@@ -1,3 +1,5 @@
+export type Platform = 'Facebook' | 'Instagram' | 'LinkedIn' | 'Twitter';
+
 export type BrandProfile = {
   businessName: string;
   businessType: string;
@@ -11,7 +13,7 @@ export type BrandProfile = {
 export type GeneratedPost = {
   id: string;
   date: string;
-  platform: 'Facebook' | 'Instagram' | 'LinkedIn' | 'Twitter';
+  platform: Platform;
   content: string;
   imageUrl: string;
   imageText: string; // Added to be used for video generation

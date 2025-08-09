@@ -26,6 +26,8 @@ const GeneratePostFromProfileInputSchema = z.object({
   events: z.string().describe('Local events happening on the target date.'),
   dayOfWeek: z.string().describe('The day of the week for the post.'),
   currentDate: z.string().describe('The current date for the post.'),
+  platform: z.string().describe('The social media platform for the post (e.g., Instagram, Facebook).'),
+  aspectRatio: z.string().describe('The aspect ratio for the generated image (e.g., "1:1", "16:9").'),
 });
 
 export type GeneratePostFromProfileInput = z.infer<typeof GeneratePostFromProfileInputSchema>;
@@ -61,7 +63,7 @@ const generatePostFromProfileFlow = ai.defineFlow(
         hashtags: z.string().describe('Relevant hashtags for the post.'),
       })},
       prompt: `You are a social media manager and an expert in the {{{businessType}}} industry.
-      Your goal is to create engaging content that is relevant to the business's location, brand, and current events.
+      Your goal is to create engaging content that is relevant to the business's location, brand, and current events for the social media platform: {{{platform}}}.
       
       Here's the information you have:
       - Business Type: {{{businessType}}}
@@ -94,7 +96,7 @@ const generatePostFromProfileFlow = ai.defineFlow(
       model: 'googleai/gemini-2.0-flash-preview-image-generation',
       prompt: [
         {
-          text: `First, generate an appealing background image for a social media post for a ${input.businessType} in ${input.location}. The brand's visual style is ${input.visualStyle}. The image should have a clear, uncluttered area suitable for placing text. The image must be a square (1:1 aspect ratio). Then, overlay the following text onto the image: "${textOutput.imageText}". It is critical that the text is clearly readable, well-composed, and not cut off or truncated at the edges of the image. The entire text must be visible. Finally, place the provided logo naturally onto the generated background image. The logo should be clearly visible but not overpower the main subject. It could be on a product, a sign, or as a subtle watermark.`,
+          text: `First, generate an appealing background image for a social media post for a ${input.businessType} in ${input.location}. The brand's visual style is ${input.visualStyle}. The image should have a clear, uncluttered area suitable for placing text. The image must have an aspect ratio of ${input.aspectRatio}. Then, overlay the following text onto the image: "${textOutput.imageText}". It is critical that the text is clearly readable, well-composed, and not cut off or truncated at the edges of the image. The entire text must be visible. Finally, place the provided logo naturally onto the generated background image. The logo should be clearly visible but not overpower the main subject. It could be on a product, a sign, or as a subtle watermark.`,
         },
         { media: { url: input.logoDataUrl } },
       ],

@@ -3,7 +3,7 @@
 import { analyzeBrand as analyzeBrandFlow } from "@/ai/flows/analyze-brand";
 import { generatePostFromProfile as generatePostFromProfileFlow } from "@/ai/flows/generate-post-from-profile";
 import { generateVideoPost as generateVideoPostFlow } from "@/ai/flows/generate-video-post";
-import type { BrandAnalysisResult, BrandProfile, GeneratedPost } from "@/lib/types";
+import type { BrandAnalysisResult, BrandProfile, GeneratedPost, Platform } from "@/lib/types";
 
 // Mock function for local data fetching
 async function getLocalData(location: string, date: Date) {
@@ -27,14 +27,31 @@ export async function analyzeBrandAction(
   }
 }
 
+const getAspectRatioForPlatform = (platform: Platform): string => {
+    switch (platform) {
+        case 'Instagram':
+            return '1:1'; // Square
+        case 'Facebook':
+            return '1.91:1'; // Landscape
+        case 'Twitter':
+            return '16:9'; // Landscape
+        case 'LinkedIn':
+            return '1.91:1'; // Landscape
+        default:
+            return '1:1';
+    }
+}
+
 export async function generateContentAction(
-  profile: BrandProfile
+  profile: BrandProfile,
+  platform: Platform
 ): Promise<GeneratedPost> {
   try {
     const today = new Date();
     const localData = await getLocalData(profile.location, today);
     const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long' });
     const currentDate = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const aspectRatio = getAspectRatioForPlatform(platform);
 
     const postDetails = await generatePostFromProfileFlow({
       businessType: profile.businessType,
@@ -47,12 +64,14 @@ export async function generateContentAction(
       events: localData.events,
       dayOfWeek,
       currentDate,
+      platform,
+      aspectRatio,
     });
 
     return {
       id: new Date().toISOString(),
       date: today.toISOString(),
-      platform: 'Instagram', // Default to Instagram for now
+      platform: platform,
       content: postDetails.content,
       imageUrl: postDetails.imageUrl || `https://placehold.co/1080x1080.png`,
       imageText: postDetails.imageText,

@@ -1,12 +1,13 @@
 "use client";
 
 import React from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PostCard } from "@/components/dashboard/post-card";
 import { generateContentAction } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
-import type { BrandProfile, GeneratedPost } from "@/lib/types";
+import type { BrandProfile, GeneratedPost, Platform } from "@/lib/types";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 type ContentCalendarProps = {
   brandProfile: BrandProfile;
@@ -15,18 +16,25 @@ type ContentCalendarProps = {
   onPostUpdated: (post: GeneratedPost) => void;
 };
 
+const platforms: { name: Platform; icon: React.ElementType }[] = [
+    { name: 'Instagram', icon: Instagram },
+    { name: 'Facebook', icon: Facebook },
+    { name: 'Twitter', icon: Twitter },
+    { name: 'LinkedIn', icon: Linkedin },
+];
+
 export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUpdated }: ContentCalendarProps) {
-  const [isGenerating, setIsGenerating] = React.useState(false);
+  const [isGenerating, setIsGenerating] = React.useState<Platform | null>(null);
   const { toast } = useToast();
 
-  const handleGenerateClick = async () => {
-    setIsGenerating(true);
+  const handleGenerateClick = async (platform: Platform) => {
+    setIsGenerating(platform);
     try {
-      const newPost = await generateContentAction(brandProfile);
+      const newPost = await generateContentAction(brandProfile, platform);
       onPostGenerated(newPost);
       toast({
         title: "Content Generated!",
-        description: "A new post has been added to your calendar.",
+        description: `A new ${platform} post has been added to your calendar.`,
       });
     } catch (error) {
       toast({
@@ -35,7 +43,7 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
         description: (error as Error).message,
       });
     } finally {
-      setIsGenerating(false);
+      setIsGenerating(null);
     }
   };
 
@@ -48,16 +56,28 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
             Here's your generated content. Click a post to edit or regenerate.
           </p>
         </div>
-        <Button onClick={handleGenerateClick} disabled={isGenerating}>
-          {isGenerating ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Generating...
-            </>
-          ) : (
-            "✨ Generate Today's Post"
-          )}
-        </Button>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button disabled={!!isGenerating}>
+                    {isGenerating ? (
+                        <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Generating for {isGenerating}...
+                        </>
+                    ) : (
+                        "✨ Generate New Post"
+                    )}
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+                {platforms.map((p) => (
+                    <DropdownMenuItem key={p.name} onClick={() => handleGenerateClick(p.name)} disabled={!!isGenerating}>
+                        <p.icon className="mr-2 h-4 w-4" />
+                        <span>{p.name}</span>
+                    </DropdownMenuItem>
+                ))}
+            </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {posts.length > 0 ? (
