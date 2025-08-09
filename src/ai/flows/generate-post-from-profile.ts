@@ -25,6 +25,7 @@ const GeneratePostFromProfileInputSchema = z.object({
   weather: z.string().describe('The current weather conditions.'),
   events: z.string().describe('Local events happening on the target date.'),
   dayOfWeek: z.string().describe('The day of the week for the post.'),
+  currentDate: z.string().describe('The current date for the post.'),
 });
 
 export type GeneratePostFromProfileInput = z.infer<typeof GeneratePostFromProfileInputSchema>;
@@ -70,8 +71,9 @@ const generatePostFromProfileFlow = ai.defineFlow(
       - Weather: {{{weather}}}
       - Local Events: {{{events}}}
       - Day of Week: {{{dayOfWeek}}}
+      - Today's Date: {{{currentDate}}}
 
-      Incorporate trends, seasonal topics, or common conversations relevant to the {{{businessType}}} industry.
+      Incorporate trends, seasonal topics, or common conversations relevant to the {{{businessType}}} industry. Use the date to ensure the content is fresh and not repetitive.
       
       Generate a social media post. This includes a longer text for the caption, a separate, very brief text to be placed on the image, and hashtags.
       

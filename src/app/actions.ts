@@ -34,6 +34,7 @@ export async function generateContentAction(
     const today = new Date();
     const localData = await getLocalData(profile.location, today);
     const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long' });
+    const currentDate = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
     const postDetails = await generatePostFromProfileFlow({
       businessType: profile.businessType,
@@ -45,6 +46,7 @@ export async function generateContentAction(
       weather: localData.weather,
       events: localData.events,
       dayOfWeek,
+      currentDate,
     });
 
     return {
