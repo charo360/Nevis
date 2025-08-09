@@ -32,6 +32,7 @@ import { format } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
+import { Input } from '../ui/input';
 
 const platformIcons = {
   Facebook: <Facebook className="h-4 w-4" />,
