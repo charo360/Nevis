@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import Image from "next/image";
-import { Facebook, Instagram, Linkedin, MoreVertical, Pen, RefreshCw, Twitter, CalendarIcon, Download } from "lucide-react";
+import { Facebook, Instagram, Linkedin, MoreVertical, Pen, RefreshCw, Twitter, CalendarIcon, Download, Loader2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,12 +27,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { GeneratedPost } from "@/lib/types";
+import type { BrandProfile, GeneratedPost } from "@/lib/types";
 import { format } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Input } from '../ui/input';
+import { generateContentAction } from '@/app/actions';
 
 const platformIcons = {
   Facebook: <Facebook className="h-4 w-4" />,
@@ -43,11 +44,13 @@ const platformIcons = {
 
 type PostCardProps = {
   post: GeneratedPost;
+  brandProfile: BrandProfile;
   onPostUpdated: (post: GeneratedPost) => void;
 };
 
-export function PostCard({ post, onPostUpdated }: PostCardProps) {
+export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   const [isEditing, setIsEditing] = React.useState(false);
+  const [isRegenerating, setIsRegenerating] = React.useState(false);
   const [editedContent, setEditedContent] = React.useState(post.content);
   const [editedHashtags, setEditedHashtags] = React.useState(post.hashtags);
   const formattedDate = format(new Date(post.date), 'MMM d, yyyy');
@@ -87,6 +90,27 @@ export function PostCard({ post, onPostUpdated }: PostCardProps) {
     });
   };
 
+  const handleRegenerate = async () => {
+    setIsRegenerating(true);
+    try {
+        const newPost = await generateContentAction(brandProfile);
+        // We replace the old post with the new one, keeping the same ID
+        onPostUpdated({ ...newPost, id: post.id });
+        toast({
+            title: "Post Regenerated!",
+            description: "A new version of your post has been generated.",
+        });
+    } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "Regeneration Failed",
+            description: (error as Error).message,
+        });
+    } finally {
+        setIsRegenerating(false);
+    }
+  };
+
   return (
     <>
       <Card className="flex flex-col">
@@ -97,7 +121,7 @@ export function PostCard({ post, onPostUpdated }: PostCardProps) {
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="ghost" className="h-6 w-6">
+              <Button size="icon" variant="ghost" className="h-6 w-6" disabled={isRegenerating}>
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -106,8 +130,12 @@ export function PostCard({ post, onPostUpdated }: PostCardProps) {
                 <Pen className="mr-2 h-4 w-4" />
                 Edit
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <RefreshCw className="mr-2 h-4 w-4" />
+              <DropdownMenuItem onClick={handleRegenerate} disabled={isRegenerating}>
+                {isRegenerating ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                )}
                 Regenerate
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleDownload}>
@@ -118,10 +146,15 @@ export function PostCard({ post, onPostUpdated }: PostCardProps) {
           </DropdownMenu>
         </CardHeader>
         <CardContent className="flex-grow space-y-4 p-4 pt-0">
-          <div className="aspect-square w-full overflow-hidden rounded-md border">
+          <div className="relative aspect-square w-full overflow-hidden rounded-md border">
+            {isRegenerating && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/80">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+            )}
             <Image
               alt="Generated post image"
-              className="h-full w-full object-cover"
+              className={`h-full w-full object-cover transition-opacity ${isRegenerating ? 'opacity-50' : 'opacity-100'}`}
               height={1080}
               src={post.imageUrl}
               data-ai-hint="social media post"

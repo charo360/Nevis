@@ -63,7 +63,12 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
       {posts.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {posts.map((post) => (
-            <PostCard key={post.id} post={post} onPostUpdated={onPostUpdated} />
+            <PostCard 
+              key={post.id} 
+              post={post} 
+              brandProfile={brandProfile} 
+              onPostUpdated={onPostUpdated} 
+            />
           ))}
         </div>
       ) : (
