@@ -19,11 +19,10 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
-import { cn } from "@/lib/utils";
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const isActive = (path: string) => path === pathname;
+  const isActive = (path: string) => pathname.startsWith(path);
 
   return (
     <Sidebar>
@@ -40,36 +39,24 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              isActive={isActive("/dashboard")}
-              tooltip="Dashboard"
-            >
-              <Link href="#">
-                <LayoutDashboard />
-                <span>Dashboard</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={isActive("/calendar")}
-              tooltip="Content Calendar"
-            >
-              <Link href="#">
-                <CalendarDays />
-                <span>Content Calendar</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={isActive("/brand")}
+              isActive={isActive("/brand-profile")}
               tooltip="Brand Profile"
             >
-              <Link href="#">
+              <Link href="/brand-profile">
                 <Sparkles />
                 <span>Brand Profile</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={isActive("/content-calendar")}
+              tooltip="Content Calendar"
+            >
+              <Link href="/content-calendar">
+                <CalendarDays />
+                <span>Content Calendar</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
