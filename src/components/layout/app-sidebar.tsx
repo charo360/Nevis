@@ -1,3 +1,4 @@
+// src/components/layout/app-sidebar.tsx
 "use client";
 
 import React from "react";
@@ -8,6 +9,7 @@ import {
   LayoutDashboard,
   Settings2,
   Sparkles,
+  Link as LinkIcon,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import {
@@ -57,6 +59,18 @@ export function AppSidebar() {
               <Link href="/content-calendar">
                 <CalendarDays />
                 <span>Content Calendar</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={isActive("/social-connect")}
+              tooltip="Social Media Connect"
+            >
+              <Link href="/social-connect">
+                <LinkIcon />
+                <span>Social Media Connect</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
