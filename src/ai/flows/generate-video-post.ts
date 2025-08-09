@@ -10,8 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import * as fs from 'fs';
-import {Readable} from 'stream';
+import { MediaPart } from 'genkit';
 
 // Define the input schema for the video generation flow.
 const GenerateVideoInputSchema = z.object({
@@ -35,6 +34,31 @@ export type GenerateVideoOutput = z.infer<typeof GenerateVideoOutputSchema>;
  */
 export async function generateVideoPost(input: GenerateVideoInput): Promise<GenerateVideoOutput> {
   return generateVideoPostFlow(input);
+}
+
+/**
+ * Helper function to download video and convert to data URI
+ */
+async function videoToDataURI(videoPart: MediaPart): Promise<string> {
+    if (!videoPart.media || !videoPart.media.url) {
+        throw new Error('Media URL not found in video part.');
+    }
+
+    const fetch = (await import('node-fetch')).default;
+    // Add API key before fetching the video. This is a temporary workaround.
+    const videoDownloadResponse = await fetch(
+        `${videoPart.media.url}&key=${process.env.GEMINI_API_KEY}`
+    );
+
+    if (!videoDownloadResponse.ok) {
+        throw new Error(`Failed to download video: ${videoDownloadResponse.statusText}`);
+    }
+
+    const videoBuffer = await videoDownloadResponse.arrayBuffer();
+    const base64Video = Buffer.from(videoBuffer).toString('base64');
+    const contentType = videoPart.media.contentType || 'video/mp4';
+
+    return `data:${contentType};base64,${base64Video}`;
 }
 
 /**
@@ -78,10 +102,7 @@ const generateVideoPostFlow = ai.defineFlow(
         throw new Error('No video was generated in the operation result.');
     }
     
-    // This is a placeholder for downloading and converting the video to a data URI
-    // In a real implementation, you would fetch the video from the URL and encode it.
-    // For now, we'll just return a placeholder.
-    const videoDataUrl = videoPart.media.url; // In a real scenario, you'd process this URL.
+    const videoDataUrl = await videoToDataURI(videoPart);
 
     return {
       videoUrl: videoDataUrl, 
