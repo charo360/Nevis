@@ -40,7 +40,12 @@ export function PostCard({ post }: PostCardProps) {
 
   const handleDownload = React.useCallback(async () => {
     try {
-      const response = await fetch(post.imageUrl);
+      // Use a cors proxy if the image is from placehold.co or another external source
+      const imageUrl = new URL(post.imageUrl);
+      const proxiedUrl = `https://images.weserv.nl/?url=${encodeURIComponent(imageUrl.href)}`;
+
+      const response = await fetch(proxiedUrl);
+
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
@@ -49,7 +54,7 @@ export function PostCard({ post }: PostCardProps) {
       const link = document.createElement('a');
       link.href = url;
       // Extracting file extension from imageUrl or defaulting to .png
-      const fileExtension = post.imageUrl.split('.').pop() || 'png';
+      const fileExtension = post.imageUrl.split('.').pop()?.split('?')[0] || 'png';
       link.download = `localbuzz-image-${post.id}.${fileExtension}`;
       document.body.appendChild(link);
       link.click();
@@ -60,7 +65,7 @@ export function PostCard({ post }: PostCardProps) {
       toast({
         variant: "destructive",
         title: "Download Failed",
-        description: "Could not download the image.",
+        description: "Could not download the image. The image provider may be blocking downloads.",
       });
     }
   }, [post.id, post.imageUrl, toast]);
