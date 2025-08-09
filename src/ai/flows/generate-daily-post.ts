@@ -27,8 +27,8 @@ const GenerateDailyPostInputSchema = z.object({
 export type GenerateDailyPostInput = z.infer<typeof GenerateDailyPostInputSchema>;
 
 const GenerateDailyPostOutputSchema = z.object({
-  content: z.string().describe('The generated social media post content.'),
-  imageUrl: z.string().describe('URL of the generated image, if any.'),
+  content: z.string().describe('The generated social media post content (the caption).'),
+  imageText: z.string().describe('A very short, catchy headline for the image itself (max 5 words).'),
   hashtags: z.string().describe('Relevant hashtags for the post.'),
 });
 
@@ -53,10 +53,13 @@ const prompt = ai.definePrompt({
   - Local Events: {{{events}}}
   - Day of Week: {{{dayOfWeek}}}
 
-  Generate a social media post that is appropriate for the given platform and target audience. 
-  Include relevant hashtags. Consider the weather and local events when creating the post.  The post should match the brand voice.
+  Generate a social media post. This includes a longer text for the caption, and a separate, very brief text to be placed on the image.
+  
+  1.  **Caption (content):** Generate a post that is appropriate for the given platform and target audience. Consider the weather and local events when creating the post. The post should match the brand voice.
+  2.  **Image Text (imageText):** Generate a very short, catchy headline (max 5 words) that relates to the caption and is suitable for being overlaid on an image.
+  3.  **Hashtags:** Include relevant hashtags.
 
-  Output the content, a URL for an image related to the content, and relevant hashtags. Be brief.
+  Output the content, the imageText, and relevant hashtags.
   `,
 });
 

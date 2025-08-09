@@ -46,7 +46,7 @@ export async function generateContentAction(
     });
     
     const imageDetails = await generateBrandConsistentImageFlow({
-        textContent: postDetails.content,
+        imageText: postDetails.imageText,
         businessType: profile.businessType,
         location: profile.location,
         visualStyle: profile.visualStyle,

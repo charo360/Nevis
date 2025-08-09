@@ -12,7 +12,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GenerateBrandConsistentImageInputSchema = z.object({
-  textContent: z.string().describe('The text content for which an image needs to be generated.'),
+  imageText: z.string().describe('The short text to be placed on the image.'),
   businessType: z.string().describe('The type of the business (e.g., restaurant, salon).'),
   location: z.string().describe('The location of the business (city, state).'),
   visualStyle: z.string().describe('The visual style of the brand (e.g., modern, vintage).'),
@@ -41,7 +41,8 @@ const generateBrandConsistentImageFlow = ai.defineFlow(
     const {media} = await ai.generate({
       model: 'googleai/gemini-2.0-flash-preview-image-generation',
       prompt: [
-        {text: `Generate a background image for a social media post for a ${input.businessType} in ${input.location}. The post content is "${input.textContent}". The brand's visual style is ${input.visualStyle}.`},
+        {text: `Generate a background image for a social media post for a ${input.businessType} in ${input.location}. The brand's visual style is ${input.visualStyle}. The image should have a clear space to place text.`},
+        {text: `Now, overlay the following text onto the image: "${input.imageText}". Ensure the text is clearly readable, well-composed, and not cut off at the edges.`},
         {media: {url: input.logoDataUrl}},
         {text: 'Place the provided logo naturally onto the generated background image. The logo should be clearly visible but not overpower the main subject. It could be on a product, a sign, or as a subtle watermark.'}
       ],
