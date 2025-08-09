@@ -4,7 +4,7 @@ import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, Sparkles, Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -30,12 +30,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import type { BrandAnalysisResult, BrandProfile } from "@/lib/types";
 import { analyzeBrandAction } from "@/app/actions";
+import Image from "next/image";
 
 const formSchema = z.object({
   businessName: z.string().min(2, { message: "Business name must be at least 2 characters." }),
   businessType: z.string().min(2, { message: "Business type must be at least 2 characters." }),
   location: z.string().min(2, { message: "Location must be at least 2 characters." }),
   socialMediaUrl: z.string().url({ message: "Please enter a valid URL." }),
+  logo: z.any().refine(fileList => fileList.length > 0, "Logo image is required."),
 });
 
 type BrandSetupProps = {
@@ -45,6 +47,8 @@ type BrandSetupProps = {
 export function BrandSetup({ onProfileSaved }: BrandSetupProps) {
   const [isLoading, setIsLoading] = React.useState(false);
   const [analysisResult, setAnalysisResult] = React.useState<BrandAnalysisResult | null>(null);
+  const [logoPreview, setLogoPreview] = React.useState<string | null>(null);
+  const [logoDataUrl, setLogoDataUrl] = React.useState<string>("");
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -57,9 +61,31 @@ export function BrandSetup({ onProfileSaved }: BrandSetupProps) {
     },
   });
 
+  const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const dataUrl = reader.result as string;
+        setLogoPreview(dataUrl);
+        setLogoDataUrl(dataUrl);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     setAnalysisResult(null);
+    if (!logoDataUrl) {
+        toast({
+            variant: "destructive",
+            title: "Missing Logo",
+            description: "Please upload a logo to continue."
+        });
+        setIsLoading(false);
+        return;
+    }
     try {
       const result = await analyzeBrandAction(values.socialMediaUrl);
       setAnalysisResult(result);
@@ -79,9 +105,13 @@ export function BrandSetup({ onProfileSaved }: BrandSetupProps) {
   }
 
   const handleSaveProfile = () => {
-    if (analysisResult) {
+    if (analysisResult && logoDataUrl) {
+      const formValues = form.getValues();
       const profile: BrandProfile = {
-        ...form.getValues(),
+        businessName: formValues.businessName,
+        businessType: formValues.businessType,
+        location: formValues.location,
+        logoDataUrl,
         ...analysisResult,
       };
       onProfileSaved(profile);
@@ -104,7 +134,7 @@ export function BrandSetup({ onProfileSaved }: BrandSetupProps) {
         <CardHeader>
           <CardTitle>Brand Discovery</CardTitle>
           <CardDescription>
-            Enter your business details and a social media link for AI-powered brand analysis.
+            Enter your business details, upload a logo, and provide a social media link for AI-powered brand analysis.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -137,6 +167,32 @@ export function BrandSetup({ onProfileSaved }: BrandSetupProps) {
                       </FormItem>
                     )} />
                   </div>
+                   <FormField control={form.control} name="logo" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Business Logo</FormLabel>
+                        <FormControl>
+                          <div className="flex items-center gap-4">
+                            <div className="relative flex h-24 w-24 items-center justify-center rounded-md border border-dashed">
+                              {logoPreview ? (
+                                <Image src={logoPreview} alt="Logo preview" layout="fill" objectFit="contain" />
+                              ) : (
+                                <Upload className="h-6 w-6 text-muted-foreground" />
+                              )}
+                            </div>
+                            <Input 
+                                type="file" 
+                                accept="image/*" 
+                                className="w-full"
+                                onChange={(e) => {
+                                    field.onChange(e.target.files);
+                                    handleLogoChange(e);
+                                }}
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
                   <FormField control={form.control} name="location" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Location</FormLabel>
@@ -195,7 +251,7 @@ export function BrandSetup({ onProfileSaved }: BrandSetupProps) {
         </CardContent>
         {analysisResult && (
             <CardFooter>
-                <Button onClick={handleSaveProfile} className="w-full md:w-auto">Save Brand Profile & Continue</Button>
+                <Button onClick={handleSaveProfile} className="w-full md:w-auto" disabled={!logoDataUrl}>Save Brand Profile & Continue</Button>
             </CardFooter>
         )}
       </Card>

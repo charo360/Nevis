@@ -50,6 +50,7 @@ export async function generateContentAction(
         businessType: profile.businessType,
         location: profile.location,
         visualStyle: profile.visualStyle,
+        logoDataUrl: profile.logoDataUrl,
     });
 
     return {
