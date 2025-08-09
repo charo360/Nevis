@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import Image from "next/image";
-import { Facebook, Instagram, Linkedin, MoreVertical, Pen, RefreshCw, Twitter, CalendarIcon, Download, Loader2 } from "lucide-react";
+import { Facebook, Instagram, Linkedin, MoreVertical, Pen, RefreshCw, Twitter, CalendarIcon, Download, Loader2, Video } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,7 +33,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Input } from '../ui/input';
-import { generateContentAction } from '@/app/actions';
+import { generateContentAction, generateVideoContentAction } from '@/app/actions';
 
 const platformIcons = {
   Facebook: <Facebook className="h-4 w-4" />,
@@ -51,8 +51,12 @@ type PostCardProps = {
 export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   const [isEditing, setIsEditing] = React.useState(false);
   const [isRegenerating, setIsRegenerating] = React.useState(false);
+  const [isGeneratingVideo, setIsGeneratingVideo] = React.useState(false);
   const [editedContent, setEditedContent] = React.useState(post.content);
   const [editedHashtags, setEditedHashtags] = React.useState(post.hashtags);
+  const [videoUrl, setVideoUrl] = React.useState<string | undefined>(post.videoUrl);
+  const [showVideoDialog, setShowVideoDialog] = React.useState(false);
+
   const formattedDate = format(new Date(post.date), 'MMM d, yyyy');
   const { toast } = useToast();
 
@@ -111,6 +115,28 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
     }
   };
 
+  const handleGenerateVideo = async () => {
+    setIsGeneratingVideo(true);
+    try {
+        const result = await generateVideoContentAction(brandProfile, post.imageText);
+        setVideoUrl(result.videoUrl);
+        onPostUpdated({ ...post, videoUrl: result.videoUrl });
+        setShowVideoDialog(true);
+        toast({
+            title: "Video Generated!",
+            description: "Your video is ready to be viewed.",
+        });
+    } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "Video Generation Failed",
+            description: (error as Error).message,
+        });
+    } finally {
+        setIsGeneratingVideo(false);
+    }
+  };
+
   return (
     <>
       <Card className="flex flex-col">
@@ -121,7 +147,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="ghost" className="h-6 w-6" disabled={isRegenerating}>
+              <Button size="icon" variant="ghost" className="h-6 w-6" disabled={isRegenerating || isGeneratingVideo}>
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -136,25 +162,34 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
                 ) : (
                     <RefreshCw className="mr-2 h-4 w-4" />
                 )}
-                Regenerate
+                Regenerate Image
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleGenerateVideo} disabled={isGeneratingVideo}>
+                {isGeneratingVideo ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                    <Video className="mr-2 h-4 w-4" />
+                )}
+                Generate Video
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleDownload}>
                 <Download className="mr-2 h-4 w-4" />
-                Download
+                Download Image
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </CardHeader>
         <CardContent className="flex-grow space-y-4 p-4 pt-0">
           <div className="relative aspect-square w-full overflow-hidden rounded-md border">
-            {isRegenerating && (
+            {(isRegenerating || isGeneratingVideo) && (
                 <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/80">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <span className="sr-only">{isRegenerating ? 'Regenerating image...' : 'Generating video...'}</span>
                 </div>
             )}
             <Image
               alt="Generated post image"
-              className={`h-full w-full object-cover transition-opacity ${isRegenerating ? 'opacity-50' : 'opacity-100'}`}
+              className={`h-full w-full object-cover transition-opacity ${(isRegenerating || isGeneratingVideo) ? 'opacity-50' : 'opacity-100'}`}
               height={1080}
               src={post.imageUrl}
               data-ai-hint="social media post"
@@ -177,6 +212,8 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
           </div>
         </CardFooter>
       </Card>
+
+      {/* Edit Post Dialog */}
       <Dialog open={isEditing} onOpenChange={setIsEditing}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -207,6 +244,28 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
             <Button onClick={handleSaveChanges}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* View Video Dialog */}
+      <Dialog open={showVideoDialog} onOpenChange={setShowVideoDialog}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Generated Video</DialogTitle>
+            <DialogDescription>
+              Here is the video generated for your post. You can download it from here.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="my-4">
+            {videoUrl ? (
+                <video controls autoPlay src={videoUrl} className="w-full rounded-md" />
+            ) : (
+                <p>No video available.</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowVideoDialog(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

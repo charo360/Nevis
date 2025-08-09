@@ -55,6 +55,7 @@ export async function generateContentAction(
       platform: 'Instagram', // Default to Instagram for now
       content: postDetails.content,
       imageUrl: postDetails.imageUrl || `https://placehold.co/1080x1080.png`,
+      imageText: postDetails.imageText,
       hashtags: postDetails.hashtags,
       status: 'generated',
     };

@@ -14,8 +14,10 @@ export type GeneratedPost = {
   platform: 'Facebook' | 'Instagram' | 'LinkedIn' | 'Twitter';
   content: string;
   imageUrl: string;
+  imageText: string; // Added to be used for video generation
   hashtags: string;
   status: 'generated' | 'edited' | 'posted';
+  videoUrl?: string; // Added to store generated video
 };
 
 export type BrandAnalysisResult = {
