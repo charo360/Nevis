@@ -40,12 +40,7 @@ const generateBrandConsistentImageFlow = ai.defineFlow(
   async input => {
     const {media} = await ai.generate({
       model: 'googleai/gemini-2.0-flash-preview-image-generation',
-      prompt: [
-        {text: `Generate an appealing background image for a social media post for a ${input.businessType} in ${input.location}. The brand's visual style is ${input.visualStyle}.`},
-        {text: `Now, overlay the following text onto the image: "${input.imageText}". It is critical that the text is clearly readable, well-composed, and not cut off or truncated at the edges of the image. The entire text must be visible.`},
-        {media: {url: input.logoDataUrl}},
-        {text: 'Place the provided logo naturally onto the generated background image. The logo should be clearly visible but not overpower the main subject. It could be on a product, a sign, or as a subtle watermark.'}
-      ],
+      prompt: `Generate an appealing background image for a social media post for a ${input.businessType} in ${input.location}. The brand's visual style is ${input.visualStyle}. The image should have a clear, uncluttered area suitable for placing text. Then, overlay the following text onto the image: "${input.imageText}". It is critical that the text is clearly readable, well-composed, and not cut off or truncated at the edges of the image. The entire text must be visible. Finally, place the provided logo naturally onto the generated background image. The logo should be clearly visible but not overpower the main subject. It could be on a product, a sign, or as a subtle watermark.`,
       config: {
         responseModalities: ['TEXT', 'IMAGE'],
       },
