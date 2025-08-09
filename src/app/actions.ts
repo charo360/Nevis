@@ -2,6 +2,7 @@
 
 import { analyzeBrand as analyzeBrandFlow } from "@/ai/flows/analyze-brand";
 import { generatePostFromProfile as generatePostFromProfileFlow } from "@/ai/flows/generate-post-from-profile";
+import { generateVideoPost as generateVideoPostFlow } from "@/ai/flows/generate-video-post";
 import type { BrandAnalysisResult, BrandProfile, GeneratedPost } from "@/lib/types";
 
 // Mock function for local data fetching
@@ -58,5 +59,23 @@ export async function generateContentAction(
   } catch (error) {
     console.error("Error generating content:", error);
     throw new Error("Failed to generate content. Please try again later.");
+  }
+}
+
+export async function generateVideoContentAction(
+  profile: BrandProfile,
+  imageText: string
+): Promise<{ videoUrl: string }> {
+  try {
+    const result = await generateVideoPostFlow({
+      businessType: profile.businessType,
+      location: profile.location,
+      visualStyle: profile.visualStyle,
+      imageText: imageText,
+    });
+    return { videoUrl: result.videoUrl };
+  } catch (error) {
+    console.error("Error generating video content:", error);
+    throw new Error("Failed to generate video. Please try again later.");
   }
 }
