@@ -1,8 +1,7 @@
 "use server";
 
 import { analyzeBrand as analyzeBrandFlow } from "@/ai/flows/analyze-brand";
-import { generateDailyPost as generateDailyPostFlow } from "@/ai/flows/generate-daily-post";
-import { generateBrandConsistentImage as generateBrandConsistentImageFlow } from "@/ai/flows/generate-brand-consistent-image";
+import { generatePostFromProfile as generatePostFromProfileFlow } from "@/ai/flows/generate-post-from-profile";
 import type { BrandAnalysisResult, BrandProfile, GeneratedPost } from "@/lib/types";
 
 // Mock function for local data fetching
@@ -33,24 +32,18 @@ export async function generateContentAction(
   try {
     const today = new Date();
     const localData = await getLocalData(profile.location, today);
-
     const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long' });
 
-    const postDetails = await generateDailyPostFlow({
+    const postDetails = await generatePostFromProfileFlow({
       businessType: profile.businessType,
       location: profile.location,
-      brandVoice: profile.writingTone,
+      writingTone: profile.writingTone,
+      contentThemes: profile.contentThemes,
+      visualStyle: profile.visualStyle,
+      logoDataUrl: profile.logoDataUrl,
       weather: localData.weather,
       events: localData.events,
       dayOfWeek,
-    });
-    
-    const imageDetails = await generateBrandConsistentImageFlow({
-        imageText: postDetails.imageText,
-        businessType: profile.businessType,
-        location: profile.location,
-        visualStyle: profile.visualStyle,
-        logoDataUrl: profile.logoDataUrl,
     });
 
     return {
@@ -58,7 +51,7 @@ export async function generateContentAction(
       date: today.toISOString(),
       platform: 'Instagram', // Default to Instagram for now
       content: postDetails.content,
-      imageUrl: imageDetails.imageUrl || `https://placehold.co/1080x1080.png`,
+      imageUrl: postDetails.imageUrl || `https://placehold.co/1080x1080.png`,
       hashtags: postDetails.hashtags,
       status: 'generated',
     };
