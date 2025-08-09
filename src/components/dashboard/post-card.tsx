@@ -27,7 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { BrandProfile, GeneratedPost } from "@/lib/types";
+import type { BrandProfile, GeneratedPost, Platform } from "@/lib/types";
 import { format } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import { Label } from '../ui/label';
@@ -35,7 +35,7 @@ import { Textarea } from '../ui/textarea';
 import { Input } from '../ui/input';
 import { generateContentAction, generateVideoContentAction } from '@/app/actions';
 
-const platformIcons = {
+const platformIcons: { [key in Platform]: React.ReactElement } = {
   Facebook: <Facebook className="h-4 w-4" />,
   Instagram: <Instagram className="h-4 w-4" />,
   LinkedIn: <Linkedin className="h-4 w-4" />,
@@ -97,7 +97,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   const handleRegenerate = async () => {
     setIsRegenerating(true);
     try {
-        const newPost = await generateContentAction(brandProfile);
+        const newPost = await generateContentAction(brandProfile, post.platform);
         // We replace the old post with the new one, keeping the same ID
         onPostUpdated({ ...newPost, id: post.id });
         toast({
