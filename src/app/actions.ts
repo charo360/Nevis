@@ -49,9 +49,7 @@ export async function generateContentAction(
         textContent: postDetails.content,
         businessType: profile.businessType,
         location: profile.location,
-        brandStyleMood: `A style described as: "${profile.visualStyle}"`,
-        brandStyleColorPalette: 'as described in the style',
-        brandStyleDesignElements: 'as described in the style',
+        visualStyle: profile.visualStyle,
     });
 
     return {

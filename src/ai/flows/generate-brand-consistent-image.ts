@@ -15,9 +15,7 @@ const GenerateBrandConsistentImageInputSchema = z.object({
   textContent: z.string().describe('The text content for which an image needs to be generated.'),
   businessType: z.string().describe('The type of the business (e.g., restaurant, salon).'),
   location: z.string().describe('The location of the business (city, state).'),
-  brandStyleMood: z.string().describe('The mood of the brand style (e.g., modern, vintage).'),
-  brandStyleColorPalette: z.string().describe('The color palette of the brand (e.g., pastel, vibrant).'),
-  brandStyleDesignElements: z.string().describe('The design elements of the brand (e.g., minimalist, geometric).'),
+  visualStyle: z.string().describe('The visual style of the brand (e.g., modern, vintage).'),
 });
 
 export type GenerateBrandConsistentImageInput = z.infer<typeof GenerateBrandConsistentImageInputSchema>;
@@ -32,13 +30,6 @@ export async function generateBrandConsistentImage(input: GenerateBrandConsisten
   return generateBrandConsistentImageFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'generateBrandConsistentImagePrompt',
-  input: {schema: GenerateBrandConsistentImageInputSchema},
-  output: {schema: GenerateBrandConsistentImageOutputSchema},
-  prompt: `Create a {{{brandStyleMood}}} image for a {{businessType}} in {{location}}. Use {{brandStyleColorPalette}} color scheme. Style: {{brandStyleDesignElements}}. Content context: {{{textContent}}}. Professional quality, social media optimized.`,
-});
-
 const generateBrandConsistentImageFlow = ai.defineFlow(
   {
     name: 'generateBrandConsistentImageFlow',
@@ -48,7 +39,10 @@ const generateBrandConsistentImageFlow = ai.defineFlow(
   async input => {
     const {media} = await ai.generate({
       model: 'googleai/gemini-2.0-flash-preview-image-generation',
-      prompt: `Create a {{{brandStyleMood}}} image for a {{businessType}} in {{location}}. Use {{brandStyleColorPalette}} color scheme. Style: {{brandStyleDesignElements}}. Content context: {{{textContent}}}. Professional quality, social media optimized.`,
+      prompt: `Create an image for a social media post for a ${input.businessType} located in ${input.location}. 
+The content of the post is: "${input.textContent}".
+The image should be visually consistent with the brand's style, which is described as: "${input.visualStyle}".
+Generate a professional, high-quality image suitable for social media.`,
       config: {
         responseModalities: ['TEXT', 'IMAGE'],
       },
