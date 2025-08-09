@@ -40,12 +40,11 @@ const generateBrandConsistentImageFlow = ai.defineFlow(
   async input => {
     const {media} = await ai.generate({
       model: 'googleai/gemini-2.0-flash-preview-image-generation',
-      prompt: `Create an image for a social media post for a ${input.businessType} located in ${input.location}.
-The content of the post is: "${input.textContent}".
-The image should be visually consistent with the brand's style, which is described as: "${input.visualStyle}".
-Incorporate the following logo naturally into the image design. The logo should be clearly visible but not overpower the main subject. For example, it could appear on a product, a sign, or as a watermark.
-Logo: {{media url=logoDataUrl}}
-Generate a professional, high-quality image suitable for social media.`,
+      prompt: [
+        {text: `Generate a background image for a social media post for a ${input.businessType} in ${input.location}. The post content is "${input.textContent}". The brand's visual style is ${input.visualStyle}.`},
+        {media: {url: input.logoDataUrl}},
+        {text: 'Place the provided logo naturally onto the generated background image. The logo should be clearly visible but not overpower the main subject. It could be on a product, a sign, or as a subtle watermark.'}
+      ],
       config: {
         responseModalities: ['TEXT', 'IMAGE'],
       },
