@@ -42,8 +42,8 @@ const prompt = ai.definePrompt({
   name: 'generateDailyPostPrompt',
   input: {schema: GenerateDailyPostInputSchema},
   output: {schema: GenerateDailyPostOutputSchema},
-  prompt: `You are a social media manager for a local business.
-  Your goal is to create engaging content that is relevant to the business's location, brand, and current events.
+  prompt: `You are a social media manager and an expert in the {{{businessType}}} industry.
+  Your goal is to create engaging content that is relevant to the business's location, brand, and current events, and what's trending in their specific field.
 
   Here's the information you have:
   - Business Type: {{{businessType}}}
@@ -53,6 +53,8 @@ const prompt = ai.definePrompt({
   - Local Events: {{{events}}}
   - Day of Week: {{{dayOfWeek}}}
 
+  Incorporate trends, seasonal topics, or common conversations relevant to the {{{businessType}}} industry.
+  
   Generate a social media post. This includes a longer text for the caption, and a separate, very brief text to be placed on the image.
   
   1.  **Caption (content):** Generate a post that is appropriate for the given platform and target audience. Consider the weather and local events when creating the post. The post should match the brand voice.
