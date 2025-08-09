@@ -73,14 +73,22 @@ const generateVideoPostFlow = ai.defineFlow(
   async (input) => {
     const videoPrompt = `Create a short, engaging promotional video for a ${input.businessType} in ${input.location}. The visual style should be ${input.visualStyle}. The video should be visually appealing and suitable for a social media post. It should also have a clear area where text can be overlaid. The text to include is: "${input.imageText}".`;
 
-    let { operation } = await ai.generate({
-        model: 'googleai/veo-2.0-generate-001',
-        prompt: videoPrompt,
-        config: {
-          durationSeconds: 5,
-          aspectRatio: '16:9',
-        },
-      });
+    let operation;
+    try {
+        const result = await ai.generate({
+            model: 'googleai/veo-2.0-generate-001',
+            prompt: videoPrompt,
+            config: {
+              durationSeconds: 5,
+              aspectRatio: '16:9',
+            },
+          });
+        operation = result.operation;
+    } catch (e) {
+        console.error(e);
+        throw new Error("Video generation failed. The model may be overloaded. Please try again in a few moments.");
+    }
+    
 
     if (!operation) {
         throw new Error('Expected the model to return an operation');
@@ -93,7 +101,8 @@ const generateVideoPostFlow = ai.defineFlow(
     }
 
     if (operation.error) {
-        throw new Error(`Video generation failed: ${operation.error.message}`);
+        console.error("Video generation operation failed", operation.error);
+        throw new Error(`Video generation failed. Please try again. Error: ${operation.error.message}`);
     }
 
     const videoPart = operation.output?.message?.content.find(p => !!p.media && p.media.contentType?.startsWith('video/'));

@@ -79,6 +79,7 @@ export async function generateVideoContentAction(
     return { videoUrl: result.videoUrl };
   } catch (error) {
     console.error("Error generating video content:", error);
-    throw new Error("Failed to generate video. Please try again later.");
+    // Pass the specific error message from the flow to the client
+    throw new Error((error as Error).message);
   }
 }
