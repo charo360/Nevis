@@ -11,6 +11,8 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { MediaPart } from 'genkit';
+import * as fs from 'fs';
+import { Readable } from 'stream';
 
 // Define the input schema for the video generation flow.
 const GenerateVideoInputSchema = z.object({
@@ -45,7 +47,7 @@ async function videoToDataURI(videoPart: MediaPart): Promise<string> {
     }
 
     const fetch = (await import('node-fetch')).default;
-    // Add API key before fetching the video. This is a temporary workaround.
+    // Add API key before fetching the video.
     const videoDownloadResponse = await fetch(
         `${videoPart.media.url}&key=${process.env.GEMINI_API_KEY}`
     );
