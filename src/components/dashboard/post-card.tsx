@@ -1,7 +1,10 @@
 "use client";
 
+import * as React from 'react';
 import Image from "next/image";
-import { Facebook, Instagram, Linkedin, MoreVertical, Pen, RefreshCw, Twitter, CalendarIcon } from "lucide-react";
+import { Facebook, Instagram, Linkedin, MoreVertical, Pen, RefreshCw, Twitter, CalendarIcon, Download } from "lucide-react";
+import * as htmlToImage from 'html-to-image';
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,7 +12,6 @@ import {
   CardContent,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -19,7 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { GeneratedPost } from "@/lib/types";
 import { format } from 'date-fns';
-
+import { useToast } from "@/hooks/use-toast";
 
 const platformIcons = {
   Facebook: <Facebook className="h-4 w-4" />,
@@ -33,9 +35,34 @@ type PostCardProps = {
 };
 
 export function PostCard({ post }: PostCardProps) {
-    const formattedDate = format(new Date(post.date), 'MMM d, yyyy');
+  const formattedDate = format(new Date(post.date), 'MMM d, yyyy');
+  const cardRef = React.useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+
+  const handleDownload = React.useCallback(() => {
+    if (cardRef.current === null) {
+      return;
+    }
+
+    htmlToImage.toPng(cardRef.current, { cacheBust: true, pixelRatio: 2 })
+      .then((dataUrl) => {
+        const link = document.createElement('a');
+        link.download = `localbuzz-post-${post.id}.png`;
+        link.href = dataUrl;
+        link.click();
+      })
+      .catch((err) => {
+        console.error(err);
+        toast({
+          variant: "destructive",
+          title: "Download Failed",
+          description: "Could not generate image for download.",
+        });
+      });
+  }, [post.id, toast]);
+
   return (
-    <Card className="flex flex-col">
+    <Card className="flex flex-col" ref={cardRef}>
       <CardHeader className="flex-row items-center justify-between gap-4 p-4">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           {platformIcons[post.platform]}
@@ -56,6 +83,10 @@ export function PostCard({ post }: PostCardProps) {
               <RefreshCw className="mr-2 h-4 w-4" />
               Regenerate
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleDownload}>
+              <Download className="mr-2 h-4 w-4" />
+              Download
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </CardHeader>
@@ -68,6 +99,7 @@ export function PostCard({ post }: PostCardProps) {
             src={post.imageUrl}
             data-ai-hint="social media post"
             width={1080}
+            crossOrigin="anonymous"
           />
         </div>
         <div className="space-y-2">
