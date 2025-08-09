@@ -11,8 +11,6 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { MediaPart } from 'genkit';
-import * as fs from 'fs';
-import { Readable } from 'stream';
 
 // Define the input schema for the video generation flow.
 const GenerateVideoInputSchema = z.object({
