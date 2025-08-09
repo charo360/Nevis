@@ -10,7 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import *s from 'fs';
+import * as fs from 'fs';
 import {Readable} from 'stream';
 
 // Define the input schema for the video generation flow.
