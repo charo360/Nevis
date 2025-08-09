@@ -12,9 +12,10 @@ type ContentCalendarProps = {
   brandProfile: BrandProfile;
   posts: GeneratedPost[];
   onPostGenerated: (post: GeneratedPost) => void;
+  onPostUpdated: (post: GeneratedPost) => void;
 };
 
-export function ContentCalendar({ brandProfile, posts, onPostGenerated }: ContentCalendarProps) {
+export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUpdated }: ContentCalendarProps) {
   const [isGenerating, setIsGenerating] = React.useState(false);
   const { toast } = useToast();
 
@@ -62,7 +63,7 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated }: Conten
       {posts.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {posts.map((post) => (
-            <PostCard key={post.id} post={post} />
+            <PostCard key={post.id} post={post} onPostUpdated={onPostUpdated} />
           ))}
         </div>
       ) : (

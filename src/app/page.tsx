@@ -46,6 +46,14 @@ export default function DashboardPage() {
   const handlePostGenerated = (post: GeneratedPost) => {
     setGeneratedPosts((prevPosts) => [post, ...prevPosts]);
   };
+  
+  const handlePostUpdated = (updatedPost: GeneratedPost) => {
+    setGeneratedPosts((prevPosts) =>
+      prevPosts.map((post) =>
+        post.id === updatedPost.id ? updatedPost : post
+      )
+    );
+  };
 
   return (
     <SidebarProvider>
@@ -81,6 +89,7 @@ export default function DashboardPage() {
               brandProfile={brandProfile}
               posts={generatedPosts}
               onPostGenerated={handlePostGenerated}
+              onPostUpdated={handlePostUpdated}
             />
           )}
         </main>
