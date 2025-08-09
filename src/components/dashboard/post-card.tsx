@@ -40,32 +40,21 @@ export function PostCard({ post }: PostCardProps) {
 
   const handleDownload = React.useCallback(async () => {
     try {
-      // Use a cors proxy if the image is from placehold.co or another external source
-      const imageUrl = new URL(post.imageUrl);
-      const proxiedUrl = `https://images.weserv.nl/?url=${encodeURIComponent(imageUrl.href)}`;
-
-      const response = await fetch(proxiedUrl);
-
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = url;
-      // Extracting file extension from imageUrl or defaulting to .png
-      const fileExtension = post.imageUrl.split('.').pop()?.split('?')[0] || 'png';
+      link.href = post.imageUrl;
+      // Extracting file extension from the data URI mime type or defaulting to .png
+      const mimeType = post.imageUrl.match(/data:(image\/[^;]+);/)?.[1];
+      const fileExtension = mimeType ? mimeType.split('/')[1] : 'png';
       link.download = `localbuzz-image-${post.id}.${fileExtension}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error(err);
       toast({
         variant: "destructive",
         title: "Download Failed",
-        description: "Could not download the image. The image provider may be blocking downloads.",
+        description: "Could not download the image. Please try again.",
       });
     }
   }, [post.id, post.imageUrl, toast]);
