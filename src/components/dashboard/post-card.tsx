@@ -1,9 +1,9 @@
+
 "use client";
 
 import * as React from 'react';
 import Image from "next/image";
 import { Facebook, Instagram, Linkedin, MoreVertical, Pen, RefreshCw, Twitter, CalendarIcon, Download } from "lucide-react";
-import * as htmlToImage from 'html-to-image';
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,33 +36,38 @@ type PostCardProps = {
 
 export function PostCard({ post }: PostCardProps) {
   const formattedDate = format(new Date(post.date), 'MMM d, yyyy');
-  const cardRef = React.useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  const handleDownload = React.useCallback(() => {
-    if (cardRef.current === null) {
-      return;
-    }
-
-    htmlToImage.toPng(cardRef.current, { cacheBust: true, pixelRatio: 2 })
-      .then((dataUrl) => {
-        const link = document.createElement('a');
-        link.download = `localbuzz-post-${post.id}.png`;
-        link.href = dataUrl;
-        link.click();
-      })
-      .catch((err) => {
-        console.error(err);
-        toast({
-          variant: "destructive",
-          title: "Download Failed",
-          description: "Could not generate image for download.",
-        });
+  const handleDownload = React.useCallback(async () => {
+    try {
+      const response = await fetch(post.imageUrl);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      // Extracting file extension from imageUrl or defaulting to .png
+      const fileExtension = post.imageUrl.split('.').pop() || 'png';
+      link.download = `localbuzz-image-${post.id}.${fileExtension}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      toast({
+        variant: "destructive",
+        title: "Download Failed",
+        description: "Could not download the image.",
       });
-  }, [post.id, toast]);
+    }
+  }, [post.id, post.imageUrl, toast]);
+
 
   return (
-    <Card className="flex flex-col" ref={cardRef}>
+    <Card className="flex flex-col">
       <CardHeader className="flex-row items-center justify-between gap-4 p-4">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           {platformIcons[post.platform]}
