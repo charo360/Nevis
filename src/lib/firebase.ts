@@ -1,7 +1,7 @@
 // src/lib/firebase.ts
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
+import { getAuth, Auth } from 'firebase/auth';
+import { getFirestore, Firestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   projectId: "localbuzz-mpkuv",
@@ -13,9 +13,33 @@ const firebaseConfig = {
   measurementId: "G-756124790"
 };
 
-// Initialize Firebase
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp("localbuzz-mpkuv");
-const db = getFirestore(app);
-const auth = getAuth(app);
+// Singleton pattern for Firebase App
+const getFirebaseApp = (): FirebaseApp => {
+    if (getApps().length > 0) {
+        return getApp("localbuzz-mpkuv");
+    }
+    return initializeApp(firebaseConfig, "localbuzz-mpkuv");
+};
 
-export { app, db, auth };
+// Singleton pattern for Firebase Auth
+let authInstance: Auth | null = null;
+const getFirebaseAuth = (): Auth => {
+    if (!authInstance) {
+        authInstance = getAuth(getFirebaseApp());
+    }
+    return authInstance;
+};
+
+// Singleton pattern for Firestore
+let dbInstance: Firestore | null = null;
+const getFirestoreDb = (): Firestore => {
+    if (!dbInstance) {
+        dbInstance = getFirestore(getFirebaseApp());
+    }
+    return dbInstance;
+};
+
+
+export const app = getFirebaseApp();
+export const db = getFirestoreDb();
+export const auth = getFirebaseAuth();
