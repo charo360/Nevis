@@ -144,59 +144,61 @@ It should be a high-quality, visually appealing asset that reflects the brand's 
     
     const explanationResult = await aiExplanationPrompt();
 
-    if (input.outputType === 'image') {
-        const { media } = await ai.generate({
-            model: 'googleai/gemini-2.0-flash-preview-image-generation',
-            prompt: promptParts,
-            config: {
-                responseModalities: ['TEXT', 'IMAGE'],
-            },
-        });
+    try {
+        if (input.outputType === 'image') {
+            const { media } = await ai.generate({
+                model: 'googleai/gemini-2.0-flash-preview-image-generation',
+                prompt: promptParts,
+                config: {
+                    responseModalities: ['TEXT', 'IMAGE'],
+                },
+            });
 
-        return {
-            imageUrl: media?.url ?? null,
-            videoUrl: null,
-            aiExplanation: explanationResult.output ?? "Here is the generated image based on your prompt."
-        };
-    } else { // Video generation
-        let operation;
-        try {
+            return {
+                imageUrl: media?.url ?? null,
+                videoUrl: null,
+                aiExplanation: explanationResult.output ?? "Here is the generated image based on your prompt."
+            };
+        } else { // Video generation
             const result = await ai.generate({
                 model: 'googleai/veo-3.0-generate-preview',
                 prompt: promptParts,
             });
-            operation = result.operation;
-        } catch (e: any) {
-            console.error("Error during ai.generate call:", e);
-            throw new Error(e.message || "Video generation failed. The model may be overloaded. Please try again in a few moments.");
+            let operation = result.operation;
+
+            if (!operation) {
+                throw new Error('Expected the model to return an operation');
+            }
+
+            while (!operation.done) {
+                await new Promise(resolve => setTimeout(resolve, 5000));
+                operation = await ai.checkOperation(operation);
+            }
+
+            if (operation.error) {
+                console.error("Video generation operation failed", operation.error);
+                throw new Error(`Video generation failed. Please try again. Error: ${operation.error.message}`);
+            }
+
+            const videoPart = operation.output?.message?.content.find(p => !!p.media);
+            if (!videoPart || !videoPart.media) {
+                throw new Error('No video was generated in the operation result.');
+            }
+
+            const videoDataUrl = await videoToDataURI(videoPart);
+
+            return {
+                imageUrl: null,
+                videoUrl: videoDataUrl,
+                aiExplanation: explanationResult.output ?? "Here is the generated video based on your prompt."
+            };
         }
-
-        if (!operation) {
-            throw new Error('Expected the model to return an operation');
+    } catch (e: any) {
+        if (e.message && e.message.includes('503')) {
+            throw new Error("The AI model is currently overloaded. Please try again in a few moments.");
         }
-
-        while (!operation.done) {
-            await new Promise(resolve => setTimeout(resolve, 5000));
-            operation = await ai.checkOperation(operation);
-        }
-
-        if (operation.error) {
-            console.error("Video generation operation failed", operation.error);
-            throw new Error(`Video generation failed. Please try again. Error: ${operation.error.message}`);
-        }
-
-        const videoPart = operation.output?.message?.content.find(p => !!p.media);
-        if (!videoPart || !videoPart.media) {
-            throw new Error('No video was generated in the operation result.');
-        }
-
-        const videoDataUrl = await videoToDataURI(videoPart);
-
-        return {
-            imageUrl: null,
-            videoUrl: videoDataUrl,
-            aiExplanation: explanationResult.output ?? "Here is the generated video based on your prompt."
-        };
+        console.error("Error during creative asset generation:", e);
+        throw new Error(e.message || "Asset generation failed. Please check your inputs and try again.");
     }
   }
 );

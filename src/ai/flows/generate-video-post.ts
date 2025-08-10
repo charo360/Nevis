@@ -83,45 +83,46 @@ For additional context, here is the full post content that will accompany the vi
 
 Generate a video that is cinematically interesting, has relevant sound, and captures the essence of the post content.`;
 
-    let operation;
     try {
       const result = await ai.generate({
         model: 'googleai/veo-3.0-generate-preview',
         prompt: videoPrompt,
       });
-      operation = result.operation;
+      let operation = result.operation;
+
+      if (!operation) {
+          throw new Error('Expected the model to return an operation');
+      }
+
+      // Poll for completion
+      while (!operation.done) {
+          await new Promise(resolve => setTimeout(resolve, 5000)); // wait 5s
+          operation = await ai.checkOperation(operation);
+      }
+
+      if (operation.error) {
+          console.error("Video generation operation failed", operation.error);
+          throw new Error(`Video generation failed. Please try again. Error: ${operation.error.message}`);
+      }
+
+      // Relaxed check for the video part
+      const videoPart = operation.output?.message?.content.find(p => !!p.media);
+      
+      if (!videoPart || !videoPart.media) {
+          throw new Error('No video was generated in the operation result.');
+      }
+      
+      const videoDataUrl = await videoToDataURI(videoPart);
+
+      return {
+        videoUrl: videoDataUrl, 
+      };
     } catch (e: any) {
-        console.error("Error during ai.generate call:", e);
+        if (e.message && e.message.includes('503')) {
+            throw new Error("The AI model is currently overloaded. Please try again in a few moments.");
+        }
+        console.error("Error during video generation:", e);
         throw new Error(e.message || "Video generation failed. The model may be overloaded. Please try again in a few moments.");
     }
-    
-
-    if (!operation) {
-        throw new Error('Expected the model to return an operation');
-    }
-
-    // Poll for completion
-    while (!operation.done) {
-        await new Promise(resolve => setTimeout(resolve, 5000)); // wait 5s
-        operation = await ai.checkOperation(operation);
-    }
-
-    if (operation.error) {
-        console.error("Video generation operation failed", operation.error);
-        throw new Error(`Video generation failed. Please try again. Error: ${operation.error.message}`);
-    }
-
-    // Relaxed check for the video part
-    const videoPart = operation.output?.message?.content.find(p => !!p.media);
-    
-    if (!videoPart || !videoPart.media) {
-        throw new Error('No video was generated in the operation result.');
-    }
-    
-    const videoDataUrl = await videoToDataURI(videoPart);
-
-    return {
-      videoUrl: videoDataUrl, 
-    };
   }
 );
