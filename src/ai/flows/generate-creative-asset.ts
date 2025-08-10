@@ -102,7 +102,7 @@ const generateCreativeAssetFlow = ai.defineFlow(
             ? `The brand's color palette is: Primary HSL(${bp.primaryColor}), Accent HSL(${bp.accentColor}), Background HSL(${bp.backgroundColor}). Please use these colors in the design.`
             : '';
         
-        let onBrandPrompt = `Generate a social media ${input.outputType} for a ${bp.businessType} in ${bp.location}.
+        let onBrandPrompt = `Generate a social media ${input.outputType} for a ${bp.businessType}.
 The brand's visual style is ${bp.visualStyle}.
 The brand's writing tone is '${bp.writingTone}' and content should align with these themes: '${bp.contentThemes}'.
 ${colorInstructions}
