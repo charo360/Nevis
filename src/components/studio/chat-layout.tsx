@@ -5,7 +5,10 @@ import { ChatInput } from './chat-input';
 import type { BrandProfile, Message } from '@/lib/types';
 import Balancer from 'react-wrap-balancer';
 import { Card, CardContent } from '@/components/ui/card';
-import { Bot, Sparkles } from 'lucide-react';
+import { Bot } from 'lucide-react';
+import { generateCreativeAssetAction } from '@/app/actions';
+import { useToast } from '@/hooks/use-toast';
+
 
 interface ChatLayoutProps {
   messages: Message[];
@@ -21,6 +24,7 @@ export function ChatLayout({ messages, setMessages, input, setInput, brandProfil
     const [imageDataUrl, setImageDataUrl] = React.useState<string | null>(null);
     const [useBrandProfile, setUseBrandProfile] = React.useState(!!brandProfile);
     const [outputType, setOutputType] = React.useState<'image' | 'video'>('image');
+    const { toast } = useToast();
 
 
     React.useEffect(() => {
@@ -51,23 +55,48 @@ export function ChatLayout({ messages, setMessages, input, setInput, brandProfil
             imageUrl: imagePreview,
         };
         setMessages([...messages, newUserMessage]);
+        
+        const currentInput = input;
+        const currentImageDataUrl = imageDataUrl;
+        
         setInput('');
         setImagePreview(null);
         setImageDataUrl(null);
         setIsLoading(true);
 
-        // Dummy response for now
-        setTimeout(() => {
+        try {
+            const result = await generateCreativeAssetAction(
+                currentInput,
+                outputType,
+                currentImageDataUrl,
+                useBrandProfile,
+                brandProfile
+            );
+
             const aiResponse: Message = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
-                content: `This is a placeholder for the generated ${outputType}. The prompt was: "${input}". Brand profile was ${useBrandProfile ? 'applied' : 'not applied'}.`,
-                imageUrl: outputType === 'image' ? `https://placehold.co/512x512.png?text=Generated+Image` : undefined,
-                videoUrl: outputType === 'video' ? `https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4` : undefined,
+                content: result.aiExplanation,
+                imageUrl: result.imageUrl,
+                videoUrl: result.videoUrl,
             };
             setMessages(prevMessages => [...prevMessages, aiResponse]);
+
+        } catch (error) {
+             const errorResponse: Message = {
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                content: `Sorry, I ran into an error: ${(error as Error).message}`,
+            };
+            setMessages(prevMessages => [...prevMessages, errorResponse]);
+            toast({
+                variant: 'destructive',
+                title: 'Generation Failed',
+                description: (error as Error).message,
+            });
+        } finally {
             setIsLoading(false);
-        }, 2000);
+        }
     };
 
     return (

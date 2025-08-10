@@ -3,7 +3,8 @@
 import { analyzeBrand as analyzeBrandFlow } from "@/ai/flows/analyze-brand";
 import { generatePostFromProfile as generatePostFromProfileFlow } from "@/ai/flows/generate-post-from-profile";
 import { generateVideoPost as generateVideoPostFlow } from "@/ai/flows/generate-video-post";
-import type { BrandAnalysisResult, BrandProfile, GeneratedPost, Platform } from "@/lib/types";
+import { generateCreativeAsset as generateCreativeAssetFlow } from "@/ai/flows/generate-creative-asset";
+import type { BrandAnalysisResult, BrandProfile, GeneratedPost, Platform, CreativeAsset } from "@/lib/types";
 
 // Mock function for local data fetching
 async function getLocalData(location: string, date: Date) {
@@ -107,4 +108,27 @@ export async function generateVideoContentAction(
     // Pass the specific error message from the flow to the client
     throw new Error((error as Error).message);
   }
+}
+
+
+export async function generateCreativeAssetAction(
+    prompt: string,
+    outputType: 'image' | 'video',
+    referenceImageUrl: string | null,
+    useBrandProfile: boolean,
+    brandProfile: BrandProfile | null
+): Promise<CreativeAsset> {
+    try {
+        const result = await generateCreativeAssetFlow({
+            prompt,
+            outputType,
+            referenceImageUrl,
+            useBrandProfile,
+            brandProfile: useBrandProfile ? brandProfile : null
+        });
+        return result;
+    } catch (error) {
+        console.error("Error generating creative asset:", error);
+        throw new Error((error as Error).message);
+    }
 }

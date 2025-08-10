@@ -41,3 +41,9 @@ export interface Message {
   imageUrl?: string | null;
   videoUrl?: string | null;
 }
+
+export type CreativeAsset = {
+  imageUrl: string | null;
+  videoUrl: string | null;
+  aiExplanation: string;
+};
