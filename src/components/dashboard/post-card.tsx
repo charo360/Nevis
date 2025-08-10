@@ -77,14 +77,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
     }
 
     try {
-        const dataUrl = await htmlToImage.toPng(downloadRef.current, { 
-            cacheBust: true,
-            fetchRequestInit: {
-                // This is the key fix for the cross-origin font issue
-                mode: 'cors',
-                credentials: 'omit'
-            }
-        });
+        const dataUrl = await htmlToImage.toPng(downloadRef.current, { cacheBust: true });
         const link = document.createElement('a');
         link.href = dataUrl;
         link.download = `localbuzz-post-${post.id}-${activeTab}.png`;
@@ -237,7 +230,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
                             src={variant.imageUrl}
                             data-ai-hint="social media post"
                             width={1080}
-                            crossOrigin="anonymous" 
+                            crossOrigin="anonymous"
                         />
                         </div>
                     </div>
