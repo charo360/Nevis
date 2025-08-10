@@ -85,14 +85,15 @@ Generate a video that is cinematically interesting, has relevant sound, and capt
 
     let operation;
     try {
-        const result = await ai.generate({
+        // Correctly destructure the operation from the direct return value
+        const { operation: op } = await ai.generate({
             model: 'googleai/veo-3.0-generate-preview',
             prompt: videoPrompt,
           });
-        operation = result.operation;
-    } catch (e) {
-        console.error(e);
-        throw new Error("Video generation failed. The model may be overloaded. Please try again in a few moments.");
+        operation = op;
+    } catch (e: any) {
+        console.error("Error during ai.generate call:", e);
+        throw new Error(e.message || "Video generation failed. The model may be overloaded. Please try again in a few moments.");
     }
     
 
