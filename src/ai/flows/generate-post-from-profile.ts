@@ -9,11 +9,7 @@
  * @exports {
  *   generatePostFromProfile: function
  *   GeneratePostFromProfileInput: type
- *   GeneratePostFromProfileOutput: type
- * }
- */
-
-import {ai} from '@/ai/genkit';
+ *   GeneratePostFrom-profile.ts'
 import { GenerateRequest } from 'genkit/generate';
 import {z} from 'zod';
 import { getWeatherTool, getEventsTool } from '@/ai/tools/local-data';
@@ -165,6 +161,7 @@ async function generateImageForVariant(
     **Key Elements to Include:**
     - **Visual Style:** The design must be ${input.visualStyle}.
     - **Brand Colors:** ${input.primaryColor ? colorInstructions : 'The brand has not specified colors, so use a visually appealing and appropriate palette.'}
+    - **People:** If the image includes people, they should be representative of the location: ${input.location}. For example, for a post in Africa, depict Black people; for Europe, White people; for the USA, a diverse mix of ethnicities. Be thoughtful and authentic in your representation.
     - **Subject/Theme:** The core subject of the image should be directly inspired by the Image Text below.
     - **Text Overlay:** The following text must be overlaid on the image in a stylish, readable font: "${textOutput.imageText}". It is critical that the text is clearly readable, well-composed, and not cut off or truncated. The entire text must be visible.
     - **Logo Placement:** The provided logo must be integrated naturally into the design. It should be clearly visible but not overpower the main subject. For example, it could be on a product, a sign, or as a subtle watermark.
