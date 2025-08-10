@@ -44,14 +44,18 @@ const getAspectRatioForPlatform = (platform: Platform): string => {
 
 export async function generateContentAction(
   profile: BrandProfile,
-  platform: Platform
+  platforms: Platform[]
 ): Promise<GeneratedPost> {
   try {
     const today = new Date();
     const localData = await getLocalData(profile.location, today);
     const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long' });
     const currentDate = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    const aspectRatio = getAspectRatioForPlatform(platform);
+    
+    const variantsToGenerate = platforms.map(platform => ({
+        platform,
+        aspectRatio: getAspectRatioForPlatform(platform),
+    }));
 
     const postDetails = await generatePostFromProfileFlow({
       businessType: profile.businessType,
@@ -60,23 +64,28 @@ export async function generateContentAction(
       contentThemes: profile.contentThemes,
       visualStyle: profile.visualStyle,
       logoDataUrl: profile.logoDataUrl,
+      primaryColor: profile.primaryColor,
+      accentColor: profile.accentColor,
+      backgroundColor: profile.backgroundColor,
       weather: localData.weather,
       events: localData.events,
       dayOfWeek,
       currentDate,
-      platform,
-      aspectRatio,
+      // Pass the variants array to the flow
+      variants: variantsToGenerate,
+      // These are now part of the variants array, but we can keep one for top-level context
+      platform: platforms[0],
+      aspectRatio: getAspectRatioForPlatform(platforms[0]),
     });
 
     return {
       id: new Date().toISOString(),
       date: today.toISOString(),
-      platform: platform,
       content: postDetails.content,
-      imageUrl: postDetails.imageUrl || `https://placehold.co/1080x1080.png`,
-      imageText: postDetails.imageText,
       hashtags: postDetails.hashtags,
       status: 'generated',
+      variants: postDetails.variants,
+      imageText: postDetails.imageText,
     };
   } catch (error) {
     console.error("Error generating content:", error);

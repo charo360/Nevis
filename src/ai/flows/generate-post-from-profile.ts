@@ -28,6 +28,9 @@ const GeneratePostFromProfileInputSchema = z.object({
   currentDate: z.string().describe('The current date for the post.'),
   platform: z.string().describe('The social media platform for the post (e.g., Instagram, Facebook).'),
   aspectRatio: z.string().describe('The aspect ratio for the generated image (e.g., "1:1", "16:9").'),
+  primaryColor: z.string().optional().describe('The primary brand color in HSL format.'),
+  accentColor: z.string().optional().describe('The accent brand color in HSL format.'),
+  backgroundColor: z.string().optional().describe('The background brand color in HSL format.'),
 });
 
 export type GeneratePostFromProfileInput = z.infer<typeof GeneratePostFromProfileInputSchema>;
@@ -36,7 +39,10 @@ const GeneratePostFromProfileOutputSchema = z.object({
   content: z.string().describe('The generated social media post content (the caption).'),
   imageText: z.string().describe('A brief, catchy headline for the image itself (max 5 words).'),
   hashtags: z.string().describe('Relevant hashtags for the post.'),
-  imageUrl: z.string().describe('The URL of the generated image.'),
+  variants: z.array(z.object({
+    platform: z.string(),
+    imageUrl: z.string(),
+  })),
 });
 
 export type GeneratePostFromProfileOutput = z.infer<typeof GeneratePostFromProfileOutputSchema>;
@@ -53,17 +59,28 @@ const generatePostFromProfileFlow = ai.defineFlow(
     outputSchema: GeneratePostFromProfileOutputSchema,
   },
   async (input) => {
-    // Step 1: Generate Text Content
+    // Step 1: Generate Text Content (once for all platforms)
     const textGenPrompt = ai.definePrompt({
       name: 'generatePostTextPrompt',
-      input: { schema: GeneratePostFromProfileInputSchema },
+      input: { schema: z.object({
+        businessType: z.string(),
+        location: z.string(),
+        writingTone: z.string(),
+        contentThemes: z.string(),
+        weather: z.string(),
+        events: z.string(),
+        dayOfWeek: z.string(),
+        currentDate: z.string(),
+        // Note: We generate generic text first, then format for platform if needed,
+        // but for now the core message is the same.
+      })},
       output: { schema: z.object({
         content: z.string().describe('The generated social media post content (the caption).'),
         imageText: z.string().describe('A brief, catchy headline for the image itself (max 5 words).'),
         hashtags: z.string().describe('Relevant hashtags for the post.'),
       })},
       prompt: `You are a social media manager and an expert in the {{{businessType}}} industry.
-      Your goal is to create engaging content that is relevant to the business's location, brand, and current events for the social media platform: {{{platform}}}.
+      Your goal is to create engaging content that is relevant to the business's location, brand, and current events.
       
       Here's the information you have:
       - Business Type: {{{businessType}}}
@@ -79,35 +96,57 @@ const generatePostFromProfileFlow = ai.defineFlow(
       
       Generate a social media post. This includes a longer text for the caption, a separate, very brief text to be placed on the image, and hashtags.
       
-      1.  **Caption (content):** Generate a post that is appropriate for the given platform and target audience. Consider the weather and local events when creating the post. The post should match the brand voice.
+      1.  **Caption (content):** Generate a post that is appropriate for a general audience. Consider the weather and local events when creating the post. The post should match the brand voice.
       2.  **Image Text (imageText):** Generate a brief, catchy headline (max 5 words) that relates to the caption and is suitable for being overlaid on an image.
       3.  **Hashtags:** Include relevant hashtags.
       `,
     });
 
-    const { output: textOutput } = await textGenPrompt(input);
+    const { output: textOutput } = await textGenPrompt({
+        businessType: input.businessType,
+        location: input.location,
+        writingTone: input.writingTone,
+        contentThemes: input.contentThemes,
+        weather: input.weather,
+        events: input.events,
+        dayOfWeek: input.dayOfWeek,
+        currentDate: input.currentDate,
+    });
+    
 
     if (!textOutput) {
         throw new Error('Failed to generate post text content.');
     }
+    
+    // Step 2: Generate Image for a specific aspect ratio using the generated text
+    const generateImageForVariant = async (aspectRatio: string, platform: string) => {
+        
+      const colorInstructions = `The brand's color palette is: Primary HSL(${input.primaryColor}), Accent HSL(${input.accentColor}), Background HSL(${input.backgroundColor}). Please use these colors in the design.`;
 
-    // Step 2: Generate Image using text from Step 1
-    const { media } = await ai.generate({
-      model: 'googleai/gemini-2.0-flash-preview-image-generation',
-      prompt: [
-        {
-          text: `First, generate an appealing background image for a social media post for a ${input.businessType} in ${input.location}. The brand's visual style is ${input.visualStyle}. The image should have a clear, uncluttered area suitable for placing text. The image must have an aspect ratio of ${input.aspectRatio}. Then, overlay the following text onto the image: "${textOutput.imageText}". It is critical that the text is clearly readable, well-composed, and not cut off or truncated at the edges of the image. The entire text must be visible. Finally, place the provided logo naturally onto the generated background image. The logo should be clearly visible but not overpower the main subject. It could be on a product, a sign, or as a subtle watermark.`,
+      const { media } = await ai.generate({
+        model: 'googleai/gemini-2.0-flash-preview-image-generation',
+        prompt: [
+          {
+            text: `First, generate an appealing background image for a social media post for a ${input.businessType} in ${input.location}. The brand's visual style is ${input.visualStyle}. ${input.primaryColor ? colorInstructions : ''} The image should have a clear, uncluttered area suitable for placing text. The image must have an aspect ratio of ${aspectRatio}. Then, overlay the following text onto the image: "${textOutput.imageText}". It is critical that the text is clearly readable, well-composed, and not cut off or truncated at the edges of the image. The entire text must be visible. Finally, place the provided logo naturally onto the generated background image. The logo should be clearly visible but not overpower the main subject. It could be on a product, a sign, or as a subtle watermark.`,
+          },
+          { media: { url: input.logoDataUrl } },
+        ],
+        config: {
+          responseModalities: ['TEXT', 'IMAGE'],
         },
-        { media: { url: input.logoDataUrl } },
-      ],
-      config: {
-        responseModalities: ['TEXT', 'IMAGE'],
-      },
-    });
+      });
+
+      return {
+        platform,
+        imageUrl: media?.url ?? '',
+      }
+    }
+    
+    const variants = await Promise.all(input.variants.map(v => generateImageForVariant(v.aspectRatio, v.platform)));
 
     return {
         ...textOutput,
-        imageUrl: media?.url ?? '',
+        variants,
     };
   }
 );
