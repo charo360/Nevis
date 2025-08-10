@@ -6,12 +6,9 @@ import Link from "next/link";
 import {
   Bot,
   CalendarDays,
-  Settings2,
   Sparkles,
   Link as LinkIcon,
   Wand,
-  LogOut,
-  User,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import {
