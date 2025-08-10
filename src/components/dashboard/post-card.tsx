@@ -1,4 +1,3 @@
-
 // src/components/dashboard/post-card.tsx
 "use client";
 
@@ -68,8 +67,8 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   const { toast } = useToast();
 
   const handleDownload = React.useCallback(async () => {
-    const element = downloadRefs.current[activeTab];
-    if (!element) {
+    const nodeToCapture = downloadRefs.current[activeTab];
+    if (!nodeToCapture) {
       toast({
         variant: "destructive",
         title: "Download Failed",
@@ -77,20 +76,31 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
       });
       return;
     }
+    
+    // Clone the node
+    const clone = nodeToCapture.cloneNode(true) as HTMLElement;
+
+    // Style the clone to be rendered off-screen but with the correct dimensions
+    clone.style.position = 'absolute';
+    clone.style.left = '-9999px';
+    clone.style.width = '1080px';
+    clone.style.height = '1080px';
+    
+    // The direct child of the cloned node (the one with aspect-square) needs to have its height forced as well
+    const innerWrapper = clone.querySelector('.aspect-square') as HTMLElement | null;
+    if (innerWrapper) {
+      innerWrapper.style.height = '1080px';
+    }
+
+
+    document.body.appendChild(clone);
 
     try {
-      const dataUrl = await toPng(element, {
+      const dataUrl = await toPng(clone, { 
         cacheBust: true,
-        width: 1080,
-        height: 1080,
-        filter: (node: HTMLElement) => {
-            if (node.tagName === 'LINK' && node.hasAttribute('href') && node.getAttribute('href')!.includes('fonts.googleapis.com')) {
-                return false;
-            }
-            return true;
-        },
+        // The width and height are taken from the styled clone
       });
-
+      
       const link = document.createElement('a');
       link.href = dataUrl;
       link.download = `localbuzz-post-${post.id}-${activeTab}.png`;
@@ -101,8 +111,11 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
       toast({
         variant: "destructive",
         title: "Download Failed",
-        description: `Could not download the image. Error: ${(err as Error).message}`,
+        description: `Could not download the image. Please try again. Error: ${(err as Error).message}`,
       });
+    } finally {
+        // Clean up the cloned node from the DOM
+        document.body.removeChild(clone);
     }
   }, [post.id, activeTab, toast]);
 
