@@ -107,6 +107,11 @@ async function generateWithRetry(request: GenerateRequest, retries = 3, delay = 
     throw new Error("The AI model is currently overloaded after multiple retries. Please try again later.");
 }
 
+const getMimeTypeFromDataURI = (dataURI: string): string => {
+    const match = dataURI.match(/^data:(.*?);/);
+    return match ? match[1] : 'application/octet-stream'; // Default if no match
+};
+
 
 /**
  * The core Genkit flow for generating a creative asset.
@@ -118,7 +123,7 @@ const generateCreativeAssetFlow = ai.defineFlow(
     outputSchema: CreativeAssetOutputSchema,
   },
   async (input) => {
-    const promptParts: (string | { text: string } | { media: { url: string } })[] = [];
+    const promptParts: (string | { text: string } | { media: { url: string; contentType?: string } })[] = [];
     let textPrompt = '';
     
     const { imageText, remainingPrompt } = extractQuotedText(input.prompt);
@@ -139,14 +144,14 @@ const generateCreativeAssetFlow = ai.defineFlow(
             refinePrompt += colorInstructions;
 
             if (bp.logoDataUrl) {
-                promptParts.push({ media: { url: bp.logoDataUrl } });
+                promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
                 refinePrompt += ` The user may also provide a logo. If they do, follow any instructions regarding the logo, such as placing or removing it.`
             }
         }
 
         textPrompt = refinePrompt;
         promptParts.push({ text: textPrompt });
-        promptParts.push({ media: { url: input.referenceImageUrl } });
+        promptParts.push({ media: { url: input.referenceImageUrl, contentType: getMimeTypeFromDataURI(input.referenceImageUrl) } });
 
     } else if (input.useBrandProfile && input.brandProfile) {
         // This is a new, on-brand asset generation.
@@ -163,7 +168,7 @@ const generateCreativeAssetFlow = ai.defineFlow(
 
         if (bp.logoDataUrl) {
             onBrandPrompt += `\nFinally, place the provided logo naturally onto the generated background image. The logo should be clearly visible but not overpower the main subject. It could be on a product, a sign, or as a subtle watermark.`;
-            promptParts.push({ media: { url: bp.logoDataUrl } });
+            promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
         }
         
         textPrompt = onBrandPrompt;
@@ -241,3 +246,5 @@ const generateCreativeAssetFlow = ai.defineFlow(
     }
   }
 );
+
+    

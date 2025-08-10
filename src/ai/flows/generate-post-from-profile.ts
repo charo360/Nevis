@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -121,6 +122,11 @@ async function generateWithRetry(request: GenerateRequest, retries = 3, delay = 
     throw new Error("The AI model is currently overloaded after multiple retries. Please try again later.");
 }
 
+const getMimeTypeFromDataURI = (dataURI: string): string => {
+    const match = dataURI.match(/^data:(.*?);/);
+    return match ? match[1] : 'application/octet-stream'; // Default if no match
+};
+
 // Helper function to generate an image for a single variant.
 async function generateImageForVariant(
     variant: {platform: string, aspectRatio: string}, 
@@ -135,7 +141,7 @@ async function generateImageForVariant(
         {
           text: `First, generate an appealing background image for a social media post for a ${input.businessType} in ${input.location}. The brand's visual style is ${input.visualStyle}. ${input.primaryColor ? colorInstructions : ''} The image should have a clear, uncluttered area suitable for placing text. The image must have an aspect ratio of ${variant.aspectRatio}. Then, overlay the following text onto the image: "${textOutput.imageText}". It is critical that the text is clearly readable, well-composed, and not cut off or truncated at the edges of the image. The entire text must be visible. Finally, place the provided logo naturally onto the generated background image. The logo should be clearly visible but not overpower the main subject. It could be on a product, a sign, or as a subtle watermark.`,
         },
-        { media: { url: input.logoDataUrl } },
+        { media: { url: input.logoDataUrl, contentType: getMimeTypeFromDataURI(input.logoDataUrl) } },
       ],
       config: {
         responseModalities: ['TEXT', 'IMAGE'],
@@ -186,3 +192,5 @@ const generatePostFromProfileFlow = ai.defineFlow(
     };
   }
 );
+
+    
