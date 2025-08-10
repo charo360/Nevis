@@ -1,4 +1,3 @@
-
 // src/components/dashboard/post-card.tsx
 "use client";
 
@@ -78,42 +77,16 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
     }
 
     const filter = (node: HTMLElement) => {
-        // This filter function is used to prevent html-to-image from
-        // trying to fetch the google fonts stylesheet, which causes a
-        // cross-origin error.
-        if (node.tagName === 'LINK' && node.getAttribute('href')?.includes('fonts.googleapis.com')) {
-            return false;
-        }
-        return true;
+      // This filter function is used to prevent html-to-image from
+      // trying to fetch the google fonts stylesheet, which causes a
+      // cross-origin error.
+      return (node.tagName !== 'LINK');
     };
 
     try {
         const dataUrl = await htmlToImage.toPng(downloadRef.current, { 
             cacheBust: true,
             filter: filter,
-            skipAutoScale: true,
-            fontEmbedCSS: await (async () => {
-                const styleSheets = Array.from(document.styleSheets).filter(
-                  (sheet) =>
-                    sheet.href && sheet.href.includes('fonts.googleapis.com')
-                );
-                let css = '';
-                for (const sheet of styleSheets) {
-                    if (sheet.cssRules) {
-                       try {
-                            const cssRules = Array.from(sheet.cssRules);
-                            for (const rule of cssRules) {
-                                if (rule instanceof CSSStyleRule) {
-                                    css += rule.cssText;
-                                }
-                            }
-                       } catch (e) {
-                            console.warn('Cannot access cssRules, skipping sheet.', e);
-                       }
-                    }
-                }
-                return css;
-            })(),
         });
         const link = document.createElement('a');
         link.href = dataUrl;
@@ -356,6 +329,3 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
     </>
   );
 }
-
-    
-    
