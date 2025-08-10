@@ -16,10 +16,11 @@ async function getLocalData(location: string, date: Date) {
 }
 
 export async function analyzeBrandAction(
-  url: string
+  websiteUrl: string,
+  designImageUris: string[],
 ): Promise<BrandAnalysisResult> {
   try {
-    const result = await analyzeBrandFlow({ socialMediaUrl: url });
+    const result = await analyzeBrandFlow({ websiteUrl, designImageUris });
     return result;
   } catch (error) {
     console.error("Error analyzing brand:", error);

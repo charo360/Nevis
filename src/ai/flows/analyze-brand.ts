@@ -1,9 +1,7 @@
-// This file is machine-generated - edit with care!
-
 'use server';
 
 /**
- * @fileOverview Analyzes a brand's social media presence to extract brand voice and visual style.
+ * @fileOverview Analyzes a brand's website and design examples to extract brand voice and visual style.
  *
  * - analyzeBrand - A function that initiates the brand analysis process.
  * - AnalyzeBrandInput - The input type for the analyzeBrand function.
@@ -14,16 +12,13 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const AnalyzeBrandInputSchema = z.object({
-  socialMediaUrl: z
-    .string()
-    .describe('The URL of the brand social media profile to analyze.'),
+  websiteUrl: z.string().describe('The URL of the brand\'s website to analyze.'),
+  designImageUris: z.array(z.string()).describe("A list of data URIs of previous design examples. Each must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."),
 });
 export type AnalyzeBrandInput = z.infer<typeof AnalyzeBrandInputSchema>;
 
 const AnalyzeBrandOutputSchema = z.object({
-  visualStyle: z
-    .string()
-    .describe('A description of the brand visual style, including colors, layouts, and image types.'),
+  visualStyle: z.string().describe('A description of the brand visual style, including colors, layouts, and image types.'),
   writingTone: z.string().describe('A description of the brand writing tone.'),
   contentThemes: z.string().describe('A description of the brand content themes.'),
 });
@@ -37,11 +32,16 @@ const analyzeBrandPrompt = ai.definePrompt({
   name: 'analyzeBrandPrompt',
   input: {schema: AnalyzeBrandInputSchema},
   output: {schema: AnalyzeBrandOutputSchema},
-  prompt: `You are an expert social media brand analyst. Analyze the provided social media profile and extract the brand's visual style, writing tone, and content themes.
+  prompt: `You are an expert brand analyst. Analyze the provided brand website and, most importantly, the design examples to extract the brand's visual style, writing tone, and content themes. The design examples are the primary source of truth for the visual style.
 
-Social Media Profile URL: {{{socialMediaUrl}}}
+Website URL: {{{websiteUrl}}}
 
-Provide a detailed analysis of the brand's visual style, writing tone, and content themes. Be specific and provide examples from the provided social media profile.`,
+{{#each designImageUris}}
+Design Example: {{media url=this}}
+{{/each}}
+
+
+Provide a detailed analysis of the brand's visual style (colors, fonts, imagery, layout), writing tone (formal, casual, witty), and common content themes. Be specific and provide examples where possible.`,
 });
 
 const analyzeBrandFlow = ai.defineFlow(

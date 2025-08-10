@@ -4,7 +4,7 @@ import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Loader2, Sparkles, Upload } from "lucide-react";
+import { Loader2, Sparkles, Upload, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -26,7 +26,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import type { BrandAnalysisResult, BrandProfile } from "@/lib/types";
 import { analyzeBrandAction } from "@/app/actions";
@@ -80,8 +79,9 @@ const formSchema = z.object({
   businessName: z.string().min(2, { message: "Business name must be at least 2 characters." }),
   businessType: z.string().min(2, { message: "Business type must be at least 2 characters." }),
   location: z.string().min(2, { message: "Location must be at least 2 characters." }),
-  socialMediaUrl: z.string().url({ message: "Please enter a valid URL." }),
+  websiteUrl: z.string().url({ message: "Please enter a valid URL." }),
   logo: z.any().optional(),
+  designs: z.any().optional(),
   primaryColor: z.string().optional(),
   accentColor: z.string().optional(),
   backgroundColor: z.string().optional(),
@@ -98,6 +98,8 @@ export function BrandSetup({ initialProfile, onProfileSaved }: BrandSetupProps) 
   const [analysisResult, setAnalysisResult] = React.useState<BrandAnalysisResult | null>(null);
   const [logoPreview, setLogoPreview] = React.useState<string | null>(initialProfile?.logoDataUrl || null);
   const [logoDataUrl, setLogoDataUrl] = React.useState<string>(initialProfile?.logoDataUrl || "");
+  const [designPreviews, setDesignPreviews] = React.useState<string[]>([]);
+  const [designDataUrls, setDesignDataUrls] = React.useState<string[]>([]);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -106,7 +108,7 @@ export function BrandSetup({ initialProfile, onProfileSaved }: BrandSetupProps) 
       businessName: initialProfile?.businessName || "",
       businessType: initialProfile?.businessType || "",
       location: initialProfile?.location || "",
-      socialMediaUrl: "https://instagram.com/yourbusiness",
+      websiteUrl: "https://yourbusiness.com",
       primaryColor: initialProfile?.primaryColor ? hslStringToHex(initialProfile.primaryColor) : "#3399FF",
       accentColor: initialProfile?.accentColor ? hslStringToHex(initialProfile.accentColor) : "#33B2B2",
       backgroundColor: initialProfile?.backgroundColor ? hslStringToHex(initialProfile.backgroundColor) : "#F0F8FF",
@@ -119,7 +121,7 @@ export function BrandSetup({ initialProfile, onProfileSaved }: BrandSetupProps) 
         businessName: initialProfile.businessName,
         businessType: initialProfile.businessType,
         location: initialProfile.location,
-        socialMediaUrl: "https://instagram.com/yourbusiness",
+        websiteUrl: "https://yourbusiness.com", // This field doesn't get saved, so we keep a default
         primaryColor: initialProfile.primaryColor ? hslStringToHex(initialProfile.primaryColor) : "#3399FF",
         accentColor: initialProfile.accentColor ? hslStringToHex(initialProfile.accentColor) : "#33B2B2",
         backgroundColor: initialProfile.backgroundColor ? hslStringToHex(initialProfile.backgroundColor) : "#F0F8FF",
@@ -147,11 +149,39 @@ export function BrandSetup({ initialProfile, onProfileSaved }: BrandSetupProps) 
     }
   };
 
+  const handleDesignsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files) {
+      const fileArray = Array.from(files);
+      const dataUrlPromises = fileArray.map(file => {
+        return new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      });
+
+      Promise.all(dataUrlPromises).then(urls => {
+        setDesignPreviews(urls);
+        setDesignDataUrls(urls);
+      });
+    }
+  };
+
   async function onAnalyze(values: z.infer<typeof formSchema>) {
+    if (designDataUrls.length === 0) {
+        toast({
+            variant: "destructive",
+            title: "Analysis Failed",
+            description: "Please upload at least one previous design example.",
+        });
+        return;
+    }
     setIsLoading(true);
     setAnalysisResult(null);
     try {
-      const result = await analyzeBrandAction(values.socialMediaUrl);
+      const result = await analyzeBrandAction(values.websiteUrl, designDataUrls);
       setAnalysisResult(result);
       toast({
         title: "Analysis Complete!",
@@ -173,7 +203,7 @@ export function BrandSetup({ initialProfile, onProfileSaved }: BrandSetupProps) 
         toast({
             variant: "destructive",
             title: "Cannot Save",
-            description: "Please analyze a social media profile first."
+            description: "Please analyze your brand first."
         });
         return;
     }
@@ -223,129 +253,167 @@ export function BrandSetup({ initialProfile, onProfileSaved }: BrandSetupProps) 
         <CardHeader>
           <CardTitle>Brand Discovery</CardTitle>
           <CardDescription>
-            Enter your business details, upload a logo, and provide a social media link for AI-powered brand analysis.
+            Enter your business details, upload a logo, and provide your website and some design examples for AI-powered brand analysis.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="social">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="social">Social Media</TabsTrigger>
-              <TabsTrigger value="website" disabled>Website (Coming Soon)</TabsTrigger>
-              <TabsTrigger value="manual" disabled>Manual (Coming Soon)</TabsTrigger>
-            </TabsList>
-            <TabsContent value="social">
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onAnalyze)} className="space-y-6 pt-4">
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <FormField control={form.control} name="businessName" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Business Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., The Corner Cafe" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                    <FormField control={form.control} name="businessType" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Business Type</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., Restaurant, Salon, Plumber" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                  </div>
-                   <FormField control={form.control} name="logo" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Business Logo</FormLabel>
-                        <FormControl>
-                          <div className="flex items-center gap-4">
-                            <div className="relative flex h-24 w-24 items-center justify-center rounded-md border border-dashed">
-                              {logoPreview ? (
-                                <Image src={logoPreview} alt="Logo preview" layout="fill" objectFit="contain" />
-                              ) : (
-                                <Upload className="h-6 w-6 text-muted-foreground" />
-                              )}
-                            </div>
-                            <Input 
-                                type="file" 
-                                accept="image/*" 
-                                className="w-full"
-                                onChange={(e) => {
-                                    field.onChange(e.target.files);
-                                    handleLogoChange(e);
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onAnalyze)} className="space-y-6 pt-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <FormField control={form.control} name="businessName" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Business Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., The Corner Cafe" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="businessType" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Business Type</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Restaurant, Salon, Plumber" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+
+               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <FormField control={form.control} name="logo" render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Business Logo</FormLabel>
+                    <FormControl>
+                        <div className="flex w-full items-center gap-4">
+                        <div className="relative flex h-24 w-24 flex-shrink-0 items-center justify-center rounded-md border border-dashed">
+                            {logoPreview ? (
+                            <Image src={logoPreview} alt="Logo preview" layout="fill" objectFit="contain" />
+                            ) : (
+                            <Upload className="h-6 w-6 text-muted-foreground" />
+                            )}
+                        </div>
+                        <Input 
+                            type="file" 
+                            accept="image/*" 
+                            className="w-full"
+                            onChange={(e) => {
+                                field.onChange(e.target.files);
+                                handleLogoChange(e);
+                            }}
+                        />
+                        </div>
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )} />
+
+                <FormField control={form.control} name="location" render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Location</FormLabel>
+                    <FormControl>
+                    <Input placeholder="e.g., San Francisco, CA" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+                )} />
+              </div>
+              
+              <FormField control={form.control} name="designs" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Previous Designs (Upload a few examples)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="file" 
+                      accept="image/*" 
+                      multiple 
+                      className="w-full"
+                      onChange={(e) => {
+                        field.onChange(e.target.files);
+                        handleDesignsChange(e);
+                      }}
+                    />
+                  </FormControl>
+                  {designPreviews.length > 0 && (
+                    <div className="mt-4 grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-6">
+                      {designPreviews.map((src, index) => (
+                        <div key={index} className="relative aspect-square">
+                          <Image src={src} alt={`Design preview ${index + 1}`} layout="fill" objectFit="cover" className="rounded-md" />
+                           <Button
+                                type="button"
+                                variant="destructive"
+                                size="icon"
+                                className="absolute -right-2 -top-2 h-5 w-5 rounded-full"
+                                onClick={() => {
+                                    setDesignPreviews(prev => prev.filter((_, i) => i !== index));
+                                    setDesignDataUrls(prev => prev.filter((_, i) => i !== index));
                                 }}
-                            />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                  <FormField control={form.control} name="location" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Location</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., San Francisco, CA" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                   <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                        <FormField control={form.control} name="primaryColor" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Primary Color</FormLabel>
-                                <FormControl>
-                                    <Input type="color" {...field} className="h-10 p-1"/>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                        <FormField control={form.control} name="accentColor" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Accent Color</FormLabel>
-                                <FormControl>
-                                    <Input type="color" {...field} className="h-10 p-1"/>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                        <FormField control={form.control} name="backgroundColor" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Background Color</FormLabel>
-                                <FormControl>
-                                    <Input type="color" {...field} className="h-10 p-1"/>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
+                            >
+                                <X className="h-3 w-3" />
+                            </Button>
+                        </div>
+                      ))}
                     </div>
-                  <FormField control={form.control} name="socialMediaUrl" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Instagram or Facebook URL</FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://instagram.com/yourbusiness" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <Button type="submit" disabled={isLoading} className="w-full md:w-auto">
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Analyzing...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        {analysisResult ? "Re-analyze Brand" : "Analyze Brand"}
-                      </>
-                    )}
-                  </Button>
-                </form>
-              </Form>
-            </TabsContent>
-          </Tabs>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )} />
+              
+               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <FormField control={form.control} name="primaryColor" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Primary Color</FormLabel>
+                            <FormControl>
+                                <Input type="color" {...field} className="h-10 p-1"/>
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                    <FormField control={form.control} name="accentColor" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Accent Color</FormLabel>
+                            <FormControl>
+                                <Input type="color" {...field} className="h-10 p-1"/>
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                    <FormField control={form.control} name="backgroundColor" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Background Color</FormLabel>
+                            <FormControl>
+                                <Input type="color" {...field} className="h-10 p-1"/>
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                </div>
+
+              <FormField control={form.control} name="websiteUrl" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Website URL</FormLabel>
+                  <FormControl>
+                    <Input placeholder="https://yourbusiness.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <Button type="submit" disabled={isLoading} className="w-full md:w-auto">
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    {analysisResult ? "Re-analyze Brand" : "Analyze Brand"}
+                  </>
+                )}
+              </Button>
+            </form>
+          </Form>
 
           {analysisResult && (
             <div className="mt-6 space-y-4 rounded-lg border bg-muted/20 p-4">
