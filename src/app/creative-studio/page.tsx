@@ -15,6 +15,7 @@ import { SidebarInset } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ChatLayout } from "@/components/studio/chat-layout";
+import { getBrandProfileAction } from "@/app/actions";
 
 export default function CreativeStudioPage() {
     const [messages, setMessages] = useState<Message[]>([]);
@@ -22,14 +23,13 @@ export default function CreativeStudioPage() {
     const [brandProfile, setBrandProfile] = useState<BrandProfile | null>(null);
 
     useEffect(() => {
-        const storedProfile = localStorage.getItem('brandProfile');
-        if (storedProfile) {
-            try {
-                setBrandProfile(JSON.parse(storedProfile));
-            } catch (e) {
-                console.error("Failed to parse brand profile from localStorage", e);
+        const fetchProfile = async () => {
+            const profile = await getBrandProfileAction();
+            if (profile) {
+                setBrandProfile(profile);
             }
-        }
+        };
+        fetchProfile();
     }, []);
 
   return (

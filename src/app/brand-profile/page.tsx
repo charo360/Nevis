@@ -1,3 +1,4 @@
+// src/app/brand-profile/page.tsx
 "use client";
 
 import * as React from "react";
@@ -7,33 +8,55 @@ import { SidebarInset } from "@/components/ui/sidebar";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getBrandProfileAction, saveBrandProfileAction } from "@/app/actions";
+import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 
 export default function BrandProfilePage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [brandProfile, setBrandProfile] = React.useState<BrandProfile | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
 
-
   React.useEffect(() => {
-    try {
-      const storedProfile = localStorage.getItem('brandProfile');
-      if (storedProfile) {
-        setBrandProfile(JSON.parse(storedProfile));
-      }
-    } catch (error) {
-        console.error("Failed to parse brand profile from localStorage", error);
-    } finally {
+    const fetchProfile = async () => {
+      setIsLoading(true);
+      try {
+        const profile = await getBrandProfileAction();
+        setBrandProfile(profile);
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Failed to load profile",
+          description: (error as Error).message,
+        });
+      } finally {
         setIsLoading(false);
-    }
-  }, []);
+      }
+    };
+    fetchProfile();
+  }, [toast]);
 
-  const handleProfileSaved = (profile: BrandProfile) => {
-    localStorage.setItem('brandProfile', JSON.stringify(profile));
-    setBrandProfile(profile);
-    // Optionally, navigate away or show a success message.
-    // For now, we'll stay on the page to allow further edits.
-    // router.push('/content-calendar');
+  const handleProfileSaved = async (profile: BrandProfile) => {
+    try {
+        await saveBrandProfileAction(profile);
+        setBrandProfile(profile);
+        toast({
+            title: "Profile Saved!",
+            description: "Your brand profile has been updated successfully.",
+        });
+        // Force a reload to apply theme colors globally from layout
+        window.location.reload();
+         if(!brandProfile) { // If it was the first time saving
+            router.push('/content-calendar');
+        }
+    } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "Failed to save profile",
+            description: (error as Error).message,
+        });
+    }
   };
 
   return (
@@ -62,7 +85,7 @@ export default function BrandProfilePage() {
         <main className="flex-1 overflow-auto p-4 lg:p-6">
             {isLoading ? (
                 <div className="flex h-full items-center justify-center">
-                    <p>Loading Profile...</p>
+                    <p>Loading Profile from Database...</p>
                 </div>
             ) : (
                 <BrandSetup 

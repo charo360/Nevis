@@ -1,4 +1,4 @@
-
+// src/components/dashboard/post-card.tsx
 "use client";
 
 import * as React from 'react';
@@ -49,7 +49,7 @@ const platformIcons: { [key in Platform]: React.ReactElement } = {
 type PostCardProps = {
   post: GeneratedPost;
   brandProfile: BrandProfile;
-  onPostUpdated: (post: GeneratedPost) => void;
+  onPostUpdated: (post: GeneratedPost) => Promise<void>;
 };
 
 export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
@@ -96,13 +96,14 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
     }
   }, [post.id, activeTab, toast]);
 
-  const handleSaveChanges = () => {
-    onPostUpdated({
+  const handleSaveChanges = async () => {
+    const updatedPost = {
         ...post,
         content: editedContent,
         hashtags: editedHashtags,
-        status: 'edited',
-    });
+        status: 'edited' as const,
+    };
+    await onPostUpdated(updatedPost);
     setIsEditing(false);
     toast({
         title: "Post Updated",
@@ -114,9 +115,14 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
     setIsRegenerating(true);
     try {
         const platform = post.variants[0].platform;
+        // The generateContentAction now saves to DB, so we don't get the post back directly
+        // Instead we can just trigger a re-fetch on the parent, but for now we'll update it locally
         const newPost = await generateContentAction(brandProfile, platform);
-        // We replace the old post with the new one, keeping the same ID
-        onPostUpdated({ ...newPost, id: post.id });
+        // We replace the old post with the new one, but this time we need to call onPostUpdated
+        // to update the state in the parent component which will then re-render this card.
+        // A better approach would be to refetch all posts.
+        // For simplicity, we'll just replace this one instance.
+        onPostUpdated({ ...newPost, id: post.id }); // Keep old id for replacement
         toast({
             title: "Post Regenerated!",
             description: "A new version of your post has been generated.",
@@ -144,8 +150,9 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
     setIsGeneratingVideo(true);
     try {
         const result = await generateVideoContentAction(brandProfile, post.imageText, post.content);
-        setVideoUrl(result.videoUrl);
-        onPostUpdated({ ...post, videoUrl: result.videoUrl });
+        const newVideoUrl = result.videoUrl;
+        setVideoUrl(newVideoUrl);
+        await onPostUpdated({ ...post, videoUrl: newVideoUrl });
         setShowVideoDialog(true);
         toast({
             title: "Video Generated!",

@@ -7,6 +7,7 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import React, { useEffect, useState } from 'react';
 import type { BrandProfile } from '@/lib/types';
+import { getBrandProfileAction } from '@/app/actions';
 
 export default function RootLayout({
   children,
@@ -14,27 +15,35 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const [style, setStyle] = useState<React.CSSProperties>({});
+  const [profileLoaded, setProfileLoaded] = useState(false);
 
   useEffect(() => {
-    try {
-      const storedProfile = localStorage.getItem('brandProfile');
-      if (storedProfile) {
-        const profile: BrandProfile = JSON.parse(storedProfile);
-        const newStyle: React.CSSProperties = {};
-        if (profile.primaryColor) {
-            newStyle['--primary-hsl'] = profile.primaryColor;
+    const fetchProfileAndSetTheme = async () => {
+      try {
+        // Since we don't have user auth, we'll fetch a default profile.
+        // In a real app, you'd pass a user ID here.
+        const profile = await getBrandProfileAction();
+        if (profile) {
+          const newStyle: React.CSSProperties = {};
+          if (profile.primaryColor) {
+              newStyle['--primary-hsl'] = profile.primaryColor;
+          }
+          if (profile.accentColor) {
+              newStyle['--accent-hsl'] = profile.accentColor;
+          }
+          if (profile.backgroundColor) {
+              newStyle['--background-hsl'] = profile.backgroundColor;
+          }
+          setStyle(newStyle);
         }
-        if (profile.accentColor) {
-            newStyle['--accent-hsl'] = profile.accentColor;
-        }
-        if (profile.backgroundColor) {
-            newStyle['--background-hsl'] = profile.backgroundColor;
-        }
-        setStyle(newStyle);
+      } catch (error) {
+        console.error("Failed to apply brand colors from Firestore", error);
+      } finally {
+        setProfileLoaded(true);
       }
-    } catch (error) {
-      console.error("Failed to apply brand colors from localStorage", error);
-    }
+    };
+    
+    fetchProfileAndSetTheme();
   }, []);
 
   return (
@@ -49,7 +58,7 @@ export default function RootLayout({
       <body className="font-body antialiased" style={style} suppressHydrationWarning>
         <SidebarProvider>
           <AppSidebar />
-          {children}
+           {profileLoaded ? children : <div className="flex-1 flex items-center justify-center"><p>Loading Brand Profile...</p></div>}
         </SidebarProvider>
         <Toaster />
       </body>

@@ -1,10 +1,74 @@
+// src/app/actions.ts
 "use server";
 
+import { doc, getDoc, setDoc, collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { analyzeBrand as analyzeBrandFlow, BrandAnalysisResult } from "@/ai/flows/analyze-brand";
 import { generatePostFromProfile as generatePostFromProfileFlow } from "@/ai/flows/generate-post-from-profile";
 import { generateVideoPost as generateVideoPostFlow } from "@/ai/flows/generate-video-post";
 import { generateCreativeAsset as generateCreativeAssetFlow } from "@/ai/flows/generate-creative-asset";
 import type { BrandProfile, GeneratedPost, Platform, CreativeAsset } from "@/lib/types";
+
+// For this starter, we'll use a hardcoded document ID for the brand profile.
+// In a multi-user app, this would be dynamically set based on the logged-in user.
+const BRAND_PROFILE_DOC_ID = "default_brand_profile";
+const POSTS_COLLECTION_ID = "generated_posts";
+
+// --- Database Actions ---
+
+export async function saveBrandProfileAction(profile: BrandProfile): Promise<void> {
+    try {
+        const profileRef = doc(db, "brandProfiles", BRAND_PROFILE_DOC_ID);
+        await setDoc(profileRef, profile);
+    } catch (error) {
+        console.error("Error saving brand profile to Firestore:", error);
+        throw new Error("Failed to save brand profile.");
+    }
+}
+
+export async function getBrandProfileAction(): Promise<BrandProfile | null> {
+    try {
+        const profileRef = doc(db, "brandProfiles", BRAND_PROFILE_DOC_ID);
+        const docSnap = await getDoc(profileRef);
+        if (docSnap.exists()) {
+            return docSnap.data() as BrandProfile;
+        }
+        return null;
+    } catch (error) {
+        console.error("Error fetching brand profile from Firestore:", error);
+        throw new Error("Failed to fetch brand profile.");
+    }
+}
+
+export async function getGeneratedPostsAction(): Promise<GeneratedPost[]> {
+    try {
+        const postsCollection = collection(db, "brandProfiles", BRAND_PROFILE_DOC_ID, POSTS_COLLECTION_ID);
+        const q = query(postsCollection, orderBy("date", "desc"), limit(20));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(doc => doc.data() as GeneratedPost);
+    } catch (error) {
+        console.error("Error fetching generated posts:", error);
+        throw new Error("Failed to fetch posts.");
+    }
+}
+
+async function saveGeneratedPostAction(post: GeneratedPost): Promise<void> {
+     try {
+        const postRef = doc(db, "brandProfiles", BRAND_PROFILE_DOC_ID, POSTS_COLLECTION_ID, post.id);
+        await setDoc(postRef, post);
+    } catch (error) {
+        console.error("Error saving generated post:", error);
+        throw new Error("Failed to save post.");
+    }
+}
+
+export async function updateGeneratedPostAction(post: GeneratedPost): Promise<void> {
+    // For Firestore, save and update can be the same operation with setDoc
+    return saveGeneratedPostAction(post);
+}
+
+
+// --- AI Flow Actions ---
 
 export async function analyzeBrandAction(
   websiteUrl: string,
@@ -66,7 +130,7 @@ export async function generateContentAction(
       competitiveAdvantages: profile.competitiveAdvantages,
     });
 
-    return {
+    const newPost: GeneratedPost = {
       id: new Date().toISOString(),
       date: today.toISOString(),
       content: postDetails.content,
@@ -75,6 +139,11 @@ export async function generateContentAction(
       variants: postDetails.variants,
       imageText: postDetails.imageText,
     };
+
+    // Save the newly generated post to the database
+    await saveGeneratedPostAction(newPost);
+
+    return newPost;
   } catch (error) {
     console.error("Error generating content:", error);
     throw new Error("Failed to generate content. Please try again later.");

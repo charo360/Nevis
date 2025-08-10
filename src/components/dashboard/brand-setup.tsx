@@ -1,3 +1,4 @@
+// src/components/dashboard/brand-setup.tsx
 "use client";
 
 import * as React from "react";
@@ -25,13 +26,11 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import type { BrandAnalysisResult, BrandProfile } from "@/lib/types";
 import { analyzeBrandAction } from "@/app/actions";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 
 // Helper to convert hex to HSL string
 const hexToHslString = (hex: string): string => {
@@ -109,12 +108,12 @@ const formSchema = z.object({
 
 type BrandSetupProps = {
   initialProfile: BrandProfile | null;
-  onProfileSaved: (profile: BrandProfile) => void;
+  onProfileSaved: (profile: BrandProfile) => Promise<void>;
 };
 
 export function BrandSetup({ initialProfile, onProfileSaved }: BrandSetupProps) {
-  const router = useRouter();
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [isAnalyzing, setIsAnalyzing] = React.useState(false);
   const [analysisResult, setAnalysisResult] = React.useState<BrandAnalysisResult | null>(initialProfile ? {
       visualStyle: initialProfile.visualStyle,
       writingTone: initialProfile.writingTone,
@@ -230,7 +229,7 @@ export function BrandSetup({ initialProfile, onProfileSaved }: BrandSetupProps) 
         });
         return;
     }
-    setIsLoading(true);
+    setIsAnalyzing(true);
     setAnalysisResult(null);
     try {
       const result = await analyzeBrandAction(values.websiteUrl, designDataUrls);
@@ -255,11 +254,11 @@ export function BrandSetup({ initialProfile, onProfileSaved }: BrandSetupProps) 
         description: (error as Error).message,
       });
     } finally {
-      setIsLoading(false);
+      setIsAnalyzing(false);
     }
   }
 
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
     const formValues = form.getValues();
      if (!logoDataUrl) {
         toast({
@@ -302,18 +301,9 @@ export function BrandSetup({ initialProfile, onProfileSaved }: BrandSetupProps) 
       },
     };
     
-    onProfileSaved(profile);
-    toast({
-      title: "Profile Saved!",
-      description: "Your brand profile has been updated.",
-    });
-    
-    // Force a reload to apply the new theme colors
-    window.location.reload();
-
-    if(!initialProfile) {
-        router.push('/content-calendar');
-    }
+    setIsSaving(true);
+    await onProfileSaved(profile);
+    setIsSaving(false);
   };
 
   return (
@@ -396,8 +386,8 @@ export function BrandSetup({ initialProfile, onProfileSaved }: BrandSetupProps) 
                         Provide your website and some design examples for AI-powered brand analysis.
                     </CardDescription>
                 </div>
-                 <Button type="button" onClick={form.handleSubmit(onAnalyze)} disabled={isLoading} className="mt-4 w-full md:mt-0 md:w-auto">
-                    {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Analyzing...</> : <><Sparkles className="mr-2 h-4 w-4" />{analysisResult ? "Re-analyze Brand" : "Analyze Brand"}</>}
+                 <Button type="button" onClick={form.handleSubmit(onAnalyze)} disabled={isAnalyzing} className="mt-4 w-full md:mt-0 md:w-auto">
+                    {isAnalyzing ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Analyzing...</> : <><Sparkles className="mr-2 h-4 w-4" />{analysisResult ? "Re-analyze Brand" : "Analyze Brand"}</>}
                 </Button>
               </div>
             </CardHeader>
@@ -498,8 +488,8 @@ export function BrandSetup({ initialProfile, onProfileSaved }: BrandSetupProps) 
           </Card>
 
           <div className="flex justify-end">
-            <Button type="button" onClick={handleSaveProfile} size="lg" disabled={!logoDataUrl || !form.getValues().visualStyle}>
-                {initialProfile ? "Save Changes" : "Save Brand Profile & Continue"}
+            <Button type="button" onClick={handleSaveProfile} size="lg" disabled={isSaving || !logoDataUrl || !form.getValues().visualStyle}>
+                {isSaving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving...</> : (initialProfile ? "Save Changes" : "Save Brand Profile & Continue")}
             </Button>
           </div>
         </form>

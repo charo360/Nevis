@@ -1,3 +1,4 @@
+// src/app/content-calendar/page.tsx
 "use client";
 
 import * as React from "react";
@@ -16,33 +17,62 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ContentCalendar } from "@/components/dashboard/content-calendar";
 import type { BrandProfile, GeneratedPost } from "@/lib/types";
 import { useRouter } from "next/navigation";
+import { getBrandProfileAction, getGeneratedPostsAction, updateGeneratedPostAction } from "@/app/actions";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ContentCalendarPage() {
   const [brandProfile, setBrandProfile] = useState<BrandProfile | null>(null);
   const [generatedPosts, setGeneratedPosts] = useState<GeneratedPost[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
-    const storedProfile = localStorage.getItem('brandProfile');
-    if (storedProfile) {
-      setBrandProfile(JSON.parse(storedProfile));
-    } else {
-        // If no profile, redirect to setup
-        router.push('/brand-profile');
-    }
-  }, [router]);
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const profile = await getBrandProfileAction();
+        if (profile) {
+          setBrandProfile(profile);
+          const posts = await getGeneratedPostsAction();
+          setGeneratedPosts(posts);
+        } else {
+          // If no profile, redirect to setup
+          router.push('/brand-profile');
+        }
+      } catch (error) {
+         toast({
+          variant: "destructive",
+          title: "Failed to load data",
+          description: (error as Error).message,
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadData();
+  }, [router, toast]);
 
 
   const handlePostGenerated = (post: GeneratedPost) => {
     setGeneratedPosts((prevPosts) => [post, ...prevPosts]);
   };
   
-  const handlePostUpdated = (updatedPost: GeneratedPost) => {
-    setGeneratedPosts((prevPosts) =>
-      prevPosts.map((post) =>
-        post.id === updatedPost.id ? updatedPost : post
-      )
-    );
+  const handlePostUpdated = async (updatedPost: GeneratedPost) => {
+    try {
+      await updateGeneratedPostAction(updatedPost);
+      setGeneratedPosts((prevPosts) =>
+        prevPosts.map((post) =>
+          post.id === updatedPost.id ? updatedPost : post
+        )
+      );
+    } catch(error) {
+        toast({
+          variant: "destructive",
+          title: "Failed to update post",
+          description: (error as Error).message,
+        });
+    }
   };
 
   return (
@@ -69,17 +99,17 @@ export default function ContentCalendarPage() {
           </DropdownMenu>
         </header>
         <main className="flex-1 overflow-auto p-4 lg:p-6">
-          {brandProfile ? (
+          {isLoading || !brandProfile ? (
+            <div className="flex h-full items-center justify-center">
+              <p>Loading Content Calendar...</p>
+            </div>
+          ) : (
             <ContentCalendar
               brandProfile={brandProfile}
               posts={generatedPosts}
               onPostGenerated={handlePostGenerated}
               onPostUpdated={handlePostUpdated}
             />
-          ) : (
-            <div className="flex h-full items-center justify-center">
-              <p>Loading Brand Profile...</p>
-            </div>
           )}
         </main>
       </SidebarInset>
