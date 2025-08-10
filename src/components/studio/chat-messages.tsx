@@ -3,8 +3,10 @@ import * as React from 'react';
 import type { Message } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ChatAvatar } from './chat-avatar';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Download } from 'lucide-react';
 import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 interface ChatMessagesProps {
   messages: Message[];
@@ -13,12 +15,32 @@ interface ChatMessagesProps {
 
 export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
   const scrollableContainerRef = React.useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   React.useEffect(() => {
     if (scrollableContainerRef.current) {
       scrollableContainerRef.current.scrollTop = scrollableContainerRef.current.scrollHeight;
     }
   }, [messages, isLoading]);
+
+  const handleDownload = (url: string | null | undefined, type: 'image' | 'video') => {
+    if (!url) {
+      toast({
+        variant: 'destructive',
+        title: 'Download Failed',
+        description: 'No asset URL found.',
+      });
+      return;
+    }
+    const link = document.createElement('a');
+    link.href = url;
+    const fileExtension = type === 'image' ? 'png' : 'mp4';
+    link.download = `creative-asset-${Date.now()}.${fileExtension}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
 
   return (
     <div ref={scrollableContainerRef} className="flex-1 overflow-y-auto p-4">
@@ -33,8 +55,8 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
               )}
             >
                 {message.imageUrl && (
-                     <div className="relative aspect-square w-full max-w-xs overflow-hidden rounded-md border">
-                        <Image src={message.imageUrl} alt="Message attachment" layout="fill" objectFit="cover" />
+                     <div className="relative w-full max-w-xs overflow-hidden rounded-md border">
+                        <Image src={message.imageUrl} alt="Generated image" layout="fill" objectFit="cover" />
                      </div>
                 )}
                  {message.videoUrl && (
@@ -43,6 +65,16 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
                      </div>
                 )}
               <p className="whitespace-pre-wrap text-sm">{message.content}</p>
+              {(message.imageUrl || message.videoUrl) && (
+                <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleDownload(message.imageUrl || message.videoUrl, message.videoUrl ? 'video' : 'image')}
+                >
+                    <Download className="mr-2 h-4 w-4" />
+                    Download
+                </Button>
+              )}
             </div>
             {message.role === 'user' && <ChatAvatar role="user" />}
           </div>
