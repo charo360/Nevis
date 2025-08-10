@@ -15,7 +15,7 @@
 
 import {ai} from '@/ai/genkit';
 import { GenerateRequest } from 'genkit/generate';
-import {z} from 'genkit';
+import {z} from 'zod';
 
 const GeneratePostFromProfileInputSchema = z.object({
   businessType: z.string().describe('The type of business (e.g., restaurant, salon).'),
@@ -35,6 +35,12 @@ const GeneratePostFromProfileInputSchema = z.object({
   primaryColor: z.string().optional().describe('The primary brand color in HSL format.'),
   accentColor: z.string().optional().describe('The accent brand color in HSL format.'),
   backgroundColor: z.string().optional().describe('The background brand color in HSL format.'),
+
+  // New detailed fields for richer content
+  services: z.string().optional().describe('A newline-separated list of key services or products.'),
+  targetAudience: z.string().optional().describe('A description of the target audience.'),
+  keyFeatures: z.string().optional().describe('A newline-separated list of key features or selling points.'),
+  competitiveAdvantages: z.string().optional().describe('A newline-separated list of competitive advantages.'),
 });
 
 export type GeneratePostFromProfileInput = z.infer<typeof GeneratePostFromProfileInputSchema>;
@@ -68,6 +74,10 @@ const textGenPrompt = ai.definePrompt({
       events: z.string(),
       dayOfWeek: z.string(),
       currentDate: z.string(),
+      services: z.string().optional(),
+      targetAudience: z.string().optional(),
+      keyFeatures: z.string().optional(),
+      competitiveAdvantages: z.string().optional(),
     })},
     output: { schema: z.object({
       content: z.string().describe('The generated social media post content (the caption).'),
@@ -87,12 +97,20 @@ const textGenPrompt = ai.definePrompt({
     - Local Events: {{{events}}}
     - Day of Week: {{{dayOfWeek}}}
     - Today's Date: {{{currentDate}}}
+    {{#if services}}- Services/Products:
+{{{services}}}{{/if}}
+    {{#if targetAudience}}- Target Audience: {{{targetAudience}}}{{/if}}
+    {{#if keyFeatures}}- Key Features:
+{{{keyFeatures}}}{{/if}}
+    {{#if competitiveAdvantages}}- Why We're Different:
+{{{competitiveAdvantages}}}{{/if}}
 
     Incorporate trends, seasonal topics, or common conversations relevant to the {{{businessType}}} industry. Use the date to ensure the content is fresh and not repetitive.
+    Use the detailed business information (services, audience, features) to make the content highly specific and compelling.
     
     Generate a social media post. This includes a longer text for the caption, a separate, very brief text to be placed on the image, and hashtags.
     
-    1.  **Caption (content):** Generate a post that is appropriate for a general audience. Consider the weather and local events when creating the post. The post should match the brand voice.
+    1.  **Caption (content):** Generate a post that is appropriate for a general audience. Consider the weather and local events when creating the post. The post should match the brand voice and directly or indirectly promote one of the services or key features.
     2.  **Image Text (imageText):** Generate a brief, catchy headline (max 5 words) that relates to the caption and is suitable for being overlaid on an image.
     3.  **Hashtags:** Include relevant hashtags.
     `,
@@ -184,6 +202,10 @@ const generatePostFromProfileFlow = ai.defineFlow(
         events: input.events,
         dayOfWeek: input.dayOfWeek,
         currentDate: input.currentDate,
+        services: input.services,
+        targetAudience: input.targetAudience,
+        keyFeatures: input.keyFeatures,
+        competitiveAdvantages: input.competitiveAdvantages,
     });
     
 

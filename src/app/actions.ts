@@ -72,6 +72,11 @@ export async function generateContentAction(
         platform: platform,
         aspectRatio: getAspectRatioForPlatform(platform),
       }],
+      // Pass new detailed fields
+      services: profile.services,
+      targetAudience: profile.targetAudience,
+      keyFeatures: profile.keyFeatures,
+      competitiveAdvantages: profile.competitiveAdvantages,
     });
 
     return {
