@@ -5,7 +5,6 @@
  * @fileOverview This file defines a Genkit flow for generating a daily social media post.
  *
  * It takes into account business type, location, brand voice, current weather, and local events to create engaging content.
- *
  * @exports generatePostFromProfile - The main function to generate a post.
  * @exports GeneratePostFromProfileInput - The input type for the generation flow.
  * @exports GeneratePostFromProfileOutput - The output type for the generation flow.
