@@ -5,7 +5,7 @@
 import * as React from 'react';
 import Image from "next/image";
 import { Facebook, Instagram, Linkedin, MoreVertical, Pen, RefreshCw, Twitter, CalendarIcon, Download, Loader2, Video, ChevronLeft, ChevronRight, ImageOff } from "lucide-react";
-import * as htmlToImage from 'html-to-image';
+import { toPng } from 'html-to-image';
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -62,13 +62,13 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   const [videoUrl, setVideoUrl] = React.useState<string | undefined>(post.videoUrl);
   const [showVideoDialog, setShowVideoDialog] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<Platform>(post.variants[0]?.platform || 'Instagram');
-  const downloadRef = React.useRef<HTMLDivElement>(null);
+  const downloadRefs = React.useRef<Record<Platform, HTMLDivElement | null>>({} as Record<Platform, HTMLDivElement | null>);
   
   const formattedDate = format(new Date(post.date), 'MMM d, yyyy');
   const { toast } = useToast();
 
   const handleDownload = React.useCallback(async () => {
-    const element = downloadRef.current;
+    const element = downloadRefs.current[activeTab];
     if (!element) {
       toast({
         variant: "destructive",
@@ -79,11 +79,10 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
     }
 
     try {
-      const dataUrl = await htmlToImage.toPng(element, {
+      const dataUrl = await toPng(element, {
         cacheBust: true,
         width: 1080,
         height: 1080,
-        // This filter is the key to fixing the CORS error with external fonts.
         filter: (node: HTMLElement) => {
             if (node.tagName === 'LINK' && node.hasAttribute('href') && node.getAttribute('href')!.includes('fonts.googleapis.com')) {
                 return false;
@@ -230,7 +229,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
             </TabsList>
             {post.variants.map(variant => (
                 <TabsContent key={variant.platform} value={variant.platform}>
-                    <div ref={downloadRef} className="bg-white">
+                    <div ref={el => downloadRefs.current[variant.platform] = el} className="bg-white">
                       <div className="relative aspect-square w-full overflow-hidden rounded-md border">
                         {(isRegenerating || isGeneratingVideo) && (
                             <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/80">
