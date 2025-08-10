@@ -1,7 +1,7 @@
 // src/app/creative-studio/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { BrandProfile, Message } from "@/lib/types";
 import {
   DropdownMenu,
@@ -21,13 +21,16 @@ export default function CreativeStudioPage() {
     const [input, setInput] = useState("");
     const [brandProfile, setBrandProfile] = useState<BrandProfile | null>(null);
 
-    // This would be loaded from localStorage in a real app
-    useState(() => {
+    useEffect(() => {
         const storedProfile = localStorage.getItem('brandProfile');
         if (storedProfile) {
-            setBrandProfile(JSON.parse(storedProfile));
+            try {
+                setBrandProfile(JSON.parse(storedProfile));
+            } catch (e) {
+                console.error("Failed to parse brand profile from localStorage", e);
+            }
         }
-    });
+    }, []);
 
   return (
     <SidebarInset>
