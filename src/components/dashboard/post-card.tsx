@@ -77,7 +77,9 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
     }
 
     try {
-        const dataUrl = await htmlToImage.toPng(downloadRef.current, { cacheBust: true });
+        const dataUrl = await htmlToImage.toPng(downloadRef.current, { 
+            cacheBust: true,
+        });
         const link = document.createElement('a');
         link.href = dataUrl;
         link.download = `localbuzz-post-${post.id}-${activeTab}.png`;
