@@ -6,10 +6,12 @@
  *
  * It takes into account business type, location, brand voice, current weather, and local events to create engaging content.
  *
- * @exports {
- *   generatePostFromProfile: function
- *   GeneratePostFromProfileInput: type
- *   GeneratePostFrom-profile.ts'
+ * @exports generatePostFromProfile - The main function to generate a post.
+ * @exports GeneratePostFromProfileInput - The input type for the generation flow.
+ * @exports GeneratePostFromProfileOutput - The output type for the generation flow.
+ */
+
+import {ai} from '@/ai/genkit';
 import { GenerateRequest } from 'genkit/generate';
 import {z} from 'zod';
 import { getWeatherTool, getEventsTool } from '@/ai/tools/local-data';
