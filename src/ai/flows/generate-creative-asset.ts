@@ -123,7 +123,31 @@ const generateCreativeAssetFlow = ai.defineFlow(
     
     const { imageText, remainingPrompt } = extractQuotedText(input.prompt);
 
-    if (input.useBrandProfile && input.brandProfile) {
+    if (input.referenceImageUrl) {
+        // This is a refinement prompt.
+        let refinePrompt = `Use the provided image as a strong reference. Your instruction for how to change it is: "${remainingPrompt}".`;
+        
+        if (imageText) {
+             refinePrompt += `\nIf there was text on the original image, replace it with the following text: "${imageText}". Ensure the new text is readable and well-composed.`
+        }
+
+        if (input.useBrandProfile && input.brandProfile) {
+            const bp = input.brandProfile;
+            const colorInstructions = (bp.primaryColor && bp.accentColor && bp.backgroundColor) 
+            ? ` The brand's color palette is: Primary HSL(${bp.primaryColor}), Accent HSL(${bp.accentColor}), Background HSL(${bp.backgroundColor}). You MUST use these colors in the new design.`
+            : '';
+            refinePrompt += colorInstructions;
+
+            if (bp.logoDataUrl) {
+                promptParts.push({ media: { url: bp.logoDataUrl } });
+            }
+        }
+
+        textPrompt = refinePrompt;
+        promptParts.push({ media: { url: input.referenceImageUrl } });
+
+    } else if (input.useBrandProfile && input.brandProfile) {
+        // This is a new, on-brand asset generation.
         const bp = input.brandProfile;
         const colorInstructions = (bp.primaryColor && bp.accentColor && bp.backgroundColor) 
             ? `The brand's color palette is: Primary HSL(${bp.primaryColor}), Accent HSL(${bp.accentColor}), Background HSL(${bp.backgroundColor}). Please use these colors in the design.`
@@ -143,27 +167,12 @@ const generateCreativeAssetFlow = ai.defineFlow(
         textPrompt = onBrandPrompt;
 
     } else {
-        // Unstructured, creative prompt
+        // This is a new, un-branded, creative prompt.
         let creativePrompt = `You are an expert creative director. Generate a compelling and high-quality ${input.outputType} for a social media advertisement based on the following instruction: "${remainingPrompt}".`;
         if (imageText) {
              creativePrompt += `\nOverlay the following text onto the asset: "${imageText}". Ensure the text is readable and well-composed.`
         }
         textPrompt = creativePrompt;
-    }
-
-    if (input.referenceImageUrl) {
-        let refinePrompt = `\nUse the provided image as a strong influence for the composition, style, and subject matter. Your instruction is: "${remainingPrompt}".`;
-        // If brand profile is used, ensure colors are maintained during refinement
-        if (input.useBrandProfile && input.brandProfile) {
-            const bp = input.brandProfile;
-            const colorInstructions = (bp.primaryColor && bp.accentColor && bp.backgroundColor) 
-            ? ` The brand's color palette is: Primary HSL(${bp.primaryColor}), Accent HSL(${bp.accentColor}), Background HSL(${bp.backgroundColor}). You MUST use these colors in the new design.`
-            : '';
-            refinePrompt += colorInstructions;
-        }
-
-        textPrompt += refinePrompt;
-        promptParts.push({ media: { url: input.referenceImageUrl } });
     }
     
     promptParts.unshift({text: textPrompt});
