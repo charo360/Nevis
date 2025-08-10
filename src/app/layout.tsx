@@ -49,15 +49,19 @@ function BrandThemeLoader({ children }: { children: React.ReactNode }) {
     fetchProfileAndSetTheme();
   }, [user]);
 
+  if (!profileLoaded) {
+    return (
+        <div className="flex-1 flex items-center justify-center">
+            <p>Loading Brand Profile...</p>
+        </div>
+    );
+  }
+
   return (
-      <body className="font-body antialiased" style={style} suppressHydrationWarning>
-        <SidebarProvider>
-          <AppSidebar />
-           {profileLoaded ? children : <div className="flex-1 flex items-center justify-center"><p>Loading Brand Profile...</p></div>}
-        </SidebarProvider>
-        <Toaster />
-      </body>
-  );
+    <div className="flex flex-1" style={style}>
+        {children}
+    </div>
+  )
 }
 
 
@@ -76,11 +80,17 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet" />
       </head>
-       <AuthProvider>
-        <BrandThemeLoader>
-          {children}
-        </BrandThemeLoader>
-      </AuthProvider>
+      <body className="font-body antialiased" suppressHydrationWarning>
+        <AuthProvider>
+            <SidebarProvider>
+                <AppSidebar />
+                <BrandThemeLoader>
+                    {children}
+                </BrandThemeLoader>
+            </SidebarProvider>
+            <Toaster />
+        </AuthProvider>
+      </body>
     </html>
   );
 }
