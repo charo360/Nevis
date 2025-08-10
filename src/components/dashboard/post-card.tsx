@@ -82,9 +82,11 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
     };
 
     try {
-        const dataUrl = await htmlToImage.toPng(downloadRef.current, { 
+        const dataUrl = await htmlToImage.toPng(downloadRef.current, {
             cacheBust: true,
             filter: filter,
+            width: 1080,
+            height: 1080,
         });
         const link = document.createElement('a');
         link.href = dataUrl;
