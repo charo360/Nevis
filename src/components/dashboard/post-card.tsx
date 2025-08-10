@@ -1,3 +1,4 @@
+
 // src/components/dashboard/post-card.tsx
 "use client";
 
@@ -67,35 +68,35 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   const { toast } = useToast();
 
   const handleDownload = React.useCallback(async () => {
-    if (!downloadRef.current) {
+    const element = downloadRef.current;
+    if (!element) {
       toast({
         variant: "destructive",
         title: "Download Failed",
-        description: "Could not prepare the image for download.",
+        description: "Could not find the image element to download.",
       });
       return;
     }
 
-    // This filter function is the key to fixing the CORS error.
-    // It tells html-to-image to skip any external stylesheets.
-    const filter = (node: HTMLElement) => {
-        if (node.tagName === 'LINK' && node.hasAttribute('href') && node.getAttribute('href')!.includes('fonts.googleapis.com')) {
-            return false;
-        }
-        return true;
-    };
-
     try {
-      const dataUrl = await htmlToImage.toPng(downloadRef.current, {
+      const dataUrl = await htmlToImage.toPng(element, {
         cacheBust: true,
-        filter: filter,
-        width: 1080, // Ensure high-resolution output
+        width: 1080,
         height: 1080,
+        // This filter is the key to fixing the CORS error with external fonts.
+        filter: (node: HTMLElement) => {
+            if (node.tagName === 'LINK' && node.hasAttribute('href') && node.getAttribute('href')!.includes('fonts.googleapis.com')) {
+                return false;
+            }
+            return true;
+        },
       });
+
       const link = document.createElement('a');
       link.href = dataUrl;
       link.download = `localbuzz-post-${post.id}-${activeTab}.png`;
       link.click();
+
     } catch (err) {
       console.error(err);
       toast({
@@ -332,3 +333,5 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
     </>
   );
 }
+
+    
