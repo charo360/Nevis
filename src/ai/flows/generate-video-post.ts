@@ -85,10 +85,13 @@ Generate a video that is cinematically interesting, has relevant sound, and capt
 
     let operation;
     try {
-        // Correctly destructure the operation from the direct return value
         const { operation: op } = await ai.generate({
             model: 'googleai/veo-3.0-generate-preview',
             prompt: videoPrompt,
+            config: {
+                // This is required by the Veo 3 model
+                responseModalities: ['TEXT', 'VIDEO'],
+            }
           });
         operation = op;
     } catch (e: any) {
@@ -113,7 +116,7 @@ Generate a video that is cinematically interesting, has relevant sound, and capt
     }
 
     // Relaxed check for the video part
-    const videoPart = operation.output?.message?.content.find(p => !!p.media);
+    const videoPart = operation.output?.message?.content.find(p => !!p.media && p.media.contentType?.startsWith('video/'));
     
     if (!videoPart || !videoPart.media) {
         throw new Error('No video was generated in the operation result.');
