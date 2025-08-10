@@ -10,6 +10,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyAIQQLuNAc0YhNz4o9LF1Zyw_Fy0nJUfwI",
   authDomain: "localbuzz-mpkuv.firebaseapp.com",
   messagingSenderId: "689428714759",
+  measurementId: "G-756124790"
 };
 
 // Initialize Firebase
