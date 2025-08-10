@@ -11,14 +11,29 @@ import { useRouter } from "next/navigation";
 
 export default function BrandProfilePage() {
   const router = useRouter();
+  const [brandProfile, setBrandProfile] = React.useState<BrandProfile | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+
+  React.useEffect(() => {
+    try {
+      const storedProfile = localStorage.getItem('brandProfile');
+      if (storedProfile) {
+        setBrandProfile(JSON.parse(storedProfile));
+      }
+    } catch (error) {
+        console.error("Failed to parse brand profile from localStorage", error);
+    } finally {
+        setIsLoading(false);
+    }
+  }, []);
 
   const handleProfileSaved = (profile: BrandProfile) => {
-    // For simplicity, we'll navigate to the content calendar.
-    // In a real app, you might want to use a shared state management solution (like Context or Zustand)
-    // to make the brand profile available globally.
-    // Storing in localStorage to pass to the next page for now.
     localStorage.setItem('brandProfile', JSON.stringify(profile));
-    router.push('/content-calendar');
+    setBrandProfile(profile);
+    // Optionally, navigate away or show a success message.
+    // For now, we'll stay on the page to allow further edits.
+    // router.push('/content-calendar');
   };
 
   return (
@@ -45,7 +60,16 @@ export default function BrandProfilePage() {
           </DropdownMenu>
         </header>
         <main className="flex-1 overflow-auto p-4 lg:p-6">
-            <BrandSetup onProfileSaved={handleProfileSaved} />
+            {isLoading ? (
+                <div className="flex h-full items-center justify-center">
+                    <p>Loading Profile...</p>
+                </div>
+            ) : (
+                <BrandSetup 
+                    initialProfile={brandProfile} 
+                    onProfileSaved={handleProfileSaved} 
+                />
+            )}
         </main>
       </SidebarInset>
   );

@@ -31,35 +31,56 @@ import { useToast } from "@/hooks/use-toast";
 import type { BrandAnalysisResult, BrandProfile } from "@/lib/types";
 import { analyzeBrandAction } from "@/app/actions";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 const formSchema = z.object({
   businessName: z.string().min(2, { message: "Business name must be at least 2 characters." }),
   businessType: z.string().min(2, { message: "Business type must be at least 2 characters." }),
   location: z.string().min(2, { message: "Location must be at least 2 characters." }),
   socialMediaUrl: z.string().url({ message: "Please enter a valid URL." }),
-  logo: z.any().refine(fileList => fileList.length > 0, "Logo image is required."),
+  logo: z.any().optional(), // Logo is optional if already provided
 });
 
 type BrandSetupProps = {
+  initialProfile: BrandProfile | null;
   onProfileSaved: (profile: BrandProfile) => void;
 };
 
-export function BrandSetup({ onProfileSaved }: BrandSetupProps) {
+export function BrandSetup({ initialProfile, onProfileSaved }: BrandSetupProps) {
+  const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
   const [analysisResult, setAnalysisResult] = React.useState<BrandAnalysisResult | null>(null);
-  const [logoPreview, setLogoPreview] = React.useState<string | null>(null);
-  const [logoDataUrl, setLogoDataUrl] = React.useState<string>("");
+  const [logoPreview, setLogoPreview] = React.useState<string | null>(initialProfile?.logoDataUrl || null);
+  const [logoDataUrl, setLogoDataUrl] = React.useState<string>(initialProfile?.logoDataUrl || "");
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      businessName: "",
-      businessType: "",
-      location: "",
-      socialMediaUrl: "",
+      businessName: initialProfile?.businessName || "",
+      businessType: initialProfile?.businessType || "",
+      location: initialProfile?.location || "",
+      socialMediaUrl: "https://instagram.com/yourbusiness", // Default placeholder
     },
   });
+
+  React.useEffect(() => {
+    if (initialProfile) {
+      form.reset({
+        businessName: initialProfile.businessName,
+        businessType: initialProfile.businessType,
+        location: initialProfile.location,
+        socialMediaUrl: "https://instagram.com/yourbusiness", // Reset with a placeholder or a saved one if we store it
+      });
+      setAnalysisResult({
+        visualStyle: initialProfile.visualStyle,
+        writingTone: initialProfile.writingTone,
+        contentThemes: initialProfile.contentThemes,
+      });
+      setLogoPreview(initialProfile.logoDataUrl);
+      setLogoDataUrl(initialProfile.logoDataUrl);
+    }
+  }, [initialProfile, form]);
 
   const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -74,24 +95,15 @@ export function BrandSetup({ onProfileSaved }: BrandSetupProps) {
     }
   };
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onAnalyze(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     setAnalysisResult(null);
-    if (!logoDataUrl) {
-        toast({
-            variant: "destructive",
-            title: "Missing Logo",
-            description: "Please upload a logo to continue."
-        });
-        setIsLoading(false);
-        return;
-    }
     try {
       const result = await analyzeBrandAction(values.socialMediaUrl);
       setAnalysisResult(result);
       toast({
         title: "Analysis Complete!",
-        description: "We've analyzed the brand profile. Review the details below.",
+        description: "Brand analysis has been updated. Review and save the profile.",
       });
     } catch (error) {
       toast({
@@ -105,29 +117,48 @@ export function BrandSetup({ onProfileSaved }: BrandSetupProps) {
   }
 
   const handleSaveProfile = () => {
-    if (analysisResult && logoDataUrl) {
-      const formValues = form.getValues();
-      const profile: BrandProfile = {
-        businessName: formValues.businessName,
-        businessType: formValues.businessType,
-        location: formValues.location,
-        logoDataUrl,
-        ...analysisResult,
-      };
-      onProfileSaved(profile);
-      toast({
-        title: "Profile Saved!",
-        description: "You can now start generating content.",
-      });
+    if (!analysisResult) {
+        toast({
+            variant: "destructive",
+            title: "Cannot Save",
+            description: "Please analyze a social media profile first."
+        });
+        return;
+    }
+     if (!logoDataUrl) {
+        toast({
+            variant: "destructive",
+            title: "Missing Logo",
+            description: "Please upload a logo to continue."
+        });
+        return;
+    }
+
+    const formValues = form.getValues();
+    const profile: BrandProfile = {
+      businessName: formValues.businessName,
+      businessType: formValues.businessType,
+      location: formValues.location,
+      logoDataUrl,
+      ...analysisResult,
+    };
+    onProfileSaved(profile);
+    toast({
+      title: "Profile Saved!",
+      description: "Your brand profile has been updated.",
+    });
+
+    if(!initialProfile) {
+        router.push('/content-calendar');
     }
   };
 
   return (
     <div className="mx-auto grid max-w-4xl gap-6">
       <div className="text-center">
-        <h1 className="text-3xl font-bold font-headline">Welcome to LocalBuzz</h1>
+        <h1 className="text-3xl font-bold font-headline">{initialProfile ? "Manage Brand Profile" : "Welcome to LocalBuzz"}</h1>
         <p className="text-muted-foreground">
-          Let's set up your brand profile to generate perfectly tailored content.
+          {initialProfile ? "Update your brand details below." : "Let's set up your brand profile to generate perfectly tailored content."}
         </p>
       </div>
       <Card>
@@ -146,7 +177,7 @@ export function BrandSetup({ onProfileSaved }: BrandSetupProps) {
             </TabsList>
             <TabsContent value="social">
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
+                <form onSubmit={form.handleSubmit(onAnalyze)} className="space-y-6 pt-4">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <FormField control={form.control} name="businessName" render={({ field }) => (
                       <FormItem>
@@ -220,7 +251,7 @@ export function BrandSetup({ onProfileSaved }: BrandSetupProps) {
                     ) : (
                       <>
                         <Sparkles className="mr-2 h-4 w-4" />
-                        Analyze Brand
+                        {analysisResult ? "Re-analyze Brand" : "Analyze Brand"}
                       </>
                     )}
                   </Button>
@@ -249,11 +280,13 @@ export function BrandSetup({ onProfileSaved }: BrandSetupProps) {
             </div>
           )}
         </CardContent>
-        {analysisResult && (
-            <CardFooter>
-                <Button onClick={handleSaveProfile} className="w-full md:w-auto" disabled={!logoDataUrl}>Save Brand Profile & Continue</Button>
-            </CardFooter>
-        )}
+        
+        <CardFooter>
+            <Button onClick={handleSaveProfile} className="w-full md:w-auto" disabled={!analysisResult || !logoDataUrl}>
+                {initialProfile ? "Save Changes" : "Save Brand Profile & Continue"}
+            </Button>
+        </CardFooter>
+        
       </Card>
     </div>
   );
