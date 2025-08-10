@@ -38,7 +38,6 @@ import { generateContentAction, generateVideoContentAction } from '@/app/actions
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from '@/lib/utils';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '../ui/carousel';
-import { useAuth } from '@/context/auth-context';
 
 const platformIcons: { [key in Platform]: React.ReactElement } = {
   Facebook: <Facebook className="h-4 w-4" />,
@@ -63,7 +62,6 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   const [showVideoDialog, setShowVideoDialog] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<Platform>(post.variants[0]?.platform || 'Instagram');
   const downloadRef = React.useRef<HTMLDivElement>(null);
-  const { user } = useAuth();
   
   const formattedDate = format(new Date(post.date), 'MMM d, yyyy');
   const { toast } = useToast();
@@ -114,14 +112,10 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   };
 
   const handleRegenerate = async () => {
-    if (!user) {
-        toast({ variant: "destructive", title: "Authentication Error", description: "You must be logged in to regenerate content." });
-        return;
-    }
     setIsRegenerating(true);
     try {
         const platform = post.variants[0].platform;
-        const newPost = await generateContentAction(user.uid, brandProfile, platform);
+        const newPost = await generateContentAction(brandProfile, platform);
         onPostUpdated({ ...newPost, id: post.id }); // Keep old id for replacement
         toast({
             title: "Post Regenerated!",

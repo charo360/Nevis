@@ -17,10 +17,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ContentCalendar } from "@/components/dashboard/content-calendar";
 import type { BrandProfile, GeneratedPost } from "@/lib/types";
 import { useRouter } from "next/navigation";
-import { getBrandProfileAction, getGeneratedPostsAction, updateGeneratedPostAction } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/context/auth-context";
-import withAuth from "@/context/with-auth";
+import { User } from "lucide-react";
+
+
+const BRAND_PROFILE_KEY = "brandProfile";
+const GENERATED_POSTS_KEY = "generatedPosts";
 
 function ContentCalendarPage() {
   const [brandProfile, setBrandProfile] = useState<BrandProfile | null>(null);
@@ -28,49 +30,46 @@ function ContentCalendarPage() {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
-  const { user, logout } = useAuth();
 
   useEffect(() => {
-    if (!user) return;
-    const loadData = async () => {
-      setIsLoading(true);
-      try {
-        const profile = await getBrandProfileAction(user.uid);
-        if (profile) {
-          setBrandProfile(profile);
-          const posts = await getGeneratedPostsAction(user.uid);
-          setGeneratedPosts(posts);
-        } else {
-          // If no profile, redirect to setup
-          router.push('/brand-profile');
+    setIsLoading(true);
+    try {
+      const storedProfile = localStorage.getItem(BRAND_PROFILE_KEY);
+      if (storedProfile) {
+        setBrandProfile(JSON.parse(storedProfile));
+        const storedPosts = localStorage.getItem(GENERATED_POSTS_KEY);
+        if (storedPosts) {
+          setGeneratedPosts(JSON.parse(storedPosts));
         }
-      } catch (error) {
-         toast({
-          variant: "destructive",
-          title: "Failed to load data",
-          description: (error as Error).message,
-        });
-      } finally {
-        setIsLoading(false);
+      } else {
+        // If no profile, redirect to setup
+        router.push('/brand-profile');
       }
-    };
-    loadData();
-  }, [router, toast, user]);
+    } catch (error) {
+       toast({
+        variant: "destructive",
+        title: "Failed to load data",
+        description: "Could not read your data from local storage. It might be corrupted.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [router, toast]);
 
 
   const handlePostGenerated = (post: GeneratedPost) => {
-    setGeneratedPosts((prevPosts) => [post, ...prevPosts]);
+    const newPosts = [post, ...generatedPosts];
+    setGeneratedPosts(newPosts);
+    localStorage.setItem(GENERATED_POSTS_KEY, JSON.stringify(newPosts));
   };
   
   const handlePostUpdated = async (updatedPost: GeneratedPost) => {
-    if (!user) return;
     try {
-      await updateGeneratedPostAction(user.uid, updatedPost);
-      setGeneratedPosts((prevPosts) =>
-        prevPosts.map((post) =>
-          post.id === updatedPost.id ? updatedPost : post
-        )
+      const updatedPosts = generatedPosts.map((post) =>
+        post.id === updatedPost.id ? updatedPost : post
       );
+      setGeneratedPosts(updatedPosts);
+      localStorage.setItem(GENERATED_POSTS_KEY, JSON.stringify(updatedPosts));
     } catch(error) {
         toast({
           variant: "destructive",
@@ -88,15 +87,13 @@ function ContentCalendarPage() {
               <Button variant="secondary" size="icon" className="rounded-full">
                 <Avatar>
                   <AvatarImage src="https://placehold.co/40x40.png" alt="User" data-ai-hint="user avatar" />
-                  <AvatarFallback>{user?.email?.charAt(0).toUpperCase()}</AvatarFallback>
+                  <AvatarFallback><User /></AvatarFallback>
                 </Avatar>
                 <span className="sr-only">Toggle user menu</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>{user?.email}</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout}>Logout</DropdownMenuItem>
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
@@ -118,4 +115,4 @@ function ContentCalendarPage() {
   );
 }
 
-export default withAuth(ContentCalendarPage);
+export default ContentCalendarPage;

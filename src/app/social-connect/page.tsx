@@ -19,12 +19,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
-import withAuth from "@/context/with-auth";
-import { useAuth } from "@/context/auth-context";
+import { Facebook, Instagram, Linkedin, Twitter, User } from "lucide-react";
+
 
 function SocialConnectPage() {
-  const { user, logout } = useAuth();
 
   return (
     <SidebarInset>
@@ -38,15 +36,13 @@ function SocialConnectPage() {
                   alt="User"
                   data-ai-hint="user avatar"
                 />
-                <AvatarFallback>{user?.email?.charAt(0).toUpperCase()}</AvatarFallback>
+                <AvatarFallback><User /></AvatarFallback>
               </Avatar>
               <span className="sr-only">Toggle user menu</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>{user?.email}</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={logout}>Logout</DropdownMenuItem>
+            <DropdownMenuLabel>My Account</DropdownMenuLabel>
           </DropdownMenuContent>
         </DropdownMenu>
       </header>
@@ -105,4 +101,4 @@ function SocialConnectPage() {
   );
 }
 
-export default withAuth(SocialConnectPage);
+export default SocialConnectPage;

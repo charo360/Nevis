@@ -23,11 +23,9 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
-import { useAuth } from "@/context/auth-context";
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
   const isActive = (path: string) => pathname.startsWith(path);
 
   return (
@@ -41,7 +39,6 @@ export function AppSidebar() {
         </Link>
       </SidebarHeader>
       <SidebarContent>
-        {user && (
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
@@ -92,35 +89,8 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
-        )}
       </SidebarContent>
       <SidebarFooter>
-        <SidebarMenu>
-          {user ? (
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                onClick={logout}
-                tooltip="Logout"
-              >
-                <LogOut />
-                <span>Logout</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ) : (
-             <SidebarMenuItem>
-              <SidebarMenuButton
-                asChild
-                isActive={isActive("/login")}
-                tooltip="Login"
-              >
-                <Link href="/login">
-                  <User />
-                  <span>Login</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          )}
-        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
   );

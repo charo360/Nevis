@@ -8,43 +8,42 @@ import { SidebarInset } from "@/components/ui/sidebar";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { getBrandProfileAction, saveBrandProfileAction } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/auth-context";
-import withAuth from "@/context/with-auth";
+import { Bot, User } from "lucide-react";
+
+
+const BRAND_PROFILE_KEY = "brandProfile";
+const GENERATED_POSTS_KEY = "generatedPosts";
 
 function BrandProfilePage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { user, logout } = useAuth();
   const [brandProfile, setBrandProfile] = React.useState<BrandProfile | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
-    if (!user) return;
-    const fetchProfile = async () => {
-      setIsLoading(true);
-      try {
-        const profile = await getBrandProfileAction(user.uid);
-        setBrandProfile(profile);
-      } catch (error) {
-        toast({
-          variant: "destructive",
-          title: "Failed to load profile",
-          description: (error as Error).message,
-        });
-      } finally {
-        setIsLoading(false);
+    setIsLoading(true);
+    try {
+      const storedProfile = localStorage.getItem(BRAND_PROFILE_KEY);
+      if (storedProfile) {
+        setBrandProfile(JSON.parse(storedProfile));
       }
-    };
-    fetchProfile();
-  }, [user, toast]);
+    } catch (error) {
+      console.error("Failed to parse brand profile from localStorage", error);
+      toast({
+        variant: "destructive",
+        title: "Failed to load profile",
+        description: "Could not read your profile from local storage. It might be corrupted.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
 
   const handleProfileSaved = async (profile: BrandProfile) => {
-    if (!user) return;
     try {
-        await saveBrandProfileAction(user.uid, profile);
+        localStorage.setItem(BRAND_PROFILE_KEY, JSON.stringify(profile));
         setBrandProfile(profile);
         toast({
             title: "Profile Saved!",
@@ -74,22 +73,20 @@ function BrandProfilePage() {
               <Button variant="secondary" size="icon" className="rounded-full">
                 <Avatar>
                   <AvatarImage src="https://placehold.co/40x40.png" alt="User" data-ai-hint="user avatar" />
-                  <AvatarFallback>{user?.email?.charAt(0).toUpperCase()}</AvatarFallback>
+                  <AvatarFallback><User /></AvatarFallback>
                 </Avatar>
                 <span className="sr-only">Toggle user menu</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>{user?.email}</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout}>Logout</DropdownMenuItem>
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
         <main className="flex-1 overflow-auto p-4 lg:p-6">
             {isLoading ? (
                 <div className="flex h-full items-center justify-center">
-                    <p>Loading Profile from Database...</p>
+                    <p>Loading Profile from Local Storage...</p>
                 </div>
             ) : (
                 <BrandSetup 
@@ -102,4 +99,4 @@ function BrandProfilePage() {
   );
 }
 
-export default withAuth(BrandProfilePage);
+export default BrandProfilePage;

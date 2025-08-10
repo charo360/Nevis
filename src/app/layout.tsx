@@ -7,26 +7,20 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import React, { useEffect, useState } from 'react';
 import type { BrandProfile } from '@/lib/types';
-import { getBrandProfileAction } from '@/app/actions';
-import { AuthProvider, useAuth } from '@/context/auth-context';
+
+
+const BRAND_PROFILE_KEY = "brandProfile";
 
 function BrandThemeLoader({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
   const [style, setStyle] = useState<React.CSSProperties>({});
   const [profileLoaded, setProfileLoaded] = useState(false);
 
   useEffect(() => {
-    const fetchProfileAndSetTheme = async () => {
-      if (!user) {
-        // Reset styles if user logs out
-        setStyle({});
-        setProfileLoaded(true);
-        return;
-      };
-
+    const fetchProfileAndSetTheme = () => {
       try {
-        const profile = await getBrandProfileAction(user.uid);
-        if (profile) {
+        const storedProfile = localStorage.getItem(BRAND_PROFILE_KEY);
+        if (storedProfile) {
+          const profile: BrandProfile = JSON.parse(storedProfile);
           const newStyle: React.CSSProperties = {};
           if (profile.primaryColor) {
               newStyle['--primary-hsl'] = profile.primaryColor;
@@ -40,14 +34,14 @@ function BrandThemeLoader({ children }: { children: React.ReactNode }) {
           setStyle(newStyle);
         }
       } catch (error) {
-        console.error("Failed to apply brand colors from Firestore", error);
+        console.error("Failed to apply brand colors from localStorage", error);
       } finally {
         setProfileLoaded(true);
       }
     };
     
     fetchProfileAndSetTheme();
-  }, [user]);
+  }, []);
 
   if (!profileLoaded) {
     return (
@@ -81,15 +75,13 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased" suppressHydrationWarning>
-        <AuthProvider>
-            <SidebarProvider>
-                <AppSidebar />
-                <BrandThemeLoader>
-                    {children}
-                </BrandThemeLoader>
-            </SidebarProvider>
-            <Toaster />
-        </AuthProvider>
+          <SidebarProvider>
+              <AppSidebar />
+              <BrandThemeLoader>
+                  {children}
+              </BrandThemeLoader>
+          </SidebarProvider>
+          <Toaster />
       </body>
     </html>
   );
