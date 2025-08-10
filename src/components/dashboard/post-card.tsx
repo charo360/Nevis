@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import Image from "next/image";
-import { Facebook, Instagram, Linkedin, MoreVertical, Pen, RefreshCw, Twitter, CalendarIcon, Download, Loader2, Video, ChevronLeft, ChevronRight } from "lucide-react";
+import { Facebook, Instagram, Linkedin, MoreVertical, Pen, RefreshCw, Twitter, CalendarIcon, Download, Loader2, Video, ChevronLeft, ChevronRight, ImageOff } from "lucide-react";
 import * as htmlToImage from 'html-to-image';
 
 import { Badge } from "@/components/ui/badge";
@@ -225,15 +225,21 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
                                 <span className="sr-only">{isRegenerating ? 'Regenerating image...' : 'Generating video...'}</span>
                             </div>
                         )}
-                        <Image
-                            alt={`Generated post image for ${variant.platform}`}
-                            className={cn('h-full w-full object-cover transition-opacity', (isRegenerating || isGeneratingVideo) ? 'opacity-50' : 'opacity-100')}
-                            height={1080}
-                            src={variant.imageUrl}
-                            data-ai-hint="social media post"
-                            width={1080}
-                            crossOrigin="anonymous"
-                        />
+                        {variant.imageUrl ? (
+                            <Image
+                                alt={`Generated post image for ${variant.platform}`}
+                                className={cn('h-full w-full object-cover transition-opacity', (isRegenerating || isGeneratingVideo) ? 'opacity-50' : 'opacity-100')}
+                                height={1080}
+                                src={variant.imageUrl}
+                                data-ai-hint="social media post"
+                                width={1080}
+                                crossOrigin="anonymous"
+                            />
+                        ) : (
+                            <div className="flex h-full w-full items-center justify-center bg-muted">
+                                <ImageOff className="h-12 w-12 text-muted-foreground" />
+                            </div>
+                        )}
                         </div>
                     </div>
                 </TabsContent>
