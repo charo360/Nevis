@@ -85,7 +85,7 @@ const textGenPrompt = ai.definePrompt({
       hashtags: z.string().describe('Relevant hashtags for the post.'),
     })},
     prompt: `You are a social media manager and an expert in the {{{businessType}}} industry.
-    Your goal is to create engaging content that is relevant to the business's location, brand, and current events.
+    Your goal is to create engaging content that drives high engagement and is relevant to the business's location, brand, and current events.
     Your response MUST be a valid JSON object that conforms to the output schema.
     
     Here's the information you have:
@@ -105,12 +105,17 @@ const textGenPrompt = ai.definePrompt({
     {{#if competitiveAdvantages}}- Why We're Different:
 {{{competitiveAdvantages}}}{{/if}}
 
-    Incorporate trends, seasonal topics, or common conversations relevant to the {{{businessType}}} industry. Use the date to ensure the content is fresh and not repetitive.
+    Incorporate trends, seasonal topics, or common conversations relevant to the {{{businessType}}} industry.
     Use the detailed business information (services, audience, features) to make the content highly specific and compelling.
     
     Generate a social media post. This includes a longer text for the caption, a separate, very brief text to be placed on the image, and hashtags.
     
-    1.  **Caption (content):** Generate a post that is appropriate for a general audience. Consider the weather and local events when creating the post. The post should match the brand voice and directly or indirectly promote one of the services or key features.
+    1.  **Caption (content):** Generate a post that is appropriate for a general audience. The post MUST:
+        - Start with a strong, attention-grabbing hook.
+        - Include a question to encourage comments and interaction.
+        - End with a clear call-to-action (e.g., "Book now," "Visit us today," "Comment below with your favorite").
+        - Consider the weather and local events when creating the post.
+        - Match the brand voice and directly or indirectly promote one of the services or key features.
     2.  **Image Text (imageText):** Generate a brief, catchy headline (max 5 words) that relates to the caption and is suitable for being overlaid on an image.
     3.  **Hashtags:** Include relevant hashtags.
     `,
