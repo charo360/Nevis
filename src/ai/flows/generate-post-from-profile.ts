@@ -58,19 +58,19 @@ export async function generatePostFromProfile(input: GeneratePostFromProfileInpu
 const textGenPrompt = ai.definePrompt({
     name: 'generatePostTextPrompt',
     input: { schema: z.object({
-    businessType: z.string(),
-    location: z.string(),
-    writingTone: z.string(),
-    contentThemes: z.string(),
-    weather: z.string(),
-    events: z.string(),
-    dayOfWeek: z.string(),
-    currentDate: z.string(),
+      businessType: z.string(),
+      location: z.string(),
+      writingTone: z.string(),
+      contentThemes: z.string(),
+      weather: z.string(),
+      events: z.string(),
+      dayOfWeek: z.string(),
+      currentDate: z.string(),
     })},
     output: { schema: z.object({
-    content: z.string().describe('The generated social media post content (the caption).'),
-    imageText: z.string().describe('A brief, catchy headline for the image itself (max 5 words).'),
-    hashtags: z.string().describe('Relevant hashtags for the post.'),
+      content: z.string().describe('The generated social media post content (the caption).'),
+      imageText: z.string().describe('A brief, catchy headline for the image itself (max 5 words).'),
+      hashtags: z.string().describe('Relevant hashtags for the post.'),
     })},
     prompt: `You are a social media manager and an expert in the {{{businessType}}} industry.
     Your goal is to create engaging content that is relevant to the business's location, brand, and current events.
