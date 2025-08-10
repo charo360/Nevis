@@ -1,3 +1,4 @@
+// src/ai/flows/generate-creative-asset.ts
 'use server';
 
 /**
@@ -73,32 +74,34 @@ const generateCreativeAssetFlow = ai.defineFlow(
     outputSchema: CreativeAssetOutputSchema,
   },
   async (input) => {
-    let finalPrompt = `You are an expert creative director. Generate a compelling and high-quality ${input.outputType} for a social media advertisement based on the following instructions.\n\n`;
-    finalPrompt += `Primary Instruction: "${input.prompt}"\n\n`;
+    let textPrompt = `You are an expert creative director. Generate a compelling and high-quality ${input.outputType} for a social media advertisement based on the following instructions.\n\n`;
+    textPrompt += `Primary Instruction: "${input.prompt}"\n\n`;
 
     const promptParts: (string | { media: { url: string } })[] = [];
 
     if (input.useBrandProfile && input.brandProfile) {
       const bp = input.brandProfile;
-      finalPrompt += `Apply the following brand identity:\n`;
-      finalPrompt += `- Visual Style: ${bp.visualStyle}\n`;
-      finalPrompt += `- Writing Tone / Vibe: ${bp.writingTone}\n`;
-      finalPrompt += `- Key Content Themes: ${bp.contentThemes}\n`;
+      textPrompt += `Apply the following brand identity:\n`;
+      textPrompt += `- Business: A ${bp.businessType} in ${bp.location}.\n`;
+      textPrompt += `- Visual Style: ${bp.visualStyle}\n`;
+      textPrompt += `- Writing Tone / Vibe: ${bp.writingTone}\n`;
+      textPrompt += `- Key Content Themes: ${bp.contentThemes}\n`;
       if (bp.primaryColor && bp.accentColor && bp.backgroundColor) {
-        finalPrompt += `- Color Palette: Use Primary HSL(${bp.primaryColor}), Accent HSL(${bp.accentColor}), and Background HSL(${bp.backgroundColor}) as the main colors.\n`;
+        textPrompt += `- Color Palette: Use Primary HSL(${bp.primaryColor}), Accent HSL(${bp.accentColor}), and Background HSL(${bp.backgroundColor}) as the main colors.\n`;
       }
       if (bp.logoDataUrl) {
-          finalPrompt += `- Logo: Place the provided logo naturally within the scene. It could be on a product, a sign, or a subtle watermark.\n`;
+          textPrompt += `- Logo: Place the provided logo naturally within the scene. It could be on a product, a sign, or a subtle watermark.\n`;
           promptParts.push({ media: { url: bp.logoDataUrl } });
       }
     }
 
     if (input.referenceImageUrl) {
-        finalPrompt += `\nReference Image: Use the provided image as a strong influence for the composition, style, and subject matter.\n`;
+        textPrompt += `\nReference Image: Use the provided image as a strong influence for the composition, style, and subject matter.\n`;
         promptParts.push({ media: { url: input.referenceImageUrl } });
     }
-
-    promptParts.unshift(finalPrompt);
+    
+    // Add the compiled text prompt to the beginning of the parts array.
+    promptParts.unshift({text: textPrompt});
 
     const aiExplanationPrompt = ai.definePrompt({
       name: 'creativeAssetExplanationPrompt',
@@ -126,7 +129,7 @@ const generateCreativeAssetFlow = ai.defineFlow(
         try {
             const result = await ai.generate({
                 model: 'googleai/veo-3.0-generate-preview',
-                prompt: finalPrompt, // Veo works best with a single text prompt
+                prompt: promptParts,
             });
             operation = result.operation;
         } catch (e: any) {
@@ -163,3 +166,4 @@ const generateCreativeAssetFlow = ai.defineFlow(
     }
   }
 );
+    
