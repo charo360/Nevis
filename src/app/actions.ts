@@ -5,15 +5,28 @@ import { generatePostFromProfile as generatePostFromProfileFlow } from "@/ai/flo
 import { generateVideoPost as generateVideoPostFlow } from "@/ai/flows/generate-video-post";
 import { generateCreativeAsset as generateCreativeAssetFlow } from "@/ai/flows/generate-creative-asset";
 import type { BrandProfile, GeneratedPost, Platform, CreativeAsset } from "@/lib/types";
+import { getWeather } from "@/services/weather";
+import { getEvents } from "@/services/events";
 
-// Mock function for local data fetching
 async function getLocalData(location: string, date: Date) {
-  // In a real app, this would call OpenWeatherMap, Eventbrite, etc.
-  console.log(`Fetching local data for ${location} on ${date.toDateString()}`);
-  return {
-    weather: "sunny with a high of 75°F",
-    events: "the annual city fair is happening this weekend at the central park",
-  };
+  try {
+    const weatherPromise = getWeather(location);
+    const eventsPromise = getEvents(location, date);
+
+    const [weatherResult, eventsResult] = await Promise.all([weatherPromise, eventsPromise]);
+
+    return {
+      weather: weatherResult || "pleasant weather",
+      events: eventsResult || "no major local events found",
+    };
+  } catch (error) {
+    console.error("Error fetching local data:", error);
+    // Return defaults if APIs fail
+    return {
+      weather: "pleasant weather",
+      events: "no major local events found",
+    };
+  }
 }
 
 export async function analyzeBrandAction(
