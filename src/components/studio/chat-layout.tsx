@@ -43,10 +43,24 @@ export function ChatLayout({ messages, setMessages, input, setInput, brandProfil
             reader.readAsDataURL(file);
         }
     };
+    
+    const handleSetReferenceImage = (url: string | null | undefined) => {
+        if (url) {
+            setImagePreview(url);
+            setImageDataUrl(url);
+        }
+    }
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        if (!input.trim() && !imageDataUrl) return;
+        if (!input.trim()) {
+            toast({
+                variant: 'destructive',
+                title: 'Input Required',
+                description: 'Please describe the image or video you want to create.',
+            });
+            return
+        };
 
         const newUserMessage: Message = {
             id: Date.now().toString(),
@@ -117,7 +131,11 @@ export function ChatLayout({ messages, setMessages, input, setInput, brandProfil
                         </Card>
                     </div>
                 ) : (
-                    <ChatMessages messages={messages} isLoading={isLoading} />
+                    <ChatMessages 
+                        messages={messages} 
+                        isLoading={isLoading} 
+                        onSetReferenceImage={handleSetReferenceImage}
+                    />
                 )}
             </div>
             
@@ -128,6 +146,7 @@ export function ChatLayout({ messages, setMessages, input, setInput, brandProfil
                 isLoading={isLoading}
                 imagePreview={imagePreview}
                 setImagePreview={setImagePreview}
+                setImageDataUrl={setImageDataUrl}
                 useBrandProfile={useBrandProfile}
                 setUseBrandProfile={setUseBrandProfile}
                 outputType={outputType}

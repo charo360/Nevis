@@ -3,17 +3,19 @@ import * as React from 'react';
 import type { Message } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ChatAvatar } from './chat-avatar';
-import { Loader2, Download } from 'lucide-react';
+import { Loader2, Download, Wand } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ChatMessagesProps {
   messages: Message[];
   isLoading: boolean;
+  onSetReferenceImage: (url: string | null | undefined) => void;
 }
 
-export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
+export function ChatMessages({ messages, isLoading, onSetReferenceImage }: ChatMessagesProps) {
   const scrollableContainerRef = React.useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -44,6 +46,7 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
 
   return (
     <div ref={scrollableContainerRef} className="flex-1 overflow-y-auto p-4">
+     <TooltipProvider>
       <div className="mx-auto max-w-3xl space-y-6">
         {messages.map((message, index) => (
           <div key={index} className={cn('flex items-start gap-4', message.role === 'user' && 'justify-end')}>
@@ -66,16 +69,37 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
                 {/* AI generated image */}
                 {message.role === 'assistant' && message.imageUrl && (
                      <div className="group relative w-full max-w-sm overflow-hidden rounded-md border">
-                        <Image src={message.imageUrl} alt="Generated image" width={512} height={512} className="w-full h-auto object-contain"/>
-                        <Button 
-                            variant="secondary" 
-                            size="icon"
-                            className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => handleDownload(message.imageUrl, 'image')}
-                        >
-                            <Download className="h-4 w-4" />
-                            <span className="sr-only">Download Image</span>
-                        </Button>
+                        <Image src={message.imageUrl} alt="Generated image" width={512} height={512} className="w-full h-auto object-contain" crossOrigin='anonymous'/>
+                        <div className="absolute top-2 right-2 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                     <Button 
+                                        variant="secondary" 
+                                        size="icon"
+                                        className="h-8 w-8"
+                                        onClick={() => onSetReferenceImage(message.imageUrl)}
+                                    >
+                                        <Wand className="h-4 w-4" />
+                                        <span className="sr-only">Refine Image</span>
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Refine this image</TooltipContent>
+                            </Tooltip>
+                             <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button 
+                                        variant="secondary" 
+                                        size="icon"
+                                        className="h-8 w-8"
+                                        onClick={() => handleDownload(message.imageUrl, 'image')}
+                                    >
+                                        <Download className="h-4 w-4" />
+                                        <span className="sr-only">Download Image</span>
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Download image</TooltipContent>
+                            </Tooltip>
+                        </div>
                      </div>
                 )}
 
@@ -83,15 +107,22 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
                  {message.role === 'assistant' && message.videoUrl && (
                      <div className="group relative w-full max-w-sm overflow-hidden rounded-md border">
                         <video controls autoPlay src={message.videoUrl} className="w-full" />
-                         <Button 
-                            variant="secondary" 
-                            size="icon"
-                            className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => handleDownload(message.videoUrl, 'video')}
-                        >
-                            <Download className="h-4 w-4" />
-                            <span className="sr-only">Download Video</span>
-                        </Button>
+                         <div className="absolute top-2 right-2 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                             <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button 
+                                        variant="secondary" 
+                                        size="icon"
+                                        className="h-8 w-8"
+                                        onClick={() => handleDownload(message.videoUrl, 'video')}
+                                    >
+                                        <Download className="h-4 w-4" />
+                                        <span className="sr-only">Download Video</span>
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Download video</TooltipContent>
+                            </Tooltip>
+                        </div>
                      </div>
                 )}
               
@@ -110,6 +141,7 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
           </div>
         )}
       </div>
+     </TooltipProvider>
     </div>
   );
 }

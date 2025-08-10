@@ -1,6 +1,6 @@
 // src/components/studio/chat-input.tsx
 import * as React from 'react';
-import { Paperclip, Send, Image as ImageIcon, Video, Wand } from 'lucide-react';
+import { Paperclip, Send, Image as ImageIcon, Video, Wand, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -17,6 +17,7 @@ interface ChatInputProps {
   isLoading: boolean;
   imagePreview: string | null;
   setImagePreview: (value: string | null) => void;
+  setImageDataUrl: (value: string | null) => void;
   useBrandProfile: boolean;
   setUseBrandProfile: (value: boolean) => void;
   outputType: 'image' | 'video';
@@ -32,6 +33,7 @@ export function ChatInput({
   isLoading,
   imagePreview,
   setImagePreview,
+  setImageDataUrl,
   useBrandProfile,
   setUseBrandProfile,
   outputType,
@@ -58,6 +60,14 @@ export function ChatInput({
       inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
     }
   }, [input]);
+  
+  const handleRemoveImage = () => {
+    setImagePreview(null);
+    setImageDataUrl(null);
+    if(fileInputRef.current) {
+        fileInputRef.current.value = "";
+    }
+  }
 
   return (
     <div className="relative mt-auto w-full border-t">
@@ -71,10 +81,10 @@ export function ChatInput({
                     variant="ghost"
                     size="icon"
                     className="absolute -right-2 -top-2 h-6 w-6 rounded-full bg-background"
-                    onClick={() => setImagePreview(null)}
+                    onClick={handleRemoveImage}
                 >
                     <span className="sr-only">Remove image</span>
-                    &times;
+                    <X className="h-4 w-4"/>
                 </Button>
             </div>
           )}
