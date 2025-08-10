@@ -112,7 +112,7 @@ Generate a video that is cinematically interesting, has relevant sound, and capt
     }
 
     // Relaxed check for the video part
-    const videoPart = operation.output?.message?.content.find(p => !!p.media && p.media.contentType?.startsWith('video/'));
+    const videoPart = operation.output?.message?.content.find(p => !!p.media);
     
     if (!videoPart || !videoPart.media) {
         throw new Error('No video was generated in the operation result.');
