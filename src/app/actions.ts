@@ -71,11 +71,7 @@ export async function generateContentAction(
       events: localData.events,
       dayOfWeek,
       currentDate,
-      // Pass the variants array to the flow
       variants: variantsToGenerate,
-      // These are now part of the variants array, but we can keep one for top-level context
-      platform: platforms[0],
-      aspectRatio: getAspectRatioForPlatform(platforms[0]),
     });
 
     return {

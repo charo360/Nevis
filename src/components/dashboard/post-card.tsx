@@ -3,7 +3,8 @@
 
 import * as React from 'react';
 import Image from "next/image";
-import { Facebook, Instagram, Linkedin, MoreVertical, Pen, RefreshCw, Twitter, CalendarIcon, Download, Loader2, Video } from "lucide-react";
+import { Facebook, Instagram, Linkedin, MoreVertical, Pen, RefreshCw, Twitter, CalendarIcon, Download, Loader2, Video, ChevronLeft, ChevronRight } from "lucide-react";
+import * as htmlToImage from 'html-to-image';
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,13 +28,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { BrandProfile, GeneratedPost, Platform } from "@/lib/types";
+import type { BrandProfile, GeneratedPost, Platform, PostVariant } from "@/lib/types";
 import { format } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Input } from '../ui/input';
 import { generateContentAction, generateVideoContentAction } from '@/app/actions';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from '@/lib/utils';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '../ui/carousel';
 
 const platformIcons: { [key in Platform]: React.ReactElement } = {
   Facebook: <Facebook className="h-4 w-4" />,
@@ -56,29 +60,46 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   const [editedHashtags, setEditedHashtags] = React.useState(post.hashtags);
   const [videoUrl, setVideoUrl] = React.useState<string | undefined>(post.videoUrl);
   const [showVideoDialog, setShowVideoDialog] = React.useState(false);
-
+  const [activeTab, setActiveTab] = React.useState<Platform>(post.variants[0]?.platform || 'Instagram');
+  const downloadRef = React.useRef<HTMLDivElement>(null);
+  
   const formattedDate = format(new Date(post.date), 'MMM d, yyyy');
   const { toast } = useToast();
 
   const handleDownload = React.useCallback(async () => {
+    if (!downloadRef.current) {
+        toast({
+            variant: "destructive",
+            title: "Download Failed",
+            description: "Could not prepare the image for download.",
+        });
+        return;
+    }
+
     try {
-      const link = document.createElement('a');
-      link.href = post.imageUrl;
-      const mimeType = post.imageUrl.match(/data:(image\/[^;]+);/)?.[1];
-      const fileExtension = mimeType ? mimeType.split('/')[1] : 'png';
-      link.download = `localbuzz-image-${post.id}.${fileExtension}`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+        const dataUrl = await htmlToImage.toPng(downloadRef.current, { 
+            cacheBust: true,
+            fetchRequestInit: {
+                // This is the key fix for the cross-origin font issue
+                mode: 'cors',
+                credentials: 'omit'
+            }
+        });
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = `localbuzz-post-${post.id}-${activeTab}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     } catch (err) {
       console.error(err);
       toast({
         variant: "destructive",
         title: "Download Failed",
-        description: "Could not download the image. Please try again.",
+        description: `Could not download the image. Error: ${(err as Error).message}`,
       });
     }
-  }, [post.id, post.imageUrl, toast]);
+  }, [post.id, activeTab, toast]);
 
   const handleSaveChanges = () => {
     onPostUpdated({
@@ -97,7 +118,8 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   const handleRegenerate = async () => {
     setIsRegenerating(true);
     try {
-        const newPost = await generateContentAction(brandProfile, post.platform);
+        const platforms = post.variants.map(v => v.platform);
+        const newPost = await generateContentAction(brandProfile, platforms);
         // We replace the old post with the new one, keeping the same ID
         onPostUpdated({ ...newPost, id: post.id });
         toast({
@@ -116,6 +138,14 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   };
 
   const handleGenerateVideo = async () => {
+    if(!post.imageText) {
+        toast({
+            variant: "destructive",
+            title: "Cannot Generate Video",
+            description: "The post is missing the required image text.",
+        });
+        return;
+    }
     setIsGeneratingVideo(true);
     try {
         const result = await generateVideoContentAction(brandProfile, post.imageText);
@@ -137,14 +167,16 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
     }
   };
 
+  const activeVariant = post.variants.find(v => v.platform === activeTab) || post.variants[0];
+
   return (
     <>
       <Card className="flex flex-col">
-        <CardHeader className="flex-row items-center justify-between gap-4 p-4">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            {platformIcons[post.platform]}
-            <span className="font-medium">{post.platform}</span>
-          </div>
+         <CardHeader className="flex-row items-center justify-between gap-4 p-4">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <CalendarIcon className="h-4 w-4" />
+                <span>{formattedDate}</span>
+            </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button size="icon" variant="ghost" className="h-6 w-6" disabled={isRegenerating || isGeneratingVideo}>
@@ -154,7 +186,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => setIsEditing(true)}>
                 <Pen className="mr-2 h-4 w-4" />
-                Edit
+                Edit Text
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleRegenerate} disabled={isRegenerating}>
                 {isRegenerating ? (
@@ -162,7 +194,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
                 ) : (
                     <RefreshCw className="mr-2 h-4 w-4" />
                 )}
-                Regenerate Image
+                Regenerate Images
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleGenerateVideo} disabled={isGeneratingVideo}>
                 {isGeneratingVideo ? (
@@ -180,25 +212,40 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
           </DropdownMenu>
         </CardHeader>
         <CardContent className="flex-grow space-y-4 p-4 pt-0">
-          <div className="relative aspect-square w-full overflow-hidden rounded-md border">
-            {(isRegenerating || isGeneratingVideo) && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/80">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    <span className="sr-only">{isRegenerating ? 'Regenerating image...' : 'Generating video...'}</span>
-                </div>
-            )}
-            <Image
-              alt="Generated post image"
-              className={`h-full w-full object-cover transition-opacity ${(isRegenerating || isGeneratingVideo) ? 'opacity-50' : 'opacity-100'}`}
-              height={1080}
-              src={post.imageUrl}
-              data-ai-hint="social media post"
-              width={1080}
-              crossOrigin="anonymous"
-            />
-          </div>
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Platform)} className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+                {post.variants.map(variant => (
+                    <TabsTrigger key={variant.platform} value={variant.platform}>
+                        {platformIcons[variant.platform]}
+                    </TabsTrigger>
+                ))}
+            </TabsList>
+            {post.variants.map(variant => (
+                <TabsContent key={variant.platform} value={variant.platform}>
+                    <div ref={downloadRef} className="bg-background">
+                        <div className="relative aspect-square w-full overflow-hidden rounded-md border">
+                        {(isRegenerating || isGeneratingVideo) && (
+                            <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/80">
+                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                <span className="sr-only">{isRegenerating ? 'Regenerating image...' : 'Generating video...'}</span>
+                            </div>
+                        )}
+                        <Image
+                            alt={`Generated post image for ${variant.platform}`}
+                            className={cn('h-full w-full object-cover transition-opacity', (isRegenerating || isGeneratingVideo) ? 'opacity-50' : 'opacity-100')}
+                            height={1080}
+                            src={variant.imageUrl}
+                            data-ai-hint="social media post"
+                            width={1080}
+                            crossOrigin="anonymous" 
+                        />
+                        </div>
+                    </div>
+                </TabsContent>
+            ))}
+          </Tabs>
+          
           <div className="space-y-2">
-              <div className="text-sm text-muted-foreground flex items-center gap-2"><CalendarIcon className="w-4 h-4" />{formattedDate}</div>
               <p className="text-sm text-foreground line-clamp-4">{post.content}</p>
           </div>
         </CardContent>
