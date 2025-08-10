@@ -74,6 +74,7 @@ const textGenPrompt = ai.definePrompt({
     })},
     prompt: `You are a social media manager and an expert in the {{{businessType}}} industry.
     Your goal is to create engaging content that is relevant to the business's location, brand, and current events.
+    Your response MUST be a valid JSON object that conforms to the output schema.
     
     Here's the information you have:
     - Business Type: {{{businessType}}}
