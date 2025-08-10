@@ -10,15 +10,17 @@ const BASE_URL = 'https://api.openweathermap.org/data/2.5/weather';
  * @returns A human-readable weather description string, or null if an error occurs.
  */
 export async function getWeather(location: string): Promise<string | null> {
-  if (!API_KEY || API_KEY === 'YOUR_OPENWEATHERMAP_API_KEY') {
-    console.log('OpenWeatherMap API key is not configured.');
+  if (!API_KEY || API_KEY === 'YOUR_OPENWEATHERMAP_API_KEY' || API_KEY.length < 20) {
+    console.log('OpenWeatherMap API key is not configured or appears invalid.');
     return null;
   }
 
   try {
     const response = await fetch(`${BASE_URL}?q=${location}&appid=${API_KEY}&units=imperial`);
     if (!response.ok) {
-      throw new Error(`Weather API request failed with status ${response.status}`);
+      console.error('Weather API Error:', `Status: ${response.status}`);
+      // Return null to allow the flow to continue without weather data
+      return `Could not retrieve weather information due to an API error (Status: ${response.status})`;
     }
     
     const data: any = await response.json();

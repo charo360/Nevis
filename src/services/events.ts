@@ -12,8 +12,8 @@ const BASE_URL = 'https://www.eventbriteapi.com/v3/events/search/';
  * @returns A string summarizing local events, or null if an error occurs.
  */
 export async function getEvents(location: string, date: Date): Promise<string | null> {
-  if (!API_KEY || API_KEY === 'YOUR_EVENTBRITE_PRIVATE_TOKEN') {
-    console.log('Eventbrite API key is not configured.');
+  if (!API_KEY || API_KEY === 'YOUR_EVENTBRITE_PRIVATE_TOKEN' || API_KEY.length < 10) {
+    console.log('Eventbrite API key is not configured or appears invalid.');
     return null;
   }
 
@@ -25,18 +25,20 @@ export async function getEvents(location: string, date: Date): Promise<string | 
   const endDate = format(add(date, { days: 7 }), "yyyy-MM-dd'T'HH:mm:ss'Z'");
 
   try {
-    const url = `${BASE_URL}?location.address=${city}&start_date.range_start=${startDate}&start_date.range_end=${endDate}&sort_by=date&token=${API_KEY}`;
+    const url = `${BASE_URL}?location.address=${city}&start_date.range_start=${startDate}&start_date.range_end=${endDate}&sort_by=date`;
     
     const response = await fetch(url, {
         headers: {
+            'Authorization': `Bearer ${API_KEY}`,
             'Accept': 'application/json',
         }
     });
     
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error('Eventbrite API Error:', errorBody);
-      throw new Error(`Eventbrite API request failed with status ${response.status}`);
+      console.error('Eventbrite API Error:', `Status: ${response.status}`, errorBody);
+      // Return null to allow the flow to continue without event data
+      return `Could not retrieve local event information due to an API error (Status: ${response.status}).`;
     }
 
     const data: any = await response.json();
