@@ -8,6 +8,27 @@ export type BrandProfile = {
   visualStyle: string;
   writingTone: string;
   contentThemes: string;
+  
+  // New detailed fields
+  websiteUrl?: string;
+  description?: string;
+  services?: string; // Storing as a newline-separated string for simplicity in UI
+  targetAudience?: string;
+  keyFeatures?: string; // Storing as a newline-separated string
+  competitiveAdvantages?: string; // Storing as a newline-separated string
+  contactInfo?: {
+    phone?: string;
+    email?: string;
+    address?: string;
+  };
+  socialMedia?: {
+    facebook?: string;
+    instagram?: string;
+    twitter?: string;
+    linkedin?: string;
+  };
+
+  // Theme colors remain
   primaryColor?: string;
   accentColor?: string;
   backgroundColor?: string;
@@ -32,6 +53,14 @@ export type BrandAnalysisResult = {
   visualStyle: string;
   writingTone: string;
   contentThemes: string;
+  // New analysis fields
+  description: string;
+  services: string;
+  contactInfo: {
+      phone?: string;
+      email?: string;
+      address?: string;
+  };
 };
 
 export interface Message {

@@ -1,10 +1,10 @@
 "use server";
 
-import { analyzeBrand as analyzeBrandFlow } from "@/ai/flows/analyze-brand";
+import { analyzeBrand as analyzeBrandFlow, BrandAnalysisResult } from "@/ai/flows/analyze-brand";
 import { generatePostFromProfile as generatePostFromProfileFlow } from "@/ai/flows/generate-post-from-profile";
 import { generateVideoPost as generateVideoPostFlow } from "@/ai/flows/generate-video-post";
 import { generateCreativeAsset as generateCreativeAssetFlow } from "@/ai/flows/generate-creative-asset";
-import type { BrandAnalysisResult, BrandProfile, GeneratedPost, Platform, CreativeAsset } from "@/lib/types";
+import type { BrandProfile, GeneratedPost, Platform, CreativeAsset } from "@/lib/types";
 
 // Mock function for local data fetching
 async function getLocalData(location: string, date: Date) {
