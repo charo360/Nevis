@@ -33,3 +33,11 @@ export type BrandAnalysisResult = {
   writingTone: string;
   contentThemes: string;
 };
+
+export interface Message {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  imageUrl?: string | null;
+  videoUrl?: string | null;
+}

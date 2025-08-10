@@ -6,10 +6,10 @@ import Link from "next/link";
 import {
   Bot,
   CalendarDays,
-  LayoutDashboard,
   Settings2,
   Sparkles,
   Link as LinkIcon,
+  Wand,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import {
@@ -54,11 +54,23 @@ export function AppSidebar() {
             <SidebarMenuButton
               asChild
               isActive={isActive("/content-calendar")}
-              tooltip="Content Calendar"
+              tooltip="Quick Content"
             >
               <Link href="/content-calendar">
                 <CalendarDays />
-                <span>Content Calendar</span>
+                <span>Quick Content</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+           <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={isActive("/creative-studio")}
+              tooltip="Creative Studio"
+            >
+              <Link href="/creative-studio">
+                <Wand />
+                <span>Creative Studio</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
