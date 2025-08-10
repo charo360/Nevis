@@ -85,9 +85,11 @@ const generateCreativeAssetFlow = ai.defineFlow(
         
         // Structured prompt for brand consistency
         textPrompt = `Generate a social media ${input.outputType} for a ${bp.businessType} in ${bp.location}.
-The brand's visual style is ${bp.visualStyle}. ${colorInstructions}
+The brand's visual style is ${bp.visualStyle}.
+The brand's writing tone is '${bp.writingTone}' and content should align with these themes: '${bp.contentThemes}'.
+${colorInstructions}
 The subject of the ${input.outputType} should be: "${input.prompt}".
-It should be a high-quality, visually appealing asset.
+It should be a high-quality, visually appealing asset that reflects the brand's identity.
 Finally, place the provided logo naturally onto the generated asset. The logo should be clearly visible but not overpower the main subject.`;
         
         if (bp.logoDataUrl) {
