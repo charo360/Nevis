@@ -95,6 +95,34 @@ const textGenPrompt = ai.definePrompt({
     `,
 });
 
+// Helper function to generate an image for a single variant.
+async function generateImageForVariant(
+    variant: {platform: string, aspectRatio: string}, 
+    input: GeneratePostFromProfileInput, 
+    textOutput: { imageText: string }
+) {
+    const colorInstructions = `The brand's color palette is: Primary HSL(${input.primaryColor}), Accent HSL(${input.accentColor}), Background HSL(${input.backgroundColor}). Please use these colors in the design.`;
+
+    const { media } = await ai.generate({
+      model: 'googleai/gemini-2.0-flash-preview-image-generation',
+      prompt: [
+        {
+          text: `First, generate an appealing background image for a social media post for a ${input.businessType} in ${input.location}. The brand's visual style is ${input.visualStyle}. ${input.primaryColor ? colorInstructions : ''} The image should have a clear, uncluttered area suitable for placing text. The image must have an aspect ratio of ${variant.aspectRatio}. Then, overlay the following text onto the image: "${textOutput.imageText}". It is critical that the text is clearly readable, well-composed, and not cut off or truncated at the edges of the image. The entire text must be visible. Finally, place the provided logo naturally onto the generated background image. The logo should be clearly visible but not overpower the main subject. It could be on a product, a sign, or as a subtle watermark.`,
+        },
+        { media: { url: input.logoDataUrl } },
+      ],
+      config: {
+        responseModalities: ['TEXT', 'IMAGE'],
+      },
+    });
+
+    return {
+      platform: variant.platform,
+      imageUrl: media?.url ?? '',
+    }
+}
+
+
 const generatePostFromProfileFlow = ai.defineFlow(
   {
     name: 'generatePostFromProfileFlow',
@@ -119,31 +147,12 @@ const generatePostFromProfileFlow = ai.defineFlow(
         throw new Error('Failed to generate post text content.');
     }
     
-    // Step 2: Generate Image for each variant using the generated text
-    const generateImageForVariant = async (variant: {platform: string, aspectRatio: string}) => {
-        
-      const colorInstructions = `The brand's color palette is: Primary HSL(${input.primaryColor}), Accent HSL(${input.accentColor}), Background HSL(${input.backgroundColor}). Please use these colors in the design.`;
-
-      const { media } = await ai.generate({
-        model: 'googleai/gemini-2.0-flash-preview-image-generation',
-        prompt: [
-          {
-            text: `First, generate an appealing background image for a social media post for a ${input.businessType} in ${input.location}. The brand's visual style is ${input.visualStyle}. ${input.primaryColor ? colorInstructions : ''} The image should have a clear, uncluttered area suitable for placing text. The image must have an aspect ratio of ${variant.aspectRatio}. Then, overlay the following text onto the image: "${textOutput.imageText}". It is critical that the text is clearly readable, well-composed, and not cut off or truncated at the edges of the image. The entire text must be visible. Finally, place the provided logo naturally onto the generated background image. The logo should be clearly visible but not overpower the main subject. It could be on a product, a sign, or as a subtle watermark.`,
-          },
-          { media: { url: input.logoDataUrl } },
-        ],
-        config: {
-          responseModalities: ['TEXT', 'IMAGE'],
-        },
-      });
-
-      return {
-        platform: variant.platform,
-        imageUrl: media?.url ?? '',
-      }
-    }
+    // Step 2: Generate Image for each variant in parallel
+    const imagePromises = input.variants.map(variant => 
+        generateImageForVariant(variant, input, textOutput)
+    );
     
-    const variants = await Promise.all(input.variants.map(v => generateImageForVariant(v)));
+    const variants = await Promise.all(imagePromises);
 
     return {
         ...textOutput,
