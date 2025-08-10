@@ -74,29 +74,32 @@ const generateCreativeAssetFlow = ai.defineFlow(
     outputSchema: CreativeAssetOutputSchema,
   },
   async (input) => {
-    let textPrompt = `You are an expert creative director. Generate a compelling and high-quality ${input.outputType} for a social media advertisement based on the following instructions.\n\n`;
-    textPrompt += `Primary Instruction: "${input.prompt}"\n\n`;
-
-    const promptParts: (string | { media: { url: string } })[] = [];
+    const promptParts: (string | { text: string } | { media: { url: string } })[] = [];
+    let textPrompt = '';
 
     if (input.useBrandProfile && input.brandProfile) {
-      const bp = input.brandProfile;
-      textPrompt += `Apply the following brand identity:\n`;
-      textPrompt += `- Business: A ${bp.businessType} in ${bp.location}.\n`;
-      textPrompt += `- Visual Style: ${bp.visualStyle}\n`;
-      textPrompt += `- Writing Tone / Vibe: ${bp.writingTone}\n`;
-      textPrompt += `- Key Content Themes: ${bp.contentThemes}\n`;
-      if (bp.primaryColor && bp.accentColor && bp.backgroundColor) {
-        textPrompt += `- Color Palette: Use Primary HSL(${bp.primaryColor}), Accent HSL(${bp.accentColor}), and Background HSL(${bp.backgroundColor}) as the main colors.\n`;
-      }
-      if (bp.logoDataUrl) {
-          textPrompt += `- Logo: Place the provided logo naturally within the scene. It could be on a product, a sign, or a subtle watermark.\n`;
-          promptParts.push({ media: { url: bp.logoDataUrl } });
-      }
+        const bp = input.brandProfile;
+        const colorInstructions = (bp.primaryColor && bp.accentColor && bp.backgroundColor) 
+            ? `The brand's color palette is: Primary HSL(${bp.primaryColor}), Accent HSL(${bp.accentColor}), Background HSL(${bp.backgroundColor}). Please use these colors in the design.`
+            : '';
+        
+        // Structured prompt for brand consistency
+        textPrompt = `Generate a social media ${input.outputType} for a ${bp.businessType} in ${bp.location}.
+The brand's visual style is ${bp.visualStyle}. ${colorInstructions}
+The subject of the ${input.outputType} should be: "${input.prompt}".
+It should be a high-quality, visually appealing asset.
+Finally, place the provided logo naturally onto the generated asset. The logo should be clearly visible but not overpower the main subject.`;
+        
+        if (bp.logoDataUrl) {
+            promptParts.push({ media: { url: bp.logoDataUrl } });
+        }
+    } else {
+        // Unstructured, creative prompt
+        textPrompt = `You are an expert creative director. Generate a compelling and high-quality ${input.outputType} for a social media advertisement based on the following instruction: "${input.prompt}".\n\n`;
     }
 
     if (input.referenceImageUrl) {
-        textPrompt += `\nReference Image: Use the provided image as a strong influence for the composition, style, and subject matter.\n`;
+        textPrompt += `\nUse the provided image as a strong influence for the composition, style, and subject matter.\n`;
         promptParts.push({ media: { url: input.referenceImageUrl } });
     }
     
