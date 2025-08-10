@@ -75,15 +75,20 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
         });
         return;
     }
+    
+    // This filter function tells the library to skip any external Google Fonts stylesheets.
+    const filter = (node: HTMLElement) => {
+        return (node.tagName !== 'LINK' || !node.hasAttribute('href') || !node.getAttribute('href')!.includes('fonts.googleapis.com'));
+    };
 
     try {
-        const dataUrl = await htmlToImage.toJpeg(downloadRef.current, { 
-            quality: 0.95,
-            backgroundColor: '#ffffff'
+        const dataUrl = await htmlToImage.toPng(downloadRef.current, { 
+            cacheBust: true,
+            filter: filter,
         });
         const link = document.createElement('a');
         link.href = dataUrl;
-        link.download = `localbuzz-post-${post.id}-${activeTab}.jpeg`;
+        link.download = `localbuzz-post-${post.id}-${activeTab}.png`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
