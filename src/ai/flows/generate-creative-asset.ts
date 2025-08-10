@@ -63,6 +63,23 @@ async function videoToDataURI(videoPart: MediaPart): Promise<string> {
     return `data:${contentType};base64,${base64Video}`;
 }
 
+/**
+ * Extracts text in quotes and the remaining prompt.
+ */
+const extractQuotedText = (prompt: string): { imageText: string | null; remainingPrompt: string } => {
+    const quoteRegex = /"([^"]*)"/;
+    const match = prompt.match(quoteRegex);
+    if (match) {
+        return {
+            imageText: match[1],
+            remainingPrompt: prompt.replace(quoteRegex, '').trim()
+        };
+    }
+    return {
+        imageText: null,
+        remainingPrompt: prompt
+    };
+};
 
 /**
  * The core Genkit flow for generating a creative asset.
@@ -76,6 +93,8 @@ const generateCreativeAssetFlow = ai.defineFlow(
   async (input) => {
     const promptParts: (string | { text: string } | { media: { url: string } })[] = [];
     let textPrompt = '';
+    
+    const { imageText, remainingPrompt } = extractQuotedText(input.prompt);
 
     if (input.useBrandProfile && input.brandProfile) {
         const bp = input.brandProfile;
@@ -83,21 +102,32 @@ const generateCreativeAssetFlow = ai.defineFlow(
             ? `The brand's color palette is: Primary HSL(${bp.primaryColor}), Accent HSL(${bp.accentColor}), Background HSL(${bp.backgroundColor}). Please use these colors in the design.`
             : '';
         
-        // Structured prompt for brand consistency
-        textPrompt = `Generate a social media ${input.outputType} for a ${bp.businessType} in ${bp.location}.
+        let onBrandPrompt = `Generate a social media ${input.outputType} for a ${bp.businessType} in ${bp.location}.
 The brand's visual style is ${bp.visualStyle}.
 The brand's writing tone is '${bp.writingTone}' and content should align with these themes: '${bp.contentThemes}'.
 ${colorInstructions}
-The subject of the ${input.outputType} should be: "${input.prompt}".
-It should be a high-quality, visually appealing asset that reflects the brand's identity.
-Finally, place the provided logo naturally onto the generated asset. The logo should be clearly visible but not overpower the main subject.`;
+The subject of the ${input.outputType} should be: "${remainingPrompt}".
+It should be a high-quality, visually appealing asset that reflects the brand's identity.`;
+
+        if (imageText) {
+             onBrandPrompt += `\nThen, overlay the following text onto the asset: "${imageText}". It is critical that the text is clearly readable, well-composed, and not cut off or truncated at the edges. The entire text must be visible.`;
+        }
+
+        onBrandPrompt += `\nFinally, place the provided logo naturally onto the generated asset. The logo should be clearly visible but not overpower the main subject.`;
         
+        textPrompt = onBrandPrompt;
+
         if (bp.logoDataUrl) {
             promptParts.push({ media: { url: bp.logoDataUrl } });
         }
+
     } else {
         // Unstructured, creative prompt
-        textPrompt = `You are an expert creative director. Generate a compelling and high-quality ${input.outputType} for a social media advertisement based on the following instruction: "${input.prompt}".\n\n`;
+        let creativePrompt = `You are an expert creative director. Generate a compelling and high-quality ${input.outputType} for a social media advertisement based on the following instruction: "${remainingPrompt}".`;
+        if (imageText) {
+             creativePrompt += `\nOverlay the following text onto the asset: "${imageText}". Ensure the text is readable and well-composed.`
+        }
+        textPrompt = creativePrompt + `\n\n`;
     }
 
     if (input.referenceImageUrl) {
@@ -105,7 +135,6 @@ Finally, place the provided logo naturally onto the generated asset. The logo sh
         promptParts.push({ media: { url: input.referenceImageUrl } });
     }
     
-    // Add the compiled text prompt to the beginning of the parts array.
     promptParts.unshift({text: textPrompt});
 
     const aiExplanationPrompt = ai.definePrompt({
@@ -171,4 +200,3 @@ Finally, place the provided logo naturally onto the generated asset. The logo sh
     }
   }
 );
-    
