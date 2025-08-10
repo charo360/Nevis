@@ -76,21 +76,14 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
         return;
     }
 
-    const filter = (node: HTMLElement) => {
-      // This filter function is used to prevent html-to-image from
-      // trying to fetch the google fonts stylesheet, which causes a
-      // cross-origin error.
-      return (node.tagName !== 'LINK');
-    };
-
     try {
-        const dataUrl = await htmlToImage.toPng(downloadRef.current, { 
-            cacheBust: true,
-            filter: filter,
+        const dataUrl = await htmlToImage.toJpeg(downloadRef.current, { 
+            quality: 0.95,
+            backgroundColor: '#ffffff'
         });
         const link = document.createElement('a');
         link.href = dataUrl;
-        link.download = `localbuzz-post-${post.id}-${activeTab}.png`;
+        link.download = `localbuzz-post-${post.id}-${activeTab}.jpeg`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -226,7 +219,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
             </TabsList>
             {post.variants.map(variant => (
                 <TabsContent key={variant.platform} value={variant.platform}>
-                    <div ref={downloadRef} className="bg-background">
+                    <div ref={downloadRef} className="bg-white">
                         <div className="relative aspect-square w-full overflow-hidden rounded-md border">
                         {(isRegenerating || isGeneratingVideo) && (
                             <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/80">
