@@ -16,21 +16,25 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ChatLayout } from "@/components/studio/chat-layout";
 import { getBrandProfileAction } from "@/app/actions";
+import { useAuth } from "@/context/auth-context";
+import withAuth from "@/context/with-auth";
 
-export default function CreativeStudioPage() {
+function CreativeStudioPage() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
     const [brandProfile, setBrandProfile] = useState<BrandProfile | null>(null);
+    const { user, logout } = useAuth();
 
     useEffect(() => {
+        if (!user) return;
         const fetchProfile = async () => {
-            const profile = await getBrandProfileAction();
+            const profile = await getBrandProfileAction(user.uid);
             if (profile) {
                 setBrandProfile(profile);
             }
         };
         fetchProfile();
-    }, []);
+    }, [user]);
 
   return (
     <SidebarInset>
@@ -45,18 +49,15 @@ export default function CreativeStudioPage() {
                     alt="User"
                     data-ai-hint="user avatar"
                   />
-                  <AvatarFallback>U</AvatarFallback>
+                  <AvatarFallback>{user?.email?.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <span className="sr-only">Toggle user menu</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>{user?.email}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Settings</DropdownMenuItem>
-              <DropdownMenuItem>Support</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Logout</DropdownMenuItem>
+              <DropdownMenuItem onClick={logout}>Logout</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
       </header>
@@ -72,3 +73,6 @@ export default function CreativeStudioPage() {
     </SidebarInset>
   );
 }
+
+
+export default withAuth(CreativeStudioPage);

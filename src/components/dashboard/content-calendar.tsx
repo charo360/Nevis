@@ -8,6 +8,7 @@ import { generateContentAction } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import type { BrandProfile, GeneratedPost, Platform } from "@/lib/types";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/context/auth-context";
 
 type ContentCalendarProps = {
   brandProfile: BrandProfile;
@@ -26,11 +27,16 @@ const platforms: { name: Platform; icon: React.ElementType }[] = [
 export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUpdated }: ContentCalendarProps) {
   const [isGenerating, setIsGenerating] = React.useState<Platform | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleGenerateClick = async (platform: Platform) => {
+    if (!user) {
+        toast({ variant: "destructive", title: "Authentication Error", description: "You must be logged in to generate content." });
+        return;
+    }
     setIsGenerating(platform);
     try {
-      const newPost = await generateContentAction(brandProfile, platform);
+      const newPost = await generateContentAction(user.uid, brandProfile, platform);
       onPostGenerated(newPost);
       toast({
         title: "Content Generated!",

@@ -1,13 +1,28 @@
+// src/app/page.tsx
 "use client";
+
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/auth-context';
+import { Loader2 } from 'lucide-react';
 
 export default function HomePage() {
   const router = useRouter();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
-    router.replace('/brand-profile');
-  }, [router]);
+    if (!loading) {
+      if (user) {
+        router.replace('/brand-profile');
+      } else {
+        router.replace('/login');
+      }
+    }
+  }, [user, loading, router]);
 
-  return null;
+  return (
+    <div className="flex h-screen w-full items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin" />
+    </div>
+  );
 }

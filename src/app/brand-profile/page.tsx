@@ -11,18 +11,22 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getBrandProfileAction, saveBrandProfileAction } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/auth-context";
+import withAuth from "@/context/with-auth";
 
-export default function BrandProfilePage() {
+function BrandProfilePage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { user, logout } = useAuth();
   const [brandProfile, setBrandProfile] = React.useState<BrandProfile | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
+    if (!user) return;
     const fetchProfile = async () => {
       setIsLoading(true);
       try {
-        const profile = await getBrandProfileAction();
+        const profile = await getBrandProfileAction(user.uid);
         setBrandProfile(profile);
       } catch (error) {
         toast({
@@ -35,18 +39,21 @@ export default function BrandProfilePage() {
       }
     };
     fetchProfile();
-  }, [toast]);
+  }, [user, toast]);
 
   const handleProfileSaved = async (profile: BrandProfile) => {
+    if (!user) return;
     try {
-        await saveBrandProfileAction(profile);
+        await saveBrandProfileAction(user.uid, profile);
         setBrandProfile(profile);
         toast({
             title: "Profile Saved!",
             description: "Your brand profile has been updated successfully.",
         });
+        
         // Force a reload to apply theme colors globally from layout
         window.location.reload();
+
          if(!brandProfile) { // If it was the first time saving
             router.push('/content-calendar');
         }
@@ -67,18 +74,15 @@ export default function BrandProfilePage() {
               <Button variant="secondary" size="icon" className="rounded-full">
                 <Avatar>
                   <AvatarImage src="https://placehold.co/40x40.png" alt="User" data-ai-hint="user avatar" />
-                  <AvatarFallback>U</AvatarFallback>
+                  <AvatarFallback>{user?.email?.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <span className="sr-only">Toggle user menu</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>{user?.email}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Settings</DropdownMenuItem>
-              <DropdownMenuItem>Support</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Logout</DropdownMenuItem>
+              <DropdownMenuItem onClick={logout}>Logout</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
@@ -97,3 +101,5 @@ export default function BrandProfilePage() {
       </SidebarInset>
   );
 }
+
+export default withAuth(BrandProfilePage);

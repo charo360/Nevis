@@ -9,16 +9,16 @@ import { generateVideoPost as generateVideoPostFlow } from "@/ai/flows/generate-
 import { generateCreativeAsset as generateCreativeAssetFlow } from "@/ai/flows/generate-creative-asset";
 import type { BrandProfile, GeneratedPost, Platform, CreativeAsset } from "@/lib/types";
 
-// For this starter, we'll use a hardcoded document ID for the brand profile.
-// In a multi-user app, this would be dynamically set based on the logged-in user.
-const BRAND_PROFILE_DOC_ID = "default_brand_profile";
+
 const POSTS_COLLECTION_ID = "generated_posts";
+const BRAND_PROFILES_COLLECTION_ID = "brandProfiles";
 
 // --- Database Actions ---
 
-export async function saveBrandProfileAction(profile: BrandProfile): Promise<void> {
+export async function saveBrandProfileAction(userId: string, profile: BrandProfile): Promise<void> {
+    if (!userId) throw new Error("User is not authenticated.");
     try {
-        const profileRef = doc(db, "brandProfiles", BRAND_PROFILE_DOC_ID);
+        const profileRef = doc(db, BRAND_PROFILES_COLLECTION_ID, userId);
         await setDoc(profileRef, profile);
     } catch (error) {
         console.error("Error saving brand profile to Firestore:", error);
@@ -26,9 +26,10 @@ export async function saveBrandProfileAction(profile: BrandProfile): Promise<voi
     }
 }
 
-export async function getBrandProfileAction(): Promise<BrandProfile | null> {
+export async function getBrandProfileAction(userId: string): Promise<BrandProfile | null> {
+    if (!userId) return null;
     try {
-        const profileRef = doc(db, "brandProfiles", BRAND_PROFILE_DOC_ID);
+        const profileRef = doc(db, BRAND_PROFILES_COLLECTION_ID, userId);
         const docSnap = await getDoc(profileRef);
         if (docSnap.exists()) {
             return docSnap.data() as BrandProfile;
@@ -40,9 +41,10 @@ export async function getBrandProfileAction(): Promise<BrandProfile | null> {
     }
 }
 
-export async function getGeneratedPostsAction(): Promise<GeneratedPost[]> {
+export async function getGeneratedPostsAction(userId: string): Promise<GeneratedPost[]> {
+    if (!userId) return [];
     try {
-        const postsCollection = collection(db, "brandProfiles", BRAND_PROFILE_DOC_ID, POSTS_COLLECTION_ID);
+        const postsCollection = collection(db, BRAND_PROFILES_COLLECTION_ID, userId, POSTS_COLLECTION_ID);
         const q = query(postsCollection, orderBy("date", "desc"), limit(20));
         const querySnapshot = await getDocs(q);
         return querySnapshot.docs.map(doc => doc.data() as GeneratedPost);
@@ -52,9 +54,10 @@ export async function getGeneratedPostsAction(): Promise<GeneratedPost[]> {
     }
 }
 
-async function saveGeneratedPostAction(post: GeneratedPost): Promise<void> {
-     try {
-        const postRef = doc(db, "brandProfiles", BRAND_PROFILE_DOC_ID, POSTS_COLLECTION_ID, post.id);
+async function saveGeneratedPostAction(userId: string, post: GeneratedPost): Promise<void> {
+    if (!userId) throw new Error("User is not authenticated.");
+    try {
+        const postRef = doc(db, BRAND_PROFILES_COLLECTION_ID, userId, POSTS_COLLECTION_ID, post.id);
         await setDoc(postRef, post);
     } catch (error) {
         console.error("Error saving generated post:", error);
@@ -62,9 +65,9 @@ async function saveGeneratedPostAction(post: GeneratedPost): Promise<void> {
     }
 }
 
-export async function updateGeneratedPostAction(post: GeneratedPost): Promise<void> {
+export async function updateGeneratedPostAction(userId: string, post: GeneratedPost): Promise<void> {
     // For Firestore, save and update can be the same operation with setDoc
-    return saveGeneratedPostAction(post);
+    return saveGeneratedPostAction(userId, post);
 }
 
 
@@ -99,9 +102,11 @@ const getAspectRatioForPlatform = (platform: Platform): string => {
 }
 
 export async function generateContentAction(
+  userId: string,
   profile: BrandProfile,
   platform: Platform,
 ): Promise<GeneratedPost> {
+  if (!userId) throw new Error("User is not authenticated.");
   try {
     const today = new Date();
     const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long' });
@@ -141,7 +146,7 @@ export async function generateContentAction(
     };
 
     // Save the newly generated post to the database
-    await saveGeneratedPostAction(newPost);
+    await saveGeneratedPostAction(userId, newPost);
 
     return newPost;
   } catch (error) {

@@ -8,21 +8,24 @@ import { AppSidebar } from '@/components/layout/app-sidebar';
 import React, { useEffect, useState } from 'react';
 import type { BrandProfile } from '@/lib/types';
 import { getBrandProfileAction } from '@/app/actions';
+import { AuthProvider, useAuth } from '@/context/auth-context';
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+function BrandThemeLoader({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [style, setStyle] = useState<React.CSSProperties>({});
   const [profileLoaded, setProfileLoaded] = useState(false);
 
   useEffect(() => {
     const fetchProfileAndSetTheme = async () => {
+      if (!user) {
+        // Reset styles if user logs out
+        setStyle({});
+        setProfileLoaded(true);
+        return;
+      };
+
       try {
-        // Since we don't have user auth, we'll fetch a default profile.
-        // In a real app, you'd pass a user ID here.
-        const profile = await getBrandProfileAction();
+        const profile = await getBrandProfileAction(user.uid);
         if (profile) {
           const newStyle: React.CSSProperties = {};
           if (profile.primaryColor) {
@@ -44,8 +47,26 @@ export default function RootLayout({
     };
     
     fetchProfileAndSetTheme();
-  }, []);
+  }, [user]);
 
+  return (
+      <body className="font-body antialiased" style={style} suppressHydrationWarning>
+        <SidebarProvider>
+          <AppSidebar />
+           {profileLoaded ? children : <div className="flex-1 flex items-center justify-center"><p>Loading Brand Profile...</p></div>}
+        </SidebarProvider>
+        <Toaster />
+      </body>
+  );
+}
+
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -55,13 +76,11 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet" />
       </head>
-      <body className="font-body antialiased" style={style} suppressHydrationWarning>
-        <SidebarProvider>
-          <AppSidebar />
-           {profileLoaded ? children : <div className="flex-1 flex items-center justify-center"><p>Loading Brand Profile...</p></div>}
-        </SidebarProvider>
-        <Toaster />
-      </body>
+       <AuthProvider>
+        <BrandThemeLoader>
+          {children}
+        </BrandThemeLoader>
+      </AuthProvider>
     </html>
   );
 }

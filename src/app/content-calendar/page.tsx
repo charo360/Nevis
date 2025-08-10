@@ -19,22 +19,26 @@ import type { BrandProfile, GeneratedPost } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { getBrandProfileAction, getGeneratedPostsAction, updateGeneratedPostAction } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/auth-context";
+import withAuth from "@/context/with-auth";
 
-export default function ContentCalendarPage() {
+function ContentCalendarPage() {
   const [brandProfile, setBrandProfile] = useState<BrandProfile | null>(null);
   const [generatedPosts, setGeneratedPosts] = useState<GeneratedPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
+  const { user, logout } = useAuth();
 
   useEffect(() => {
+    if (!user) return;
     const loadData = async () => {
       setIsLoading(true);
       try {
-        const profile = await getBrandProfileAction();
+        const profile = await getBrandProfileAction(user.uid);
         if (profile) {
           setBrandProfile(profile);
-          const posts = await getGeneratedPostsAction();
+          const posts = await getGeneratedPostsAction(user.uid);
           setGeneratedPosts(posts);
         } else {
           // If no profile, redirect to setup
@@ -51,7 +55,7 @@ export default function ContentCalendarPage() {
       }
     };
     loadData();
-  }, [router, toast]);
+  }, [router, toast, user]);
 
 
   const handlePostGenerated = (post: GeneratedPost) => {
@@ -59,8 +63,9 @@ export default function ContentCalendarPage() {
   };
   
   const handlePostUpdated = async (updatedPost: GeneratedPost) => {
+    if (!user) return;
     try {
-      await updateGeneratedPostAction(updatedPost);
+      await updateGeneratedPostAction(user.uid, updatedPost);
       setGeneratedPosts((prevPosts) =>
         prevPosts.map((post) =>
           post.id === updatedPost.id ? updatedPost : post
@@ -83,18 +88,15 @@ export default function ContentCalendarPage() {
               <Button variant="secondary" size="icon" className="rounded-full">
                 <Avatar>
                   <AvatarImage src="https://placehold.co/40x40.png" alt="User" data-ai-hint="user avatar" />
-                  <AvatarFallback>U</AvatarFallback>
+                  <AvatarFallback>{user?.email?.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <span className="sr-only">Toggle user menu</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>{user?.email}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Settings</DropdownMenuItem>
-              <DropdownMenuItem>Support</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Logout</DropdownMenuItem>
+              <DropdownMenuItem onClick={logout}>Logout</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
@@ -115,3 +117,5 @@ export default function ContentCalendarPage() {
       </SidebarInset>
   );
 }
+
+export default withAuth(ContentCalendarPage);
