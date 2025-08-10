@@ -88,10 +88,6 @@ Generate a video that is cinematically interesting, has relevant sound, and capt
         const { operation: op } = await ai.generate({
             model: 'googleai/veo-3.0-generate-preview',
             prompt: videoPrompt,
-            config: {
-                // This is required by the Veo 3 model
-                responseModalities: ['TEXT', 'VIDEO'],
-            }
           });
         operation = op;
     } catch (e: any) {
