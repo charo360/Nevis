@@ -1,3 +1,4 @@
+
 // src/components/dashboard/post-card.tsx
 "use client";
 
@@ -76,9 +77,20 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
         return;
     }
 
+    const filter = (node: HTMLElement) => {
+        // This filter function is used to prevent html-to-image from
+        // trying to fetch the google fonts stylesheet, which causes a
+        // cross-origin error.
+        if (node.tagName === 'LINK' && node.getAttribute('href')?.includes('fonts.googleapis.com')) {
+            return false;
+        }
+        return true;
+    };
+
     try {
         const dataUrl = await htmlToImage.toPng(downloadRef.current, { 
             cacheBust: true,
+            filter: filter,
         });
         const link = document.createElement('a');
         link.href = dataUrl;
@@ -321,3 +333,5 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
     </>
   );
 }
+
+    
