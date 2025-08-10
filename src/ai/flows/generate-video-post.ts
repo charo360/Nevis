@@ -17,7 +17,8 @@ const GenerateVideoInputSchema = z.object({
   businessType: z.string().describe('The type of business (e.g., restaurant, salon).'),
   location: z.string().describe('The location of the business (city, state).'),
   visualStyle: z.string().describe('The visual style of the brand (e.g., modern, vintage).'),
-  imageText: z.string().describe('A brief, catchy headline to be overlaid on the video.'),
+  imageText: z.string().describe('A brief, catchy headline for the video.'),
+  postContent: z.string().describe('The full text content of the social media post for additional context.'),
 });
 export type GenerateVideoInput = z.infer<typeof GenerateVideoInputSchema>;
 
@@ -72,17 +73,21 @@ const generateVideoPostFlow = ai.defineFlow(
     outputSchema: GenerateVideoOutputSchema,
   },
   async (input) => {
-    const videoPrompt = `Create a short, engaging promotional video for a ${input.businessType} in ${input.location}. The visual style should be ${input.visualStyle}. The video should be visually appealing and suitable for a social media post. It should also have a clear area where text can be overlaid. The text to include is: "${input.imageText}".`;
+    const videoPrompt = `Create a short, engaging promotional video with sound for a ${input.businessType} in ${input.location}.
+The visual style should be ${input.visualStyle}.
+The video should be visually appealing and suitable for a social media post.
+
+The main headline for the video is: "${input.imageText}".
+
+For additional context, here is the full post content that will accompany the video: "${input.postContent}".
+
+Generate a video that is cinematically interesting, has relevant sound, and captures the essence of the post content.`;
 
     let operation;
     try {
         const result = await ai.generate({
-            model: 'googleai/veo-2.0-generate-001',
+            model: 'googleai/veo-3.0-generate-preview',
             prompt: videoPrompt,
-            config: {
-              durationSeconds: 5,
-              aspectRatio: '16:9',
-            },
           });
         operation = result.operation;
     } catch (e) {

@@ -148,7 +148,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
     }
     setIsGeneratingVideo(true);
     try {
-        const result = await generateVideoContentAction(brandProfile, post.imageText);
+        const result = await generateVideoContentAction(brandProfile, post.imageText, post.content);
         setVideoUrl(result.videoUrl);
         onPostUpdated({ ...post, videoUrl: result.videoUrl });
         setShowVideoDialog(true);

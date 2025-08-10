@@ -90,7 +90,8 @@ export async function generateContentAction(
 
 export async function generateVideoContentAction(
   profile: BrandProfile,
-  imageText: string
+  imageText: string,
+  postContent: string,
 ): Promise<{ videoUrl: string }> {
   try {
     const result = await generateVideoPostFlow({
@@ -98,6 +99,7 @@ export async function generateVideoContentAction(
       location: profile.location,
       visualStyle: profile.visualStyle,
       imageText: imageText,
+      postContent: postContent,
     });
     return { videoUrl: result.videoUrl };
   } catch (error) {
