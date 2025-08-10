@@ -137,13 +137,22 @@ async function generateImageForVariant(
     textOutput: { imageText: string }
 ) {
     const colorInstructions = `The brand's color palette is: Primary HSL(${input.primaryColor}), Accent HSL(${input.accentColor}), Background HSL(${input.backgroundColor}). Please use these colors in the design.`;
+    
+    const imagePrompt = `You are an expert graphic designer creating a social media post for a ${input.businessType}.
+    Your goal is to generate a single, cohesive, and visually stunning image. The image must have an aspect ratio of ${variant.aspectRatio}.
+
+    **Key Elements to Include:**
+    - **Visual Style:** The design must be ${input.visualStyle}.
+    - **Brand Colors:** ${input.primaryColor ? colorInstructions : 'The brand has not specified colors, so use a visually appealing and appropriate palette.'}
+    - **Subject/Theme:** The core subject of the image should be directly inspired by the Image Text below.
+    - **Text Overlay:** The following text must be overlaid on the image in a stylish, readable font: "${textOutput.imageText}". It is critical that the text is clearly readable, well-composed, and not cut off or truncated. The entire text must be visible.
+    - **Logo Placement:** The provided logo must be integrated naturally into the design. It should be clearly visible but not overpower the main subject. For example, it could be on a product, a sign, or as a subtle watermark.
+    `;
 
     const { media } = await generateWithRetry({
       model: 'googleai/gemini-2.0-flash-preview-image-generation',
       prompt: [
-        {
-          text: `First, generate an appealing background image for a social media post for a ${input.businessType}. The brand's visual style is ${input.visualStyle}. ${input.primaryColor ? colorInstructions : ''} The image should have a clear, uncluttered area suitable for placing text. The image must have an aspect ratio of ${variant.aspectRatio}. Then, overlay the following text onto the image: "${textOutput.imageText}". It is critical that the text is clearly readable, well-composed, and not cut off or truncated at the edges of the image. The entire text must be visible. Finally, place the provided logo naturally onto the generated background image. The logo should be clearly visible but not overpower the main subject. It could be on a product, a sign, or as a subtle watermark.`,
-        },
+        { text: imagePrompt },
         { media: { url: input.logoDataUrl, contentType: getMimeTypeFromDataURI(input.logoDataUrl) } },
       ],
       config: {

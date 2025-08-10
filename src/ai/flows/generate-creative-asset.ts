@@ -163,14 +163,18 @@ const generateCreativeAssetFlow = ai.defineFlow(
             ? `The brand's color palette is: Primary HSL(${bp.primaryColor}), Accent HSL(${bp.accentColor}), Background HSL(${bp.backgroundColor}). Please use these colors in the design.`
             : '';
         
-        let onBrandPrompt = `First, generate an appealing background image for a social media post for a ${bp.businessType}. The brand's visual style is ${bp.visualStyle}. The writing tone is ${bp.writingTone} and content should align with these themes: ${bp.contentThemes}. ${colorInstructions} The subject of the ${input.outputType} should be: "${remainingPrompt}". The image should have a clear, uncluttered area suitable for placing text.`;
+        const onBrandPrompt = `You are an expert graphic designer creating a social media ${input.outputType} for a ${bp.businessType}.
 
-        if (imageText) {
-             onBrandPrompt += `\nThen, overlay the following text onto the image: "${imageText}". It is critical that the text is clearly readable, well-composed, and not cut off or truncated at the edges of the image. The entire text must be visible.`;
-        }
+Your goal is to generate a single, cohesive, and visually stunning asset.
+
+**Key Elements to Include:**
+- **Visual Style:** The design must be ${bp.visualStyle}. The writing tone is ${bp.writingTone} and content should align with these themes: ${bp.contentThemes}.
+- **Brand Colors:** ${colorInstructions}
+- **Subject/Theme:** The core subject of the ${input.outputType} should be: "${remainingPrompt}".
+- **Text Overlay:** ${imageText ? `The following text must be overlaid on the asset in a stylish, readable font: "${imageText}". It must be fully visible and well-composed.` : 'No text should be added to the asset.'}
+- **Logo Placement:** The provided logo must be integrated naturally into the design (e.g., on a product, a sign, or as a subtle watermark).`;
 
         if (bp.logoDataUrl) {
-            onBrandPrompt += `\nFinally, place the provided logo naturally onto the generated background image. The logo should be clearly visible but not overpower the main subject. It could be on a product, a sign, or as a subtle watermark.`;
             promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
         }
         
