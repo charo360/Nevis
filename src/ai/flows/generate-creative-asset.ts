@@ -10,6 +10,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import type { BrandProfile } from '@/lib/types';
 import { MediaPart } from 'genkit';
+import { GenerateRequest } from 'genkit/generate';
 
 // Define the input schema for the creative asset generation flow.
 const CreativeAssetInputSchema = z.object({
@@ -82,6 +83,31 @@ const extractQuotedText = (prompt: string): { imageText: string | null; remainin
 };
 
 /**
+ * Wraps ai.generate with retry logic for 503 errors.
+ */
+async function generateWithRetry(request: GenerateRequest, retries = 3, delay = 1000) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const result = await ai.generate(request);
+            return result;
+        } catch (e: any) {
+            if (e.message && e.message.includes('503') && i < retries - 1) {
+                console.log(`Attempt ${i + 1} failed with 503. Retrying in ${delay}ms...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+            } else {
+                if (e.message && e.message.includes('503')) {
+                    throw new Error("The AI model is currently overloaded. Please try again in a few moments.");
+                }
+                throw e; // Rethrow other errors immediately
+            }
+        }
+    }
+    // This line should not be reachable if retries are configured, but as a fallback:
+    throw new Error("The AI model is currently overloaded after multiple retries. Please try again later.");
+}
+
+
+/**
  * The core Genkit flow for generating a creative asset.
  */
 const generateCreativeAssetFlow = ai.defineFlow(
@@ -102,19 +128,18 @@ const generateCreativeAssetFlow = ai.defineFlow(
             ? `The brand's color palette is: Primary HSL(${bp.primaryColor}), Accent HSL(${bp.accentColor}), Background HSL(${bp.backgroundColor}). Please use these colors in the design.`
             : '';
         
-        let onBrandPrompt = `First, generate an appealing background image for a social media post for a ${bp.businessType}. The brand's visual style is ${bp.visualStyle}. ${colorInstructions} The image should have a clear, uncluttered area suitable for placing text. The post's subject is: "${remainingPrompt}".`;
+        let onBrandPrompt = `First, generate an appealing background image for a social media post for a ${bp.businessType}. The brand's visual style is ${bp.visualStyle}. The writing tone is ${bp.writingTone} and content should align with these themes: ${bp.contentThemes}. ${colorInstructions} The subject of the ${input.outputType} should be: "${remainingPrompt}". The image should have a clear, uncluttered area suitable for placing text.`;
 
         if (imageText) {
              onBrandPrompt += `\nThen, overlay the following text onto the image: "${imageText}". It is critical that the text is clearly readable, well-composed, and not cut off or truncated at the edges of the image. The entire text must be visible.`;
         }
 
-        onBrandPrompt += `\nFinally, place the provided logo naturally onto the generated background image. The logo should be clearly visible but not overpower the main subject. It could be on a product, a sign, or as a subtle watermark.`;
-        
-        textPrompt = onBrandPrompt;
-
         if (bp.logoDataUrl) {
+            onBrandPrompt += `\nFinally, place the provided logo naturally onto the generated background image. The logo should be clearly visible but not overpower the main subject. It could be on a product, a sign, or as a subtle watermark.`;
             promptParts.push({ media: { url: bp.logoDataUrl } });
         }
+        
+        textPrompt = onBrandPrompt;
 
     } else {
         // Unstructured, creative prompt
@@ -122,7 +147,7 @@ const generateCreativeAssetFlow = ai.defineFlow(
         if (imageText) {
              creativePrompt += `\nOverlay the following text onto the asset: "${imageText}". Ensure the text is readable and well-composed.`
         }
-        textPrompt = creativePrompt + `\n\n`;
+        textPrompt = creativePrompt;
     }
 
     if (input.referenceImageUrl) {
@@ -141,7 +166,7 @@ const generateCreativeAssetFlow = ai.defineFlow(
 
     try {
         if (input.outputType === 'image') {
-            const { media } = await ai.generate({
+            const { media } = await generateWithRetry({
                 model: 'googleai/gemini-2.0-flash-preview-image-generation',
                 prompt: promptParts,
                 config: {
@@ -155,7 +180,7 @@ const generateCreativeAssetFlow = ai.defineFlow(
                 aiExplanation: explanationResult.output ?? "Here is the generated image based on your prompt."
             };
         } else { // Video generation
-            const result = await ai.generate({
+            const result = await generateWithRetry({
                 model: 'googleai/veo-3.0-generate-preview',
                 prompt: promptParts,
             });
@@ -189,9 +214,6 @@ const generateCreativeAssetFlow = ai.defineFlow(
             };
         }
     } catch (e: any) {
-        if (e.message && e.message.includes('503')) {
-            throw new Error("The AI model is currently overloaded. Please try again in a few moments.");
-        }
         console.error("Error during creative asset generation:", e);
         throw new Error(e.message || "Asset generation failed. Please check your inputs and try again.");
     }

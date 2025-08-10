@@ -11,6 +11,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { MediaPart } from 'genkit';
+import { GenerateRequest } from 'genkit/generate';
 
 // Define the input schema for the video generation flow.
 const GenerateVideoInputSchema = z.object({
@@ -64,6 +65,30 @@ async function videoToDataURI(videoPart: MediaPart): Promise<string> {
 }
 
 /**
+ * Wraps ai.generate with retry logic for 503 errors.
+ */
+async function generateWithRetry(request: GenerateRequest, retries = 3, delay = 1000) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const result = await ai.generate(request);
+            return result;
+        } catch (e: any) {
+            if (e.message && e.message.includes('503') && i < retries - 1) {
+                console.log(`Attempt ${i + 1} failed with 503. Retrying in ${delay}ms...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+            } else {
+                if (e.message && e.message.includes('503')) {
+                    throw new Error("The AI model is currently overloaded. Please try again in a few moments.");
+                }
+                throw e; // Rethrow other errors immediately
+            }
+        }
+    }
+    // This line should not be reachable if retries are configured, but as a fallback:
+    throw new Error("The AI model is currently overloaded after multiple retries. Please try again later.");
+}
+
+/**
  * The core Genkit flow for generating a video post.
  */
 const generateVideoPostFlow = ai.defineFlow(
@@ -84,7 +109,7 @@ For additional context, here is the full post content that will accompany the vi
 Generate a video that is cinematically interesting, has relevant sound, and captures the essence of the post content.`;
 
     try {
-      const result = await ai.generate({
+      const result = await generateWithRetry({
         model: 'googleai/veo-3.0-generate-preview',
         prompt: videoPrompt,
       });
@@ -118,9 +143,6 @@ Generate a video that is cinematically interesting, has relevant sound, and capt
         videoUrl: videoDataUrl, 
       };
     } catch (e: any) {
-        if (e.message && e.message.includes('503')) {
-            throw new Error("The AI model is currently overloaded. Please try again in a few moments.");
-        }
         console.error("Error during video generation:", e);
         throw new Error(e.message || "Video generation failed. The model may be overloaded. Please try again in a few moments.");
     }
