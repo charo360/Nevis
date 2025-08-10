@@ -114,6 +114,9 @@ async function generateWithRetry(request: GenerateRequest, retries = 3, delay = 
                 if (e.message && e.message.includes('503')) {
                     throw new Error("The AI model is currently overloaded. Please try again in a few moments.");
                 }
+                if (e.message && e.message.includes('429')) {
+                    throw new Error("You've exceeded your request limit for the AI model. Please check your plan or try again later.");
+                }
                 throw e; // Rethrow other errors immediately
             }
         }
@@ -192,5 +195,3 @@ const generatePostFromProfileFlow = ai.defineFlow(
     };
   }
 );
-
-    
