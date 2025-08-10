@@ -8,19 +8,25 @@ export type BrandProfile = {
   visualStyle: string;
   writingTone: string;
   contentThemes: string;
+  primaryColor?: string;
+  accentColor?: string;
+  backgroundColor?: string;
 };
 
 export type GeneratedPost = {
   id: string;
   date: string;
-  platform: Platform;
   content: string;
-  imageUrl: string;
-  imageText: string; // Added to be used for video generation
   hashtags: string;
   status: 'generated' | 'edited' | 'posted';
-  videoUrl?: string; // Added to store generated video
+  variants: {
+    platform: Platform;
+    imageUrl: string;
+  }[];
+  imageText: string;
+  videoUrl?: string;
 };
+
 
 export type BrandAnalysisResult = {
   visualStyle: string;

@@ -33,12 +33,58 @@ import { analyzeBrandAction } from "@/app/actions";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
+// Helper to convert hex to HSL string
+const hexToHslString = (hex: string): string => {
+    hex = hex.replace(/^#/, '');
+    const r = parseInt(hex.substring(0, 2), 16) / 255;
+    const g = parseInt(hex.substring(2, 4), 16) / 255;
+    const b = parseInt(hex.substring(4, 6), 16) / 255;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h = 0, s = 0, l = (max + min) / 2;
+    if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+        }
+        h /= 6;
+    }
+    return `${(h * 360).toFixed(1)} ${(s * 100).toFixed(1)}% ${(l * 100).toFixed(1)}%`;
+};
+
+// Helper to convert HSL string to hex
+const hslStringToHex = (hslStr: string): string => {
+    const [h, s, l] = hslStr.split(' ').map(val => parseFloat(val));
+    const s_norm = s / 100;
+    const l_norm = l / 100;
+    let c = (1 - Math.abs(2 * l_norm - 1)) * s_norm,
+        x = c * (1 - Math.abs((h / 60) % 2 - 1)),
+        m = l_norm - c / 2,
+        r = 0, g = 0, b = 0;
+    if (0 <= h && h < 60) { [r, g, b] = [c, x, 0]; }
+    else if (60 <= h && h < 120) { [r, g, b] = [x, c, 0]; }
+    else if (120 <= h && h < 180) { [r, g, b] = [0, c, x]; }
+    else if (180 <= h && h < 240) { [r, g, b] = [0, x, c]; }
+    else if (240 <= h && h < 300) { [r, g, b] = [x, 0, c]; }
+    else if (300 <= h && h < 360) { [r, g, b] = [c, 0, x]; }
+    r = Math.round((r + m) * 255);
+    g = Math.round((g + m) * 255);
+    b = Math.round((b + m) * 255);
+    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}
+
 const formSchema = z.object({
   businessName: z.string().min(2, { message: "Business name must be at least 2 characters." }),
   businessType: z.string().min(2, { message: "Business type must be at least 2 characters." }),
   location: z.string().min(2, { message: "Location must be at least 2 characters." }),
   socialMediaUrl: z.string().url({ message: "Please enter a valid URL." }),
-  logo: z.any().optional(), // Logo is optional if already provided
+  logo: z.any().optional(),
+  primaryColor: z.string().optional(),
+  accentColor: z.string().optional(),
+  backgroundColor: z.string().optional(),
 });
 
 type BrandSetupProps = {
@@ -60,7 +106,10 @@ export function BrandSetup({ initialProfile, onProfileSaved }: BrandSetupProps) 
       businessName: initialProfile?.businessName || "",
       businessType: initialProfile?.businessType || "",
       location: initialProfile?.location || "",
-      socialMediaUrl: "https://instagram.com/yourbusiness", // Default placeholder
+      socialMediaUrl: "https://instagram.com/yourbusiness",
+      primaryColor: initialProfile?.primaryColor ? hslStringToHex(initialProfile.primaryColor) : "#3399FF",
+      accentColor: initialProfile?.accentColor ? hslStringToHex(initialProfile.accentColor) : "#33B2B2",
+      backgroundColor: initialProfile?.backgroundColor ? hslStringToHex(initialProfile.backgroundColor) : "#F0F8FF",
     },
   });
 
@@ -70,7 +119,10 @@ export function BrandSetup({ initialProfile, onProfileSaved }: BrandSetupProps) 
         businessName: initialProfile.businessName,
         businessType: initialProfile.businessType,
         location: initialProfile.location,
-        socialMediaUrl: "https://instagram.com/yourbusiness", // Reset with a placeholder or a saved one if we store it
+        socialMediaUrl: "https://instagram.com/yourbusiness",
+        primaryColor: initialProfile.primaryColor ? hslStringToHex(initialProfile.primaryColor) : "#3399FF",
+        accentColor: initialProfile.accentColor ? hslStringToHex(initialProfile.accentColor) : "#33B2B2",
+        backgroundColor: initialProfile.backgroundColor ? hslStringToHex(initialProfile.backgroundColor) : "#F0F8FF",
       });
       setAnalysisResult({
         visualStyle: initialProfile.visualStyle,
@@ -140,6 +192,9 @@ export function BrandSetup({ initialProfile, onProfileSaved }: BrandSetupProps) 
       businessType: formValues.businessType,
       location: formValues.location,
       logoDataUrl,
+      primaryColor: formValues.primaryColor ? hexToHslString(formValues.primaryColor) : undefined,
+      accentColor: formValues.accentColor ? hexToHslString(formValues.accentColor) : undefined,
+      backgroundColor: formValues.backgroundColor ? hexToHslString(formValues.backgroundColor) : undefined,
       ...analysisResult,
     };
     onProfileSaved(profile);
@@ -147,6 +202,9 @@ export function BrandSetup({ initialProfile, onProfileSaved }: BrandSetupProps) 
       title: "Profile Saved!",
       description: "Your brand profile has been updated.",
     });
+    
+    // Force a reload to apply the new theme colors
+    window.location.reload();
 
     if(!initialProfile) {
         router.push('/content-calendar');
@@ -233,6 +291,35 @@ export function BrandSetup({ initialProfile, onProfileSaved }: BrandSetupProps) 
                       <FormMessage />
                     </FormItem>
                   )} />
+                   <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                        <FormField control={form.control} name="primaryColor" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Primary Color</FormLabel>
+                                <FormControl>
+                                    <Input type="color" {...field} className="h-10 p-1"/>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="accentColor" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Accent Color</FormLabel>
+                                <FormControl>
+                                    <Input type="color" {...field} className="h-10 p-1"/>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="backgroundColor" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Background Color</FormLabel>
+                                <FormControl>
+                                    <Input type="color" {...field} className="h-10 p-1"/>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                    </div>
                   <FormField control={form.control} name="socialMediaUrl" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Instagram or Facebook URL</FormLabel>
