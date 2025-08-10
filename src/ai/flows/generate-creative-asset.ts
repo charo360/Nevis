@@ -197,7 +197,7 @@ const generateCreativeAssetFlow = ai.defineFlow(
     try {
         if (input.outputType === 'image') {
             const { media } = await generateWithRetry({
-                model: 'googleai/gemini-2.0-flash-preview-image-generation',
+                model: 'googleai/imagen-4-ultra',
                 prompt: promptParts,
                 config: {
                     responseModalities: ['TEXT', 'IMAGE'],
