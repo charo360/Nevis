@@ -44,7 +44,7 @@ const getAspectRatioForPlatform = (platform: Platform): string => {
 
 export async function generateContentAction(
   profile: BrandProfile,
-  platforms: Platform[]
+  platform: Platform,
 ): Promise<GeneratedPost> {
   try {
     const today = new Date();
@@ -52,11 +52,6 @@ export async function generateContentAction(
     const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long' });
     const currentDate = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     
-    const variantsToGenerate = platforms.map(platform => ({
-        platform,
-        aspectRatio: getAspectRatioForPlatform(platform),
-    }));
-
     const postDetails = await generatePostFromProfileFlow({
       businessType: profile.businessType,
       location: profile.location,
@@ -71,7 +66,10 @@ export async function generateContentAction(
       events: localData.events,
       dayOfWeek,
       currentDate,
-      variants: variantsToGenerate,
+      variants: [{
+        platform: platform,
+        aspectRatio: getAspectRatioForPlatform(platform),
+      }],
     });
 
     return {

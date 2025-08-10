@@ -33,9 +33,3 @@ export type BrandAnalysisResult = {
   writingTone: string;
   contentThemes: string;
 };
-
-export type GenerateDailyPostOutput = {
-  content: string;
-  imageText: string;
-  hashtags: string;
-};

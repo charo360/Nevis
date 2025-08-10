@@ -118,8 +118,8 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   const handleRegenerate = async () => {
     setIsRegenerating(true);
     try {
-        const platforms = post.variants.map(v => v.platform);
-        const newPost = await generateContentAction(brandProfile, platforms);
+        const platform = post.variants[0].platform;
+        const newPost = await generateContentAction(brandProfile, platform);
         // We replace the old post with the new one, keeping the same ID
         onPostUpdated({ ...newPost, id: post.id });
         toast({
@@ -194,7 +194,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
                 ) : (
                     <RefreshCw className="mr-2 h-4 w-4" />
                 )}
-                Regenerate Images
+                Regenerate Image
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleGenerateVideo} disabled={isGeneratingVideo}>
                 {isGeneratingVideo ? (
