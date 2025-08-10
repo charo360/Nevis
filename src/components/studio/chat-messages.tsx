@@ -54,27 +54,47 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
                 message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'
               )}
             >
-                {message.imageUrl && (
-                     <div className="relative w-full max-w-xs overflow-hidden rounded-md border">
-                        <Image src={message.imageUrl} alt="Generated image" layout="fill" objectFit="cover" />
+                {/* User uploaded image preview */}
+                {message.role === 'user' && message.imageUrl && (
+                     <div className="relative w-48 h-48 overflow-hidden rounded-md border">
+                        <Image src={message.imageUrl} alt="User upload preview" layout="fill" objectFit="cover" />
                      </div>
                 )}
-                 {message.videoUrl && (
-                     <div className="relative w-full max-w-xs overflow-hidden rounded-md border">
+                
+                <p className="whitespace-pre-wrap text-sm">{message.content}</p>
+
+                {/* AI generated image */}
+                {message.role === 'assistant' && message.imageUrl && (
+                     <div className="group relative w-full max-w-sm overflow-hidden rounded-md border">
+                        <Image src={message.imageUrl} alt="Generated image" width={512} height={512} className="w-full h-auto object-contain"/>
+                        <Button 
+                            variant="secondary" 
+                            size="icon"
+                            className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => handleDownload(message.imageUrl, 'image')}
+                        >
+                            <Download className="h-4 w-4" />
+                            <span className="sr-only">Download Image</span>
+                        </Button>
+                     </div>
+                )}
+
+                 {/* AI generated video */}
+                 {message.role === 'assistant' && message.videoUrl && (
+                     <div className="group relative w-full max-w-sm overflow-hidden rounded-md border">
                         <video controls autoPlay src={message.videoUrl} className="w-full" />
+                         <Button 
+                            variant="secondary" 
+                            size="icon"
+                            className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => handleDownload(message.videoUrl, 'video')}
+                        >
+                            <Download className="h-4 w-4" />
+                            <span className="sr-only">Download Video</span>
+                        </Button>
                      </div>
                 )}
-              <p className="whitespace-pre-wrap text-sm">{message.content}</p>
-              {(message.imageUrl || message.videoUrl) && (
-                <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => handleDownload(message.imageUrl || message.videoUrl, message.videoUrl ? 'video' : 'image')}
-                >
-                    <Download className="mr-2 h-4 w-4" />
-                    Download
-                </Button>
-              )}
+              
             </div>
             {message.role === 'user' && <ChatAvatar role="user" />}
           </div>
