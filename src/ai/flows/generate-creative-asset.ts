@@ -1,3 +1,4 @@
+
 // src/ai/flows/generate-creative-asset.ts
 'use server';
 
@@ -151,7 +152,17 @@ const generateCreativeAssetFlow = ai.defineFlow(
     }
 
     if (input.referenceImageUrl) {
-        textPrompt += `\nUse the provided image as a strong influence for the composition, style, and subject matter.\n`;
+        let refinePrompt = `\nUse the provided image as a strong influence for the composition, style, and subject matter. Your instruction is: "${remainingPrompt}".`;
+        // If brand profile is used, ensure colors are maintained during refinement
+        if (input.useBrandProfile && input.brandProfile) {
+            const bp = input.brandProfile;
+            const colorInstructions = (bp.primaryColor && bp.accentColor && bp.backgroundColor) 
+            ? ` The brand's color palette is: Primary HSL(${bp.primaryColor}), Accent HSL(${bp.accentColor}), Background HSL(${bp.backgroundColor}). You MUST use these colors in the new design.`
+            : '';
+            refinePrompt += colorInstructions;
+        }
+
+        textPrompt += refinePrompt;
         promptParts.push({ media: { url: input.referenceImageUrl } });
     }
     
