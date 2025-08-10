@@ -61,13 +61,13 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   const [videoUrl, setVideoUrl] = React.useState<string | undefined>(post.videoUrl);
   const [showVideoDialog, setShowVideoDialog] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<Platform>(post.variants[0]?.platform || 'Instagram');
-  const downloadRef = React.useRef<HTMLDivElement>(null);
   
   const formattedDate = format(new Date(post.date), 'MMM d, yyyy');
   const { toast } = useToast();
 
   const handleDownload = React.useCallback(async () => {
-    if (!downloadRef.current) {
+    const downloadElement = document.getElementById(`download-area-${post.id}-${activeTab}`);
+    if (!downloadElement) {
         toast({
             variant: "destructive",
             title: "Download Failed",
@@ -78,22 +78,29 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
     
     // This filter function tells the library to skip any external Google Fonts stylesheets.
     const filter = (node: HTMLElement) => {
-        return (node.tagName !== 'LINK' || !node.hasAttribute('href') || !node.getAttribute('href')!.includes('fonts.googleapis.com'));
+        return (node.tagName !== 'LINK');
     };
 
+    // Temporarily set high-res styles
+    const originalStyle = downloadElement.style.cssText;
+    downloadElement.style.width = '1080px';
+    downloadElement.style.height = '1080px';
+    downloadElement.style.position = 'absolute';
+    downloadElement.style.top = '-9999px';
+    downloadElement.style.left = '-9999px';
+    document.body.appendChild(downloadElement);
+
+
     try {
-        const dataUrl = await htmlToImage.toPng(downloadRef.current, {
+        const dataUrl = await htmlToImage.toPng(downloadElement, {
             cacheBust: true,
             filter: filter,
-            width: 1080,
-            height: 1080,
+            // We are now controlling the size via CSS
         });
         const link = document.createElement('a');
         link.href = dataUrl;
         link.download = `localbuzz-post-${post.id}-${activeTab}.png`;
-        document.body.appendChild(link);
         link.click();
-        document.body.removeChild(link);
     } catch (err) {
       console.error(err);
       toast({
@@ -101,8 +108,14 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
         title: "Download Failed",
         description: `Could not download the image. Error: ${(err as Error).message}`,
       });
+    } finally {
+        // Cleanup: revert styles and remove from body
+        downloadElement.style.cssText = originalStyle;
+        const parent = document.getElementById(`download-parent-${post.id}-${activeTab}`);
+        parent?.appendChild(downloadElement);
     }
   }, [post.id, activeTab, toast]);
+
 
   const handleSaveChanges = async () => {
     const updatedPost = {
@@ -226,29 +239,31 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
             </TabsList>
             {post.variants.map(variant => (
                 <TabsContent key={variant.platform} value={variant.platform}>
-                    <div ref={downloadRef} className="bg-white">
-                        <div className="relative aspect-square w-full overflow-hidden rounded-md border">
-                        {(isRegenerating || isGeneratingVideo) && (
-                            <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/80">
-                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                <span className="sr-only">{isRegenerating ? 'Regenerating image...' : 'Generating video...'}</span>
+                    <div id={`download-parent-${post.id}-${variant.platform}`}>
+                        <div id={`download-area-${post.id}-${variant.platform}`} className="bg-white">
+                            <div className="relative aspect-square w-full overflow-hidden rounded-md border">
+                            {(isRegenerating || isGeneratingVideo) && (
+                                <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/80">
+                                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                    <span className="sr-only">{isRegenerating ? 'Regenerating image...' : 'Generating video...'}</span>
+                                </div>
+                            )}
+                            {variant.imageUrl ? (
+                                <Image
+                                    alt={`Generated post image for ${variant.platform}`}
+                                    className={cn('h-full w-full object-cover transition-opacity', (isRegenerating || isGeneratingVideo) ? 'opacity-50' : 'opacity-100')}
+                                    height={1080}
+                                    src={variant.imageUrl}
+                                    data-ai-hint="social media post"
+                                    width={1080}
+                                    crossOrigin="anonymous"
+                                />
+                            ) : (
+                                <div className="flex h-full w-full items-center justify-center bg-muted">
+                                    <ImageOff className="h-12 w-12 text-muted-foreground" />
+                                </div>
+                            )}
                             </div>
-                        )}
-                        {variant.imageUrl ? (
-                            <Image
-                                alt={`Generated post image for ${variant.platform}`}
-                                className={cn('h-full w-full object-cover transition-opacity', (isRegenerating || isGeneratingVideo) ? 'opacity-50' : 'opacity-100')}
-                                height={1080}
-                                src={variant.imageUrl}
-                                data-ai-hint="social media post"
-                                width={1080}
-                                crossOrigin="anonymous"
-                            />
-                        ) : (
-                            <div className="flex h-full w-full items-center justify-center bg-muted">
-                                <ImageOff className="h-12 w-12 text-muted-foreground" />
-                            </div>
-                        )}
                         </div>
                     </div>
                 </TabsContent>
