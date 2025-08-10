@@ -128,7 +128,7 @@ const generateCreativeAssetFlow = ai.defineFlow(
         let refinePrompt = `Use the provided image as a strong reference. Your instruction for how to change it is: "${remainingPrompt}".`;
         
         if (imageText) {
-             refinePrompt += `\nIf there was text on the original image, replace it with the following text: "${imageText}". Ensure the new text is readable and well-composed.`
+             refinePrompt += `\nIf there was text on the original image, replace it with the following text: "${imageText}". If there was no text, add this text: "${imageText}". Ensure the new text is readable and well-composed.`
         }
 
         if (input.useBrandProfile && input.brandProfile) {
@@ -140,10 +140,12 @@ const generateCreativeAssetFlow = ai.defineFlow(
 
             if (bp.logoDataUrl) {
                 promptParts.push({ media: { url: bp.logoDataUrl } });
+                refinePrompt += ` The user may also provide a logo. If they do, follow any instructions regarding the logo, such as placing or removing it.`
             }
         }
 
         textPrompt = refinePrompt;
+        promptParts.push({ text: textPrompt });
         promptParts.push({ media: { url: input.referenceImageUrl } });
 
     } else if (input.useBrandProfile && input.brandProfile) {
@@ -165,6 +167,7 @@ const generateCreativeAssetFlow = ai.defineFlow(
         }
         
         textPrompt = onBrandPrompt;
+        promptParts.unshift({text: textPrompt});
 
     } else {
         // This is a new, un-branded, creative prompt.
@@ -173,10 +176,9 @@ const generateCreativeAssetFlow = ai.defineFlow(
              creativePrompt += `\nOverlay the following text onto the asset: "${imageText}". Ensure the text is readable and well-composed.`
         }
         textPrompt = creativePrompt;
+        promptParts.unshift({text: textPrompt});
     }
     
-    promptParts.unshift({text: textPrompt});
-
     const aiExplanationPrompt = ai.definePrompt({
       name: 'creativeAssetExplanationPrompt',
       prompt: `Based on the generated ${input.outputType}, write a very brief, one-sentence explanation of the creative choices made. For example: "I created a modern, vibrant image of a coffee shop, using your brand's primary color for the logo."`
