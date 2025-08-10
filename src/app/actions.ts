@@ -5,29 +5,6 @@ import { generatePostFromProfile as generatePostFromProfileFlow } from "@/ai/flo
 import { generateVideoPost as generateVideoPostFlow } from "@/ai/flows/generate-video-post";
 import { generateCreativeAsset as generateCreativeAssetFlow } from "@/ai/flows/generate-creative-asset";
 import type { BrandProfile, GeneratedPost, Platform, CreativeAsset } from "@/lib/types";
-import { getWeather } from "@/services/weather";
-import { getEvents } from "@/services/events";
-
-async function getLocalData(location: string, date: Date) {
-  try {
-    const weatherPromise = getWeather(location);
-    const eventsPromise = getEvents(location, date);
-
-    const [weatherResult, eventsResult] = await Promise.all([weatherPromise, eventsPromise]);
-
-    return {
-      weather: weatherResult || "pleasant weather",
-      events: eventsResult || "no major local events found",
-    };
-  } catch (error) {
-    console.error("Error fetching local data:", error);
-    // Return defaults if APIs fail
-    return {
-      weather: "pleasant weather",
-      events: "no major local events found",
-    };
-  }
-}
 
 export async function analyzeBrandAction(
   websiteUrl: string,
@@ -63,7 +40,6 @@ export async function generateContentAction(
 ): Promise<GeneratedPost> {
   try {
     const today = new Date();
-    const localData = await getLocalData(profile.location, today);
     const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long' });
     const currentDate = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     
@@ -77,8 +53,6 @@ export async function generateContentAction(
       primaryColor: profile.primaryColor,
       accentColor: profile.accentColor,
       backgroundColor: profile.backgroundColor,
-      weather: localData.weather,
-      events: localData.events,
       dayOfWeek,
       currentDate,
       variants: [{

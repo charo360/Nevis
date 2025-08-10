@@ -16,6 +16,7 @@
 import {ai} from '@/ai/genkit';
 import { GenerateRequest } from 'genkit/generate';
 import {z} from 'zod';
+import { getWeatherTool, getEventsTool } from '@/ai/tools/local-data';
 
 const GeneratePostFromProfileInputSchema = z.object({
   businessType: z.string().describe('The type of business (e.g., restaurant, salon).'),
@@ -24,8 +25,6 @@ const GeneratePostFromProfileInputSchema = z.object({
   writingTone: z.string().describe('The brand voice of the business.'),
   contentThemes: z.string().describe('The content themes of the business.'),
   logoDataUrl: z.string().describe("The business logo as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."),
-  weather: z.string().describe('The current weather conditions.'),
-  events: z.string().describe('Local events happening on the target date.'),
   dayOfWeek: z.string().describe('The day of the week for the post.'),
   currentDate: z.string().describe('The current date for the post.'),
   variants: z.array(z.object({
@@ -70,8 +69,6 @@ const textGenPrompt = ai.definePrompt({
       location: z.string(),
       writingTone: z.string(),
       contentThemes: z.string(),
-      weather: z.string(),
-      events: z.string(),
       dayOfWeek: z.string(),
       currentDate: z.string(),
       services: z.string().optional(),
@@ -84,17 +81,19 @@ const textGenPrompt = ai.definePrompt({
       imageText: z.string().describe('A brief, catchy headline for the image itself (max 5 words).'),
       hashtags: z.string().describe('Relevant hashtags for the post.'),
     })},
+    tools: [getWeatherTool, getEventsTool],
     prompt: `You are a social media manager and an expert in the {{{businessType}}} industry.
     Your goal is to create content that drives the highest possible engagement.
     Your response MUST be a valid JSON object that conforms to the output schema.
     
+    You have tools to get the current weather and local events for the business's location.
+    You should consider using these tools if you think that information will make the post more timely and engaging. Do not use them if it feels forced or irrelevant.
+    
     Here's the information you have:
     - Business Type: {{{businessType}}}
-    - Location: {{{location}}}
+    - Location: {{{location}}} (Use this for your tool calls)
     - Brand Voice: {{{writingTone}}}
     - Content Themes: {{{contentThemes}}}
-    - Weather: {{{weather}}}
-    - Local Events: {{{events}}}
     - Day of Week: {{{dayOfWeek}}}
     - Today's Date: {{{currentDate}}}
     {{#if services}}- Services/Products:
@@ -114,7 +113,6 @@ const textGenPrompt = ai.definePrompt({
         - Start with a strong, attention-grabbing hook.
         - Include a question to encourage comments and interaction.
         - End with a clear call-to-action (e.g., "Book now," "Visit us today," "Comment below with your favorite").
-        - Consider the weather and local events when creating the post.
         - Match the brand voice and directly or indirectly promote one of the services or key features.
     2.  **Image Text (imageText):** Generate a brief, catchy headline (max 5 words) that relates to the caption and is suitable for being overlaid on an image.
     3.  **Hashtags:** Include relevant hashtags.
@@ -203,8 +201,6 @@ const generatePostFromProfileFlow = ai.defineFlow(
         location: input.location,
         writingTone: input.writingTone,
         contentThemes: input.contentThemes,
-        weather: input.weather,
-        events: input.events,
         dayOfWeek: input.dayOfWeek,
         currentDate: input.currentDate,
         services: input.services,
