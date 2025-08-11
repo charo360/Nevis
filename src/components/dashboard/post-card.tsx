@@ -82,7 +82,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
         cacheBust: true,
         canvasWidth: 1080,
         canvasHeight: 1080,
-        pixelRatio: 1,
+        pixelRatio: 2,
         style: {
           borderRadius: '0',
           border: 'none',
@@ -227,28 +227,30 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
             </TabsList>
             {post.variants.map(variant => (
                 <TabsContent key={variant.platform} value={variant.platform}>
-                    <div ref={el => (downloadRefs.current[variant.platform] = el)} className="relative aspect-square w-full overflow-hidden rounded-md border">
+                    <div className="relative aspect-square w-full overflow-hidden">
                         {(isRegenerating || isGeneratingVideo) && (
                             <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/80">
                                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
                                 <span className="sr-only">{isRegenerating ? 'Regenerating image...' : 'Generating video...'}</span>
                             </div>
                         )}
-                        {variant.imageUrl ? (
-                            <Image
-                                alt={`Generated post image for ${variant.platform}`}
-                                className={cn('h-full w-full object-cover transition-opacity', (isRegenerating || isGeneratingVideo) ? 'opacity-50' : 'opacity-100')}
-                                height={1080}
-                                src={variant.imageUrl}
-                                data-ai-hint="social media post"
-                                width={1080}
-                                crossOrigin="anonymous"
-                            />
-                        ) : (
-                            <div className="flex h-full w-full items-center justify-center bg-muted">
-                                <ImageOff className="h-12 w-12 text-muted-foreground" />
-                            </div>
-                        )}
+                        <div ref={el => (downloadRefs.current[variant.platform] = el)} className="relative aspect-square w-full overflow-hidden rounded-md border">
+                            {variant.imageUrl ? (
+                                <Image
+                                    alt={`Generated post image for ${variant.platform}`}
+                                    className={cn('h-full w-full object-cover transition-opacity', (isRegenerating || isGeneratingVideo) ? 'opacity-50' : 'opacity-100')}
+                                    height={1080}
+                                    src={variant.imageUrl}
+                                    data-ai-hint="social media post"
+                                    width={1080}
+                                    crossOrigin="anonymous"
+                                />
+                            ) : (
+                                <div className="flex h-full w-full items-center justify-center bg-muted">
+                                    <ImageOff className="h-12 w-12 text-muted-foreground" />
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </TabsContent>
             ))}
