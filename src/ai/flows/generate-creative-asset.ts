@@ -272,5 +272,3 @@ Your goal is to generate a single, cohesive, and visually stunning asset.
     }
   }
 );
-
-    

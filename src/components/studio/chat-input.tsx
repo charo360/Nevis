@@ -172,7 +172,7 @@ export function ChatInput({
 
             <div className="flex items-center space-x-4">
                 <Label>Output Type:</Label>
-                 <RadioGroup defaultValue={outputType} onValueChange={(v) => setOutputType(v as 'image' | 'video')} className="flex items-center space-x-4" disabled={isLoading}>
+                 <RadioGroup value={outputType} onValueChange={(v) => setOutputType(v as 'image' | 'video')} className="flex items-center space-x-4" disabled={isLoading}>
                     <div className="flex items-center space-x-2">
                         <RadioGroupItem value="image" id="r-image" />
                         <Label htmlFor="r-image" className="flex items-center gap-2"><ImageIcon className="h-4 w-4" /> Image</Label>
