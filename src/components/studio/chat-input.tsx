@@ -1,6 +1,6 @@
 // src/components/studio/chat-input.tsx
 import * as React from 'react';
-import { Paperclip, Send, Image as ImageIcon, Video, Wand, X } from 'lucide-react';
+import { Paperclip, Send, Image as ImageIcon, Video, Wand, X, Brush } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -24,6 +24,7 @@ interface ChatInputProps {
   setOutputType: (value: 'image' | 'video') => void;
   handleImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   isBrandProfileAvailable: boolean;
+  onEditImage: (url: string) => void;
 }
 
 export function ChatInput({
@@ -39,7 +40,8 @@ export function ChatInput({
   outputType,
   setOutputType,
   handleImageUpload,
-  isBrandProfileAvailable
+  isBrandProfileAvailable,
+  onEditImage,
 }: ChatInputProps) {
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -74,8 +76,27 @@ export function ChatInput({
        <form onSubmit={handleSubmit} className="p-4 space-y-4">
         <div className="relative">
           {imagePreview && (
-            <div className="absolute bottom-full mb-2 w-24 h-24">
+            <div className="group absolute bottom-full mb-2 w-24 h-24">
                 <Image src={imagePreview} alt="Image preview" layout="fill" objectFit="cover" className="rounded-md"/>
+                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-md">
+                     <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-white hover:bg-white/20 hover:text-white"
+                                    onClick={() => onEditImage(imagePreview)}
+                                >
+                                    <span className="sr-only">Edit image</span>
+                                    <Brush className="h-4 w-4"/>
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Edit this image</TooltipContent>
+                        </Tooltip>
+                     </TooltipProvider>
+                 </div>
                  <Button
                     type="button"
                     variant="ghost"

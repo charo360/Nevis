@@ -36,8 +36,8 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
             const reader = new FileReader();
             reader.onloadend = () => {
                 const dataUrl = reader.result as string;
-                // Directly open the uploaded image in the editor
-                onEditImage(dataUrl);
+                setImagePreview(dataUrl);
+                setImageDataUrl(dataUrl);
             };
             reader.readAsDataURL(file);
         }
@@ -153,6 +153,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 setOutputType={setOutputType}
                 handleImageUpload={handleImageUpload}
                 isBrandProfileAvailable={!!brandProfile}
+                onEditImage={onEditImage}
             />
         </div>
     );
