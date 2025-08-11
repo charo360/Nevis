@@ -8,7 +8,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 import type { BrandProfile } from '@/lib/types';
 import { MediaPart } from 'genkit';
 import { GenerateRequest } from 'genkit/generate';
@@ -20,7 +20,7 @@ const CreativeAssetInputSchema = z.object({
   referenceImageUrl: z.string().nullable().describe('An optional reference image as a data URI.'),
   useBrandProfile: z.boolean().describe('Whether to apply the brand profile.'),
   brandProfile: z.custom<BrandProfile>().nullable().describe('The brand profile object.'),
-  maskDataUrl: z.string().nullable().describe('An optional mask image for inpainting as a data URI.'),
+  maskDataUrl: z.string().nullable().optional().describe('An optional mask image for inpainting as a data URI.'),
 });
 export type CreativeAssetInput = z.infer<typeof CreativeAssetInputSchema>;
 
@@ -265,3 +265,5 @@ Your goal is to generate a single, cohesive, and visually stunning asset.
     }
   }
 );
+
+    
