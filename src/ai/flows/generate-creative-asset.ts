@@ -134,10 +134,12 @@ const generateCreativeAssetFlow = ai.defineFlow(
 
     if (input.maskDataUrl && input.referenceImageUrl) {
       // This is an inpainting request.
-      textPrompt = `You are an expert image editor. Use the provided image, mask, and prompt to perform an inpainting task.
-The user wants to modify the area of the image designated by the black region in the mask.
-The modification instruction is: "${remainingPrompt}".
-Only change the masked area and ensure the result is a seamless, photorealistic blend with the original image.`;
+      textPrompt = `You are an expert image editor performing a precise inpainting task.
+You will be given an original image, a mask, and a text prompt.
+Your task is to modify the original image *only* in the areas designated by the black region of the mask.
+The rest of the image must remain absolutely unchanged.
+The user's instruction for the masked area is: "${remainingPrompt}".
+Recreate the content within the black-masked region based on this instruction, ensuring a seamless and photorealistic blend with the surrounding, untouched areas of the image.`;
       
       promptParts.push({ text: textPrompt });
       promptParts.push({ media: { url: input.referenceImageUrl, contentType: getMimeTypeFromDataURI(input.referenceImageUrl) } });
