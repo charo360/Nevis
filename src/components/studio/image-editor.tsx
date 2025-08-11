@@ -30,13 +30,19 @@ export function ImageEditor({ imageUrl, onClose, brandProfile }: ImageEditorProp
     const [prompt, setPrompt] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     
-    const [history, setHistory] = useState<ImageData[]>([]);
-    const [historyIndex, setHistoryIndex] = useState(-1);
+    // History for drawing actions (masking)
+    const [drawHistory, setDrawHistory] = useState<ImageData[]>([]);
+    const [drawHistoryIndex, setDrawHistoryIndex] = useState(-1);
 
-    const [currentImageUrl, setCurrentImageUrl] = useState(imageUrl);
+    // History for generated images
+    const [imageHistory, setImageHistory] = useState<string[]>([imageUrl]);
+    const [imageHistoryIndex, setImageHistoryIndex] = useState(0);
+
     const { toast } = useToast();
     
     const [rectStart, setRectStart] = useState<{x: number, y: number} | null>(null);
+
+    const currentImageUrl = imageHistory[imageHistoryIndex];
 
     // Function to draw the main image onto its canvas
     const drawImage = (url: string) => {
@@ -59,52 +65,62 @@ export function ImageEditor({ imageUrl, onClose, brandProfile }: ImageEditorProp
 
             imageCtx.drawImage(image, 0, 0);
 
+            // Clear drawing canvas and reset its history
             drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
             const initialImageData = drawingCtx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height);
-            setHistory([initialImageData]);
-            setHistoryIndex(0);
+            setDrawHistory([initialImageData]);
+            setDrawHistoryIndex(0);
         };
         image.onerror = () => {
             toast({ variant: 'destructive', title: "Error loading image", description: "Could not load the image for editing." });
         }
     };
     
+    // Redraw the image whenever the currentImageUrl changes (from undo/redo or new generation)
     useEffect(() => {
-        drawImage(currentImageUrl);
+        if (currentImageUrl) {
+            drawImage(currentImageUrl);
+        }
     }, [currentImageUrl]);
 
 
     const getDrawingContext = () => drawingCanvasRef.current?.getContext('2d', { willReadFrequently: true });
     
-    const saveToHistory = () => {
+    const saveToDrawHistory = () => {
         const drawingCtx = getDrawingContext();
         if (!drawingCtx || !drawingCanvasRef.current) return;
         
-        const newHistory = history.slice(0, historyIndex + 1);
+        const newHistory = drawHistory.slice(0, drawHistoryIndex + 1);
         newHistory.push(drawingCtx.getImageData(0, 0, drawingCanvasRef.current.width, drawingCanvasRef.current.height));
-        setHistory(newHistory);
-        setHistoryIndex(newHistory.length - 1);
+        setDrawHistory(newHistory);
+        setDrawHistoryIndex(newHistory.length - 1);
     }
     
-    const handleUndo = () => {
-        if (historyIndex > 0) {
-            const newIndex = historyIndex - 1;
-            setHistoryIndex(newIndex);
+    const handleDrawUndo = () => {
+        if (drawHistoryIndex > 0) {
+            const newIndex = drawHistoryIndex - 1;
+            setDrawHistoryIndex(newIndex);
             const drawingCtx = getDrawingContext();
             if (drawingCtx) {
-                drawingCtx.putImageData(history[newIndex], 0, 0);
+                drawingCtx.putImageData(drawHistory[newIndex], 0, 0);
             }
         }
     }
     
-    const handleRedo = () => {
-        if (historyIndex < history.length - 1) {
-            const newIndex = historyIndex + 1;
-            setHistoryIndex(newIndex);
+    const handleDrawRedo = () => {
+        if (drawHistoryIndex < drawHistory.length - 1) {
+            const newIndex = drawHistoryIndex + 1;
+            setDrawHistoryIndex(newIndex);
             const drawingCtx = getDrawingContext();
             if (drawingCtx) {
-                drawingCtx.putImageData(history[newIndex], 0, 0);
+                drawingCtx.putImageData(drawHistory[newIndex], 0, 0);
             }
+        }
+    }
+    
+    const handleGenerationUndo = () => {
+        if (imageHistoryIndex > 0) {
+            setImageHistoryIndex(prev => prev - 1);
         }
     }
 
@@ -150,7 +166,7 @@ export function ImageEditor({ imageUrl, onClose, brandProfile }: ImageEditorProp
             ctx.stroke();
         } else if (tool === 'rect' && rectStart) {
             // Restore previous state to draw rect preview
-            ctx.putImageData(history[historyIndex], 0, 0);
+            ctx.putImageData(drawHistory[drawHistoryIndex], 0, 0);
             ctx.strokeStyle = 'rgba(0, 0, 0, 0.7)';
             ctx.lineWidth = 2;
             ctx.strokeRect(rectStart.x, rectStart.y, x - rectStart.x, y - rectStart.y);
@@ -167,7 +183,7 @@ export function ImageEditor({ imageUrl, onClose, brandProfile }: ImageEditorProp
             ctx.closePath();
         } else if (tool === 'rect' && rectStart) {
             // Restore canvas before drawing final rect
-            ctx.putImageData(history[historyIndex], 0, 0);
+            ctx.putImageData(drawHistory[drawHistoryIndex], 0, 0);
             const { x, y } = getMousePos(canvas, e);
             ctx.globalCompositeOperation = 'source-over';
             ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
@@ -176,7 +192,7 @@ export function ImageEditor({ imageUrl, onClose, brandProfile }: ImageEditorProp
         }
 
         setIsDrawing(false);
-        saveToHistory();
+        saveToDrawHistory();
     };
 
 
@@ -241,7 +257,10 @@ export function ImageEditor({ imageUrl, onClose, brandProfile }: ImageEditorProp
             );
 
             if (result.imageUrl) {
-                setCurrentImageUrl(result.imageUrl);
+                const newHistory = imageHistory.slice(0, imageHistoryIndex + 1);
+                newHistory.push(result.imageUrl);
+                setImageHistory(newHistory);
+                setImageHistoryIndex(newHistory.length - 1);
                  toast({ title: "Image Updated!", description: result.aiExplanation });
             } else {
                  toast({ variant: 'destructive', title: "Generation Failed", description: "The AI did not return an image." });
@@ -267,9 +286,12 @@ export function ImageEditor({ imageUrl, onClose, brandProfile }: ImageEditorProp
                  <div className="space-y-4">
                     <Label>History</Label>
                      <div className="grid grid-cols-2 gap-2">
-                        <Button variant='outline' onClick={handleUndo} disabled={historyIndex <= 0}> <Undo className="mr-2"/> Undo</Button>
-                        <Button variant='outline' onClick={handleRedo} disabled={historyIndex >= history.length - 1}><Redo className="mr-2"/> Redo</Button>
+                        <Button variant='outline' onClick={handleDrawUndo} disabled={drawHistoryIndex <= 0}> <Undo className="mr-2"/> Undo Mask</Button>
+                        <Button variant='outline' onClick={handleDrawRedo} disabled={drawHistoryIndex >= drawHistory.length - 1}><Redo className="mr-2"/> Redo Mask</Button>
                     </div>
+                     <Button variant='outline' onClick={handleGenerationUndo} disabled={imageHistoryIndex <= 0} className="w-full">
+                        <Undo className="mr-2"/> Undo Generation
+                    </Button>
                 </div>
 
                 <div className="space-y-4">
