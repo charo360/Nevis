@@ -23,6 +23,7 @@ import { User } from "lucide-react";
 
 const BRAND_PROFILE_KEY = "brandProfile";
 const GENERATED_POSTS_KEY = "generatedPosts";
+const MAX_POSTS_TO_STORE = 10;
 
 function ContentCalendarPage() {
   const [brandProfile, setBrandProfile] = useState<BrandProfile | null>(null);
@@ -58,7 +59,8 @@ function ContentCalendarPage() {
 
 
   const handlePostGenerated = (post: GeneratedPost) => {
-    const newPosts = [post, ...generatedPosts];
+    // Add the new post and slice the array to only keep the most recent ones
+    const newPosts = [post, ...generatedPosts].slice(0, MAX_POSTS_TO_STORE);
     setGeneratedPosts(newPosts);
     localStorage.setItem(GENERATED_POSTS_KEY, JSON.stringify(newPosts));
   };
