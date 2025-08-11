@@ -36,8 +36,8 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
             const reader = new FileReader();
             reader.onloadend = () => {
                 const dataUrl = reader.result as string;
-                setImagePreview(dataUrl);
-                setImageDataUrl(dataUrl);
+                // Directly open the uploaded image in the editor
+                onEditImage(dataUrl);
             };
             reader.readAsDataURL(file);
         }
@@ -123,7 +123,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                                 <h1 className="text-2xl font-bold font-headline">Creative Studio</h1>
                                 <p className="text-muted-foreground mt-2">
                                      <Balancer>
-                                        Welcome to your AI-powered creative partner. Describe the ad you want, upload a reference image, and let&apos;s create something amazing together.
+                                        Welcome to your AI-powered creative partner. Describe the ad you want, upload an image to edit, or start from scratch.
                                     </Balancer>
                                 </p>
                             </CardContent>
