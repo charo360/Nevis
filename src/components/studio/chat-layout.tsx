@@ -44,9 +44,10 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
         }
     };
     
-    const handleSetReferenceImage = (url: string | null | undefined) => {
+    const handleSetReferenceAsset = (url: string | null | undefined, type: 'image' | 'video') => {
         if (url) {
-            setImagePreview(url);
+            setOutputType(type);
+            setImagePreview(url); // Using imagePreview for both image and video previews in the input area.
             setImageDataUrl(url);
         }
     }
@@ -66,6 +67,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
             id: Date.now().toString(),
             role: 'user',
             content: input,
+            // For simplicity, we just show the preview, which could be an image data URL for a video.
             imageUrl: imagePreview,
         };
         setMessages([...messages, newUserMessage]);
@@ -136,7 +138,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     <ChatMessages 
                         messages={messages} 
                         isLoading={isLoading} 
-                        onSetReferenceImage={handleSetReferenceImage}
+                        onSetReferenceAsset={handleSetReferenceAsset}
                         onEditImage={onEditImage}
                     />
                 )}

@@ -12,11 +12,11 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 interface ChatMessagesProps {
   messages: Message[];
   isLoading: boolean;
-  onSetReferenceImage: (url: string | null | undefined) => void;
+  onSetReferenceAsset: (url: string | null | undefined, type: 'image' | 'video') => void;
   onEditImage: (url: string) => void;
 }
 
-export function ChatMessages({ messages, isLoading, onSetReferenceImage, onEditImage }: ChatMessagesProps) {
+export function ChatMessages({ messages, isLoading, onSetReferenceAsset, onEditImage }: ChatMessagesProps) {
   const scrollableContainerRef = React.useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -92,7 +92,7 @@ export function ChatMessages({ messages, isLoading, onSetReferenceImage, onEditI
                                         variant="secondary" 
                                         size="icon"
                                         className="h-8 w-8"
-                                        onClick={() => onSetReferenceImage(message.imageUrl)}
+                                        onClick={() => onSetReferenceAsset(message.imageUrl, 'image')}
                                     >
                                         <Wand className="h-4 w-4" />
                                         <span className="sr-only">Refine Image</span>
@@ -123,6 +123,20 @@ export function ChatMessages({ messages, isLoading, onSetReferenceImage, onEditI
                      <div className="group relative w-full max-w-sm overflow-hidden rounded-md border">
                         <video controls autoPlay src={message.videoUrl} className="w-full" />
                          <div className="absolute top-2 right-2 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                     <Button 
+                                        variant="secondary" 
+                                        size="icon"
+                                        className="h-8 w-8"
+                                        onClick={() => onSetReferenceAsset(message.videoUrl, 'video')}
+                                    >
+                                        <Wand className="h-4 w-4" />
+                                        <span className="sr-only">Refine Video</span>
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Refine this video (new prompt)</TooltipContent>
+                            </Tooltip>
                              <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button 

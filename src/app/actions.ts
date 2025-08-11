@@ -112,7 +112,7 @@ export async function generateVideoContentAction(
 export async function generateCreativeAssetAction(
     prompt: string,
     outputType: 'image' | 'video',
-    referenceImageUrl: string | null,
+    referenceAssetUrl: string | null,
     useBrandProfile: boolean,
     brandProfile: BrandProfile | null,
     maskDataUrl: string | null | undefined,
@@ -122,7 +122,7 @@ export async function generateCreativeAssetAction(
         const result = await generateCreativeAssetFlow({
             prompt,
             outputType,
-            referenceImageUrl,
+            referenceAssetUrl,
             useBrandProfile,
             brandProfile: useBrandProfile ? brandProfile : null,
             maskDataUrl,

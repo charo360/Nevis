@@ -17,7 +17,7 @@ import { GenerateRequest } from 'genkit/generate';
 const CreativeAssetInputSchema = z.object({
   prompt: z.string().describe('The main text prompt describing the desired asset.'),
   outputType: z.enum(['image', 'video']).describe('The type of asset to generate.'),
-  referenceImageUrl: z.string().nullable().describe('An optional reference image as a data URI.'),
+  referenceAssetUrl: z.string().nullable().describe('An optional reference image or video as a data URI.'),
   useBrandProfile: z.boolean().describe('Whether to apply the brand profile.'),
   brandProfile: z.custom<BrandProfile>().nullable().describe('The brand profile object.'),
   maskDataUrl: z.string().nullable().optional().describe('An optional mask image for inpainting as a data URI.'),
@@ -133,7 +133,7 @@ const generateCreativeAssetFlow = ai.defineFlow(
     
     const { imageText, remainingPrompt } = extractQuotedText(input.prompt);
 
-    if (input.maskDataUrl && input.referenceImageUrl) {
+    if (input.maskDataUrl && input.referenceAssetUrl) {
       // This is an inpainting request.
       textPrompt = `You are an expert image editor performing a precise inpainting task.
 You will be given an original image, a mask, and a text prompt.
@@ -144,19 +144,19 @@ The user's instruction for the masked area is: "${remainingPrompt}".
 Recreate the content within the black-masked region based on this instruction, ensuring a seamless and photorealistic blend with the surrounding, untouched areas of the image.`;
       
       promptParts.push({ text: textPrompt });
-      promptParts.push({ media: { url: input.referenceImageUrl, contentType: getMimeTypeFromDataURI(input.referenceImageUrl) } });
+      promptParts.push({ media: { url: input.referenceAssetUrl, contentType: getMimeTypeFromDataURI(input.referenceAssetUrl) } });
       promptParts.push({ media: { url: input.maskDataUrl, contentType: getMimeTypeFromDataURI(input.maskDataUrl) } });
 
-    } else if (input.referenceImageUrl) {
-        // This is a generation prompt with a reference image.
-        let referencePrompt = `You are an expert creative director specializing in high-end advertisements. You will be given a reference image and a text prompt with instructions.
-Your task is to generate a new asset that is inspired by the reference image and follows the new instructions.
+    } else if (input.referenceAssetUrl) {
+        // This is a generation prompt with a reference asset (image or video).
+        let referencePrompt = `You are an expert creative director specializing in high-end advertisements. You will be given a reference asset and a text prompt with instructions.
+Your task is to generate a new asset that is inspired by the reference asset and follows the new instructions.
 
-Your primary goal is to intelligently interpret the user's request, considering the provided reference image. Do not just copy the reference image.
+Your primary goal is to intelligently interpret the user's request, considering the provided reference asset. Do not just copy the reference.
 Analyze the user's prompt for common editing terminology and apply it creatively. For example:
 - If asked to "change the background," intelligently isolate the main subject and replace the background with a new one that matches the prompt, preserving the foreground subject.
 - If asked to "make the logo bigger" or "change the text color," perform those specific edits while maintaining the overall composition.
-- If the prompt is more general, use the reference image for style, color, and subject inspiration to create a new, distinct asset.
+- If the prompt is more general, use the reference asset for style, color, and subject inspiration to create a new, distinct asset.
 
 The user's instruction is: "${remainingPrompt}"`;
 
@@ -186,7 +186,7 @@ The user's instruction is: "${remainingPrompt}"`;
 
         textPrompt = referencePrompt;
         promptParts.push({ text: textPrompt });
-        promptParts.push({ media: { url: input.referenceImageUrl, contentType: getMimeTypeFromDataURI(input.referenceImageUrl) } });
+        promptParts.push({ media: { url: input.referenceAssetUrl, contentType: getMimeTypeFromDataURI(input.referenceAssetUrl) } });
 
     } else if (input.useBrandProfile && input.brandProfile) {
         // This is a new, on-brand asset generation.
