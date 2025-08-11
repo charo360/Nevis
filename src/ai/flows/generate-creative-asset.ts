@@ -189,7 +189,7 @@ The user's instruction is: "${remainingPrompt}"`;
             ? `The brand's color palette is: Primary HSL(${bp.primaryColor}), Accent HSL(${bp.accentColor}), Background HSL(${bp.backgroundColor}). Please use these colors in the design.`
             : '';
         
-        const onBrandPrompt = `You are an expert graphic designer creating a social media ${input.outputType} for a ${bp.businessType}.
+        let onBrandPrompt = `You are an expert graphic designer creating a social media ${input.outputType} for a ${bp.businessType}.
 
 Your goal is to generate a single, cohesive, and visually stunning asset.
 
@@ -199,6 +199,10 @@ Your goal is to generate a single, cohesive, and visually stunning asset.
 - **Subject/Theme:** The core subject of the ${input.outputType} should be: "${remainingPrompt}".
 - **Text Overlay:** ${imageText ? `The following text must be overlaid on the asset in a stylish, readable font: "${imageText}". It must be fully visible and well-composed.` : 'No text should be added to the asset.'}
 - **Logo Placement:** The provided logo must be integrated naturally into the design (e.g., on a product, a sign, or as a subtle watermark).`;
+        
+        if (input.outputType === 'video') {
+            onBrandPrompt += `\n\n**Video Specifics:** Generate a video that is cinematically interesting and has a sense of completeness. Ensure the video has a clear beginning, middle, and end, even within a short duration. Avoid abrupt cuts or unfinished scenes.`
+        }
 
         if (bp.logoDataUrl) {
             promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
@@ -212,6 +216,9 @@ Your goal is to generate a single, cohesive, and visually stunning asset.
         let creativePrompt = `You are an expert creative director. Generate a compelling and high-quality ${input.outputType} for a social media advertisement based on the following instruction: "${remainingPrompt}".`;
         if (imageText) {
              creativePrompt += `\nOverlay the following text onto the asset: "${imageText}". Ensure the text is readable and well-composed.`
+        }
+        if (input.outputType === 'video') {
+            creativePrompt += `\n\nFor this video, create a cinematically interesting shot with a sense of completeness. Avoid abrupt cuts or unfinished scenes.`
         }
         textPrompt = creativePrompt;
         promptParts.unshift({text: textPrompt});
@@ -283,5 +290,3 @@ Your goal is to generate a single, cohesive, and visually stunning asset.
     }
   }
 );
-
-    
