@@ -20,6 +20,7 @@ const CreativeAssetInputSchema = z.object({
   referenceImageUrl: z.string().nullable().describe('An optional reference image as a data URI.'),
   useBrandProfile: z.boolean().describe('Whether to apply the brand profile.'),
   brandProfile: z.custom<BrandProfile>().nullable().describe('The brand profile object.'),
+  maskDataUrl: z.string().nullable().describe('An optional mask image for inpainting as a data URI.'),
 });
 export type CreativeAssetInput = z.infer<typeof CreativeAssetInputSchema>;
 
@@ -131,7 +132,18 @@ const generateCreativeAssetFlow = ai.defineFlow(
     
     const { imageText, remainingPrompt } = extractQuotedText(input.prompt);
 
-    if (input.referenceImageUrl) {
+    if (input.maskDataUrl && input.referenceImageUrl) {
+      // This is an inpainting request.
+      textPrompt = `You are an expert image editor. Use the provided image, mask, and prompt to perform an inpainting task.
+The user wants to modify the area of the image designated by the black region in the mask.
+The modification instruction is: "${remainingPrompt}".
+Only change the masked area and ensure the result is a seamless, photorealistic blend with the original image.`;
+      
+      promptParts.push({ text: textPrompt });
+      promptParts.push({ media: { url: input.referenceImageUrl, contentType: getMimeTypeFromDataURI(input.referenceImageUrl) } });
+      promptParts.push({ media: { url: input.maskDataUrl, contentType: getMimeTypeFromDataURI(input.maskDataUrl) } });
+
+    } else if (input.referenceImageUrl) {
         // This is a refinement prompt.
         let refinePrompt = `Use the provided image as a strong reference. Your instruction for how to change it is: "${remainingPrompt}".`;
         

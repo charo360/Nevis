@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { BrandProfile, Message } from "@/lib/types";
+import type { BrandProfile } from "@/lib/types";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,14 +16,13 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ChatLayout } from "@/components/studio/chat-layout";
 import { User } from "lucide-react";
-
+import { ImageEditor } from "@/components/studio/image-editor";
 
 const BRAND_PROFILE_KEY = "brandProfile";
 
 function CreativeStudioPage() {
-    const [messages, setMessages] = useState<Message[]>([]);
-    const [input, setInput] = useState("");
     const [brandProfile, setBrandProfile] = useState<BrandProfile | null>(null);
+    const [editorImage, setEditorImage] = useState<string | null>(null);
 
     useEffect(() => {
         const storedProfile = localStorage.getItem(BRAND_PROFILE_KEY);
@@ -56,13 +55,18 @@ function CreativeStudioPage() {
           </DropdownMenu>
       </header>
        <main className="flex-1 overflow-auto">
-          <ChatLayout
-              brandProfile={brandProfile}
-              messages={messages}
-              input={input}
-              setInput={setInput}
-              setMessages={setMessages}
+          {editorImage ? (
+            <ImageEditor 
+                imageUrl={editorImage}
+                onClose={() => setEditorImage(null)}
+                brandProfile={brandProfile}
             />
+          ) : (
+            <ChatLayout
+                brandProfile={brandProfile}
+                onEditImage={setEditorImage}
+            />
+          )}
       </main>
     </SidebarInset>
   );

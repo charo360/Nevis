@@ -69,6 +69,7 @@ export interface Message {
   content: string;
   imageUrl?: string | null;
   videoUrl?: string | null;
+  maskDataUrl?: string | null;
 }
 
 export type CreativeAsset = {

@@ -11,15 +11,14 @@ import { useToast } from '@/hooks/use-toast';
 
 
 interface ChatLayoutProps {
-  messages: Message[];
-  setMessages: (messages: Message[]) => void;
-  input: string;
-  setInput: (value: string) => void;
   brandProfile: BrandProfile | null;
+  onEditImage: (imageUrl: string) => void;
 }
 
-export function ChatLayout({ messages, setMessages, input, setInput, brandProfile }: ChatLayoutProps) {
+export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
+    const [messages, setMessages] = React.useState<Message[]>([]);
     const [isLoading, setIsLoading] = React.useState(false);
+    const [input, setInput] = React.useState('');
     const [imagePreview, setImagePreview] = React.useState<string | null>(null);
     const [imageDataUrl, setImageDataUrl] = React.useState<string | null>(null);
     const [useBrandProfile, setUseBrandProfile] = React.useState(!!brandProfile);
@@ -135,6 +134,7 @@ export function ChatLayout({ messages, setMessages, input, setInput, brandProfil
                         messages={messages} 
                         isLoading={isLoading} 
                         onSetReferenceImage={handleSetReferenceImage}
+                        onEditImage={onEditImage}
                     />
                 )}
             </div>

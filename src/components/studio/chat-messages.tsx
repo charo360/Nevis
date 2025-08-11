@@ -3,7 +3,7 @@ import * as React from 'react';
 import type { Message } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ChatAvatar } from './chat-avatar';
-import { Loader2, Download, Wand } from 'lucide-react';
+import { Loader2, Download, Wand, Brush } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -13,9 +13,10 @@ interface ChatMessagesProps {
   messages: Message[];
   isLoading: boolean;
   onSetReferenceImage: (url: string | null | undefined) => void;
+  onEditImage: (url: string) => void;
 }
 
-export function ChatMessages({ messages, isLoading, onSetReferenceImage }: ChatMessagesProps) {
+export function ChatMessages({ messages, isLoading, onSetReferenceImage, onEditImage }: ChatMessagesProps) {
   const scrollableContainerRef = React.useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -77,13 +78,27 @@ export function ChatMessages({ messages, isLoading, onSetReferenceImage }: ChatM
                                         variant="secondary" 
                                         size="icon"
                                         className="h-8 w-8"
+                                        onClick={() => onEditImage(message.imageUrl!)}
+                                    >
+                                        <Brush className="h-4 w-4" />
+                                        <span className="sr-only">Edit Image</span>
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Edit with Inpainting</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                     <Button 
+                                        variant="secondary" 
+                                        size="icon"
+                                        className="h-8 w-8"
                                         onClick={() => onSetReferenceImage(message.imageUrl)}
                                     >
                                         <Wand className="h-4 w-4" />
                                         <span className="sr-only">Refine Image</span>
                                     </Button>
                                 </TooltipTrigger>
-                                <TooltipContent>Refine this image</TooltipContent>
+                                <TooltipContent>Refine this image (new prompt)</TooltipContent>
                             </Tooltip>
                              <Tooltip>
                                 <TooltipTrigger asChild>

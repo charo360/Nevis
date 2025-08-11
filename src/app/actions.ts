@@ -114,7 +114,8 @@ export async function generateCreativeAssetAction(
     outputType: 'image' | 'video',
     referenceImageUrl: string | null,
     useBrandProfile: boolean,
-    brandProfile: BrandProfile | null
+    brandProfile: BrandProfile | null,
+    maskDataUrl?: string | null,
 ): Promise<CreativeAsset> {
     try {
         const result = await generateCreativeAssetFlow({
@@ -122,7 +123,8 @@ export async function generateCreativeAssetAction(
             outputType,
             referenceImageUrl,
             useBrandProfile,
-            brandProfile: useBrandProfile ? brandProfile : null
+            brandProfile: useBrandProfile ? brandProfile : null,
+            maskDataUrl,
         });
         return result;
     } catch (error) {
