@@ -138,6 +138,7 @@ const generateCreativeAssetFlow = ai.defineFlow(
 You will be given an original image, a mask, and a text prompt.
 Your task is to modify the original image *only* in the areas designated by the black region of the mask.
 The rest of the image must remain absolutely unchanged.
+If the user is masking out text to change it, replace *only* the masked text. Do not add, remove, or alter any text outside the masked area.
 The user's instruction for the masked area is: "${remainingPrompt}".
 Recreate the content within the black-masked region based on this instruction, ensuring a seamless and photorealistic blend with the surrounding, untouched areas of the image.`;
       

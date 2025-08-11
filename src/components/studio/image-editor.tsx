@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from 'react';
-import { X, Wand, Brush, Eraser, Undo, Redo, Loader2 } from 'lucide-react';
+import { X, Wand, Brush, Eraser, Undo, Redo, Loader2, RectangleHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
@@ -26,7 +26,7 @@ export function ImageEditor({ imageUrl, onClose, brandProfile }: ImageEditorProp
 
     const [isDrawing, setIsDrawing] = useState(false);
     const [brushSize, setBrushSize] = useState(40);
-    const [tool, setTool] = useState<'brush' | 'eraser'>('brush');
+    const [tool, setTool] = useState<'brush' | 'eraser' | 'rect'>('brush');
     const [prompt, setPrompt] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     
@@ -36,6 +36,8 @@ export function ImageEditor({ imageUrl, onClose, brandProfile }: ImageEditorProp
     const [currentImageUrl, setCurrentImageUrl] = useState(imageUrl);
     const { toast } = useToast();
     
+    const [rectStart, setRectStart] = useState<{x: number, y: number} | null>(null);
+
     // Function to draw the main image onto its canvas
     const drawImage = (url: string) => {
         const imageCanvas = imageCanvasRef.current;
@@ -50,16 +52,13 @@ export function ImageEditor({ imageUrl, onClose, brandProfile }: ImageEditorProp
         image.crossOrigin = "anonymous";
         image.src = url;
         image.onload = () => {
-            // Set both canvases to the image's dimensions
             imageCanvas.width = image.naturalWidth;
             imageCanvas.height = image.naturalHeight;
             drawingCanvas.width = image.naturalWidth;
             drawingCanvas.height = image.naturalHeight;
 
-            // Draw the image on the bottom canvas
             imageCtx.drawImage(image, 0, 0);
 
-            // Clear the top (drawing) canvas and initialize history
             drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
             const initialImageData = drawingCtx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height);
             setHistory([initialImageData]);
@@ -70,7 +69,6 @@ export function ImageEditor({ imageUrl, onClose, brandProfile }: ImageEditorProp
         }
     };
     
-    // Redraw the main image when the URL changes
     useEffect(() => {
         drawImage(currentImageUrl);
     }, [currentImageUrl]);
@@ -124,20 +122,18 @@ export function ImageEditor({ imageUrl, onClose, brandProfile }: ImageEditorProp
         if (!ctx || !canvas) return;
 
         const { x, y } = getMousePos(canvas, e);
-        
         setIsDrawing(true);
-        ctx.beginPath();
-        ctx.moveTo(x, y);
         
-        ctx.lineWidth = brushSize;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-
-        if (tool === 'brush') {
-            ctx.globalCompositeOperation = 'source-over';
-            ctx.strokeStyle = 'rgba(0, 0, 0, 0.7)'; // Semi-transparent black for mask
-        } else { // Eraser
-            ctx.globalCompositeOperation = 'destination-out';
+        if (tool === 'brush' || tool === 'eraser') {
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineWidth = brushSize;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.globalCompositeOperation = tool === 'brush' ? 'source-over' : 'destination-out';
+        } else if (tool === 'rect') {
+            setRectStart({ x, y });
         }
     };
 
@@ -148,17 +144,41 @@ export function ImageEditor({ imageUrl, onClose, brandProfile }: ImageEditorProp
         if (!ctx || !canvas) return;
         
         const { x, y } = getMousePos(canvas, e);
-        ctx.lineTo(x, y);
-        ctx.stroke();
+        
+        if (tool === 'brush' || tool === 'eraser') {
+            ctx.lineTo(x, y);
+            ctx.stroke();
+        } else if (tool === 'rect' && rectStart) {
+            // Restore previous state to draw rect preview
+            ctx.putImageData(history[historyIndex], 0, 0);
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(rectStart.x, rectStart.y, x - rectStart.x, y - rectStart.y);
+        }
     };
     
-    const stopDrawing = () => {
+    const stopDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
         if (!isDrawing) return;
+        const canvas = drawingCanvasRef.current;
         const ctx = getDrawingContext();
-        if (ctx) ctx.closePath();
+        if (!ctx || !canvas) return;
+
+        if (tool === 'brush' || tool === 'eraser') {
+            ctx.closePath();
+        } else if (tool === 'rect' && rectStart) {
+            // Restore canvas before drawing final rect
+            ctx.putImageData(history[historyIndex], 0, 0);
+            const { x, y } = getMousePos(canvas, e);
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(rectStart.x, rectStart.y, x - rectStart.x, y - rectStart.y);
+            setRectStart(null);
+        }
+
         setIsDrawing(false);
         saveToHistory();
     };
+
 
     const getMaskDataUrl = (): string => {
         const drawingCanvas = drawingCanvasRef.current;
@@ -169,7 +189,6 @@ export function ImageEditor({ imageUrl, onClose, brandProfile }: ImageEditorProp
         const originalImageData = ctx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height);
         const originalData = originalImageData.data;
 
-        // Create a new canvas for the final black and white mask
         const maskCanvas = document.createElement('canvas');
         maskCanvas.width = drawingCanvas.width;
         maskCanvas.height = drawingCanvas.height;
@@ -180,18 +199,16 @@ export function ImageEditor({ imageUrl, onClose, brandProfile }: ImageEditorProp
         const maskData = maskImageData.data;
         
         for (let i = 0; i < originalData.length; i += 4) {
-            // If the pixel on the drawing canvas has any content (alpha > 0), make it black on the mask
-            if (originalData[i + 3] > 0) {
-                maskData[i] = 0;     // R
+            if (originalData[i + 3] > 0) { // If pixel has alpha
+                maskData[i] = 0;     // R (black)
                 maskData[i + 1] = 0; // G
                 maskData[i + 2] = 0; // B
-                maskData[i + 3] = 255; // A (fully opaque black)
+                maskData[i + 3] = 255; // A (opaque)
             } else {
-                // Otherwise, make it white
-                maskData[i] = 255;
-                maskData[i + 1] = 255;
-                maskData[i + 2] = 255;
-                maskData[i + 3] = 255; // A (fully opaque white)
+                maskData[i] = 255;   // R (white)
+                maskData[i + 1] = 255; // G
+                maskData[i + 2] = 255; // B
+                maskData[i + 3] = 255; // A (opaque)
             }
         }
 
@@ -257,9 +274,10 @@ export function ImageEditor({ imageUrl, onClose, brandProfile }: ImageEditorProp
 
                 <div className="space-y-4">
                     <Label>Tool</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                        <Button variant={tool === 'brush' ? 'secondary' : 'outline'} onClick={() => setTool('brush')}><Brush className="mr-2"/> Brush</Button>
-                        <Button variant={tool === 'eraser' ? 'secondary' : 'outline'} onClick={() => setTool('eraser')}><Eraser className="mr-2"/> Eraser</Button>
+                    <div className="grid grid-cols-3 gap-2">
+                        <Button variant={tool === 'brush' ? 'secondary' : 'outline'} onClick={() => setTool('brush')}><Brush/></Button>
+                        <Button variant={tool === 'rect' ? 'secondary' : 'outline'} onClick={() => setTool('rect')}><RectangleHorizontal/></Button>
+                        <Button variant={tool === 'eraser' ? 'secondary' : 'outline'} onClick={() => setTool('eraser')}><Eraser/></Button>
                     </div>
                 </div>
 
@@ -293,9 +311,7 @@ export function ImageEditor({ imageUrl, onClose, brandProfile }: ImageEditorProp
                     <canvas
                         ref={drawingCanvasRef}
                         className={cn(
-                            "absolute top-0 left-0 max-w-full max-h-full object-contain cursor-crosshair",
-                            tool === 'brush' && 'cursor-crosshair',
-                            tool === 'eraser' && 'cursor-grab' // A better cursor for erasing
+                            "absolute top-0 left-0 max-w-full max-h-full object-contain cursor-crosshair"
                         )}
                         onMouseDown={startDrawing}
                         onMouseMove={draw}
