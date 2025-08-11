@@ -22,8 +22,6 @@ interface ChatInputProps {
   setUseBrandProfile: (value: boolean) => void;
   outputType: 'image' | 'video';
   setOutputType: (value: 'image' | 'video') => void;
-  videoAspectRatio: '16:9' | '9:16';
-  setVideoAspectRatio: (value: '16:9' | '9:16') => void;
   handleImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   isBrandProfileAvailable: boolean;
   onEditImage: (url: string) => void;
@@ -41,8 +39,6 @@ export function ChatInput({
   setUseBrandProfile,
   outputType,
   setOutputType,
-  videoAspectRatio,
-  setVideoAspectRatio,
   handleImageUpload,
   isBrandProfileAvailable,
   onEditImage,
@@ -188,25 +184,6 @@ export function ChatInput({
                 </RadioGroup>
             </div>
              
-             {outputType === 'video' && (
-                 <>
-                    <Separator orientation="vertical" className="h-6 hidden sm:block" />
-                     <div className="flex items-center space-x-4">
-                        <Label>Aspect Ratio:</Label>
-                        <RadioGroup value={videoAspectRatio} onValueChange={(v) => setVideoAspectRatio(v as '16:9' | '9:16')} className="flex items-center space-x-4" disabled={isLoading}>
-                            <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="16:9" id="r-169" />
-                                <Label htmlFor="r-169">16:9</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="9:16" id="r-916" />
-                                <Label htmlFor="r-916">9:16</Label>
-                            </div>
-                        </RadioGroup>
-                    </div>
-                 </>
-             )}
-
              <Separator orientation="vertical" className="h-6 hidden sm:block" />
 
              <Button type="submit" className="w-full sm:w-auto" disabled={isLoading || !input}>
