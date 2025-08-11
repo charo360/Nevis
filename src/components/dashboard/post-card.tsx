@@ -85,6 +85,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
         pixelRatio: 1,
         style: {
           borderRadius: '0',
+          border: 'none',
         }
       });
       
@@ -226,8 +227,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
             </TabsList>
             {post.variants.map(variant => (
                 <TabsContent key={variant.platform} value={variant.platform}>
-                    <div ref={el => downloadRefs.current[variant.platform] = el}>
-                      <div className="relative aspect-square w-full overflow-hidden rounded-md border">
+                    <div ref={el => (downloadRefs.current[variant.platform] = el)} className="relative aspect-square w-full overflow-hidden rounded-md border">
                         {(isRegenerating || isGeneratingVideo) && (
                             <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/80">
                                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -249,7 +249,6 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
                                 <ImageOff className="h-12 w-12 text-muted-foreground" />
                             </div>
                         )}
-                      </div>
                     </div>
                 </TabsContent>
             ))}
