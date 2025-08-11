@@ -148,23 +148,38 @@ Recreate the content within the black-masked region based on this instruction, e
       promptParts.push({ media: { url: input.maskDataUrl, contentType: getMimeTypeFromDataURI(input.maskDataUrl) } });
 
     } else if (input.referenceImageUrl) {
-        // This is a refinement prompt.
-        let refinePrompt = `Use the provided image as a strong reference. Your instruction for how to change it is: "${remainingPrompt}".`;
-        
+        // This is a refinement prompt with an "intelligent editing" agent.
+        let refinePrompt = `You are an expert creative director and photo editor. You will be given a reference image and a text prompt with instructions on how to modify it.
+Your task is to analyze the user's prompt to understand their intent and then generate a new image that reflects those changes as accurately as possible, using the reference image as the starting point.
+
+**Analyze the user's intent from their prompt:** "${remainingPrompt}"
+
+Based on your analysis, perform one or more of the following actions:
+
+*   **Background Change:** If the user asks to "change the background," "remove the background," or something similar, you must intelligently separate the main subject(s) from the background. Keep the subject(s) the same, and replace the original background with a new one that matches the user's description.
+*   **Color Change:** If the user asks to change the color of a specific element (e.g., "change the shirt to red," "make the sky blue"), you must identify that element and change its color while preserving its texture and details.
+*   **Text Manipulation:**
+    *   If the user provides new text in quotes (e.g., "add text 'Hello World'"), overlay this text onto the image. The text should be stylish, readable, and well-composed. If there was text on the original image, replace it with the new text.
+    *   If the user asks to "remove the text," perform a seamless, content-aware fill to remove the text and replace it with a plausible background.
+*   **Element Adjustment:** If the user asks to "add," "remove," "resize," or "move" an element (e.g., "add a hat," "make the logo smaller"), you must perform that action while maintaining a photorealistic and cohesive final image.
+*   **General Style Change:** If the user provides a general instruction (e.g., "make it look more professional," "give it a vintage feel"), you should interpret this as a stylistic filter and apply it to the entire image.
+
+It is critical that you follow the user's instructions precisely while maintaining the integrity and quality of the original image as much as possible.`;
+
         if (imageText) {
-             refinePrompt += `\nIf there was text on the original image, replace it with the following text: "${imageText}". If there was no text, add this text: "${imageText}". Ensure the new text is readable and well-composed.`
+             refinePrompt += `\n\n**Explicit Text Overlay:** The user has provided specific text in quotes: "${imageText}". This is a high-priority instruction. You MUST overlay this text on the image. If there was existing text, replace it. Ensure the new text is readable and well-composed.`
         }
 
         if (input.useBrandProfile && input.brandProfile) {
             const bp = input.brandProfile;
             const colorInstructions = (bp.primaryColor && bp.accentColor && bp.backgroundColor) 
-            ? ` The brand's color palette is: Primary HSL(${bp.primaryColor}), Accent HSL(${bp.accentColor}), Background HSL(${bp.backgroundColor}). You MUST use these colors in the new design.`
+            ? ` The brand's color palette is: Primary HSL(${bp.primaryColor}), Accent HSL(${bp.accentColor}), Background HSL(${bp.backgroundColor}). You MUST use these colors in the new design where appropriate.`
             : '';
-            refinePrompt += colorInstructions;
+            refinePrompt += `\n\n**Brand Guidelines:**${colorInstructions}`;
 
             if (bp.logoDataUrl) {
                 promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
-                refinePrompt += ` The user may also provide a logo. If they do, follow any instructions regarding the logo, such as placing or removing it.`
+                refinePrompt += ` A logo has also been provided. Follow any instructions regarding the logo, such as placing, removing, or resizing it.`
             }
         }
 
