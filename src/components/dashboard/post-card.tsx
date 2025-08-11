@@ -83,6 +83,9 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
         canvasWidth: 1080,
         canvasHeight: 1080,
         pixelRatio: 1,
+        style: {
+          borderRadius: '0',
+        }
       });
       
       const link = document.createElement('a');
