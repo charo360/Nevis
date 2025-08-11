@@ -118,36 +118,6 @@ const getMimeTypeFromDataURI = (dataURI: string): string => {
 };
 
 
-const videoGenPrompt = ai.definePrompt({
-    name: 'videoGenerationPrompt',
-    input: { schema: z.object({
-        basePrompt: z.string(),
-        imageText: z.string().nullable(),
-        logoProvided: z.boolean(),
-        hasSound: z.boolean(),
-    })},
-    prompt: `You are an expert creative director creating a short promotional video for a high-end marketing campaign.
-Your goal is to generate a single, cohesive, and visually stunning video.
-The video should be cinematically interesting, well-composed, and have a sense of completeness. Avoid abrupt cuts or unfinished scenes.
-{{#if hasSound}}The video should have relevant sound.{{/if}}
-
-**Creative Brief:**
-{{{basePrompt}}}
-
-{{#if imageText}}
-**Text Overlay:**
-The following text MUST be overlaid on the video in a stylish, readable font: "{{{imageText}}}".
-It is critical that the text is clearly readable, well-composed, and not cut off. The entire text must be visible.
-{{/if}}
-
-{{#if logoProvided}}
-**Logo Placement:**
-The provided logo MUST be placed on the video. It should be integrated naturally into the design.
-{{/if}}
-`
-});
-
-
 /**
  * The core Genkit flow for generating a creative asset.
  */
@@ -210,7 +180,9 @@ The user's instruction is: "${remainingPrompt}"`;
         }
 
         textPrompt = referencePrompt;
-        promptParts.push({ text: textPrompt });
+        if (textPrompt) {
+            promptParts.push({ text: textPrompt });
+        }
         promptParts.push({ media: { url: input.referenceAssetUrl, contentType: getMimeTypeFromDataURI(input.referenceAssetUrl) } });
 
     } else if (input.useBrandProfile && input.brandProfile) {
@@ -235,17 +207,19 @@ The user's instruction is: "${remainingPrompt}"`;
                 promptParts.unshift({text: textPrompt});
             }
         } else { // Video
-             if (bp.logoDataUrl) {
+             onBrandPrompt += `\n- **Video Specifics:** Generate a video that is cinematically interesting, well-composed, and has a sense of completeness. Create a well-composed shot with a clear beginning, middle, and end, even within a short duration. Avoid abrupt cuts or unfinished scenes.`;
+            if (input.aspectRatio === '16:9') {
+                onBrandPrompt += ' The video should have relevant sound.';
+            }
+            if(imageText) {
+                onBrandPrompt += `\n- **Text Overlay:** The following text MUST be overlaid on the video in a stylish, readable font: "${imageText}". It is critical that the text is clearly readable, well-composed, and not cut off. The entire text must be visible.`
+            }
+            if (bp.logoDataUrl) {
+                onBrandPrompt += `\n- **Logo Placement:** The provided logo must be integrated naturally into the design.`;
                 promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
             }
-            const videoPromptResult = await videoGenPrompt({
-                basePrompt: onBrandPrompt,
-                imageText,
-                logoProvided: !!bp.logoDataUrl,
-                hasSound: input.aspectRatio === "16:9"
-            });
-            textPrompt = videoPromptResult.output!
-            if (textPrompt) {
+            textPrompt = onBrandPrompt;
+             if (textPrompt) {
                 promptParts.unshift({text: textPrompt});
             }
         }
@@ -260,13 +234,14 @@ The user's instruction is: "${remainingPrompt}"`;
                 promptParts.unshift({text: textPrompt});
             }
         } else { // Video
-            const videoPromptResult = await videoGenPrompt({
-                basePrompt: creativePrompt,
-                imageText,
-                logoProvided: false,
-                hasSound: input.aspectRatio === "16:9"
-            });
-            textPrompt = videoPromptResult.output!;
+            creativePrompt += `\n\n**Video Specifics:** Generate a video that is cinematically interesting, well-composed, and has a sense of completeness. Create a well-composed shot with a clear beginning, middle, and end, even within a short duration. Avoid abrupt cuts or unfinished scenes.`;
+            if (input.aspectRatio === '16:9') {
+                creativePrompt += ' The video should have relevant sound.';
+            }
+            if (imageText) {
+                creativePrompt += `\n\n**Text Overlay:** The following text MUST be overlaid on the video in a stylish, readable font: "${imageText}". It is critical that the text is clearly readable, well-composed, and not cut off. The entire text must be visible.`;
+            }
+            textPrompt = creativePrompt;
             if (textPrompt) {
                 promptParts.unshift({text: textPrompt});
             }
