@@ -116,6 +116,7 @@ export async function generateCreativeAssetAction(
     useBrandProfile: boolean,
     brandProfile: BrandProfile | null,
     maskDataUrl?: string | null,
+    aspectRatio?: '16:9' | '9:16',
 ): Promise<CreativeAsset> {
     try {
         const result = await generateCreativeAssetFlow({
@@ -125,6 +126,7 @@ export async function generateCreativeAssetAction(
             useBrandProfile,
             brandProfile: useBrandProfile ? brandProfile : null,
             maskDataUrl,
+            aspectRatio,
         });
         return result;
     } catch (error) {
@@ -132,3 +134,5 @@ export async function generateCreativeAssetAction(
         throw new Error((error as Error).message);
     }
 }
+
+    

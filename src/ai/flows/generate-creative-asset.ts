@@ -17,6 +17,7 @@ import { GenerateRequest } from 'genkit/generate';
 const CreativeAssetInputSchema = z.object({
   prompt: z.string().describe('The main text prompt describing the desired asset.'),
   outputType: z.enum(['image', 'video']).describe('The type of asset to generate.'),
+  aspectRatio: z.enum(['16:9', '9:16']).optional().describe('The aspect ratio for video generation.'),
   referenceImageUrl: z.string().nullable().describe('An optional reference image as a data URI.'),
   useBrandProfile: z.boolean().describe('Whether to apply the brand profile.'),
   brandProfile: z.custom<BrandProfile>().nullable().describe('The brand profile object.'),
@@ -150,7 +151,13 @@ Recreate the content within the black-masked region based on this instruction, e
     } else if (input.referenceImageUrl) {
         // This is a generation prompt with a reference image.
         let referencePrompt = `You are an expert creative director. You will be given a reference image and a text prompt with instructions.
-Your task is to generate a new image that is inspired by the reference image and follows the new instructions.
+Your task is to generate a new asset that is inspired by the reference image and follows the new instructions.
+
+Your primary goal is to intelligently interpret the user's request, considering the provided reference image. Do not just copy the reference image.
+Analyze the user's prompt for common editing terminology and apply it creatively. For example:
+- If asked to "change the background," intelligently isolate the main subject and replace the background with a new one that matches the prompt, preserving the foreground subject.
+- If asked to "make the logo bigger" or "change the text color," perform those specific edits while maintaining the overall composition.
+- If the prompt is more general, use the reference image for style, color, and subject inspiration to create a new, distinct asset.
 
 The user's instruction is: "${remainingPrompt}"`;
 
@@ -234,8 +241,12 @@ Your goal is to generate a single, cohesive, and visually stunning asset.
             };
         } else { // Video generation
             const result = await generateWithRetry({
-                model: 'googleai/veo-3.0-generate-preview',
+                model: 'googleai/veo-2.0-generate-001',
                 prompt: promptParts,
+                config: {
+                    aspectRatio: input.aspectRatio || '16:9',
+                    durationSeconds: 8,
+                }
             });
             let operation = result.operation;
 
@@ -272,3 +283,5 @@ Your goal is to generate a single, cohesive, and visually stunning asset.
     }
   }
 );
+
+    
