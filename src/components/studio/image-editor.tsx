@@ -110,14 +110,24 @@ export function ImageEditor({ imageUrl, onClose, brandProfile }: ImageEditorProp
         }
     }
 
-    const startDrawing = ({ nativeEvent }: React.MouseEvent<HTMLCanvasElement>) => {
-        const { offsetX, offsetY } = nativeEvent;
+    const getMousePos = (canvas: HTMLCanvasElement, evt: React.MouseEvent<HTMLCanvasElement>) => {
+        const rect = canvas.getBoundingClientRect();
+        return {
+            x: ((evt.clientX - rect.left) / rect.width) * canvas.width,
+            y: ((evt.clientY - rect.top) / rect.height) * canvas.height,
+        };
+    }
+
+    const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+        const canvas = drawingCanvasRef.current;
         const ctx = getDrawingContext();
-        if (!ctx) return;
+        if (!ctx || !canvas) return;
+
+        const { x, y } = getMousePos(canvas, e);
         
         setIsDrawing(true);
         ctx.beginPath();
-        ctx.moveTo(offsetX, offsetY);
+        ctx.moveTo(x, y);
         
         ctx.lineWidth = brushSize;
         ctx.lineCap = 'round';
@@ -131,13 +141,14 @@ export function ImageEditor({ imageUrl, onClose, brandProfile }: ImageEditorProp
         }
     };
 
-    const draw = ({ nativeEvent }: React.MouseEvent<HTMLCanvasElement>) => {
+    const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
         if (!isDrawing) return;
-        const { offsetX, offsetY } = nativeEvent;
+        const canvas = drawingCanvasRef.current;
         const ctx = getDrawingContext();
-        if (!ctx) return;
+        if (!ctx || !canvas) return;
         
-        ctx.lineTo(offsetX, offsetY);
+        const { x, y } = getMousePos(canvas, e);
+        ctx.lineTo(x, y);
         ctx.stroke();
     };
     
