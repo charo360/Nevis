@@ -131,6 +131,7 @@ export async function generateCreativeAssetAction(
         return result;
     } catch (error) {
         console.error("Error generating creative asset:", error);
+        // Always pass the specific error message from the flow to the client.
         throw new Error((error as Error).message);
     }
 }

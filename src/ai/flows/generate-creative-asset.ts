@@ -139,7 +139,6 @@ const generateCreativeAssetFlow = ai.defineFlow(
 You will be given an original image, a mask, and a text prompt.
 Your task is to modify the original image *only* in the areas designated by the black region of the mask.
 The rest of the image must remain absolutely unchanged.
-If the user is masking out text to change it, replace *only* the masked text. Do not add, remove, or alter any text outside the masked area.
 If the prompt is a "remove" or "delete" instruction, perform a seamless, content-aware fill to replace the masked object with a photorealistic background that matches the surrounding area.
 The user's instruction for the masked area is: "${remainingPrompt}".
 Recreate the content within the black-masked region based on this instruction, ensuring a seamless and photorealistic blend with the surrounding, untouched areas of the image.`;
@@ -166,7 +165,7 @@ The user's instruction is: "${remainingPrompt}"`;
         }
         
         if (input.outputType === 'video') {
-             referencePrompt += `\n\n**Video Specifics:** Generate a video that is cinematically interesting, well-composed, and has a sense of completeness. Avoid abrupt cuts or unfinished scenes.`
+             referencePrompt += `\n\n**Video Specifics:** Generate a video that is cinematically interesting, well-composed, and has a sense of completeness. Create a well-composed shot with a clear beginning, middle, and end, even within a short duration. Avoid abrupt cuts or unfinished scenes.`
              if(input.aspectRatio === "16:9") {
                  referencePrompt += ' The video should include sound.'
              }
@@ -196,9 +195,7 @@ The user's instruction is: "${remainingPrompt}"`;
             ? `The brand's color palette is: Primary HSL(${bp.primaryColor}), Accent HSL(${bp.accentColor}), Background HSL(${bp.backgroundColor}). Please use these colors in the design.`
             : '';
         
-        let onBrandPrompt = `You are an expert creative director creating a social media advertisement ${input.outputType} for a ${bp.businessType}.
-
-Your goal is to generate a single, cohesive, and visually stunning asset for a professional marketing campaign.
+        let onBrandPrompt = `You are an expert creative director creating a social media advertisement ${input.outputType} for a ${bp.businessType}. Your goal is to generate a single, cohesive, and visually stunning asset for a professional marketing campaign.
 
 **Key Elements to Include:**
 - **Visual Style:** The design must be ${bp.visualStyle}. The writing tone is ${bp.writingTone} and content should align with these themes: ${bp.contentThemes}.
@@ -208,7 +205,7 @@ Your goal is to generate a single, cohesive, and visually stunning asset for a p
 - **Logo Placement:** The provided logo must be integrated naturally into the design (e.g., on a product, a sign, or as a subtle watermark).`;
         
         if (input.outputType === 'video') {
-             onBrandPrompt += `\n\n**Video Specifics:** Generate a video that is cinematically interesting, well-composed, and has a sense of completeness. Ensure the video has a clear beginning, middle, and end, even within a short duration. Avoid abrupt cuts or unfinished scenes.`
+             onBrandPrompt += `\n\n**Video Specifics:** Generate a video that is cinematically interesting, well-composed, and has a sense of completeness. Create a well-composed shot with a clear beginning, middle, and end, even within a short duration. Avoid abrupt cuts or unfinished scenes.`
              if(input.aspectRatio === "16:9") {
                  onBrandPrompt += ' The video should include sound.'
              }
@@ -274,25 +271,27 @@ Your goal is to generate a single, cohesive, and visually stunning asset for a p
                 prompt: promptParts,
                 config,
             });
+            
             let operation = result.operation;
 
             if (!operation) {
-                throw new Error('Expected the model to return an operation');
+                throw new Error('The video generation process did not start correctly. Please try again.');
             }
 
+            // Poll for completion
             while (!operation.done) {
-                await new Promise(resolve => setTimeout(resolve, 5000));
+                await new Promise(resolve => setTimeout(resolve, 5000)); // wait 5s
                 operation = await ai.checkOperation(operation);
             }
-
+            
             if (operation.error) {
                 console.error("Video generation operation failed", operation.error);
-                throw new Error(`Video generation failed. Please try again. Error: ${operation.error.message}`);
+                throw new Error(`Video generation failed: ${operation.error.message}. Please try again.`);
             }
 
             const videoPart = operation.output?.message?.content.find(p => !!p.media);
             if (!videoPart || !videoPart.media) {
-                throw new Error('No video was generated in the operation result.');
+                throw new Error('Video generation completed, but the final video file could not be found.');
             }
 
             const videoDataUrl = await videoToDataURI(videoPart);
@@ -305,7 +304,9 @@ Your goal is to generate a single, cohesive, and visually stunning asset for a p
         }
     } catch (e: any) {
         console.error("Error during creative asset generation:", e);
-        throw new Error(e.message || "Asset generation failed. Please check your inputs and try again.");
+        // Ensure a user-friendly error is thrown
+        const message = e.message || "An unknown error occurred during asset generation.";
+        throw new Error(message);
     }
   }
 );
