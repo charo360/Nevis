@@ -173,15 +173,13 @@ The user's instruction is: "${remainingPrompt}"`;
 
         if (input.useBrandProfile && input.brandProfile) {
             const bp = input.brandProfile;
-            const colorInstructions = (bp.primaryColor && bp.accentColor && bp.backgroundColor) 
-            ? ` The brand's color palette is: Primary HSL(${bp.primaryColor}), Accent HSL(${bp.accentColor}), Background HSL(${bp.backgroundColor}). You MUST use these colors in the new design where appropriate.`
-            : '';
-            referencePrompt += `\n\n**Brand Guidelines:**${colorInstructions}`;
+            let brandGuidelines = '\n\n**Brand Guidelines:**';
 
             if (bp.logoDataUrl) {
                 promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
-                referencePrompt += ` A logo has also been provided. Integrate it naturally into the new design.`
+                brandGuidelines += ` A logo has also been provided. Integrate it naturally into the new design.`
             }
+            referencePrompt += brandGuidelines;
         }
 
         textPrompt = referencePrompt;
@@ -191,9 +189,9 @@ The user's instruction is: "${remainingPrompt}"`;
     } else if (input.useBrandProfile && input.brandProfile) {
         // This is a new, on-brand asset generation.
         const bp = input.brandProfile;
-        const colorInstructions = (bp.primaryColor && bp.accentColor && bp.backgroundColor) 
+        const colorInstructions = (input.outputType === 'image' && bp.primaryColor && bp.accentColor && bp.backgroundColor) 
             ? `The brand's color palette is: Primary HSL(${bp.primaryColor}), Accent HSL(${bp.accentColor}), Background HSL(${bp.backgroundColor}). Please use these colors in the design.`
-            : '';
+            : 'The brand has not specified colors, so use a visually appealing and appropriate palette based on the visual style.';
         
         let onBrandPrompt = `You are an expert creative director creating a social media advertisement ${input.outputType} for a ${bp.businessType}. Your goal is to generate a single, cohesive, and visually stunning asset for a professional marketing campaign.
 
@@ -228,7 +226,7 @@ The user's instruction is: "${remainingPrompt}"`;
             creativePrompt += `\n\nFor this video, create a cinematically interesting shot that is well-composed and suitable for a professional marketing campaign. It should have a sense of completeness and avoid abrupt cuts or unfinished scenes.`
             if(input.aspectRatio === "16:9") {
                  creativePrompt += ' The video should include sound.'
-            }
+             }
         }
         textPrompt = creativePrompt;
         promptParts.unshift({text: textPrompt});
