@@ -126,8 +126,8 @@ const videoGenPrompt = ai.definePrompt({
         logoProvided: z.boolean(),
         hasSound: z.boolean(),
     })},
-    prompt: `You are an expert creative director creating a short promotional video.
-Your goal is to generate a single, cohesive, and visually stunning video for a professional marketing campaign.
+    prompt: `You are an expert creative director creating a short promotional video for a high-end marketing campaign.
+Your goal is to generate a single, cohesive, and visually stunning video.
 The video should be cinematically interesting, well-composed, and have a sense of completeness. Avoid abrupt cuts or unfinished scenes.
 {{#if hasSound}}The video should have relevant sound.{{/if}}
 
@@ -224,11 +224,6 @@ The user's instruction is: "${remainingPrompt}"`;
 - **Subject/Theme:** The core subject of the ${input.outputType} should be: "${remainingPrompt}".`;
         
         if (input.outputType === 'image') {
-            const colorInstructions = (bp.primaryColor && bp.accentColor && bp.backgroundColor) 
-                ? `The brand's color palette is: Primary HSL(${bp.primaryColor}), Accent HSL(${bp.accentColor}), Background HSL(${bp.backgroundColor}). Please use these colors in the design.`
-                : 'The brand has not specified colors, so use a visually appealing and appropriate palette based on the visual style.';
-            
-            onBrandPrompt += `\n- **Brand Colors:** ${colorInstructions}`;
             onBrandPrompt += `\n- **Text Overlay:** ${imageText ? `The following text must be overlaid on the asset in a stylish, readable font: "${imageText}". It must be fully visible and well-composed.` : 'No text should be added to the asset.'}`;
             onBrandPrompt += `\n- **Logo Placement:** The provided logo must be integrated naturally into the design (e.g., on a product, a sign, or as a subtle watermark).`;
 
@@ -236,7 +231,9 @@ The user's instruction is: "${remainingPrompt}"`;
                 promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
             }
             textPrompt = onBrandPrompt;
-            promptParts.unshift({text: textPrompt});
+            if (textPrompt) {
+                promptParts.unshift({text: textPrompt});
+            }
         } else { // Video
              if (bp.logoDataUrl) {
                 promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
@@ -247,7 +244,10 @@ The user's instruction is: "${remainingPrompt}"`;
                 logoProvided: !!bp.logoDataUrl,
                 hasSound: input.aspectRatio === "16:9"
             });
-            promptParts.unshift({text: videoPromptResult.output!});
+            textPrompt = videoPromptResult.output!
+            if (textPrompt) {
+                promptParts.unshift({text: textPrompt});
+            }
         }
     } else {
         // This is a new, un-branded, creative prompt.
@@ -256,7 +256,9 @@ The user's instruction is: "${remainingPrompt}"`;
         if (input.outputType === 'image' && imageText) {
              creativePrompt += `\nOverlay the following text onto the asset: "${imageText}". Ensure the text is readable and well-composed.`
              textPrompt = creativePrompt;
-             promptParts.unshift({text: textPrompt});
+             if (textPrompt) {
+                promptParts.unshift({text: textPrompt});
+            }
         } else { // Video
             const videoPromptResult = await videoGenPrompt({
                 basePrompt: creativePrompt,
@@ -264,7 +266,10 @@ The user's instruction is: "${remainingPrompt}"`;
                 logoProvided: false,
                 hasSound: input.aspectRatio === "16:9"
             });
-            promptParts.unshift({text: videoPromptResult.output!});
+            textPrompt = videoPromptResult.output!;
+            if (textPrompt) {
+                promptParts.unshift({text: textPrompt});
+            }
         }
     }
     
