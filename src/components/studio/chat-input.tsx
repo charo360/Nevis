@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import Image from "next/image";
+import { cn } from '@/lib/utils';
 
 interface ChatInputProps {
   input: string;
@@ -25,6 +26,8 @@ interface ChatInputProps {
   handleImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   isBrandProfileAvailable: boolean;
   onEditImage: (url: string) => void;
+  aspectRatio: '16:9' | '9:16';
+  setAspectRatio: (value: '16:9' | '9:16') => void;
 }
 
 export function ChatInput({
@@ -42,6 +45,8 @@ export function ChatInput({
   handleImageUpload,
   isBrandProfileAvailable,
   onEditImage,
+  aspectRatio,
+  setAspectRatio,
 }: ChatInputProps) {
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -184,7 +189,19 @@ export function ChatInput({
                 </RadioGroup>
             </div>
              
-             <Separator orientation="vertical" className="h-6 hidden sm:block" />
+             <div className={cn("flex items-center space-x-4", outputType === 'video' ? 'opacity-100' : 'opacity-0')}>
+                <Label>Aspect Ratio:</Label>
+                 <RadioGroup value={aspectRatio} onValueChange={(v) => setAspectRatio(v as '16:9' | '9:16')} className="flex items-center space-x-4" disabled={isLoading || outputType !== 'video'}>
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="16:9" id="r-16-9" />
+                        <Label htmlFor="r-16-9" className="flex items-center gap-2">16:9 (Sound)</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="9:16" id="r-9-16" />
+                        <Label htmlFor="r-9-16" className="flex items-center gap-2">9:16 (No Sound)</Label>
+                    </div>
+                </RadioGroup>
+            </div>
 
              <Button type="submit" className="w-full sm:w-auto" disabled={isLoading || !input}>
                 {isLoading ? 'Generating...' : <><Wand className="mr-2 h-4 w-4" /> Generate</>}
@@ -194,5 +211,3 @@ export function ChatInput({
     </div>
   );
 }
-
-    

@@ -23,6 +23,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
     const [imageDataUrl, setImageDataUrl] = React.useState<string | null>(null);
     const [useBrandProfile, setUseBrandProfile] = React.useState(!!brandProfile);
     const [outputType, setOutputType] = React.useState<'image' | 'video'>('image');
+    const [aspectRatio, setAspectRatio] = React.useState<'16:9' | '9:16'>('16:9');
     const { toast } = useToast();
 
 
@@ -36,7 +37,8 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
             const reader = new FileReader();
             reader.onloadend = () => {
                 const dataUrl = reader.result as string;
-                onEditImage(dataUrl);
+                setImagePreview(dataUrl);
+                setImageDataUrl(dataUrl);
             };
             reader.readAsDataURL(file);
         }
@@ -84,6 +86,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 useBrandProfile,
                 brandProfile,
                 null, // maskDataUrl
+                outputType === 'video' ? aspectRatio : undefined,
             );
 
             const aiResponse: Message = {
@@ -154,9 +157,9 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 handleImageUpload={handleImageUpload}
                 isBrandProfileAvailable={!!brandProfile}
                 onEditImage={onEditImage}
+                aspectRatio={aspectRatio}
+                setAspectRatio={setAspectRatio}
             />
         </div>
     );
 }
-
-    

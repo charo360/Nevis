@@ -21,6 +21,7 @@ const CreativeAssetInputSchema = z.object({
   useBrandProfile: z.boolean().describe('Whether to apply the brand profile.'),
   brandProfile: z.custom<BrandProfile>().nullable().describe('The brand profile object.'),
   maskDataUrl: z.string().nullable().optional().describe('An optional mask image for inpainting as a data URI.'),
+  aspectRatio: z.enum(['16:9', '9:16']).optional().describe('The aspect ratio for video generation.'),
 });
 export type CreativeAssetInput = z.infer<typeof CreativeAssetInputSchema>;
 
@@ -165,7 +166,10 @@ The user's instruction is: "${remainingPrompt}"`;
         }
         
         if (input.outputType === 'video') {
-            referencePrompt += `\n\n**Video Specifics:** The final output must be a high-quality video with sound, suitable for a marketing campaign. Generate a video that is cinematically interesting, well-composed, and has a sense of completeness. Avoid abrupt cuts or unfinished scenes.`
+             referencePrompt += `\n\n**Video Specifics:** Generate a video that is cinematically interesting, well-composed, and has a sense of completeness. Avoid abrupt cuts or unfinished scenes.`
+             if(input.aspectRatio === "16:9") {
+                 referencePrompt += ' The video should include sound.'
+             }
         }
 
         if (input.useBrandProfile && input.brandProfile) {
@@ -204,7 +208,10 @@ Your goal is to generate a single, cohesive, and visually stunning asset for a p
 - **Logo Placement:** The provided logo must be integrated naturally into the design (e.g., on a product, a sign, or as a subtle watermark).`;
         
         if (input.outputType === 'video') {
-            onBrandPrompt += `\n\n**Video Specifics:** Generate a video with sound that is cinematically interesting, well-composed, and has a sense of completeness. Ensure the video has a clear beginning, middle, and end, even within a short duration. Avoid abrupt cuts or unfinished scenes.`
+             onBrandPrompt += `\n\n**Video Specifics:** Generate a video that is cinematically interesting, well-composed, and has a sense of completeness. Ensure the video has a clear beginning, middle, and end, even within a short duration. Avoid abrupt cuts or unfinished scenes.`
+             if(input.aspectRatio === "16:9") {
+                 onBrandPrompt += ' The video should include sound.'
+             }
         }
 
         if (bp.logoDataUrl) {
@@ -221,7 +228,10 @@ Your goal is to generate a single, cohesive, and visually stunning asset for a p
              creativePrompt += `\nOverlay the following text onto the asset: "${imageText}". Ensure the text is readable and well-composed.`
         }
         if (input.outputType === 'video') {
-            creativePrompt += `\n\nFor this video, create a cinematically interesting shot with sound that is well-composed and suitable for a professional marketing campaign. It should have a sense of completeness and avoid abrupt cuts or unfinished scenes.`
+            creativePrompt += `\n\nFor this video, create a cinematically interesting shot that is well-composed and suitable for a professional marketing campaign. It should have a sense of completeness and avoid abrupt cuts or unfinished scenes.`
+            if(input.aspectRatio === "16:9") {
+                 creativePrompt += ' The video should include sound.'
+            }
         }
         textPrompt = creativePrompt;
         promptParts.unshift({text: textPrompt});
@@ -250,9 +260,19 @@ Your goal is to generate a single, cohesive, and visually stunning asset for a p
                 aiExplanation: explanationResult.output ?? "Here is the generated image based on your prompt."
             };
         } else { // Video generation
+            const isVertical = input.aspectRatio === '9:16';
+            
+            const model = isVertical ? 'googleai/veo-2.0-generate-001' : 'googleai/veo-3.0-generate-preview';
+            const config: Record<string, any> = {};
+            if (isVertical) {
+                config.aspectRatio = '9:16';
+                config.durationSeconds = 8;
+            }
+
             const result = await generateWithRetry({
-                model: 'googleai/veo-3.0-generate-preview',
+                model,
                 prompt: promptParts,
+                config,
             });
             let operation = result.operation;
 
@@ -289,5 +309,3 @@ Your goal is to generate a single, cohesive, and visually stunning asset for a p
     }
   }
 );
-
-    
