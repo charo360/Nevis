@@ -150,7 +150,7 @@ Recreate the content within the black-masked region based on this instruction, e
 
     } else if (input.referenceImageUrl) {
         // This is a generation prompt with a reference image.
-        let referencePrompt = `You are an expert creative director. You will be given a reference image and a text prompt with instructions.
+        let referencePrompt = `You are an expert creative director specializing in high-end advertisements. You will be given a reference image and a text prompt with instructions.
 Your task is to generate a new asset that is inspired by the reference image and follows the new instructions.
 
 Your primary goal is to intelligently interpret the user's request, considering the provided reference image. Do not just copy the reference image.
@@ -163,6 +163,10 @@ The user's instruction is: "${remainingPrompt}"`;
 
         if (imageText) {
              referencePrompt += `\n\n**Explicit Text Overlay:** The user has provided specific text in quotes: "${imageText}". You MUST overlay this text on the image. If there was existing text, replace it. Ensure the new text is readable and well-composed.`
+        }
+        
+        if (input.outputType === 'video') {
+            referencePrompt += `\n\n**Video Specifics:** The final output must be a high-quality video suitable for a marketing campaign. Generate a video that is cinematically interesting, well-composed, and has a sense of completeness. Avoid abrupt cuts or unfinished scenes.`
         }
 
         if (input.useBrandProfile && input.brandProfile) {
@@ -189,9 +193,9 @@ The user's instruction is: "${remainingPrompt}"`;
             ? `The brand's color palette is: Primary HSL(${bp.primaryColor}), Accent HSL(${bp.accentColor}), Background HSL(${bp.backgroundColor}). Please use these colors in the design.`
             : '';
         
-        let onBrandPrompt = `You are an expert graphic designer creating a social media ${input.outputType} for a ${bp.businessType}.
+        let onBrandPrompt = `You are an expert creative director creating a social media advertisement ${input.outputType} for a ${bp.businessType}.
 
-Your goal is to generate a single, cohesive, and visually stunning asset.
+Your goal is to generate a single, cohesive, and visually stunning asset for a professional marketing campaign.
 
 **Key Elements to Include:**
 - **Visual Style:** The design must be ${bp.visualStyle}. The writing tone is ${bp.writingTone} and content should align with these themes: ${bp.contentThemes}.
@@ -201,7 +205,7 @@ Your goal is to generate a single, cohesive, and visually stunning asset.
 - **Logo Placement:** The provided logo must be integrated naturally into the design (e.g., on a product, a sign, or as a subtle watermark).`;
         
         if (input.outputType === 'video') {
-            onBrandPrompt += `\n\n**Video Specifics:** Generate a video that is cinematically interesting and has a sense of completeness. Ensure the video has a clear beginning, middle, and end, even within a short duration. Avoid abrupt cuts or unfinished scenes.`
+            onBrandPrompt += `\n\n**Video Specifics:** Generate a video that is cinematically interesting, well-composed, and has a sense of completeness. Ensure the video has a clear beginning, middle, and end, even within a short duration. Avoid abrupt cuts or unfinished scenes.`
         }
 
         if (bp.logoDataUrl) {
@@ -213,12 +217,12 @@ Your goal is to generate a single, cohesive, and visually stunning asset.
 
     } else {
         // This is a new, un-branded, creative prompt.
-        let creativePrompt = `You are an expert creative director. Generate a compelling and high-quality ${input.outputType} for a social media advertisement based on the following instruction: "${remainingPrompt}".`;
+        let creativePrompt = `You are an expert creative director specializing in high-end video advertisements. Generate a compelling, high-quality social media advertisement ${input.outputType} based on the following instruction: "${remainingPrompt}".`;
         if (imageText) {
              creativePrompt += `\nOverlay the following text onto the asset: "${imageText}". Ensure the text is readable and well-composed.`
         }
         if (input.outputType === 'video') {
-            creativePrompt += `\n\nFor this video, create a cinematically interesting shot with a sense of completeness. Avoid abrupt cuts or unfinished scenes.`
+            creativePrompt += `\n\nFor this video, create a cinematically interesting shot that is well-composed and suitable for a professional marketing campaign. It should have a sense of completeness and avoid abrupt cuts or unfinished scenes.`
         }
         textPrompt = creativePrompt;
         promptParts.unshift({text: textPrompt});
