@@ -4,7 +4,7 @@
 import * as React from 'react';
 import Image from "next/image";
 import { Facebook, Instagram, Linkedin, MoreVertical, Pen, RefreshCw, Twitter, CalendarIcon, Download, Loader2, Video, ChevronLeft, ChevronRight, ImageOff } from "lucide-react";
-import { toPng } from 'html-to-image-fix';
+import { toPng } from 'html-to-image';
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
