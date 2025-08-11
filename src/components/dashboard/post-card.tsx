@@ -4,7 +4,7 @@
 import * as React from 'react';
 import Image from "next/image";
 import { Facebook, Instagram, Linkedin, MoreVertical, Pen, RefreshCw, Twitter, CalendarIcon, Download, Loader2, Video, ChevronLeft, ChevronRight, ImageOff } from "lucide-react";
-import { toPng } from 'html-to-image';
+import { toPng } from 'html-to-image-fix';
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -76,29 +76,13 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
       });
       return;
     }
-    
-    // Clone the node
-    const clone = nodeToCapture.cloneNode(true) as HTMLElement;
-
-    // Style the clone to be rendered off-screen but with the correct dimensions
-    clone.style.position = 'absolute';
-    clone.style.left = '-9999px';
-    clone.style.width = '1080px';
-    clone.style.height = '1080px';
-    
-    // The direct child of the cloned node (the one with aspect-square) needs to have its height forced as well
-    const innerWrapper = clone.querySelector('.aspect-square') as HTMLElement | null;
-    if (innerWrapper) {
-      innerWrapper.style.height = '1080px';
-    }
-
-
-    document.body.appendChild(clone);
 
     try {
-      const dataUrl = await toPng(clone, { 
+      const dataUrl = await toPng(nodeToCapture, {
         cacheBust: true,
-        // The width and height are taken from the styled clone
+        canvasWidth: 1080,
+        canvasHeight: 1080,
+        pixelRatio: 1,
       });
       
       const link = document.createElement('a');
@@ -113,9 +97,6 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
         title: "Download Failed",
         description: `Could not download the image. Please try again. Error: ${(err as Error).message}`,
       });
-    } finally {
-        // Clean up the cloned node from the DOM
-        document.body.removeChild(clone);
     }
   }, [post.id, activeTab, toast]);
 
@@ -242,7 +223,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
             </TabsList>
             {post.variants.map(variant => (
                 <TabsContent key={variant.platform} value={variant.platform}>
-                    <div ref={el => downloadRefs.current[variant.platform] = el} className="bg-white">
+                    <div ref={el => downloadRefs.current[variant.platform] = el}>
                       <div className="relative aspect-square w-full overflow-hidden rounded-md border">
                         {(isRegenerating || isGeneratingVideo) && (
                             <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/80">
