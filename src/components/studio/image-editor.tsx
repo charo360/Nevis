@@ -2,7 +2,6 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from 'react';
-import Image from 'next/image';
 import { X, Wand, Brush, Eraser, Undo, Redo, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +11,8 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { generateCreativeAssetAction } from '@/app/actions';
 import type { BrandProfile } from '@/lib/types';
+import { cn } from '@/lib/utils';
+
 
 interface ImageEditorProps {
     imageUrl: string;
@@ -20,117 +21,172 @@ interface ImageEditorProps {
 }
 
 export function ImageEditor({ imageUrl, onClose, brandProfile }: ImageEditorProps) {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const imageRef = useRef<HTMLImageElement>(null);
+    const imageCanvasRef = useRef<HTMLCanvasElement>(null);
+    const drawingCanvasRef = useRef<HTMLCanvasElement>(null);
+
     const [isDrawing, setIsDrawing] = useState(false);
     const [brushSize, setBrushSize] = useState(40);
     const [tool, setTool] = useState<'brush' | 'eraser'>('brush');
     const [prompt, setPrompt] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [history, setHistory] = useState<string[]>([]);
+    
+    const [history, setHistory] = useState<ImageData[]>([]);
     const [historyIndex, setHistoryIndex] = useState(-1);
+
     const [currentImageUrl, setCurrentImageUrl] = useState(imageUrl);
     const { toast } = useToast();
+    
+    // Function to draw the main image onto its canvas
+    const drawImage = (url: string) => {
+        const imageCanvas = imageCanvasRef.current;
+        const drawingCanvas = drawingCanvasRef.current;
+        if (!imageCanvas || !drawingCanvas) return;
 
-    const getCanvasContext = () => canvasRef.current?.getContext('2d');
-
-    const saveToHistory = (data: string) => {
-        const newHistory = history.slice(0, historyIndex + 1);
-        newHistory.push(data);
-        setHistory(newHistory);
-        setHistoryIndex(newHistory.length - 1);
-    };
-
-    const drawImageOnCanvas = (url: string) => {
-        const canvas = canvasRef.current;
-        const ctx = getCanvasContext();
-        if (!canvas || !ctx) return;
+        const imageCtx = imageCanvas.getContext('2d');
+        const drawingCtx = drawingCanvas.getContext('2d');
+        if (!imageCtx || !drawingCtx) return;
 
         const image = new window.Image();
         image.crossOrigin = "anonymous";
         image.src = url;
         image.onload = () => {
-            canvas.width = image.naturalWidth;
-            canvas.height = image.naturalHeight;
-            ctx.drawImage(image, 0, 0);
-            imageRef.current = image;
-            // Clear mask on new image
-            ctx.globalCompositeOperation = 'source-over';
-        };
-    };
+            // Set both canvases to the image's dimensions
+            imageCanvas.width = image.naturalWidth;
+            imageCanvas.height = image.naturalHeight;
+            drawingCanvas.width = image.naturalWidth;
+            drawingCanvas.height = image.naturalHeight;
 
+            // Draw the image on the bottom canvas
+            imageCtx.drawImage(image, 0, 0);
+
+            // Clear the top (drawing) canvas and initialize history
+            drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+            const initialImageData = drawingCtx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height);
+            setHistory([initialImageData]);
+            setHistoryIndex(0);
+        };
+        image.onerror = () => {
+            toast({ variant: 'destructive', title: "Error loading image", description: "Could not load the image for editing." });
+        }
+    };
+    
+    // Redraw the main image when the URL changes
     useEffect(() => {
-        drawImageOnCanvas(currentImageUrl);
+        drawImage(currentImageUrl);
     }, [currentImageUrl]);
 
 
-    const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
-        const ctx = getCanvasContext();
+    const getDrawingContext = () => drawingCanvasRef.current?.getContext('2d', { willReadFrequently: true });
+    
+    const saveToHistory = () => {
+        const drawingCtx = getDrawingContext();
+        if (!drawingCtx || !drawingCanvasRef.current) return;
+        
+        const newHistory = history.slice(0, historyIndex + 1);
+        newHistory.push(drawingCtx.getImageData(0, 0, drawingCanvasRef.current.width, drawingCanvasRef.current.height));
+        setHistory(newHistory);
+        setHistoryIndex(newHistory.length - 1);
+    }
+    
+    const handleUndo = () => {
+        if (historyIndex > 0) {
+            const newIndex = historyIndex - 1;
+            setHistoryIndex(newIndex);
+            const drawingCtx = getDrawingContext();
+            if (drawingCtx) {
+                drawingCtx.putImageData(history[newIndex], 0, 0);
+            }
+        }
+    }
+    
+    const handleRedo = () => {
+        if (historyIndex < history.length - 1) {
+            const newIndex = historyIndex + 1;
+            setHistoryIndex(newIndex);
+            const drawingCtx = getDrawingContext();
+            if (drawingCtx) {
+                drawingCtx.putImageData(history[newIndex], 0, 0);
+            }
+        }
+    }
+
+    const startDrawing = ({ nativeEvent }: React.MouseEvent<HTMLCanvasElement>) => {
+        const { offsetX, offsetY } = nativeEvent;
+        const ctx = getDrawingContext();
         if (!ctx) return;
+        
         setIsDrawing(true);
         ctx.beginPath();
-        ctx.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-        ctx.globalCompositeOperation = tool === 'brush' ? 'source-over' : 'destination-out';
-        ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
-        ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+        ctx.moveTo(offsetX, offsetY);
+        
         ctx.lineWidth = brushSize;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
+
+        if (tool === 'brush') {
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.7)'; // Semi-transparent black for mask
+        } else { // Eraser
+            ctx.globalCompositeOperation = 'destination-out';
+        }
     };
 
-    const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const draw = ({ nativeEvent }: React.MouseEvent<HTMLCanvasElement>) => {
         if (!isDrawing) return;
-        const ctx = getCanvasContext();
+        const { offsetX, offsetY } = nativeEvent;
+        const ctx = getDrawingContext();
         if (!ctx) return;
-        ctx.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
+        
+        ctx.lineTo(offsetX, offsetY);
         ctx.stroke();
     };
-
-    const stopDrawing = () => {
-        const ctx = getCanvasContext();
-        if (!ctx) return;
-        ctx.closePath();
-        setIsDrawing(false);
-    };
     
+    const stopDrawing = () => {
+        if (!isDrawing) return;
+        const ctx = getDrawingContext();
+        if (ctx) ctx.closePath();
+        setIsDrawing(false);
+        saveToHistory();
+    };
+
     const getMaskDataUrl = (): string => {
-        const canvas = canvasRef.current;
-        if (!canvas) return '';
-
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = canvas.width;
-        tempCanvas.height = canvas.height;
-        const tempCtx = tempCanvas.getContext('2d');
-        if(!tempCtx) return '';
+        const drawingCanvas = drawingCanvasRef.current;
+        if (!drawingCanvas) return '';
+        const ctx = getDrawingContext();
+        if (!ctx) return '';
         
-        const originalCtx = getCanvasContext();
-        if(!originalCtx) return '';
+        const originalImageData = ctx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height);
+        const originalData = originalImageData.data;
 
-        const imageData = originalCtx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imageData.data;
-        // Create a new imageData object for the mask
-        const maskImageData = tempCtx.createImageData(canvas.width, canvas.height);
+        // Create a new canvas for the final black and white mask
+        const maskCanvas = document.createElement('canvas');
+        maskCanvas.width = drawingCanvas.width;
+        maskCanvas.height = drawingCanvas.height;
+        const maskCtx = maskCanvas.getContext('2d');
+        if (!maskCtx) return '';
+
+        const maskImageData = maskCtx.createImageData(drawingCanvas.width, drawingCanvas.height);
         const maskData = maskImageData.data;
-
-        for (let i = 0; i < data.length; i += 4) {
-            // Check if the pixel is part of the red mask (with some tolerance)
-            if (data[i] > 200 && data[i+1] < 50 && data[i+2] < 50 && data[i+3] > 100) {
-                 maskData[i] = 0;   // R
-                 maskData[i+1] = 0; // G
-                 maskData[i+2] = 0; // B
-                 maskData[i+3] = 255; // A (black)
+        
+        for (let i = 0; i < originalData.length; i += 4) {
+            // If the pixel on the drawing canvas has any content (alpha > 0), make it black on the mask
+            if (originalData[i + 3] > 0) {
+                maskData[i] = 0;     // R
+                maskData[i + 1] = 0; // G
+                maskData[i + 2] = 0; // B
+                maskData[i + 3] = 255; // A (fully opaque black)
             } else {
-                 maskData[i] = 255;   // R
-                 maskData[i+1] = 255; // G
-                 maskData[i+2] = 255; // B
-                 maskData[i+3] = 255; // A (white)
+                // Otherwise, make it white
+                maskData[i] = 255;
+                maskData[i + 1] = 255;
+                maskData[i + 2] = 255;
+                maskData[i + 3] = 255; // A (fully opaque white)
             }
         }
-        
-        tempCtx.putImageData(maskImageData, 0, 0);
-        return tempCanvas.toDataURL('image/png');
+
+        maskCtx.putImageData(maskImageData, 0, 0);
+        return maskCanvas.toDataURL('image/png');
     };
-    
 
     const handleGenerate = async () => {
         if (!prompt.trim()) {
@@ -140,6 +196,11 @@ export function ImageEditor({ imageUrl, onClose, brandProfile }: ImageEditorProp
         setIsLoading(true);
 
         const maskDataUrl = getMaskDataUrl();
+        if (!maskDataUrl) {
+            toast({ variant: 'destructive', title: "Mask Error", description: "Could not generate the mask data." });
+            setIsLoading(false);
+            return;
+        }
 
         try {
             const result = await generateCreativeAssetAction(
@@ -174,6 +235,15 @@ export function ImageEditor({ imageUrl, onClose, brandProfile }: ImageEditorProp
                     <h2 className="text-xl font-bold">Image Editor</h2>
                     <Button variant="ghost" size="icon" onClick={onClose}><X className="h-4 w-4"/></Button>
                 </div>
+                
+                 <div className="space-y-4">
+                    <Label>History</Label>
+                     <div className="grid grid-cols-2 gap-2">
+                        <Button variant='outline' onClick={handleUndo} disabled={historyIndex <= 0}> <Undo className="mr-2"/> Undo</Button>
+                        <Button variant='outline' onClick={handleRedo} disabled={historyIndex >= history.length - 1}><Redo className="mr-2"/> Redo</Button>
+                    </div>
+                </div>
+
                 <div className="space-y-4">
                     <Label>Tool</Label>
                     <div className="grid grid-cols-2 gap-2">
@@ -181,12 +251,13 @@ export function ImageEditor({ imageUrl, onClose, brandProfile }: ImageEditorProp
                         <Button variant={tool === 'eraser' ? 'secondary' : 'outline'} onClick={() => setTool('eraser')}><Eraser className="mr-2"/> Eraser</Button>
                     </div>
                 </div>
+
                 <div className="space-y-4">
                     <Label htmlFor="brush-size">Brush Size: {brushSize}px</Label>
-                    <Slider id="brush-size" min={1} max={100} value={[brushSize]} onValueChange={(v) => setBrushSize(v[0])} />
+                    <Slider id="brush-size" min={5} max={100} value={[brushSize]} onValueChange={(v) => setBrushSize(v[0])} />
                 </div>
                 <Separator />
-                <div className="space-y-2">
+                <div className="space-y-2 flex-1 flex flex-col">
                     <Label htmlFor="inpaint-prompt">Edit Prompt</Label>
                     <Input 
                         id="inpaint-prompt" 
@@ -203,14 +274,24 @@ export function ImageEditor({ imageUrl, onClose, brandProfile }: ImageEditorProp
             </div>
             {/* Canvas Area */}
             <div className="flex-1 flex items-center justify-center p-4 overflow-hidden bg-muted/20">
-                 <canvas
-                    ref={canvasRef}
-                    className="max-w-full max-h-full object-contain cursor-crosshair rounded-md shadow-lg"
-                    onMouseDown={startDrawing}
-                    onMouseMove={draw}
-                    onMouseUp={stopDrawing}
-                    onMouseLeave={stopDrawing}
-                />
+                <div className="relative">
+                    <canvas
+                        ref={imageCanvasRef}
+                        className="max-w-full max-h-full object-contain rounded-md shadow-lg"
+                    />
+                    <canvas
+                        ref={drawingCanvasRef}
+                        className={cn(
+                            "absolute top-0 left-0 max-w-full max-h-full object-contain cursor-crosshair",
+                            tool === 'brush' && 'cursor-crosshair',
+                            tool === 'eraser' && 'cursor-grab' // A better cursor for erasing
+                        )}
+                        onMouseDown={startDrawing}
+                        onMouseMove={draw}
+                        onMouseUp={stopDrawing}
+                        onMouseLeave={stopDrawing}
+                    />
+                </div>
             </div>
         </div>
     );
