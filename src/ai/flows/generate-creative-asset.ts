@@ -118,6 +118,36 @@ const getMimeTypeFromDataURI = (dataURI: string): string => {
 };
 
 
+const videoGenPrompt = ai.definePrompt({
+    name: 'videoGenerationPrompt',
+    input: { schema: z.object({
+        basePrompt: z.string(),
+        imageText: z.string().nullable(),
+        logoProvided: z.boolean(),
+        hasSound: z.boolean(),
+    })},
+    prompt: `You are an expert creative director creating a short promotional video.
+Your goal is to generate a single, cohesive, and visually stunning video for a professional marketing campaign.
+The video should be cinematically interesting, well-composed, and have a sense of completeness. Avoid abrupt cuts or unfinished scenes.
+{{#if hasSound}}The video should have relevant sound.{{/if}}
+
+**Creative Brief:**
+{{{basePrompt}}}
+
+{{#if imageText}}
+**Text Overlay:**
+The following text MUST be overlaid on the video in a stylish, readable font: "{{{imageText}}}".
+It is critical that the text is clearly readable, well-composed, and not cut off. The entire text must be visible.
+{{/if}}
+
+{{#if logoProvided}}
+**Logo Placement:**
+The provided logo MUST be placed on the video. It should be integrated naturally into the design.
+{{/if}}
+`
+});
+
+
 /**
  * The core Genkit flow for generating a creative asset.
  */
@@ -166,9 +196,6 @@ The user's instruction is: "${remainingPrompt}"`;
         
         if (input.outputType === 'video') {
              referencePrompt += `\n\n**Video Specifics:** Generate a video that is cinematically interesting, well-composed, and has a sense of completeness. Create a well-composed shot with a clear beginning, middle, and end, even within a short duration. Avoid abrupt cuts or unfinished scenes.`
-             if(input.aspectRatio === "16:9") {
-                 referencePrompt += ' The video should include sound.'
-             }
         }
 
         if (input.useBrandProfile && input.brandProfile) {
@@ -189,47 +216,56 @@ The user's instruction is: "${remainingPrompt}"`;
     } else if (input.useBrandProfile && input.brandProfile) {
         // This is a new, on-brand asset generation.
         const bp = input.brandProfile;
-        const colorInstructions = (input.outputType === 'image' && bp.primaryColor && bp.accentColor && bp.backgroundColor) 
-            ? `The brand's color palette is: Primary HSL(${bp.primaryColor}), Accent HSL(${bp.accentColor}), Background HSL(${bp.backgroundColor}). Please use these colors in the design.`
-            : 'The brand has not specified colors, so use a visually appealing and appropriate palette based on the visual style.';
         
         let onBrandPrompt = `You are an expert creative director creating a social media advertisement ${input.outputType} for a ${bp.businessType}. Your goal is to generate a single, cohesive, and visually stunning asset for a professional marketing campaign.
 
 **Key Elements to Include:**
 - **Visual Style:** The design must be ${bp.visualStyle}. The writing tone is ${bp.writingTone} and content should align with these themes: ${bp.contentThemes}.
-- **Brand Colors:** ${colorInstructions}
-- **Subject/Theme:** The core subject of the ${input.outputType} should be: "${remainingPrompt}".
-- **Text Overlay:** ${imageText ? `The following text must be overlaid on the asset in a stylish, readable font: "${imageText}". It must be fully visible and well-composed.` : 'No text should be added to the asset.'}
-- **Logo Placement:** The provided logo must be integrated naturally into the design (e.g., on a product, a sign, or as a subtle watermark).`;
+- **Subject/Theme:** The core subject of the ${input.outputType} should be: "${remainingPrompt}".`;
         
-        if (input.outputType === 'video') {
-             onBrandPrompt += `\n\n**Video Specifics:** Generate a video that is cinematically interesting, well-composed, and has a sense of completeness. Create a well-composed shot with a clear beginning, middle, and end, even within a short duration. Avoid abrupt cuts or unfinished scenes.`
-             if(input.aspectRatio === "16:9") {
-                 onBrandPrompt += ' The video should include sound.'
-             }
-        }
+        if (input.outputType === 'image') {
+            const colorInstructions = (bp.primaryColor && bp.accentColor && bp.backgroundColor) 
+                ? `The brand's color palette is: Primary HSL(${bp.primaryColor}), Accent HSL(${bp.accentColor}), Background HSL(${bp.backgroundColor}). Please use these colors in the design.`
+                : 'The brand has not specified colors, so use a visually appealing and appropriate palette based on the visual style.';
+            
+            onBrandPrompt += `\n- **Brand Colors:** ${colorInstructions}`;
+            onBrandPrompt += `\n- **Text Overlay:** ${imageText ? `The following text must be overlaid on the asset in a stylish, readable font: "${imageText}". It must be fully visible and well-composed.` : 'No text should be added to the asset.'}`;
+            onBrandPrompt += `\n- **Logo Placement:** The provided logo must be integrated naturally into the design (e.g., on a product, a sign, or as a subtle watermark).`;
 
-        if (bp.logoDataUrl) {
-            promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
+            if (bp.logoDataUrl) {
+                promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
+            }
+            textPrompt = onBrandPrompt;
+            promptParts.unshift({text: textPrompt});
+        } else { // Video
+             if (bp.logoDataUrl) {
+                promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
+            }
+            const videoPromptResult = await videoGenPrompt({
+                basePrompt: onBrandPrompt,
+                imageText,
+                logoProvided: !!bp.logoDataUrl,
+                hasSound: input.aspectRatio === "16:9"
+            });
+            promptParts.unshift({text: videoPromptResult.output!});
         }
-        
-        textPrompt = onBrandPrompt;
-        promptParts.unshift({text: textPrompt});
-
     } else {
         // This is a new, un-branded, creative prompt.
         let creativePrompt = `You are an expert creative director specializing in high-end advertisements. Generate a compelling, high-quality social media advertisement ${input.outputType} based on the following instruction: "${remainingPrompt}".`;
-        if (imageText) {
+        
+        if (input.outputType === 'image' && imageText) {
              creativePrompt += `\nOverlay the following text onto the asset: "${imageText}". Ensure the text is readable and well-composed.`
+             textPrompt = creativePrompt;
+             promptParts.unshift({text: textPrompt});
+        } else { // Video
+            const videoPromptResult = await videoGenPrompt({
+                basePrompt: creativePrompt,
+                imageText,
+                logoProvided: false,
+                hasSound: input.aspectRatio === "16:9"
+            });
+            promptParts.unshift({text: videoPromptResult.output!});
         }
-        if (input.outputType === 'video') {
-            creativePrompt += `\n\nFor this video, create a cinematically interesting shot that is well-composed and suitable for a professional marketing campaign. It should have a sense of completeness and avoid abrupt cuts or unfinished scenes.`
-            if(input.aspectRatio === "16:9") {
-                 creativePrompt += ' The video should include sound.'
-             }
-        }
-        textPrompt = creativePrompt;
-        promptParts.unshift({text: textPrompt});
     }
     
     const aiExplanationPrompt = ai.definePrompt({
@@ -308,3 +344,5 @@ The user's instruction is: "${remainingPrompt}"`;
     }
   }
 );
+
+    
