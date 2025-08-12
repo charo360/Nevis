@@ -9,6 +9,7 @@ import {
   Sparkles,
   Link as LinkIcon,
   Wand,
+  Settings,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import {
@@ -36,56 +37,68 @@ export function AppSidebar() {
         </Link>
       </SidebarHeader>
       <SidebarContent>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                asChild
-                isActive={isActive("/brand-profile")}
-                tooltip="Brand Profile"
-              >
-                <Link href="/brand-profile">
-                  <Sparkles />
-                  <span>Brand Profile</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                asChild
-                isActive={isActive("/content-calendar")}
-                tooltip="Quick Content"
-              >
-                <Link href="/content-calendar">
-                  <CalendarDays />
-                  <span>Quick Content</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-              <SidebarMenuButton
-                asChild
-                isActive={isActive("/creative-studio")}
-                tooltip="Creative Studio"
-              >
-                <Link href="/creative-studio">
-                  <Wand />
-                  <span>Creative Studio</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                asChild
-                isActive={isActive("/social-connect")}
-                tooltip="Social Media Connect"
-              >
-                <Link href="/social-connect">
-                  <LinkIcon />
-                  <span>Social Media Connect</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={isActive("/brand-profile")}
+              tooltip="Brand Profile"
+            >
+              <Link href="/brand-profile">
+                <Sparkles />
+                <span>Brand Profile</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={isActive("/cbrand")}
+              tooltip="Complete Brand Setup"
+            >
+              <Link href="/cbrand">
+                <Settings />
+                <span>Complete Brand Setup</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={isActive("/content-calendar")}
+              tooltip="Quick Content"
+            >
+              <Link href="/content-calendar">
+                <CalendarDays />
+                <span>Quick Content</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={isActive("/creative-studio")}
+              tooltip="Creative Studio"
+            >
+              <Link href="/creative-studio">
+                <Wand />
+                <span>Creative Studio</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={isActive("/social-connect")}
+              tooltip="Social Media Connect"
+            >
+              <Link href="/social-connect">
+                <LinkIcon />
+                <span>Social Media Connect</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarContent>
       <SidebarFooter>
       </SidebarFooter>
