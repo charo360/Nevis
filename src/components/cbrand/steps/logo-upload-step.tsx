@@ -10,7 +10,8 @@ import {
   X,
   Check,
   ChevronLeft,
-  Save
+  Save,
+  Eye
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { CompleteBrandProfile } from '../cbrand-wizard';
@@ -276,10 +277,8 @@ export function LogoUploadStep({
         description: "Your complete brand profile has been created successfully. You can now use it for content generation.",
       });
 
-      // Optional: Redirect to content calendar after a delay
-      setTimeout(() => {
-        window.location.href = '/content-calendar';
-      }, 2000);
+      // Keep user on summary page instead of redirecting
+      // They can navigate manually when ready
 
     } catch (error) {
       console.error('Save error:', error);
@@ -370,100 +369,295 @@ export function LogoUploadStep({
       {/* Profile Summary */}
       <Card>
         <CardHeader>
-          <CardTitle>Profile Summary</CardTitle>
-          <p className="text-gray-600">
-            Review your complete brand profile before saving
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5" />
+                Profile Summary
+              </CardTitle>
+              <p className="text-gray-600">
+                {brandProfile.businessName && brandProfile.logoDataUrl
+                  ? 'Your complete brand profile information'
+                  : 'Review your brand profile before saving'
+                }
+              </p>
+            </div>
+            {brandProfile.businessName && brandProfile.logoDataUrl && (
+              <div className="text-right">
+                <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                  ✅ Complete
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Ready for content generation</p>
+              </div>
+            )}
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div>
-              <Label className="font-medium">Business Name</Label>
-              <p className="text-gray-600">{brandProfile.businessName || 'Not set'}</p>
-            </div>
-            <div>
-              <Label className="font-medium">Business Type</Label>
-              <p className="text-gray-600">{brandProfile.businessType || 'Not set'}</p>
-            </div>
-            <div>
-              <Label className="font-medium">Location</Label>
-              <p className="text-gray-600">{brandProfile.location || 'Not set'}</p>
-            </div>
-            <div>
-              <Label className="font-medium">Website</Label>
-              <p className="text-gray-600">{brandProfile.websiteUrl || 'Not set'}</p>
+        <CardContent className="space-y-6">
+          {/* Basic Information */}
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              Basic Information
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <Label className="font-medium">Business Name</Label>
+                <p className="text-gray-600">{brandProfile.businessName || 'Not set'}</p>
+              </div>
+              <div>
+                <Label className="font-medium">Business Type</Label>
+                <p className="text-gray-600">{brandProfile.businessType || 'Not set'}</p>
+              </div>
+              <div>
+                <Label className="font-medium">Location</Label>
+                <p className="text-gray-600">{brandProfile.location || 'Not set'}</p>
+              </div>
+              <div>
+                <Label className="font-medium">Website</Label>
+                <p className="text-gray-600">{brandProfile.websiteUrl || 'Not set'}</p>
+              </div>
             </div>
           </div>
 
+          {/* Business Description */}
           <div>
-            <Label className="font-medium">Description</Label>
-            <p className="text-gray-600 text-sm">
-              {brandProfile.description ?
-                (brandProfile.description.length > 150 ?
-                  brandProfile.description.substring(0, 150) + '...' :
-                  brandProfile.description
-                ) :
-                'Not set'
-              }
+            <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              Business Description
+            </h4>
+            <p className="text-gray-600 text-sm bg-gray-50 p-3 rounded">
+              {brandProfile.description || 'Not set'}
             </p>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div>
-              <Label className="font-medium">Brand Colors</Label>
-              <div className="flex gap-2 mt-1">
-                <div
-                  className="w-6 h-6 rounded border"
-                  style={{ backgroundColor: brandProfile.primaryColor }}
-                  title="Primary Color"
-                />
-                <div
-                  className="w-6 h-6 rounded border"
-                  style={{ backgroundColor: brandProfile.accentColor }}
-                  title="Accent Color"
-                />
-                <div
-                  className="w-6 h-6 rounded border"
-                  style={{ backgroundColor: brandProfile.backgroundColor }}
-                  title="Background Color"
-                />
+          {/* Services/Products */}
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+              Services/Products ({brandProfile.services?.length || 0})
+            </h4>
+            {brandProfile.services && brandProfile.services.length > 0 ? (
+              <div className="space-y-2">
+                {brandProfile.services.map((service, index) => (
+                  <div key={index} className="bg-gray-50 p-3 rounded text-sm">
+                    <div className="font-medium text-gray-900">{service.name}</div>
+                    {service.description && (
+                      <div className="text-gray-600 mt-1">{service.description}</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm">No services added</p>
+            )}
+          </div>
+
+          {/* Contact Information */}
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+              Contact Information
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div>
+                <Label className="font-medium">Phone</Label>
+                <p className="text-gray-600">{brandProfile.contactPhone || 'Not set'}</p>
+              </div>
+              <div>
+                <Label className="font-medium">Email</Label>
+                <p className="text-gray-600">{brandProfile.contactEmail || 'Not set'}</p>
+              </div>
+              <div>
+                <Label className="font-medium">Address</Label>
+                <p className="text-gray-600">{brandProfile.contactAddress || 'Not set'}</p>
               </div>
             </div>
+          </div>
 
+          {/* Brand Identity */}
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <div className="w-2 h-2 bg-pink-500 rounded-full"></div>
+              Brand Identity
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <Label className="font-medium">Target Audience</Label>
+                <p className="text-gray-600">{brandProfile.targetAudience || 'Not set'}</p>
+              </div>
+              <div>
+                <Label className="font-medium">Visual Style</Label>
+                <p className="text-gray-600">{brandProfile.visualStyle || 'Not set'}</p>
+              </div>
+              <div>
+                <Label className="font-medium">Writing Tone</Label>
+                <p className="text-gray-600">{brandProfile.writingTone || 'Not set'}</p>
+              </div>
+              <div>
+                <Label className="font-medium">Content Themes</Label>
+                <p className="text-gray-600">{brandProfile.contentThemes || 'Not set'}</p>
+              </div>
+              <div>
+                <Label className="font-medium">Key Features</Label>
+                <p className="text-gray-600">{brandProfile.keyFeatures || 'Not set'}</p>
+              </div>
+              <div>
+                <Label className="font-medium">Competitive Advantages</Label>
+                <p className="text-gray-600">{brandProfile.competitiveAdvantages || 'Not set'}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Brand Colors */}
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+              Brand Colors
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div>
+                <Label className="font-medium">Primary Color</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <div
+                    className="w-6 h-6 rounded border border-gray-300"
+                    style={{ backgroundColor: brandProfile.primaryColor || '#3B82F6' }}
+                  ></div>
+                  <p className="text-gray-600">{brandProfile.primaryColor || '#3B82F6'}</p>
+                </div>
+              </div>
+              <div>
+                <Label className="font-medium">Accent Color</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <div
+                    className="w-6 h-6 rounded border border-gray-300"
+                    style={{ backgroundColor: brandProfile.accentColor || '#10B981' }}
+                  ></div>
+                  <p className="text-gray-600">{brandProfile.accentColor || '#10B981'}</p>
+                </div>
+              </div>
+              <div>
+                <Label className="font-medium">Background Color</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <div
+                    className="w-6 h-6 rounded border border-gray-300"
+                    style={{ backgroundColor: brandProfile.backgroundColor || '#F8FAFC' }}
+                  ></div>
+                  <p className="text-gray-600">{brandProfile.backgroundColor || '#F8FAFC'}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Social Media (Only show if any are filled) */}
+          {(brandProfile.facebookUrl || brandProfile.instagramUrl || brandProfile.twitterUrl || brandProfile.linkedinUrl) && (
             <div>
-              <Label className="font-medium">Logo</Label>
-              <p className="text-gray-600 text-sm">
-                {brandProfile.logoDataUrl ? '✅ Uploaded' : '❌ Not uploaded'}
-              </p>
+              <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
+                Social Media
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                {brandProfile.facebookUrl && (
+                  <div>
+                    <Label className="font-medium">Facebook</Label>
+                    <p className="text-gray-600 truncate">{brandProfile.facebookUrl}</p>
+                  </div>
+                )}
+                {brandProfile.instagramUrl && (
+                  <div>
+                    <Label className="font-medium">Instagram</Label>
+                    <p className="text-gray-600 truncate">{brandProfile.instagramUrl}</p>
+                  </div>
+                )}
+                {brandProfile.twitterUrl && (
+                  <div>
+                    <Label className="font-medium">Twitter/X</Label>
+                    <p className="text-gray-600 truncate">{brandProfile.twitterUrl}</p>
+                  </div>
+                )}
+                {brandProfile.linkedinUrl && (
+                  <div>
+                    <Label className="font-medium">LinkedIn</Label>
+                    <p className="text-gray-600 truncate">{brandProfile.linkedinUrl}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Logo Status */}
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+              Brand Logo
+            </h4>
+            <div className="flex items-center gap-3">
+              {brandProfile.logoDataUrl ? (
+                <>
+                  <img
+                    src={brandProfile.logoDataUrl}
+                    alt="Brand Logo"
+                    className="w-12 h-12 object-contain border rounded"
+                  />
+                  <div>
+                    <p className="text-green-600 font-medium text-sm">✅ Logo uploaded</p>
+                    <p className="text-gray-500 text-xs">Ready for content generation</p>
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <p className="text-red-600 font-medium text-sm">❌ Logo not uploaded</p>
+                  <p className="text-gray-500 text-xs">Upload logo above to complete profile</p>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Navigation */}
-      <div className="flex justify-between">
-        <Button variant="outline" onClick={onPrevious}>
-          <ChevronLeft className="mr-2 h-4 w-4" />
-          Previous Step
-        </Button>
+      <div className="space-y-4">
+        <div className="flex justify-between">
+          <Button variant="outline" onClick={onPrevious}>
+            <ChevronLeft className="mr-2 h-4 w-4" />
+            Previous Step
+          </Button>
 
-        <Button
-          onClick={handleSaveProfile}
-          disabled={isSaving}
-          className="bg-green-600 hover:bg-green-700"
-        >
-          {isSaving ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-              Saving Profile...
-            </>
-          ) : (
-            <>
-              <Save className="mr-2 h-4 w-4" />
-              Save Complete Profile
-            </>
-          )}
-        </Button>
+          <Button
+            onClick={handleSaveProfile}
+            disabled={isSaving}
+            variant={brandProfile.businessName && brandProfile.logoDataUrl ? "outline" : "default"}
+            className={brandProfile.businessName && brandProfile.logoDataUrl ? "" : "bg-green-600 hover:bg-green-700"}
+          >
+            {isSaving ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                {brandProfile.businessName && brandProfile.logoDataUrl ? 'Updating...' : 'Saving Profile...'}
+              </>
+            ) : (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                {brandProfile.businessName && brandProfile.logoDataUrl ? 'Update Profile' : 'Save Complete Profile'}
+              </>
+            )}
+          </Button>
+        </div>
+
+        {/* Show "Go to Content Calendar" button when profile is complete */}
+        {brandProfile.businessName && brandProfile.logoDataUrl && (
+          <div className="border-t pt-4">
+            <div className="text-center">
+              <p className="text-sm text-gray-600 mb-3">
+                ✅ Your brand profile is complete! You can now generate content or make further edits.
+              </p>
+              <Button
+                onClick={() => window.location.href = '/content-calendar'}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Go to Content Calendar
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
