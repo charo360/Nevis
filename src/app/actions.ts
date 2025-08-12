@@ -15,27 +15,35 @@ export async function analyzeBrandAction(
   designImageUris: string[],
 ): Promise<BrandAnalysisResult> {
   try {
+    console.log("🔍 Starting brand analysis for URL:", websiteUrl);
+    console.log("🖼️ Design images count:", designImageUris.length);
+
     const result = await analyzeBrandFlow({ websiteUrl, designImageUris });
+
+    console.log("✅ Brand analysis result:", JSON.stringify(result, null, 2));
+    console.log("🔍 Result type:", typeof result);
+    console.log("🔍 Result keys:", result ? Object.keys(result) : "No result");
+
     return result;
   } catch (error) {
-    console.error("Error analyzing brand:", error);
+    console.error("❌ Error analyzing brand:", error);
     throw new Error("Failed to analyze brand. Please check the URL and try again.");
   }
 }
 
 const getAspectRatioForPlatform = (platform: Platform): string => {
-    switch (platform) {
-        case 'Instagram':
-            return '1:1'; // Square
-        case 'Facebook':
-            return '1:1'; // Square is highly compatible
-        case 'Twitter':
-            return '16:9'; // Landscape
-        case 'LinkedIn':
-            return '1:1'; // Square is recommended
-        default:
-            return '1:1';
-    }
+  switch (platform) {
+    case 'Instagram':
+      return '1:1'; // Square
+    case 'Facebook':
+      return '1:1'; // Square is highly compatible
+    case 'Twitter':
+      return '16:9'; // Landscape
+    case 'LinkedIn':
+      return '1:1'; // Square is recommended
+    default:
+      return '1:1';
+  }
 }
 
 export async function generateContentAction(
@@ -46,7 +54,7 @@ export async function generateContentAction(
     const today = new Date();
     const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long' });
     const currentDate = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    
+
     const postDetails = await generatePostFromProfileFlow({
       businessType: profile.businessType,
       location: profile.location,
@@ -110,28 +118,28 @@ export async function generateVideoContentAction(
 
 
 export async function generateCreativeAssetAction(
-    prompt: string,
-    outputType: 'image' | 'video',
-    referenceAssetUrl: string | null,
-    useBrandProfile: boolean,
-    brandProfile: BrandProfile | null,
-    maskDataUrl: string | null | undefined,
-    aspectRatio: '16:9' | '9:16' | undefined
+  prompt: string,
+  outputType: 'image' | 'video',
+  referenceAssetUrl: string | null,
+  useBrandProfile: boolean,
+  brandProfile: BrandProfile | null,
+  maskDataUrl: string | null | undefined,
+  aspectRatio: '16:9' | '9:16' | undefined
 ): Promise<CreativeAsset> {
-    try {
-        const result = await generateCreativeAssetFlow({
-            prompt,
-            outputType,
-            referenceAssetUrl,
-            useBrandProfile,
-            brandProfile: useBrandProfile ? brandProfile : null,
-            maskDataUrl,
-            aspectRatio,
-        });
-        return result;
-    } catch (error) {
-        console.error("Error generating creative asset:", error);
-        // Always pass the specific error message from the flow to the client.
-        throw new Error((error as Error).message);
-    }
+  try {
+    const result = await generateCreativeAssetFlow({
+      prompt,
+      outputType,
+      referenceAssetUrl,
+      useBrandProfile,
+      brandProfile: useBrandProfile ? brandProfile : null,
+      maskDataUrl,
+      aspectRatio,
+    });
+    return result;
+  } catch (error) {
+    console.error("Error generating creative asset:", error);
+    // Always pass the specific error message from the flow to the client.
+    throw new Error((error as Error).message);
+  }
 }
