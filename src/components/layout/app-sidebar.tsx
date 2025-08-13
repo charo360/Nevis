@@ -50,18 +50,7 @@ export function AppSidebar() {
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={isActive("/cbrand")}
-              tooltip="Complete Brand Setup"
-            >
-              <Link href="/cbrand">
-                <Settings />
-                <span>Complete Brand Setup</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
