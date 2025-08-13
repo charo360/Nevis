@@ -95,6 +95,13 @@ export async function generateContentAction(
       status: 'generated',
       variants: postDetails.variants,
       imageText: postDetails.imageText,
+      // Include enhanced AI features
+      contentVariants: postDetails.contentVariants,
+      hashtagAnalysis: postDetails.hashtagAnalysis,
+      // Include advanced AI features
+      marketIntelligence: postDetails.marketIntelligence,
+      // Include local context features
+      localContext: postDetails.localContext,
     };
 
     return newPost;
