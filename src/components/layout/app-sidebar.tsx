@@ -10,6 +10,8 @@ import {
   Link as LinkIcon,
   Wand,
   Settings,
+  Zap,
+  Calendar,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import {
@@ -54,12 +56,24 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              isActive={isActive("/content-calendar")}
+              isActive={isActive("/quick-content")}
               tooltip="Quick Content"
             >
-              <Link href="/content-calendar">
-                <CalendarDays />
+              <Link href="/quick-content">
+                <Zap />
                 <span>Quick Content</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={isActive("/content-calendar")}
+              tooltip="Content Calendar"
+            >
+              <Link href="/content-calendar">
+                <Calendar />
+                <span>Content Calendar</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

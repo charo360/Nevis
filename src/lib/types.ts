@@ -1,5 +1,10 @@
 export type Platform = 'Facebook' | 'Instagram' | 'LinkedIn' | 'Twitter';
 
+export type BrandConsistencyPreferences = {
+  strictConsistency: boolean; // Whether to strictly follow design examples for consistency
+  followBrandColors: boolean; // Whether to follow brand colors in the design
+};
+
 export type BrandProfile = {
   businessName: string;
   businessType: string;
