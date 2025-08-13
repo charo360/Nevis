@@ -10,9 +10,9 @@
  * @exports GeneratePostFromProfileOutput - The output type for the generation flow.
  */
 
-import {ai} from '@/ai/genkit';
+import { ai } from '@/ai/genkit';
 import { GenerateRequest } from 'genkit/generate';
-import {z} from 'zod';
+import { z } from 'zod';
 import { getWeatherTool, getEventsTool } from '@/ai/tools/local-data';
 
 const GeneratePostFromProfileInputSchema = z.object({
@@ -22,6 +22,7 @@ const GeneratePostFromProfileInputSchema = z.object({
   writingTone: z.string().describe('The brand voice of the business.'),
   contentThemes: z.string().describe('The content themes of the business.'),
   logoDataUrl: z.string().describe("The business logo as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."),
+  designExamples: z.array(z.string()).optional().describe("Array of design example data URIs to use as style reference for generating similar designs."),
   dayOfWeek: z.string().describe('The day of the week for the post.'),
   currentDate: z.string().describe('The current date for the post.'),
   variants: z.array(z.object({
@@ -60,8 +61,9 @@ export async function generatePostFromProfile(input: GeneratePostFromProfileInpu
 
 // Define the text generation prompt at the top level.
 const textGenPrompt = ai.definePrompt({
-    name: 'generatePostTextPrompt',
-    input: { schema: z.object({
+  name: 'generatePostTextPrompt',
+  input: {
+    schema: z.object({
       businessType: z.string(),
       location: z.string(),
       writingTone: z.string(),
@@ -72,14 +74,17 @@ const textGenPrompt = ai.definePrompt({
       targetAudience: z.string().optional(),
       keyFeatures: z.string().optional(),
       competitiveAdvantages: z.string().optional(),
-    })},
-    output: { schema: z.object({
+    })
+  },
+  output: {
+    schema: z.object({
       content: z.string().describe('The generated social media post content (the caption).'),
       imageText: z.string().describe('A brief, catchy headline for the image itself (max 5 words).'),
       hashtags: z.string().describe('Relevant hashtags for the post.'),
-    })},
-    tools: [getWeatherTool, getEventsTool],
-    prompt: `You are a social media manager and an expert in the {{{businessType}}} industry.
+    })
+  },
+  tools: [getWeatherTool, getEventsTool],
+  prompt: `You are a social media manager and an expert in the {{{businessType}}} industry.
     Your goal is to create content that drives the highest possible engagement.
     Your response MUST be a valid JSON object that conforms to the output schema.
     
@@ -120,43 +125,43 @@ const textGenPrompt = ai.definePrompt({
  * Wraps ai.generate with retry logic for 503 errors.
  */
 async function generateWithRetry(request: GenerateRequest, retries = 3, delay = 1000) {
-    for (let i = 0; i < retries; i++) {
-        try {
-            const result = await ai.generate(request);
-            return result;
-        } catch (e: any) {
-            if (e.message && e.message.includes('503') && i < retries - 1) {
-                console.log(`Attempt ${i + 1} failed with 503. Retrying in ${delay}ms...`);
-                await new Promise(resolve => setTimeout(resolve, delay));
-            } else {
-                if (e.message && e.message.includes('503')) {
-                    throw new Error("The AI model is currently overloaded. Please try again in a few moments.");
-                }
-                if (e.message && e.message.includes('429')) {
-                    throw new Error("You've exceeded your request limit for the AI model. Please check your plan or try again later.");
-                }
-                throw e; // Rethrow other errors immediately
-            }
+  for (let i = 0; i < retries; i++) {
+    try {
+      const result = await ai.generate(request);
+      return result;
+    } catch (e: any) {
+      if (e.message && e.message.includes('503') && i < retries - 1) {
+        console.log(`Attempt ${i + 1} failed with 503. Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        if (e.message && e.message.includes('503')) {
+          throw new Error("The AI model is currently overloaded. Please try again in a few moments.");
         }
+        if (e.message && e.message.includes('429')) {
+          throw new Error("You've exceeded your request limit for the AI model. Please check your plan or try again later.");
+        }
+        throw e; // Rethrow other errors immediately
+      }
     }
-    // This line should not be reachable if retries are configured, but as a fallback:
-    throw new Error("The AI model is currently overloaded after multiple retries. Please try again later.");
+  }
+  // This line should not be reachable if retries are configured, but as a fallback:
+  throw new Error("The AI model is currently overloaded after multiple retries. Please try again later.");
 }
 
 const getMimeTypeFromDataURI = (dataURI: string): string => {
-    const match = dataURI.match(/^data:(.*?);/);
-    return match ? match[1] : 'application/octet-stream'; // Default if no match
+  const match = dataURI.match(/^data:(.*?);/);
+  return match ? match[1] : 'application/octet-stream'; // Default if no match
 };
 
 // Helper function to generate an image for a single variant.
 async function generateImageForVariant(
-    variant: {platform: string, aspectRatio: string}, 
-    input: GeneratePostFromProfileInput, 
-    textOutput: { imageText: string }
+  variant: { platform: string, aspectRatio: string },
+  input: GeneratePostFromProfileInput,
+  textOutput: { imageText: string }
 ) {
-    const colorInstructions = `The brand's color palette is: Primary HSL(${input.primaryColor}), Accent HSL(${input.accentColor}), Background HSL(${input.backgroundColor}). Please use these colors in the design.`;
-    
-    const imagePrompt = `You are an expert graphic designer creating a social media post for a ${input.businessType}.
+  const colorInstructions = `The brand's color palette is: Primary HSL(${input.primaryColor}), Accent HSL(${input.accentColor}), Background HSL(${input.backgroundColor}). Please use these colors in the design.`;
+
+  let imagePrompt = `You are an expert graphic designer creating a social media post for a ${input.businessType}.
     Your goal is to generate a single, cohesive, and visually stunning image. The image must have an aspect ratio of ${variant.aspectRatio}.
 
     **Key Elements to Include:**
@@ -165,24 +170,38 @@ async function generateImageForVariant(
     - **People:** If the image includes people, they should be representative of the location: ${input.location}. For example, for a post in Africa, depict Black people; for Europe, White people; for the USA, a diverse mix of ethnicities. Be thoughtful and authentic in your representation.
     - **Subject/Theme:** The core subject of the image should be directly inspired by the Image Text below.
     - **Text Overlay:** The following text must be overlaid on the image in a stylish, readable font: "${textOutput.imageText}". It is critical that the text is clearly readable, well-composed, and not cut off or truncated. The entire text must be visible.
-    - **Logo Placement:** The provided logo must be integrated naturally into the design. It should be clearly visible but not overpower the main subject. For example, it could be on a product, a sign, or as a subtle watermark.
-    `;
+    - **Logo Placement:** The provided logo must be integrated naturally into the design. It should be clearly visible but not overpower the main subject. For example, it could be on a product, a sign, or as a subtle watermark.`;
 
-    const { media } = await generateWithRetry({
-      model: 'googleai/gemini-2.0-flash-preview-image-generation',
-      prompt: [
-        { text: imagePrompt },
-        { media: { url: input.logoDataUrl, contentType: getMimeTypeFromDataURI(input.logoDataUrl) } },
-      ],
-      config: {
-        responseModalities: ['TEXT', 'IMAGE'],
-      },
+  // Add design examples reference if available
+  if (input.designExamples && input.designExamples.length > 0) {
+    imagePrompt += `\n    - **Style Reference:** Use the provided design examples as style reference to create a similar visual aesthetic, color scheme, typography, and overall design approach. Match the style, mood, and visual characteristics of the reference designs while creating new content.`;
+  }
+
+  // Build prompt parts array
+  const promptParts: any[] = [{ text: imagePrompt }];
+
+  // Add logo
+  promptParts.push({ media: { url: input.logoDataUrl, contentType: getMimeTypeFromDataURI(input.logoDataUrl) } });
+
+  // Add design examples as reference
+  if (input.designExamples && input.designExamples.length > 0) {
+    input.designExamples.forEach(designExample => {
+      promptParts.push({ media: { url: designExample, contentType: getMimeTypeFromDataURI(designExample) } });
     });
+  }
 
-    return {
-      platform: variant.platform,
-      imageUrl: media?.url ?? '',
-    }
+  const { media } = await generateWithRetry({
+    model: 'googleai/gemini-2.0-flash-preview-image-generation',
+    prompt: promptParts,
+    config: {
+      responseModalities: ['TEXT', 'IMAGE'],
+    },
+  });
+
+  return {
+    platform: variant.platform,
+    imageUrl: media?.url ?? '',
+  }
 }
 
 
@@ -195,33 +214,33 @@ const generatePostFromProfileFlow = ai.defineFlow(
   async (input) => {
     // Step 1: Generate Text Content (once for all platforms)
     const { output: textOutput } = await textGenPrompt({
-        businessType: input.businessType,
-        location: input.location,
-        writingTone: input.writingTone,
-        contentThemes: input.contentThemes,
-        dayOfWeek: input.dayOfWeek,
-        currentDate: input.currentDate,
-        services: input.services,
-        targetAudience: input.targetAudience,
-        keyFeatures: input.keyFeatures,
-        competitiveAdvantages: input.competitiveAdvantages,
+      businessType: input.businessType,
+      location: input.location,
+      writingTone: input.writingTone,
+      contentThemes: input.contentThemes,
+      dayOfWeek: input.dayOfWeek,
+      currentDate: input.currentDate,
+      services: input.services,
+      targetAudience: input.targetAudience,
+      keyFeatures: input.keyFeatures,
+      competitiveAdvantages: input.competitiveAdvantages,
     });
-    
+
 
     if (!textOutput) {
-        throw new Error('Failed to generate post text content.');
+      throw new Error('Failed to generate post text content.');
     }
-    
+
     // Step 2: Generate Image for each variant in parallel
-    const imagePromises = input.variants.map(variant => 
-        generateImageForVariant(variant, input, textOutput)
+    const imagePromises = input.variants.map(variant =>
+      generateImageForVariant(variant, input, textOutput)
     );
-    
+
     const variants = await Promise.all(imagePromises);
 
     return {
-        ...textOutput,
-        variants,
+      ...textOutput,
+      variants,
     };
   }
 );

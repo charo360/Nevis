@@ -56,6 +56,9 @@ export interface CompleteBrandProfile {
   // Website & Logo
   websiteUrl: string;
   logoDataUrl: string;
+
+  // Design Examples (for AI reference)
+  designExamples: string[]; // Array of data URIs from uploaded design samples
 }
 
 const STEPS = [
@@ -103,6 +106,7 @@ export function CbrandWizard() {
     linkedinUrl: '',
     websiteUrl: '',
     logoDataUrl: '',
+    designExamples: [],
   });
 
   // Load existing profile on component mount
@@ -142,6 +146,7 @@ export function CbrandWizard() {
               : [],
             websiteUrl: parsedLegacy.websiteUrl || '',
             logoDataUrl: parsedLegacy.logoDataUrl || '',
+            designExamples: parsedLegacy.designExamples || [],
             visualStyle: parsedLegacy.visualStyle || '',
             writingTone: parsedLegacy.writingTone || '',
             contentThemes: parsedLegacy.contentThemes || '',
@@ -195,11 +200,29 @@ export function CbrandWizard() {
     const updatedProfile = { ...brandProfile, ...updates };
     setBrandProfile(updatedProfile);
 
-    // Auto-save to localStorage whenever profile is updated
+    // Auto-save to localStorage whenever profile is updated with size check
     try {
+      const profileSize = JSON.stringify(updatedProfile).length;
+      const maxSize = 5 * 1024 * 1024; // 5MB limit for localStorage
+
+      if (profileSize > maxSize) {
+        console.warn('Profile too large for auto-save, skipping:', profileSize);
+        // Try saving without design examples
+        const profileWithoutDesigns = { ...updatedProfile, designExamples: [] };
+        localStorage.setItem('completeBrandProfile', JSON.stringify(profileWithoutDesigns));
+        return;
+      }
+
       localStorage.setItem('completeBrandProfile', JSON.stringify(updatedProfile));
     } catch (error) {
       console.warn('Failed to auto-save profile:', error);
+      // Try saving without design examples as fallback
+      try {
+        const profileWithoutDesigns = { ...updatedProfile, designExamples: [] };
+        localStorage.setItem('completeBrandProfile', JSON.stringify(profileWithoutDesigns));
+      } catch (fallbackError) {
+        console.error('Failed to save even without design examples:', fallbackError);
+      }
     }
   };
 

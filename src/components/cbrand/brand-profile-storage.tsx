@@ -10,26 +10,70 @@ export interface SavedBrandProfile extends CompleteBrandProfile {
   version: string;
 }
 
-// Save current brand profile
+// Compress design examples to reduce storage size
+function compressDesignExamples(designExamples: string[]): string[] {
+  return designExamples.map(dataUri => {
+    try {
+      // Extract the base64 part
+      const base64Data = dataUri.split(',')[1];
+      if (!base64Data) return dataUri;
+
+      // For storage optimization, we'll keep only the first 3 design examples
+      // and compress them by reducing quality
+      return dataUri; // For now, keep original - we'll implement compression if needed
+    } catch (error) {
+      console.warn('Failed to compress design example:', error);
+      return dataUri;
+    }
+  }).slice(0, 3); // Limit to 3 design examples to prevent storage overflow
+}
+
+// Save current brand profile with storage optimization
 export function saveBrandProfile(profile: CompleteBrandProfile): SavedBrandProfile {
   const now = new Date().toISOString();
-  const savedProfile: SavedBrandProfile = {
+
+  // Optimize profile for storage
+  const optimizedProfile = {
     ...profile,
+    // Compress design examples to prevent storage overflow
+    designExamples: profile.designExamples ? compressDesignExamples(profile.designExamples) : [],
+  };
+
+  const savedProfile: SavedBrandProfile = {
+    ...optimizedProfile,
     id: generateId(),
     createdAt: now,
     updatedAt: now,
     version: '1.0',
   };
 
-  // Save as current profile
-  localStorage.setItem(CBRAND_PROFILE_KEY, JSON.stringify(savedProfile));
+  try {
+    // Save as current profile
+    localStorage.setItem(CBRAND_PROFILE_KEY, JSON.stringify(savedProfile));
 
-  // Also save to profiles list for future reference
-  const existingProfiles = getSavedProfiles();
-  const updatedProfiles = [savedProfile, ...existingProfiles.filter(p => p.id !== savedProfile.id)];
-  localStorage.setItem(CBRAND_PROFILES_KEY, JSON.stringify(updatedProfiles));
+    // Also save to profiles list for future reference
+    const existingProfiles = getSavedProfiles();
+    const updatedProfiles = [savedProfile, ...existingProfiles.filter(p => p.id !== savedProfile.id)];
+    localStorage.setItem(CBRAND_PROFILES_KEY, JSON.stringify(updatedProfiles));
 
-  return savedProfile;
+    return savedProfile;
+  } catch (error) {
+    // If storage fails due to size, try saving without design examples
+    console.warn('Storage failed with design examples, saving without them:', error);
+
+    const profileWithoutDesigns = {
+      ...savedProfile,
+      designExamples: [],
+    };
+
+    localStorage.setItem(CBRAND_PROFILE_KEY, JSON.stringify(profileWithoutDesigns));
+
+    const existingProfiles = getSavedProfiles();
+    const updatedProfiles = [profileWithoutDesigns, ...existingProfiles.filter(p => p.id !== profileWithoutDesigns.id)];
+    localStorage.setItem(CBRAND_PROFILES_KEY, JSON.stringify(updatedProfiles));
+
+    throw new Error('Profile saved but design examples were removed due to storage limitations. Please use fewer or smaller design images.');
+  }
 }
 
 // Load current brand profile
@@ -76,6 +120,7 @@ export function convertToLegacyProfile(profile: CompleteBrandProfile): any {
     services: profile.services,
     websiteUrl: profile.websiteUrl,
     logoDataUrl: profile.logoDataUrl,
+    designExamples: profile.designExamples, // Include design examples
     visualStyle: profile.visualStyle,
     writingTone: profile.writingTone,
     contentThemes: profile.contentThemes,
@@ -134,7 +179,7 @@ export function importBrandProfile(jsonData: string): SavedBrandProfile {
   try {
     const data = JSON.parse(jsonData);
     const now = new Date().toISOString();
-    
+
     const importedProfile: SavedBrandProfile = {
       ...data,
       id: generateId(), // Generate new ID for imported profile
@@ -158,7 +203,7 @@ function generateId(): string {
 export function isProfileComplete(profile: CompleteBrandProfile): boolean {
   const requiredFields = [
     'businessName',
-    'businessType', 
+    'businessType',
     'location',
     'description',
     'services',

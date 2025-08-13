@@ -8,7 +8,7 @@ export type BrandProfile = {
   visualStyle: string;
   writingTone: string;
   contentThemes: string;
-  
+
   // New detailed fields
   websiteUrl?: string;
   description?: string;
@@ -32,6 +32,9 @@ export type BrandProfile = {
   primaryColor?: string;
   accentColor?: string;
   backgroundColor?: string;
+
+  // Design Examples (for AI reference)
+  designExamples?: string[]; // Array of data URIs from uploaded design samples
 };
 
 export type GeneratedPost = {
@@ -57,9 +60,9 @@ export type BrandAnalysisResult = {
   description: string;
   services: string;
   contactInfo: {
-      phone?: string;
-      email?: string;
-      address?: string;
+    phone?: string;
+    email?: string;
+    address?: string;
   };
 };
 

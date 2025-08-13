@@ -15,21 +15,21 @@ import { GenerateRequest } from 'genkit/generate';
 
 // Define the input schema for the creative asset generation flow.
 const CreativeAssetInputSchema = z.object({
-  prompt: z.string().describe('The main text prompt describing the desired asset.'),
-  outputType: z.enum(['image', 'video']).describe('The type of asset to generate.'),
-  referenceAssetUrl: z.string().nullable().describe('An optional reference image or video as a data URI.'),
-  useBrandProfile: z.boolean().describe('Whether to apply the brand profile.'),
-  brandProfile: z.custom<BrandProfile>().nullable().describe('The brand profile object.'),
-  maskDataUrl: z.string().nullable().optional().describe('An optional mask image for inpainting as a data URI.'),
-  aspectRatio: z.enum(['16:9', '9:16']).optional().describe('The aspect ratio for video generation.'),
+    prompt: z.string().describe('The main text prompt describing the desired asset.'),
+    outputType: z.enum(['image', 'video']).describe('The type of asset to generate.'),
+    referenceAssetUrl: z.string().nullable().describe('An optional reference image or video as a data URI.'),
+    useBrandProfile: z.boolean().describe('Whether to apply the brand profile.'),
+    brandProfile: z.custom<BrandProfile>().nullable().describe('The brand profile object.'),
+    maskDataUrl: z.string().nullable().optional().describe('An optional mask image for inpainting as a data URI.'),
+    aspectRatio: z.enum(['16:9', '9:16']).optional().describe('The aspect ratio for video generation.'),
 });
 export type CreativeAssetInput = z.infer<typeof CreativeAssetInputSchema>;
 
 // Define the output schema for the creative asset generation flow.
 const CreativeAssetOutputSchema = z.object({
-  imageUrl: z.string().nullable().describe('The data URI of the generated image, if applicable.'),
-  videoUrl: z.string().nullable().describe('The data URI of the generated video, if applicable.'),
-  aiExplanation: z.string().describe('A brief explanation from the AI about what it created.'),
+    imageUrl: z.string().nullable().describe('The data URI of the generated image, if applicable.'),
+    videoUrl: z.string().nullable().describe('The data URI of the generated video, if applicable.'),
+    aiExplanation: z.string().describe('A brief explanation from the AI about what it created.'),
 });
 export type CreativeAsset = z.infer<typeof CreativeAssetOutputSchema>;
 
@@ -39,7 +39,7 @@ export type CreativeAsset = z.infer<typeof CreativeAssetOutputSchema>;
  * @returns A promise that resolves to the generated asset details.
  */
 export async function generateCreativeAsset(input: CreativeAssetInput): Promise<CreativeAsset> {
-  return generateCreativeAssetFlow(input);
+    return generateCreativeAssetFlow(input);
 }
 
 
@@ -122,34 +122,34 @@ const getMimeTypeFromDataURI = (dataURI: string): string => {
  * The core Genkit flow for generating a creative asset.
  */
 const generateCreativeAssetFlow = ai.defineFlow(
-  {
-    name: 'generateCreativeAssetFlow',
-    inputSchema: CreativeAssetInputSchema,
-    outputSchema: CreativeAssetOutputSchema,
-  },
-  async (input) => {
-    const promptParts: (string | { text: string } | { media: { url: string; contentType?: string } })[] = [];
-    let textPrompt = '';
-    
-    const { imageText, remainingPrompt } = extractQuotedText(input.prompt);
+    {
+        name: 'generateCreativeAssetFlow',
+        inputSchema: CreativeAssetInputSchema,
+        outputSchema: CreativeAssetOutputSchema,
+    },
+    async (input) => {
+        const promptParts: (string | { text: string } | { media: { url: string; contentType?: string } })[] = [];
+        let textPrompt = '';
 
-    if (input.maskDataUrl && input.referenceAssetUrl) {
-      // This is an inpainting request.
-      textPrompt = `You are an expert image editor performing a precise inpainting task.
+        const { imageText, remainingPrompt } = extractQuotedText(input.prompt);
+
+        if (input.maskDataUrl && input.referenceAssetUrl) {
+            // This is an inpainting request.
+            textPrompt = `You are an expert image editor performing a precise inpainting task.
 You will be given an original image, a mask, and a text prompt.
 Your task is to modify the original image *only* in the areas designated by the black region of the mask.
 The rest of the image must remain absolutely unchanged.
 If the prompt is a "remove" or "delete" instruction, perform a seamless, content-aware fill to replace the masked object with a photorealistic background that matches the surrounding area.
 The user's instruction for the masked area is: "${remainingPrompt}".
 Recreate the content within the black-masked region based on this instruction, ensuring a seamless and photorealistic blend with the surrounding, untouched areas of the image.`;
-      
-      promptParts.push({ text: textPrompt });
-      promptParts.push({ media: { url: input.referenceAssetUrl, contentType: getMimeTypeFromDataURI(input.referenceAssetUrl) } });
-      promptParts.push({ media: { url: input.maskDataUrl, contentType: getMimeTypeFromDataURI(input.maskDataUrl) } });
 
-    } else if (input.referenceAssetUrl) {
-        // This is a generation prompt with a reference asset (image or video).
-        let referencePrompt = `You are an expert creative director specializing in high-end advertisements. You will be given a reference asset and a text prompt with instructions.
+            promptParts.push({ text: textPrompt });
+            promptParts.push({ media: { url: input.referenceAssetUrl, contentType: getMimeTypeFromDataURI(input.referenceAssetUrl) } });
+            promptParts.push({ media: { url: input.maskDataUrl, contentType: getMimeTypeFromDataURI(input.maskDataUrl) } });
+
+        } else if (input.referenceAssetUrl) {
+            // This is a generation prompt with a reference asset (image or video).
+            let referencePrompt = `You are an expert creative director specializing in high-end advertisements. You will be given a reference asset and a text prompt with instructions.
 Your task is to generate a new asset that is inspired by the reference asset and follows the new instructions.
 
 Your primary goal is to intelligently interpret the user's request, considering the provided reference asset. Do not just copy the reference.
@@ -160,172 +160,185 @@ Analyze the user's prompt for common editing terminology and apply it creatively
 
 The user's instruction is: "${remainingPrompt}"`;
 
-        if (imageText) {
-             referencePrompt += `\n\n**Explicit Text Overlay:** The user has provided specific text in quotes: "${imageText}". You MUST overlay this text on the image. If there was existing text, replace it. Ensure the new text is readable and well-composed.`
-        }
-        
-        if (input.outputType === 'video') {
-             referencePrompt += `\n\n**Video Specifics:** Generate a video that is cinematically interesting, well-composed, and has a sense of completeness. Create a well-composed shot with a clear beginning, middle, and end, even within a short duration. Avoid abrupt cuts or unfinished scenes.`;
             if (imageText) {
-                referencePrompt += `\n\n**Text Overlay:** The following text MUST be overlaid on the video in a stylish, readable font: "${imageText}". It is critical that the text is clearly readable, well-composed, and not cut off. The entire text must be visible.`;
+                referencePrompt += `\n\n**Explicit Text Overlay:** The user has provided specific text in quotes: "${imageText}". You MUST overlay this text on the image. If there was existing text, replace it. Ensure the new text is readable and well-composed.`
             }
-        }
 
-        if (input.useBrandProfile && input.brandProfile) {
+            if (input.outputType === 'video') {
+                referencePrompt += `\n\n**Video Specifics:** Generate a video that is cinematically interesting, well-composed, and has a sense of completeness. Create a well-composed shot with a clear beginning, middle, and end, even within a short duration. Avoid abrupt cuts or unfinished scenes.`;
+                if (imageText) {
+                    referencePrompt += `\n\n**Text Overlay:** The following text MUST be overlaid on the video in a stylish, readable font: "${imageText}". It is critical that the text is clearly readable, well-composed, and not cut off. The entire text must be visible.`;
+                }
+            }
+
+            if (input.useBrandProfile && input.brandProfile) {
+                const bp = input.brandProfile;
+                let brandGuidelines = '\n\n**Brand Guidelines:**';
+
+                if (bp.logoDataUrl) {
+                    promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
+                    brandGuidelines += ` A logo has also been provided. Integrate it naturally into the new design.`
+                }
+                referencePrompt += brandGuidelines;
+            }
+
+            textPrompt = referencePrompt;
+            if (textPrompt) {
+                promptParts.push({ text: textPrompt });
+            }
+            promptParts.push({ media: { url: input.referenceAssetUrl, contentType: getMimeTypeFromDataURI(input.referenceAssetUrl) } });
+
+        } else if (input.useBrandProfile && input.brandProfile) {
+            // This is a new, on-brand asset generation.
             const bp = input.brandProfile;
-            let brandGuidelines = '\n\n**Brand Guidelines:**';
 
-            if (bp.logoDataUrl) {
-                promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
-                brandGuidelines += ` A logo has also been provided. Integrate it naturally into the new design.`
-            }
-            referencePrompt += brandGuidelines;
-        }
-
-        textPrompt = referencePrompt;
-        if (textPrompt) {
-            promptParts.push({ text: textPrompt });
-        }
-        promptParts.push({ media: { url: input.referenceAssetUrl, contentType: getMimeTypeFromDataURI(input.referenceAssetUrl) } });
-
-    } else if (input.useBrandProfile && input.brandProfile) {
-        // This is a new, on-brand asset generation.
-        const bp = input.brandProfile;
-        
-        let onBrandPrompt = `You are an expert creative director creating a social media advertisement ${input.outputType} for a ${bp.businessType}. Your goal is to generate a single, cohesive, and visually stunning asset for a professional marketing campaign.
+            let onBrandPrompt = `You are an expert creative director creating a social media advertisement ${input.outputType} for a ${bp.businessType}. Your goal is to generate a single, cohesive, and visually stunning asset for a professional marketing campaign.
 
 **Key Elements to Include:**
 - **Visual Style:** The design must be ${bp.visualStyle}. The writing tone is ${bp.writingTone} and content should align with these themes: ${bp.contentThemes}.
 - **Subject/Theme:** The core subject of the ${input.outputType} should be: "${remainingPrompt}".`;
-        
-        if (input.outputType === 'image') {
-            onBrandPrompt += `\n- **Text Overlay:** ${imageText ? `The following text must be overlaid on the asset in a stylish, readable font: "${imageText}". It must be fully visible and well-composed.` : 'No text should be added to the asset.'}`;
-            onBrandPrompt += `\n- **Logo Placement:** The provided logo must be integrated naturally into the design (e.g., on a product, a sign, or as a subtle watermark).`;
 
-            if (bp.logoDataUrl) {
-                promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
+            // Add design examples reference if available
+            if (bp.designExamples && bp.designExamples.length > 0) {
+                onBrandPrompt += `\n- **Style Reference:** Use the provided design examples as style reference to create a similar visual aesthetic, color scheme, typography, and overall design approach. Match the style, mood, and visual characteristics of the reference designs while creating new content.`;
             }
-            textPrompt = onBrandPrompt;
-            if (textPrompt) {
-                promptParts.unshift({text: textPrompt});
+
+            if (input.outputType === 'image') {
+                onBrandPrompt += `\n- **Text Overlay:** ${imageText ? `The following text must be overlaid on the asset in a stylish, readable font: "${imageText}". It must be fully visible and well-composed.` : 'No text should be added to the asset.'}`;
+                onBrandPrompt += `\n- **Logo Placement:** The provided logo must be integrated naturally into the design (e.g., on a product, a sign, or as a subtle watermark).`;
+
+                if (bp.logoDataUrl) {
+                    promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
+                }
+                textPrompt = onBrandPrompt;
+                if (textPrompt) {
+                    promptParts.unshift({ text: textPrompt });
+                }
+            } else { // Video
+                onBrandPrompt += `\n- **Video Specifics:** Generate a video that is cinematically interesting, well-composed, and has a sense of completeness. Create a well-composed shot with a clear beginning, middle, and end, even within a short duration. Avoid abrupt cuts or unfinished scenes.`;
+                if (input.aspectRatio === '16:9') {
+                    onBrandPrompt += ' The video should have relevant sound.';
+                }
+                if (imageText) {
+                    onBrandPrompt += `\n- **Text Overlay:** The following text MUST be overlaid on the video in a stylish, readable font: "${imageText}". It is critical that the text is clearly readable, well-composed, and not cut off. The entire text must be visible.`
+                }
+                if (bp.logoDataUrl) {
+                    onBrandPrompt += `\n- **Logo Placement:** The provided logo must be integrated naturally into the design.`;
+                    promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
+                }
+
+                // Add design examples as reference
+                if (bp.designExamples && bp.designExamples.length > 0) {
+                    bp.designExamples.forEach(designExample => {
+                        promptParts.push({ media: { url: designExample, contentType: getMimeTypeFromDataURI(designExample) } });
+                    });
+                }
+
+                textPrompt = onBrandPrompt;
+                if (textPrompt) {
+                    promptParts.unshift({ text: textPrompt });
+                }
             }
-        } else { // Video
-             onBrandPrompt += `\n- **Video Specifics:** Generate a video that is cinematically interesting, well-composed, and has a sense of completeness. Create a well-composed shot with a clear beginning, middle, and end, even within a short duration. Avoid abrupt cuts or unfinished scenes.`;
-            if (input.aspectRatio === '16:9') {
-                onBrandPrompt += ' The video should have relevant sound.';
-            }
-            if(imageText) {
-                onBrandPrompt += `\n- **Text Overlay:** The following text MUST be overlaid on the video in a stylish, readable font: "${imageText}". It is critical that the text is clearly readable, well-composed, and not cut off. The entire text must be visible.`
-            }
-            if (bp.logoDataUrl) {
-                onBrandPrompt += `\n- **Logo Placement:** The provided logo must be integrated naturally into the design.`;
-                promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
-            }
-            textPrompt = onBrandPrompt;
-             if (textPrompt) {
-                promptParts.unshift({text: textPrompt});
+        } else {
+            // This is a new, un-branded, creative prompt.
+            let creativePrompt = `You are an expert creative director specializing in high-end advertisements. Generate a compelling, high-quality social media advertisement ${input.outputType} based on the following instruction: "${remainingPrompt}".`;
+
+            if (input.outputType === 'image' && imageText) {
+                creativePrompt += `\nOverlay the following text onto the asset: "${imageText}". Ensure the text is readable and well-composed.`
+                textPrompt = creativePrompt;
+                if (textPrompt) {
+                    promptParts.unshift({ text: textPrompt });
+                }
+            } else { // Video
+                creativePrompt += `\n\n**Video Specifics:** Generate a video that is cinematically interesting, well-composed, and has a sense of completeness. Create a well-composed shot with a clear beginning, middle, and end, even within a short duration. Avoid abrupt cuts or unfinished scenes.`;
+                if (input.aspectRatio === '16:9') {
+                    creativePrompt += ' The video should have relevant sound.';
+                }
+                if (imageText) {
+                    creativePrompt += `\n\n**Text Overlay:** The following text MUST be overlaid on the video in a stylish, readable font: "${imageText}". It is critical that the text is clearly readable, well-composed, and not cut off. The entire text must be visible.`;
+                }
+                textPrompt = creativePrompt;
+                if (textPrompt) {
+                    promptParts.unshift({ text: textPrompt });
+                }
             }
         }
-    } else {
-        // This is a new, un-branded, creative prompt.
-        let creativePrompt = `You are an expert creative director specializing in high-end advertisements. Generate a compelling, high-quality social media advertisement ${input.outputType} based on the following instruction: "${remainingPrompt}".`;
-        
-        if (input.outputType === 'image' && imageText) {
-             creativePrompt += `\nOverlay the following text onto the asset: "${imageText}". Ensure the text is readable and well-composed.`
-             textPrompt = creativePrompt;
-             if (textPrompt) {
-                promptParts.unshift({text: textPrompt});
+
+        const aiExplanationPrompt = ai.definePrompt({
+            name: 'creativeAssetExplanationPrompt',
+            prompt: `Based on the generated ${input.outputType}, write a very brief, one-sentence explanation of the creative choices made. For example: "I created a modern, vibrant image of a coffee shop, using your brand's primary color for the logo."`
+        });
+
+        const explanationResult = await aiExplanationPrompt();
+
+        try {
+            if (input.outputType === 'image') {
+                const { media } = await generateWithRetry({
+                    model: 'googleai/gemini-2.0-flash-preview-image-generation',
+                    prompt: promptParts,
+                    config: {
+                        responseModalities: ['TEXT', 'IMAGE'],
+                    },
+                });
+
+                return {
+                    imageUrl: media?.url ?? null,
+                    videoUrl: null,
+                    aiExplanation: explanationResult.output ?? "Here is the generated image based on your prompt."
+                };
+            } else { // Video generation
+                const isVertical = input.aspectRatio === '9:16';
+
+                const model = isVertical ? 'googleai/veo-2.0-generate-001' : 'googleai/veo-3.0-generate-preview';
+                const config: Record<string, any> = {};
+                if (isVertical) {
+                    config.aspectRatio = '9:16';
+                    config.durationSeconds = 8;
+                }
+
+                const result = await generateWithRetry({
+                    model,
+                    prompt: promptParts,
+                    config,
+                });
+
+                let operation = result.operation;
+
+                if (!operation) {
+                    throw new Error('The video generation process did not start correctly. Please try again.');
+                }
+
+                // Poll for completion
+                while (!operation.done) {
+                    await new Promise(resolve => setTimeout(resolve, 5000)); // wait 5s
+                    operation = await ai.checkOperation(operation);
+                }
+
+                if (operation.error) {
+                    console.error("Video generation operation failed", operation.error);
+                    throw new Error(`Video generation failed: ${operation.error.message}. Please try again.`);
+                }
+
+                const videoPart = operation.output?.message?.content.find(p => !!p.media);
+                if (!videoPart || !videoPart.media) {
+                    throw new Error('Video generation completed, but the final video file could not be found.');
+                }
+
+                const videoDataUrl = await videoToDataURI(videoPart);
+
+                return {
+                    imageUrl: null,
+                    videoUrl: videoDataUrl,
+                    aiExplanation: explanationResult.output ?? "Here is the generated video based on your prompt."
+                };
             }
-        } else { // Video
-            creativePrompt += `\n\n**Video Specifics:** Generate a video that is cinematically interesting, well-composed, and has a sense of completeness. Create a well-composed shot with a clear beginning, middle, and end, even within a short duration. Avoid abrupt cuts or unfinished scenes.`;
-            if (input.aspectRatio === '16:9') {
-                creativePrompt += ' The video should have relevant sound.';
-            }
-            if (imageText) {
-                creativePrompt += `\n\n**Text Overlay:** The following text MUST be overlaid on the video in a stylish, readable font: "${imageText}". It is critical that the text is clearly readable, well-composed, and not cut off. The entire text must be visible.`;
-            }
-            textPrompt = creativePrompt;
-            if (textPrompt) {
-                promptParts.unshift({text: textPrompt});
-            }
+        } catch (e: any) {
+            console.error("Error during creative asset generation:", e);
+            // Ensure a user-friendly error is thrown
+            const message = e.message || "An unknown error occurred during asset generation.";
+            throw new Error(message);
         }
     }
-    
-    const aiExplanationPrompt = ai.definePrompt({
-      name: 'creativeAssetExplanationPrompt',
-      prompt: `Based on the generated ${input.outputType}, write a very brief, one-sentence explanation of the creative choices made. For example: "I created a modern, vibrant image of a coffee shop, using your brand's primary color for the logo."`
-    });
-    
-    const explanationResult = await aiExplanationPrompt();
-
-    try {
-        if (input.outputType === 'image') {
-            const { media } = await generateWithRetry({
-                model: 'googleai/gemini-2.0-flash-preview-image-generation',
-                prompt: promptParts,
-                config: {
-                    responseModalities: ['TEXT', 'IMAGE'],
-                },
-            });
-
-            return {
-                imageUrl: media?.url ?? null,
-                videoUrl: null,
-                aiExplanation: explanationResult.output ?? "Here is the generated image based on your prompt."
-            };
-        } else { // Video generation
-            const isVertical = input.aspectRatio === '9:16';
-            
-            const model = isVertical ? 'googleai/veo-2.0-generate-001' : 'googleai/veo-3.0-generate-preview';
-            const config: Record<string, any> = {};
-            if (isVertical) {
-                config.aspectRatio = '9:16';
-                config.durationSeconds = 8;
-            }
-
-            const result = await generateWithRetry({
-                model,
-                prompt: promptParts,
-                config,
-            });
-            
-            let operation = result.operation;
-
-            if (!operation) {
-                throw new Error('The video generation process did not start correctly. Please try again.');
-            }
-
-            // Poll for completion
-            while (!operation.done) {
-                await new Promise(resolve => setTimeout(resolve, 5000)); // wait 5s
-                operation = await ai.checkOperation(operation);
-            }
-            
-            if (operation.error) {
-                console.error("Video generation operation failed", operation.error);
-                throw new Error(`Video generation failed: ${operation.error.message}. Please try again.`);
-            }
-
-            const videoPart = operation.output?.message?.content.find(p => !!p.media);
-            if (!videoPart || !videoPart.media) {
-                throw new Error('Video generation completed, but the final video file could not be found.');
-            }
-
-            const videoDataUrl = await videoToDataURI(videoPart);
-
-            return {
-                imageUrl: null,
-                videoUrl: videoDataUrl,
-                aiExplanation: explanationResult.output ?? "Here is the generated video based on your prompt."
-            };
-        }
-    } catch (e: any) {
-        console.error("Error during creative asset generation:", e);
-        // Ensure a user-friendly error is thrown
-        const message = e.message || "An unknown error occurred during asset generation.";
-        throw new Error(message);
-    }
-  }
 );
 
-    
+
