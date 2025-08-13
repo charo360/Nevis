@@ -49,9 +49,11 @@ export async function generateOpenAIEnhancedDesign(
     enhancementsApplied.push('DALL-E 3 Optimized Prompting', 'Text Validation & Cleaning');
 
     console.log('🎨 Generating enhanced design with OpenAI DALL-E 3...');
-    console.log('📝 Original text:', input.imageText);
-    console.log('🧹 Cleaned text:', cleanedText);
+    console.log('📝 Original text:', `"${input.imageText}"`);
+    console.log('🧹 Cleaned text:', `"${cleanedText}"`);
+    console.log('🔄 Text changed:', input.imageText !== cleanedText ? 'YES' : 'NO');
     console.log('📏 Prompt length:', enhancedPrompt.length);
+    console.log('🎯 Full prompt preview:', enhancedPrompt.substring(0, 200) + '...');
 
     // Generate image with DALL-E 3
     const response = await openai.images.generate({
@@ -118,31 +120,38 @@ function buildDALLE3Prompt(input: OpenAIEnhancedDesignInput): string {
     : '';
 
   // Build simple, clear prompt optimized for DALL-E 3
-  const prompt = `A professional ${platform} social media post design for a ${businessType} business.
+  const prompt = `Create a professional ${platform} social media post for a ${businessType} business.
 
-TEXT TO DISPLAY: "${imageText}"
-Make this text large, bold, and perfectly readable in English.
+CRITICAL TEXT REQUIREMENT - SPELL EXACTLY AS WRITTEN:
+"${imageText}"
+- Display this text EXACTLY as written above
+- Do NOT change any letters or spelling
+- Make text large, bold, and crystal clear
+- Use proper English typography
+- Ensure perfect readability
 
-VISUAL STYLE: ${visualStyle} and professional
-COLORS: ${colorInstructions}
-BUSINESS: ${brandProfile.businessName || businessType}
+DESIGN SPECIFICATIONS:
+- Style: ${visualStyle} and professional
+- Colors: ${colorInstructions}
+- Business: ${brandProfile.businessName || businessType}
+- Platform: Optimized for ${platform}
 ${peopleInstructions}
 
-DESIGN REQUIREMENTS:
-- Clean, modern layout optimized for ${platform}
-- Text is the main focus and must be crystal clear
-- Professional appearance suitable for ${businessType}
-- High contrast between text and background
-- Mobile-friendly design
-- Engaging and eye-catching
+QUALITY REQUIREMENTS:
+- Clean, modern layout with excellent typography
+- High contrast text (minimum 4.5:1 ratio)
+- Mobile-optimized design
+- Professional business appearance
+- Eye-catching and engaging
 
-Make it look professional, modern, and perfect for social media.`;
+The text must be spelled EXACTLY as provided - do not alter any letters or words.`;
 
   return prompt;
 }
 
 /**
  * Validate and clean text input for better DALL-E 3 results
+ * MINIMAL cleaning to preserve text accuracy
  */
 function validateAndCleanText(text: string): string {
   if (!text || text.trim().length === 0) {
@@ -151,23 +160,23 @@ function validateAndCleanText(text: string): string {
 
   let cleanedText = text.trim();
 
-  // Remove or replace problematic characters that might confuse DALL-E 3
+  // Only remove truly problematic characters, preserve all letters and numbers
   cleanedText = cleanedText
-    .replace(/[^\w\s\-.,!?'"()&]/g, '') // Remove special characters except basic punctuation
-    .replace(/\s+/g, ' ') // Normalize whitespace
-    .replace(/(.)\1{3,}/g, '$1$1') // Reduce repeated characters (e.g., "!!!!!!" -> "!!")
+    .replace(/[^\w\s\-.,!?'"()&%$#@]/g, '') // Keep more characters, only remove truly problematic ones
+    .replace(/\s+/g, ' ') // Normalize whitespace only
+    .replace(/(.)\1{4,}/g, '$1$1$1') // Only reduce excessive repetition (4+ chars -> 3)
     .trim();
 
-  // Ensure text is not too long (DALL-E 3 works better with shorter text)
-  if (cleanedText.length > 50) {
+  // Be more lenient with length - only trim if extremely long
+  if (cleanedText.length > 100) {
     const words = cleanedText.split(' ');
-    if (words.length > 8) {
-      cleanedText = words.slice(0, 8).join(' ');
+    if (words.length > 15) {
+      cleanedText = words.slice(0, 15).join(' ');
     }
   }
 
-  // Ensure text is meaningful
-  if (cleanedText.length < 3) {
+  // Only fallback if completely empty
+  if (cleanedText.length === 0) {
     return 'Professional Business Content';
   }
 
