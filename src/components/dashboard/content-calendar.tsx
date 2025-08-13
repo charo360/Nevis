@@ -5,7 +5,7 @@ import React from "react";
 import { Loader2, Facebook, Instagram, Linkedin, Twitter, Settings, Palette, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PostCard } from "@/components/dashboard/post-card";
-import { generateContentAction } from "@/app/actions";
+import { generateContentAction, generateEnhancedDesignAction } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import type { BrandProfile, GeneratedPost, Platform, BrandConsistencyPreferences } from "@/lib/types";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -38,11 +38,19 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
     followBrandColors: true, // Always follow brand colors
   });
 
+  // Enhanced design preference
+  const [useEnhancedDesign, setUseEnhancedDesign] = React.useState(true);
+
   // Save preferences to localStorage
   React.useEffect(() => {
     const savedPreferences = localStorage.getItem('brandConsistencyPreferences');
     if (savedPreferences) {
       setBrandConsistency(JSON.parse(savedPreferences));
+    }
+
+    const savedEnhancedDesign = localStorage.getItem('useEnhancedDesign');
+    if (savedEnhancedDesign !== null) {
+      setUseEnhancedDesign(JSON.parse(savedEnhancedDesign));
     }
   }, []);
 
@@ -50,14 +58,53 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
     localStorage.setItem('brandConsistencyPreferences', JSON.stringify(brandConsistency));
   }, [brandConsistency]);
 
+  React.useEffect(() => {
+    localStorage.setItem('useEnhancedDesign', JSON.stringify(useEnhancedDesign));
+  }, [useEnhancedDesign]);
+
   const handleGenerateClick = async (platform: Platform) => {
     setIsGenerating(platform);
     try {
-      const newPost = await generateContentAction(brandProfile, platform, brandConsistency);
+      let newPost;
+
+      if (useEnhancedDesign) {
+        // First generate proper content using the standard flow
+        const standardPost = await generateContentAction(brandProfile, platform, brandConsistency);
+
+        // Then enhance the visual design with brand consistency settings
+        const enhancedResult = await generateEnhancedDesignAction(
+          brandProfile.businessType || 'business',
+          platform.toLowerCase(),
+          brandProfile.visualStyle || 'modern',
+          standardPost.imageText || 'Engaging Content',
+          brandProfile,
+          true,
+          brandConsistency
+        );
+
+        // Combine standard content with enhanced visuals
+        newPost = {
+          ...standardPost,
+          id: Date.now().toString(),
+          variants: [{
+            platform: platform,
+            imageUrl: enhancedResult.imageUrl
+          }],
+          // Add enhancement metadata to content
+          content: `${standardPost.content}\n\n✨ Enhanced with AI+ (Quality: ${enhancedResult.qualityScore}/10)`,
+          date: new Date().toISOString()
+        };
+      } else {
+        // Use standard content generation
+        newPost = await generateContentAction(brandProfile, platform, brandConsistency);
+      }
+
       onPostGenerated(newPost);
       toast({
-        title: "Content Generated!",
-        description: `A new ${platform} post has been added to your calendar.`,
+        title: useEnhancedDesign ? "Enhanced Content Generated! ✨" : "Content Generated!",
+        description: useEnhancedDesign
+          ? `A new enhanced ${platform} post with professional design principles has been added.`
+          : `A new ${platform} post has been added to your calendar.`,
       });
     } catch (error) {
       toast({
@@ -100,12 +147,26 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
                 }
               />
             </div>
+            <Separator orientation="vertical" className="h-4" />
+            <div className="flex items-center gap-2">
+              <div className="h-3 w-3 rounded-full bg-gradient-to-r from-purple-500 to-blue-500" />
+              <span className="text-xs text-gray-600">Enhanced</span>
+              <Switch
+                checked={useEnhancedDesign}
+                onCheckedChange={setUseEnhancedDesign}
+              />
+              {useEnhancedDesign && (
+                <span className="text-xs text-purple-600 font-medium">✨ AI+</span>
+              )}
+            </div>
           </div>
         </div>
         <p className="text-xs text-gray-500 mt-2">
-          {brandConsistency.strictConsistency
-            ? "🎯 Consistent content matching your design examples"
-            : "✨ Varied content using your brand colors"
+          {useEnhancedDesign
+            ? `✨ Enhanced AI: Professional design principles + ${brandConsistency.strictConsistency ? "strict consistency" : "brand colors"}`
+            : brandConsistency.strictConsistency
+              ? "🎯 Consistent content matching your design examples"
+              : "✨ Varied content using your brand colors"
           }
         </p>
       </div>
