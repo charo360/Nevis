@@ -6,13 +6,13 @@ import type { BrandProfile, Message } from '@/lib/types';
 import Balancer from 'react-wrap-balancer';
 import { Card, CardContent } from '@/components/ui/card';
 import { Bot } from 'lucide-react';
-import { generateCreativeAssetAction } from '@/app/actions';
+import { generateCreativeAssetAction, generateEnhancedDesignAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 
 
 interface ChatLayoutProps {
-  brandProfile: BrandProfile | null;
-  onEditImage: (imageUrl: string) => void;
+    brandProfile: BrandProfile | null;
+    onEditImage: (imageUrl: string) => void;
 }
 
 export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
@@ -24,6 +24,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
     const [useBrandProfile, setUseBrandProfile] = React.useState(!!brandProfile);
     const [outputType, setOutputType] = React.useState<'image' | 'video'>('image');
     const [aspectRatio, setAspectRatio] = React.useState<'16:9' | '9:16'>('16:9');
+    const [useEnhancedDesign, setUseEnhancedDesign] = React.useState(true);
     const { toast } = useToast();
 
 
@@ -43,7 +44,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
             reader.readAsDataURL(file);
         }
     };
-    
+
     const handleSetReferenceAsset = (url: string | null | undefined, type: 'image' | 'video') => {
         if (url) {
             setOutputType(type);
@@ -71,37 +72,62 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
             imageUrl: imagePreview,
         };
         setMessages([...messages, newUserMessage]);
-        
+
         const currentInput = input;
         const currentImageDataUrl = imageDataUrl;
-        
+
         setInput('');
         setImagePreview(null);
         setImageDataUrl(null);
         setIsLoading(true);
 
         try {
-            const result = await generateCreativeAssetAction(
-                currentInput,
-                outputType,
-                currentImageDataUrl,
-                useBrandProfile,
-                brandProfile,
-                null, // maskDataUrl
-                outputType === 'video' ? aspectRatio : undefined,
-            );
+            let result;
+            let aiResponse: Message;
 
-            const aiResponse: Message = {
-                id: (Date.now() + 1).toString(),
-                role: 'assistant',
-                content: result.aiExplanation,
-                imageUrl: result.imageUrl,
-                videoUrl: result.videoUrl,
-            };
+            if (useEnhancedDesign && outputType === 'image' && brandProfile) {
+                // Use enhanced design generation for images with brand profile
+                const enhancedResult = await generateEnhancedDesignAction(
+                    brandProfile.businessType || 'business',
+                    'instagram', // Default platform, could be made configurable
+                    brandProfile.visualStyle || 'modern',
+                    currentInput,
+                    brandProfile,
+                    true,
+                    { strictConsistency: true, followBrandColors: true } // Enable all enhancements for Creative Studio
+                );
+
+                aiResponse = {
+                    id: (Date.now() + 1).toString(),
+                    role: 'assistant',
+                    content: `✨ Enhanced Design Generated!\n\nQuality Score: ${enhancedResult.qualityScore}/10\nEnhancements: ${enhancedResult.enhancementsApplied.join(', ')}\nProcessing Time: ${enhancedResult.processingTime}ms\n\nThis design uses professional design principles, platform optimization, and quality validation for superior results.`,
+                    imageUrl: enhancedResult.imageUrl,
+                };
+            } else {
+                // Use standard creative asset generation
+                result = await generateCreativeAssetAction(
+                    currentInput,
+                    outputType,
+                    currentImageDataUrl,
+                    useBrandProfile,
+                    brandProfile,
+                    null, // maskDataUrl
+                    outputType === 'video' ? aspectRatio : undefined,
+                );
+
+                aiResponse = {
+                    id: (Date.now() + 1).toString(),
+                    role: 'assistant',
+                    content: result.aiExplanation,
+                    imageUrl: result.imageUrl,
+                    videoUrl: result.videoUrl,
+                };
+            }
+
             setMessages(prevMessages => [...prevMessages, aiResponse]);
 
         } catch (error) {
-             const errorResponse: Message = {
+            const errorResponse: Message = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
                 content: `Sorry, I ran into an error: ${(error as Error).message}`,
@@ -127,7 +153,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                                 <Bot className="mx-auto h-12 w-12 text-primary mb-4" />
                                 <h1 className="text-2xl font-bold font-headline">Creative Studio</h1>
                                 <p className="text-muted-foreground mt-2">
-                                     <Balancer>
+                                    <Balancer>
                                         Welcome to your AI-powered creative partner. Describe the ad you want, upload an image to edit, or start from scratch.
                                     </Balancer>
                                 </p>
@@ -135,16 +161,16 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                         </Card>
                     </div>
                 ) : (
-                    <ChatMessages 
-                        messages={messages} 
-                        isLoading={isLoading} 
+                    <ChatMessages
+                        messages={messages}
+                        isLoading={isLoading}
                         onSetReferenceAsset={handleSetReferenceAsset}
                         onEditImage={onEditImage}
                     />
                 )}
             </div>
-            
-            <ChatInput 
+
+            <ChatInput
                 input={input}
                 setInput={setInput}
                 handleSubmit={handleSubmit}
@@ -161,6 +187,8 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 onEditImage={onEditImage}
                 aspectRatio={aspectRatio}
                 setAspectRatio={setAspectRatio}
+                useEnhancedDesign={useEnhancedDesign}
+                setUseEnhancedDesign={setUseEnhancedDesign}
             />
         </div>
     );

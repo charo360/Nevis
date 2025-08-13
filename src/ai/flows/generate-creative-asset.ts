@@ -12,6 +12,24 @@ import { z } from 'zod';
 import type { BrandProfile } from '@/lib/types';
 import { MediaPart } from 'genkit';
 import { GenerateRequest } from 'genkit/generate';
+import {
+    ADVANCED_DESIGN_PRINCIPLES,
+    PLATFORM_SPECIFIC_GUIDELINES,
+    BUSINESS_TYPE_DESIGN_DNA,
+    QUALITY_ENHANCEMENT_INSTRUCTIONS
+} from '@/ai/prompts/advanced-design-prompts';
+import {
+    analyzeDesignExample,
+    selectOptimalDesignExamples,
+    extractDesignDNA,
+    type DesignAnalysis
+} from '@/ai/utils/design-analysis';
+import {
+    assessDesignQuality,
+    generateImprovementPrompt,
+    meetsQualityStandards,
+    type DesignQuality
+} from '@/ai/utils/design-quality';
 
 // Define the input schema for the creative asset generation flow.
 const CreativeAssetInputSchema = z.object({
@@ -175,9 +193,11 @@ The user's instruction is: "${remainingPrompt}"`;
                 const bp = input.brandProfile;
                 let brandGuidelines = '\n\n**Brand Guidelines:**';
 
-                if (bp.logoDataUrl) {
+                if (bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
                     promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
                     brandGuidelines += ` A logo has also been provided. Integrate it naturally into the new design.`
+                } else if (bp.logoDataUrl && bp.logoDataUrl.includes('image/svg+xml')) {
+                    brandGuidelines += ` Create a design that represents the brand identity (SVG logo format not supported by AI model).`
                 }
                 referencePrompt += brandGuidelines;
             }
@@ -189,25 +209,96 @@ The user's instruction is: "${remainingPrompt}"`;
             promptParts.push({ media: { url: input.referenceAssetUrl, contentType: getMimeTypeFromDataURI(input.referenceAssetUrl) } });
 
         } else if (input.useBrandProfile && input.brandProfile) {
-            // This is a new, on-brand asset generation.
+            // This is a new, on-brand asset generation with advanced design principles.
             const bp = input.brandProfile;
 
-            let onBrandPrompt = `You are an expert creative director creating a social media advertisement ${input.outputType} for a ${bp.businessType}. Your goal is to generate a single, cohesive, and visually stunning asset for a professional marketing campaign.
+            // Get business-specific design DNA
+            const businessDNA = BUSINESS_TYPE_DESIGN_DNA[bp.businessType as keyof typeof BUSINESS_TYPE_DESIGN_DNA] || BUSINESS_TYPE_DESIGN_DNA.default;
 
-**Key Elements to Include:**
+            let onBrandPrompt = `You are a world-class creative director and visual designer with expertise in social media marketing, brand design, and visual psychology.
+
+**CREATIVE BRIEF:**
+Create a professional, high-impact social media ${input.outputType} for a ${bp.businessType} business.
+Visual Style: ${bp.visualStyle} | Writing Tone: ${bp.writingTone}
+Content Themes: ${bp.contentThemes}
+
+${ADVANCED_DESIGN_PRINCIPLES}
+
+${businessDNA}
+
+**BRAND INTEGRATION:**
 - **Visual Style:** The design must be ${bp.visualStyle}. The writing tone is ${bp.writingTone} and content should align with these themes: ${bp.contentThemes}.
-- **Subject/Theme:** The core subject of the ${input.outputType} should be: "${remainingPrompt}".`;
+- **Subject/Theme:** The core subject of the ${input.outputType} should be: "${remainingPrompt}".
 
-            // Add design examples reference if available
+**MANDATORY BRAND COLORS:**
+${bp.primaryColor ? `- **Primary Color: ${bp.primaryColor}** - Use this as the dominant color (60% of design)` : ''}
+${bp.accentColor ? `- **Accent Color: ${bp.accentColor}** - Use for highlights and important elements (30% of design)` : ''}
+${bp.backgroundColor ? `- **Background Color: ${bp.backgroundColor}** - Use as base background color (10% of design)` : ''}
+${bp.primaryColor || bp.accentColor || bp.backgroundColor ? '- **CRITICAL:** These brand colors MUST be prominently featured and used exactly as specified' : '- Use colors appropriate for the business type and visual style'}
+
+${QUALITY_ENHANCEMENT_INSTRUCTIONS}`;
+
+            // Intelligent design examples processing
+            let designDNA = '';
+            let selectedExamples: string[] = [];
+
             if (bp.designExamples && bp.designExamples.length > 0) {
-                onBrandPrompt += `\n- **Style Reference:** Use the provided design examples as style reference to create a similar visual aesthetic, color scheme, typography, and overall design approach. Match the style, mood, and visual characteristics of the reference designs while creating new content.`;
+                try {
+                    // Analyze design examples for intelligent processing
+                    const analyses: DesignAnalysis[] = [];
+                    for (const example of bp.designExamples.slice(0, 3)) { // Limit for performance
+                        try {
+                            const analysis = await analyzeDesignExample(
+                                example,
+                                bp.businessType,
+                                'creative-studio',
+                                `${bp.visualStyle} ${input.outputType} for ${remainingPrompt}`
+                            );
+                            analyses.push(analysis);
+                        } catch (error) {
+                            console.warn('Design analysis failed for example, skipping:', error);
+                        }
+                    }
+
+                    if (analyses.length > 0) {
+                        // Extract design DNA from analyzed examples
+                        designDNA = extractDesignDNA(analyses);
+
+                        // Select optimal examples based on analysis
+                        selectedExamples = selectOptimalDesignExamples(
+                            bp.designExamples,
+                            analyses,
+                            remainingPrompt,
+                            'creative-studio',
+                            2
+                        );
+                    } else {
+                        selectedExamples = bp.designExamples.slice(0, 2);
+                    }
+                } catch (error) {
+                    console.warn('Design analysis system failed, using fallback:', error);
+                    selectedExamples = bp.designExamples.slice(0, 2);
+                }
+
+                onBrandPrompt += `\n**STYLE REFERENCE:**
+Use the provided design examples as style reference to create a similar visual aesthetic, color scheme, typography, and overall design approach. Match the style, mood, and visual characteristics of the reference designs while creating new content.
+
+${designDNA}`;
             }
 
             if (input.outputType === 'image') {
-                onBrandPrompt += `\n- **Text Overlay:** ${imageText ? `The following text must be overlaid on the asset in a stylish, readable font: "${imageText}". It must be fully visible and well-composed.` : 'No text should be added to the asset.'}`;
+                onBrandPrompt += `\n- **Text Overlay Requirements:** ${imageText ? `
+                  * Display this EXACT text: "${imageText}"
+                  * Use ENGLISH ONLY - no foreign languages, symbols, or corrupted characters
+                  * Make text LARGE and BOLD for mobile readability
+                  * Apply high contrast (minimum 4.5:1 ratio) between text and background
+                  * Add text shadows, outlines, or semi-transparent backgrounds for readability
+                  * Position text using rule of thirds for optimal composition
+                  * Ensure text is the primary focal point of the design` : 'No text should be added to the asset.'}`;
                 onBrandPrompt += `\n- **Logo Placement:** The provided logo must be integrated naturally into the design (e.g., on a product, a sign, or as a subtle watermark).`;
+                onBrandPrompt += `\n- **Critical Language Rule:** ALL text must be in clear, readable ENGLISH only. Never use foreign languages, corrupted text, or unreadable symbols.`;
 
-                if (bp.logoDataUrl) {
+                if (bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
                     promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
                 }
                 textPrompt = onBrandPrompt;
@@ -222,17 +313,17 @@ The user's instruction is: "${remainingPrompt}"`;
                 if (imageText) {
                     onBrandPrompt += `\n- **Text Overlay:** The following text MUST be overlaid on the video in a stylish, readable font: "${imageText}". It is critical that the text is clearly readable, well-composed, and not cut off. The entire text must be visible.`
                 }
-                if (bp.logoDataUrl) {
+                if (bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
                     onBrandPrompt += `\n- **Logo Placement:** The provided logo must be integrated naturally into the design.`;
                     promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
+                } else if (bp.logoDataUrl && bp.logoDataUrl.includes('image/svg+xml')) {
+                    onBrandPrompt += `\n- **Brand Identity:** Create a design that represents the brand identity and style.`;
                 }
 
-                // Add design examples as reference
-                if (bp.designExamples && bp.designExamples.length > 0) {
-                    bp.designExamples.forEach(designExample => {
-                        promptParts.push({ media: { url: designExample, contentType: getMimeTypeFromDataURI(designExample) } });
-                    });
-                }
+                // Add selected design examples as reference
+                selectedExamples.forEach(designExample => {
+                    promptParts.push({ media: { url: designExample, contentType: getMimeTypeFromDataURI(designExample) } });
+                });
 
                 textPrompt = onBrandPrompt;
                 if (textPrompt) {
@@ -273,16 +364,74 @@ The user's instruction is: "${remainingPrompt}"`;
 
         try {
             if (input.outputType === 'image') {
-                const { media } = await generateWithRetry({
-                    model: 'googleai/gemini-2.0-flash-preview-image-generation',
-                    prompt: promptParts,
-                    config: {
-                        responseModalities: ['TEXT', 'IMAGE'],
-                    },
-                });
+                // Generate image with quality validation
+                let finalImageUrl: string | null = null;
+                let attempts = 0;
+                const maxAttempts = 2;
+
+                while (attempts < maxAttempts && !finalImageUrl) {
+                    attempts++;
+
+                    const { media } = await generateWithRetry({
+                        model: 'googleai/gemini-2.0-flash-preview-image-generation',
+                        prompt: promptParts,
+                        config: {
+                            responseModalities: ['TEXT', 'IMAGE'],
+                        },
+                    });
+
+                    const imageUrl = media?.url ?? null;
+                    if (!imageUrl) {
+                        if (attempts === maxAttempts) {
+                            throw new Error('Failed to generate image');
+                        }
+                        continue;
+                    }
+
+                    // Quality validation for brand profile designs
+                    if (input.useBrandProfile && input.brandProfile && attempts === 1) {
+                        try {
+                            const quality = await assessDesignQuality(
+                                imageUrl,
+                                input.brandProfile.businessType,
+                                'creative-studio',
+                                input.brandProfile.visualStyle,
+                                undefined,
+                                `Creative asset: ${remainingPrompt}`
+                            );
+
+                            // If quality is acceptable, use this design
+                            if (meetsQualityStandards(quality, 6)) { // Slightly lower threshold for creative assets
+                                finalImageUrl = imageUrl;
+                                break;
+                            }
+
+                            // If quality is poor and we have attempts left, try to improve
+                            if (attempts < maxAttempts) {
+                                console.log(`Creative asset quality score: ${quality.overall.score}/10. Attempting improvement...`);
+
+                                // Add improvement instructions to prompt
+                                const improvementInstructions = generateImprovementPrompt(quality);
+                                const improvedPrompt = `${promptParts[0].text}\n\n${improvementInstructions}`;
+                                promptParts[0] = { text: improvedPrompt };
+                                continue;
+                            } else {
+                                finalImageUrl = imageUrl;
+                                break;
+                            }
+                        } catch (qualityError) {
+                            console.warn('Quality assessment failed for creative asset, using generated design:', qualityError);
+                            finalImageUrl = imageUrl;
+                            break;
+                        }
+                    } else {
+                        finalImageUrl = imageUrl;
+                        break;
+                    }
+                }
 
                 return {
-                    imageUrl: media?.url ?? null,
+                    imageUrl: finalImageUrl,
                     videoUrl: null,
                     aiExplanation: explanationResult.output ?? "Here is the generated image based on your prompt."
                 };

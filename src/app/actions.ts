@@ -159,3 +159,66 @@ export async function generateCreativeAssetAction(
     throw new Error((error as Error).message);
   }
 }
+
+export async function generateEnhancedDesignAction(
+  businessType: string,
+  platform: string,
+  visualStyle: string,
+  imageText: string,
+  brandProfile?: BrandProfile,
+  enableEnhancements: boolean = true,
+  brandConsistency?: { strictConsistency: boolean; followBrandColors: boolean }
+): Promise<{
+  imageUrl: string;
+  qualityScore: number;
+  enhancementsApplied: string[];
+  processingTime: number;
+}> {
+  const startTime = Date.now();
+  const enhancementsApplied: string[] = [];
+
+  try {
+    if (!brandProfile) {
+      throw new Error('Brand profile is required for enhanced design generation');
+    }
+
+    console.log('🎨 Enhanced Design Generation Started');
+    console.log('- Business Type:', businessType);
+    console.log('- Platform:', platform);
+    console.log('- Visual Style:', visualStyle);
+    console.log('- Image Text:', imageText);
+    console.log('- Brand Profile:', brandProfile.businessName);
+    console.log('- Enhancements Enabled:', enableEnhancements);
+
+    // Use OpenAI DALL-E 3 for enhanced design generation
+    console.log('🚀 Using OpenAI DALL-E 3 for enhanced design generation...');
+
+    const { generateEnhancedDesignWithFallback } = await import('@/ai/openai-enhanced-design');
+
+    const result = await generateEnhancedDesignWithFallback({
+      businessType,
+      platform,
+      visualStyle,
+      imageText,
+      brandProfile,
+      brandConsistency,
+    });
+
+    console.log('✅ OpenAI enhanced design generated successfully');
+    console.log('🔗 Image URL:', result.imageUrl);
+    console.log('⭐ Quality Score:', result.qualityScore);
+    console.log('🎯 Enhancements Applied:', result.enhancementsApplied);
+
+    return {
+      imageUrl: result.imageUrl,
+      qualityScore: result.qualityScore,
+      enhancementsApplied: result.enhancementsApplied,
+      processingTime: result.processingTime
+    };
+
+
+  } catch (error) {
+    console.error("Error generating enhanced design:", error);
+    throw new Error((error as Error).message);
+  }
+}
