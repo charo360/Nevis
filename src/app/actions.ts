@@ -62,6 +62,7 @@ export async function generateContentAction(
       contentThemes: profile.contentThemes,
       visualStyle: profile.visualStyle,
       logoDataUrl: profile.logoDataUrl,
+      designExamples: profile.designExamples || [], // Pass design examples for style reference
       primaryColor: profile.primaryColor,
       accentColor: profile.accentColor,
       backgroundColor: profile.backgroundColor,
