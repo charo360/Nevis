@@ -40,13 +40,18 @@ export async function generateOpenAIEnhancedDesign(
       throw new Error('OpenAI API key is required. Please set OPENAI_API_KEY environment variable.');
     }
 
+    // Validate and clean the text input
+    const cleanedText = validateAndCleanText(input.imageText);
+    const inputWithCleanText = { ...input, imageText: cleanedText };
+
     // Build enhanced prompt optimized for DALL-E 3
-    const enhancedPrompt = buildDALLE3Prompt(input);
-    enhancementsApplied.push('DALL-E 3 Optimized Prompting');
+    const enhancedPrompt = buildDALLE3Prompt(inputWithCleanText);
+    enhancementsApplied.push('DALL-E 3 Optimized Prompting', 'Text Validation & Cleaning');
 
     console.log('🎨 Generating enhanced design with OpenAI DALL-E 3...');
-    console.log('📝 Prompt length:', enhancedPrompt.length);
-    console.log('🎯 Target text:', input.imageText);
+    console.log('📝 Original text:', input.imageText);
+    console.log('🧹 Cleaned text:', cleanedText);
+    console.log('📏 Prompt length:', enhancedPrompt.length);
 
     // Generate image with DALL-E 3
     const response = await openai.images.generate({
@@ -96,66 +101,136 @@ export async function generateOpenAIEnhancedDesign(
 
 /**
  * Build optimized prompt for DALL-E 3
+ * DALL-E 3 works best with clear, direct instructions and specific visual descriptions
  */
 function buildDALLE3Prompt(input: OpenAIEnhancedDesignInput): string {
   const { businessType, platform, visualStyle, imageText, brandProfile, brandConsistency } = input;
 
-  // Brand color instructions
-  const colorInstructions = brandProfile.primaryColor && brandProfile.accentColor && brandProfile.backgroundColor
-    ? `Use these exact brand colors: Primary ${brandProfile.primaryColor}, Accent ${brandProfile.accentColor}, Background ${brandProfile.backgroundColor}.`
+  // Simplify color instructions for DALL-E 3
+  const colorInstructions = brandProfile.primaryColor && brandProfile.accentColor
+    ? `Use ${brandProfile.primaryColor} as the main color and ${brandProfile.accentColor} as accent color.`
+    : 'Use professional, modern colors that work well together.';
+
+  // Determine if people should be included based on business type and content
+  const shouldIncludePeople = shouldIncludePeopleInDesign(businessType, imageText, visualStyle);
+  const peopleInstructions = shouldIncludePeople
+    ? 'Include diverse, professional people in the design to make it more engaging and relatable.'
     : '';
 
-  // Design consistency instructions
-  const consistencyInstructions = brandConsistency?.strictConsistency && brandProfile.designExamples?.length
-    ? 'Match the visual style and design patterns from the provided brand examples.'
-    : '';
+  // Build simple, clear prompt optimized for DALL-E 3
+  const prompt = `A professional ${platform} social media post design for a ${businessType} business.
 
-  const prompt = `Create a professional ${platform} social media post for a ${businessType} business.
+TEXT TO DISPLAY: "${imageText}"
+Make this text large, bold, and perfectly readable in English.
 
-CRITICAL TEXT REQUIREMENT:
-Display this exact text clearly and readably: "${imageText}"
-The text must be large, bold, and highly readable in English only.
+VISUAL STYLE: ${visualStyle} and professional
+COLORS: ${colorInstructions}
+BUSINESS: ${brandProfile.businessName || businessType}
+${peopleInstructions}
 
-BRAND REQUIREMENTS:
-${colorInstructions}
-${consistencyInstructions}
-Business style: ${brandProfile.visualStyle || visualStyle}
-Business name: ${brandProfile.businessName || 'Business'}
+DESIGN REQUIREMENTS:
+- Clean, modern layout optimized for ${platform}
+- Text is the main focus and must be crystal clear
+- Professional appearance suitable for ${businessType}
+- High contrast between text and background
+- Mobile-friendly design
+- Engaging and eye-catching
 
-DESIGN EXCELLENCE:
-- Apply rule of thirds composition
-- Create clear visual hierarchy with text as primary focus
-- Use high contrast for maximum readability (minimum 4.5:1 ratio)
-- Add text shadows or backgrounds for text clarity
-- Professional ${visualStyle} aesthetic
-- Mobile-optimized design for ${platform}
-- Modern, clean, and engaging layout
-
-QUALITY STANDARDS:
-- HD quality, crisp imagery
-- Thumb-stopping visual appeal
-- Platform-specific optimization for ${platform}
-- Professional business-appropriate design
-- Ensure text is perfectly readable and prominent
-
-The design should look professional, modern, and perfectly suited for ${businessType} businesses on ${platform}.`;
+Make it look professional, modern, and perfect for social media.`;
 
   return prompt;
 }
 
 /**
+ * Validate and clean text input for better DALL-E 3 results
+ */
+function validateAndCleanText(text: string): string {
+  if (!text || text.trim().length === 0) {
+    return 'Professional Business Content';
+  }
+
+  let cleanedText = text.trim();
+
+  // Remove or replace problematic characters that might confuse DALL-E 3
+  cleanedText = cleanedText
+    .replace(/[^\w\s\-.,!?'"()&]/g, '') // Remove special characters except basic punctuation
+    .replace(/\s+/g, ' ') // Normalize whitespace
+    .replace(/(.)\1{3,}/g, '$1$1') // Reduce repeated characters (e.g., "!!!!!!" -> "!!")
+    .trim();
+
+  // Ensure text is not too long (DALL-E 3 works better with shorter text)
+  if (cleanedText.length > 50) {
+    const words = cleanedText.split(' ');
+    if (words.length > 8) {
+      cleanedText = words.slice(0, 8).join(' ');
+    }
+  }
+
+  // Ensure text is meaningful
+  if (cleanedText.length < 3) {
+    return 'Professional Business Content';
+  }
+
+  return cleanedText;
+}
+
+/**
+ * Determine if people should be included in the design
+ */
+function shouldIncludePeopleInDesign(businessType: string, imageText: string, visualStyle: string): boolean {
+  const businessTypeLower = businessType.toLowerCase();
+  const imageTextLower = imageText.toLowerCase();
+  const visualStyleLower = visualStyle.toLowerCase();
+
+  // Business types that typically benefit from people
+  const peopleBusinessTypes = [
+    'fitness', 'gym', 'health', 'wellness', 'coaching', 'training',
+    'education', 'consulting', 'service', 'restaurant', 'retail',
+    'beauty', 'salon', 'spa', 'medical', 'dental', 'therapy'
+  ];
+
+  // Content that suggests people
+  const peopleContent = [
+    'team', 'customer', 'client', 'people', 'community', 'join',
+    'experience', 'service', 'help', 'support', 'training', 'class'
+  ];
+
+  // Visual styles that work well with people
+  const peopleStyles = ['lifestyle', 'authentic', 'personal', 'friendly', 'approachable'];
+
+  const hasPeopleBusinessType = peopleBusinessTypes.some(type => businessTypeLower.includes(type));
+  const hasPeopleContent = peopleContent.some(content => imageTextLower.includes(content));
+  const hasPeopleStyle = peopleStyles.some(style => visualStyleLower.includes(style));
+
+  return hasPeopleBusinessType || hasPeopleContent || hasPeopleStyle;
+}
+
+/**
  * Get appropriate image size for platform
+ * DALL-E 3 supports: 1024x1024, 1792x1024, 1024x1792
  */
 function getPlatformSize(platform: string): '1024x1024' | '1792x1024' | '1024x1792' {
   const platformLower = platform.toLowerCase();
 
-  if (platformLower.includes('story') || platformLower.includes('reel')) {
-    return '1024x1792'; // Vertical for stories/reels
-  } else if (platformLower.includes('linkedin') || platformLower.includes('twitter')) {
-    return '1792x1024'; // Horizontal for professional platforms
-  } else {
-    return '1024x1024'; // Square for Instagram/Facebook posts
+  // Vertical formats (9:16 aspect ratio)
+  if (platformLower.includes('story') ||
+    platformLower.includes('reel') ||
+    platformLower.includes('tiktok') ||
+    platformLower.includes('youtube short')) {
+    return '1024x1792';
   }
+
+  // Horizontal formats (16:9 aspect ratio)
+  if (platformLower.includes('linkedin') ||
+    platformLower.includes('twitter') ||
+    platformLower.includes('youtube') ||
+    platformLower.includes('facebook cover') ||
+    platformLower.includes('banner')) {
+    return '1792x1024';
+  }
+
+  // Square format (1:1 aspect ratio) - default for most social media posts
+  return '1024x1024';
 }
 
 /**
