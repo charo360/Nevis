@@ -22,6 +22,33 @@ import { generateMarketIntelligence, generateRealTimeTrendingTopics } from '@/ai
 import { fetchLocalContext } from '@/ai/utils/real-time-trends-integration';
 import { selectRelevantContext, filterContextData } from '@/ai/utils/intelligent-context-selector';
 import { generateHumanizationTechniques, generateTrafficDrivingElements } from '@/ai/utils/human-content-generator';
+import {
+  ADVANCED_DESIGN_PRINCIPLES,
+  PLATFORM_SPECIFIC_GUIDELINES,
+  BUSINESS_TYPE_DESIGN_DNA,
+  QUALITY_ENHANCEMENT_INSTRUCTIONS
+} from '@/ai/prompts/advanced-design-prompts';
+import {
+  analyzeDesignExample,
+  selectOptimalDesignExamples,
+  extractDesignDNA,
+  type DesignAnalysis
+} from '@/ai/utils/design-analysis';
+import {
+  assessDesignQuality,
+  generateImprovementPrompt,
+  meetsQualityStandards,
+  type DesignQuality
+} from '@/ai/utils/design-quality';
+import {
+  getCachedDesignTrends,
+  generateTrendInstructions,
+  type DesignTrends
+} from '@/ai/utils/design-trends';
+import {
+  recordDesignGeneration,
+  generatePerformanceOptimizedInstructions
+} from '@/ai/utils/design-analytics';
 
 const GeneratePostFromProfileInputSchema = z.object({
   businessType: z.string().describe('The type of business (e.g., restaurant, salon).'),
@@ -184,7 +211,7 @@ const getMimeTypeFromDataURI = (dataURI: string): string => {
   return match ? match[1] : 'application/octet-stream'; // Default if no match
 };
 
-// Helper function to generate an image for a single variant.
+// Helper function to generate an image for a single variant with advanced design principles
 async function generateImageForVariant(
   variant: { platform: string, aspectRatio: string },
   input: GeneratePostFromProfileInput,
@@ -196,27 +223,122 @@ async function generateImageForVariant(
   const isStrictConsistency = input.brandConsistency?.strictConsistency ?? false;
   const followBrandColors = input.brandConsistency?.followBrandColors ?? true;
 
-  let imagePrompt = `You are an expert graphic designer creating a social media post for a ${input.businessType}.
-    Your goal is to generate a single, cohesive, and visually stunning image. The image must have an aspect ratio of ${variant.aspectRatio}.
+  // Get platform-specific guidelines
+  const platformGuidelines = PLATFORM_SPECIFIC_GUIDELINES[variant.platform as keyof typeof PLATFORM_SPECIFIC_GUIDELINES] || PLATFORM_SPECIFIC_GUIDELINES.instagram;
 
-    **Key Elements to Include:**
-    - **Visual Style:** The design must be ${input.visualStyle}.
-    - **Brand Colors:** ${followBrandColors && input.primaryColor ? colorInstructions : 'Use a visually appealing and appropriate palette that fits the business type.'}
-    - **People:** If the image includes people, they should be representative of the location: ${input.location}. For example, for a post in Africa, depict Black people; for Europe, White people; for the USA, a diverse mix of ethnicities. Be thoughtful and authentic in your representation.
-    - **Subject/Theme:** The core subject of the image should be directly inspired by the Image Text below.
-    - **Text Overlay:** The following text must be overlaid on the image in a stylish, readable font: "${textOutput.imageText}". It is critical that the text is clearly readable, well-composed, and not cut off or truncated. The entire text must be visible.
-    - **Logo Placement:** The provided logo must be integrated naturally into the design. It should be clearly visible but not overpower the main subject. For example, it could be on a product, a sign, or as a subtle watermark.`;
+  // Get business-specific design DNA
+  const businessDNA = BUSINESS_TYPE_DESIGN_DNA[input.businessType as keyof typeof BUSINESS_TYPE_DESIGN_DNA] || BUSINESS_TYPE_DESIGN_DNA.default;
 
-  // Add design consistency instructions based on user preferences
-  if (isStrictConsistency && input.designExamples && input.designExamples.length > 0) {
-    imagePrompt += `\n    - **Strict Style Reference:** Use the provided design examples as strict style reference. Closely match the visual aesthetic, color scheme, typography, layout patterns, and overall design approach of the reference designs. Create content that looks very similar to the uploaded examples while incorporating the new text and subject matter.`;
-  } else if (input.designExamples && input.designExamples.length > 0) {
-    imagePrompt += `\n    - **Style Inspiration:** Use the provided design examples as loose inspiration for the overall aesthetic and mood, but feel free to create more varied and creative designs while maintaining the brand essence.`;
+  // Get current design trends
+  let trendInstructions = '';
+  try {
+    const trends = await getCachedDesignTrends(
+      input.businessType,
+      variant.platform,
+      input.targetAudience,
+      input.businessType
+    );
+    trendInstructions = generateTrendInstructions(trends, variant.platform);
+  } catch (error) {
+    console.warn('Failed to get design trends, continuing without:', error);
   }
 
-  // Add variation instructions for non-strict consistency
-  if (!isStrictConsistency) {
-    imagePrompt += `\n    - **Creative Variation:** Feel free to experiment with different layouts, compositions, and design elements to create fresh, engaging content that avoids repetitive appearance while maintaining brand recognition.`;
+  // Get performance-optimized instructions
+  const performanceInstructions = generatePerformanceOptimizedInstructions(
+    input.businessType,
+    variant.platform,
+    input.visualStyle
+  );
+
+  let imagePrompt = `You are a world-class creative director and visual designer with expertise in social media marketing, brand design, and visual psychology.
+
+    **DESIGN BRIEF:**
+    Create a professional, high-impact social media design for a ${input.businessType} business.
+    Target Platform: ${variant.platform} | Aspect Ratio: ${variant.aspectRatio}
+    Visual Style: ${input.visualStyle} | Location: ${input.location}
+
+    ${ADVANCED_DESIGN_PRINCIPLES}
+
+    ${platformGuidelines}
+
+    ${businessDNA}
+
+    ${trendInstructions}
+
+    ${performanceInstructions}
+
+    **BRAND INTEGRATION:**
+    - **Brand Colors:** ${followBrandColors && input.primaryColor ? colorInstructions : 'Use a visually appealing and appropriate palette that fits the business type.'}
+    - **Logo Placement:** The provided logo must be integrated naturally into the design. It should be clearly visible but not overpower the main subject. For example, it could be on a product, a sign, or as a subtle watermark.
+
+    **CONTENT REQUIREMENTS:**
+    - **Primary Subject:** The core subject of the image should be directly inspired by: "${textOutput.imageText}"
+    - **Text Overlay:** The following text must be overlaid on the image in a stylish, readable font: "${textOutput.imageText}". It is critical that the text is clearly readable, well-composed, and not cut off or truncated. The entire text must be visible.
+    - **Cultural Representation:** If the image includes people, they should be representative of the location: ${input.location}. For example, for a post in Africa, depict Black people; for Europe, White people; for the USA, a diverse mix of ethnicities. Be thoughtful and authentic in your representation.
+
+    ${QUALITY_ENHANCEMENT_INSTRUCTIONS}`;
+
+  // Intelligent design examples processing
+  let designDNA = '';
+  let selectedExamples: string[] = [];
+
+  if (input.designExamples && input.designExamples.length > 0) {
+    try {
+      // Analyze design examples for intelligent processing
+      const analyses: DesignAnalysis[] = [];
+      for (const example of input.designExamples.slice(0, 5)) { // Limit to 5 for performance
+        try {
+          const analysis = await analyzeDesignExample(
+            example,
+            input.businessType,
+            variant.platform,
+            `${input.visualStyle} design for ${textOutput.imageText}`
+          );
+          analyses.push(analysis);
+        } catch (error) {
+          console.warn('Design analysis failed for example, skipping:', error);
+        }
+      }
+
+      if (analyses.length > 0) {
+        // Extract design DNA from analyzed examples
+        designDNA = extractDesignDNA(analyses);
+
+        // Select optimal examples based on analysis
+        selectedExamples = selectOptimalDesignExamples(
+          input.designExamples,
+          analyses,
+          textOutput.imageText,
+          variant.platform,
+          isStrictConsistency ? 3 : 1
+        );
+      } else {
+        // Fallback to original logic if analysis fails
+        selectedExamples = isStrictConsistency
+          ? input.designExamples
+          : [input.designExamples[Math.floor(Math.random() * input.designExamples.length)]];
+      }
+    } catch (error) {
+      console.warn('Design analysis system failed, using fallback:', error);
+      selectedExamples = isStrictConsistency
+        ? input.designExamples
+        : [input.designExamples[Math.floor(Math.random() * input.designExamples.length)]];
+    }
+
+    // Add design consistency instructions based on analysis
+    if (isStrictConsistency) {
+      imagePrompt += `\n    **STRICT STYLE REFERENCE:**
+      Use the provided design examples as strict style reference. Closely match the visual aesthetic, color scheme, typography, layout patterns, and overall design approach of the reference designs. Create content that looks very similar to the uploaded examples while incorporating the new text and subject matter.
+
+      ${designDNA}`;
+    } else {
+      imagePrompt += `\n    **STYLE INSPIRATION:**
+      Use the provided design examples as loose inspiration for the overall aesthetic and mood, but feel free to create more varied and creative designs while maintaining the brand essence.
+
+      ${designDNA}
+
+      **CREATIVE VARIATION:** Feel free to experiment with different layouts, compositions, and design elements to create fresh, engaging content that avoids repetitive appearance while maintaining brand recognition.`;
+    }
   }
 
   // Build prompt parts array
@@ -225,31 +347,115 @@ async function generateImageForVariant(
   // Add logo
   promptParts.push({ media: { url: input.logoDataUrl, contentType: getMimeTypeFromDataURI(input.logoDataUrl) } });
 
-  // Add design examples based on consistency preferences
-  if (input.designExamples && input.designExamples.length > 0) {
-    if (isStrictConsistency) {
-      // For strict consistency, include all design examples
-      input.designExamples.forEach(designExample => {
-        promptParts.push({ media: { url: designExample, contentType: getMimeTypeFromDataURI(designExample) } });
+  // Add selected design examples
+  selectedExamples.forEach(example => {
+    promptParts.push({ media: { url: example, contentType: getMimeTypeFromDataURI(example) } });
+  });
+
+  // Generate initial design
+  let finalImageUrl = '';
+  let attempts = 0;
+  const maxAttempts = 2; // Limit attempts to avoid excessive API calls
+
+  while (attempts < maxAttempts) {
+    attempts++;
+
+    try {
+      const { media } = await generateWithRetry({
+        model: 'googleai/gemini-2.0-flash-preview-image-generation',
+        prompt: promptParts,
+        config: {
+          responseModalities: ['TEXT', 'IMAGE'],
+        },
       });
-    } else {
-      // For loose consistency, include only one design example as inspiration
-      const randomExample = input.designExamples[Math.floor(Math.random() * input.designExamples.length)];
-      promptParts.push({ media: { url: randomExample, contentType: getMimeTypeFromDataURI(randomExample) } });
+
+      const imageUrl = media?.url ?? '';
+      if (!imageUrl) {
+        throw new Error('No image generated');
+      }
+
+      // Quality validation for first attempt
+      if (attempts === 1) {
+        try {
+          const quality = await assessDesignQuality(
+            imageUrl,
+            input.businessType,
+            variant.platform,
+            input.visualStyle,
+            followBrandColors && input.primaryColor ? colorInstructions : undefined,
+            `Create engaging design for: ${textOutput.imageText}`
+          );
+
+          // If quality is acceptable, use this design
+          if (meetsQualityStandards(quality, 7)) {
+            finalImageUrl = imageUrl;
+            break;
+          }
+
+          // If quality is poor and we have attempts left, try to improve
+          if (attempts < maxAttempts) {
+            console.log(`Design quality score: ${quality.overall.score}/10. Attempting improvement...`);
+
+            // Add improvement instructions to prompt
+            const improvementInstructions = generateImprovementPrompt(quality);
+            const improvedPrompt = `${imagePrompt}\n\n${improvementInstructions}`;
+            promptParts[0] = { text: improvedPrompt };
+            continue;
+          } else {
+            // Use the design even if quality is subpar (better than nothing)
+            finalImageUrl = imageUrl;
+            break;
+          }
+        } catch (qualityError) {
+          console.warn('Quality assessment failed, using generated design:', qualityError);
+          finalImageUrl = imageUrl;
+          break;
+        }
+      } else {
+        // For subsequent attempts, use the result
+        finalImageUrl = imageUrl;
+        break;
+      }
+    } catch (error) {
+      console.error(`Design generation attempt ${attempts} failed:`, error);
+      if (attempts === maxAttempts) {
+        throw error;
+      }
     }
   }
 
-  const { media } = await generateWithRetry({
-    model: 'googleai/gemini-2.0-flash-preview-image-generation',
-    prompt: promptParts,
-    config: {
-      responseModalities: ['TEXT', 'IMAGE'],
-    },
-  });
+  // Record design generation for analytics
+  if (finalImageUrl) {
+    try {
+      const designId = `design_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      recordDesignGeneration(
+        designId,
+        input.businessType,
+        variant.platform,
+        input.visualStyle,
+        8, // Default quality score, will be updated if assessment was performed
+        {
+          colorPalette: input.primaryColor ? [input.primaryColor, input.accentColor, input.backgroundColor].filter(Boolean) : [],
+          typography: 'Modern social media optimized',
+          composition: variant.aspectRatio,
+          trends: selectedExamples.length > 0 ? ['design-examples-based'] : ['ai-generated'],
+          businessDNA: businessDNA.substring(0, 100) // Truncate for storage
+        },
+        {
+          engagement: 8,
+          brandAlignment: followBrandColors ? 9 : 7,
+          technicalQuality: 8,
+          trendRelevance: trendInstructions ? 8 : 6
+        }
+      );
+    } catch (analyticsError) {
+      console.warn('Failed to record design analytics:', analyticsError);
+    }
+  }
 
   return {
     platform: variant.platform,
-    imageUrl: media?.url ?? '',
+    imageUrl: finalImageUrl,
   }
 }
 

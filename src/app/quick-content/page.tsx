@@ -32,11 +32,27 @@ const cleanupStorage = () => {
     const storedPosts = localStorage.getItem(GENERATED_POSTS_KEY);
     if (storedPosts) {
       const posts = JSON.parse(storedPosts);
-      if (posts.length > 5) {
+
+      // Fix invalid dates in existing posts
+      const fixedPosts = posts.map((post: GeneratedPost) => {
+        if (!post.date || isNaN(new Date(post.date).getTime())) {
+          return {
+            ...post,
+            date: new Date().toISOString()
+          };
+        }
+        return post;
+      });
+
+      if (fixedPosts.length > 5) {
         // Keep only the 5 most recent posts
-        const recentPosts = posts.slice(0, 5);
+        const recentPosts = fixedPosts.slice(0, 5);
         localStorage.setItem(GENERATED_POSTS_KEY, JSON.stringify(recentPosts));
         return recentPosts;
+      } else {
+        // Save the fixed posts back
+        localStorage.setItem(GENERATED_POSTS_KEY, JSON.stringify(fixedPosts));
+        return fixedPosts;
       }
     }
   } catch (error) {
@@ -58,9 +74,32 @@ function QuickContentPage() {
       const storedProfile = localStorage.getItem(BRAND_PROFILE_KEY);
       if (storedProfile) {
         setBrandProfile(JSON.parse(storedProfile));
-        const storedPosts = localStorage.getItem(GENERATED_POSTS_KEY);
-        if (storedPosts) {
-          setGeneratedPosts(JSON.parse(storedPosts));
+
+        // Temporary: Clear all posts to avoid date issues during development
+        // Remove this in production once date issues are resolved
+        try {
+          const storedPosts = localStorage.getItem(GENERATED_POSTS_KEY);
+          if (storedPosts) {
+            const posts = JSON.parse(storedPosts);
+            // Check if any posts have invalid dates
+            const hasInvalidDates = posts.some((post: GeneratedPost) =>
+              !post.date || isNaN(new Date(post.date).getTime())
+            );
+
+            if (hasInvalidDates) {
+              console.warn('Found posts with invalid dates, clearing storage...');
+              localStorage.removeItem(GENERATED_POSTS_KEY);
+              setGeneratedPosts([]);
+            } else {
+              setGeneratedPosts(posts);
+            }
+          } else {
+            setGeneratedPosts([]);
+          }
+        } catch (parseError) {
+          console.warn('Failed to parse stored posts, clearing storage:', parseError);
+          localStorage.removeItem(GENERATED_POSTS_KEY);
+          setGeneratedPosts([]);
         }
       } else {
         // If no profile, redirect to setup
@@ -119,6 +158,24 @@ function QuickContentPage() {
           description: "Unable to save posts. Your browser storage may be full.",
         });
       }
+    }
+  };
+
+  // Debug function to clear all posts if needed
+  const clearAllPosts = () => {
+    try {
+      localStorage.removeItem(GENERATED_POSTS_KEY);
+      setGeneratedPosts([]);
+      toast({
+        title: "Posts Cleared",
+        description: "All stored posts have been cleared.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Clear Failed",
+        description: "Could not clear stored posts.",
+      });
     }
   };
 

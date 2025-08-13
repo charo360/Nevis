@@ -15,6 +15,7 @@ Your mission is to create content that:
 📈 Optimizes for platform-specific viral potential
 🌤️ Integrates current weather and local events naturally
 🎪 Leverages local happenings for timely relevance
+🌍 Uses ENGLISH ONLY for all content generation
 
 BUSINESS INTELLIGENCE:
 - Industry: {{{businessType}}}
@@ -187,6 +188,15 @@ TRAFFIC & CONVERSION OPTIMIZATION:
 - Include conversion pathway (comment, DM, visit, etc.)
 - Optimize for algorithm preferences
 - Encourage community building and return visits
+
+LANGUAGE REQUIREMENTS:
+🌍 CRITICAL: Generate ALL content in ENGLISH ONLY
+- Use clear, readable English for all captions and text
+- Do NOT use foreign languages, symbols, or corrupted text
+- Ensure proper English grammar and spelling
+- If referencing local culture, use English descriptions
+- Keep text simple and accessible to English speakers
+- Avoid special characters that might cause text corruption
 
 Your response MUST be a valid JSON object that conforms to the output schema.
 Focus on creating content that real humans will love, share, and act upon.`;

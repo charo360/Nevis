@@ -62,8 +62,20 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   const [showVideoDialog, setShowVideoDialog] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<Platform>(post.variants[0]?.platform || 'Instagram');
   const downloadRefs = React.useRef<Record<Platform, HTMLDivElement | null>>({} as Record<Platform, HTMLDivElement | null>);
-  
-  const formattedDate = format(new Date(post.date), 'MMM d, yyyy');
+
+  const formattedDate = React.useMemo(() => {
+    try {
+      const date = new Date(post.date);
+      if (isNaN(date.getTime())) {
+        // If date is invalid, use current date
+        return format(new Date(), 'MMM d, yyyy');
+      }
+      return format(date, 'MMM d, yyyy');
+    } catch (error) {
+      // Fallback to current date if any error occurs
+      return format(new Date(), 'MMM d, yyyy');
+    }
+  }, [post.date]);
   const { toast } = useToast();
 
   const handleDownload = React.useCallback(async () => {
@@ -88,7 +100,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
           border: 'none',
         }
       });
-      
+
       const link = document.createElement('a');
       link.href = dataUrl;
       link.download = `localbuzz-post-${post.id}-${activeTab}.png`;
@@ -107,68 +119,68 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
 
   const handleSaveChanges = async () => {
     const updatedPost = {
-        ...post,
-        content: editedContent,
-        hashtags: editedHashtags,
-        status: 'edited' as const,
+      ...post,
+      content: editedContent,
+      hashtags: editedHashtags,
+      status: 'edited' as const,
     };
     await onPostUpdated(updatedPost);
     setIsEditing(false);
     toast({
-        title: "Post Updated",
-        description: "Your changes have been saved.",
+      title: "Post Updated",
+      description: "Your changes have been saved.",
     });
   };
 
   const handleRegenerate = async () => {
     setIsRegenerating(true);
     try {
-        const platform = post.variants[0].platform;
-        const newPost = await generateContentAction(brandProfile, platform);
-        onPostUpdated({ ...newPost, id: post.id }); // Keep old id for replacement
-        toast({
-            title: "Post Regenerated!",
-            description: "A new version of your post has been generated.",
-        });
+      const platform = post.variants[0].platform;
+      const newPost = await generateContentAction(brandProfile, platform);
+      onPostUpdated({ ...newPost, id: post.id }); // Keep old id for replacement
+      toast({
+        title: "Post Regenerated!",
+        description: "A new version of your post has been generated.",
+      });
     } catch (error) {
-        toast({
-            variant: "destructive",
-            title: "Regeneration Failed",
-            description: (error as Error).message,
-        });
+      toast({
+        variant: "destructive",
+        title: "Regeneration Failed",
+        description: (error as Error).message,
+      });
     } finally {
-        setIsRegenerating(false);
+      setIsRegenerating(false);
     }
   };
 
   const handleGenerateVideo = async () => {
-    if(!post.imageText) {
-        toast({
-            variant: "destructive",
-            title: "Cannot Generate Video",
-            description: "The post is missing the required image text.",
-        });
-        return;
+    if (!post.imageText) {
+      toast({
+        variant: "destructive",
+        title: "Cannot Generate Video",
+        description: "The post is missing the required image text.",
+      });
+      return;
     }
     setIsGeneratingVideo(true);
     try {
-        const result = await generateVideoContentAction(brandProfile, post.imageText, post.content);
-        const newVideoUrl = result.videoUrl;
-        setVideoUrl(newVideoUrl);
-        await onPostUpdated({ ...post, videoUrl: newVideoUrl });
-        setShowVideoDialog(true);
-        toast({
-            title: "Video Generated!",
-            description: "Your video is ready to be viewed.",
-        });
+      const result = await generateVideoContentAction(brandProfile, post.imageText, post.content);
+      const newVideoUrl = result.videoUrl;
+      setVideoUrl(newVideoUrl);
+      await onPostUpdated({ ...post, videoUrl: newVideoUrl });
+      setShowVideoDialog(true);
+      toast({
+        title: "Video Generated!",
+        description: "Your video is ready to be viewed.",
+      });
     } catch (error) {
-        toast({
-            variant: "destructive",
-            title: "Video Generation Failed",
-            description: (error as Error).message,
-        });
+      toast({
+        variant: "destructive",
+        title: "Video Generation Failed",
+        description: (error as Error).message,
+      });
     } finally {
-        setIsGeneratingVideo(false);
+      setIsGeneratingVideo(false);
     }
   };
 
@@ -177,11 +189,11 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   return (
     <>
       <Card className="flex flex-col">
-         <CardHeader className="flex-row items-center justify-between gap-4 p-4">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <CalendarIcon className="h-4 w-4" />
-                <span>{formattedDate}</span>
-            </div>
+        <CardHeader className="flex-row items-center justify-between gap-4 p-4">
+          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <CalendarIcon className="h-4 w-4" />
+            <span>{formattedDate}</span>
+          </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button size="icon" variant="ghost" className="h-6 w-6" disabled={isRegenerating || isGeneratingVideo}>
@@ -195,17 +207,17 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleRegenerate} disabled={isRegenerating}>
                 {isRegenerating ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                    <RefreshCw className="mr-2 h-4 w-4" />
+                  <RefreshCw className="mr-2 h-4 w-4" />
                 )}
                 Regenerate Image
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleGenerateVideo} disabled={isGeneratingVideo}>
                 {isGeneratingVideo ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                    <Video className="mr-2 h-4 w-4" />
+                  <Video className="mr-2 h-4 w-4" />
                 )}
                 Generate Video
               </DropdownMenuItem>
@@ -219,54 +231,59 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
         <CardContent className="flex-grow space-y-4 p-4 pt-0">
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Platform)} className="w-full">
             <TabsList className="grid w-full grid-cols-4">
-                {post.variants.map(variant => (
-                    <TabsTrigger key={variant.platform} value={variant.platform}>
-                        {platformIcons[variant.platform]}
-                    </TabsTrigger>
-                ))}
+              {post.variants.map(variant => (
+                <TabsTrigger key={variant.platform} value={variant.platform}>
+                  {platformIcons[variant.platform]}
+                </TabsTrigger>
+              ))}
             </TabsList>
             {post.variants.map(variant => (
-                <TabsContent key={variant.platform} value={variant.platform}>
-                    <div className="relative aspect-square w-full overflow-hidden">
-                        {(isRegenerating || isGeneratingVideo) && (
-                            <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/80">
-                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                <span className="sr-only">{isRegenerating ? 'Regenerating image...' : 'Generating video...'}</span>
-                            </div>
-                        )}
-                        <div ref={el => (downloadRefs.current[variant.platform] = el)} className="relative aspect-square w-full overflow-hidden rounded-md border">
-                            {variant.imageUrl ? (
-                                <Image
-                                    alt={`Generated post image for ${variant.platform}`}
-                                    className={cn('h-full w-full object-cover transition-opacity', (isRegenerating || isGeneratingVideo) ? 'opacity-50' : 'opacity-100')}
-                                    height={1080}
-                                    src={variant.imageUrl}
-                                    data-ai-hint="social media post"
-                                    width={1080}
-                                    crossOrigin="anonymous"
-                                />
-                            ) : (
-                                <div className="flex h-full w-full items-center justify-center bg-muted">
-                                    <ImageOff className="h-12 w-12 text-muted-foreground" />
-                                </div>
-                            )}
-                        </div>
+              <TabsContent key={variant.platform} value={variant.platform}>
+                <div className="relative aspect-square w-full overflow-hidden">
+                  {(isRegenerating || isGeneratingVideo) && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/80">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      <span className="sr-only">{isRegenerating ? 'Regenerating image...' : 'Generating video...'}</span>
                     </div>
-                </TabsContent>
+                  )}
+                  <div ref={el => (downloadRefs.current[variant.platform] = el)} className="relative aspect-square w-full overflow-hidden rounded-md border">
+                    {variant.imageUrl ? (
+                      <Image
+                        alt={`Generated post image for ${variant.platform}`}
+                        className={cn('h-full w-full object-cover transition-opacity', (isRegenerating || isGeneratingVideo) ? 'opacity-50' : 'opacity-100')}
+                        height={1080}
+                        src={variant.imageUrl}
+                        data-ai-hint="social media post"
+                        width={1080}
+                        crossOrigin="anonymous"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-muted">
+                        <ImageOff className="h-12 w-12 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </TabsContent>
             ))}
           </Tabs>
-          
+
           <div className="space-y-2">
-              <p className="text-sm text-foreground line-clamp-4">{post.content}</p>
+            <p className="text-sm text-foreground line-clamp-4">{post.content}</p>
           </div>
         </CardContent>
         <CardFooter className="p-4 pt-0">
           <div className="flex flex-wrap gap-1">
-            {post.hashtags.split(" ").map((tag, index) => (
+            {post.hashtags && post.hashtags.split(" ").map((tag, index) => (
               <Badge key={index} variant="secondary" className="font-normal">
                 {tag}
               </Badge>
             ))}
+            {!post.hashtags && (
+              <Badge variant="secondary" className="font-normal">
+                #enhanced #ai #design
+              </Badge>
+            )}
           </div>
         </CardFooter>
       </Card>
@@ -305,7 +322,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       {/* View Video Dialog */}
       <Dialog open={showVideoDialog} onOpenChange={setShowVideoDialog}>
         <DialogContent className="sm:max-w-[600px]">
@@ -317,9 +334,9 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
           </DialogHeader>
           <div className="my-4">
             {videoUrl ? (
-                <video controls autoPlay src={videoUrl} className="w-full rounded-md" />
+              <video controls autoPlay src={videoUrl} className="w-full rounded-md" />
             ) : (
-                <p>No video available.</p>
+              <p>No video available.</p>
             )}
           </div>
           <DialogFooter>
