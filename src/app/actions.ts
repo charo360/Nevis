@@ -49,11 +49,17 @@ const getAspectRatioForPlatform = (platform: Platform): string => {
 export async function generateContentAction(
   profile: BrandProfile,
   platform: Platform,
+  brandConsistency?: { strictConsistency: boolean; followBrandColors: boolean }
 ): Promise<GeneratedPost> {
   try {
     const today = new Date();
     const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long' });
     const currentDate = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    // Apply brand consistency logic
+    const effectiveDesignExamples = brandConsistency?.strictConsistency
+      ? (profile.designExamples || [])
+      : []; // Don't use design examples if not strict consistency
 
     const postDetails = await generatePostFromProfileFlow({
       businessType: profile.businessType,
@@ -62,7 +68,7 @@ export async function generateContentAction(
       contentThemes: profile.contentThemes,
       visualStyle: profile.visualStyle,
       logoDataUrl: profile.logoDataUrl,
-      designExamples: profile.designExamples || [], // Pass design examples for style reference
+      designExamples: effectiveDesignExamples, // Use design examples based on consistency preference
       primaryColor: profile.primaryColor,
       accentColor: profile.accentColor,
       backgroundColor: profile.backgroundColor,
@@ -77,6 +83,8 @@ export async function generateContentAction(
       targetAudience: profile.targetAudience,
       keyFeatures: profile.keyFeatures,
       competitiveAdvantages: profile.competitiveAdvantages,
+      // Pass brand consistency preferences
+      brandConsistency: brandConsistency || { strictConsistency: false, followBrandColors: true },
     });
 
     const newPost: GeneratedPost = {

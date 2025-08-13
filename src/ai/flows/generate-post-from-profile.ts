@@ -38,6 +38,12 @@ const GeneratePostFromProfileInputSchema = z.object({
   targetAudience: z.string().optional().describe('A description of the target audience.'),
   keyFeatures: z.string().optional().describe('A newline-separated list of key features or selling points.'),
   competitiveAdvantages: z.string().optional().describe('A newline-separated list of competitive advantages.'),
+
+  // Brand consistency preferences
+  brandConsistency: z.object({
+    strictConsistency: z.boolean().describe('Whether to strictly follow design examples for consistency.'),
+    followBrandColors: z.boolean().describe('Whether to follow brand colors in the design.'),
+  }).optional().describe('Brand consistency preferences for content generation.'),
 });
 
 export type GeneratePostFromProfileInput = z.infer<typeof GeneratePostFromProfileInputSchema>;
@@ -161,20 +167,31 @@ async function generateImageForVariant(
 ) {
   const colorInstructions = `The brand's color palette is: Primary HSL(${input.primaryColor}), Accent HSL(${input.accentColor}), Background HSL(${input.backgroundColor}). Please use these colors in the design.`;
 
+  // Determine consistency level based on preferences
+  const isStrictConsistency = input.brandConsistency?.strictConsistency ?? false;
+  const followBrandColors = input.brandConsistency?.followBrandColors ?? true;
+
   let imagePrompt = `You are an expert graphic designer creating a social media post for a ${input.businessType}.
     Your goal is to generate a single, cohesive, and visually stunning image. The image must have an aspect ratio of ${variant.aspectRatio}.
 
     **Key Elements to Include:**
     - **Visual Style:** The design must be ${input.visualStyle}.
-    - **Brand Colors:** ${input.primaryColor ? colorInstructions : 'The brand has not specified colors, so use a visually appealing and appropriate palette.'}
+    - **Brand Colors:** ${followBrandColors && input.primaryColor ? colorInstructions : 'Use a visually appealing and appropriate palette that fits the business type.'}
     - **People:** If the image includes people, they should be representative of the location: ${input.location}. For example, for a post in Africa, depict Black people; for Europe, White people; for the USA, a diverse mix of ethnicities. Be thoughtful and authentic in your representation.
     - **Subject/Theme:** The core subject of the image should be directly inspired by the Image Text below.
     - **Text Overlay:** The following text must be overlaid on the image in a stylish, readable font: "${textOutput.imageText}". It is critical that the text is clearly readable, well-composed, and not cut off or truncated. The entire text must be visible.
     - **Logo Placement:** The provided logo must be integrated naturally into the design. It should be clearly visible but not overpower the main subject. For example, it could be on a product, a sign, or as a subtle watermark.`;
 
-  // Add design examples reference if available
-  if (input.designExamples && input.designExamples.length > 0) {
-    imagePrompt += `\n    - **Style Reference:** Use the provided design examples as style reference to create a similar visual aesthetic, color scheme, typography, and overall design approach. Match the style, mood, and visual characteristics of the reference designs while creating new content.`;
+  // Add design consistency instructions based on user preferences
+  if (isStrictConsistency && input.designExamples && input.designExamples.length > 0) {
+    imagePrompt += `\n    - **Strict Style Reference:** Use the provided design examples as strict style reference. Closely match the visual aesthetic, color scheme, typography, layout patterns, and overall design approach of the reference designs. Create content that looks very similar to the uploaded examples while incorporating the new text and subject matter.`;
+  } else if (input.designExamples && input.designExamples.length > 0) {
+    imagePrompt += `\n    - **Style Inspiration:** Use the provided design examples as loose inspiration for the overall aesthetic and mood, but feel free to create more varied and creative designs while maintaining the brand essence.`;
+  }
+
+  // Add variation instructions for non-strict consistency
+  if (!isStrictConsistency) {
+    imagePrompt += `\n    - **Creative Variation:** Feel free to experiment with different layouts, compositions, and design elements to create fresh, engaging content that avoids repetitive appearance while maintaining brand recognition.`;
   }
 
   // Build prompt parts array
@@ -183,11 +200,18 @@ async function generateImageForVariant(
   // Add logo
   promptParts.push({ media: { url: input.logoDataUrl, contentType: getMimeTypeFromDataURI(input.logoDataUrl) } });
 
-  // Add design examples as reference
+  // Add design examples based on consistency preferences
   if (input.designExamples && input.designExamples.length > 0) {
-    input.designExamples.forEach(designExample => {
-      promptParts.push({ media: { url: designExample, contentType: getMimeTypeFromDataURI(designExample) } });
-    });
+    if (isStrictConsistency) {
+      // For strict consistency, include all design examples
+      input.designExamples.forEach(designExample => {
+        promptParts.push({ media: { url: designExample, contentType: getMimeTypeFromDataURI(designExample) } });
+      });
+    } else {
+      // For loose consistency, include only one design example as inspiration
+      const randomExample = input.designExamples[Math.floor(Math.random() * input.designExamples.length)];
+      promptParts.push({ media: { url: randomExample, contentType: getMimeTypeFromDataURI(randomExample) } });
+    }
   }
 
   const { media } = await generateWithRetry({
