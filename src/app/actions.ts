@@ -6,6 +6,8 @@ import { generatePostFromProfile as generatePostFromProfileFlow } from "@/ai/flo
 import { generateVideoPost as generateVideoPostFlow } from "@/ai/flows/generate-video-post";
 import { generateCreativeAsset as generateCreativeAssetFlow } from "@/ai/flows/generate-creative-asset";
 import type { BrandProfile, GeneratedPost, Platform, CreativeAsset } from "@/lib/types";
+import { artifactsService } from "@/lib/services/artifacts-service";
+import type { Artifact } from "@/lib/types/artifacts";
 
 
 // --- AI Flow Actions ---
@@ -167,7 +169,8 @@ export async function generateEnhancedDesignAction(
   imageText: string,
   brandProfile?: BrandProfile,
   enableEnhancements: boolean = true,
-  brandConsistency?: { strictConsistency: boolean; followBrandColors: boolean }
+  brandConsistency?: { strictConsistency: boolean; followBrandColors: boolean },
+  artifactInstructions?: string
 ): Promise<{
   imageUrl: string;
   qualityScore: number;
@@ -202,6 +205,7 @@ export async function generateEnhancedDesignAction(
       imageText,
       brandProfile,
       brandConsistency,
+      artifactInstructions,
     });
 
     console.log('✅ OpenAI enhanced design generated successfully');
@@ -219,6 +223,177 @@ export async function generateEnhancedDesignAction(
 
   } catch (error) {
     console.error("Error generating enhanced design:", error);
+    throw new Error((error as Error).message);
+  }
+}
+
+/**
+ * Generate content with artifact references (Enhanced)
+ */
+export async function generateContentWithArtifactsAction(
+  profile: BrandProfile,
+  platform: Platform,
+  brandConsistency?: { strictConsistency: boolean; followBrandColors: boolean },
+  artifactIds: string[] = [],
+  useEnhancedDesign: boolean = true
+): Promise<GeneratedPost> {
+  try {
+    console.log('🎨 Generating content with artifacts...');
+    console.log('- Platform:', platform);
+    console.log('- Artifacts:', artifactIds.length);
+    console.log('- Enhanced Design:', useEnhancedDesign);
+
+    // Get active artifacts if no specific artifacts provided
+    let targetArtifacts: Artifact[] = [];
+
+    if (artifactIds.length > 0) {
+      // Use specified artifacts
+      for (const artifactId of artifactIds) {
+        const artifact = artifactsService.getArtifact(artifactId);
+        if (artifact) {
+          targetArtifacts.push(artifact);
+          await artifactsService.trackUsage(artifactId, 'quick-content');
+        }
+      }
+    } else {
+      // Use active artifacts, prioritizing exact-use
+      const activeArtifacts = artifactsService.getActiveArtifacts();
+      console.log('🔍 Active artifacts found:', activeArtifacts.length);
+      console.log('📋 Active artifacts details:', activeArtifacts.map(a => ({
+        id: a.id,
+        name: a.name,
+        type: a.type,
+        usageType: a.usageType,
+        isActive: a.isActive,
+        instructions: a.instructions
+      })));
+
+      const exactUseArtifacts = activeArtifacts.filter(a => a.usageType === 'exact-use');
+      const referenceArtifacts = activeArtifacts.filter(a => a.usageType === 'reference');
+
+      // Prioritize exact-use artifacts
+      targetArtifacts = [...exactUseArtifacts, ...referenceArtifacts.slice(0, 3)];
+
+      // Track usage for active artifacts
+      for (const artifact of targetArtifacts) {
+        await artifactsService.trackUsage(artifact.id, 'quick-content');
+      }
+    }
+
+    console.log('📎 Using artifacts:', targetArtifacts.map(a => `${a.name} (${a.usageType})`));
+
+    // Generate base content first
+    const basePost = await generateContentAction(profile, platform, brandConsistency);
+
+    // If no artifacts or enhanced design disabled, return base content
+    if (targetArtifacts.length === 0 || !useEnhancedDesign) {
+      return basePost;
+    }
+
+    // Separate exact-use and reference artifacts
+    const exactUseArtifacts = targetArtifacts.filter(a => a.usageType === 'exact-use');
+    const referenceArtifacts = targetArtifacts.filter(a => a.usageType === 'reference');
+
+    let enhancedImageText = basePost.imageText || 'Engaging Content';
+    let enhancedContent = basePost.content;
+
+    // Collect usage instructions from artifacts
+    const artifactInstructions = targetArtifacts
+      .filter(a => a.instructions && a.instructions.trim())
+      .map(a => `- ${a.name}: ${a.instructions}`)
+      .join('\n');
+
+    // Collect text overlay instructions from text artifacts
+    const textOverlayInstructions = exactUseArtifacts
+      .filter(a => a.textOverlay?.instructions && a.textOverlay.instructions.trim())
+      .map(a => `- ${a.name}: ${a.textOverlay.instructions}`)
+      .join('\n');
+
+    // Process exact-use artifacts first (higher priority)
+    if (exactUseArtifacts.length > 0) {
+      const primaryExactUse = exactUseArtifacts[0];
+
+      // Use text overlay if available
+      if (primaryExactUse.textOverlay) {
+        if (primaryExactUse.textOverlay.headline) {
+          enhancedImageText = primaryExactUse.textOverlay.headline;
+          console.log('📝 Using headline from exact-use artifact:', enhancedImageText);
+        }
+
+        if (primaryExactUse.textOverlay.message) {
+          enhancedContent = primaryExactUse.textOverlay.message;
+          console.log('📝 Using message from exact-use artifact');
+        }
+      }
+    }
+
+    // Process reference artifacts for style guidance
+    const activeDirectives = referenceArtifacts.flatMap(artifact =>
+      artifact.directives.filter(directive => directive.active)
+    );
+
+    // Apply style reference directives
+    const styleDirectives = activeDirectives.filter(d => d.type === 'style-reference');
+    let visualStyleOverride = profile.visualStyle || 'modern';
+    if (styleDirectives.length > 0) {
+      console.log('🎨 Applying style references from artifacts');
+      const primaryStyleDirective = styleDirectives.find(d => d.priority >= 7);
+      if (primaryStyleDirective) {
+        visualStyleOverride = 'artifact-inspired';
+        console.log('🎨 Using artifact-inspired visual style');
+      }
+    }
+
+    // Combine all instructions
+    const allInstructions = [artifactInstructions, textOverlayInstructions]
+      .filter(Boolean)
+      .join('\n');
+
+    // Generate enhanced design with artifact context
+    const enhancedResult = await generateEnhancedDesignAction(
+      profile.businessType || 'business',
+      platform.toLowerCase(),
+      visualStyleOverride,
+      enhancedImageText,
+      profile,
+      true,
+      brandConsistency,
+      allInstructions || undefined
+    );
+
+    // Create enhanced post with artifact metadata
+    const enhancedPost: GeneratedPost = {
+      ...basePost,
+      id: Date.now().toString(),
+      variants: [{
+        platform: platform,
+        imageUrl: enhancedResult.imageUrl
+      }],
+      content: `${enhancedContent}\n\n✨ Enhanced with AI+ using ${artifacts.length} reference${artifacts.length !== 1 ? 's' : ''} (Quality: ${enhancedResult.qualityScore}/10)`,
+      date: new Date().toISOString(),
+      // Add artifact metadata
+      metadata: {
+        ...basePost.metadata,
+        referencedArtifacts: artifacts.map(a => ({
+          id: a.id,
+          name: a.name,
+          type: a.type,
+          category: a.category
+        })),
+        activeDirectives: activeDirectives.map(d => ({
+          id: d.id,
+          type: d.type,
+          label: d.label,
+          priority: d.priority
+        }))
+      }
+    };
+
+    console.log('✅ Enhanced content with artifacts generated successfully');
+    return enhancedPost;
+
+  } catch (error) {
+    console.error("Error generating content with artifacts:", error);
     throw new Error((error as Error).message);
   }
 }
