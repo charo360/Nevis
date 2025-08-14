@@ -133,12 +133,27 @@ function buildDALLE3Prompt(input: OpenAIEnhancedDesignInput): string {
   const platformSpecs = getPlatformSpecifications(platform);
 
   // Build advanced prompt optimized for DALL-E 3's latest capabilities
-  const prompt = `Create a stunning, professional ${platform} social media post for a ${businessType} business using DALL-E 3's advanced capabilities.
+  const prompt = `⚠️ CRITICAL INSTRUCTION: Use ONLY the text "${imageText}" - DO NOT add any other text like "Payroll Banking Simplified" or similar phrases.
+
+Create a stunning, professional ${platform} social media post for a ${businessType} business using DALL-E 3's advanced capabilities.
+
+🚫 ABSOLUTE TEXT CONTROL - CRITICAL REQUIREMENT:
+ONLY USE THIS EXACT TEXT: "${imageText}"
+
+🎯 MANDATORY TEXT RESTRICTIONS:
+- DO NOT add "Payroll Banking Simplified" or any banking terms
+- DO NOT add "Banking Made Easy" or similar phrases
+- DO NOT add company descriptions or service explanations
+- DO NOT add placeholder text like "lorem ipsum" or sample content
+- DO NOT add marketing copy or promotional text
+- DO NOT add any text other than: "${imageText}"
+- DO NOT create fake headlines or taglines
+- DO NOT add descriptive text about the business
+- ONLY THE SPECIFIED TEXT: "${imageText}" - NOTHING ELSE
 
 🎯 CRITICAL TEXT REQUIREMENT (GPT-IMAGE 1 ULTRA-PRECISION MODE):
 "${imageText}"
-- Render ONLY this exact text - DO NOT add any additional text, placeholder text, or random words
-- NO EXTRA TEXT: Do not include any lorem ipsum, sample text, or filler content
+- Render ONLY this exact text - ABSOLUTELY NO additional text
 - EXACT TEXT ONLY: Use only the provided text "${imageText}" and nothing else
 - SMALL FONT SIZE MASTERY: When using small font sizes, ensure every character is crystal-clear and perfectly legible
 - TINY TEXT RENDERING: Even at 8pt, 10pt, 12pt font sizes, every letter must be sharp and readable
@@ -199,12 +214,26 @@ ${artifactInstructions}
 - PIXEL-PERFECT SMALL TEXT: Each letter rendered with maximum clarity at any size
 - BACKGROUND CONTRAST: Ensure sufficient contrast between small text and background
 
-🚫 STRICTLY FORBIDDEN:
-- Do NOT add any text other than "${imageText}"
-- Do NOT include placeholder text, lorem ipsum, or sample content
-- Do NOT add random words, descriptions, or filler text
-- Do NOT create fake company names or dummy content
-- ONLY use the exact text provided: "${imageText}"`;
+🚫 ABSOLUTELY FORBIDDEN - WILL CAUSE FAILURE:
+- Do NOT add "Payroll Banking Simplified"
+- Do NOT add "Banking Made Easy"
+- Do NOT add "Financial Services"
+- Do NOT add "Professional Banking"
+- Do NOT add "Secure Payments"
+- Do NOT add "Digital Banking"
+- Do NOT add "Money Management"
+- Do NOT add ANY banking or financial terms
+- Do NOT add ANY business descriptions
+- Do NOT add ANY marketing copy
+- Do NOT add ANY placeholder text
+- Do NOT add ANY lorem ipsum
+- Do NOT add ANY sample content
+- Do NOT add ANY random words
+- Do NOT add ANY filler text
+- Do NOT create ANY fake headlines
+- Do NOT create ANY taglines
+- CRITICAL: ONLY use the exact text: "${imageText}"
+- NOTHING ELSE IS ALLOWED`;
 
   return prompt;
 }
