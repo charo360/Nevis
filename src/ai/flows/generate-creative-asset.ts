@@ -335,7 +335,34 @@ ${designDNA}`;
             let creativePrompt = `You are an expert creative director specializing in high-end advertisements. Generate a compelling, high-quality social media advertisement ${input.outputType} based on the following instruction: "${remainingPrompt}".`;
 
             if (input.outputType === 'image' && imageText) {
-                creativePrompt += `\nOverlay the following text onto the asset: "${imageText}". Ensure the text is readable and well-composed.`
+                creativePrompt += `
+
+🚨🚨🚨 EMERGENCY OVERRIDE - CRITICAL TEXT CONTROL 🚨🚨🚨
+
+⛔ ABSOLUTE PROHIBITION - NO EXCEPTIONS:
+- NEVER add "Flex Your Finances" or any financial terms
+- NEVER add "Payroll Banking Simplified" or banking phrases
+- NEVER add "Banking Made Easy" or similar taglines
+- NEVER add company descriptions or service explanations
+- NEVER add marketing copy or promotional text
+- NEVER add placeholder text or sample content
+- NEVER create fake headlines or taglines
+- NEVER add descriptive text about the business
+- NEVER add ANY text except what is specified below
+
+🎯 ONLY THIS TEXT IS ALLOWED: "${imageText}"
+🎯 REPEAT: ONLY THIS TEXT: "${imageText}"
+🎯 NO OTHER TEXT PERMITTED: "${imageText}"
+
+🌍 ENGLISH ONLY REQUIREMENT:
+- ALL text must be in clear, readable English
+- NO foreign languages (Arabic, Chinese, Hindi, etc.)
+- NO special characters, symbols, or corrupted text
+- NO accents or diacritical marks
+
+Overlay ONLY the following text onto the asset: "${imageText}".
+DO NOT ADD ANY OTHER TEXT.
+Ensure the text is readable and well-composed.`
                 textPrompt = creativePrompt;
                 if (textPrompt) {
                     promptParts.unshift({ text: textPrompt });

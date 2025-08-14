@@ -131,10 +131,14 @@ Generate a comprehensive social media post with these components:
    - Feel like it was written by a real person, not AI
 
 2. **IMAGE TEXT (imageText)**:
-   - Create punchy, memorable headline (3-5 words max)
-   - Use trending language or cultural references
+   - Create relevant, business-focused headline (3-5 words max)
+   - MUST be directly related to the specific business services/products
+   - Use clear, professional language that matches the business type
+   - Focus on the business value proposition or key service
+   - Avoid generic phrases like "Banking Made Easy" or random financial terms
+   - Examples: For a restaurant: "Fresh Daily Specials", For a gym: "Transform Your Body", For a salon: "Expert Hair Care"
    - Complement caption without repetition
-   - Optimize for visual impact and shareability
+   - Optimize for visual impact and business relevance
 
 3. **HASHTAGS**:
    - Mix trending hashtags with niche industry tags
@@ -190,13 +194,16 @@ TRAFFIC & CONVERSION OPTIMIZATION:
 - Encourage community building and return visits
 
 LANGUAGE REQUIREMENTS:
-🌍 CRITICAL: Generate ALL content in ENGLISH ONLY
-- Use clear, readable English for all captions and text
-- Do NOT use foreign languages, symbols, or corrupted text
-- Ensure proper English grammar and spelling
-- If referencing local culture, use English descriptions
-- Keep text simple and accessible to English speakers
-- Avoid special characters that might cause text corruption
+🌍 TEXT CLARITY: Generate clear, readable text
+- Use proper, well-formed text in appropriate languages for the location
+- Local languages are acceptable when relevant to {{{location}}}
+- Do NOT use corrupted, gibberish, or unreadable character sequences
+- Do NOT use random symbols or malformed text
+- Ensure all text is properly formatted and legible
+- Avoid character encoding issues or text corruption
+- If using local language, ensure it's grammatically correct
+- All text must be clear and professional, regardless of language
+- Prevent any garbled or nonsensical character combinations
 
 Your response MUST be a valid JSON object that conforms to the output schema.
 Focus on creating content that real humans will love, share, and act upon.`;

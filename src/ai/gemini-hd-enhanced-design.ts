@@ -143,27 +143,37 @@ function buildGeminiHDPrompt(input: GeminiHDEnhancedDesignInput): string {
   const platformSpecs = getPlatformSpecifications(platform);
 
   // Build advanced prompt optimized for Gemini 2.0 Flash HD capabilities
-  const prompt = `⚠️ CRITICAL INSTRUCTION: Use ONLY the text "${imageText}" - DO NOT add any other text like "Payroll Banking Simplified" or similar phrases.
+  const prompt = `🚨🚨🚨 EMERGENCY OVERRIDE - CRITICAL TEXT CONTROL 🚨🚨🚨
+
+⛔ ABSOLUTE PROHIBITION - NO EXCEPTIONS:
+- NEVER add "Flex Your Finances" or any financial terms
+- NEVER add "Payroll Banking Simplified" or banking phrases
+- NEVER add "Banking Made Easy" or similar taglines
+- NEVER add company descriptions or service explanations
+- NEVER add marketing copy or promotional text
+- NEVER add placeholder text or sample content
+- NEVER create fake headlines or taglines
+- NEVER add descriptive text about the business
+- NEVER add ANY text except what is specified below
+
+🎯 ONLY THIS TEXT IS ALLOWED: "${imageText}"
+🎯 REPEAT: ONLY THIS TEXT: "${imageText}"
+🎯 NO OTHER TEXT PERMITTED: "${imageText}"
+
+⚠️ CRITICAL INSTRUCTION: Use ONLY the text "${imageText}" - DO NOT add any other text.
 
 Create a stunning, professional ${platform} social media post for a ${businessType} business using Gemini 2.0 Flash's advanced HD capabilities.
 
 🚫 ABSOLUTE TEXT CONTROL - CRITICAL REQUIREMENT:
 ONLY USE THIS EXACT TEXT: "${imageText}"
 
-🎯 MANDATORY TEXT RESTRICTIONS:
-- DO NOT add "Payroll Banking Simplified" or any banking terms
-- DO NOT add "Banking Made Easy" or similar phrases
-- DO NOT add company descriptions or service explanations
-- DO NOT add placeholder text like "lorem ipsum" or sample content
-- DO NOT add marketing copy or promotional text
-- DO NOT add any text other than: "${imageText}"
-- DO NOT create fake headlines or taglines
-- DO NOT add descriptive text about the business
-- ONLY THE SPECIFIED TEXT: "${imageText}" - NOTHING ELSE
-
 🎯 ULTRA-PRECISION TEXT RENDERING:
 "${imageText}"
 - Render ONLY this exact text - ABSOLUTELY NO additional text
+- CLEAR TEXT ONLY: All text must be clear, readable, and well-formed
+- NO GIBBERISH: Do not use corrupted, garbled, or nonsensical character sequences
+- NO MALFORMED TEXT: Avoid random symbols or unreadable character combinations
+- PROPER FORMATTING: Ensure all text is properly formatted and legible
 - ULTRA-HD TEXT RENDERING: Perfect character formation at any font size
 - SMALL FONT MASTERY: Crystal-clear rendering at any size
 - HIGH-DPI RENDERING: 300+ DPI quality
