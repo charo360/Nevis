@@ -105,7 +105,7 @@ export type GeneratedPost = {
   id: string;
   date: string;
   content: string;
-  hashtags: string;
+  hashtags: string[] | string; // Support both array and string formats
   status: 'generated' | 'edited' | 'posted';
   variants: {
     platform: Platform;
@@ -113,6 +113,20 @@ export type GeneratedPost = {
   }[];
   imageText: string;
   videoUrl?: string;
+  imageUrl?: string;
+  // Platform and post type
+  platform: Platform;
+  postType: 'post' | 'story' | 'reel' | 'advertisement';
+  // Business context
+  businessType?: string;
+  visualStyle?: string;
+  targetAudience?: string;
+  generationPrompt?: string;
+  aiModel?: string;
+  // Quality metrics
+  qualityScore?: number;
+  engagementPrediction?: number;
+  brandAlignmentScore?: number;
   // Enhanced AI features
   contentVariants?: ContentVariant[];
   hashtagAnalysis?: HashtagAnalysis;

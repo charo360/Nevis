@@ -1,4 +1,7 @@
 import { CompleteBrandProfile } from './cbrand-wizard';
+import { brandProfileFirebaseService } from '@/lib/firebase/services/brand-profile-service';
+import { auth } from '@/lib/firebase/config';
+import { useAuthState } from 'react-firebase-hooks/auth';
 
 const CBRAND_PROFILE_KEY = 'completeBrandProfile';
 const CBRAND_PROFILES_KEY = 'completeBrandProfiles';

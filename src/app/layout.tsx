@@ -2,11 +2,18 @@
 'use client';
 
 import './globals.css';
+import type { Metadata } from 'next';
 import { Toaster } from "@/components/ui/toaster"
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/app-sidebar';
+import { AuthWrapper } from '@/components/auth/auth-wrapper';
 import React, { useEffect, useState } from 'react';
 import type { BrandProfile } from '@/lib/types';
+
+// Import test function for development
+if (typeof window !== 'undefined') {
+  import('@/lib/test-database');
+}
 
 
 const BRAND_PROFILE_KEY = "brandProfile";
@@ -23,13 +30,13 @@ function BrandThemeLoader({ children }: { children: React.ReactNode }) {
           const profile: BrandProfile = JSON.parse(storedProfile);
           const newStyle: React.CSSProperties = {};
           if (profile.primaryColor) {
-              newStyle['--primary-hsl'] = profile.primaryColor;
+            newStyle['--primary-hsl'] = profile.primaryColor;
           }
           if (profile.accentColor) {
-              newStyle['--accent-hsl'] = profile.accentColor;
+            newStyle['--accent-hsl'] = profile.accentColor;
           }
           if (profile.backgroundColor) {
-              newStyle['--background-hsl'] = profile.backgroundColor;
+            newStyle['--background-hsl'] = profile.backgroundColor;
           }
           setStyle(newStyle);
         }
@@ -39,21 +46,21 @@ function BrandThemeLoader({ children }: { children: React.ReactNode }) {
         setProfileLoaded(true);
       }
     };
-    
+
     fetchProfileAndSetTheme();
   }, []);
 
   if (!profileLoaded) {
     return (
-        <div className="flex-1 flex items-center justify-center">
-            <p>Loading Brand Profile...</p>
-        </div>
+      <div className="flex-1 flex items-center justify-center">
+        <p>Loading Brand Profile...</p>
+      </div>
     );
   }
 
   return (
     <div className="flex flex-1" style={style}>
-        {children}
+      {children}
     </div>
   )
 }
@@ -64,7 +71,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -72,13 +79,15 @@ export default function RootLayout({
         <meta name="description" content="Hyper-local, relevant social media content generation for local businesses" />
       </head>
       <body className="font-body antialiased" suppressHydrationWarning>
+        <AuthWrapper requireAuth={false}>
           <SidebarProvider>
-              <AppSidebar />
-              <BrandThemeLoader>
-                  {children}
-              </BrandThemeLoader>
+            <AppSidebar />
+            <BrandThemeLoader>
+              {children}
+            </BrandThemeLoader>
           </SidebarProvider>
-          <Toaster />
+        </AuthWrapper>
+        <Toaster />
       </body>
     </html>
   );

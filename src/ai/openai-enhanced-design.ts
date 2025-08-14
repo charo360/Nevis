@@ -16,6 +16,7 @@ export interface OpenAIEnhancedDesignInput {
     strictConsistency: boolean;
     followBrandColors: boolean;
   };
+  artifactInstructions?: string;
 }
 
 export interface OpenAIEnhancedDesignResult {
@@ -106,7 +107,7 @@ export async function generateOpenAIEnhancedDesign(
  * DALL-E 3 works best with clear, direct instructions and specific visual descriptions
  */
 function buildDALLE3Prompt(input: OpenAIEnhancedDesignInput): string {
-  const { businessType, platform, visualStyle, imageText, brandProfile, brandConsistency } = input;
+  const { businessType, platform, visualStyle, imageText, brandProfile, brandConsistency, artifactInstructions } = input;
 
   // Simplify color instructions for DALL-E 3
   const colorInstructions = brandProfile.primaryColor && brandProfile.accentColor
@@ -144,7 +145,12 @@ QUALITY REQUIREMENTS:
 - Professional business appearance
 - Eye-catching and engaging
 
-The text must be spelled EXACTLY as provided - do not alter any letters or words.`;
+${artifactInstructions ? `SPECIAL INSTRUCTIONS FROM UPLOADED CONTENT:
+${artifactInstructions}
+- Follow these instructions precisely when creating the design
+- These instructions specify how to use specific content elements
+
+` : ''}The text must be spelled EXACTLY as provided - do not alter any letters or words.`;
 
   return prompt;
 }
@@ -295,7 +301,7 @@ export async function generateEnhancedDesignWithFallback(
  * Build enhanced prompt for Gemini fallback
  */
 function buildGeminiFallbackPrompt(input: OpenAIEnhancedDesignInput): string {
-  const { businessType, platform, visualStyle, imageText, brandProfile, brandConsistency } = input;
+  const { businessType, platform, visualStyle, imageText, brandProfile, brandConsistency, artifactInstructions } = input;
 
   const colorInstructions = brandProfile.primaryColor && brandProfile.accentColor && brandProfile.backgroundColor
     ? `**MANDATORY BRAND COLORS - MUST USE EXACTLY:**
@@ -356,5 +362,11 @@ ${designExampleInstructions}
 - Professional ${visualStyle} aesthetic
 - High-resolution, crisp imagery
 - Consistent with ${businessType} industry standards
-- Suitable for social media compression`;
+- Suitable for social media compression
+
+${artifactInstructions ? `**SPECIAL INSTRUCTIONS FROM UPLOADED CONTENT:**
+${artifactInstructions}
+- Follow these instructions precisely when creating the design
+- These instructions specify how to use specific content elements
+` : ''}`;
 }
