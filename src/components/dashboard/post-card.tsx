@@ -79,6 +79,34 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   const { toast } = useToast();
 
   const handleDownload = React.useCallback(async () => {
+    const activeVariant = post.variants.find(v => v.platform === activeTab);
+
+    // First try to download the original HD image directly from GPT-Image 1
+    if (activeVariant?.imageUrl) {
+      try {
+        const response = await fetch(activeVariant.imageUrl);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `nevis-hd-${post.id}-${activeTab}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+
+        toast({
+          title: "HD Download Complete",
+          description: "High-definition image downloaded successfully.",
+        });
+        return;
+      } catch (error) {
+        console.warn('Direct HD download failed, falling back to capture method:', error);
+      }
+    }
+
+    // Fallback: Capture the displayed image with maximum quality settings
     const nodeToCapture = downloadRefs.current[activeTab];
     if (!nodeToCapture) {
       toast({
@@ -92,9 +120,10 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
     try {
       const dataUrl = await toPng(nodeToCapture, {
         cacheBust: true,
-        canvasWidth: 1080,
-        canvasHeight: 1080,
-        pixelRatio: 2,
+        canvasWidth: 2160, // 4K width for maximum quality
+        canvasHeight: 2160, // 4K height for maximum quality
+        pixelRatio: 3, // Higher pixel ratio for HD quality
+        quality: 1.0, // Maximum quality
         style: {
           borderRadius: '0',
           border: 'none',
@@ -103,7 +132,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
 
       const link = document.createElement('a');
       link.href = dataUrl;
-      link.download = `localbuzz-post-${post.id}-${activeTab}.png`;
+      link.download = `nevis-hd-${post.id}-${activeTab}.png`;
       link.click();
 
     } catch (err) {

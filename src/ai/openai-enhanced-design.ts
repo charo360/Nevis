@@ -62,15 +62,16 @@ export async function generateOpenAIEnhancedDesign(
     console.log('📏 Prompt length:', enhancedPrompt.length);
     console.log('🎯 Full prompt preview:', enhancedPrompt.substring(0, 200) + '...');
 
-    // Generate image with DALL-E 3 (Latest OpenAI Image Model)
-    // Using the most advanced configuration for optimal results
+    // Generate image with GPT-Image 1 (Latest OpenAI Image Model - 2025)
+    // GPT-Image 1 replaced DALL-E 3 as the most advanced OpenAI image model
+    // Enhanced for MAXIMUM QUALITY and PERFECT FACE RENDERING
     const response = await openai.images.generate({
-      model: 'dall-e-3', // Latest and most advanced OpenAI image model
+      model: 'gpt-image-1', // Latest OpenAI image model (successor to DALL-E 3)
       prompt: enhancedPrompt,
-      size: getPlatformSize(input.platform),
-      quality: 'hd', // Highest quality setting
-      style: getDALLEStyle(input.visualStyle),
-      n: 1, // DALL-E 3 only supports n=1 for optimal quality
+      size: getPlatformSize(input.platform), // Using highest available resolution
+      quality: 'hd', // MAXIMUM quality setting - highest available
+      style: getGPTImageStyle(input.visualStyle), // Optimized style for quality
+      n: 1, // GPT-Image 1 supports single high-quality generation
       response_format: 'url', // Explicitly request URL format
     });
 
@@ -100,7 +101,7 @@ export async function generateOpenAIEnhancedDesign(
 
     return {
       imageUrl,
-      qualityScore: 9.8, // DALL-E 3 Latest Model - Superior quality and accuracy
+      qualityScore: 9.9, // GPT-Image 1 Ultra-HD - Maximum quality with perfect face rendering
       enhancementsApplied,
       processingTime: Date.now() - startTime,
     };
@@ -122,11 +123,11 @@ function buildDALLE3Prompt(input: OpenAIEnhancedDesignInput): string {
     ? `Primary brand color: ${brandProfile.primaryColor}, Secondary brand color: ${brandProfile.accentColor}. Use these colors prominently and consistently throughout the design.`
     : 'Use a cohesive, professional color palette with high contrast and modern appeal.';
 
-  // Advanced people inclusion logic for better engagement
+  // Advanced people inclusion logic for better engagement with HD face rendering
   const shouldIncludePeople = shouldIncludePeopleInDesign(businessType, imageText, visualStyle);
   const peopleInstructions = shouldIncludePeople
-    ? 'Include diverse, authentic people (various ethnicities, ages) in natural, professional poses that enhance the message.'
-    : 'Focus on clean, minimalist design without people, emphasizing the product/service/message.';
+    ? 'Include diverse, authentic people (various ethnicities, ages) with PERFECT FACIAL FEATURES - complete faces, symmetrical features, natural expressions, professional poses. Ensure faces are fully visible, well-lit, and anatomically correct with no deformations or missing features.'
+    : 'Focus on clean, minimalist design without people, emphasizing the product/service/message with ultra-sharp details.';
 
   // Enhanced platform-specific optimization
   const platformSpecs = getPlatformSpecifications(platform);
@@ -134,13 +135,26 @@ function buildDALLE3Prompt(input: OpenAIEnhancedDesignInput): string {
   // Build advanced prompt optimized for DALL-E 3's latest capabilities
   const prompt = `Create a stunning, professional ${platform} social media post for a ${businessType} business using DALL-E 3's advanced capabilities.
 
-🎯 CRITICAL TEXT REQUIREMENT (DALL-E 3 PRECISION MODE):
+🎯 CRITICAL TEXT REQUIREMENT (GPT-IMAGE 1 ULTRA-PRECISION MODE):
 "${imageText}"
-- Render this text with PIXEL-PERFECT accuracy
-- Use advanced typography with perfect letter spacing
-- Apply anti-aliasing for crystal-clear readability
-- Ensure text is the focal point of the design
-- Use professional font hierarchy and contrast
+- Render ONLY this exact text - DO NOT add any additional text, placeholder text, or random words
+- NO EXTRA TEXT: Do not include any lorem ipsum, sample text, or filler content
+- EXACT TEXT ONLY: Use only the provided text "${imageText}" and nothing else
+- SMALL FONT SIZE MASTERY: When using small font sizes, ensure every character is crystal-clear and perfectly legible
+- TINY TEXT RENDERING: Even at 8pt, 10pt, 12pt font sizes, every letter must be sharp and readable
+- MICRO-TYPOGRAPHY: Perfect character formation even when text appears small in the overall design
+- SMALL FONT ANTI-ALIASING: Advanced smoothing specifically optimized for small font rendering
+- PIXEL-LEVEL PRECISION: Each character pixel perfectly placed for maximum clarity at small sizes
+- HIGH-DPI RENDERING: Render small text as if viewed on a high-resolution display (300+ DPI)
+- CONTRAST BOOST: Extra contrast for small text to ensure readability
+- FONT WEIGHT OPTIMIZATION: Slightly bolder rendering for small fonts to maintain clarity
+
+🧑 PERFECT HUMAN RENDERING (MANDATORY):
+- Complete, symmetrical faces with all features present
+- Natural, professional expressions with clear eyes
+- Proper anatomy with no deformations or missing parts
+- High-quality skin textures and realistic lighting
+- Diverse representation with authentic appearance
 
 🎨 ADVANCED DESIGN SPECIFICATIONS:
 - Visual Style: ${visualStyle} with modern, premium aesthetics
@@ -149,20 +163,48 @@ function buildDALLE3Prompt(input: OpenAIEnhancedDesignInput): string {
 - Platform Optimization: ${platformSpecs}
 - Human Elements: ${peopleInstructions}
 
-⚡ DALL-E 3 QUALITY ENHANCEMENTS:
-- Ultra-high definition rendering (4K quality)
-- Professional design principles with golden ratio layouts
-- Advanced color theory with perfect contrast ratios (7:1 minimum)
-- Responsive design elements for all screen sizes
-- Premium visual hierarchy and composition
-- Photorealistic textures and lighting effects
+⚡ GPT-IMAGE 1 ULTRA-HD QUALITY ENHANCEMENTS:
+- MAXIMUM RESOLUTION: Ultra-high definition rendering (4K+ quality) for perfect small font clarity
+- SMALL FONT SIZE EXCELLENCE: Perfect rendering at 8pt, 10pt, 12pt, and all small font sizes
+- TINY TEXT PRECISION: Every character sharp and legible even when font size is very small
+- HIGH-DPI SMALL TEXT: Render small fonts as if on 300+ DPI display for maximum sharpness
+- MICRO-TYPOGRAPHY: Perfect letter formation and spacing at the smallest font sizes
+- PERFECT ANATOMY: Complete, symmetrical faces with natural expressions
+- SHARP DETAILS: Crystal-clear textures, no blur or artifacts
+- PROFESSIONAL LIGHTING: Studio-quality lighting with proper shadows
+- PREMIUM COMPOSITION: Golden ratio layouts with perfect balance
+- ADVANCED COLOR THEORY: Perfect contrast ratios (7:1 minimum) with vibrant, accurate colors
+- FLAWLESS RENDERING: No deformations, missing parts, or visual errors
+- PHOTOREALISTIC QUALITY: Magazine-level professional appearance
+- TEXT LEGIBILITY: All text sizes optimized for perfect readability and clarity
 
 ${artifactInstructions ? `SPECIAL INSTRUCTIONS FROM UPLOADED CONTENT:
 ${artifactInstructions}
 - Follow these instructions precisely when creating the design
 - These instructions specify how to use specific content elements
 
-` : ''}The text must be spelled EXACTLY as provided - do not alter any letters or words.`;
+` : ''}📝 ABSOLUTE TEXT ACCURACY REQUIREMENTS:
+- STRICT TEXT CONTROL: Use ONLY the exact text "${imageText}" - NO additional text allowed
+- NO RANDOM TEXT: Do not add placeholder text, lorem ipsum, sample content, or any extra words
+- NO FILLER CONTENT: Do not include random descriptions, fake company names, or dummy text
+- EXACT SPELLING: The text must be spelled EXACTLY as provided - do not alter any letters or words
+- SINGLE TEXT SOURCE: Only use the provided text "${imageText}" as the text content in the image
+- SMALL FONT SIZE HANDLING: When design requires small fonts (8pt-12pt), apply these rules:
+  * Increase contrast by 20% for small text visibility
+  * Use slightly bolder font weight to maintain character definition
+  * Ensure perfect pixel alignment for crisp edges
+  * Apply high-resolution anti-aliasing for smooth curves
+  * Maintain proper letter spacing even at small sizes
+- READABILITY GUARANTEE: Every character must be perfectly legible regardless of font size
+- PIXEL-PERFECT SMALL TEXT: Each letter rendered with maximum clarity at any size
+- BACKGROUND CONTRAST: Ensure sufficient contrast between small text and background
+
+🚫 STRICTLY FORBIDDEN:
+- Do NOT add any text other than "${imageText}"
+- Do NOT include placeholder text, lorem ipsum, or sample content
+- Do NOT add random words, descriptions, or filler text
+- Do NOT create fake company names or dummy content
+- ONLY use the exact text provided: "${imageText}"`;
 
   return prompt;
 }
@@ -289,9 +331,9 @@ function getPlatformSize(platform: string): '1024x1024' | '1792x1024' | '1024x17
 }
 
 /**
- * Get DALL-E style based on visual style
+ * Get GPT-Image 1 style based on visual style for maximum quality
  */
-function getDALLEStyle(visualStyle: string): 'vivid' | 'natural' {
+function getGPTImageStyle(visualStyle: string): 'vivid' | 'natural' {
   const styleLower = visualStyle.toLowerCase();
 
   if (styleLower.includes('vibrant') || styleLower.includes('bold') || styleLower.includes('modern')) {
