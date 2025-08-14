@@ -85,7 +85,7 @@ export type GeneratePostFromProfileInput = z.infer<typeof GeneratePostFromProfil
 
 const GeneratePostFromProfileOutputSchema = z.object({
   content: z.string().describe('The primary generated social media post content (the caption).'),
-  imageText: z.string().describe('A brief, catchy headline for the image itself (max 5 words).'),
+  imageText: z.string().describe('A brief, business-relevant headline for the image (max 5 words). Must be directly related to the specific business services/products, not generic phrases.'),
   hashtags: z.string().describe('Strategically selected hashtags for the post.'),
   contentVariants: z.array(z.object({
     content: z.string().describe('Alternative caption variant.'),
@@ -166,7 +166,7 @@ const enhancedTextGenPrompt = ai.definePrompt({
   output: {
     schema: z.object({
       content: z.string().describe('The primary generated social media post content (the caption).'),
-      imageText: z.string().describe('A brief, catchy headline for the image itself (max 5 words).'),
+      imageText: z.string().describe('A brief, business-relevant headline for the image (max 5 words). Must be directly related to the specific business services/products, not generic phrases.'),
       hashtags: z.string().describe('Strategically selected hashtags for the post.'),
       contentVariants: z.array(z.object({
         content: z.string().describe('Alternative caption variant.'),

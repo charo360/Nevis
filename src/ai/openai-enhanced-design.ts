@@ -133,27 +133,37 @@ function buildDALLE3Prompt(input: OpenAIEnhancedDesignInput): string {
   const platformSpecs = getPlatformSpecifications(platform);
 
   // Build advanced prompt optimized for DALL-E 3's latest capabilities
-  const prompt = `⚠️ CRITICAL INSTRUCTION: Use ONLY the text "${imageText}" - DO NOT add any other text like "Payroll Banking Simplified" or similar phrases.
+  const prompt = `🚨🚨🚨 EMERGENCY OVERRIDE - CRITICAL TEXT CONTROL 🚨🚨🚨
+
+⛔ ABSOLUTE PROHIBITION - NO EXCEPTIONS:
+- NEVER add "Flex Your Finances" or any financial terms
+- NEVER add "Payroll Banking Simplified" or banking phrases
+- NEVER add "Banking Made Easy" or similar taglines
+- NEVER add company descriptions or service explanations
+- NEVER add marketing copy or promotional text
+- NEVER add placeholder text or sample content
+- NEVER create fake headlines or taglines
+- NEVER add descriptive text about the business
+- NEVER add ANY text except what is specified below
+
+🎯 ONLY THIS TEXT IS ALLOWED: "${imageText}"
+🎯 REPEAT: ONLY THIS TEXT: "${imageText}"
+🎯 NO OTHER TEXT PERMITTED: "${imageText}"
+
+⚠️ CRITICAL INSTRUCTION: Use ONLY the text "${imageText}" - DO NOT add any other text.
 
 Create a stunning, professional ${platform} social media post for a ${businessType} business using DALL-E 3's advanced capabilities.
 
 🚫 ABSOLUTE TEXT CONTROL - CRITICAL REQUIREMENT:
 ONLY USE THIS EXACT TEXT: "${imageText}"
 
-🎯 MANDATORY TEXT RESTRICTIONS:
-- DO NOT add "Payroll Banking Simplified" or any banking terms
-- DO NOT add "Banking Made Easy" or similar phrases
-- DO NOT add company descriptions or service explanations
-- DO NOT add placeholder text like "lorem ipsum" or sample content
-- DO NOT add marketing copy or promotional text
-- DO NOT add any text other than: "${imageText}"
-- DO NOT create fake headlines or taglines
-- DO NOT add descriptive text about the business
-- ONLY THE SPECIFIED TEXT: "${imageText}" - NOTHING ELSE
-
 🎯 CRITICAL TEXT REQUIREMENT (GPT-IMAGE 1 ULTRA-PRECISION MODE):
 "${imageText}"
 - Render ONLY this exact text - ABSOLUTELY NO additional text
+- CLEAR TEXT ONLY: All text must be clear, readable, and well-formed
+- NO GIBBERISH: Do not use corrupted, garbled, or nonsensical character sequences
+- NO MALFORMED TEXT: Avoid random symbols or unreadable character combinations
+- PROPER FORMATTING: Ensure all text is properly formatted and legible
 - EXACT TEXT ONLY: Use only the provided text "${imageText}" and nothing else
 - SMALL FONT SIZE MASTERY: When using small font sizes, ensure every character is crystal-clear and perfectly legible
 - TINY TEXT RENDERING: Even at 8pt, 10pt, 12pt font sizes, every letter must be sharp and readable
