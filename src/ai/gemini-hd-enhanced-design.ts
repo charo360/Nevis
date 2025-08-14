@@ -1,5 +1,6 @@
 import { BrandProfile } from '@/lib/types';
-import { generateWithRetry } from './genkit';
+import { ai } from './genkit';
+import { GenerateRequest } from 'genkit/generate';
 
 export interface GeminiHDEnhancedDesignInput {
   businessType: string;
@@ -19,6 +20,29 @@ export interface GeminiHDEnhancedDesignResult {
   qualityScore: number;
   enhancementsApplied: string[];
   processingTime: number;
+}
+
+/**
+ * Wraps ai.generate with retry logic for 503 errors.
+ */
+async function generateWithRetry(request: GenerateRequest, retries = 3, delay = 1000) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const result = await ai.generate(request);
+      return result;
+    } catch (e: any) {
+      if (e.message && e.message.includes('503') && i < retries - 1) {
+        console.log(`Attempt ${i + 1} failed with 503. Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        if (e.message && e.message.includes('503')) {
+          throw new Error("The AI model is currently overloaded. Please try again in a few moments.");
+        }
+        throw e; // Rethrow other errors immediately
+      }
+    }
+  }
+  throw new Error("Max retries exceeded");
 }
 
 /**
