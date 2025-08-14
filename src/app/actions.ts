@@ -209,22 +209,43 @@ export async function generateEnhancedDesignAction(
     console.log('- Brand Profile:', brandProfile.businessName);
     console.log('- Enhancements Enabled:', enableEnhancements);
 
-    // Use OpenAI DALL-E 3 for enhanced design generation
-    console.log('🚀 Using OpenAI DALL-E 3 for enhanced design generation...');
+    // Try OpenAI GPT-Image 1 first, then fallback to Gemini HD
+    let result;
 
-    const { generateEnhancedDesignWithFallback } = await import('@/ai/openai-enhanced-design');
+    try {
+      console.log('🚀 Using OpenAI GPT-Image 1 for enhanced design generation...');
+      const { generateEnhancedDesignWithFallback } = await import('@/ai/openai-enhanced-design');
 
-    const result = await generateEnhancedDesignWithFallback({
-      businessType,
-      platform,
-      visualStyle,
-      imageText,
-      brandProfile,
-      brandConsistency,
-      artifactInstructions,
-    });
+      result = await generateEnhancedDesignWithFallback({
+        businessType,
+        platform,
+        visualStyle,
+        imageText,
+        brandProfile,
+        brandConsistency,
+        artifactInstructions,
+      });
 
-    console.log('✅ OpenAI enhanced design generated successfully');
+      console.log('✅ OpenAI GPT-Image 1 enhanced design generated successfully');
+    } catch (openaiError) {
+      console.warn('⚠️ OpenAI generation failed, falling back to Gemini HD:', openaiError);
+
+      console.log('🚀 Using Gemini 2.0 Flash HD for enhanced design generation...');
+      const { generateGeminiHDEnhancedDesignWithFallback } = await import('@/ai/gemini-hd-enhanced-design');
+
+      result = await generateGeminiHDEnhancedDesignWithFallback({
+        businessType,
+        platform,
+        visualStyle,
+        imageText,
+        brandProfile,
+        brandConsistency,
+        artifactInstructions,
+      });
+
+      console.log('✅ Gemini HD enhanced design generated successfully');
+    }
+
     console.log('🔗 Image URL:', result.imageUrl);
     console.log('⭐ Quality Score:', result.qualityScore);
     console.log('🎯 Enhancements Applied:', result.enhancementsApplied);
@@ -240,6 +261,64 @@ export async function generateEnhancedDesignAction(
   } catch (error) {
     console.error("Error generating enhanced design:", error);
     throw new Error((error as Error).message);
+  }
+}
+
+/**
+ * Generate enhanced design specifically using Gemini 2.0 Flash HD
+ * This action forces the use of Gemini HD for maximum quality
+ */
+export async function generateGeminiHDDesignAction(
+  businessType: string,
+  platform: string,
+  visualStyle: string,
+  imageText: string,
+  brandProfile: BrandProfile,
+  brandConsistency?: {
+    strictConsistency: boolean;
+    followBrandColors: boolean;
+  },
+  artifactInstructions?: string
+): Promise<PostVariant> {
+  try {
+    if (!brandProfile) {
+      throw new Error('Brand profile is required for Gemini HD design generation');
+    }
+
+    console.log('🎨 Gemini HD Design Generation Started');
+    console.log('- Business Type:', businessType);
+    console.log('- Platform:', platform);
+    console.log('- Visual Style:', visualStyle);
+    console.log('- Image Text:', imageText);
+    console.log('- Brand Profile:', brandProfile.businessName);
+
+    console.log('🚀 Using Gemini 2.0 Flash HD for enhanced design generation...');
+    const { generateGeminiHDEnhancedDesignWithFallback } = await import('@/ai/gemini-hd-enhanced-design');
+
+    const result = await generateGeminiHDEnhancedDesignWithFallback({
+      businessType,
+      platform,
+      visualStyle,
+      imageText,
+      brandProfile,
+      brandConsistency,
+      artifactInstructions,
+    });
+
+    console.log('✅ Gemini HD enhanced design generated successfully');
+    console.log('🔗 Image URL:', result.imageUrl);
+    console.log('⭐ Quality Score:', result.qualityScore);
+    console.log('🎯 Enhancements Applied:', result.enhancementsApplied);
+
+    return {
+      platform,
+      imageUrl: result.imageUrl,
+      caption: imageText,
+      hashtags: [],
+    };
+  } catch (error) {
+    console.error('❌ Error in Gemini HD design generation:', error);
+    throw new Error(`Gemini HD design generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
