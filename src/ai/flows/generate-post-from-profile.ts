@@ -366,13 +366,6 @@ async function generateImageForVariant(
         prompt: promptParts,
         config: {
           responseModalities: ['TEXT', 'IMAGE'],
-          // Enhanced HD quality settings for Gemini 2.0 Flash
-          imageGenerationConfig: {
-            aspectRatio: '1:1', // Default square format for social media
-            negativePrompt: 'low quality, blurry, pixelated, distorted faces, missing features, text errors, random text, lorem ipsum, placeholder text, poor resolution, artifacts',
-            guidanceScale: 20, // Higher guidance for better prompt adherence and quality
-            seed: Math.floor(Math.random() * 1000000), // Random seed for variety
-          },
         },
       });
 
