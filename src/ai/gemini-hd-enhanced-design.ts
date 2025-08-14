@@ -81,13 +81,6 @@ export async function generateGeminiHDEnhancedDesign(
       prompt: enhancedPrompt,
       config: {
         responseModalities: ['TEXT', 'IMAGE'],
-        // Enhanced quality settings for HD generation
-        imageGenerationConfig: {
-          aspectRatio: getPlatformAspectRatio(input.platform),
-          negativePrompt: 'low quality, blurry, pixelated, distorted faces, missing features, text errors, random text, lorem ipsum, placeholder text',
-          guidanceScale: 20, // Higher guidance for better prompt adherence
-          seed: Math.floor(Math.random() * 1000000), // Random seed for variety
-        },
       },
     });
 

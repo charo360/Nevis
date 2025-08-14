@@ -377,13 +377,6 @@ ${designDNA}`;
                         prompt: promptParts,
                         config: {
                             responseModalities: ['TEXT', 'IMAGE'],
-                            // Enhanced HD quality settings for Gemini
-                            imageGenerationConfig: {
-                                aspectRatio: '1:1', // Default square format
-                                negativePrompt: 'low quality, blurry, pixelated, distorted faces, missing features, text errors, random text, lorem ipsum, placeholder text, poor resolution',
-                                guidanceScale: 20, // Higher guidance for better prompt adherence
-                                seed: Math.floor(Math.random() * 1000000), // Random seed for variety
-                            },
                         },
                     });
 
