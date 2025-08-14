@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { PostCard } from "@/components/dashboard/post-card";
 import { generateContentAction, generateEnhancedDesignAction, generateContentWithArtifactsAction } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
+import { useGeneratedPosts } from "@/hooks/use-generated-posts";
+import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import type { BrandProfile, GeneratedPost, Platform, BrandConsistencyPreferences } from "@/lib/types";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,6 +34,8 @@ const platforms: { name: Platform; icon: React.ElementType }[] = [
 export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUpdated }: ContentCalendarProps) {
   const [isGenerating, setIsGenerating] = React.useState<Platform | null>(null);
   const { toast } = useToast();
+  const { user } = useFirebaseAuth();
+  const { savePost, saving } = useGeneratedPosts();
 
   // Brand consistency preferences - default to consistent if design examples exist
   const [brandConsistency, setBrandConsistency] = React.useState<BrandConsistencyPreferences>({
@@ -69,12 +73,17 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
   const handleGenerateClick = async (platform: Platform) => {
     setIsGenerating(platform);
     try {
+      console.log('🚀 Starting content generation for platform:', platform);
+      console.log('👤 User authenticated:', !!user);
+      console.log('🏢 Brand profile:', brandProfile?.businessName);
+
       let newPost;
 
       // Check if artifacts are enabled (simple toggle approach)
       const artifactsEnabled = selectedArtifacts.length > 0;
 
       if (artifactsEnabled || useEnhancedDesign) {
+        console.log('✨ Using enhanced generation with artifacts/design');
         // Use artifact-enhanced generation - will automatically use active artifacts from artifacts page
         newPost = await generateContentWithArtifactsAction(
           brandProfile,
@@ -84,22 +93,38 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
           useEnhancedDesign
         );
       } else {
+        console.log('📝 Using standard content generation');
         // Use standard content generation
         newPost = await generateContentAction(brandProfile, platform, brandConsistency);
       }
 
-      onPostGenerated(newPost);
+      console.log('📄 Generated post:', newPost.content.substring(0, 100) + '...');
+
+      // Save to Firestore database first
+      try {
+        console.log('💾 Saving post to Firestore database...');
+        const postId = await savePost(newPost);
+        console.log('✅ Post saved to Firestore with ID:', postId);
+
+        // Update the post with the Firestore ID
+        const savedPost = { ...newPost, id: postId };
+        onPostGenerated(savedPost);
+      } catch (saveError) {
+        console.error('❌ Failed to save to Firestore, falling back to localStorage:', saveError);
+        // Fallback to localStorage if Firestore fails
+        onPostGenerated(newPost);
+      }
 
       // Dynamic toast message based on generation type
       let title = "Content Generated!";
-      let description = `A new ${platform} post has been added to your calendar.`;
+      let description = `A new ${platform} post has been saved to your database.`;
 
       if (selectedArtifacts.length > 0) {
         title = "Content Generated with References! 📎";
-        description = `A new ${platform} post using ${selectedArtifacts.length} reference${selectedArtifacts.length !== 1 ? 's' : ''} has been added.`;
+        description = `A new ${platform} post using ${selectedArtifacts.length} reference${selectedArtifacts.length !== 1 ? 's' : ''} has been saved.`;
       } else if (useEnhancedDesign) {
         title = "Enhanced Content Generated! ✨";
-        description = `A new enhanced ${platform} post with professional design principles has been added.`;
+        description = `A new enhanced ${platform} post with professional design has been saved.`;
       }
 
       toast({ title, description });

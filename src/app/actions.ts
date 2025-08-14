@@ -63,6 +63,22 @@ export async function generateContentAction(
       ? (profile.designExamples || [])
       : []; // Don't use design examples if not strict consistency
 
+    // Convert arrays to newline-separated strings for AI processing
+    const keyFeaturesString = Array.isArray(profile.keyFeatures)
+      ? profile.keyFeatures.join('\n')
+      : profile.keyFeatures || '';
+
+    const competitiveAdvantagesString = Array.isArray(profile.competitiveAdvantages)
+      ? profile.competitiveAdvantages.join('\n')
+      : profile.competitiveAdvantages || '';
+
+    console.log('🔍 Data transformation debug:');
+    console.log('- keyFeatures type:', typeof profile.keyFeatures);
+    console.log('- keyFeatures value:', profile.keyFeatures);
+    console.log('- keyFeaturesString:', keyFeaturesString);
+    console.log('- competitiveAdvantages type:', typeof profile.competitiveAdvantages);
+    console.log('- competitiveAdvantagesString:', competitiveAdvantagesString);
+
     const postDetails = await generatePostFromProfileFlow({
       businessType: profile.businessType,
       location: profile.location,
@@ -83,8 +99,8 @@ export async function generateContentAction(
       // Pass new detailed fields
       services: profile.services,
       targetAudience: profile.targetAudience,
-      keyFeatures: profile.keyFeatures,
-      competitiveAdvantages: profile.competitiveAdvantages,
+      keyFeatures: keyFeaturesString,
+      competitiveAdvantages: competitiveAdvantagesString,
       // Pass brand consistency preferences
       brandConsistency: brandConsistency || { strictConsistency: false, followBrandColors: true },
     });

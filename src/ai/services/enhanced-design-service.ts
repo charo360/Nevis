@@ -299,8 +299,12 @@ async function generatePrimaryDesign(request: EnhancedDesignRequest) {
       }],
       services: request.brandProfile.services,
       targetAudience: request.brandProfile.targetAudience,
-      keyFeatures: request.brandProfile.keyFeatures,
-      competitiveAdvantages: request.brandProfile.competitiveAdvantages
+      keyFeatures: Array.isArray(request.brandProfile.keyFeatures)
+        ? request.brandProfile.keyFeatures.join('\n')
+        : request.brandProfile.keyFeatures || '',
+      competitiveAdvantages: Array.isArray(request.brandProfile.competitiveAdvantages)
+        ? request.brandProfile.competitiveAdvantages.join('\n')
+        : request.brandProfile.competitiveAdvantages || ''
     });
 
     return {
