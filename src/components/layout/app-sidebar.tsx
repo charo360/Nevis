@@ -12,6 +12,7 @@ import {
   Settings,
   Zap,
   Calendar,
+  Archive,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import {
@@ -62,6 +63,19 @@ export function AppSidebar() {
               <Link href="/quick-content">
                 <Zap />
                 <span>Quick Content</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={isActive("/artifacts")}
+              tooltip="Artifacts"
+            >
+              <Link href="/artifacts">
+                <Archive />
+                <span>Artifacts</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

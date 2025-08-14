@@ -5,14 +5,17 @@ import React from "react";
 import { Loader2, Facebook, Instagram, Linkedin, Twitter, Settings, Palette, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PostCard } from "@/components/dashboard/post-card";
-import { generateContentAction, generateEnhancedDesignAction } from "@/app/actions";
+import { generateContentAction, generateEnhancedDesignAction, generateContentWithArtifactsAction } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
+import { useGeneratedPosts } from "@/hooks/use-generated-posts";
+import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import type { BrandProfile, GeneratedPost, Platform, BrandConsistencyPreferences } from "@/lib/types";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { ArtifactSelector } from "@/components/artifacts/artifact-selector";
 
 type ContentCalendarProps = {
   brandProfile: BrandProfile;
@@ -31,6 +34,8 @@ const platforms: { name: Platform; icon: React.ElementType }[] = [
 export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUpdated }: ContentCalendarProps) {
   const [isGenerating, setIsGenerating] = React.useState<Platform | null>(null);
   const { toast } = useToast();
+  const { user } = useFirebaseAuth();
+  const { savePost, saving } = useGeneratedPosts();
 
   // Brand consistency preferences - default to consistent if design examples exist
   const [brandConsistency, setBrandConsistency] = React.useState<BrandConsistencyPreferences>({
@@ -40,6 +45,9 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
 
   // Enhanced design preference
   const [useEnhancedDesign, setUseEnhancedDesign] = React.useState(true);
+
+  // Artifact selection for content generation
+  const [selectedArtifacts, setSelectedArtifacts] = React.useState<string[]>([]);
 
   // Save preferences to localStorage
   React.useEffect(() => {
@@ -65,47 +73,61 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
   const handleGenerateClick = async (platform: Platform) => {
     setIsGenerating(platform);
     try {
+      console.log('🚀 Starting content generation for platform:', platform);
+      console.log('👤 User authenticated:', !!user);
+      console.log('🏢 Brand profile:', brandProfile?.businessName);
+
       let newPost;
 
-      if (useEnhancedDesign) {
-        // First generate proper content using the standard flow
-        const standardPost = await generateContentAction(brandProfile, platform, brandConsistency);
+      // Check if artifacts are enabled (simple toggle approach)
+      const artifactsEnabled = selectedArtifacts.length > 0;
 
-        // Then enhance the visual design with brand consistency settings
-        const enhancedResult = await generateEnhancedDesignAction(
-          brandProfile.businessType || 'business',
-          platform.toLowerCase(),
-          brandProfile.visualStyle || 'modern',
-          standardPost.imageText || 'Engaging Content',
+      if (artifactsEnabled || useEnhancedDesign) {
+        console.log('✨ Using enhanced generation with artifacts/design');
+        // Use artifact-enhanced generation - will automatically use active artifacts from artifacts page
+        newPost = await generateContentWithArtifactsAction(
           brandProfile,
-          true,
-          brandConsistency
+          platform,
+          brandConsistency,
+          [], // Empty array - let the action use active artifacts from artifacts service
+          useEnhancedDesign
         );
-
-        // Combine standard content with enhanced visuals
-        newPost = {
-          ...standardPost,
-          id: Date.now().toString(),
-          variants: [{
-            platform: platform,
-            imageUrl: enhancedResult.imageUrl
-          }],
-          // Add enhancement metadata to content
-          content: `${standardPost.content}\n\n✨ Enhanced with AI+ (Quality: ${enhancedResult.qualityScore}/10)`,
-          date: new Date().toISOString()
-        };
       } else {
+        console.log('📝 Using standard content generation');
         // Use standard content generation
         newPost = await generateContentAction(brandProfile, platform, brandConsistency);
       }
 
-      onPostGenerated(newPost);
-      toast({
-        title: useEnhancedDesign ? "Enhanced Content Generated! ✨" : "Content Generated!",
-        description: useEnhancedDesign
-          ? `A new enhanced ${platform} post with professional design principles has been added.`
-          : `A new ${platform} post has been added to your calendar.`,
-      });
+      console.log('📄 Generated post:', newPost.content.substring(0, 100) + '...');
+
+      // Save to Firestore database first
+      try {
+        console.log('💾 Saving post to Firestore database...');
+        const postId = await savePost(newPost);
+        console.log('✅ Post saved to Firestore with ID:', postId);
+
+        // Update the post with the Firestore ID
+        const savedPost = { ...newPost, id: postId };
+        onPostGenerated(savedPost);
+      } catch (saveError) {
+        console.error('❌ Failed to save to Firestore, falling back to localStorage:', saveError);
+        // Fallback to localStorage if Firestore fails
+        onPostGenerated(newPost);
+      }
+
+      // Dynamic toast message based on generation type
+      let title = "Content Generated!";
+      let description = `A new ${platform} post has been saved to your database.`;
+
+      if (selectedArtifacts.length > 0) {
+        title = "Content Generated with References! 📎";
+        description = `A new ${platform} post using ${selectedArtifacts.length} reference${selectedArtifacts.length !== 1 ? 's' : ''} has been saved.`;
+      } else if (useEnhancedDesign) {
+        title = "Enhanced Content Generated! ✨";
+        description = `A new enhanced ${platform} post with professional design has been saved.`;
+      }
+
+      toast({ title, description });
     } catch (error) {
       toast({
         variant: "destructive",
@@ -169,6 +191,51 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
               : "✨ Varied content using your brand colors"
           }
         </p>
+      </div>
+
+      {/* Simple Artifacts Toggle */}
+      <div className="mb-6">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label className="text-sm font-medium">Use Artifacts</Label>
+                <p className="text-xs text-muted-foreground">
+                  Enable to use your uploaded reference materials and exact-use content
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={selectedArtifacts.length > 0}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      // Enable artifacts - this will use active artifacts from the artifacts page
+                      setSelectedArtifacts(['active']);
+                    } else {
+                      // Disable artifacts
+                      setSelectedArtifacts([]);
+                    }
+                  }}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open('/artifacts', '_blank')}
+                  className="text-xs"
+                >
+                  Manage
+                </Button>
+              </div>
+            </div>
+            {selectedArtifacts.length > 0 && (
+              <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-md">
+                <p className="text-xs text-blue-700">
+                  ✓ Artifacts enabled - Content will use your reference materials and exact-use items from the Artifacts page
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       <div className="flex flex-col items-start gap-4 md:flex-row md:items-center md:justify-between">

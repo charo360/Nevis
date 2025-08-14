@@ -15,6 +15,8 @@ import { SidebarInset } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ContentCalendar } from "@/components/dashboard/content-calendar";
+// TODO: Re-enable once ActiveArtifactsIndicator is properly set up
+// import { ActiveArtifactsIndicator } from "@/components/artifacts/active-artifacts-indicator";
 import type { BrandProfile, GeneratedPost } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
@@ -256,12 +258,27 @@ function QuickContentPage() {
             <p>Loading Content Calendar...</p>
           </div>
         ) : (
-          <ContentCalendar
-            brandProfile={brandProfile}
-            posts={generatedPosts}
-            onPostGenerated={handlePostGenerated}
-            onPostUpdated={handlePostUpdated}
-          />
+          <div className="space-y-4">
+            {/* TODO: Re-enable Active Artifacts Indicator once component is set up */}
+            {/* <ActiveArtifactsIndicator
+              onArtifactDeactivate={() => {
+                // Refresh content when artifacts are deactivated
+                console.log('Artifact deactivated, content generation will use updated active artifacts');
+              }}
+              onManageArtifacts={() => {
+                // Navigate to artifacts page
+                window.open('/artifacts', '_blank');
+              }}
+            /> */}
+
+            {/* Content Calendar */}
+            <ContentCalendar
+              brandProfile={brandProfile}
+              posts={generatedPosts}
+              onPostGenerated={handlePostGenerated}
+              onPostUpdated={handlePostUpdated}
+            />
+          </div>
         )}
       </main>
     </SidebarInset>
