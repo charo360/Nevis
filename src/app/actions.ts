@@ -8,6 +8,7 @@ import { generateCreativeAsset as generateCreativeAssetFlow } from "@/ai/flows/g
 import type { BrandProfile, GeneratedPost, Platform, CreativeAsset } from "@/lib/types";
 import { artifactsService } from "@/lib/services/artifacts-service";
 import type { Artifact } from "@/lib/types/artifacts";
+import { generateEnhancedDesign } from "@/ai/gemini-2.5-design";
 
 
 // --- AI Flow Actions ---
@@ -209,14 +210,13 @@ export async function generateEnhancedDesignAction(
     console.log('- Brand Profile:', brandProfile.businessName);
     console.log('- Enhancements Enabled:', enableEnhancements);
 
-    // Try OpenAI GPT-Image 1 first, then fallback to Gemini HD
+    // Try Gemini 2.5 first (best quality), then fallback to OpenAI, then Gemini 2.0 HD
     let result;
 
     try {
-      console.log('🚀 Using OpenAI GPT-Image 1 for enhanced design generation...');
-      const { generateEnhancedDesignWithFallback } = await import('@/ai/openai-enhanced-design');
+      console.log('🚀 Using Gemini 2.5 Pro for superior design generation...');
 
-      result = await generateEnhancedDesignWithFallback({
+      result = await generateEnhancedDesign({
         businessType,
         platform,
         visualStyle,
@@ -226,24 +226,46 @@ export async function generateEnhancedDesignAction(
         artifactInstructions,
       });
 
-      console.log('✅ OpenAI GPT-Image 1 enhanced design generated successfully');
-    } catch (openaiError) {
-      console.warn('⚠️ OpenAI generation failed, falling back to Gemini HD:', openaiError);
+      console.log('✅ Gemini 2.5 enhanced design generated successfully');
+      console.log(`🎯 Quality Score: ${result.qualityScore}/10`);
+      console.log(`⚡ Processing Time: ${result.processingTime}ms`);
 
-      console.log('🚀 Using Gemini 2.0 Flash HD for enhanced design generation...');
-      const { generateGeminiHDEnhancedDesignWithFallback } = await import('@/ai/gemini-hd-enhanced-design');
+    } catch (gemini25Error) {
+      console.warn('⚠️ Gemini 2.5 generation failed, falling back to OpenAI:', gemini25Error);
 
-      result = await generateGeminiHDEnhancedDesignWithFallback({
-        businessType,
-        platform,
-        visualStyle,
-        imageText,
-        brandProfile,
-        brandConsistency,
-        artifactInstructions,
-      });
+      try {
+        console.log('🚀 Using OpenAI GPT-Image 1 for enhanced design generation...');
+        const { generateEnhancedDesignWithFallback } = await import('@/ai/openai-enhanced-design');
 
-      console.log('✅ Gemini HD enhanced design generated successfully');
+        result = await generateEnhancedDesignWithFallback({
+          businessType,
+          platform,
+          visualStyle,
+          imageText,
+          brandProfile,
+          brandConsistency,
+          artifactInstructions,
+        });
+
+        console.log('✅ OpenAI GPT-Image 1 enhanced design generated successfully');
+      } catch (openaiError) {
+        console.warn('⚠️ OpenAI generation also failed, falling back to Gemini 2.0 HD:', openaiError);
+
+        console.log('🚀 Using Gemini 2.0 Flash HD for enhanced design generation...');
+        const { generateGeminiHDEnhancedDesignWithFallback } = await import('@/ai/gemini-hd-enhanced-design');
+
+        result = await generateGeminiHDEnhancedDesignWithFallback({
+          businessType,
+          platform,
+          visualStyle,
+          imageText,
+          brandProfile,
+          brandConsistency,
+          artifactInstructions,
+        });
+
+        console.log('✅ Gemini 2.0 HD enhanced design generated successfully');
+      }
     }
 
     console.log('🔗 Image URL:', result.imageUrl);
