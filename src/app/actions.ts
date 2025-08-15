@@ -402,9 +402,20 @@ export async function generateContentWithArtifactsAction(
     // Generate base content first
     const basePost = await generateContentAction(profile, platform, brandConsistency);
 
-    // If no artifacts or enhanced design disabled, return base content
-    if (targetArtifacts.length === 0 || !useEnhancedDesign) {
+    // If enhanced design is disabled, return base content
+    if (!useEnhancedDesign) {
+      console.log('🔄 Enhanced design disabled, using base content generation');
       return basePost;
+    }
+
+    // Enhanced design is enabled - always use enhanced generation regardless of artifacts
+    console.log('🎨 Enhanced design enabled - proceeding with enhanced generation');
+    console.log(`📊 Artifacts available: ${targetArtifacts.length}`);
+
+    if (targetArtifacts.length === 0) {
+      console.log('✨ No artifacts provided - using enhanced design without artifact context');
+    } else {
+      console.log('🎯 Using enhanced design with artifact context');
     }
 
     // Separate exact-use and reference artifacts
@@ -486,12 +497,14 @@ export async function generateContentWithArtifactsAction(
         platform: platform,
         imageUrl: enhancedResult.imageUrl
       }],
-      content: `${enhancedContent}\n\n✨ Enhanced with AI+ using ${artifacts.length} reference${artifacts.length !== 1 ? 's' : ''} (Quality: ${enhancedResult.qualityScore}/10)`,
+      content: targetArtifacts.length > 0
+        ? `${enhancedContent}\n\n✨ Enhanced with AI+ using ${targetArtifacts.length} reference${targetArtifacts.length !== 1 ? 's' : ''} (Quality: ${enhancedResult.qualityScore}/10)`
+        : `${enhancedContent}\n\n✨ Enhanced with AI+ Design Generation (Quality: ${enhancedResult.qualityScore}/10)`,
       date: new Date().toISOString(),
       // Add artifact metadata
       metadata: {
         ...basePost.metadata,
-        referencedArtifacts: artifacts.map(a => ({
+        referencedArtifacts: targetArtifacts.map(a => ({
           id: a.id,
           name: a.name,
           type: a.type,
