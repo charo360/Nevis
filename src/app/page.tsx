@@ -40,9 +40,8 @@ export default function HomePage() {
   };
 
   const handleSignIn = () => {
-    console.log('Sign In clicked - navigating to /brand-profile');
-    // For now, redirect to brand profile. Later can add auth
-    router.push('/brand-profile');
+    console.log('Sign In clicked - navigating to /auth');
+    router.push('/auth');
   };
 
   const handleWatchDemo = () => {
@@ -52,18 +51,6 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 overflow-hidden">
-      {/* Debug button */}
-      <div className="fixed top-4 left-4 z-50">
-        <Button
-          onClick={() => {
-            console.log('Debug button clicked!');
-            alert('Debug button works!');
-          }}
-          className="bg-red-500 hover:bg-red-600 text-white"
-        >
-          Test Button
-        </Button>
-      </div>
       {/* Navigation */}
       <nav className="relative z-50 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
