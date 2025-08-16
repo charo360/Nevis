@@ -31,6 +31,17 @@ export default function HomePage() {
   }, []);
 
   const handleGetStarted = () => {
+    console.log('Get Started clicked - navigating to /brand-profile');
+    try {
+      router.push('/brand-profile');
+    } catch (error) {
+      console.error('Navigation error:', error);
+    }
+  };
+
+  const handleSignIn = () => {
+    console.log('Sign In clicked - navigating to /brand-profile');
+    // For now, redirect to brand profile. Later can add auth
     router.push('/brand-profile');
   };
 
@@ -41,6 +52,18 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 overflow-hidden">
+      {/* Debug button */}
+      <div className="fixed top-4 left-4 z-50">
+        <Button
+          onClick={() => {
+            console.log('Debug button clicked!');
+            alert('Debug button works!');
+          }}
+          className="bg-red-500 hover:bg-red-600 text-white"
+        >
+          Test Button
+        </Button>
+      </div>
       {/* Navigation */}
       <nav className="relative z-50 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -57,10 +80,17 @@ export default function HomePage() {
             <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">Features</a>
             <a href="#pricing" className="text-gray-600 hover:text-gray-900 transition-colors">Pricing</a>
             <a href="#about" className="text-gray-600 hover:text-gray-900 transition-colors">About</a>
-            <Button variant="outline" className="border-gray-300">
+            <Button
+              onClick={handleSignIn}
+              variant="outline"
+              className="border-gray-300 hover:bg-gray-50 cursor-pointer z-10 relative"
+            >
               Sign In
             </Button>
-            <Button onClick={handleGetStarted} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+            <Button
+              onClick={handleGetStarted}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 cursor-pointer z-10 relative"
+            >
               Get Started
             </Button>
           </div>
@@ -93,7 +123,7 @@ export default function HomePage() {
               <Button
                 onClick={handleGetStarted}
                 size="lg"
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-8 py-4 h-auto"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-8 py-4 h-auto cursor-pointer z-10 relative"
               >
                 Start Creating Free
                 <ArrowRight className="ml-2 w-5 h-5" />

@@ -67,11 +67,22 @@ function BrandThemeLoader({ children }: { children: React.ReactNode }) {
 }
 
 function ConditionalLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
+  const [pathname, setPathname] = useState('');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setPathname(window.location.pathname);
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return <div>Loading...</div>;
+  }
+
   const isLandingPage = pathname === '/';
 
   if (isLandingPage) {
-    return <>{children}</>;
+    return <div className="w-full">{children}</div>;
   }
 
   return (
