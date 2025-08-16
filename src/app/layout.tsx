@@ -89,14 +89,12 @@ function ConditionalLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <BrandProvider>
-      <SidebarProvider>
-        <AppSidebar />
-        <BrandThemeLoader>
-          {children}
-        </BrandThemeLoader>
-      </SidebarProvider>
-    </BrandProvider>
+    <SidebarProvider>
+      <AppSidebar />
+      <BrandThemeLoader>
+        {children}
+      </BrandThemeLoader>
+    </SidebarProvider>
   );
 }
 
@@ -115,9 +113,11 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased" suppressHydrationWarning>
         <AuthWrapper requireAuth={false}>
-          <ConditionalLayout>
-            {children}
-          </ConditionalLayout>
+          <BrandProvider>
+            <ConditionalLayout>
+              {children}
+            </ConditionalLayout>
+          </BrandProvider>
         </AuthWrapper>
         <Toaster />
       </body>
