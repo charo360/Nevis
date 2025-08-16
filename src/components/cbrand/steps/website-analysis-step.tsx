@@ -119,7 +119,18 @@ export function WebsiteAnalysisStep({
 
       // Add progress feedback for AI analysis
       setAnalysisProgress('🤖 AI is analyzing website content and extracting company-specific information...');
-      const result = await analyzeBrandAction(websiteUrl, designImageUris);
+      const analysisResult = await analyzeBrandAction(websiteUrl, designImageUris);
+
+      // Check if analysis failed
+      if (!analysisResult.success) {
+        setAnalysisProgress('');
+        setDialogType(analysisResult.errorType);
+        setDialogMessage(analysisResult.error);
+        setShowAnalysisDialog(true);
+        return;
+      }
+
+      const result = analysisResult.data;
 
       setAnalysisProgress('📊 Processing analysis results and organizing data...');
 
@@ -228,24 +239,11 @@ export function WebsiteAnalysisStep({
       });
 
     } catch (error) {
-      console.error('Analysis error:', error);
+      // This catch is now for unexpected errors only
+      console.error('Unexpected analysis error:', error);
       setAnalysisProgress('');
-
-      const errorMessage = (error as Error).message.toLowerCase();
-
-      // Determine dialog type and message based on error
-      if (errorMessage.includes('403') || errorMessage.includes('blocked') || errorMessage.includes('cors')) {
-        setDialogType('blocked');
-        setDialogMessage('This website blocks automated analysis for security reasons. This is completely normal and happens with many professional websites.');
-      } else if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
-        setDialogType('timeout');
-        setDialogMessage('The website took too long to respond. This might be due to slow loading or server issues.');
-      } else {
-        setDialogType('error');
-        setDialogMessage('We encountered an issue while analyzing this website. This can happen for various technical reasons.');
-      }
-
-      // Show friendly dialog instead of error toast
+      setDialogType('error');
+      setDialogMessage('An unexpected error occurred during analysis.');
       setShowAnalysisDialog(true);
     } finally {
       setIsAnalyzing(false);
