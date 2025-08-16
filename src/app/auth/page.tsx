@@ -46,7 +46,7 @@ export default function AuthPage() {
         title: "Welcome back!",
         description: "You've been signed in successfully.",
       });
-      router.push('/dashboard');
+      router.push('/brand-profile');
     } catch (error) {
       toast({
         variant: "destructive",
@@ -72,9 +72,9 @@ export default function AuthPage() {
       await signUp(signUpData.email, signUpData.password, signUpData.name);
       toast({
         title: "Account created!",
-        description: "Welcome to Crevo! You can now access your dashboard.",
+        description: "Welcome to Crevo! Let's set up your brand profile.",
       });
-      router.push('/dashboard');
+      router.push('/brand-profile');
     } catch (error) {
       toast({
         variant: "destructive",
@@ -89,9 +89,9 @@ export default function AuthPage() {
       await signInAnonymous();
       toast({
         title: "Demo mode activated!",
-        description: "Welcome to your dashboard! You can explore all features.",
+        description: "You can now try all features. Let's start with your brand profile.",
       });
-      router.push('/dashboard');
+      router.push('/brand-profile');
     } catch (error) {
       toast({
         variant: "destructive",
