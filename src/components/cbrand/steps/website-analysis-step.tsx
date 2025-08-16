@@ -136,10 +136,33 @@ export function WebsiteAnalysisStep({
 
       // Debug: Log what business name was extracted
       console.log('🏢 AI Extracted Business Name:', result.businessName);
+      console.log('🏭 AI Extracted Business Type:', result.businessType);
       console.log('📝 AI Extracted Description:', result.description);
 
       // Ensure we have a proper business name - fallback to extracting from URL if needed
       let businessName = result.businessName?.trim();
+      let businessType = result.businessType?.trim();
+
+      // Check if AI mixed up business name and business type
+      const businessNameWords = businessName?.toLowerCase().split(' ') || [];
+      const businessTypeWords = businessType?.toLowerCase().split(' ') || [];
+
+      // If business name contains generic business type words, it might be swapped
+      const genericBusinessWords = ['software', 'technology', 'company', 'corporation', 'inc', 'llc', 'development', 'solutions', 'services', 'consulting', 'agency', 'firm', 'group', 'enterprises', 'systems', 'platform', 'application', 'financial', 'lending', 'mixed-use'];
+
+      const businessNameHasGenericWords = businessNameWords.some(word => genericBusinessWords.includes(word));
+      const businessTypeHasSpecificWords = businessTypeWords.length > 0 && !businessTypeWords.some(word => genericBusinessWords.includes(word));
+
+      // If business name seems generic and business type seems specific, they might be swapped
+      if (businessNameHasGenericWords && businessTypeHasSpecificWords && businessType && businessType.length > 2) {
+        console.log('🔄 Detected potential name/type swap. Swapping them.');
+        console.log('🔄 Original Name:', businessName, '→ Type:', businessType);
+        const temp = businessName;
+        businessName = businessType;
+        businessType = temp;
+        console.log('🔄 After swap Name:', businessName, '→ Type:', businessType);
+      }
+
       if (!businessName || businessName.length < 2) {
         // Try to extract business name from URL as fallback
         try {
@@ -187,13 +210,17 @@ export function WebsiteAnalysisStep({
       const accentColor = result.colorPalette?.secondary || result.colorPalette?.accent || '#10B981';
       const backgroundColor = '#F8FAFC'; // Default background
 
+      // Debug: Log what we're actually saving
+      console.log('💾 Saving Business Name:', businessName);
+      console.log('💾 Saving Business Type:', businessType || '');
+
       // Update the brand profile with comprehensive analysis results
       updateBrandProfile({
         // Basic Information
         businessName: businessName,
         websiteUrl,
         description: result.description,
-        businessType: result.businessType || '',
+        businessType: businessType || '',
         location: result.location || '',
 
         // Services and Products

@@ -20,9 +20,9 @@ export type AnalyzeBrandInput = z.infer<typeof AnalyzeBrandInputSchema>;
 
 const AnalyzeBrandOutputSchema = z.object({
   // Core Business Information
-  businessName: z.string().describe('The EXACT business name, company name, or brand name as it appears on the website. Look for the company name in headers, logos, titles, "About Us" sections, or anywhere the business identifies itself. Extract the precise name they use.'),
+  businessName: z.string().describe('The EXACT business name, company name, or brand name as it appears on the website. This should be the PROPER NAME like "Apple Inc.", "Microsoft Corporation", "Joe\'s Pizza", NOT a description of what they do. Look for the company name in headers, logos, titles, "About Us" sections, or anywhere the business identifies itself. Extract the precise name they use, not their business type or industry.'),
   description: z.string().describe('A comprehensive, detailed summary of the business that includes: what they do, how they do it, their mission/values, their approach, their history, and what makes them unique. Combine information from multiple website sections to create a thorough description. Minimum 3-4 sentences using the company\'s own words.'),
-  businessType: z.string().optional().describe('The specific type/category of business using the exact terms the company uses to describe themselves.'),
+  businessType: z.string().optional().describe('The specific type/category of business like "Software Company", "Restaurant", "Consulting Firm", "E-commerce Store" - this describes WHAT they do, not WHO they are. This is different from the business name.'),
   industry: z.string().optional().describe('The specific industry sector the business operates in using their own terminology.'),
   targetAudience: z.string().describe('DETAILED description of the specific target audience, customer base, client types, demographics, business types, industries, or customer characteristics this company mentions they serve. Be very specific and comprehensive. Include customer examples, business sizes, industries, or any specific customer details mentioned on the website.'),
 
