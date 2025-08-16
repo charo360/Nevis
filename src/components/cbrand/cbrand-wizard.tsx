@@ -79,7 +79,12 @@ const STEPS = [
   },
 ];
 
-export function CbrandWizard() {
+interface CbrandWizardProps {
+  mode?: string | null;
+  brandId?: string | null;
+}
+
+export function CbrandWizard({ mode, brandId }: CbrandWizardProps = {}) {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [brandProfile, setBrandProfile] = useState<CompleteBrandProfile>({

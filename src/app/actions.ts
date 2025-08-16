@@ -21,16 +21,46 @@ export async function analyzeBrandAction(
     console.log("🔍 Starting brand analysis for URL:", websiteUrl);
     console.log("🖼️ Design images count:", designImageUris.length);
 
-    const result = await analyzeBrandFlow({ websiteUrl, designImageUris });
+    // Validate URL format
+    if (!websiteUrl || !websiteUrl.trim()) {
+      throw new Error("Website URL is required");
+    }
+
+    // Ensure URL has protocol
+    let validUrl = websiteUrl.trim();
+    if (!validUrl.startsWith('http://') && !validUrl.startsWith('https://')) {
+      validUrl = 'https://' + validUrl;
+    }
+
+    const result = await analyzeBrandFlow({
+      websiteUrl: validUrl,
+      designImageUris: designImageUris || []
+    });
 
     console.log("✅ Brand analysis result:", JSON.stringify(result, null, 2));
     console.log("🔍 Result type:", typeof result);
     console.log("🔍 Result keys:", result ? Object.keys(result) : "No result");
 
+    if (!result) {
+      throw new Error("Analysis returned empty result");
+    }
+
     return result;
   } catch (error) {
     console.error("❌ Error analyzing brand:", error);
-    throw new Error("Failed to analyze brand. Please check the URL and try again.");
+
+    // Provide more specific error messages
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+
+    if (errorMessage.includes('fetch')) {
+      throw new Error("Unable to access the website. The site may be blocking automated access or may be temporarily unavailable.");
+    } else if (errorMessage.includes('timeout')) {
+      throw new Error("Website analysis timed out. Please try again or check if the website is accessible.");
+    } else if (errorMessage.includes('CORS')) {
+      throw new Error("Website blocks automated access. This is common for security reasons. You can still create your brand profile manually.");
+    } else {
+      throw new Error(`Analysis failed: ${errorMessage}. You can skip the analysis and fill in the details manually.`);
+    }
   }
 }
 
