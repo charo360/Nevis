@@ -185,7 +185,7 @@ export async function generateEnhancedDesignAction(
   businessType: string,
   platform: string,
   visualStyle: string,
-  imageText: string,
+  imageText: string | { catchyWords: string; subheadline?: string; callToAction?: string },
   brandProfile?: BrandProfile,
   enableEnhancements: boolean = true,
   brandConsistency?: { strictConsistency: boolean; followBrandColors: boolean },
@@ -204,11 +204,27 @@ export async function generateEnhancedDesignAction(
       throw new Error('Brand profile is required for enhanced design generation');
     }
 
+    // Handle both old string format and new object format
+    let finalImageText: string;
+    if (typeof imageText === 'string') {
+      finalImageText = imageText;
+    } else {
+      // Combine catchy words, subheadline, and call-to-action
+      const components = [imageText.catchyWords];
+      if (imageText.subheadline && imageText.subheadline.trim()) {
+        components.push(imageText.subheadline.trim());
+      }
+      if (imageText.callToAction && imageText.callToAction.trim()) {
+        components.push(imageText.callToAction.trim());
+      }
+      finalImageText = components.join('\n');
+    }
+
     console.log('🎨 Enhanced Design Generation Started');
     console.log('- Business Type:', businessType);
     console.log('- Platform:', platform);
     console.log('- Visual Style:', visualStyle);
-    console.log('- Image Text:', imageText);
+    console.log('- Image Text:', finalImageText);
     console.log('- Brand Profile:', brandProfile.businessName);
     console.log('- Enhancements Enabled:', enableEnhancements);
 
@@ -222,7 +238,7 @@ export async function generateEnhancedDesignAction(
         businessType,
         platform,
         visualStyle,
-        imageText,
+        imageText: finalImageText,
         brandProfile,
         brandConsistency,
         artifactInstructions,
@@ -243,7 +259,7 @@ export async function generateEnhancedDesignAction(
           businessType,
           platform,
           visualStyle,
-          imageText,
+          imageText: finalImageText,
           brandProfile,
           brandConsistency,
           artifactInstructions,
@@ -260,7 +276,7 @@ export async function generateEnhancedDesignAction(
           businessType,
           platform,
           visualStyle,
-          imageText,
+          imageText: finalImageText,
           brandProfile,
           brandConsistency,
           artifactInstructions,
@@ -424,7 +440,12 @@ export async function generateContentWithArtifactsAction(
     const exactUseArtifacts = targetArtifacts.filter(a => a.usageType === 'exact-use');
     const referenceArtifacts = targetArtifacts.filter(a => a.usageType === 'reference');
 
-    let enhancedImageText = basePost.catchyWords || 'Engaging Content';
+    // Create enhanced image text structure from post components
+    let enhancedImageText: { catchyWords: string; subheadline?: string; callToAction?: string } = {
+      catchyWords: basePost.catchyWords || 'Engaging Content',
+      subheadline: basePost.subheadline,
+      callToAction: basePost.callToAction
+    };
     let enhancedContent = basePost.content;
 
     // Collect usage instructions from artifacts
@@ -446,13 +467,19 @@ export async function generateContentWithArtifactsAction(
       // Use text overlay if available
       if (primaryExactUse.textOverlay) {
         if (primaryExactUse.textOverlay.headline) {
-          enhancedImageText = primaryExactUse.textOverlay.headline;
-          console.log('📝 Using headline from exact-use artifact:', enhancedImageText);
+          enhancedImageText.catchyWords = primaryExactUse.textOverlay.headline;
+          console.log('📝 Using headline from exact-use artifact:', enhancedImageText.catchyWords);
         }
 
         if (primaryExactUse.textOverlay.message) {
           enhancedContent = primaryExactUse.textOverlay.message;
           console.log('📝 Using message from exact-use artifact');
+        }
+
+        // Use CTA from artifact if available
+        if (primaryExactUse.textOverlay.cta) {
+          enhancedImageText.callToAction = primaryExactUse.textOverlay.cta;
+          console.log('📝 Using CTA from exact-use artifact:', enhancedImageText.callToAction);
         }
       }
     }

@@ -91,7 +91,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     brandProfile.businessType || 'business',
                     'instagram', // Default platform, could be made configurable
                     brandProfile.visualStyle || 'modern',
-                    currentInput,
+                    currentInput, // Creative Studio uses simple text input for now
                     brandProfile,
                     true,
                     { strictConsistency: true, followBrandColors: true } // Enable all enhancements for Creative Studio
