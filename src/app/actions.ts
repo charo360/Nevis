@@ -49,17 +49,17 @@ export async function analyzeBrandAction(
   } catch (error) {
     console.error("❌ Error analyzing brand:", error);
 
-    // Provide more specific error messages
+    // Provide more specific error messages but still throw for the component to handle
     const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
 
-    if (errorMessage.includes('fetch')) {
-      throw new Error("Unable to access the website. The site may be blocking automated access or may be temporarily unavailable.");
+    if (errorMessage.includes('fetch') || errorMessage.includes('403') || errorMessage.includes('blocked')) {
+      throw new Error("Website blocks automated access. This is common for security reasons.");
     } else if (errorMessage.includes('timeout')) {
       throw new Error("Website analysis timed out. Please try again or check if the website is accessible.");
     } else if (errorMessage.includes('CORS')) {
-      throw new Error("Website blocks automated access. This is common for security reasons. You can still create your brand profile manually.");
+      throw new Error("Website blocks automated access. This is common for security reasons.");
     } else {
-      throw new Error(`Analysis failed: ${errorMessage}. You can skip the analysis and fill in the details manually.`);
+      throw new Error(`Analysis failed: ${errorMessage}`);
     }
   }
 }
