@@ -14,7 +14,9 @@ import {
   Calendar,
   Archive,
   LayoutDashboard,
+  Building2,
 } from "lucide-react";
+import { BrandSelector } from '@/components/brand/brand-selector';
 import { usePathname } from "next/navigation";
 import {
   Sidebar,
@@ -41,6 +43,11 @@ export function AppSidebar() {
             Crevo
           </h1>
         </Link>
+
+        {/* Brand Selector */}
+        <div className="px-2 py-2">
+          <BrandSelector />
+        </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
@@ -53,6 +60,19 @@ export function AppSidebar() {
               <Link href="/dashboard">
                 <LayoutDashboard />
                 <span>Dashboard</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={isActive("/brands")}
+              tooltip="Manage Brands"
+            >
+              <Link href="/brands">
+                <Building2 />
+                <span>Manage Brands</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

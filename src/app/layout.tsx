@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import { AuthWrapper } from '@/components/auth/auth-wrapper';
+import { BrandProvider } from '@/contexts/brand-context';
 import React, { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import type { BrandProfile } from '@/lib/types';
@@ -88,12 +89,14 @@ function ConditionalLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <BrandThemeLoader>
-        {children}
-      </BrandThemeLoader>
-    </SidebarProvider>
+    <BrandProvider>
+      <SidebarProvider>
+        <AppSidebar />
+        <BrandThemeLoader>
+          {children}
+        </BrandThemeLoader>
+      </SidebarProvider>
+    </BrandProvider>
   );
 }
 

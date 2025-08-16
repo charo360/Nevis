@@ -5,13 +5,13 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Sparkles, 
-  Zap, 
-  Calendar, 
-  Archive, 
-  Settings, 
-  User, 
+import {
+  Sparkles,
+  Zap,
+  Calendar,
+  Archive,
+  Settings,
+  User,
   BarChart3,
   Palette,
   Globe,
@@ -22,17 +22,12 @@ import {
 } from 'lucide-react';
 import { useFirebaseAuth } from '@/hooks/use-firebase-auth';
 import { SidebarInset } from '@/components/ui/sidebar';
+import { useBrandContext } from '@/contexts/brand-context';
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user } = useFirebaseAuth();
-  const [brandProfileExists, setBrandProfileExists] = useState(false);
-
-  useEffect(() => {
-    // Check if brand profile exists in localStorage
-    const profile = localStorage.getItem('brandProfile') || localStorage.getItem('completeBrandProfile');
-    setBrandProfileExists(!!profile);
-  }, []);
+  const { currentBrand, brands, hasBrands, brandCount } = useBrandContext();
 
   const features = [
     {
@@ -41,7 +36,7 @@ export default function DashboardPage() {
       description: 'Set up your brand identity with AI-powered website analysis',
       icon: User,
       color: 'bg-blue-500',
-      status: brandProfileExists ? 'complete' : 'setup-needed',
+      status: currentBrand ? 'complete' : 'setup-needed',
       route: '/brand-profile',
       isCore: true
     },
@@ -138,8 +133,8 @@ export default function DashboardPage() {
     if (feature.status === 'coming-soon') {
       return;
     }
-    
-    if (feature.status === 'requires-setup' && !brandProfileExists) {
+
+    if (feature.status === 'requires-setup' && !currentBrand) {
       // Redirect to brand profile setup first
       router.push('/brand-profile');
       return;
@@ -161,15 +156,17 @@ export default function DashboardPage() {
           </h1>
           <p className="text-gray-600">
             {user?.displayName ? `Hi ${user.displayName}! ` : 'Hi there! '}
-            {brandProfileExists 
-              ? "Your brand profile is set up. Choose a feature to get started creating amazing content."
-              : "Let's start by setting up your brand profile, then explore all the powerful features available to you."
+            {currentBrand
+              ? `You're working with ${currentBrand.businessName}. Choose a feature to get started creating amazing content.`
+              : hasBrands
+                ? `You have ${brandCount} brand${brandCount !== 1 ? 's' : ''}. Select one from the sidebar or create a new one to get started.`
+                : "Let's start by creating your first brand profile, then explore all the powerful features available to you."
             }
           </p>
         </div>
 
         {/* Quick Actions */}
-        {!brandProfileExists && (
+        {!currentBrand && (
           <Card className="border-blue-200 bg-blue-50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-blue-900">
@@ -177,18 +174,81 @@ export default function DashboardPage() {
                 Get Started
               </CardTitle>
               <CardDescription className="text-blue-700">
-                Set up your brand profile to unlock all features and start generating personalized content.
+                {hasBrands
+                  ? "Select a brand from the sidebar above or create a new one to start generating content."
+                  : "Create your first brand profile to unlock all features and start generating personalized content."
+                }
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button 
-                onClick={() => router.push('/brand-profile')}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Set Up Brand Profile
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => router.push('/brand-profile?mode=create')}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  {hasBrands ? 'Create New Brand' : 'Set Up Brand Profile'}
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+                {hasBrands && (
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push('/brands')}
+                    className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                  >
+                    Manage Brands
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Current Brand Info */}
+        {currentBrand && (
+          <Card className="border-green-200 bg-green-50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-green-900">
+                <CheckCircle className="w-5 h-5" />
+                Active Brand
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                  {currentBrand.logoDataUrl ? (
+                    <img src={currentBrand.logoDataUrl} alt="Logo" className="w-8 h-8 rounded" />
+                  ) : (
+                    <span className="text-primary font-semibold">
+                      {currentBrand.businessName?.slice(0, 2).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">{currentBrand.businessName}</h3>
+                  <p className="text-sm text-gray-600">{currentBrand.businessType}</p>
+                  {currentBrand.location && (
+                    <p className="text-xs text-gray-500">{currentBrand.location}</p>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => router.push('/quick-content')}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <Zap className="w-4 h-4 mr-2" />
+                  Start Creating Content
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => router.push('/brands')}
+                  className="border-green-200 text-green-700 hover:bg-green-50"
+                >
+                  Switch Brand
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -200,13 +260,12 @@ export default function DashboardPage() {
             {coreFeatures.map((feature) => {
               const Icon = feature.icon;
               const isDisabled = feature.status === 'requires-setup' && !brandProfileExists;
-              
+
               return (
-                <Card 
+                <Card
                   key={feature.id}
-                  className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${
-                    isDisabled ? 'opacity-60' : 'hover:scale-105'
-                  }`}
+                  className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${isDisabled ? 'opacity-60' : 'hover:scale-105'
+                    }`}
                   onClick={() => handleFeatureClick(feature)}
                 >
                   <CardHeader className="pb-3">
@@ -220,15 +279,15 @@ export default function DashboardPage() {
                     <CardDescription>{feature.description}</CardDescription>
                   </CardHeader>
                   <CardContent className="pt-0">
-                    <Button 
-                      variant={isDisabled ? "secondary" : "default"} 
-                      size="sm" 
+                    <Button
+                      variant={isDisabled ? "secondary" : "default"}
+                      size="sm"
                       className="w-full"
                       disabled={feature.status === 'coming-soon'}
                     >
-                      {feature.status === 'setup-needed' ? 'Set Up' : 
-                       feature.status === 'requires-setup' ? 'Requires Setup' :
-                       feature.status === 'coming-soon' ? 'Coming Soon' : 'Open'}
+                      {feature.status === 'setup-needed' ? 'Set Up' :
+                        feature.status === 'requires-setup' ? 'Requires Setup' :
+                          feature.status === 'coming-soon' ? 'Coming Soon' : 'Open'}
                       {feature.status !== 'coming-soon' && <ArrowRight className="w-3 h-3 ml-2" />}
                     </Button>
                   </CardContent>
@@ -245,13 +304,12 @@ export default function DashboardPage() {
             {additionalFeatures.map((feature) => {
               const Icon = feature.icon;
               const isDisabled = feature.status === 'coming-soon';
-              
+
               return (
-                <Card 
+                <Card
                   key={feature.id}
-                  className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
-                    isDisabled ? 'opacity-60 cursor-not-allowed' : 'hover:scale-102'
-                  }`}
+                  className={`cursor-pointer transition-all duration-200 hover:shadow-md ${isDisabled ? 'opacity-60 cursor-not-allowed' : 'hover:scale-102'
+                    }`}
                   onClick={() => handleFeatureClick(feature)}
                 >
                   <CardHeader className="pb-2">
