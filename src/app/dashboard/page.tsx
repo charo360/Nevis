@@ -46,7 +46,7 @@ export default function DashboardPage() {
       description: 'Generate social media posts instantly with AI',
       icon: Zap,
       color: 'bg-purple-500',
-      status: brandProfileExists ? 'available' : 'requires-setup',
+      status: currentBrand ? 'available' : 'requires-setup',
       route: '/quick-content',
       isCore: true
     },
@@ -56,7 +56,7 @@ export default function DashboardPage() {
       description: 'Plan and schedule your content strategy',
       icon: Calendar,
       color: 'bg-green-500',
-      status: brandProfileExists ? 'available' : 'requires-setup',
+      status: currentBrand ? 'available' : 'requires-setup',
       route: '/content-calendar',
       isCore: true
     },
@@ -66,7 +66,7 @@ export default function DashboardPage() {
       description: 'Create stunning visuals with advanced AI design tools',
       icon: Palette,
       color: 'bg-pink-500',
-      status: brandProfileExists ? 'available' : 'requires-setup',
+      status: currentBrand ? 'available' : 'requires-setup',
       route: '/enhanced-design',
       isCore: false
     },
@@ -259,7 +259,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {coreFeatures.map((feature) => {
               const Icon = feature.icon;
-              const isDisabled = feature.status === 'requires-setup' && !brandProfileExists;
+              const isDisabled = feature.status === 'requires-setup' && !currentBrand;
 
               return (
                 <Card
