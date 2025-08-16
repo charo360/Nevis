@@ -40,12 +40,8 @@ export function WebsiteAnalysisStep({
 
   // Dialog states for friendly error handling
   const [showAnalysisDialog, setShowAnalysisDialog] = useState(false);
-  const [dialogType, setDialogType] = useState<'blocked' | 'timeout' | 'error' | 'existing'>('error');
+  const [dialogType, setDialogType] = useState<'blocked' | 'timeout' | 'error'>('error');
   const [dialogMessage, setDialogMessage] = useState('');
-
-  // Existing analysis states
-  const [existingAnalysis, setExistingAnalysis] = useState<any>(null);
-  const [showExistingDialog, setShowExistingDialog] = useState(false);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
@@ -100,182 +96,157 @@ export function WebsiteAnalysisStep({
     setIsAnalyzing(true);
     setAnalysisComplete(false);
     setAnalysisError('');
-    setAnalysisProgress('Checking for existing analysis...');
+    setAnalysisProgress('Preparing comprehensive analysis...');
 
     try {
-      // Check if this website has already been analyzed
-      const { brandProfileFirebaseService } = await import('@/lib/firebase/services/brand-profile-service');
-      const { getCurrentUserId } = await import('@/lib/firebase/auth');
-
-      const userId = await getCurrentUserId();
-      if (userId) {
-        const existing = await brandProfileFirebaseService.checkExistingAnalysis(websiteUrl, userId);
-
-        if (existing) {
-          setExistingAnalysis(existing);
-          setShowExistingDialog(true);
-          setIsAnalyzing(false);
-          return;
-        }
+      // Convert images to data URLs with progress feedback
+      setAnalysisProgress('Processing design examples...');
+      const designImageUris: string[] = [];
+      for (let i = 0; i < designImages.length; i++) {
+        const file = designImages[i];
+        setAnalysisProgress(`Processing design example ${i + 1}/${designImages.length}...`);
+        const dataUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.readAsDataURL(file);
+        });
+        designImageUris.push(dataUrl);
       }
 
-      setAnalysisProgress('Preparing comprehensive analysis...');
+      // Start comprehensive AI analysis with website scraping
+      setAnalysisProgress('🌐 Scraping website content and extracting text...');
+      const { analyzeBrandAction } = await import('@/app/actions');
 
-      try {
-        // Convert images to data URLs with progress feedback
-        setAnalysisProgress('Processing design examples...');
-        const designImageUris: string[] = [];
-        for (let i = 0; i < designImages.length; i++) {
-          const file = designImages[i];
-          setAnalysisProgress(`Processing design example ${i + 1}/${designImages.length}...`);
-          const dataUrl = await new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onload = (e) => resolve(e.target?.result as string);
-            reader.readAsDataURL(file);
-          });
-          designImageUris.push(dataUrl);
-        }
+      // Add progress feedback for AI analysis
+      setAnalysisProgress('🤖 AI is analyzing website content and extracting company-specific information...');
+      const analysisResult = await analyzeBrandAction(websiteUrl, designImageUris);
 
-        // Start comprehensive AI analysis with website scraping
-        setAnalysisProgress('🌐 Scraping website content and extracting text...');
-        const { analyzeBrandAction } = await import('@/app/actions');
+      // Check if analysis failed
+      if (!analysisResult.success) {
+        setAnalysisProgress('');
+        setDialogType(analysisResult.errorType);
+        setDialogMessage(analysisResult.error);
+        setShowAnalysisDialog(true);
+        return;
+      }
 
-        // Add progress feedback for AI analysis
-        setAnalysisProgress('🤖 AI is analyzing website content and extracting company-specific information...');
-        const analysisResult = await analyzeBrandAction(websiteUrl, designImageUris);
+      const result = analysisResult.data;
 
-        // Check if analysis failed
-        if (!analysisResult.success) {
-          setAnalysisProgress('');
-          setDialogType(analysisResult.errorType);
-          setDialogMessage(analysisResult.error);
-          setShowAnalysisDialog(true);
-          return;
-        }
+      setAnalysisProgress('📊 Processing analysis results and organizing data...');
 
-        const result = analysisResult.data;
-
-        setAnalysisProgress('📊 Processing analysis results and organizing data...');
-
-        // Parse services from AI result and convert to array format
-        const servicesArray = result.services
-          ? result.services.split('\n').filter(service => service.trim()).map(service => {
-            // Enhanced parsing to handle detailed service descriptions
-            const colonIndex = service.indexOf(':');
-            if (colonIndex > 0) {
+      // Parse services from AI result and convert to array format
+      const servicesArray = result.services
+        ? result.services.split('\n').filter(service => service.trim()).map(service => {
+          // Enhanced parsing to handle detailed service descriptions
+          const colonIndex = service.indexOf(':');
+          if (colonIndex > 0) {
+            return {
+              name: service.substring(0, colonIndex).trim(),
+              description: service.substring(colonIndex + 1).trim()
+            };
+          } else {
+            // If no colon, check for dash
+            const dashIndex = service.indexOf(' - ');
+            if (dashIndex > 0) {
               return {
-                name: service.substring(0, colonIndex).trim(),
-                description: service.substring(colonIndex + 1).trim()
+                name: service.substring(0, dashIndex).trim(),
+                description: service.substring(dashIndex + 3).trim()
               };
             } else {
-              // If no colon, check for dash
-              const dashIndex = service.indexOf(' - ');
-              if (dashIndex > 0) {
-                return {
-                  name: service.substring(0, dashIndex).trim(),
-                  description: service.substring(dashIndex + 3).trim()
-                };
-              } else {
-                // If no separator, use the whole thing as name
-                return {
-                  name: service.trim(),
-                  description: ''
-                };
-              }
+              // If no separator, use the whole thing as name
+              return {
+                name: service.trim(),
+                description: ''
+              };
             }
-          })
-          : [];
+          }
+        })
+        : [];
 
-        // Extract color palette information
-        const primaryColor = result.colorPalette?.primary || '#3B82F6';
-        const accentColor = result.colorPalette?.secondary || result.colorPalette?.accent || '#10B981';
-        const backgroundColor = '#F8FAFC'; // Default background
+      // Extract color palette information
+      const primaryColor = result.colorPalette?.primary || '#3B82F6';
+      const accentColor = result.colorPalette?.secondary || result.colorPalette?.accent || '#10B981';
+      const backgroundColor = '#F8FAFC'; // Default background
 
-        // Update the brand profile with comprehensive analysis results
-        updateBrandProfile({
-          // Basic Information
-          businessName: result.businessName || '',
-          websiteUrl,
-          description: result.description,
-          businessType: result.businessType || '',
-          location: result.location || '',
+      // Update the brand profile with comprehensive analysis results
+      updateBrandProfile({
+        // Basic Information
+        businessName: result.businessName || '',
+        websiteUrl,
+        description: result.description,
+        businessType: result.businessType || '',
+        location: result.location || '',
 
-          // Services and Products
-          services: servicesArray,
-          keyFeatures: result.keyFeatures || '',
-          competitiveAdvantages: result.competitiveAdvantages || '',
-          targetAudience: result.targetAudience || 'Target audience not specified on website',
+        // Services and Products
+        services: servicesArray,
+        keyFeatures: result.keyFeatures || '',
+        competitiveAdvantages: result.competitiveAdvantages || '',
+        targetAudience: result.targetAudience || 'Target audience not specified on website',
 
-          // Brand Identity
-          visualStyle: result.visualStyle,
-          writingTone: result.writingTone,
-          contentThemes: result.contentThemes,
+        // Brand Identity
+        visualStyle: result.visualStyle,
+        writingTone: result.writingTone,
+        contentThemes: result.contentThemes,
 
-          // Colors (extracted from AI analysis)
-          primaryColor,
-          accentColor,
-          backgroundColor,
+        // Colors (extracted from AI analysis)
+        primaryColor,
+        accentColor,
+        backgroundColor,
 
-          // Contact Information
-          contactPhone: result.contactInfo?.phone || '',
-          contactEmail: result.contactInfo?.email || '',
-          contactAddress: result.contactInfo?.address || '',
+        // Contact Information
+        contactPhone: result.contactInfo?.phone || '',
+        contactEmail: result.contactInfo?.email || '',
+        contactAddress: result.contactInfo?.address || '',
 
-          // Social Media (if found by AI)
-          facebookUrl: result.socialMedia?.facebook || '',
-          instagramUrl: result.socialMedia?.instagram || '',
-          twitterUrl: result.socialMedia?.twitter || '',
-          linkedinUrl: result.socialMedia?.linkedin || '',
+        // Social Media (if found by AI)
+        facebookUrl: result.socialMedia?.facebook || '',
+        instagramUrl: result.socialMedia?.instagram || '',
+        twitterUrl: result.socialMedia?.twitter || '',
+        linkedinUrl: result.socialMedia?.linkedin || '',
 
-          // Store design examples for future AI reference
-          designExamples: designImageUris,
-        });
+        // Store design examples for future AI reference
+        designExamples: designImageUris,
+      });
 
-        setAnalysisProgress('Analysis complete! Extracted comprehensive brand information.');
-        setAnalysisComplete(true);
+      setAnalysisProgress('Analysis complete! Extracted comprehensive brand information.');
+      setAnalysisComplete(true);
 
-        // Count extracted information for feedback
-        const extractedCount = [
-          result.description,
-          result.businessType,
-          result.services,
-          result.visualStyle,
-          result.writingTone,
-          result.contentThemes,
-          result.targetAudience,
-          result.keyFeatures,
-          result.competitiveAdvantages,
-          result.contactInfo?.phone,
-          result.contactInfo?.email,
-          result.contactInfo?.address,
-          result.socialMedia?.facebook,
-          result.socialMedia?.instagram,
-          result.socialMedia?.twitter,
-          result.socialMedia?.linkedin,
-          result.colorPalette?.primary,
-          result.location
-        ].filter(Boolean).length;
+      // Count extracted information for feedback
+      const extractedCount = [
+        result.description,
+        result.businessType,
+        result.services,
+        result.visualStyle,
+        result.writingTone,
+        result.contentThemes,
+        result.targetAudience,
+        result.keyFeatures,
+        result.competitiveAdvantages,
+        result.contactInfo?.phone,
+        result.contactInfo?.email,
+        result.contactInfo?.address,
+        result.socialMedia?.facebook,
+        result.socialMedia?.instagram,
+        result.socialMedia?.twitter,
+        result.socialMedia?.linkedin,
+        result.colorPalette?.primary,
+        result.location
+      ].filter(Boolean).length;
 
-        toast({
-          title: "🎉 Enhanced Analysis Complete!",
-          description: `AI extracted ${extractedCount} pieces of detailed brand information including target audience, comprehensive services, and color analysis from your designs.`,
-        });
+      toast({
+        title: "🎉 Enhanced Analysis Complete!",
+        description: `AI extracted ${extractedCount} pieces of detailed brand information including target audience, comprehensive services, and color analysis from your designs.`,
+      });
 
-      } catch (error) {
-        // This catch is now for unexpected errors only
-        console.error('Unexpected analysis error:', error);
-        setAnalysisProgress('');
-        setDialogType('error');
-        setDialogMessage('An unexpected error occurred during analysis.');
-        setShowAnalysisDialog(true);
-      } finally {
-        setIsAnalyzing(false);
-      }
     } catch (error) {
-      // This catch is for the outer try block (checking existing analysis)
-      console.error('Error checking existing analysis:', error);
-      setAnalysisProgress('Preparing comprehensive analysis...');
-      // Continue with normal analysis flow
+      // This catch is now for unexpected errors only
+      console.error('Unexpected analysis error:', error);
+      setAnalysisProgress('');
+      setDialogType('error');
+      setDialogMessage('An unexpected error occurred during analysis.');
+      setShowAnalysisDialog(true);
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -831,60 +802,6 @@ export function WebsiteAnalysisStep({
               handleSkipAnalysis();
             }}>
               Continue Manually
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Existing Analysis Dialog */}
-      <AlertDialog open={showExistingDialog} onOpenChange={setShowExistingDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              Analysis Already Available
-            </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-3">
-              <p>
-                Great news! We found an existing analysis for this website from your brand "{existingAnalysis?.businessName}".
-              </p>
-
-              <div className="bg-green-50 p-3 rounded-lg">
-                <p className="text-sm text-green-800">
-                  <strong>Save time!</strong> You can use the existing analysis data instead of running a new analysis.
-                  This will populate all the brand information instantly.
-                </p>
-              </div>
-
-              {existingAnalysis?.lastAnalyzed && (
-                <p className="text-xs text-gray-500">
-                  Last analyzed: {new Date(existingAnalysis.lastAnalyzed).toLocaleDateString()}
-                </p>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>
-              Run New Analysis
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={() => {
-              // Use existing analysis data
-              if (existingAnalysis?.analysisData) {
-                updateBrandProfile({
-                  websiteUrl,
-                  visualStyle: existingAnalysis.analysisData.visualStyle,
-                  writingTone: existingAnalysis.analysisData.writingTone,
-                  contentThemes: existingAnalysis.analysisData.contentThemes,
-                });
-                setAnalysisComplete(true);
-                toast({
-                  title: "Analysis Data Applied!",
-                  description: "Using existing analysis data from your previous brand setup.",
-                });
-              }
-              setShowExistingDialog(false);
-            }}>
-              Use Existing Analysis
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
