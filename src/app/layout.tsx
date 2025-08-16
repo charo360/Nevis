@@ -79,9 +79,11 @@ function ConditionalLayout({ children }: { children: React.ReactNode }) {
     return <div>Loading...</div>;
   }
 
-  const isLandingPage = pathname === '/';
+  // Pages that should NOT show the sidebar
+  const pagesWithoutSidebar = ['/', '/auth'];
+  const shouldHideSidebar = pagesWithoutSidebar.includes(pathname);
 
-  if (isLandingPage) {
+  if (shouldHideSidebar) {
     return <div className="w-full">{children}</div>;
   }
 
