@@ -203,7 +203,7 @@ export function CbrandWizard() {
     // Auto-save to localStorage whenever profile is updated with size check
     try {
       const profileSize = JSON.stringify(updatedProfile).length;
-      const maxSize = 5 * 1024 * 1024; // 5MB limit for localStorage
+      const maxSize = 10 * 1024 * 1024; // 10MB limit for localStorage (increased for larger profiles)
 
       if (profileSize > maxSize) {
         console.warn('Profile too large for auto-save, skipping:', profileSize);

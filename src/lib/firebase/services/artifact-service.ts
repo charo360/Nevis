@@ -86,7 +86,7 @@ export class ArtifactFirebaseService extends DatabaseService<ArtifactDocument> {
   }> {
     // Compress image if it's too large
     let processedFile = file;
-    if (file.type.startsWith('image/') && file.size > 2 * 1024 * 1024) { // 2MB
+    if (file.type.startsWith('image/') && file.size > 5 * 1024 * 1024) { // 5MB (increased threshold for compression)
       processedFile = await compressImage(file, 1920, 1080, 0.9);
     }
 

@@ -29,7 +29,7 @@ import {
 
 // Default upload configuration
 const DEFAULT_UPLOAD_CONFIG: ArtifactUploadConfig = {
-  maxFileSize: 10 * 1024 * 1024, // 10MB
+  maxFileSize: 20 * 1024 * 1024, // 20MB (increased from 10MB for high-quality images)
   allowedTypes: [
     'image/jpeg',
     'image/png',
