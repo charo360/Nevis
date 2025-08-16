@@ -85,7 +85,9 @@ export type GeneratePostFromProfileInput = z.infer<typeof GeneratePostFromProfil
 
 const GeneratePostFromProfileOutputSchema = z.object({
   content: z.string().describe('The primary generated social media post content (the caption).'),
-  imageText: z.string().describe('A brief, business-relevant headline for the image (max 5 words). Must be directly related to the specific business services/products, not generic phrases.'),
+  catchyWords: z.string().describe('Catchy words for the image (max 5 words). Must be directly related to the specific business services/products, not generic phrases. Required for ALL posts.'),
+  subheadline: z.string().optional().describe('Optional subheadline (max 14 words). Add only when it would make the post more effective based on marketing strategy.'),
+  callToAction: z.string().optional().describe('Optional call to action. Add only when it would drive better engagement or conversions based on marketing strategy.'),
   hashtags: z.string().describe('Strategically selected hashtags for the post.'),
   contentVariants: z.array(z.object({
     content: z.string().describe('Alternative caption variant.'),
@@ -145,6 +147,23 @@ export async function generatePostFromProfile(input: GeneratePostFromProfileInpu
 }
 
 
+/**
+ * Combines catchy words, subheadline, and call to action into a single text for image overlay
+ */
+function combineTextComponents(catchyWords: string, subheadline?: string, callToAction?: string): string {
+  const components = [catchyWords];
+
+  if (subheadline && subheadline.trim()) {
+    components.push(subheadline.trim());
+  }
+
+  if (callToAction && callToAction.trim()) {
+    components.push(callToAction.trim());
+  }
+
+  return components.join('\n');
+}
+
 // Define the enhanced text generation prompt
 const enhancedTextGenPrompt = ai.definePrompt({
   name: 'enhancedGeneratePostTextPrompt',
@@ -166,7 +185,9 @@ const enhancedTextGenPrompt = ai.definePrompt({
   output: {
     schema: z.object({
       content: z.string().describe('The primary generated social media post content (the caption).'),
-      imageText: z.string().describe('A brief, business-relevant headline for the image (max 5 words). Must be directly related to the specific business services/products, not generic phrases.'),
+      catchyWords: z.string().describe('Catchy words for the image (max 5 words). Must be directly related to the specific business services/products, not generic phrases. Required for ALL posts.'),
+      subheadline: z.string().optional().describe('Optional subheadline (max 14 words). Add only when it would make the post more effective based on marketing strategy.'),
+      callToAction: z.string().optional().describe('Optional call to action. Add only when it would drive better engagement or conversions based on marketing strategy.'),
       hashtags: z.string().describe('Strategically selected hashtags for the post.'),
       contentVariants: z.array(z.object({
         content: z.string().describe('Alternative caption variant.'),
@@ -272,8 +293,8 @@ async function generateImageForVariant(
     - **Logo Placement:** The provided logo must be integrated naturally into the design. It should be clearly visible but not overpower the main subject. For example, it could be on a product, a sign, or as a subtle watermark.
 
     **CONTENT REQUIREMENTS:**
-    - **Primary Subject:** The core subject of the image should be directly inspired by: "${textOutput.imageText}"
-    - **Text Overlay:** The following text must be overlaid on the image in a stylish, readable font: "${textOutput.imageText}". It is critical that the text is clearly readable, well-composed, and not cut off or truncated. The entire text must be visible.
+    - **Primary Subject:** The core subject of the image should be directly inspired by: "${textOutput.catchyWords}"
+    - **Text Overlay:** The following text must be overlaid on the image in a stylish, readable font: "${combineTextComponents(textOutput.catchyWords, textOutput.subheadline, textOutput.callToAction)}". It is critical that the text is clearly readable, well-composed, and not cut off or truncated. The entire text must be visible.
     - **Cultural Representation:** If the image includes people, they should be representative of the location: ${input.location}. For example, for a post in Africa, depict Black people; for Europe, White people; for the USA, a diverse mix of ethnicities. Be thoughtful and authentic in your representation.
 
     ${QUALITY_ENHANCEMENT_INSTRUCTIONS}`;
@@ -383,7 +404,7 @@ async function generateImageForVariant(
             variant.platform,
             input.visualStyle,
             followBrandColors && input.primaryColor ? colorInstructions : undefined,
-            `Create engaging design for: ${textOutput.imageText}`
+            `Create engaging design for: ${textOutput.catchyWords}`
           );
 
           // If quality is acceptable, use this design
@@ -575,10 +596,19 @@ const generatePostFromProfileFlow = ai.defineFlow(
 
     const variants = await Promise.all(imagePromises);
 
-    // Step 11: Combine results with intelligently selected context
+    // Step 11: Combine text components for image overlay
+    const combinedImageText = combineTextComponents(
+      textOutput.catchyWords,
+      textOutput.subheadline,
+      textOutput.callToAction
+    );
+
+    // Step 12: Combine results with intelligently selected context
     return {
       content: textOutput.content,
-      imageText: textOutput.imageText,
+      catchyWords: textOutput.catchyWords,
+      subheadline: textOutput.subheadline,
+      callToAction: textOutput.callToAction,
       hashtags: textOutput.hashtags,
       contentVariants: textOutput.contentVariants,
       hashtagAnalysis: {
