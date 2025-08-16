@@ -140,47 +140,42 @@ function buildDALLE3Prompt(input: OpenAIEnhancedDesignInput): string {
   // Enhanced platform-specific optimization
   const platformSpecs = getPlatformSpecifications(platform);
 
-  // Build advanced prompt optimized for DALL-E 3's latest capabilities
-  const prompt = `🚨🚨🚨 EMERGENCY OVERRIDE - CRITICAL TEXT CONTROL 🚨🚨🚨
+  // Get platform-specific guidelines
+  const platformGuidelines = PLATFORM_SPECIFIC_GUIDELINES[platform.toLowerCase() as keyof typeof PLATFORM_SPECIFIC_GUIDELINES] || PLATFORM_SPECIFIC_GUIDELINES.instagram;
 
-⛔ ABSOLUTE PROHIBITION - NO EXCEPTIONS:
-- NEVER add "Flex Your Finances" or any financial terms
-- NEVER add "Payroll Banking Simplified" or banking phrases
-- NEVER add "Banking Made Easy" or similar taglines
-- NEVER add company descriptions or service explanations
-- NEVER add marketing copy or promotional text
-- NEVER add placeholder text or sample content
-- NEVER create fake headlines or taglines
-- NEVER add descriptive text about the business
-- NEVER add ANY text except what is specified below
+  // Get business-specific design DNA
+  const businessDNA = BUSINESS_TYPE_DESIGN_DNA[businessType.toLowerCase() as keyof typeof BUSINESS_TYPE_DESIGN_DNA] || BUSINESS_TYPE_DESIGN_DNA.default;
 
-🎯 ONLY THIS TEXT IS ALLOWED: "${imageText}"
-🎯 REPEAT: ONLY THIS TEXT: "${imageText}"
-🎯 NO OTHER TEXT PERMITTED: "${imageText}"
+  // Build rich, diverse design prompt like standard generation
+  const prompt = `You are a world-class creative director and visual designer with expertise in social media marketing, brand design, and visual psychology.
 
-⚠️ CRITICAL INSTRUCTION: Use ONLY the text "${imageText}" - DO NOT add any other text.
+**DESIGN BRIEF:**
+Create a professional, high-impact social media design for a ${businessType} business.
+Target Platform: ${platform} | Aspect Ratio: 1:1 (1080x1080px)
+Visual Style: ${visualStyle} | Location: ${brandProfile.location || 'Global'}
 
-Create a stunning, professional ${platform} social media post for a ${businessType} business using DALL-E 3's advanced capabilities.
+**TEXT CONTENT TO INCLUDE:**
+Primary Text: "${imageText}"
+${brandProfile.businessName ? `Business Name: "${brandProfile.businessName}"` : ''}
 
-🚫 ABSOLUTE TEXT CONTROL - CRITICAL REQUIREMENT:
-ONLY USE THIS EXACT TEXT: "${imageText}"
+${ADVANCED_DESIGN_PRINCIPLES}
 
-🎯 CRITICAL TEXT REQUIREMENT (GPT-IMAGE 1 ULTRA-PRECISION MODE):
-"${imageText}"
-- Render ONLY this exact text - ABSOLUTELY NO additional text
-- CLEAR TEXT ONLY: All text must be clear, readable, and well-formed
-- NO GIBBERISH: Do not use corrupted, garbled, or nonsensical character sequences
-- NO MALFORMED TEXT: Avoid random symbols or unreadable character combinations
-- PROPER FORMATTING: Ensure all text is properly formatted and legible
-- EXACT TEXT ONLY: Use only the provided text "${imageText}" and nothing else
-- SMALL FONT SIZE MASTERY: When using small font sizes, ensure every character is crystal-clear and perfectly legible
-- TINY TEXT RENDERING: Even at 8pt, 10pt, 12pt font sizes, every letter must be sharp and readable
-- MICRO-TYPOGRAPHY: Perfect character formation even when text appears small in the overall design
-- SMALL FONT ANTI-ALIASING: Advanced smoothing specifically optimized for small font rendering
-- PIXEL-LEVEL PRECISION: Each character pixel perfectly placed for maximum clarity at small sizes
-- HIGH-DPI RENDERING: Render small text as if viewed on a high-resolution display (300+ DPI)
-- CONTRAST BOOST: Extra contrast for small text to ensure readability
-- FONT WEIGHT OPTIMIZATION: Slightly bolder rendering for small fonts to maintain clarity
+${platformGuidelines}
+
+${businessDNA}
+
+**BRAND GUIDELINES:**
+${colorInstructions}
+${peopleInstructions}
+
+**PLATFORM SPECIFICATIONS:**
+${platformSpecs}
+
+**TEXT RENDERING REQUIREMENTS:**
+- Use the provided text: "${imageText}"
+- Ensure perfect text clarity and readability
+- High-quality typography with proper spacing
+- Professional font choices that match the visual style
 
 🧑 PERFECT HUMAN RENDERING (MANDATORY):
 - Complete, symmetrical faces with all features present

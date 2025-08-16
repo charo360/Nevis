@@ -9,6 +9,20 @@ import {
   PLATFORM_MODERN_OPTIMIZATIONS,
   BUSINESS_TYPE_MODERN_DNA
 } from './prompts/modern-design-prompts';
+import {
+  ADVANCED_DESIGN_PRINCIPLES,
+  PLATFORM_SPECIFIC_GUIDELINES,
+  BUSINESS_TYPE_DESIGN_DNA,
+  QUALITY_ENHANCEMENT_INSTRUCTIONS
+} from './prompts/advanced-design-prompts';
+
+/**
+ * Helper function to get MIME type from data URI
+ */
+function getMimeTypeFromDataURI(dataUri: string): string {
+  const match = dataUri.match(/^data:([^;]+);/);
+  return match ? match[1] : 'image/png';
+}
 
 export interface GeminiHDEnhancedDesignInput {
   businessType: string;
@@ -83,10 +97,35 @@ export async function generateGeminiHDEnhancedDesign(
     console.log('📏 Prompt length:', enhancedPrompt.length);
     console.log('🎯 Full prompt preview:', enhancedPrompt.substring(0, 200) + '...');
 
+    // Build prompt parts array with media inputs like standard generation
+    const promptParts: any[] = [{ text: enhancedPrompt }];
+
+    // Add logo if available
+    if (input.brandProfile.logoDataUrl) {
+      promptParts.push({
+        media: {
+          url: input.brandProfile.logoDataUrl,
+          contentType: getMimeTypeFromDataURI(input.brandProfile.logoDataUrl)
+        }
+      });
+    }
+
+    // Add design examples if available and strict consistency is enabled
+    if (input.brandConsistency?.strictConsistency && input.brandProfile.designExamples) {
+      input.brandProfile.designExamples.slice(0, 3).forEach(example => {
+        promptParts.push({
+          media: {
+            url: example,
+            contentType: getMimeTypeFromDataURI(example)
+          }
+        });
+      });
+    }
+
     // Generate image with Gemini 2.0 Flash with HD quality settings
     const { media } = await generateWithRetry({
       model: 'googleai/gemini-2.0-flash-preview-image-generation',
-      prompt: enhancedPrompt,
+      prompt: promptParts,
       config: {
         responseModalities: ['TEXT', 'IMAGE'],
       },
@@ -150,42 +189,42 @@ function buildGeminiHDPrompt(input: GeminiHDEnhancedDesignInput): string {
   // Enhanced platform-specific optimization
   const platformSpecs = getPlatformSpecifications(platform);
 
-  // Build advanced prompt optimized for Gemini 2.0 Flash HD capabilities
-  const prompt = `🚨🚨🚨 EMERGENCY OVERRIDE - CRITICAL TEXT CONTROL 🚨🚨🚨
+  // Get platform-specific guidelines
+  const platformGuidelines = PLATFORM_SPECIFIC_GUIDELINES[platform.toLowerCase() as keyof typeof PLATFORM_SPECIFIC_GUIDELINES] || PLATFORM_SPECIFIC_GUIDELINES.instagram;
 
-⛔ ABSOLUTE PROHIBITION - NO EXCEPTIONS:
-- NEVER add "Flex Your Finances" or any financial terms
-- NEVER add "Payroll Banking Simplified" or banking phrases
-- NEVER add "Banking Made Easy" or similar taglines
-- NEVER add company descriptions or service explanations
-- NEVER add marketing copy or promotional text
-- NEVER add placeholder text or sample content
-- NEVER create fake headlines or taglines
-- NEVER add descriptive text about the business
-- NEVER add ANY text except what is specified below
+  // Get business-specific design DNA
+  const businessDNA = BUSINESS_TYPE_DESIGN_DNA[businessType.toLowerCase() as keyof typeof BUSINESS_TYPE_DESIGN_DNA] || BUSINESS_TYPE_DESIGN_DNA.default;
 
-🎯 ONLY THIS TEXT IS ALLOWED: "${imageText}"
-🎯 REPEAT: ONLY THIS TEXT: "${imageText}"
-🎯 NO OTHER TEXT PERMITTED: "${imageText}"
+  // Build rich, diverse design prompt like standard generation
+  const prompt = `You are a world-class creative director and visual designer with expertise in social media marketing, brand design, and visual psychology.
 
-⚠️ CRITICAL INSTRUCTION: Use ONLY the text "${imageText}" - DO NOT add any other text.
+**DESIGN BRIEF:**
+Create a professional, high-impact social media design for a ${businessType} business.
+Target Platform: ${platform} | Aspect Ratio: 1:1 (1080x1080px)
+Visual Style: ${visualStyle} | Location: ${brandProfile.location || 'Global'}
 
-Create a stunning, professional ${platform} social media post for a ${businessType} business using Gemini 2.0 Flash's advanced HD capabilities.
+**TEXT CONTENT TO INCLUDE:**
+Primary Text: "${imageText}"
+${brandProfile.businessName ? `Business Name: "${brandProfile.businessName}"` : ''}
 
-🚫 ABSOLUTE TEXT CONTROL - CRITICAL REQUIREMENT:
-ONLY USE THIS EXACT TEXT: "${imageText}"
+${ADVANCED_DESIGN_PRINCIPLES}
 
-🎯 ULTRA-PRECISION TEXT RENDERING:
-"${imageText}"
-- Render ONLY this exact text - ABSOLUTELY NO additional text
-- CLEAR TEXT ONLY: All text must be clear, readable, and well-formed
-- NO GIBBERISH: Do not use corrupted, garbled, or nonsensical character sequences
-- NO MALFORMED TEXT: Avoid random symbols or unreadable character combinations
-- PROPER FORMATTING: Ensure all text is properly formatted and legible
-- ULTRA-HD TEXT RENDERING: Perfect character formation at any font size
-- SMALL FONT MASTERY: Crystal-clear rendering at any size
-- HIGH-DPI RENDERING: 300+ DPI quality
-- PIXEL-PERFECT PRECISION: Each character perfectly placed
+${platformGuidelines}
+
+${businessDNA}
+
+**BRAND GUIDELINES:**
+${colorInstructions}
+${peopleInstructions}
+
+**PLATFORM SPECIFICATIONS:**
+${platformSpecs}
+
+**TEXT RENDERING REQUIREMENTS:**
+- Use the provided text: "${imageText}"
+- Ensure perfect text clarity and readability
+- High-quality typography with proper spacing
+- Professional font choices that match the visual style
 
 🧑 PERFECT HUMAN RENDERING (MANDATORY):
 - Complete, symmetrical faces with all features present
@@ -445,9 +484,34 @@ export async function generateGeminiHDEnhancedDesignWithFallback(
       const startTime = Date.now();
       const enhancedPrompt = buildGeminiHDPrompt(input);
 
+      // Build prompt parts array with media inputs
+      const promptParts: any[] = [{ text: enhancedPrompt }];
+
+      // Add logo if available
+      if (input.brandProfile.logoDataUrl) {
+        promptParts.push({
+          media: {
+            url: input.brandProfile.logoDataUrl,
+            contentType: getMimeTypeFromDataURI(input.brandProfile.logoDataUrl)
+          }
+        });
+      }
+
+      // Add design examples if available
+      if (input.brandConsistency?.strictConsistency && input.brandProfile.designExamples) {
+        input.brandProfile.designExamples.slice(0, 3).forEach(example => {
+          promptParts.push({
+            media: {
+              url: example,
+              contentType: getMimeTypeFromDataURI(example)
+            }
+          });
+        });
+      }
+
       const { media } = await generateWithRetry({
         model: 'googleai/gemini-2.0-flash-preview-image-generation',
-        prompt: enhancedPrompt,
+        prompt: promptParts,
         config: {
           responseModalities: ['TEXT', 'IMAGE'],
         },
