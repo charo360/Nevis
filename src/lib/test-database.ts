@@ -17,7 +17,7 @@ export async function testDatabaseConnection(): Promise<boolean> {
         platform: 'instagram',
         imageUrl: 'https://via.placeholder.com/400x400/blue/white?text=Test+Post',
       }],
-      imageText: 'Test Post',
+      catchyWords: 'Test Post',
       platform: 'instagram',
       postType: 'post',
       businessType: 'test',

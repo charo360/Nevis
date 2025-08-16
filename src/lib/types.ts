@@ -111,7 +111,9 @@ export type GeneratedPost = {
     platform: Platform;
     imageUrl: string;
   }[];
-  imageText: string;
+  catchyWords: string;
+  subheadline?: string;
+  callToAction?: string;
   videoUrl?: string;
   imageUrl?: string;
   // Platform and post type

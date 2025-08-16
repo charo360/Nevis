@@ -130,44 +130,59 @@ Generate a comprehensive social media post with these components:
    - Length optimized for platform and engagement
    - Feel like it was written by a real person, not AI
 
-2. **IMAGE TEXT (imageText)**:
-   - Create relevant, business-focused headline (3-5 words max)
+2. **CATCHY WORDS (catchyWords)**:
+   - Create relevant, business-focused catchy words (max 5 words)
    - MUST be directly related to the specific business services/products
    - Use clear, professional language that matches the business type
    - Focus on the business value proposition or key service
    - Avoid generic phrases like "Banking Made Easy" or random financial terms
    - Examples: For a restaurant: "Fresh Daily Specials", For a gym: "Transform Your Body", For a salon: "Expert Hair Care"
-   - Complement caption without repetition
+   - Required for ALL posts - this is the main visual text
    - Optimize for visual impact and business relevance
 
-3. **HASHTAGS**:
+3. **SUBHEADLINE (subheadline)** - OPTIONAL:
+   - Add only when it would make the post more effective
+   - Maximum 14 words
+   - Use your marketing expertise to decide when needed
+   - Should complement the catchy words and enhance the message
+   - Examples: When explaining a complex service, highlighting a special offer, or providing context
+   - Skip if the catchy words and caption are sufficient
+
+4. **CALL TO ACTION (callToAction)** - OPTIONAL:
+   - Add only when it would drive better engagement or conversions
+   - Use your marketing expertise to decide when needed
+   - Should be specific and actionable
+   - Examples: "Book Now", "Call Today", "Visit Us", "Learn More", "Get Started"
+   - Skip if the post is more about awareness or engagement rather than direct action
+
+5. **HASHTAGS**:
    - Mix trending hashtags with niche industry tags
    - Include location-specific and cultural hashtags
    - Balance high-competition and low-competition tags
    - Ensure cultural sensitivity and appropriateness
    - Optimize quantity for platform (Instagram: 20-30, LinkedIn: 3-5, etc.)
 
-4. **CONTENT VARIANTS (contentVariants)**:
+6. **CONTENT VARIANTS (contentVariants)**:
    Generate 2-3 alternative approaches:
-   
+
    **Variant 1 - Trending Topic Angle**:
    - Hook into current trending conversation
    - Connect trend to business value naturally
    - Use viral content patterns
    - Include shareability factors
-   
+
    **Variant 2 - Cultural Connection Angle**:
    - Start with local cultural reference
    - Show deep community understanding
    - Use location-specific language naturally
    - Build authentic local connections
-   
+
    **Variant 3 - Competitor Differentiation Angle**:
    - Address common industry pain points differently
    - Highlight unique business approach
    - Use contrarian but respectful positioning
    - Show authentic expertise and experience
-   
+
    For each variant, provide:
    - The alternative caption content
    - The strategic approach used

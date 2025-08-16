@@ -113,7 +113,9 @@ export async function generateContentAction(
       hashtags: postDetails.hashtags,
       status: 'generated',
       variants: postDetails.variants,
-      imageText: postDetails.imageText,
+      catchyWords: postDetails.catchyWords,
+      subheadline: postDetails.subheadline,
+      callToAction: postDetails.callToAction,
       // Include enhanced AI features
       contentVariants: postDetails.contentVariants,
       hashtagAnalysis: postDetails.hashtagAnalysis,
@@ -132,7 +134,7 @@ export async function generateContentAction(
 
 export async function generateVideoContentAction(
   profile: BrandProfile,
-  imageText: string,
+  catchyWords: string,
   postContent: string,
 ): Promise<{ videoUrl: string }> {
   try {
@@ -140,7 +142,7 @@ export async function generateVideoContentAction(
       businessType: profile.businessType,
       location: profile.location,
       visualStyle: profile.visualStyle,
-      imageText: imageText,
+      imageText: catchyWords, // Use catchyWords as imageText for video generation
       postContent: postContent,
     });
     return { videoUrl: result.videoUrl };
@@ -422,7 +424,7 @@ export async function generateContentWithArtifactsAction(
     const exactUseArtifacts = targetArtifacts.filter(a => a.usageType === 'exact-use');
     const referenceArtifacts = targetArtifacts.filter(a => a.usageType === 'reference');
 
-    let enhancedImageText = basePost.imageText || 'Engaging Content';
+    let enhancedImageText = basePost.catchyWords || 'Engaging Content';
     let enhancedContent = basePost.content;
 
     // Collect usage instructions from artifacts

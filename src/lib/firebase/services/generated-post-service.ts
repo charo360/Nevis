@@ -103,7 +103,9 @@ export class GeneratedPostService extends DatabaseService<GeneratedPostDocument>
         platform: doc.platform as Platform,
         imageUrl: doc.content.imageUrl || '',
       }],
-      imageText: '', // Not stored in Firestore, legacy field
+      catchyWords: '', // Not stored in Firestore, will be populated from new posts
+      subheadline: undefined, // Not stored in Firestore, will be populated from new posts
+      callToAction: undefined, // Not stored in Firestore, will be populated from new posts
     };
   }
 

@@ -183,17 +183,17 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   };
 
   const handleGenerateVideo = async () => {
-    if (!post.imageText) {
+    if (!post.catchyWords) {
       toast({
         variant: "destructive",
         title: "Cannot Generate Video",
-        description: "The post is missing the required image text.",
+        description: "The post is missing the required catchy words.",
       });
       return;
     }
     setIsGeneratingVideo(true);
     try {
-      const result = await generateVideoContentAction(brandProfile, post.imageText, post.content);
+      const result = await generateVideoContentAction(brandProfile, post.catchyWords, post.content);
       const newVideoUrl = result.videoUrl;
       setVideoUrl(newVideoUrl);
       await onPostUpdated({ ...post, videoUrl: newVideoUrl });
