@@ -8,15 +8,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { 
-  Sparkles, 
-  Zap, 
-  Mail, 
-  Lock, 
-  User, 
+import {
+  Sparkles,
+  Zap,
+  Mail,
+  Lock,
+  User,
   ArrowLeft,
   Loader2,
-  CheckCircle 
+  CheckCircle
 } from 'lucide-react';
 import { useFirebaseAuth } from '@/hooks/use-firebase-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -25,12 +25,12 @@ export default function AuthPage() {
   const router = useRouter();
   const { signIn, signUp, signInAnonymous, loading } = useFirebaseAuth();
   const { toast } = useToast();
-  
+
   const [signInData, setSignInData] = useState({
     email: '',
     password: ''
   });
-  
+
   const [signUpData, setSignUpData] = useState({
     name: '',
     email: '',
@@ -46,7 +46,7 @@ export default function AuthPage() {
         title: "Welcome back!",
         description: "You've been signed in successfully.",
       });
-      router.push('/brand-profile');
+      router.push('/dashboard');
     } catch (error) {
       toast({
         variant: "destructive",
@@ -58,7 +58,7 @@ export default function AuthPage() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (signUpData.password !== signUpData.confirmPassword) {
       toast({
         variant: "destructive",
@@ -72,9 +72,9 @@ export default function AuthPage() {
       await signUp(signUpData.email, signUpData.password, signUpData.name);
       toast({
         title: "Account created!",
-        description: "Welcome to Crevo! Let's set up your brand profile.",
+        description: "Welcome to Crevo! You can now access your dashboard.",
       });
-      router.push('/brand-profile');
+      router.push('/dashboard');
     } catch (error) {
       toast({
         variant: "destructive",
@@ -89,9 +89,9 @@ export default function AuthPage() {
       await signInAnonymous();
       toast({
         title: "Demo mode activated!",
-        description: "You can now try all features without creating an account.",
+        description: "Welcome to your dashboard! You can explore all features.",
       });
-      router.push('/brand-profile');
+      router.push('/dashboard');
     } catch (error) {
       toast({
         variant: "destructive",
@@ -149,7 +149,7 @@ export default function AuthPage() {
                 Try Demo Mode (No Account Needed)
               </Button>
             </div>
-            
+
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <Separator className="w-full" />
@@ -184,7 +184,7 @@ export default function AuthPage() {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="signin-password">Password</Label>
                     <div className="relative">
@@ -201,9 +201,9 @@ export default function AuthPage() {
                     </div>
                   </div>
 
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
+                  <Button
+                    type="submit"
+                    className="w-full"
                     disabled={loading}
                   >
                     {loading ? (
@@ -247,7 +247,7 @@ export default function AuthPage() {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Password</Label>
                     <div className="relative">
@@ -280,9 +280,9 @@ export default function AuthPage() {
                     </div>
                   </div>
 
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
+                  <Button
+                    type="submit"
+                    className="w-full"
                     disabled={loading}
                   >
                     {loading ? (
