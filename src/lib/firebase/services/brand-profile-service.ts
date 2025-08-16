@@ -221,51 +221,7 @@ export class BrandProfileService extends DatabaseService<BrandProfileDocument> {
     return this.fromFirestoreDocument(doc);
   }
 
-  // Check if a website has already been analyzed
-  async checkExistingAnalysis(websiteUrl: string, userId: string): Promise<any | null> {
-    try {
-      const normalizedUrl = this.normalizeUrl(websiteUrl);
-      const q = query(
-        collection(db, 'brandProfiles'),
-        where('userId', '==', userId),
-        where('analysisData.websiteUrl', '==', normalizedUrl),
-        where('analysisData.hasBeenAnalyzed', '==', true),
-        limit(1)
-      );
 
-      const querySnapshot = await getDocs(q);
-
-      if (!querySnapshot.empty) {
-        const doc = querySnapshot.docs[0];
-        const data = doc.data();
-        return {
-          id: doc.id,
-          businessName: data.name,
-          analysisData: data.analysisData,
-          lastAnalyzed: data.analysisData?.lastAnalyzed
-        };
-      }
-
-      return null;
-    } catch (error) {
-      console.error('Error checking existing analysis:', error);
-      return null;
-    }
-  }
-
-  // Normalize URL for comparison
-  private normalizeUrl(url: string): string {
-    try {
-      let normalizedUrl = url.trim().toLowerCase();
-      if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
-        normalizedUrl = 'https://' + normalizedUrl;
-      }
-      const urlObj = new URL(normalizedUrl);
-      return urlObj.hostname.replace(/^www\./, '');
-    } catch {
-      return url.trim().toLowerCase();
-    }
-  }
 }
 
 // Export singleton instance
