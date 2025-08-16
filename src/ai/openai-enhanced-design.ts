@@ -1,5 +1,13 @@
 import OpenAI from 'openai';
 import { BrandProfile } from '@/lib/types';
+import {
+  MODERN_DESIGN_TRENDS_2024_2025,
+  MODERN_COLOR_PSYCHOLOGY_2024,
+  MODERN_LAYOUT_PRINCIPLES,
+  MODERN_VISUAL_EFFECTS,
+  PLATFORM_MODERN_OPTIMIZATIONS,
+  BUSINESS_TYPE_MODERN_DNA
+} from './prompts/modern-design-prompts';
 
 // Initialize OpenAI client with latest configuration
 const openai = new OpenAI({
@@ -181,9 +189,38 @@ ONLY USE THIS EXACT TEXT: "${imageText}"
 - High-quality skin textures and realistic lighting
 - Diverse representation with authentic appearance
 
-🎨 ADVANCED DESIGN SPECIFICATIONS:
-- Visual Style: ${visualStyle} with modern, premium aesthetics
-- Color Palette: ${colorInstructions}
+🎨 ULTRA-MODERN DESIGN SPECIFICATIONS (2024-2025 TRENDS):
+
+**CONTEMPORARY VISUAL STYLE:**
+- ${visualStyle} with cutting-edge 2024-2025 design trends
+- Implement glassmorphism effects: frosted glass backgrounds with subtle transparency
+- Use neumorphism/soft UI: subtle shadows and highlights for depth
+- Apply modern gradient overlays: multi-directional, vibrant gradients
+- Include contemporary typography: bold, clean sans-serif fonts with perfect spacing
+- Modern color psychology: ${colorInstructions}
+
+**ADVANCED LAYOUT & COMPOSITION:**
+- Asymmetrical layouts with dynamic visual hierarchy
+- Generous white space with intentional negative space design
+- Floating elements with subtle drop shadows and depth
+- Modern grid systems with broken grid elements for visual interest
+- Contemporary card-based layouts with rounded corners and elevation
+
+**CUTTING-EDGE VISUAL EFFECTS:**
+- Glassmorphism: Semi-transparent backgrounds with blur effects
+- Gradient meshes: Complex, multi-point gradients for depth
+- Subtle animations implied through motion blur and dynamic positioning
+- Modern shadows: Soft, realistic shadows with multiple light sources
+- Contemporary textures: Subtle noise, grain, or organic patterns
+
+**2024-2025 DESIGN TRENDS:**
+- Bold, oversized typography with creative font pairings
+- Vibrant, saturated color palettes with high contrast
+- Organic shapes and fluid forms mixed with geometric elements
+- Modern iconography: minimal, line-based icons with perfect pixel alignment
+- Contemporary photography style: high contrast, vibrant, authentic moments
+
+**BRAND INTEGRATION:**
 - Brand Identity: ${brandProfile.businessName || businessType}
 - Platform Optimization: ${platformSpecs}
 - Human Elements: ${peopleInstructions}
@@ -202,6 +239,24 @@ ONLY USE THIS EXACT TEXT: "${imageText}"
 - FLAWLESS RENDERING: No deformations, missing parts, or visual errors
 - PHOTOREALISTIC QUALITY: Magazine-level professional appearance
 - TEXT LEGIBILITY: All text sizes optimized for perfect readability and clarity
+
+🎨 MODERN DESIGN TRENDS (2024-2025):
+${MODERN_DESIGN_TRENDS_2024_2025}
+
+🌈 CONTEMPORARY COLOR PSYCHOLOGY:
+${MODERN_COLOR_PSYCHOLOGY_2024}
+
+📐 MODERN LAYOUT PRINCIPLES:
+${MODERN_LAYOUT_PRINCIPLES}
+
+✨ ADVANCED VISUAL EFFECTS:
+${MODERN_VISUAL_EFFECTS}
+
+📱 PLATFORM-SPECIFIC MODERN OPTIMIZATION:
+${PLATFORM_MODERN_OPTIMIZATIONS[platform.toLowerCase() as keyof typeof PLATFORM_MODERN_OPTIMIZATIONS] || PLATFORM_MODERN_OPTIMIZATIONS.instagram}
+
+🏢 BUSINESS-SPECIFIC MODERN DNA:
+${BUSINESS_TYPE_MODERN_DNA[businessType.toLowerCase() as keyof typeof BUSINESS_TYPE_MODERN_DNA] || BUSINESS_TYPE_MODERN_DNA.tech}
 
 ${artifactInstructions ? `SPECIAL INSTRUCTIONS FROM UPLOADED CONTENT:
 ${artifactInstructions}
