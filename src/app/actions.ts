@@ -13,17 +13,30 @@ import { generateEnhancedDesign } from "@/ai/gemini-2.5-design";
 
 // --- AI Flow Actions ---
 
+type AnalysisResult = {
+  success: true;
+  data: BrandAnalysisResult;
+} | {
+  success: false;
+  error: string;
+  errorType: 'blocked' | 'timeout' | 'error';
+};
+
 export async function analyzeBrandAction(
   websiteUrl: string,
   designImageUris: string[],
-): Promise<BrandAnalysisResult> {
+): Promise<AnalysisResult> {
   try {
     console.log("🔍 Starting brand analysis for URL:", websiteUrl);
     console.log("🖼️ Design images count:", designImageUris.length);
 
     // Validate URL format
     if (!websiteUrl || !websiteUrl.trim()) {
-      throw new Error("Website URL is required");
+      return {
+        success: false,
+        error: "Website URL is required",
+        errorType: 'error'
+      };
     }
 
     // Ensure URL has protocol
@@ -42,24 +55,47 @@ export async function analyzeBrandAction(
     console.log("🔍 Result keys:", result ? Object.keys(result) : "No result");
 
     if (!result) {
-      throw new Error("Analysis returned empty result");
+      return {
+        success: false,
+        error: "Analysis returned empty result",
+        errorType: 'error'
+      };
     }
 
-    return result;
+    return {
+      success: true,
+      data: result
+    };
   } catch (error) {
     console.error("❌ Error analyzing brand:", error);
 
-    // Provide more specific error messages but still throw for the component to handle
+    // Return structured error response instead of throwing
     const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
 
     if (errorMessage.includes('fetch') || errorMessage.includes('403') || errorMessage.includes('blocked')) {
-      throw new Error("Website blocks automated access. This is common for security reasons.");
+      return {
+        success: false,
+        error: "Website blocks automated access. This is common for security reasons.",
+        errorType: 'blocked'
+      };
     } else if (errorMessage.includes('timeout')) {
-      throw new Error("Website analysis timed out. Please try again or check if the website is accessible.");
+      return {
+        success: false,
+        error: "Website analysis timed out. Please try again or check if the website is accessible.",
+        errorType: 'timeout'
+      };
     } else if (errorMessage.includes('CORS')) {
-      throw new Error("Website blocks automated access. This is common for security reasons.");
+      return {
+        success: false,
+        error: "Website blocks automated access. This is common for security reasons.",
+        errorType: 'blocked'
+      };
     } else {
-      throw new Error(`Analysis failed: ${errorMessage}`);
+      return {
+        success: false,
+        error: `Analysis failed: ${errorMessage}`,
+        errorType: 'error'
+      };
     }
   }
 }
