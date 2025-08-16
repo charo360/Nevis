@@ -79,7 +79,7 @@ function ConditionalLayout({ children }: { children: React.ReactNode }) {
     return <div>Loading...</div>;
   }
 
-  // Pages that should NOT show the sidebar
+  // Pages that should NOT show the sidebar (public pages only)
   const pagesWithoutSidebar = ['/', '/auth'];
   const shouldHideSidebar = pagesWithoutSidebar.includes(pathname);
 
