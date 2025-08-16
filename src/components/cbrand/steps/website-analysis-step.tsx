@@ -6,8 +6,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Globe, Sparkles, Upload, X, CheckCircle } from 'lucide-react';
+import { Loader2, Globe, Sparkles, Upload, X, CheckCircle, Shield, AlertTriangle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { CompleteBrandProfile } from '../cbrand-wizard';
 
 interface WebsiteAnalysisStepProps {
@@ -27,6 +37,11 @@ export function WebsiteAnalysisStep({
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState('');
   const [analysisError, setAnalysisError] = useState('');
+
+  // Dialog states for friendly error handling
+  const [showAnalysisDialog, setShowAnalysisDialog] = useState(false);
+  const [dialogType, setDialogType] = useState<'blocked' | 'timeout' | 'error'>('error');
+  const [dialogMessage, setDialogMessage] = useState('');
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
@@ -214,14 +229,24 @@ export function WebsiteAnalysisStep({
 
     } catch (error) {
       console.error('Analysis error:', error);
-      setAnalysisError((error as Error).message);
       setAnalysisProgress('');
 
-      toast({
-        variant: "destructive",
-        title: "Analysis Failed",
-        description: `Failed to analyze website: ${(error as Error).message}. Please check the URL and try again.`,
-      });
+      const errorMessage = (error as Error).message.toLowerCase();
+
+      // Determine dialog type and message based on error
+      if (errorMessage.includes('403') || errorMessage.includes('blocked') || errorMessage.includes('cors')) {
+        setDialogType('blocked');
+        setDialogMessage('This website blocks automated analysis for security reasons. This is completely normal and happens with many professional websites.');
+      } else if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
+        setDialogType('timeout');
+        setDialogMessage('The website took too long to respond. This might be due to slow loading or server issues.');
+      } else {
+        setDialogType('error');
+        setDialogMessage('We encountered an issue while analyzing this website. This can happen for various technical reasons.');
+      }
+
+      // Show friendly dialog instead of error toast
+      setShowAnalysisDialog(true);
     } finally {
       setIsAnalyzing(false);
     }
@@ -725,6 +750,64 @@ export function WebsiteAnalysisStep({
           Continue to Brand Details
         </Button>
       </div>
+
+      {/* Friendly Analysis Dialog */}
+      <AlertDialog open={showAnalysisDialog} onOpenChange={setShowAnalysisDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              {dialogType === 'blocked' && <Shield className="h-5 w-5 text-blue-500" />}
+              {dialogType === 'timeout' && <AlertTriangle className="h-5 w-5 text-yellow-500" />}
+              {dialogType === 'error' && <AlertTriangle className="h-5 w-5 text-orange-500" />}
+
+              {dialogType === 'blocked' && 'Website Analysis Blocked'}
+              {dialogType === 'timeout' && 'Analysis Timed Out'}
+              {dialogType === 'error' && 'Analysis Unavailable'}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>{dialogMessage}</p>
+
+              {dialogType === 'blocked' && (
+                <div className="bg-blue-50 p-3 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <strong>Don't worry!</strong> Many professional websites block automated tools for security.
+                    You can still create an amazing brand profile by filling in the details manually.
+                  </p>
+                </div>
+              )}
+
+              {dialogType === 'timeout' && (
+                <div className="bg-yellow-50 p-3 rounded-lg">
+                  <p className="text-sm text-yellow-800">
+                    <strong>No problem!</strong> You can try again later or proceed manually.
+                    The manual setup gives you full control over your brand information.
+                  </p>
+                </div>
+              )}
+
+              {dialogType === 'error' && (
+                <div className="bg-orange-50 p-3 rounded-lg">
+                  <p className="text-sm text-orange-800">
+                    <strong>That's okay!</strong> Technical issues happen sometimes.
+                    You can create an excellent brand profile by entering the information yourself.
+                  </p>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setWebsiteUrl('')}>
+              Try Different Website
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              setShowAnalysisDialog(false);
+              handleSkipAnalysis();
+            }}>
+              Continue Manually
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
