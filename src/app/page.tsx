@@ -31,9 +31,9 @@ export default function HomePage() {
   }, []);
 
   const handleGetStarted = () => {
-    console.log('Get Started clicked - navigating to /brand-profile');
+    console.log('Get Started clicked - navigating to /auth');
     try {
-      router.push('/brand-profile');
+      router.push('/auth');
     } catch (error) {
       console.error('Navigation error:', error);
     }
