@@ -13,7 +13,6 @@ import {
   Zap,
   Calendar,
   Archive,
-  LayoutDashboard,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import {
@@ -44,19 +43,6 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={isActive("/dashboard")}
-              tooltip="Dashboard"
-            >
-              <Link href="/dashboard">
-                <LayoutDashboard />
-                <span>Dashboard</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
@@ -95,6 +81,7 @@ export function AppSidebar() {
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
+
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
@@ -107,18 +94,7 @@ export function AppSidebar() {
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={isActive("/creative-studio")}
-              tooltip="Creative Studio"
-            >
-              <Link href="/creative-studio">
-                <Wand />
-                <span>Creative Studio</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
