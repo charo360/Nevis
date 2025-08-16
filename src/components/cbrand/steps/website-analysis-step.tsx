@@ -134,6 +134,25 @@ export function WebsiteAnalysisStep({
 
       setAnalysisProgress('📊 Processing analysis results and organizing data...');
 
+      // Debug: Log what business name was extracted
+      console.log('🏢 AI Extracted Business Name:', result.businessName);
+      console.log('📝 AI Extracted Description:', result.description);
+
+      // Ensure we have a proper business name - fallback to extracting from URL if needed
+      let businessName = result.businessName?.trim();
+      if (!businessName || businessName.length < 2) {
+        // Try to extract business name from URL as fallback
+        try {
+          const urlObj = new URL(websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`);
+          const domain = urlObj.hostname.replace(/^www\./, '');
+          const domainParts = domain.split('.');
+          businessName = domainParts[0].charAt(0).toUpperCase() + domainParts[0].slice(1);
+          console.log('🔄 Using domain-based business name:', businessName);
+        } catch {
+          businessName = 'New Business';
+        }
+      }
+
       // Parse services from AI result and convert to array format
       const servicesArray = result.services
         ? result.services.split('\n').filter(service => service.trim()).map(service => {
@@ -171,7 +190,7 @@ export function WebsiteAnalysisStep({
       // Update the brand profile with comprehensive analysis results
       updateBrandProfile({
         // Basic Information
-        businessName: result.businessName || '',
+        businessName: businessName,
         websiteUrl,
         description: result.description,
         businessType: result.businessType || '',
