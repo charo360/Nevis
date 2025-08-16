@@ -40,7 +40,7 @@ export async function generateDesignSpecs(
   try {
     console.log('🧠 Generating advanced design specs with Gemini 2.5...');
 
-    const designPrompt = `You are an expert graphic designer and brand strategist with deep expertise in visual design, color theory, typography, and brand identity. Create a comprehensive design specification for a ${input.platform} post.
+    const designPrompt = `You are an expert graphic designer and brand strategist with deep expertise in 2024-2025 design trends, visual design, color theory, typography, and brand identity. Create a comprehensive ultra-modern design specification for a ${input.platform} post.
 
 BUSINESS CONTEXT:
 - Business: ${input.brandProfile.businessName}
@@ -56,9 +56,21 @@ BRAND COLORS:
 
 DESIGN REQUIREMENTS:
 - Platform: ${input.platform} (1080x1080px)
-- Visual Style: ${input.visualStyle}
+- Visual Style: ${input.visualStyle} with cutting-edge 2024-2025 trends
 - Text to Include: "${input.imageText}"
 - Brand Consistency: ${input.brandConsistency?.strictConsistency ? 'Strict' : 'Flexible'}
+
+MODERN DESIGN TRENDS TO IMPLEMENT:
+- Glassmorphism: Semi-transparent backgrounds with blur effects
+- Neumorphism: Subtle shadows and highlights for depth
+- Bold typography: Oversized, modern fonts with creative spacing
+- Gradient meshes: Complex, multi-directional gradients
+- Organic shapes: Fluid, natural forms mixed with geometric elements
+- Modern color palettes: Vibrant, saturated colors with high contrast
+- Contemporary layouts: Asymmetrical, dynamic compositions
+- Advanced shadows: Soft, realistic multi-layered shadows
+- Modern iconography: Minimal, line-based icons
+- Subtle textures: Noise, grain, or organic patterns
 
 ${input.artifactInstructions ? `SPECIAL INSTRUCTIONS: ${input.artifactInstructions}` : ''}
 
@@ -219,59 +231,130 @@ async function createSVGFromSpecs(specs: any, input: Gemini25DesignInput): Promi
   const { colors = {}, layout = {}, typography = {}, elements = {} } = specs || {};
   const { width = 1080, height = 1080 } = layout?.dimensions || {};
 
-  // Generate gradient colors
-  const primaryColor = colors.primary || input.brandProfile.primaryColor || '#1e40af';
-  const secondaryColor = colors.secondary || input.brandProfile.accentColor || '#3b82f6';
-  const textColor = colors.text || '#333333';
+  // Modern color palette with enhanced gradients
+  const primaryColor = colors.primary || input.brandProfile.primaryColor || '#6366f1';
+  const secondaryColor = colors.secondary || input.brandProfile.accentColor || '#8b5cf6';
+  const accentColor = '#f59e0b';
+  const textColor = colors.text || '#1f2937';
+  const glassColor = 'rgba(255,255,255,0.1)';
+
+  // Parse image text components
+  const textLines = input.imageText.split('\n').filter(line => line.trim());
+  const mainText = textLines[0] || 'Modern Business';
+  const subText = textLines[1] || '';
+  const ctaText = textLines[2] || 'Get Started';
 
   return `
     <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id="mainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <!-- Modern gradient definitions -->
+        <linearGradient id="modernGradient" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" style="stop-color:${primaryColor};stop-opacity:1" />
-          <stop offset="100%" style="stop-color:${secondaryColor};stop-opacity:1" />
+          <stop offset="50%" style="stop-color:${secondaryColor};stop-opacity:0.9" />
+          <stop offset="100%" style="stop-color:${accentColor};stop-opacity:0.8" />
         </linearGradient>
-        <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" style="stop-color:${secondaryColor};stop-opacity:0.8" />
-          <stop offset="100%" style="stop-color:${primaryColor};stop-opacity:0.6" />
+
+        <radialGradient id="glowGradient" cx="50%" cy="30%" r="70%">
+          <stop offset="0%" style="stop-color:${primaryColor};stop-opacity:0.3" />
+          <stop offset="100%" style="stop-color:${secondaryColor};stop-opacity:0.1" />
+        </radialGradient>
+
+        <linearGradient id="glassmorphism" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:rgba(255,255,255,0.25);stop-opacity:1" />
+          <stop offset="100%" style="stop-color:rgba(255,255,255,0.05);stop-opacity:1" />
         </linearGradient>
+
+        <!-- Modern shadow filters -->
         <filter id="modernShadow" x="-50%" y="-50%" width="200%" height="200%">
-          <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="rgba(0,0,0,0.15)"/>
+          <feDropShadow dx="0" dy="20" stdDeviation="25" flood-color="rgba(0,0,0,0.1)"/>
+        </filter>
+
+        <filter id="glowEffect" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+
+        <filter id="glassmorphismBlur" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="10"/>
         </filter>
       </defs>
-      
-      <!-- Main background -->
-      <rect width="100%" height="100%" fill="url(#mainGradient)" />
-      
-      <!-- Geometric accent elements -->
-      <circle cx="850" cy="230" r="120" fill="url(#accentGradient)" opacity="0.4" />
-      <rect x="0" y="0" width="300" height="300" fill="${primaryColor}" opacity="0.1" />
-      
-      <!-- Content area -->
-      <rect x="80" y="300" width="920" height="480" rx="20" fill="rgba(255,255,255,0.95)" filter="url(#modernShadow)" />
-      
-      <!-- Logo area -->
-      <circle cx="150" cy="360" r="40" fill="${primaryColor}" />
-      <text x="150" y="370" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="28" font-weight="bold">
-        ${input.brandProfile.businessName?.charAt(0) || 'B'}
-      </text>
-      
-      <!-- Main content -->
-      <text x="540" y="480" text-anchor="middle" fill="${primaryColor}" font-family="Arial, sans-serif" font-size="38" font-weight="bold">
-        ${input.brandProfile.businessName || 'Your Business'}
-      </text>
-      <text x="540" y="520" text-anchor="middle" fill="${textColor}" font-family="Arial, sans-serif" font-size="22">
-        ${input.imageText || 'Professional Excellence'}
-      </text>
-      
-      <!-- Call-to-action -->
-      <rect x="420" y="600" width="240" height="60" rx="30" fill="${primaryColor}" />
-      <text x="540" y="640" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="18" font-weight="600">
-        Get Started Today
-      </text>
-      
-      <!-- Decorative elements -->
-      <path d="M0,900 Q540,850 1080,900 L1080,1080 L0,1080 Z" fill="url(#accentGradient)" opacity="0.3" />
+
+      <!-- Modern background with gradient mesh -->
+      <rect width="100%" height="100%" fill="url(#modernGradient)" />
+
+      <!-- Glow overlay -->
+      <rect width="100%" height="100%" fill="url(#glowGradient)" />
+
+      <!-- Modern geometric elements -->
+      <circle cx="900" cy="200" r="150" fill="${primaryColor}" opacity="0.1" filter="url(#glowEffect)" />
+      <circle cx="200" cy="800" r="100" fill="${secondaryColor}" opacity="0.15" />
+
+      <!-- Organic shapes -->
+      <path d="M0,0 Q300,100 600,50 T1080,80 L1080,0 Z" fill="${accentColor}" opacity="0.08" />
+      <path d="M0,1080 Q400,950 800,1000 T1080,950 L1080,1080 Z" fill="${primaryColor}" opacity="0.12" />
+
+      <!-- Main glassmorphism card -->
+      <rect x="120" y="250" width="840" height="580" rx="32"
+            fill="url(#glassmorphism)"
+            stroke="rgba(255,255,255,0.2)"
+            stroke-width="1"
+            filter="url(#modernShadow)" />
+
+      <!-- Content area with modern layout -->
+      <g transform="translate(540, 400)">
+        <!-- Brand mark -->
+        <circle cx="0" cy="-80" r="35" fill="${primaryColor}" filter="url(#glowEffect)" />
+        <text x="0" y="-70" text-anchor="middle" fill="white"
+              font-family="system-ui, -apple-system, sans-serif"
+              font-size="24" font-weight="700">
+          ${input.brandProfile.businessName?.charAt(0) || 'B'}
+        </text>
+
+        <!-- Main headline with modern typography -->
+        <text x="0" y="0" text-anchor="middle" fill="${textColor}"
+              font-family="system-ui, -apple-system, sans-serif"
+              font-size="42" font-weight="800" letter-spacing="-0.02em">
+          ${mainText}
+        </text>
+
+        ${subText ? `
+        <!-- Subheadline -->
+        <text x="0" y="50" text-anchor="middle" fill="${textColor}"
+              font-family="system-ui, -apple-system, sans-serif"
+              font-size="18" font-weight="400" opacity="0.8">
+          ${subText}
+        </text>
+        ` : ''}
+
+        <!-- Modern CTA button -->
+        <g transform="translate(0, 120)">
+          <rect x="-120" y="-25" width="240" height="50" rx="25"
+                fill="${primaryColor}" filter="url(#modernShadow)" />
+          <rect x="-120" y="-25" width="240" height="50" rx="25"
+                fill="url(#glowGradient)" opacity="0.3" />
+          <text x="0" y="5" text-anchor="middle" fill="white"
+                font-family="system-ui, -apple-system, sans-serif"
+                font-size="16" font-weight="600">
+            ${ctaText}
+          </text>
+        </g>
+      </g>
+
+      <!-- Modern decorative elements -->
+      <circle cx="150" cy="150" r="3" fill="${accentColor}" opacity="0.6" />
+      <circle cx="930" cy="930" r="4" fill="${primaryColor}" opacity="0.5" />
+      <circle cx="200" cy="900" r="2" fill="${secondaryColor}" opacity="0.7" />
+
+      <!-- Subtle grid pattern -->
+      <defs>
+        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+          <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#grid)" />
     </svg>
   `;
 }
