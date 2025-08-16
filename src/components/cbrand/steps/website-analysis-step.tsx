@@ -42,13 +42,13 @@ export function WebsiteAnalysisStep({
 
     // Check file sizes to prevent storage issues
     const totalSize = imageFiles.reduce((sum, file) => sum + file.size, 0);
-    const maxSize = 10 * 1024 * 1024; // 10MB total limit for design files
+    const maxSize = 25 * 1024 * 1024; // 25MB total limit for design files (increased for high-quality images)
 
     if (totalSize > maxSize) {
       toast({
         variant: "destructive",
         title: "Files Too Large",
-        description: "Design examples are too large. Please use smaller images (max 10MB total).",
+        description: "Design examples are too large. Please use smaller images (max 25MB total).",
       });
       return;
     }
@@ -145,6 +145,7 @@ export function WebsiteAnalysisStep({
       // Update the brand profile with comprehensive analysis results
       updateBrandProfile({
         // Basic Information
+        businessName: result.businessName || '',
         websiteUrl,
         description: result.description,
         businessType: result.businessType || '',

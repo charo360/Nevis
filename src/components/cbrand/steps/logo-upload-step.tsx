@@ -70,12 +70,12 @@ export function LogoUploadStep({
       return;
     }
 
-    // Validate file size (max 2MB for localStorage compatibility)
-    if (file.size > 2 * 1024 * 1024) {
+    // Validate file size (max 5MB for high-quality logos)
+    if (file.size > 5 * 1024 * 1024) {
       toast({
         variant: "destructive",
         title: "File Too Large",
-        description: "Please upload an image smaller than 2MB to avoid storage issues",
+        description: "Please upload an image smaller than 5MB for optimal performance",
       });
       return;
     }
@@ -204,7 +204,7 @@ export function LogoUploadStep({
 
       // Check localStorage space before saving
       const testData = JSON.stringify(brandProfile);
-      if (testData.length > 5 * 1024 * 1024) { // 5MB limit
+      if (testData.length > 10 * 1024 * 1024) { // 10MB limit (increased for larger profiles)
         throw new Error('Profile data too large for storage');
       }
 
