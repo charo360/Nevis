@@ -35,7 +35,7 @@ const REVO_MODELS: RevoModelOption[] = [
     icon: Zap,
     badge: 'Stable',
     badgeVariant: 'secondary',
-    features: ['Gemini 2.0 Flash', '1:1 Images', 'Core Features', 'Proven Reliability'],
+    features: ['Reliable AI Engine', '1:1 Images', 'Core Features', 'Proven Performance'],
     status: 'stable'
   },
   {
@@ -45,7 +45,7 @@ const REVO_MODELS: RevoModelOption[] = [
     icon: Sparkles,
     badge: 'Enhanced',
     badgeVariant: 'default',
-    features: ['Advanced AI', 'Better Quality', 'Enhanced Design', 'Optimizations'],
+    features: ['Advanced AI Engine', 'Superior Quality', 'Enhanced Design', 'Smart Optimizations'],
     status: 'enhanced'
   },
   {
@@ -55,7 +55,7 @@ const REVO_MODELS: RevoModelOption[] = [
     icon: Rocket,
     badge: 'Coming Soon',
     badgeVariant: 'outline',
-    features: ['Imagen 4', 'Multi Aspect Ratios', 'Revolutionary AI', 'Next-Gen UI'],
+    features: ['Next-Gen AI Engine', 'Multi Aspect Ratios', 'Revolutionary Features', 'Advanced UI'],
     status: 'development'
   }
 ]
@@ -74,7 +74,7 @@ export function RevoModelSelector({
   className
 }: RevoModelSelectorProps) {
   const [isOpen, setIsOpen] = React.useState(false)
-  
+
   const currentModel = REVO_MODELS.find(model => model.id === selectedModel) || REVO_MODELS[0]
   const CurrentIcon = currentModel.icon
 
@@ -101,19 +101,19 @@ export function RevoModelSelector({
           <ChevronDown className="h-4 w-4 opacity-50" />
         </Button>
       </DropdownMenuTrigger>
-      
+
       <DropdownMenuContent align="start" className="w-80">
         <DropdownMenuLabel className="flex items-center gap-2">
           <Rocket className="w-4 h-4" />
           Select Revo Model
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        
+
         {REVO_MODELS.map((model) => {
           const IconComponent = model.icon
           const isSelected = selectedModel === model.id
           const isAvailable = model.status !== 'development'
-          
+
           return (
             <DropdownMenuItem
               key={model.id}
@@ -141,11 +141,11 @@ export function RevoModelSelector({
                 </div>
                 {isSelected && <Check className="h-4 w-4 text-green-600" />}
               </div>
-              
+
               <p className="text-sm text-muted-foreground">
                 {model.description}
               </p>
-              
+
               <div className="flex flex-wrap gap-1">
                 {model.features.map((feature, index) => (
                   <Badge key={index} variant="outline" className="text-xs">
@@ -156,7 +156,7 @@ export function RevoModelSelector({
             </DropdownMenuItem>
           )
         })}
-        
+
         <DropdownMenuSeparator />
         <div className="p-2 text-xs text-muted-foreground">
           Each Revo model offers different capabilities and features

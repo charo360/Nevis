@@ -17,8 +17,8 @@ Each Revo version is an **independent branch** that can evolve separately withou
 *(Renamed from `standardmodel`)*
 
 **Features:**
-- ✅ Gemini 2.0 Flash image generation
-- ✅ Standard AI model with proven reliability
+- ✅ Reliable AI engine with proven performance
+- ✅ Standard model with consistent results
 - ✅ 1:1 aspect ratio (square images)
 - ✅ Basic brand consistency controls
 - ✅ Core content generation features
@@ -40,13 +40,13 @@ Each Revo version is an **independent branch** that can evolve separately withou
 *(Renamed from `eNHENCEDMODEL`)*
 
 **Features:**
-- ✅ Enhanced AI model with improved capabilities
-- ✅ Advanced prompt engineering
-- ✅ Better quality control and consistency
-- ✅ Enhanced design generation
+- ✅ Advanced AI engine with superior capabilities
+- ✅ Enhanced content generation algorithms
+- ✅ Superior quality control and consistency
+- ✅ Professional design generation
 - ✅ Improved brand integration
 - ✅ Advanced customization options
-- ✅ Performance optimizations
+- ✅ Smart performance optimizations
 
 **Target Use Case:**
 - Users who want enhanced AI capabilities
@@ -62,7 +62,7 @@ Each Revo version is an **independent branch** that can evolve separately withou
 **Next Generation - Future Development**
 
 **Planned Features:**
-- 🔄 Imagen 4 integration (Google's latest image model)
+- 🔄 Next-generation AI engine integration
 - 🔄 Native aspect ratio control (16:9, 9:16, 1:1)
 - 🔄 Revolutionary AI improvements
 - 🔄 Advanced text rendering and typography
@@ -115,11 +115,11 @@ git commit -m "Revo 2.0: Add feature Z"
 
 ## Current Status
 
-| Version | Branch | Status | AI Model | Features | Quality |
-|---------|--------|--------|----------|----------|---------|
-| Revo 1.0 | `revo-1.0` | ✅ Production | Gemini 2.0 Flash | Standard | Stable |
-| Revo 1.5 | `revo-1.5` | ✅ Production | Enhanced Gemini | Advanced | Enhanced |
-| Revo 2.0 | `revo-2.0` | 🚧 Development | Imagen 4 (planned) | Revolutionary | TBD |
+| Version | Branch | Status | AI Engine | Features | Quality |
+|---------|--------|--------|-----------|----------|---------|
+| Revo 1.0 | `revo-1.0` | ✅ Production | Reliable Engine | Standard | Stable |
+| Revo 1.5 | `revo-1.5` | ✅ Production | Advanced Engine | Enhanced | Superior |
+| Revo 2.0 | `revo-2.0` | 🚧 Development | Next-Gen Engine | Revolutionary | TBD |
 
 ---
 
