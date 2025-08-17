@@ -16,39 +16,36 @@ export async function GET(request: NextRequest) {
     switch (action) {
       case 'list':
         // Get design-related artifacts
-        const designArtifacts = await artifactsService.getArtifacts({
-          category: 'references',
-          isActive: true
-        });
-        
+        const allArtifacts = artifactsService.getAllArtifacts();
+
         // Filter for design-related artifacts
-        const filteredArtifacts = designArtifacts.filter(artifact => 
-          artifact.type === 'image' || 
-          artifact.type === 'template' || 
-          artifact.type === 'reference'
+        const filteredArtifacts = allArtifacts.filter(artifact =>
+          (artifact.type === 'image' ||
+            artifact.type === 'template' ||
+            artifact.type === 'reference') &&
+          artifact.isActive
         );
 
-        return NextResponse.json({ 
-          success: true, 
+        return NextResponse.json({
+          success: true,
           artifacts: filteredArtifacts,
           count: filteredArtifacts.length
         });
 
       case 'examples':
         // Get design examples for specific platform/business type
-        const examples = await artifactsService.getArtifacts({
-          category: 'references',
-          isActive: true
-        });
+        const examples = artifactsService.getAllArtifacts().filter(a =>
+          a.category === 'references' && a.isActive
+        );
 
         // Filter by platform and business type if provided
         let filteredExamples = examples;
         if (platform || businessType) {
           filteredExamples = examples.filter(artifact => {
-            const matchesPlatform = !platform || 
+            const matchesPlatform = !platform ||
               artifact.tags?.includes(platform.toLowerCase()) ||
               artifact.metadata?.platform === platform;
-            
+
             const matchesBusinessType = !businessType ||
               artifact.tags?.includes(businessType.toLowerCase()) ||
               artifact.metadata?.businessType === businessType;
@@ -57,8 +54,8 @@ export async function GET(request: NextRequest) {
           });
         }
 
-        return NextResponse.json({ 
-          success: true, 
+        return NextResponse.json({
+          success: true,
           examples: filteredExamples,
           platform,
           businessType,
@@ -67,36 +64,35 @@ export async function GET(request: NextRequest) {
 
       case 'templates':
         // Get design templates
-        const templates = await artifactsService.getArtifacts({
-          category: 'templates',
-          isActive: true
-        });
+        const templates = artifactsService.getAllArtifacts().filter(a =>
+          a.category === 'templates' && a.isActive
+        );
 
-        return NextResponse.json({ 
-          success: true, 
+        return NextResponse.json({
+          success: true,
           templates,
           count: templates.length
         });
 
       case 'active-design':
         // Get currently active design artifacts
-        const activeDesignArtifacts = await artifactsService.getActiveArtifacts();
+        const activeDesignArtifacts = artifactsService.getActiveArtifacts();
         const designOnly = activeDesignArtifacts.filter(artifact =>
           artifact.category === 'references' ||
           artifact.category === 'templates' ||
           artifact.type === 'image'
         );
 
-        return NextResponse.json({ 
-          success: true, 
+        return NextResponse.json({
+          success: true,
           artifacts: designOnly,
           count: designOnly.length
         });
 
       default:
-        return NextResponse.json({ 
-          success: false, 
-          error: 'Invalid action. Supported: list, examples, templates, active-design' 
+        return NextResponse.json({
+          success: false,
+          error: 'Invalid action. Supported: list, examples, templates, active-design'
         }, { status: 400 });
     }
 
@@ -146,8 +142,8 @@ export async function POST(request: NextRequest) {
           if (platform) tags.push(platform.toLowerCase());
           if (businessType) tags.push(businessType.toLowerCase());
           if (designType) tags.push(designType.toLowerCase());
-          
-          await artifactsService.updateArtifact(artifact.id, { 
+
+          await artifactsService.updateArtifact(artifact.id, {
             tags,
             metadata: {
               ...artifact.metadata,
@@ -179,9 +175,9 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true, analysis: mockAnalysis });
 
       default:
-        return NextResponse.json({ 
-          success: false, 
-          error: 'Invalid action. Supported: upload-design, analyze-design' 
+        return NextResponse.json({
+          success: false,
+          error: 'Invalid action. Supported: upload-design, analyze-design'
         }, { status: 400 });
     }
 
