@@ -86,8 +86,8 @@ export type GeneratePostFromProfileInput = z.infer<typeof GeneratePostFromProfil
 const GeneratePostFromProfileOutputSchema = z.object({
   content: z.string().describe('The primary generated social media post content (the caption).'),
   catchyWords: z.string().describe('Catchy words for the image (max 5 words). Must be directly related to the specific business services/products, not generic phrases. Required for ALL posts.'),
-  subheadline: z.string().optional().describe('Optional subheadline (max 14 words). Add only when it would make the post more effective based on marketing strategy.'),
-  callToAction: z.string().optional().describe('Optional call to action. Add only when it would drive better engagement or conversions based on marketing strategy.'),
+  subheadline: z.string().nullable().optional().describe('Optional subheadline (max 14 words). Add only when it would make the post more effective based on marketing strategy.'),
+  callToAction: z.string().nullable().optional().describe('Optional call to action. Add only when it would drive better engagement or conversions based on marketing strategy.'),
   hashtags: z.string().describe('Strategically selected hashtags for the post.'),
   contentVariants: z.array(z.object({
     content: z.string().describe('Alternative caption variant.'),
@@ -186,8 +186,8 @@ const enhancedTextGenPrompt = ai.definePrompt({
     schema: z.object({
       content: z.string().describe('The primary generated social media post content (the caption).'),
       catchyWords: z.string().describe('Catchy words for the image (max 5 words). Must be directly related to the specific business services/products, not generic phrases. Required for ALL posts.'),
-      subheadline: z.string().optional().describe('Optional subheadline (max 14 words). Add only when it would make the post more effective based on marketing strategy.'),
-      callToAction: z.string().optional().describe('Optional call to action. Add only when it would drive better engagement or conversions based on marketing strategy.'),
+      subheadline: z.string().nullable().optional().describe('Optional subheadline (max 14 words). Add only when it would make the post more effective based on marketing strategy.'),
+      callToAction: z.string().nullable().optional().describe('Optional call to action. Add only when it would drive better engagement or conversions based on marketing strategy.'),
       hashtags: z.string().describe('Strategically selected hashtags for the post.'),
       contentVariants: z.array(z.object({
         content: z.string().describe('Alternative caption variant.'),
