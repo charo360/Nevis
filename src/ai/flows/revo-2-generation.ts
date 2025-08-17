@@ -135,17 +135,19 @@ function generateRevo2Hashtags(
   platform: Platform,
   brandProfile?: BrandProfile
 ): string[] {
-  const baseHashtags = {
-    Instagram: ['#instagram', '#content', '#creative', '#design'],
-    Facebook: ['#facebook', '#social', '#community', '#engagement'],
-    Twitter: ['#twitter', '#trending', '#news', '#update'],
-    LinkedIn: ['#linkedin', '#professional', '#business', '#networking'],
-    TikTok: ['#tiktok', '#viral', '#trending', '#fyp'],
-    YouTube: ['#youtube', '#video', '#content', '#creator'],
-    Pinterest: ['#pinterest', '#inspiration', '#ideas', '#discover']
+  const baseHashtags: Record<string, string[]> = {
+    instagram: ['#instagram', '#content', '#creative', '#design'],
+    facebook: ['#facebook', '#social', '#community', '#engagement'],
+    twitter: ['#twitter', '#trending', '#news', '#update'],
+    linkedin: ['#linkedin', '#professional', '#business', '#networking'],
+    tiktok: ['#tiktok', '#viral', '#trending', '#fyp'],
+    youtube: ['#youtube', '#video', '#content', '#creator'],
+    pinterest: ['#pinterest', '#inspiration', '#ideas', '#discover']
   };
 
-  let hashtags = [...(baseHashtags[platform] || baseHashtags.Instagram)];
+  // Normalize platform to lowercase
+  const normalizedPlatform = platform.toLowerCase();
+  let hashtags = [...(baseHashtags[normalizedPlatform] || baseHashtags.instagram)];
 
   // Add brand-specific hashtags
   if (brandProfile) {
