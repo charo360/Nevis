@@ -389,7 +389,7 @@ export class BrandScopedStorage {
     const stripped = {
       id: item.id,
       date: item.date,
-      content: item.content ? (item.content.length > 300 ? item.content.substring(0, 300) + '...' : item.content) : '',
+      content: (item.content && typeof item.content === 'string') ? (item.content.length > 300 ? item.content.substring(0, 300) + '...' : item.content) : '',
       hashtags: item.hashtags,
       platform: item.platform || 'instagram',
       status: item.status,
@@ -416,7 +416,7 @@ export class BrandScopedStorage {
       // Keep only the 1 most recent item
       return data.slice(0, 1).map(item => ({
         id: item.id,
-        content: item.content ? item.content.substring(0, 100) + '...' : '',
+        content: (item.content && typeof item.content === 'string') ? item.content.substring(0, 100) + '...' : '',
         date: item.date,
         platform: item.platform || 'instagram'
       }));
@@ -425,7 +425,7 @@ export class BrandScopedStorage {
     // For single items, return basic info only
     return {
       id: data.id,
-      content: data.content ? data.content.substring(0, 100) + '...' : '',
+      content: (data.content && typeof data.content === 'string') ? data.content.substring(0, 100) + '...' : '',
       date: data.date || new Date().toISOString(),
       platform: data.platform || 'instagram'
     };
@@ -514,7 +514,7 @@ export class BrandScopedStorage {
       return data.slice(-5).map(item => ({
         id: item.id,
         date: item.date,
-        content: item.content ? item.content.substring(0, 200) + '...' : '',
+        content: (item.content && typeof item.content === 'string') ? item.content.substring(0, 200) + '...' : '',
         hashtags: item.hashtags,
         status: item.status
       }));
@@ -524,7 +524,7 @@ export class BrandScopedStorage {
     return {
       id: data.id,
       date: data.date,
-      content: data.content ? data.content.substring(0, 200) + '...' : '',
+      content: (data.content && typeof data.content === 'string') ? data.content.substring(0, 200) + '...' : '',
       hashtags: data.hashtags,
       status: data.status
     };
