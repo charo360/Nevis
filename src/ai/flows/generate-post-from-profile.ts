@@ -275,6 +275,15 @@ async function generateImageForVariant(
 
     **DESIGN BRIEF:**
     Create a professional, high-impact social media design for a ${input.businessType} business.
+
+    🎯 CRITICAL ASPECT RATIO REQUIREMENT:
+    - MUST generate image in exactly ${variant.aspectRatio} aspect ratio
+    - Platform: ${variant.platform} (optimized for ${variant.aspectRatio} format)
+    - Dimensions: ${variant.aspectRatio === '16:9' ? '1920x1080px (landscape)' : variant.aspectRatio === '9:16' ? '1080x1920px (portrait)' : '1080x1080px (square)'}
+    - DO NOT generate square images unless aspect ratio is specifically 1:1
+    - DO NOT generate portrait images unless aspect ratio is specifically 9:16
+    - FOR FACEBOOK AND LINKEDIN: Generate landscape (16:9) format images
+
     Target Platform: ${variant.platform} | Aspect Ratio: ${variant.aspectRatio}
     Visual Style: ${input.visualStyle} | Location: ${input.location}
 
@@ -407,19 +416,25 @@ async function generateImageForVariant(
         prompt: promptParts,
         config: {
           responseModalities: ['TEXT', 'IMAGE'],
-          // Temporarily removed imageGenerationConfig to test if it's causing 500 error
-          // imageGenerationConfig: {
-          //   aspectRatio: variant.aspectRatio === '9:16' ? '9:16' : variant.aspectRatio === '16:9' ? '16:9' : '1:1',
-          //   negativePrompt: 'low quality, blurry, pixelated, distorted faces, missing features, text errors, random text, lorem ipsum, placeholder text',
-          //   guidanceScale: 20, // Higher guidance for better prompt adherence and quality
-          //   seed: Math.floor(Math.random() * 1000000), // Random seed for variety
-          // },
         },
       });
 
-      const imageUrl = media?.url ?? '';
+      let imageUrl = media?.url ?? '';
       if (!imageUrl) {
         throw new Error('No image generated');
+      }
+
+      // Apply aspect ratio correction for non-square platforms
+      const { cropImageFromUrl, needsAspectRatioCorrection } = await import('@/lib/image-processing');
+      if (needsAspectRatioCorrection(variant.platform)) {
+        console.log(`🖼️ Applying aspect ratio correction for ${variant.platform}...`);
+        try {
+          imageUrl = await cropImageFromUrl(imageUrl, variant.platform);
+          console.log(`✅ Image cropped successfully for ${variant.platform}`);
+        } catch (cropError) {
+          console.warn('⚠️ Image cropping failed, using original:', cropError);
+          // Continue with original image if cropping fails
+        }
       }
 
       // Quality validation for first attempt

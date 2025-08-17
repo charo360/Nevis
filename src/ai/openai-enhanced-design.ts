@@ -440,8 +440,8 @@ function getPlatformSize(platform: string): '1024x1024' | '1792x1024' | '1024x17
   // Horizontal formats (16:9 aspect ratio)
   if (platformLower.includes('linkedin') ||
     platformLower.includes('twitter') ||
+    platformLower.includes('facebook') ||
     platformLower.includes('youtube') ||
-    platformLower.includes('facebook cover') ||
     platformLower.includes('banner')) {
     return '1792x1024';
   }

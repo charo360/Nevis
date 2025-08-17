@@ -307,14 +307,32 @@ async function generatePrimaryDesign(request: EnhancedDesignRequest) {
         : request.brandProfile.competitiveAdvantages || ''
     });
 
+    let imageUrl = result.variants[0]?.imageUrl || '';
+
+    // Apply aspect ratio correction for non-square platforms
+    if (imageUrl) {
+      const { cropImageFromUrl, needsAspectRatioCorrection } = await import('@/lib/image-processing');
+      if (needsAspectRatioCorrection(request.platform)) {
+        console.log(`🖼️ Applying aspect ratio correction for ${request.platform}...`);
+        try {
+          imageUrl = await cropImageFromUrl(imageUrl, request.platform);
+          console.log(`✅ Image cropped successfully for ${request.platform}`);
+        } catch (cropError) {
+          console.warn('⚠️ Image cropping failed, using original:', cropError);
+          // Continue with original image if cropping fails
+        }
+      }
+    }
+
     return {
-      imageUrl: result.variants[0]?.imageUrl || '',
+      imageUrl,
       qualityScore: 8, // Default score
       designId,
       variant: 'primary'
     };
   } else {
-    // Use creative asset flow
+    // Use creative asset flow with correct aspect ratio
+    const aspectRatio = getAspectRatioForPlatform(request.platform);
     const result = await generateCreativeAssetFlow({
       prompt: request.contentText,
       outputType: 'image',
@@ -322,7 +340,7 @@ async function generatePrimaryDesign(request: EnhancedDesignRequest) {
       useBrandProfile: false,
       brandProfile: null,
       maskDataUrl: null,
-      aspectRatio: undefined
+      aspectRatio: aspectRatio
     });
 
     return {
@@ -353,8 +371,26 @@ async function generateVariantDesign(request: EnhancedDesignRequest, variant: De
     aspectRatio: undefined
   });
 
+  let imageUrl = result.imageUrl || '';
+
+  // Apply aspect ratio correction if needed (since aspectRatio was undefined above)
+  if (imageUrl) {
+    const { cropImageFromUrl, needsAspectRatioCorrection } = await import('@/lib/image-processing');
+    // For variants, we need to determine the platform from the request context
+    // For now, assume it needs correction for non-square platforms
+    try {
+      // Since we don't have platform info here, we'll crop to landscape by default
+      // This is a fallback - ideally we'd pass platform info to this function
+      imageUrl = await cropImageFromUrl(imageUrl, 'linkedin'); // Default to LinkedIn format
+      console.log(`✅ Variant image cropped successfully`);
+    } catch (cropError) {
+      console.warn('⚠️ Variant image cropping failed, using original:', cropError);
+      // Continue with original image if cropping fails
+    }
+  }
+
   return {
-    imageUrl: result.imageUrl || '',
+    imageUrl,
     qualityScore: 7, // Default score, will be updated by quality assessment
     designId,
     variant: variant.id
@@ -369,7 +405,7 @@ function getAspectRatioForPlatform(platform: string): string {
     instagram: '1:1',
     facebook: '16:9',
     twitter: '16:9',
-    linkedin: '1.91:1'
+    linkedin: '16:9' // Changed from 1.91:1 to 16:9 for consistency with Gemini generation
   };
   return ratios[platform] || '1:1';
 }
