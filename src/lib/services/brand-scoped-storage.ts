@@ -413,9 +413,9 @@ export class BrandScopedStorage {
     if (compressed.variants && Array.isArray(compressed.variants)) {
       compressed.variants = compressed.variants.map((variant: any) => ({
         platform: variant.platform,
-        // Remove base64 images completely to save space
+        // Remove base64 images completely to save space, use undefined instead of null
         imageUrl: variant.imageUrl && variant.imageUrl.startsWith('data:')
-          ? null // Remove base64 completely
+          ? undefined // Remove base64 completely
           : variant.imageUrl
       }));
     }

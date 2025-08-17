@@ -39,6 +39,30 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from '@/lib/utils';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '../ui/carousel';
 
+// Helper function to validate URLs
+const isValidUrl = (url: string): boolean => {
+  if (!url || typeof url !== 'string') {
+    if (url) {
+      console.warn('Invalid URL type:', typeof url, url);
+    }
+    return false;
+  }
+
+  try {
+    // Check for data URLs (base64 images)
+    if (url.startsWith('data:')) {
+      return url.includes('base64,') || url.includes('charset=');
+    }
+
+    // Check for HTTP/HTTPS URLs
+    const parsedUrl = new URL(url);
+    return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
+  } catch (error) {
+    console.warn('URL validation failed for:', url, error);
+    return false;
+  }
+};
+
 const platformIcons: { [key in Platform]: React.ReactElement } = {
   Facebook: <Facebook className="h-4 w-4" />,
   Instagram: <Instagram className="h-4 w-4" />,
@@ -81,8 +105,8 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   const handleDownload = React.useCallback(async () => {
     const activeVariant = post.variants.find(v => v.platform === activeTab);
 
-    // First try to download the original HD image directly from GPT-Image 1
-    if (activeVariant?.imageUrl) {
+    // First try to download the original HD image directly if URL is valid
+    if (activeVariant?.imageUrl && isValidUrl(activeVariant.imageUrl)) {
       try {
         const response = await fetch(activeVariant.imageUrl);
         const blob = await response.blob();
@@ -276,7 +300,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
                     </div>
                   )}
                   <div ref={el => (downloadRefs.current[variant.platform] = el)} className="relative aspect-square w-full overflow-hidden rounded-md border">
-                    {variant.imageUrl ? (
+                    {variant.imageUrl && isValidUrl(variant.imageUrl) ? (
                       <Image
                         alt={`Generated post image for ${variant.platform}`}
                         className={cn('h-full w-full object-cover transition-opacity', (isRegenerating || isGeneratingVideo) ? 'opacity-50' : 'opacity-100')}
@@ -285,10 +309,18 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
                         data-ai-hint="social media post"
                         width={1080}
                         crossOrigin="anonymous"
+                        unoptimized={variant.imageUrl.startsWith('data:')} // Don't optimize data URLs
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center bg-muted">
                         <ImageOff className="h-12 w-12 text-muted-foreground" />
+                        {variant.imageUrl && !isValidUrl(variant.imageUrl) && (
+                          <div className="absolute bottom-2 left-2 right-2">
+                            <p className="text-xs text-red-500 bg-white/90 p-1 rounded">
+                              Invalid image URL
+                            </p>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
