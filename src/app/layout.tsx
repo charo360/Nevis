@@ -68,11 +68,10 @@ function BrandThemeLoader({ children }: { children: React.ReactNode }) {
 }
 
 function ConditionalLayout({ children }: { children: React.ReactNode }) {
-  const [pathname, setPathname] = useState('');
+  const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setPathname(window.location.pathname);
     setMounted(true);
   }, []);
 
@@ -83,6 +82,8 @@ function ConditionalLayout({ children }: { children: React.ReactNode }) {
   // Pages that should NOT show the sidebar (public pages only)
   const pagesWithoutSidebar = ['/', '/auth'];
   const shouldHideSidebar = pagesWithoutSidebar.includes(pathname);
+
+  console.log('🔍 ConditionalLayout - pathname:', pathname, 'shouldHideSidebar:', shouldHideSidebar);
 
   if (shouldHideSidebar) {
     return <div className="w-full">{children}</div>;
