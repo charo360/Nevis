@@ -45,16 +45,43 @@ export class BrandScopedStorage {
   }
 
   /**
-   * Store data for the current brand
+   * Store data for the current brand with quota management
    */
   setItem(data: any): void {
     try {
       const key = this.getStorageKey();
       const serialized = JSON.stringify(data);
+
+      // Check if data is too large before attempting to store
+      const dataSize = new Blob([serialized]).size;
+      const maxSize = 4 * 1024 * 1024; // 4MB limit per item
+
+      if (dataSize > maxSize) {
+        console.warn(`⚠️ Data too large for ${this.feature} (${this.formatBytes(dataSize)}), applying compression...`);
+
+        // Try to compress the data by removing large base64 images
+        const compressedData = this.compressDataForStorage(data);
+        const compressedSerialized = JSON.stringify(compressedData);
+        const compressedSize = new Blob([compressedSerialized]).size;
+
+        if (compressedSize > maxSize) {
+          throw new Error(`Data still too large after compression: ${this.formatBytes(compressedSize)}`);
+        }
+
+        localStorage.setItem(key, compressedSerialized);
+        console.log(`💾 Saved compressed ${this.feature} data for brand ${this.brandId} (${this.formatBytes(compressedSize)})`);
+        return;
+      }
+
       localStorage.setItem(key, serialized);
-      console.log(`💾 Saved ${this.feature} data for brand ${this.brandId}`);
+      console.log(`💾 Saved ${this.feature} data for brand ${this.brandId} (${this.formatBytes(dataSize)})`);
     } catch (error) {
-      console.error(`Failed to save ${this.feature} data for brand ${this.brandId}:`, error);
+      if (error.name === 'QuotaExceededError') {
+        console.error(`🚨 Storage quota exceeded for ${this.feature} data for brand ${this.brandId}`);
+        this.handleQuotaExceeded(data);
+      } else {
+        console.error(`Failed to save ${this.feature} data for brand ${this.brandId}:`, error);
+      }
     }
   }
 
@@ -222,6 +249,130 @@ export class BrandScopedStorage {
   }
 
   /**
+   * Handle quota exceeded error by cleaning up old data
+   */
+  private handleQuotaExceeded(data: any): void {
+    console.log(`🧹 Handling quota exceeded for ${this.feature} brand ${this.brandId}`);
+
+    try {
+      // Try to clean up old data first
+      this.cleanupOldData();
+
+      // Try to compress and save again
+      const compressedData = this.compressDataForStorage(data);
+      const key = this.getStorageKey();
+      const serialized = JSON.stringify(compressedData);
+
+      localStorage.setItem(key, serialized);
+      console.log(`✅ Successfully saved after cleanup and compression for ${this.feature}`);
+    } catch (retryError) {
+      console.error(`❌ Failed to save even after cleanup: ${retryError.message}`);
+
+      // Last resort: save only essential data
+      const essentialData = this.extractEssentialData(data);
+      const key = this.getStorageKey();
+      const serialized = JSON.stringify(essentialData);
+
+      try {
+        localStorage.setItem(key, serialized);
+        console.log(`⚠️ Saved only essential data for ${this.feature} due to quota limits`);
+      } catch (finalError) {
+        console.error(`💥 Complete storage failure for ${this.feature}:`, finalError);
+      }
+    }
+  }
+
+  /**
+   * Compress data by removing or reducing large elements
+   */
+  private compressDataForStorage(data: any): any {
+    if (!data) return data;
+
+    // Handle arrays (like posts)
+    if (Array.isArray(data)) {
+      return data.map(item => this.compressItem(item));
+    }
+
+    // Handle single items
+    return this.compressItem(data);
+  }
+
+  /**
+   * Compress individual data items
+   */
+  private compressItem(item: any): any {
+    if (!item || typeof item !== 'object') return item;
+
+    const compressed = { ...item };
+
+    // Remove or compress large base64 images
+    if (compressed.variants && Array.isArray(compressed.variants)) {
+      compressed.variants = compressed.variants.map((variant: any) => ({
+        ...variant,
+        imageUrl: variant.imageUrl && variant.imageUrl.startsWith('data:')
+          ? '[COMPRESSED_IMAGE]' // Replace base64 with placeholder
+          : variant.imageUrl
+      }));
+    }
+
+    // Remove large content fields if they exist
+    if (compressed.content && typeof compressed.content === 'string' && compressed.content.length > 1000) {
+      compressed.content = compressed.content.substring(0, 1000) + '...[TRUNCATED]';
+    }
+
+    return compressed;
+  }
+
+  /**
+   * Extract only essential data when storage is critically low
+   */
+  private extractEssentialData(data: any): any {
+    if (!data) return data;
+
+    if (Array.isArray(data)) {
+      // Keep only the most recent 5 items
+      return data.slice(-5).map(item => ({
+        id: item.id,
+        date: item.date,
+        content: item.content ? item.content.substring(0, 200) + '...' : '',
+        hashtags: item.hashtags,
+        status: item.status
+      }));
+    }
+
+    // For single items, keep only essential fields
+    return {
+      id: data.id,
+      date: data.date,
+      content: data.content ? data.content.substring(0, 200) + '...' : '',
+      hashtags: data.hashtags,
+      status: data.status
+    };
+  }
+
+  /**
+   * Clean up old data to free space
+   */
+  private cleanupOldData(): void {
+    try {
+      // Get current data
+      const currentData = this.getItem();
+      if (!currentData || !Array.isArray(currentData)) return;
+
+      // Keep only the most recent 10 items
+      const recentData = currentData.slice(-10);
+
+      if (recentData.length < currentData.length) {
+        const key = this.getStorageKey();
+        localStorage.setItem(key, JSON.stringify(recentData));
+        console.log(`🧹 Cleaned up old data, kept ${recentData.length} of ${currentData.length} items`);
+      }
+    } catch (error) {
+      console.warn('Failed to cleanup old data:', error);
+    }
+  }
+
+  /**
    * Format bytes to human readable format
    */
   private formatBytes(bytes: number): string {
@@ -268,6 +419,87 @@ export function migrateAllGlobalStorage(brandId: string, features: string[]): vo
   });
 
   console.log(`✅ Migration completed for brand ${brandId}`);
+}
+
+/**
+ * Get localStorage usage statistics
+ */
+export function getStorageUsage(): {
+  used: number;
+  total: number;
+  percentage: number;
+  usedFormatted: string;
+  totalFormatted: string;
+} {
+  let used = 0;
+
+  try {
+    // Calculate used space
+    for (let key in localStorage) {
+      if (localStorage.hasOwnProperty(key)) {
+        used += localStorage[key].length + key.length;
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to calculate storage usage:', error);
+  }
+
+  // Estimate total available space (varies by browser, ~5-10MB)
+  const total = 10 * 1024 * 1024; // 10MB estimate
+  const percentage = (used / total) * 100;
+
+  return {
+    used,
+    total,
+    percentage,
+    usedFormatted: formatBytes(used),
+    totalFormatted: formatBytes(total)
+  };
+}
+
+/**
+ * Clean up all old data across all brands and features
+ */
+export function cleanupAllStorage(): void {
+  console.log('🧹 Starting comprehensive storage cleanup...');
+
+  const keysToCheck: string[] = [];
+
+  // Collect all keys
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key) keysToCheck.push(key);
+  }
+
+  // Clean up brand-scoped data
+  keysToCheck.forEach(key => {
+    if (key.includes('_') && !key.includes('migration_completed')) {
+      try {
+        const data = JSON.parse(localStorage.getItem(key) || '[]');
+        if (Array.isArray(data) && data.length > 10) {
+          // Keep only recent items
+          const recentData = data.slice(-10);
+          localStorage.setItem(key, JSON.stringify(recentData));
+          console.log(`🧹 Cleaned up ${key}: ${data.length} → ${recentData.length} items`);
+        }
+      } catch (error) {
+        console.warn(`Failed to cleanup ${key}:`, error);
+      }
+    }
+  });
+
+  console.log('✅ Storage cleanup completed');
+}
+
+/**
+ * Format bytes helper function
+ */
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
 
