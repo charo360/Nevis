@@ -52,9 +52,18 @@ export class BrandScopedStorage {
       const key = this.getStorageKey();
       const serialized = JSON.stringify(data);
 
-      // Check if data is too large before attempting to store
+      // Check storage stats before attempting to store
+      const stats = this.getStorageStats();
       const dataSize = new Blob([serialized]).size;
-      const maxSize = 4 * 1024 * 1024; // 4MB limit per item
+      const maxSize = 2 * 1024 * 1024; // 2MB limit per item (reduced for better management)
+
+      console.log(`📊 Storage stats before save: Total: ${stats.totalUsage}, Available: ${stats.available}, New data: ${this.formatBytes(dataSize)}`);
+
+      // If available space is low, proactively clean up
+      if (dataSize > 1024 * 1024 && stats.available.includes('KB')) { // Less than 1MB available and data > 1MB
+        console.log('⚠️ Low storage space detected, performing proactive cleanup...');
+        this.aggressiveCleanup();
+      }
 
       if (dataSize > maxSize) {
         console.warn(`⚠️ Data too large for ${this.feature} (${this.formatBytes(dataSize)}), applying compression...`);
@@ -227,15 +236,33 @@ export class BrandScopedStorage {
   /**
    * Get storage usage statistics for the current brand
    */
-  getStorageStats(): { key: string; size: number; sizeFormatted: string } {
+  getStorageStats(): { key: string; size: number; sizeFormatted: string; totalUsage: string; available: string } {
     const key = this.getStorageKey();
     const data = localStorage.getItem(key);
     const size = data ? new Blob([data]).size : 0;
 
+    // Calculate total localStorage usage
+    let totalSize = 0;
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key) {
+        const value = localStorage.getItem(key);
+        if (value) {
+          totalSize += new Blob([value]).size;
+        }
+      }
+    }
+
+    // Estimate available space (localStorage limit is usually 5-10MB)
+    const estimatedLimit = 8 * 1024 * 1024; // 8MB estimate
+    const available = Math.max(0, estimatedLimit - totalSize);
+
     return {
       key,
       size,
-      sizeFormatted: this.formatBytes(size)
+      sizeFormatted: this.formatBytes(size),
+      totalUsage: this.formatBytes(totalSize),
+      available: this.formatBytes(available)
     };
   }
 
@@ -255,31 +282,107 @@ export class BrandScopedStorage {
     console.log(`🧹 Handling quota exceeded for ${this.feature} brand ${this.brandId}`);
 
     try {
-      // Try to clean up old data first
-      this.cleanupOldData();
+      // Step 1: Aggressive cleanup of all old data
+      this.aggressiveCleanup();
 
-      // Try to compress and save again
+      // Step 2: Try to compress and save again
       const compressedData = this.compressDataForStorage(data);
       const key = this.getStorageKey();
       const serialized = JSON.stringify(compressedData);
+
+      // Check size after compression
+      const compressedSize = new Blob([serialized]).size;
+      console.log(`📦 Compressed data size: ${this.formatBytes(compressedSize)}`);
 
       localStorage.setItem(key, serialized);
       console.log(`✅ Successfully saved after cleanup and compression for ${this.feature}`);
     } catch (retryError) {
       console.error(`❌ Failed to save even after cleanup: ${retryError.message}`);
 
-      // Last resort: save only essential data
-      const essentialData = this.extractEssentialData(data);
-      const key = this.getStorageKey();
-      const serialized = JSON.stringify(essentialData);
-
+      // Step 3: Try with only essential data
       try {
+        const essentialData = this.extractEssentialData(data);
+        const key = this.getStorageKey();
+        const serialized = JSON.stringify(essentialData);
+        const essentialSize = new Blob([serialized]).size;
+
+        console.log(`📦 Essential data size: ${this.formatBytes(essentialSize)}`);
         localStorage.setItem(key, serialized);
         console.log(`⚠️ Saved only essential data for ${this.feature} due to quota limits`);
       } catch (finalError) {
         console.error(`💥 Complete storage failure for ${this.feature}:`, finalError);
+
+        // Step 4: Clear current feature data and try minimal save
+        this.removeItem();
+        try {
+          const minimalData = this.extractMinimalData(data);
+          const key = this.getStorageKey();
+          localStorage.setItem(key, JSON.stringify(minimalData));
+          console.log(`🔥 Saved minimal data after clearing existing data`);
+        } catch (criticalError) {
+          console.error(`💀 Critical storage failure - cannot save any data:`, criticalError);
+        }
       }
     }
+  }
+
+  /**
+   * Aggressive cleanup of localStorage to free up space
+   */
+  private aggressiveCleanup(): void {
+    console.log('🔥 Performing aggressive localStorage cleanup...');
+
+    // Get all localStorage keys
+    const allKeys = Object.keys(localStorage);
+    let totalFreed = 0;
+
+    // Remove old migration flags and temporary data
+    allKeys.forEach(key => {
+      if (key.includes('_migrated') || key.includes('_temp') || key.includes('_cache')) {
+        const item = localStorage.getItem(key);
+        if (item) {
+          totalFreed += new Blob([item]).size;
+          localStorage.removeItem(key);
+        }
+      }
+    });
+
+    // Clean up old brand data (keep only current brand and most recent)
+    const brandKeys = allKeys.filter(key => key.includes('_') && key !== this.getStorageKey());
+    brandKeys.forEach(key => {
+      const item = localStorage.getItem(key);
+      if (item) {
+        totalFreed += new Blob([item]).size;
+        localStorage.removeItem(key);
+      }
+    });
+
+    console.log(`🧹 Freed up ${this.formatBytes(totalFreed)} of storage space`);
+  }
+
+  /**
+   * Extract minimal data (only the most recent items)
+   */
+  private extractMinimalData(data: any): any {
+    if (!data) return null;
+
+    if (Array.isArray(data)) {
+      // Keep only the 2 most recent items
+      return data.slice(0, 2).map(item => ({
+        id: item.id,
+        content: item.content ? item.content.substring(0, 200) + '...' : '',
+        date: item.date,
+        platform: item.platform || 'instagram'
+      }));
+    }
+
+    // For single items, return basic info only
+    return {
+      id: data.id,
+      content: data.content ? data.content.substring(0, 200) + '...' : '',
+      date: data.date || new Date().toISOString(),
+      platform: data.platform || 'instagram'
+    };
   }
 
   /**
@@ -290,7 +393,8 @@ export class BrandScopedStorage {
 
     // Handle arrays (like posts)
     if (Array.isArray(data)) {
-      return data.map(item => this.compressItem(item));
+      // Limit to 5 most recent items and compress each
+      return data.slice(0, 5).map(item => this.compressItem(item));
     }
 
     // Handle single items
@@ -298,7 +402,7 @@ export class BrandScopedStorage {
   }
 
   /**
-   * Compress individual data items
+   * Compress individual data items aggressively
    */
   private compressItem(item: any): any {
     if (!item || typeof item !== 'object') return item;
@@ -308,19 +412,43 @@ export class BrandScopedStorage {
     // Remove or compress large base64 images
     if (compressed.variants && Array.isArray(compressed.variants)) {
       compressed.variants = compressed.variants.map((variant: any) => ({
-        ...variant,
+        platform: variant.platform,
+        // Remove base64 images completely to save space
         imageUrl: variant.imageUrl && variant.imageUrl.startsWith('data:')
-          ? '[COMPRESSED_IMAGE]' // Replace base64 with placeholder
+          ? null // Remove base64 completely
           : variant.imageUrl
       }));
     }
 
-    // Remove large content fields if they exist
-    if (compressed.content && typeof compressed.content === 'string' && compressed.content.length > 1000) {
-      compressed.content = compressed.content.substring(0, 1000) + '...[TRUNCATED]';
+    // Compress content fields
+    if (compressed.content && typeof compressed.content === 'string') {
+      if (compressed.content.length > 500) {
+        compressed.content = compressed.content.substring(0, 500) + '...';
+      }
     }
 
-    return compressed;
+    // Remove large metadata fields
+    delete compressed.metadata;
+    delete compressed.marketIntelligence;
+    delete compressed.localContext;
+    delete compressed.contentVariants;
+    delete compressed.hashtagAnalysis;
+
+    // Keep only essential fields
+    const essential = {
+      id: compressed.id,
+      date: compressed.date,
+      content: compressed.content,
+      hashtags: compressed.hashtags,
+      platform: compressed.platform || 'instagram',
+      status: compressed.status,
+      catchyWords: compressed.catchyWords,
+      subheadline: compressed.subheadline,
+      callToAction: compressed.callToAction,
+      variants: compressed.variants
+    };
+
+    return essential;
   }
 
   /**
