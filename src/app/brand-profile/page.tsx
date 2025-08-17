@@ -28,7 +28,7 @@ function BrandProfileContent() {
           </p>
         </div>
 
-        <CbrandWizard mode={mode} brandId={brandId} />
+        <CbrandWizard key={`${mode}-${brandId || 'new'}`} mode={mode} brandId={brandId} />
       </div>
     </div>
   );

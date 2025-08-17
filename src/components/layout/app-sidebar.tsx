@@ -15,8 +15,9 @@ import {
   Archive,
   LayoutDashboard,
   Building2,
+  Palette,
 } from "lucide-react";
-import { BrandSelector } from '@/components/brand/brand-selector';
+import { UnifiedBrandSelector } from '@/components/brand/unified-brand-selector';
 import { usePathname } from "next/navigation";
 import {
   Sidebar,
@@ -44,9 +45,9 @@ export function AppSidebar() {
           </h1>
         </Link>
 
-        {/* Brand Selector */}
+        {/* Unified Brand Selector */}
         <div className="px-2 py-2">
-          <BrandSelector />
+          <UnifiedBrandSelector />
         </div>
       </SidebarHeader>
       <SidebarContent>
@@ -106,10 +107,23 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              isActive={isActive("/artifacts")}
+              isActive={isActive("/creative-studio")}
+              tooltip="Creative Studio"
+            >
+              <Link href="/creative-studio">
+                <Palette />
+                <span>Creative Studio</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={isActive("/artifacts-brand-scoped")}
               tooltip="Artifacts"
             >
-              <Link href="/artifacts">
+              <Link href="/artifacts-brand-scoped">
                 <Archive />
                 <span>Artifacts</span>
               </Link>

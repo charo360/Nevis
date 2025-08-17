@@ -209,8 +209,8 @@ export function isProfileComplete(profile: CompleteBrandProfile): boolean {
     'businessType',
     'location',
     'description',
-    'services',
-    'logoDataUrl'
+    'services'
+    // Temporarily removed 'logoDataUrl' to test logo persistence
   ];
 
   return requiredFields.every(field => {

@@ -22,12 +22,14 @@ import {
 } from 'lucide-react';
 import { useFirebaseAuth } from '@/hooks/use-firebase-auth';
 import { SidebarInset } from '@/components/ui/sidebar';
-import { useBrandContext } from '@/contexts/brand-context';
+import { useUnifiedBrand } from '@/contexts/unified-brand-context';
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user } = useFirebaseAuth();
-  const { currentBrand, brands, hasBrands, brandCount } = useBrandContext();
+  const { currentBrand, brands } = useUnifiedBrand();
+  const hasBrands = brands.length > 0;
+  const brandCount = brands.length;
 
   const features = [
     {
@@ -147,7 +149,7 @@ export default function DashboardPage() {
   const additionalFeatures = features.filter(f => !f.isCore);
 
   return (
-    <SidebarInset>
+    <SidebarInset key={currentBrand?.id || 'no-brand'}>
       <div className="flex-1 space-y-6 p-6">
         {/* Welcome Header */}
         <div className="space-y-2">
@@ -157,7 +159,7 @@ export default function DashboardPage() {
           <p className="text-gray-600">
             {user?.displayName ? `Hi ${user.displayName}! ` : 'Hi there! '}
             {currentBrand
-              ? `You're working with ${currentBrand.businessName}. Choose a feature to get started creating amazing content.`
+              ? `You're working with ${currentBrand.businessName || currentBrand.name || 'your brand'}. Choose a feature to get started creating amazing content.`
               : hasBrands
                 ? `You have ${brandCount} brand${brandCount !== 1 ? 's' : ''}. Select one from the sidebar or create a new one to get started.`
                 : "Let's start by creating your first brand profile, then explore all the powerful features available to you."
@@ -220,13 +222,13 @@ export default function DashboardPage() {
                     <img src={currentBrand.logoDataUrl} alt="Logo" className="w-8 h-8 rounded" />
                   ) : (
                     <span className="text-primary font-semibold">
-                      {currentBrand.businessName?.slice(0, 2).toUpperCase()}
+                      {(currentBrand.businessName || currentBrand.name || 'BR')?.slice(0, 2).toUpperCase()}
                     </span>
                   )}
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">{currentBrand.businessName}</h3>
-                  <p className="text-sm text-gray-600">{currentBrand.businessType}</p>
+                  <h3 className="font-semibold text-gray-900">{currentBrand.businessName || currentBrand.name || 'Unnamed Brand'}</h3>
+                  <p className="text-sm text-gray-600">{currentBrand.businessType || 'General Business'}</p>
                   {currentBrand.location && (
                     <p className="text-xs text-gray-500">{currentBrand.location}</p>
                   )}
@@ -240,6 +242,13 @@ export default function DashboardPage() {
                   <Zap className="w-4 h-4 mr-2" />
                   Start Creating Content
                   <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => router.push(`/brand-profile?mode=edit&id=${(currentBrand as any)?.id}`)}
+                  className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                >
+                  Edit Brand
                 </Button>
                 <Button
                   variant="outline"

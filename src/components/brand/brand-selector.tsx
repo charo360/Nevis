@@ -12,10 +12,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  ChevronDown, 
-  Plus, 
-  Building2, 
+import {
+  ChevronDown,
+  Plus,
+  Building2,
   Check,
   Settings,
   Sparkles
@@ -25,13 +25,13 @@ import { useRouter } from 'next/navigation';
 
 export function BrandSelector() {
   const router = useRouter();
-  const { 
-    currentBrand, 
-    brands, 
-    loading, 
-    selectBrand, 
-    hasBrands, 
-    brandCount 
+  const {
+    currentBrand,
+    brands,
+    loading,
+    selectBrand,
+    hasBrands,
+    brandCount
   } = useBrandContext();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -79,7 +79,8 @@ export function BrandSelector() {
     );
   }
 
-  const currentBrandInitials = currentBrand?.businessName
+  const currentBrandName = currentBrand?.businessName || currentBrand?.name || 'Brand';
+  const currentBrandInitials = currentBrandName
     ?.split(' ')
     .map(word => word[0])
     .join('')
@@ -103,7 +104,7 @@ export function BrandSelector() {
             </Avatar>
             <div className="flex flex-col items-start min-w-0">
               <span className="text-sm font-medium truncate max-w-[120px]">
-                {currentBrand?.businessName || 'Select Brand'}
+                {currentBrand?.businessName || currentBrand?.name || 'Select Brand'}
               </span>
               <div className="flex items-center gap-1">
                 <span className="text-xs text-muted-foreground">
@@ -130,7 +131,8 @@ export function BrandSelector() {
 
         {brands.map((brand: any) => {
           const isSelected = currentBrand && brand.id === (currentBrand as any).id;
-          const brandInitials = brand.businessName
+          const brandName = brand.businessName || brand.name || 'Brand';
+          const brandInitials = brandName
             ?.split(' ')
             .map((word: string) => word[0])
             .join('')
@@ -151,10 +153,10 @@ export function BrandSelector() {
               </Avatar>
               <div className="flex flex-col items-start min-w-0 flex-1">
                 <span className="text-sm font-medium truncate max-w-[140px]">
-                  {brand.businessName}
+                  {brand.businessName || brand.name || 'Unnamed Brand'}
                 </span>
                 <span className="text-xs text-muted-foreground truncate max-w-[140px]">
-                  {brand.businessType}
+                  {brand.businessType || 'General Business'}
                 </span>
               </div>
               {isSelected && (
@@ -165,7 +167,7 @@ export function BrandSelector() {
         })}
 
         <DropdownMenuSeparator />
-        
+
         <DropdownMenuItem onClick={handleCreateNew} className="flex items-center gap-2 p-2 cursor-pointer">
           <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10">
             <Plus className="h-3 w-3 text-primary" />

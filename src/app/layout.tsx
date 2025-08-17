@@ -7,7 +7,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import { AuthWrapper } from '@/components/auth/auth-wrapper';
-import { BrandProvider } from '@/contexts/brand-context';
+import { UnifiedBrandProvider } from '@/contexts/unified-brand-context';
 import React, { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import type { BrandProfile } from '@/lib/types';
@@ -113,11 +113,11 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased" suppressHydrationWarning>
         <AuthWrapper requireAuth={false}>
-          <BrandProvider>
+          <UnifiedBrandProvider>
             <ConditionalLayout>
               {children}
             </ConditionalLayout>
-          </BrandProvider>
+          </UnifiedBrandProvider>
         </AuthWrapper>
         <Toaster />
       </body>
