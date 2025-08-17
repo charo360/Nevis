@@ -332,7 +332,18 @@ ${designDNA}`;
             }
         } else {
             // This is a new, un-branded, creative prompt.
-            let creativePrompt = `You are an expert creative director specializing in high-end advertisements. Generate a compelling, high-quality social media advertisement ${input.outputType} based on the following instruction: "${remainingPrompt}".`;
+            let creativePrompt = `You are an expert creative director specializing in high-end advertisements. Generate a compelling, high-quality social media advertisement ${input.outputType} based on the following instruction: "${remainingPrompt}".
+
+⚡ GEMINI 2.0 FLASH HD QUALITY ENHANCEMENTS:
+- MAXIMUM RESOLUTION: Ultra-high definition rendering (4K+ quality)
+- SMALL FONT SIZE EXCELLENCE: Perfect rendering at 8pt, 10pt, 12pt, and all small font sizes
+- TINY TEXT PRECISION: Every character sharp and legible even when font size is very small
+- HIGH-DPI SMALL TEXT: Render small fonts as if on 300+ DPI display for maximum sharpness
+- PERFECT ANATOMY: Complete, symmetrical faces with natural expressions
+- SHARP DETAILS: Crystal-clear textures, no blur or artifacts
+- PROFESSIONAL LIGHTING: Studio-quality lighting with proper shadows
+- PREMIUM COMPOSITION: Golden ratio layouts with perfect balance
+- ADVANCED COLOR THEORY: Perfect contrast ratios (7:1 minimum) with vibrant, accurate colors`;
 
             if (input.outputType === 'image' && imageText) {
                 creativePrompt += `
@@ -404,6 +415,12 @@ Ensure the text is readable and well-composed.`
                         prompt: promptParts,
                         config: {
                             responseModalities: ['TEXT', 'IMAGE'],
+                            imageGenerationConfig: {
+                                aspectRatio: '1:1', // Standard square format for social media
+                                negativePrompt: 'low quality, blurry, pixelated, distorted faces, missing features, text errors, random text, lorem ipsum, placeholder text',
+                                guidanceScale: 20, // Higher guidance for better prompt adherence and quality
+                                seed: Math.floor(Math.random() * 1000000), // Random seed for variety
+                            },
                         },
                     });
 
