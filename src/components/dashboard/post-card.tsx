@@ -68,6 +68,49 @@ const isValidUrl = (url: string): boolean => {
   }
 };
 
+/**
+ * Utility function to detect and handle different image data URL formats
+ */
+function getImageFormatFromDataUrl(dataUrl: string): { format: string; extension: string } {
+  if (dataUrl.startsWith('data:image/svg+xml;base64,')) {
+    return { format: 'svg', extension: 'svg' };
+  } else if (dataUrl.startsWith('data:image/svg+xml;charset=utf-8,')) {
+    return { format: 'svg', extension: 'svg' };
+  } else if (dataUrl.startsWith('data:image/png;base64,')) {
+    return { format: 'png', extension: 'png' };
+  } else if (dataUrl.startsWith('data:image/jpeg;base64,') || dataUrl.startsWith('data:image/jpg;base64,')) {
+    return { format: 'jpeg', extension: 'jpg' };
+  } else if (dataUrl.startsWith('data:image/webp;base64,')) {
+    return { format: 'webp', extension: 'webp' };
+  }
+  return { format: 'png', extension: 'png' }; // default fallback
+}
+
+/**
+ * Convert SVG data URL to a more compatible format for download
+ */
+function processSvgDataUrl(dataUrl: string): string {
+  // If it's already a proper SVG data URL, return as is
+  if (dataUrl.startsWith('data:image/svg+xml;charset=utf-8,')) {
+    return dataUrl;
+  }
+
+  // If it's base64 encoded, decode and re-encode properly
+  if (dataUrl.startsWith('data:image/svg+xml;base64,')) {
+    try {
+      const base64Data = dataUrl.split(',')[1];
+      const svgContent = atob(base64Data);
+      // Re-encode as UTF-8 for better compatibility
+      return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`;
+    } catch (error) {
+      console.warn('Failed to process SVG data URL:', error);
+      return dataUrl; // return original if processing fails
+    }
+  }
+
+  return dataUrl;
+}
+
 const platformIcons: { [key in Platform]: React.ReactElement } = {
   Facebook: <Facebook className="h-4 w-4" />,
   Instagram: <Instagram className="h-4 w-4" />,
@@ -113,13 +156,50 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
     // First try to download the original HD image directly if URL is valid
     if (activeVariant?.imageUrl && isValidUrl(activeVariant.imageUrl)) {
       try {
+        // Check if it's a data URL (base64 encoded image)
+        if (activeVariant.imageUrl.startsWith('data:')) {
+          const { format, extension } = getImageFormatFromDataUrl(activeVariant.imageUrl);
+
+          // Process SVG data URLs for better compatibility
+          let processedUrl = activeVariant.imageUrl;
+          if (format === 'svg') {
+            processedUrl = processSvgDataUrl(activeVariant.imageUrl);
+          }
+
+          // Handle data URL directly
+          const link = document.createElement('a');
+          link.href = processedUrl;
+          link.download = `nevis-hd-${post.id}-${activeTab}.${extension}`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
+          toast({
+            title: "HD Download Complete",
+            description: `High-definition ${format.toUpperCase()} image downloaded successfully.`,
+          });
+          return;
+        }
+
+        // Handle regular image URLs (PNG, JPEG, etc.)
         const response = await fetch(activeVariant.imageUrl);
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
 
+        // Determine file extension based on content type
+        const contentType = response.headers.get('content-type') || blob.type;
+        let extension = 'png'; // default
+        if (contentType.includes('jpeg') || contentType.includes('jpg')) {
+          extension = 'jpg';
+        } else if (contentType.includes('svg')) {
+          extension = 'svg';
+        } else if (contentType.includes('webp')) {
+          extension = 'webp';
+        }
+
         const link = document.createElement('a');
         link.href = url;
-        link.download = `nevis-hd-${post.id}-${activeTab}.png`;
+        link.download = `nevis-hd-${post.id}-${activeTab}.${extension}`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -147,11 +227,15 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
     }
 
     try {
+      // For SVG data URLs, we need special handling to ensure high quality conversion
+      const activeVariant = post.variants.find(v => v.platform === activeTab);
+      const isSvgDataUrl = activeVariant?.imageUrl?.startsWith('data:image/svg+xml');
+
       const dataUrl = await toPng(nodeToCapture, {
         cacheBust: true,
-        canvasWidth: 2160, // 4K width for maximum quality
-        canvasHeight: 2160, // 4K height for maximum quality
-        pixelRatio: 3, // Higher pixel ratio for HD quality
+        canvasWidth: isSvgDataUrl ? 3240 : 2160, // Higher resolution for SVG conversion
+        canvasHeight: isSvgDataUrl ? 3240 : 2160, // Higher resolution for SVG conversion
+        pixelRatio: isSvgDataUrl ? 4 : 3, // Higher pixel ratio for SVG conversion
         quality: 1.0, // Maximum quality
         style: {
           borderRadius: '0',
