@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import Image from "next/image";
-import { Facebook, Instagram, Linkedin, MoreVertical, Pen, RefreshCw, Twitter, CalendarIcon, Download, Loader2, Video, ChevronLeft, ChevronRight, ImageOff } from "lucide-react";
+import { Facebook, Instagram, Linkedin, MoreVertical, Pen, RefreshCw, Twitter, CalendarIcon, Download, Loader2, Video, ChevronLeft, ChevronRight, ImageOff, Copy, Eye } from "lucide-react";
 import { toPng } from 'html-to-image';
 
 import { Badge } from "@/components/ui/badge";
@@ -105,6 +105,8 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   const [editedHashtags, setEditedHashtags] = React.useState(post.hashtags);
   const [videoUrl, setVideoUrl] = React.useState<string | undefined>(post.videoUrl);
   const [showVideoDialog, setShowVideoDialog] = React.useState(false);
+  const [showImagePreview, setShowImagePreview] = React.useState(false);
+  const [previewImageUrl, setPreviewImageUrl] = React.useState<string>('');
   const [activeTab, setActiveTab] = React.useState<Platform>(post.variants[0]?.platform || 'Instagram');
   const downloadRefs = React.useRef<Record<Platform, HTMLDivElement | null>>({} as Record<Platform, HTMLDivElement | null>);
 
@@ -122,6 +124,64 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
     }
   }, [post.date]);
   const { toast } = useToast();
+
+  // Platform-specific dimensions
+  const getPlatformDimensions = React.useCallback((platform: Platform) => {
+    switch (platform.toLowerCase()) {
+      case 'instagram':
+        return { width: 1080, height: 1080, aspectClass: 'aspect-square' };
+      case 'facebook':
+        return { width: 1200, height: 630, aspectClass: 'aspect-[1200/630]' };
+      case 'twitter':
+        return { width: 1200, height: 675, aspectClass: 'aspect-[1200/675]' };
+      case 'linkedin':
+        return { width: 1200, height: 627, aspectClass: 'aspect-[1200/627]' };
+      case 'tiktok':
+        return { width: 1080, height: 1920, aspectClass: 'aspect-[9/16]' };
+      default:
+        return { width: 1080, height: 1080, aspectClass: 'aspect-square' };
+    }
+  }, []);
+
+  // Copy functionality
+  const handleCopyCaption = React.useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(post.content);
+      toast({
+        title: "Caption Copied!",
+        description: "The caption has been copied to your clipboard.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Copy Failed",
+        description: "Could not copy the caption. Please try again.",
+      });
+    }
+  }, [post.content, toast]);
+
+  const handleCopyHashtags = React.useCallback(async () => {
+    try {
+      const hashtagsText = typeof post.hashtags === 'string' ? post.hashtags : post.hashtags?.join(' ') || '';
+      await navigator.clipboard.writeText(hashtagsText);
+      toast({
+        title: "Hashtags Copied!",
+        description: "The hashtags have been copied to your clipboard.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Copy Failed",
+        description: "Could not copy the hashtags. Please try again.",
+      });
+    }
+  }, [post.hashtags, toast]);
+
+  // Image preview functionality
+  const handleImagePreview = React.useCallback((imageUrl: string) => {
+    setPreviewImageUrl(imageUrl);
+    setShowImagePreview(true);
+  }, []);
 
   const handleDownload = React.useCallback(async () => {
     const activeVariant = post.variants.find(v => v.platform === activeTab);
@@ -207,12 +267,13 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
       // Check if we're converting an SVG enhanced design
       const activeVariant = post.variants.find(v => v.platform === activeTab);
       const isSvgDataUrl = activeVariant?.imageUrl?.startsWith('data:image/svg+xml');
+      const platformDimensions = getPlatformDimensions(activeTab);
 
-      // Optimized settings for social media posts
+      // Platform-specific optimized settings for social media posts
       const socialMediaSettings = {
         cacheBust: true,
-        canvasWidth: 1080, // Instagram standard resolution
-        canvasHeight: 1080, // Square format for social media
+        canvasWidth: platformDimensions.width,
+        canvasHeight: platformDimensions.height,
         pixelRatio: 3, // High DPI for crisp images
         quality: 1.0, // Maximum quality
         backgroundColor: '#ffffff', // White background for transparency
@@ -224,10 +285,10 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
 
       // Enhanced settings for SVG conversion
       if (isSvgDataUrl) {
-        socialMediaSettings.canvasWidth = 1080; // Keep social media standard
-        socialMediaSettings.canvasHeight = 1080;
+        socialMediaSettings.canvasWidth = platformDimensions.width;
+        socialMediaSettings.canvasHeight = platformDimensions.height;
         socialMediaSettings.pixelRatio = 4; // Extra high DPI for SVG conversion
-        console.log('🎨 Converting enhanced SVG design to social media PNG...');
+        console.log(`🎨 Converting enhanced SVG design to ${platformDimensions.width}x${platformDimensions.height} PNG for ${activeTab}...`);
       }
 
       const dataUrl = await toPng(nodeToCapture, socialMediaSettings);
@@ -378,61 +439,97 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
                 </TabsTrigger>
               ))}
             </TabsList>
-            {post.variants.map(variant => (
-              <TabsContent key={variant.platform} value={variant.platform}>
-                <div className="relative aspect-square w-full overflow-hidden">
-                  {(isRegenerating || isGeneratingVideo) && (
-                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/80">
-                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                      <span className="sr-only">{isRegenerating ? 'Regenerating image...' : 'Generating video...'}</span>
-                    </div>
-                  )}
-                  <div ref={el => (downloadRefs.current[variant.platform] = el)} className="relative aspect-square w-full overflow-hidden rounded-md border">
-                    {variant.imageUrl && isValidUrl(variant.imageUrl) ? (
-                      <Image
-                        alt={`Generated post image for ${variant.platform}`}
-                        className={cn('h-full w-full object-cover transition-opacity', (isRegenerating || isGeneratingVideo) ? 'opacity-50' : 'opacity-100')}
-                        height={1080}
-                        src={variant.imageUrl}
-                        data-ai-hint="social media post"
-                        width={1080}
-                        crossOrigin="anonymous"
-                        unoptimized={variant.imageUrl.startsWith('data:')} // Don't optimize data URLs
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-muted">
-                        <ImageOff className="h-12 w-12 text-muted-foreground" />
-                        {variant.imageUrl && !isValidUrl(variant.imageUrl) && (
-                          <div className="absolute bottom-2 left-2 right-2">
-                            <p className="text-xs text-red-500 bg-white/90 p-1 rounded">
-                              Invalid image URL
-                            </p>
-                          </div>
-                        )}
+            {post.variants.map(variant => {
+              const dimensions = getPlatformDimensions(variant.platform);
+              return (
+                <TabsContent key={variant.platform} value={variant.platform}>
+                  <div className={`relative ${dimensions.aspectClass} w-full overflow-hidden`}>
+                    {(isRegenerating || isGeneratingVideo) && (
+                      <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/80">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        <span className="sr-only">{isRegenerating ? 'Regenerating image...' : 'Generating video...'}</span>
                       </div>
                     )}
+                    <div ref={el => (downloadRefs.current[variant.platform] = el)} className={`relative ${dimensions.aspectClass} w-full overflow-hidden rounded-md border group`}>
+                      {variant.imageUrl && isValidUrl(variant.imageUrl) ? (
+                        <div
+                          className="relative h-full w-full cursor-pointer"
+                          onClick={() => handleImagePreview(variant.imageUrl)}
+                        >
+                          <Image
+                            alt={`Generated post image for ${variant.platform}`}
+                            className={cn('h-full w-full object-cover transition-opacity', (isRegenerating || isGeneratingVideo) ? 'opacity-50' : 'opacity-100')}
+                            height={dimensions.height}
+                            src={variant.imageUrl}
+                            data-ai-hint="social media post"
+                            width={dimensions.width}
+                            crossOrigin="anonymous"
+                            unoptimized={variant.imageUrl.startsWith('data:')} // Don't optimize data URLs
+                          />
+                          {/* Preview overlay */}
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                            <div className="bg-white/90 rounded-full p-2">
+                              <Eye className="h-5 w-5 text-gray-700" />
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-muted">
+                          <ImageOff className="h-12 w-12 text-muted-foreground" />
+                          {variant.imageUrl && !isValidUrl(variant.imageUrl) && (
+                            <div className="absolute bottom-2 left-2 right-2">
+                              <p className="text-xs text-red-500 bg-white/90 p-1 rounded">
+                                Invalid image URL
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </TabsContent>
-            ))}
+                </TabsContent>
+              );
+            })}
           </Tabs>
 
           <div className="space-y-2">
-            <p className="text-sm text-foreground line-clamp-4">{post.content}</p>
+            <div className="flex items-start justify-between gap-2">
+              <p className="text-sm text-foreground line-clamp-4 flex-1">{post.content}</p>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCopyCaption}
+                className="h-8 w-8 p-0 flex-shrink-0"
+                title="Copy caption"
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </CardContent>
         <CardFooter className="p-4 pt-0">
-          <div className="flex flex-wrap gap-1">
-            {post.hashtags && post.hashtags.split(" ").map((tag, index) => (
-              <Badge key={index} variant="secondary" className="font-normal">
-                {tag}
-              </Badge>
-            ))}
-            {!post.hashtags && (
-              <Badge variant="secondary" className="font-normal">
-                #enhanced #ai #design
-              </Badge>
-            )}
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex flex-wrap gap-1 flex-1">
+              {post.hashtags && post.hashtags.split(" ").map((tag, index) => (
+                <Badge key={index} variant="secondary" className="font-normal">
+                  {tag}
+                </Badge>
+              ))}
+              {!post.hashtags && (
+                <Badge variant="secondary" className="font-normal">
+                  #enhanced #ai #design
+                </Badge>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleCopyHashtags}
+              className="h-8 w-8 p-0 flex-shrink-0"
+              title="Copy hashtags"
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
           </div>
         </CardFooter>
       </Card>
@@ -490,6 +587,32 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowVideoDialog(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Preview Modal */}
+      <Dialog open={showImagePreview} onOpenChange={setShowImagePreview}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] p-2">
+          <DialogHeader className="pb-2">
+            <DialogTitle>Image Preview</DialogTitle>
+            <DialogDescription>
+              Click and drag to pan, scroll to zoom
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-center max-h-[70vh] overflow-hidden">
+            {previewImageUrl && (
+              <img
+                src={previewImageUrl}
+                alt="Post image preview"
+                className="max-w-full max-h-full object-contain rounded-lg"
+              />
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowImagePreview(false)}>
+              Close
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

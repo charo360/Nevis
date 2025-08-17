@@ -219,6 +219,13 @@ The user's instruction is: "${remainingPrompt}"`;
 
 **CREATIVE BRIEF:**
 Create a professional, high-impact social media ${input.outputType} for a ${bp.businessType} business.
+
+🎯 CRITICAL ASPECT RATIO REQUIREMENT:
+${input.aspectRatio ? `- MUST generate ${input.outputType} in exactly ${input.aspectRatio} aspect ratio
+- Dimensions: ${input.aspectRatio === '16:9' ? '1920x1080px (landscape)' : input.aspectRatio === '9:16' ? '1080x1920px (portrait)' : '1080x1080px (square)'}
+- DO NOT generate square images unless aspect ratio is specifically 1:1
+- DO NOT generate portrait images unless aspect ratio is specifically 9:16` : '- Generate in appropriate aspect ratio for the content'}
+
 Visual Style: ${bp.visualStyle} | Writing Tone: ${bp.writingTone}
 Content Themes: ${bp.contentThemes}
 
@@ -415,22 +422,31 @@ Ensure the text is readable and well-composed.`
                         prompt: promptParts,
                         config: {
                             responseModalities: ['TEXT', 'IMAGE'],
-                            // Temporarily removed imageGenerationConfig to test if it's causing 500 error
-                            // imageGenerationConfig: {
-                            //     aspectRatio: '1:1', // Standard square format for social media
-                            //     negativePrompt: 'low quality, blurry, pixelated, distorted faces, missing features, text errors, random text, lorem ipsum, placeholder text',
-                            //     guidanceScale: 20, // Higher guidance for better prompt adherence and quality
-                            //     seed: Math.floor(Math.random() * 1000000), // Random seed for variety
-                            // },
                         },
                     });
 
-                    const imageUrl = media?.url ?? null;
+                    let imageUrl = media?.url ?? null;
                     if (!imageUrl) {
                         if (attempts === maxAttempts) {
                             throw new Error('Failed to generate image');
                         }
                         continue;
+                    }
+
+                    // Apply aspect ratio correction if needed
+                    if (input.aspectRatio && input.aspectRatio !== '1:1') {
+                        console.log(`🖼️ Applying aspect ratio correction for ${input.aspectRatio}...`);
+                        try {
+                            const { cropImageFromUrl } = await import('@/lib/image-processing');
+                            // Map aspect ratio to platform for cropping
+                            const platformForCropping = input.aspectRatio === '16:9' ? 'linkedin' :
+                                input.aspectRatio === '9:16' ? 'story' : 'instagram';
+                            imageUrl = await cropImageFromUrl(imageUrl, platformForCropping);
+                            console.log(`✅ Image cropped successfully for ${input.aspectRatio}`);
+                        } catch (cropError) {
+                            console.warn('⚠️ Image cropping failed, using original:', cropError);
+                            // Continue with original image if cropping fails
+                        }
                     }
 
                     // Quality validation for brand profile designs

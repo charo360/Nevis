@@ -105,11 +105,11 @@ const getAspectRatioForPlatform = (platform: Platform): string => {
     case 'Instagram':
       return '1:1'; // Square
     case 'Facebook':
-      return '1:1'; // Square is highly compatible
+      return '16:9'; // Landscape - Facebook posts are landscape format
     case 'Twitter':
       return '16:9'; // Landscape
     case 'LinkedIn':
-      return '1:1'; // Square is recommended
+      return '16:9'; // Landscape - LinkedIn posts are landscape format
     default:
       return '1:1';
   }

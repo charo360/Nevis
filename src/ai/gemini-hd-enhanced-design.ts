@@ -224,7 +224,16 @@ function buildGeminiHDPrompt(input: GeminiHDEnhancedDesignInput): string {
 
 **DESIGN BRIEF:**
 Create a professional, high-impact social media design for a ${businessType} business.
-Target Platform: ${platform} | Aspect Ratio: 1:1 (1080x1080px)
+
+🎯 CRITICAL ASPECT RATIO REQUIREMENT:
+- Platform: ${platform}
+- MUST generate image in correct aspect ratio for ${platform}
+- Facebook/LinkedIn: 16:9 landscape (1920x1080px)
+- Instagram: 1:1 square (1080x1080px)
+- Twitter: 16:9 landscape (1920x1080px)
+- DO NOT generate square images for Facebook or LinkedIn
+- DO NOT generate portrait images unless specifically required
+
 Visual Style: ${visualStyle} | Location: ${brandProfile.location || 'Global'}
 
 **TEXT CONTENT TO INCLUDE:**
@@ -428,8 +437,8 @@ function getPlatformAspectRatio(platform: string): string {
   // Horizontal formats (16:9 aspect ratio)
   if (platformLower.includes('linkedin') ||
     platformLower.includes('twitter') ||
+    platformLower.includes('facebook') ||
     platformLower.includes('youtube') ||
-    platformLower.includes('facebook cover') ||
     platformLower.includes('banner')) {
     return '16:9';
   }
