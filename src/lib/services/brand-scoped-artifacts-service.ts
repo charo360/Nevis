@@ -110,24 +110,83 @@ export class BrandScopedArtifactsService {
       if (artifacts && Array.isArray(artifacts)) {
         console.log(`✅ Found ${artifacts.length} artifacts for brand ${this.brandId}`);
 
-        artifacts.forEach((artifact: Artifact) => {
-          // Convert date strings back to Date objects
-          artifact.timestamps.created = new Date(artifact.timestamps.created);
-          artifact.timestamps.modified = new Date(artifact.timestamps.modified);
-          artifact.timestamps.uploaded = new Date(artifact.timestamps.uploaded);
-          if (artifact.usage.lastUsed) {
-            artifact.usage.lastUsed = new Date(artifact.usage.lastUsed);
+        let validArtifacts = 0;
+        artifacts.forEach((artifact: any) => {
+          // Validate artifact structure before processing
+          if (!artifact || typeof artifact !== 'object') {
+            console.warn('Skipping invalid artifact data:', artifact);
+            return;
           }
-          this.artifacts.set(artifact.id, artifact);
-          console.log(`📋 Loaded artifact: ${artifact.name}, isActive: ${artifact.isActive}, usageType: ${artifact.usageType}`);
+
+          // Ensure required properties exist
+          if (!artifact.id || !artifact.name) {
+            console.warn('Skipping artifact with missing required properties:', artifact);
+            return;
+          }
+
+          // Validate and fix timestamps
+          if (!artifact.timestamps || typeof artifact.timestamps !== 'object') {
+            console.warn('Artifact missing timestamps, creating default:', artifact.id);
+            artifact.timestamps = {
+              created: new Date(),
+              modified: new Date(),
+              uploaded: new Date()
+            };
+          } else {
+            try {
+              artifact.timestamps.created = artifact.timestamps.created ? new Date(artifact.timestamps.created) : new Date();
+              artifact.timestamps.modified = artifact.timestamps.modified ? new Date(artifact.timestamps.modified) : new Date();
+              artifact.timestamps.uploaded = artifact.timestamps.uploaded ? new Date(artifact.timestamps.uploaded) : new Date();
+            } catch (dateError) {
+              console.warn('Invalid timestamps in artifact, using current date:', artifact.id);
+              artifact.timestamps = {
+                created: new Date(),
+                modified: new Date(),
+                uploaded: new Date()
+              };
+            }
+          }
+
+          // Validate and fix usage data
+          if (!artifact.usage || typeof artifact.usage !== 'object') {
+            artifact.usage = {
+              count: 0,
+              lastUsed: null
+            };
+          } else {
+            if (artifact.usage.lastUsed) {
+              try {
+                artifact.usage.lastUsed = new Date(artifact.usage.lastUsed);
+              } catch (dateError) {
+                artifact.usage.lastUsed = null;
+              }
+            }
+            if (typeof artifact.usage.count !== 'number') {
+              artifact.usage.count = 0;
+            }
+          }
+
+          // Ensure other required properties
+          if (typeof artifact.isActive !== 'boolean') {
+            artifact.isActive = false;
+          }
+
+          this.artifacts.set(artifact.id, artifact as Artifact);
+          console.log(`📋 Loaded artifact: ${artifact.name}, isActive: ${artifact.isActive}, usageType: ${artifact.usageType || 'unknown'}`);
+          validArtifacts++;
         });
 
-        console.log(`🎯 Total artifacts loaded for brand ${this.brandId}: ${this.artifacts.size}`);
+        console.log(`🎯 Successfully loaded ${validArtifacts} valid artifacts for brand ${this.brandId}`);
       } else {
         console.log(`📂 No artifacts found for brand ${this.brandId}`);
       }
     } catch (error) {
       console.error(`Failed to load artifacts for brand ${this.brandId}:`, error);
+      // Clear corrupted artifact data
+      if (this.artifactsStorage) {
+        console.log('🧹 Clearing corrupted artifact data');
+        this.artifactsStorage.removeItem();
+      }
     }
   }
 
@@ -164,15 +223,64 @@ export class BrandScopedArtifactsService {
       const folders = this.foldersStorage.getItem<ArtifactFolder[]>();
 
       if (folders && Array.isArray(folders)) {
-        folders.forEach((folder: ArtifactFolder) => {
-          folder.metadata.created = new Date(folder.metadata.created);
-          folder.metadata.modified = new Date(folder.metadata.modified);
-          this.folders.set(folder.id, folder);
+        let validFolders = 0;
+        folders.forEach((folder: any) => {
+          // Validate folder structure before processing
+          if (!folder || typeof folder !== 'object') {
+            console.warn('Skipping invalid folder data:', folder);
+            return;
+          }
+
+          // Ensure required properties exist
+          if (!folder.id || !folder.name) {
+            console.warn('Skipping folder with missing required properties:', folder);
+            return;
+          }
+
+          // Ensure metadata exists and has required properties
+          if (!folder.metadata || typeof folder.metadata !== 'object') {
+            console.warn('Folder missing metadata, creating default:', folder.id);
+            folder.metadata = {
+              created: new Date(),
+              modified: new Date()
+            };
+          } else {
+            // Validate and convert date properties
+            try {
+              folder.metadata.created = folder.metadata.created ? new Date(folder.metadata.created) : new Date();
+              folder.metadata.modified = folder.metadata.modified ? new Date(folder.metadata.modified) : new Date();
+            } catch (dateError) {
+              console.warn('Invalid date in folder metadata, using current date:', folder.id);
+              folder.metadata.created = new Date();
+              folder.metadata.modified = new Date();
+            }
+          }
+
+          // Ensure other required properties
+          if (!folder.artifactIds || !Array.isArray(folder.artifactIds)) {
+            folder.artifactIds = [];
+          }
+
+          if (typeof folder.isDefault !== 'boolean') {
+            folder.isDefault = false;
+          }
+
+          if (!folder.type) {
+            folder.type = 'custom';
+          }
+
+          this.folders.set(folder.id, folder as ArtifactFolder);
+          validFolders++;
         });
-        console.log(`✅ Loaded ${folders.length} folders for brand ${this.brandId}`);
+        console.log(`✅ Loaded ${validFolders} valid folders for brand ${this.brandId}`);
       }
     } catch (error) {
       console.error(`Failed to load folders for brand ${this.brandId}:`, error);
+      // Clear corrupted folder data
+      if (this.foldersStorage) {
+        console.log('🧹 Clearing corrupted folder data');
+        this.foldersStorage.removeItem();
+      }
     }
   }
 
