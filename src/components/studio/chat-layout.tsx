@@ -7,6 +7,7 @@ import Balancer from 'react-wrap-balancer';
 import { Card, CardContent } from '@/components/ui/card';
 import { Bot } from 'lucide-react';
 import { generateCreativeAssetAction, generateEnhancedDesignAction } from '@/app/actions';
+import { generateRevo2CreativeAssetAction } from '@/app/actions/revo-2-actions';
 import { useToast } from '@/hooks/use-toast';
 import { type RevoModel } from '@/components/ui/revo-model-selector';
 
@@ -86,7 +87,27 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
             let result;
             let aiResponse: Message;
 
-            if (selectedRevoModel === 'revo-1.5' && outputType === 'image' && brandProfile) {
+            if (selectedRevoModel === 'revo-2.0' && outputType === 'image' && brandProfile) {
+                // Use Revo 2.0 next-generation AI for images with brand profile
+                const revo2Result = await generateRevo2CreativeAssetAction(
+                    currentInput,
+                    brandProfile,
+                    {
+                        platform: 'instagram', // Default platform for Creative Studio
+                        aspectRatio: '1:1', // Default to square for Creative Studio
+                        style: 'photographic',
+                        quality: 'ultra',
+                        mood: 'professional'
+                    }
+                );
+
+                aiResponse = {
+                    id: (Date.now() + 1).toString(),
+                    role: 'assistant',
+                    content: `🌟 ${selectedRevoModel} Revolutionary AI Generated!\n\nQuality Score: ${revo2Result.qualityScore}/10\nEnhancements: ${revo2Result.enhancementsApplied.join(', ')}\nProcessing Time: ${revo2Result.processingTime}ms\n\nThis image was created using our next-generation AI engine with revolutionary capabilities and ultra-high quality results.`,
+                    imageUrl: revo2Result.imageUrl,
+                };
+            } else if (selectedRevoModel === 'revo-1.5' && outputType === 'image' && brandProfile) {
                 // Use enhanced design generation for images with brand profile
                 const enhancedResult = await generateEnhancedDesignAction(
                     brandProfile.businessType || 'business',
