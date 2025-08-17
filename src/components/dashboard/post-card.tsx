@@ -142,48 +142,51 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
             // Handle other data URL formats (PNG, JPEG, etc.) directly
             const link = document.createElement('a');
             link.href = activeVariant.imageUrl;
-            link.download = `nevis-hd-${post.id}-${activeTab}.${extension}`;
+            link.download = `nevis-social-${post.id}-${activeTab}.${extension}`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
 
             toast({
-              title: "HD Download Complete",
+              title: "Social Media Image Ready",
               description: `High-definition ${format.toUpperCase()} image downloaded successfully.`,
             });
             return;
           }
+        } else {
+          // Handle regular HTTP/HTTPS URLs (not data URLs)
+          try {
+            const response = await fetch(activeVariant.imageUrl);
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+
+            // Determine file extension based on content type
+            const contentType = response.headers.get('content-type') || blob.type;
+            let extension = 'png'; // default
+            if (contentType.includes('jpeg') || contentType.includes('jpg')) {
+              extension = 'jpg';
+            } else if (contentType.includes('webp')) {
+              extension = 'webp';
+            }
+
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `nevis-social-${post.id}-${activeTab}.${extension}`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
+            toast({
+              title: "Social Media Image Ready",
+              description: "High-definition image downloaded successfully.",
+            });
+            return;
+          } catch (error) {
+            console.warn('Direct download failed, falling back to canvas conversion:', error);
+            // Fall through to canvas conversion
+          }
         }
-
-        // Handle regular image URLs (PNG, JPEG, etc.)
-        const response = await fetch(activeVariant.imageUrl);
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-
-        // Determine file extension based on content type
-        const contentType = response.headers.get('content-type') || blob.type;
-        let extension = 'png'; // default
-        if (contentType.includes('jpeg') || contentType.includes('jpg')) {
-          extension = 'jpg';
-        } else if (contentType.includes('svg')) {
-          extension = 'svg';
-        } else if (contentType.includes('webp')) {
-          extension = 'webp';
-        }
-
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `nevis-hd-${post.id}-${activeTab}.${extension}`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-
-        toast({
-          title: "HD Download Complete",
-          description: "High-definition image downloaded successfully.",
-        });
-        return;
       } catch (error) {
         console.warn('Direct HD download failed, falling back to capture method:', error);
       }
