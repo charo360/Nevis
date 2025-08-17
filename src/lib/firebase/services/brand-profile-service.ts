@@ -53,7 +53,8 @@ export class BrandProfileService extends DatabaseService<BrandProfileDocument> {
       businessType: profile.businessType || 'General',
       description: profile.businessDescription || profile.description || '',
       location: cleanObject(profile.location),
-      website: cleanUrl(profile.website),
+      website: cleanUrl(profile.websiteUrl || (profile as any).website),
+      logoDataUrl: profile.logoDataUrl || '', // Added logo support
       socialMedia: cleanObject({
         instagram: profile.socialMedia?.instagram || '',
         facebook: profile.socialMedia?.facebook || '',
@@ -66,6 +67,17 @@ export class BrandProfileService extends DatabaseService<BrandProfileDocument> {
       visualStyle: profile.visualStyle || '',
       targetAudience: profile.targetAudience || '',
       brandVoice: profile.brandVoice || '',
+
+      // Store analysis data for future use
+      analysisData: {
+        websiteUrl: profile.websiteUrl || '',
+        lastAnalyzed: new Date().toISOString(),
+        visualStyle: profile.visualStyle || '',
+        writingTone: profile.writingTone || '',
+        contentThemes: profile.contentThemes || '',
+        hasBeenAnalyzed: !!(profile.visualStyle && profile.writingTone && profile.contentThemes)
+      },
+
       services: Array.isArray(profile.services) ? profile.services.map(service => ({
         name: service?.name || '',
         description: service?.description || '',
@@ -87,26 +99,47 @@ export class BrandProfileService extends DatabaseService<BrandProfileDocument> {
   // Convert from Firestore document to app BrandProfile
   private fromFirestoreDocument(doc: BrandProfileDocument): CompleteBrandProfile {
     return {
+      // Basic Information
       businessName: doc.name,
-      businessType: doc.businessType,
-      businessDescription: doc.description,
-      location: doc.location,
-      website: doc.website,
-      socialMedia: {
-        instagram: doc.socialMedia?.instagram || '',
-        facebook: doc.socialMedia?.facebook || '',
-        twitter: doc.socialMedia?.twitter || '',
-        linkedin: doc.socialMedia?.linkedin || '',
-        tiktok: doc.socialMedia?.tiktok || '',
-      },
-      brandColors: doc.brandColors || [],
-      brandFonts: doc.brandFonts || [],
-      visualStyle: doc.visualStyle,
-      targetAudience: doc.targetAudience,
-      brandVoice: doc.brandVoice,
+      businessType: doc.businessType || '',
+      location: doc.location || '',
+      description: doc.description || '',
+
+      // Website and Logo
+      websiteUrl: doc.website || '',
+      logoDataUrl: doc.logoDataUrl || '', // Added logo support
+
+      // Services & Target Audience
       services: doc.services || [],
+      targetAudience: doc.targetAudience || '',
+      keyFeatures: '', // Not stored in Firebase yet
+      competitiveAdvantages: '', // Not stored in Firebase yet
+
+      // Contact Information
+      contactPhone: '', // Not stored in Firebase yet
+      contactEmail: '', // Not stored in Firebase yet
+      contactAddress: '', // Not stored in Firebase yet
+
+      // Brand Identity & Voice
+      visualStyle: doc.visualStyle || '',
+      writingTone: '', // Not stored in Firebase yet
+      contentThemes: '', // Not stored in Firebase yet
+
+      // Brand Colors
+      primaryColor: '#3B82F6', // Default values
+      accentColor: '#10B981',
+      backgroundColor: '#F8FAFC',
+
+      // Social Media
+      facebookUrl: doc.socialMedia?.facebook || '',
+      instagramUrl: doc.socialMedia?.instagram || '',
+      twitterUrl: doc.socialMedia?.twitter || '',
+      linkedinUrl: doc.socialMedia?.linkedin || '',
+
+      // Design Examples
       designExamples: doc.designExamples || [],
-      // Add required CompleteBrandProfile fields
+
+      // Metadata fields
       id: doc.id,
       createdAt: doc.createdAt instanceof Date ? doc.createdAt.toISOString() : new Date().toISOString(),
       updatedAt: doc.updatedAt instanceof Date ? doc.updatedAt.toISOString() : new Date().toISOString(),
@@ -209,6 +242,8 @@ export class BrandProfileService extends DatabaseService<BrandProfileDocument> {
 
     return this.fromFirestoreDocument(doc);
   }
+
+
 }
 
 // Export singleton instance

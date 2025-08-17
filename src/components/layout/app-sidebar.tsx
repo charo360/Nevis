@@ -13,7 +13,11 @@ import {
   Zap,
   Calendar,
   Archive,
+  LayoutDashboard,
+  Building2,
+  Palette,
 } from "lucide-react";
+import { UnifiedBrandSelector } from '@/components/brand/unified-brand-selector';
 import { usePathname } from "next/navigation";
 import {
   Sidebar,
@@ -33,14 +37,47 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader>
         <Link href="/" className="flex items-center gap-2">
-          <Bot className="h-8 w-8 text-primary" />
+          <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+            <Sparkles className="w-5 h-5 text-white" />
+          </div>
           <h1 className="text-xl font-bold text-primary-foreground font-headline">
-            LocalBuzz
+            Crevo
           </h1>
         </Link>
+
+        {/* Unified Brand Selector */}
+        <div className="px-2 py-2">
+          <UnifiedBrandSelector />
+        </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={isActive("/dashboard")}
+              tooltip="Dashboard"
+            >
+              <Link href="/dashboard">
+                <LayoutDashboard />
+                <span>Dashboard</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={isActive("/brands")}
+              tooltip="Manage Brands"
+            >
+              <Link href="/brands">
+                <Building2 />
+                <span>Manage Brands</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
@@ -70,15 +107,29 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              isActive={isActive("/artifacts")}
+              isActive={isActive("/creative-studio")}
+              tooltip="Creative Studio"
+            >
+              <Link href="/creative-studio">
+                <Palette />
+                <span>Creative Studio</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={isActive("/artifacts-brand-scoped")}
               tooltip="Artifacts"
             >
-              <Link href="/artifacts">
+              <Link href="/artifacts-brand-scoped">
                 <Archive />
                 <span>Artifacts</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
+
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
@@ -91,18 +142,7 @@ export function AppSidebar() {
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={isActive("/creative-studio")}
-              tooltip="Creative Studio"
-            >
-              <Link href="/creative-studio">
-                <Wand />
-                <span>Creative Studio</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild

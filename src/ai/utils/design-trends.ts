@@ -187,9 +187,11 @@ function getFallbackTrends(businessType: string, platform: string): DesignTrends
 
 /**
  * Caches trends to avoid excessive API calls
+ * Reduced cache duration and added randomization to prevent repetitive designs
  */
-const trendsCache = new Map<string, { trends: DesignTrends; timestamp: number }>();
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+const trendsCache = new Map<string, { trends: DesignTrends; timestamp: number; usageCount: number }>();
+const CACHE_DURATION = 6 * 60 * 60 * 1000; // 6 hours (reduced from 24 hours)
+const MAX_USAGE_COUNT = 5; // Force refresh after 5 uses to add variety
 
 export async function getCachedDesignTrends(
   businessType: string,
@@ -197,15 +199,22 @@ export async function getCachedDesignTrends(
   targetAudience?: string,
   industry?: string
 ): Promise<DesignTrends> {
-  const cacheKey = `${businessType}-${platform}-${targetAudience}-${industry}`;
+  // Add randomization to cache key to create more variety
+  const hourOfDay = new Date().getHours();
+  const randomSeed = Math.floor(hourOfDay / 2); // Changes every 2 hours
+  const cacheKey = `${businessType}-${platform}-${targetAudience}-${industry}-${randomSeed}`;
   const cached = trendsCache.get(cacheKey);
 
-  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+  // Check if cache is valid and not overused
+  if (cached &&
+    Date.now() - cached.timestamp < CACHE_DURATION &&
+    cached.usageCount < MAX_USAGE_COUNT) {
+    cached.usageCount++;
     return cached.trends;
   }
 
   const trends = await getCurrentDesignTrends(businessType, platform, targetAudience, industry);
-  trendsCache.set(cacheKey, { trends, timestamp: Date.now() });
+  trendsCache.set(cacheKey, { trends, timestamp: Date.now(), usageCount: 1 });
 
   return trends;
 }

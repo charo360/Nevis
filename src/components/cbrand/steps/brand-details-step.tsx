@@ -104,9 +104,12 @@ export function BrandDetailsStep({
                     id="businessName"
                     value={brandProfile.businessName}
                     onChange={(e) => handleInputChange('businessName', e.target.value)}
-                    placeholder="Your business name"
+                    placeholder="e.g., ABC Development Company, Metro Properties, The Corner Cafe"
                     className="mt-1"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Enter your actual brand/company name, not the business type
+                  </p>
                 </div>
                 <div>
                   <Label htmlFor="businessType">Business Type *</Label>
@@ -114,9 +117,12 @@ export function BrandDetailsStep({
                     id="businessType"
                     value={brandProfile.businessType}
                     onChange={(e) => handleInputChange('businessType', e.target.value)}
-                    placeholder="e.g., Restaurant, Tech Startup, Consulting"
+                    placeholder="e.g., Real Estate Development, Restaurant, Tech Startup"
                     className="mt-1"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Enter the category/industry your business operates in
+                  </p>
                 </div>
               </div>
 

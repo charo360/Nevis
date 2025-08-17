@@ -152,7 +152,11 @@ export function useBrandProfiles() {
 
   // Set current profile
   const setCurrentProfile = useCallback((profile: CompleteBrandProfile | null) => {
-    setState(prev => ({ ...prev, currentProfile: profile }));
+    console.log('🎯 setCurrentProfile called with:', profile?.businessName || 'null');
+    setState(prev => {
+      console.log('📊 Previous current profile:', prev.currentProfile?.businessName || 'none');
+      return { ...prev, currentProfile: profile };
+    });
   }, []);
 
   // Get profile by ID
@@ -177,13 +181,41 @@ export function useBrandProfiles() {
     const unsubscribe = brandProfileFirebaseService.onUserDocumentsChange(
       userId,
       (profiles) => {
-        setState(prev => ({
-          ...prev,
-          profiles,
-          currentProfile: profiles.length > 0 && !prev.currentProfile
-            ? profiles[0]
-            : prev.currentProfile,
-        }));
+        console.log('🔄 Real-time profiles update received:', profiles.length, 'profiles');
+        setState(prev => {
+          // Preserve the current profile if it still exists in the updated profiles
+          let preservedCurrentProfile = prev.currentProfile;
+
+          if (prev.currentProfile) {
+            // Check if current profile still exists in the updated list
+            const stillExists = profiles.find(p => p.id === (prev.currentProfile as any)?.id);
+            if (!stillExists) {
+              console.log('⚠️ Current profile no longer exists, clearing selection');
+              preservedCurrentProfile = null;
+            } else {
+              // Update with the latest version of the current profile
+              const updatedProfile = profiles.find(p => p.id === (prev.currentProfile as any)?.id);
+              if (updatedProfile) {
+                console.log('✅ Current profile updated with latest data:', updatedProfile.businessName);
+                preservedCurrentProfile = updatedProfile;
+              }
+            }
+          }
+
+          // Only auto-select first profile if there's no current profile at all AND this is the initial load
+          const finalCurrentProfile = preservedCurrentProfile ||
+            (!prev.currentProfile && profiles.length > 0 ? profiles[0] : null);
+
+          if (finalCurrentProfile && !prev.currentProfile) {
+            console.log('🎯 Auto-selecting first profile on initial load:', finalCurrentProfile.businessName);
+          }
+
+          return {
+            ...prev,
+            profiles,
+            currentProfile: finalCurrentProfile,
+          };
+        });
       },
       { orderBy: 'updatedAt', orderDirection: 'desc' }
     );
