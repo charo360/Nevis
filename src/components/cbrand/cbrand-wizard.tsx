@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useUnifiedBrand } from '@/contexts/unified-brand-context';
 
 // Import validation and progress components
 import { ProgressIndicator } from './progress-indicator';
@@ -85,6 +86,7 @@ interface CbrandWizardProps {
 }
 
 export function CbrandWizard({ mode, brandId }: CbrandWizardProps = {}) {
+  const { currentBrand, loading: brandLoading } = useUnifiedBrand();
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [brandProfile, setBrandProfile] = useState<CompleteBrandProfile>({
@@ -118,6 +120,30 @@ export function CbrandWizard({ mode, brandId }: CbrandWizardProps = {}) {
   useEffect(() => {
     const loadExistingProfile = () => {
       try {
+        console.log('🔄 Loading brand profile. Mode:', mode, 'BrandId:', brandId, 'CurrentBrand:', currentBrand?.businessName);
+
+        // If we're in edit mode with a specific brandId, load that brand
+        if (mode === 'edit' && brandId) {
+          console.log('🔄 Loading brand for edit mode:', brandId);
+          // Load specific brand by ID
+          // For now, we'll use the current brand from context if it matches
+          if (currentBrand && (currentBrand as any).id === brandId) {
+            console.log('✅ Using current brand from context for edit');
+            setBrandProfile(currentBrand);
+            return;
+          }
+        }
+
+        // If we have a current brand selected and we're not in create mode, use it
+        if (currentBrand && mode !== 'create') {
+          console.log('✅ Using current brand from context:', currentBrand.businessName);
+          setBrandProfile(currentBrand);
+          return;
+        }
+
+        // For create mode or when no brand is selected, try to load from storage
+        console.log('🔄 Loading from storage for create mode or no current brand');
+
         // Try to load the complete brand profile first
         const savedProfile = localStorage.getItem('completeBrandProfile');
         if (savedProfile) {
@@ -180,8 +206,11 @@ export function CbrandWizard({ mode, brandId }: CbrandWizardProps = {}) {
       }
     };
 
-    loadExistingProfile();
-  }, []);
+    // Only load when brand context is ready
+    if (!brandLoading) {
+      loadExistingProfile();
+    }
+  }, [currentBrand, brandLoading, mode, brandId]);
 
   const progress = (currentStep / STEPS.length) * 100;
 

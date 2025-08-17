@@ -139,12 +139,16 @@ export async function generateContentAction(
       ? profile.competitiveAdvantages.join('\n')
       : profile.competitiveAdvantages || '';
 
-    console.log('🔍 Data transformation debug:');
-    console.log('- keyFeatures type:', typeof profile.keyFeatures);
-    console.log('- keyFeatures value:', profile.keyFeatures);
-    console.log('- keyFeaturesString:', keyFeaturesString);
-    console.log('- competitiveAdvantages type:', typeof profile.competitiveAdvantages);
-    console.log('- competitiveAdvantagesString:', competitiveAdvantagesString);
+    // Convert services array to newline-separated string
+    const servicesString = Array.isArray(profile.services)
+      ? profile.services.map(service =>
+        typeof service === 'object' && service.name
+          ? `${service.name}: ${service.description || ''}`
+          : service
+      ).join('\n')
+      : profile.services || '';
+
+
 
     const postDetails = await generatePostFromProfileFlow({
       businessType: profile.businessType,
@@ -164,7 +168,7 @@ export async function generateContentAction(
         aspectRatio: getAspectRatioForPlatform(platform),
       }],
       // Pass new detailed fields
-      services: profile.services,
+      services: servicesString,
       targetAudience: profile.targetAudience,
       keyFeatures: keyFeaturesString,
       competitiveAdvantages: competitiveAdvantagesString,

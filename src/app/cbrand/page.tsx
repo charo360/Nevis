@@ -9,11 +9,11 @@ export default function CbrandPage() {
             Complete Brand Profile Setup
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Create a comprehensive brand profile with AI-powered analysis, 
+            Create a comprehensive brand profile with AI-powered analysis,
             detailed information sections, and professional customization options.
           </p>
         </div>
-        
+
         <CbrandWizard />
       </div>
     </div>

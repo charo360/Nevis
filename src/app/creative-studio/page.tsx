@@ -15,62 +15,126 @@ import { SidebarInset } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ChatLayout } from "@/components/studio/chat-layout";
-import { User } from "lucide-react";
+import { User, Palette } from "lucide-react";
 import { ImageEditor } from "@/components/studio/image-editor";
+import { useUnifiedBrand, useBrandStorage, useBrandChangeListener } from "@/contexts/unified-brand-context";
+import { UnifiedBrandLayout, BrandContent, BrandSwitchingStatus } from "@/components/layout/unified-brand-layout";
+import { STORAGE_FEATURES } from "@/lib/services/brand-scoped-storage";
 
-const BRAND_PROFILE_KEY = "brandProfile";
+function CreativeStudioPageContent() {
+  const { currentBrand } = useUnifiedBrand();
+  const [editorImage, setEditorImage] = useState<string | null>(null);
+  const creativeStudioStorage = useBrandStorage(STORAGE_FEATURES.CREATIVE_STUDIO);
 
-function CreativeStudioPage() {
-    const [brandProfile, setBrandProfile] = useState<BrandProfile | null>(null);
-    const [editorImage, setEditorImage] = useState<string | null>(null);
-
-    useEffect(() => {
-        const storedProfile = localStorage.getItem(BRAND_PROFILE_KEY);
-        if (storedProfile) {
-            setBrandProfile(JSON.parse(storedProfile));
+  // Load Creative Studio data when brand changes
+  useBrandChangeListener((brand) => {
+    if (brand) {
+      console.log(`🎨 Creative Studio: brand changed to: ${brand.businessName || brand.name}`);
+      // Load any Creative Studio specific data for this brand
+      if (creativeStudioStorage) {
+        const studioData = creativeStudioStorage.getItem();
+        if (studioData) {
+          console.log(`📂 Loaded Creative Studio data for brand ${brand.businessName || brand.name}`);
+          // Apply any saved studio settings here
         }
-    }, []);
+      }
+    } else {
+      console.log('🎨 Creative Studio: no brand selected');
+    }
+  });
+
+  // Convert CompleteBrandProfile to BrandProfile for compatibility
+  const brandProfile: BrandProfile | null = currentBrand ? {
+    businessName: currentBrand.businessName,
+    businessType: currentBrand.businessType,
+    location: currentBrand.location,
+    description: currentBrand.description,
+    targetAudience: currentBrand.targetAudience,
+    keyFeatures: currentBrand.keyFeatures,
+    competitiveAdvantages: currentBrand.competitiveAdvantages,
+    visualStyle: currentBrand.visualStyle,
+    writingTone: currentBrand.writingTone,
+    contentThemes: currentBrand.contentThemes,
+    primaryColor: currentBrand.primaryColor,
+    accentColor: currentBrand.accentColor,
+    backgroundColor: currentBrand.backgroundColor,
+    logoDataUrl: currentBrand.logoDataUrl,
+    websiteUrl: currentBrand.websiteUrl,
+    facebookUrl: currentBrand.facebookUrl,
+    instagramUrl: currentBrand.instagramUrl,
+    twitterUrl: currentBrand.twitterUrl,
+    linkedinUrl: currentBrand.linkedinUrl,
+    contactPhone: currentBrand.contactPhone,
+    contactEmail: currentBrand.contactEmail,
+    contactAddress: currentBrand.contactAddress,
+  } : null;
 
   return (
     <SidebarInset>
       <header className="flex h-14 items-center justify-between border-b bg-card px-4 lg:h-[60px] lg:px-6">
-         <div />
-         <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="secondary" size="icon" className="rounded-full">
-                <Avatar>
-                  <AvatarImage
-                    src="https://placehold.co/40x40.png"
-                    alt="User"
-                    data-ai-hint="user avatar"
-                  />
-                  <AvatarFallback><User /></AvatarFallback>
-                </Avatar>
-                <span className="sr-only">Toggle user menu</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-            </DropdownMenuContent>
-          </DropdownMenu>
+        <div />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="secondary" size="icon" className="rounded-full">
+              <Avatar>
+                <AvatarImage
+                  src="https://placehold.co/40x40.png"
+                  alt="User"
+                  data-ai-hint="user avatar"
+                />
+                <AvatarFallback><User /></AvatarFallback>
+              </Avatar>
+              <span className="sr-only">Toggle user menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </header>
-       <main className="flex-1 overflow-auto">
-          {editorImage ? (
-            <ImageEditor 
-                imageUrl={editorImage}
-                onClose={() => setEditorImage(null)}
-                brandProfile={brandProfile}
-            />
-          ) : (
-            <ChatLayout
-                brandProfile={brandProfile}
-                onEditImage={setEditorImage}
-            />
-          )}
+      <main className="flex-1 overflow-auto">
+        {editorImage ? (
+          <ImageEditor
+            imageUrl={editorImage}
+            onClose={() => setEditorImage(null)}
+            brandProfile={brandProfile}
+          />
+        ) : (
+          <ChatLayout
+            brandProfile={brandProfile}
+            onEditImage={setEditorImage}
+          />
+        )}
       </main>
     </SidebarInset>
   );
 }
 
+function CreativeStudioPage() {
+  return (
+    <BrandContent fallback={
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Palette className="w-8 h-8 text-gray-400" />
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">No Brand Selected</h2>
+          <p className="text-gray-600">Please select a brand to access the Creative Studio.</p>
+        </div>
+      </div>
+    }>
+      {() => <CreativeStudioPageContent />}
+    </BrandContent>
+  );
+}
 
-export default CreativeStudioPage;
+function CreativeStudioPageWithUnifiedBrand() {
+  return (
+    <UnifiedBrandLayout>
+      <CreativeStudioPage />
+      <BrandSwitchingStatus />
+    </UnifiedBrandLayout>
+  );
+}
+
+export default CreativeStudioPageWithUnifiedBrand;

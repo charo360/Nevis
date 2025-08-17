@@ -24,6 +24,7 @@ import {
   ArtifactTextOverlay
 } from '@/lib/types/artifacts';
 import { artifactsService } from '@/lib/services/artifacts-service';
+import { brandScopedArtifactsService } from '@/lib/services/brand-scoped-artifacts-service';
 // TODO: Re-enable enhanced components once they're properly set up
 // import { TypeSelector } from './type-selector';
 // import { UsageCategorySelector } from './usage-category-selector';
@@ -54,6 +55,7 @@ interface UploadZoneProps {
   defaultFolderId?: string;
   customName?: string; // Custom name for uploaded files
   instructions?: string; // Usage instructions for exact-use artifacts
+  useBrandScopedService?: boolean; // Use brand-scoped service instead of regular service
 }
 
 export function UploadZone({
@@ -70,7 +72,8 @@ export function UploadZone({
   defaultUsageType = 'reference',
   defaultFolderId,
   customName,
-  instructions
+  instructions,
+  useBrandScopedService = false
 }: UploadZoneProps) {
   const [uploadFiles, setUploadFiles] = useState<UploadFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -134,7 +137,8 @@ export function UploadZone({
           }
 
           // Upload the file with enhanced configuration
-          const artifacts = await artifactsService.uploadArtifacts([uploadFile.file], category, {
+          const service = useBrandScopedService ? brandScopedArtifactsService : artifactsService;
+          const artifacts = await service.uploadArtifacts([uploadFile.file], category, {
             uploadType: selectedUploadType,
             usageType: selectedUsageType,
             folderId: selectedFolderId,

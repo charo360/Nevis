@@ -7,21 +7,21 @@ import type { CompleteBrandProfile } from '@/components/cbrand/cbrand-wizard';
 interface BrandContextType {
   // Current selected brand
   currentBrand: CompleteBrandProfile | null;
-  
+
   // All available brands
   brands: CompleteBrandProfile[];
-  
+
   // Loading states
   loading: boolean;
   saving: boolean;
-  
+
   // Actions
   selectBrand: (brand: CompleteBrandProfile | null) => void;
   createBrand: (brand: CompleteBrandProfile) => Promise<string>;
   updateBrand: (brandId: string, updates: Partial<CompleteBrandProfile>) => Promise<void>;
   deleteBrand: (brandId: string) => Promise<void>;
   refreshBrands: () => Promise<void>;
-  
+
   // Utilities
   hasBrands: boolean;
   brandCount: number;
@@ -50,42 +50,102 @@ export function BrandProvider({ children }: BrandProviderProps) {
 
   // Sync current brand with the hook's current profile
   useEffect(() => {
+    console.log('🔄 Brand sync effect triggered:', {
+      currentProfile: currentProfile?.businessName || (currentProfile as any)?.name,
+      currentBrand: currentBrand?.businessName,
+      brandsCount: brands.length
+    });
+
+    // Only sync if currentProfile exists and is different from currentBrand
+    // Don't override manual selections
     if (currentProfile && currentProfile !== currentBrand) {
-      setCurrentBrand(currentProfile);
+      const normalizedProfile = normalizeBrand(currentProfile);
+      console.log('✅ Syncing currentBrand with currentProfile:', normalizedProfile?.businessName);
+      setCurrentBrand(normalizedProfile);
     } else if (!currentProfile && brands.length > 0 && !currentBrand) {
+      const firstBrand = normalizeBrand(brands[0]);
+      console.log('🎯 Auto-selecting first brand:', firstBrand?.businessName);
       // Auto-select first brand if none selected
-      setCurrentBrand(brands[0]);
-      setCurrentProfile(brands[0]);
+      setCurrentBrand(firstBrand);
+      setCurrentProfile(firstBrand);
     }
-  }, [currentProfile, brands, currentBrand, setCurrentProfile]);
+  }, [currentProfile, brands.length]); // Removed currentBrand and setCurrentProfile from dependencies to prevent loops
+
+  // Helper function to normalize brand data structure
+  const normalizeBrand = (brand: any): CompleteBrandProfile | null => {
+    if (!brand) return null;
+
+    // If brand has 'name' but not 'businessName', map it
+    if (brand.name && !brand.businessName) {
+      return {
+        ...brand,
+        businessName: brand.name
+      };
+    }
+
+    return brand;
+  };
 
   const selectBrand = (brand: CompleteBrandProfile | null) => {
-    setCurrentBrand(brand);
-    setCurrentProfile(brand);
-    
+    console.log('🎯 selectBrand called with:', brand);
+    console.log('🎯 selectBrand brand type:', typeof brand);
+    console.log('🎯 selectBrand brand keys:', brand ? Object.keys(brand) : 'null');
+    console.log('🎯 selectBrand businessName:', brand?.businessName);
+    console.log('🎯 selectBrand name:', (brand as any)?.name);
+    console.log('📊 Current state before selection:', {
+      currentBrand: currentBrand?.businessName,
+      currentProfile: currentProfile?.businessName
+    });
+
+    // Normalize the brand data structure
+    const normalizedBrand = normalizeBrand(brand);
+    console.log('🔄 Normalized brand:', normalizedBrand?.businessName);
+
+    // Force immediate update of both states
+    setCurrentBrand(normalizedBrand);
+    setCurrentProfile(normalizedBrand);
+
+    // Force a re-render by updating the state in the next tick
+    setTimeout(() => {
+      setCurrentBrand(normalizedBrand);
+    }, 0);
+
+    console.log('✅ Brand selection completed, new brand:', normalizedBrand?.businessName || 'null');
+
     // Store selected brand ID in localStorage for persistence
-    if (brand && 'id' in brand) {
-      localStorage.setItem('selectedBrandId', (brand as any).id);
+    if (normalizedBrand && 'id' in normalizedBrand) {
+      localStorage.setItem('selectedBrandId', (normalizedBrand as any).id);
     } else {
       localStorage.removeItem('selectedBrandId');
     }
+
+    // Emit event for unified brand context to listen to
+    const event = new CustomEvent('originalBrandChanged', {
+      detail: {
+        brand: normalizedBrand,
+        brandId: normalizedBrand?.id || null,
+        brandName: normalizedBrand?.businessName || (normalizedBrand as any)?.name || 'null'
+      }
+    });
+    window.dispatchEvent(event);
+    console.log('🔄 Emitted originalBrandChanged event for:', normalizedBrand?.businessName || (normalizedBrand as any)?.name || 'null');
   };
 
   const createBrand = async (brand: CompleteBrandProfile): Promise<string> => {
     const brandId = await saveProfile(brand);
-    
+
     // Auto-select the newly created brand
     const savedBrand = brands.find(b => (b as any).id === brandId);
     if (savedBrand) {
       selectBrand(savedBrand);
     }
-    
+
     return brandId;
   };
 
   const updateBrand = async (brandId: string, updates: Partial<CompleteBrandProfile>) => {
     await updateProfile(brandId, updates);
-    
+
     // Update current brand if it's the one being updated
     if (currentBrand && (currentBrand as any).id === brandId) {
       const updatedBrand = brands.find(b => (b as any).id === brandId);
@@ -97,7 +157,7 @@ export function BrandProvider({ children }: BrandProviderProps) {
 
   const deleteBrand = async (brandId: string) => {
     await deleteProfile(brandId);
-    
+
     // If deleted brand was current, select another one
     if (currentBrand && (currentBrand as any).id === brandId) {
       const remainingBrands = brands.filter(b => (b as any).id !== brandId);
@@ -152,14 +212,14 @@ export function useCurrentBrand() {
 }
 
 export function useBrandActions() {
-  const { 
-    selectBrand, 
-    createBrand, 
-    updateBrand, 
-    deleteBrand, 
-    refreshBrands 
+  const {
+    selectBrand,
+    createBrand,
+    updateBrand,
+    deleteBrand,
+    refreshBrands
   } = useBrandContext();
-  
+
   return {
     selectBrand,
     createBrand,

@@ -16,12 +16,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Building2, 
-  Globe, 
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Building2,
+  Globe,
   MapPin,
   Star,
   MoreVertical,
@@ -34,19 +34,20 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { SidebarInset } from '@/components/ui/sidebar';
-import { useBrandContext } from '@/contexts/brand-context';
+import { useUnifiedBrand } from '@/contexts/unified-brand-context';
 import { toast } from '@/hooks/use-toast';
 
 export default function BrandsPage() {
   const router = useRouter();
-  const { 
-    brands, 
-    currentBrand, 
-    loading, 
-    selectBrand, 
-    deleteBrand, 
-    hasBrands 
-  } = useBrandContext();
+  const {
+    brands,
+    currentBrand,
+    loading,
+    selectBrand,
+    deleteProfile: deleteBrand,
+  } = useUnifiedBrand();
+
+  const hasBrands = brands.length > 0;
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [brandToDelete, setBrandToDelete] = useState<any>(null);
@@ -57,10 +58,15 @@ export default function BrandsPage() {
   };
 
   const handleEditBrand = (brand: any) => {
+    selectBrand(brand);
     router.push(`/brand-profile?mode=edit&id=${brand.id}`);
   };
 
   const handleViewBrand = (brand: any) => {
+    console.log('🎯 handleViewBrand called with brand:', brand);
+    console.log('🎯 Brand object keys:', Object.keys(brand || {}));
+    console.log('🎯 Brand businessName:', brand?.businessName);
+    console.log('🎯 Brand id:', brand?.id);
     selectBrand(brand);
     router.push('/dashboard');
   };
@@ -76,12 +82,12 @@ export default function BrandsPage() {
     try {
       setDeleting(true);
       await deleteBrand(brandToDelete.id);
-      
+
       toast({
         title: "Brand deleted",
-        description: `${brandToDelete.businessName} has been deleted successfully.`,
+        description: `${brandToDelete.businessName || brandToDelete.name || 'Brand'} has been deleted successfully.`,
       });
-      
+
       setDeleteDialogOpen(false);
       setBrandToDelete(null);
     } catch (error) {
@@ -95,10 +101,11 @@ export default function BrandsPage() {
     }
   };
 
-  const getBrandInitials = (businessName: string) => {
-    return businessName
+  const getBrandInitials = (brand: any) => {
+    const name = brand.businessName || brand.name || 'Brand';
+    return name
       ?.split(' ')
-      .map(word => word[0])
+      .map((word: string) => word[0])
       .join('')
       .toUpperCase()
       .slice(0, 2) || 'BR';
@@ -160,7 +167,7 @@ export default function BrandsPage() {
                 {currentBrand ? '1' : '0'}
               </div>
               <p className="text-xs text-muted-foreground">
-                {currentBrand?.businessName || 'None selected'}
+                {currentBrand?.businessName || currentBrand?.name || 'None selected'}
               </p>
             </CardContent>
           </Card>
@@ -169,9 +176,9 @@ export default function BrandsPage() {
               <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent>
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={handleCreateNew}
                 className="w-full"
               >
@@ -187,7 +194,7 @@ export default function BrandsPage() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {brands.map((brand: any) => {
               const isActive = currentBrand && brand.id === (currentBrand as any).id;
-              const brandInitials = getBrandInitials(brand.businessName);
+              const brandInitials = getBrandInitials(brand);
 
               return (
                 <Card key={brand.id} className={`relative ${isActive ? 'ring-2 ring-primary' : ''}`}>
@@ -202,14 +209,14 @@ export default function BrandsPage() {
                         </Avatar>
                         <div className="space-y-1">
                           <CardTitle className="text-lg leading-none">
-                            {brand.businessName}
+                            {brand.businessName || brand.name || 'Unnamed Brand'}
                           </CardTitle>
                           <CardDescription className="text-sm">
-                            {brand.businessType}
+                            {brand.businessType || 'General Business'}
                           </CardDescription>
                         </div>
                       </div>
-                      
+
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -225,7 +232,7 @@ export default function BrandsPage() {
                             <Edit className="h-4 w-4 mr-2" />
                             Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             onClick={() => handleDeleteClick(brand)}
                             className="text-destructive"
                           >
@@ -235,7 +242,7 @@ export default function BrandsPage() {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
-                    
+
                     {isActive && (
                       <Badge variant="default" className="w-fit">
                         <Star className="h-3 w-3 mr-1" />
@@ -243,7 +250,7 @@ export default function BrandsPage() {
                       </Badge>
                     )}
                   </CardHeader>
-                  
+
                   <CardContent className="space-y-3">
                     <div className="space-y-2 text-sm">
                       {brand.location && (
@@ -259,19 +266,19 @@ export default function BrandsPage() {
                         </div>
                       )}
                     </div>
-                    
+
                     <div className="flex gap-2">
-                      <Button 
-                        variant={isActive ? "secondary" : "default"} 
-                        size="sm" 
+                      <Button
+                        variant={isActive ? "secondary" : "default"}
+                        size="sm"
                         onClick={() => handleViewBrand(brand)}
                         className="flex-1"
                       >
                         {isActive ? 'Current' : 'Select'}
                       </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => handleEditBrand(brand)}
                       >
                         <Edit className="h-3 w-3" />
@@ -304,7 +311,7 @@ export default function BrandsPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Brand Profile</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete "{brandToDelete?.businessName}"? 
+                Are you sure you want to delete "{brandToDelete?.businessName}"?
                 This action cannot be undone and will remove all associated data.
               </AlertDialogDescription>
             </AlertDialogHeader>

@@ -358,7 +358,16 @@ async function generateImageForVariant(
 
       ${designDNA}
 
-      **CREATIVE VARIATION:** Feel free to experiment with different layouts, compositions, and design elements to create fresh, engaging content that avoids repetitive appearance while maintaining brand recognition.`;
+      **CREATIVE VARIATION:** Feel free to experiment with different layouts, compositions, and design elements to create fresh, engaging content that avoids repetitive appearance while maintaining brand recognition.
+
+      **UNIQUENESS REQUIREMENT:** This design must be visually distinct from previous generations. Use different:
+      - Layout compositions (grid vs. asymmetrical vs. centered)
+      - Color emphasis and gradients
+      - Typography placement and hierarchy
+      - Visual elements and imagery styles
+      - Background treatments and textures
+
+      **GENERATION ID:** ${Date.now()}_${Math.random().toString(36).substr(2, 9)} - Use this unique identifier to ensure no two designs are identical.`;
     }
   }
 

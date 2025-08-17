@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SidebarInset } from "@/components/ui/sidebar";
+import { SidebarInset, useSidebar } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ContentCalendar } from "@/components/dashboard/content-calendar";
@@ -20,109 +20,127 @@ import { ContentCalendar } from "@/components/dashboard/content-calendar";
 import type { BrandProfile, GeneratedPost } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { User } from "lucide-react";
+import { User, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { useUnifiedBrand, useBrandStorage, useBrandChangeListener } from "@/contexts/unified-brand-context";
+import { UnifiedBrandLayout, BrandContent, BrandSwitchingStatus } from "@/components/layout/unified-brand-layout";
+import { STORAGE_FEATURES } from "@/lib/services/brand-scoped-storage";
 
-
-const BRAND_PROFILE_KEY = "brandProfile";
-const GENERATED_POSTS_KEY = "generatedPosts";
 const MAX_POSTS_TO_STORE = 10;
 
-// Storage cleanup utility
-const cleanupStorage = () => {
+// Brand-scoped storage cleanup utility
+const cleanupBrandScopedStorage = (brandStorage: any) => {
   try {
-    // Clear old posts if storage is getting full
-    const storedPosts = localStorage.getItem(GENERATED_POSTS_KEY);
-    if (storedPosts) {
-      const posts = JSON.parse(storedPosts);
+    const posts = brandStorage.getItem() || [];
 
-      // Fix invalid dates in existing posts
-      const fixedPosts = posts.map((post: GeneratedPost) => {
-        if (!post.date || isNaN(new Date(post.date).getTime())) {
-          return {
-            ...post,
-            date: new Date().toISOString()
-          };
-        }
-        return post;
-      });
-
-      if (fixedPosts.length > 5) {
-        // Keep only the 5 most recent posts
-        const recentPosts = fixedPosts.slice(0, 5);
-        localStorage.setItem(GENERATED_POSTS_KEY, JSON.stringify(recentPosts));
-        return recentPosts;
-      } else {
-        // Save the fixed posts back
-        localStorage.setItem(GENERATED_POSTS_KEY, JSON.stringify(fixedPosts));
-        return fixedPosts;
+    // Fix invalid dates in existing posts
+    const fixedPosts = posts.map((post: GeneratedPost) => {
+      if (!post.date || isNaN(new Date(post.date).getTime())) {
+        return {
+          ...post,
+          date: new Date().toISOString()
+        };
       }
+      return post;
+    });
+
+    if (fixedPosts.length > 5) {
+      // Keep only the 5 most recent posts
+      const recentPosts = fixedPosts.slice(0, 5);
+      brandStorage.setItem(recentPosts);
+      return recentPosts;
+    } else {
+      // Save the fixed posts back
+      brandStorage.setItem(fixedPosts);
+      return fixedPosts;
     }
   } catch (error) {
-    console.warn('Storage cleanup failed:', error);
+    console.warn('Brand-scoped storage cleanup failed:', error);
   }
   return null;
 };
 
 function QuickContentPage() {
-  const [brandProfile, setBrandProfile] = useState<BrandProfile | null>(null);
+  const { currentBrand, brands, loading: brandLoading, selectBrand } = useUnifiedBrand();
+  const postsStorage = useBrandStorage(STORAGE_FEATURES.QUICK_CONTENT);
   const [generatedPosts, setGeneratedPosts] = useState<GeneratedPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
+  const { open: sidebarOpen, toggleSidebar } = useSidebar();
 
-  useEffect(() => {
+  // Load posts when brand changes using unified brand system
+  useBrandChangeListener(React.useCallback((brand) => {
+    const brandName = brand?.businessName || brand?.name || 'none';
+    console.log('🔄 Quick Content: brand changed to:', brandName);
+
+    if (!brand) {
+      setGeneratedPosts([]);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
+
     try {
-      const storedProfile = localStorage.getItem(BRAND_PROFILE_KEY);
-      if (storedProfile) {
-        setBrandProfile(JSON.parse(storedProfile));
+      if (postsStorage) {
+        const posts = postsStorage.getItem<GeneratedPost[]>() || [];
 
-        // Temporary: Clear all posts to avoid date issues during development
-        // Remove this in production once date issues are resolved
-        try {
-          const storedPosts = localStorage.getItem(GENERATED_POSTS_KEY);
-          if (storedPosts) {
-            const posts = JSON.parse(storedPosts);
-            // Check if any posts have invalid dates
-            const hasInvalidDates = posts.some((post: GeneratedPost) =>
-              !post.date || isNaN(new Date(post.date).getTime())
-            );
+        // Check if any posts have invalid dates
+        const hasInvalidDates = posts.some((post: GeneratedPost) =>
+          !post.date || isNaN(new Date(post.date).getTime())
+        );
 
-            if (hasInvalidDates) {
-              console.warn('Found posts with invalid dates, clearing storage...');
-              localStorage.removeItem(GENERATED_POSTS_KEY);
-              setGeneratedPosts([]);
-            } else {
-              setGeneratedPosts(posts);
-            }
-          } else {
-            setGeneratedPosts([]);
-          }
-        } catch (parseError) {
-          console.warn('Failed to parse stored posts, clearing storage:', parseError);
-          localStorage.removeItem(GENERATED_POSTS_KEY);
+        if (hasInvalidDates) {
+          console.warn('Found posts with invalid dates, clearing brand storage...');
+          postsStorage.removeItem();
           setGeneratedPosts([]);
+        } else {
+          setGeneratedPosts(posts);
         }
+
+        console.log(`✅ Loaded ${posts.length} posts for brand ${brandName}`);
       } else {
-        // If no profile, redirect to setup
-        router.push('/brand-profile');
+        setGeneratedPosts([]);
       }
     } catch (error) {
+      console.error('Failed to load posts for brand:', brandName, error);
       toast({
         variant: "destructive",
         title: "Failed to load data",
-        description: "Could not read your data from local storage. It might be corrupted.",
+        description: "Could not read your posts data. It might be corrupted.",
       });
     } finally {
       setIsLoading(false);
     }
-  }, [router, toast]);
+  }, [postsStorage, toast]));
+
+  // Handle brand selection logic - only when truly needed
+  // Add a delay to prevent premature redirects during brand loading
+  useEffect(() => {
+    if (!brandLoading) {
+      // Add a small delay to ensure brands have time to load
+      const timer = setTimeout(() => {
+        if (!currentBrand && brands.length === 0) {
+          // No brands exist, redirect to brand setup
+          console.log('🔄 Quick Content: No brands found, redirecting to brand setup');
+          router.push('/brand-profile');
+        }
+      }, 1000); // 1 second delay
+
+      return () => clearTimeout(timer);
+    }
+  }, [currentBrand, brands.length, brandLoading, router]);
 
 
   const handlePostGenerated = (post: GeneratedPost) => {
     // Add the new post and slice the array to only keep the most recent ones
     const newPosts = [post, ...generatedPosts].slice(0, MAX_POSTS_TO_STORE);
     setGeneratedPosts(newPosts);
+
+    if (!postsStorage) {
+      console.warn('No posts storage available for current brand');
+      return;
+    }
 
     try {
       // Check storage size before saving
@@ -132,7 +150,7 @@ function QuickContentPage() {
       if (postsData.length > maxSize) {
         // If too large, keep fewer posts
         const reducedPosts = newPosts.slice(0, Math.max(1, Math.floor(MAX_POSTS_TO_STORE / 2)));
-        localStorage.setItem(GENERATED_POSTS_KEY, JSON.stringify(reducedPosts));
+        postsStorage.setItem(reducedPosts);
         setGeneratedPosts(reducedPosts);
 
         toast({
@@ -140,13 +158,15 @@ function QuickContentPage() {
           description: "Reduced stored posts to prevent storage overflow. Older posts were removed.",
         });
       } else {
-        localStorage.setItem(GENERATED_POSTS_KEY, postsData);
+        postsStorage.setItem(newPosts);
       }
+
+      console.log(`💾 Saved ${newPosts.length} posts for brand ${currentBrand?.businessName || currentBrand?.name}`);
     } catch (error) {
       // If storage fails, try with just the current post
       try {
         const singlePost = [post];
-        localStorage.setItem(GENERATED_POSTS_KEY, JSON.stringify(singlePost));
+        postsStorage.setItem(singlePost);
         setGeneratedPosts(singlePost);
 
         toast({
@@ -163,15 +183,21 @@ function QuickContentPage() {
     }
   };
 
-  // Debug function to clear all posts if needed
+  // Debug function to clear all posts for current brand
   const clearAllPosts = () => {
+    if (!postsStorage) {
+      console.warn('No posts storage available for current brand');
+      return;
+    }
+
     try {
-      localStorage.removeItem(GENERATED_POSTS_KEY);
+      postsStorage.removeItem();
       setGeneratedPosts([]);
       toast({
         title: "Posts Cleared",
-        description: "All stored posts have been cleared.",
+        description: `All stored posts have been cleared for ${currentBrand?.businessName || currentBrand?.name}.`,
       });
+      console.log(`🗑️ Cleared all posts for brand ${currentBrand?.businessName || currentBrand?.name}`);
     } catch (error) {
       toast({
         variant: "destructive",
@@ -182,6 +208,11 @@ function QuickContentPage() {
   };
 
   const handlePostUpdated = async (updatedPost: GeneratedPost) => {
+    if (!postsStorage) {
+      console.warn('No posts storage available for current brand');
+      return;
+    }
+
     try {
       const updatedPosts = generatedPosts.map((post) =>
         post.id === updatedPost.id ? updatedPost : post
@@ -195,7 +226,7 @@ function QuickContentPage() {
       if (postsData.length > maxSize) {
         // If too large, keep fewer posts
         const reducedPosts = updatedPosts.slice(0, Math.max(1, Math.floor(MAX_POSTS_TO_STORE / 2)));
-        localStorage.setItem(GENERATED_POSTS_KEY, JSON.stringify(reducedPosts));
+        postsStorage.setItem(reducedPosts);
         setGeneratedPosts(reducedPosts);
 
         toast({
@@ -203,8 +234,10 @@ function QuickContentPage() {
           description: "Reduced stored posts to prevent storage overflow. Some older posts were removed.",
         });
       } else {
-        localStorage.setItem(GENERATED_POSTS_KEY, postsData);
+        postsStorage.setItem(updatedPosts);
       }
+
+      console.log(`💾 Updated post for brand ${currentBrand?.businessName || currentBrand?.name}`);
     } catch (error) {
       toast({
         variant: "destructive",
@@ -215,8 +248,27 @@ function QuickContentPage() {
   };
 
   return (
-    <SidebarInset>
-      <header className="flex h-14 items-center justify-end gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
+    <SidebarInset key={currentBrand?.id || 'no-brand'}>
+      <header className="flex h-14 items-center justify-between gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleSidebar}
+            className="h-8 w-8"
+            title={sidebarOpen ? "Hide sidebar for full-screen mode" : "Show sidebar"}
+          >
+            {sidebarOpen ? (
+              <PanelLeftClose className="h-4 w-4" />
+            ) : (
+              <PanelLeftOpen className="h-4 w-4" />
+            )}
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            {sidebarOpen ? "Sidebar visible" : "Full-screen mode"}
+          </span>
+        </div>
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="secondary" size="icon" className="rounded-full">
@@ -232,17 +284,25 @@ function QuickContentPage() {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => {
-                const cleaned = cleanupStorage();
-                if (cleaned) {
-                  setGeneratedPosts(cleaned);
-                  toast({
-                    title: "Storage Cleaned",
-                    description: "Removed older posts to free up storage space.",
-                  });
+                if (postsStorage) {
+                  const cleaned = cleanupBrandScopedStorage(postsStorage);
+                  if (cleaned) {
+                    setGeneratedPosts(cleaned);
+                    toast({
+                      title: "Storage Cleaned",
+                      description: `Removed older posts for ${currentBrand?.businessName || currentBrand?.name}.`,
+                    });
+                  } else {
+                    toast({
+                      title: "Storage Clean",
+                      description: "Storage is already optimized.",
+                    });
+                  }
                 } else {
                   toast({
-                    title: "Storage Clean",
-                    description: "Storage is already optimized.",
+                    variant: "destructive",
+                    title: "No Brand Selected",
+                    description: "Please select a brand first.",
                   });
                 }
               }}
@@ -253,7 +313,7 @@ function QuickContentPage() {
         </DropdownMenu>
       </header>
       <main className="flex-1 overflow-auto p-4 lg:p-6">
-        {isLoading || !brandProfile ? (
+        {isLoading || brandLoading || !currentBrand ? (
           <div className="flex h-full items-center justify-center">
             <p>Loading Content Calendar...</p>
           </div>
@@ -273,7 +333,7 @@ function QuickContentPage() {
 
             {/* Content Calendar */}
             <ContentCalendar
-              brandProfile={brandProfile}
+              brandProfile={currentBrand}
               posts={generatedPosts}
               onPostGenerated={handlePostGenerated}
               onPostUpdated={handlePostUpdated}
@@ -285,4 +345,13 @@ function QuickContentPage() {
   );
 }
 
-export default QuickContentPage;
+function QuickContentPageWithUnifiedBrand() {
+  return (
+    <UnifiedBrandLayout>
+      <QuickContentPage />
+      <BrandSwitchingStatus />
+    </UnifiedBrandLayout>
+  );
+}
+
+export default QuickContentPageWithUnifiedBrand;
