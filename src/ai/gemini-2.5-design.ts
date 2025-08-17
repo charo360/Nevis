@@ -150,7 +150,8 @@ Format your response as a detailed JSON object with all specifications clearly o
 }
 
 /**
- * Generate complete design using Gemini 2.5 specifications
+ * Generate complete design using REAL AI image generation
+ * This replaces the hardcoded SVG template with actual AI-generated images
  */
 export async function generateEnhancedDesign(
   input: Gemini25DesignInput
@@ -159,35 +160,135 @@ export async function generateEnhancedDesign(
   const enhancementsApplied: string[] = ['Gemini 2.5 Pro Design Specs', 'Advanced Color Theory', 'Professional Layout'];
 
   try {
-    console.log('🎨 Starting Gemini 2.5 enhanced design generation...');
+    console.log('🎨 Starting REAL AI enhanced design generation...');
 
     // Step 1: Generate advanced design specifications
     const designSpecs = await generateDesignSpecs(input);
     enhancementsApplied.push('AI Design Specifications');
 
-    // Step 2: Create SVG design based on specifications
-    const svgDesign = await createSVGFromSpecs(designSpecs, input);
-    enhancementsApplied.push('SVG Design Generation');
-
-    // Step 3: Convert to data URL
-    const imageUrl = `data:image/svg+xml;base64,${btoa(svgDesign)}`;
+    // Step 2: Use REAL AI image generation instead of SVG templates
+    console.log('🚀 Using Gemini 2.0 Flash for actual image generation...');
+    const imageUrl = await generateRealAIImage(designSpecs, input);
+    enhancementsApplied.push('Real AI Image Generation', 'Gemini 2.0 Flash');
 
     const result: Gemini25DesignResult = {
       imageUrl,
       designSpecs,
-      qualityScore: 9.2, // Higher quality with Gemini 2.5
+      qualityScore: 8.8, // Realistic quality score for AI-generated images
       enhancementsApplied,
       processingTime: Date.now() - startTime,
-      model: GEMINI_2_5_MODELS.PRO
+      model: 'gemini-2.0-flash-image'
     };
 
-    console.log('✅ Gemini 2.5 enhanced design generated successfully');
+    console.log('✅ Real AI enhanced design generated successfully');
     return result;
 
   } catch (error) {
-    console.error('❌ Error generating enhanced design with Gemini 2.5:', error);
-    throw new Error(`Gemini 2.5 enhanced design generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error('❌ Real AI generation failed, falling back to improved SVG:', error);
+
+    // Fallback to improved SVG generation that actually uses the specs
+    try {
+      const designSpecs = await generateDesignSpecs(input);
+      const svgDesign = await createDynamicSVGFromSpecs(designSpecs, input);
+      const imageUrl = `data:image/svg+xml;base64,${btoa(svgDesign)}`;
+
+      return {
+        imageUrl,
+        designSpecs,
+        qualityScore: 7.5, // Lower score for SVG fallback
+        enhancementsApplied: [...enhancementsApplied, 'Dynamic SVG Fallback'],
+        processingTime: Date.now() - startTime,
+        model: 'svg-dynamic'
+      };
+    } catch (fallbackError) {
+      console.error('❌ Both AI and SVG generation failed:', fallbackError);
+      throw new Error(`Enhanced design generation completely failed: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}`);
+    }
   }
+}
+
+/**
+ * Generate real AI image using Gemini 2.0 Flash based on design specifications
+ */
+async function generateRealAIImage(designSpecs: any, input: Gemini25DesignInput): Promise<string> {
+  try {
+    // Import the Gemini image generation
+    const { generateMultimodal } = await import('./google-ai-direct');
+
+    // Build comprehensive prompt from design specs
+    const imagePrompt = buildImagePromptFromSpecs(designSpecs, input);
+
+    console.log('🎨 Generating real AI image with prompt:', imagePrompt.substring(0, 200) + '...');
+
+    // Generate image with Gemini 2.0 Flash
+    const result = await generateMultimodal(imagePrompt, {
+      model: 'gemini-2.0-flash-exp',
+      temperature: 0.7,
+      maxOutputTokens: 1024
+    });
+
+    // Extract image URL from result
+    if (result.media?.url) {
+      console.log('✅ Real AI image generated successfully');
+      return result.media.url;
+    } else {
+      throw new Error('No image URL returned from Gemini 2.0 Flash');
+    }
+
+  } catch (error) {
+    console.error('❌ Real AI image generation failed:', error);
+    throw error;
+  }
+}
+
+/**
+ * Build comprehensive image generation prompt from AI design specifications
+ */
+function buildImagePromptFromSpecs(designSpecs: any, input: Gemini25DesignInput): string {
+  const { businessType, platform, visualStyle, imageText, brandProfile } = input;
+
+  // Extract key design elements from specs
+  const colors = designSpecs?.colors || {};
+  const layout = designSpecs?.layout || {};
+  const typography = designSpecs?.typography || {};
+  const elements = designSpecs?.elements || {};
+
+  return `Create a professional ${visualStyle} social media post for ${platform} (1080x1080px) for ${brandProfile.businessName}, a ${businessType} business.
+
+DESIGN SPECIFICATIONS:
+${designSpecs?.concept || 'Modern professional design'}
+
+BRAND CONTEXT:
+- Business: ${brandProfile.businessName}
+- Industry: ${businessType}
+- Target Audience: ${brandProfile.targetAudience}
+- Brand Colors: Primary ${brandProfile.primaryColor}, Accent ${brandProfile.accentColor}
+- Services: ${brandProfile.services?.join(', ')}
+
+VISUAL REQUIREMENTS:
+- Style: ${visualStyle} with 2024-2025 design trends
+- Platform: ${platform} (square format, 1080x1080)
+- Text Content: "${imageText}"
+- Color Palette: ${colors.primary || brandProfile.primaryColor}, ${colors.secondary || brandProfile.accentColor}
+- Layout Style: ${layout.style || 'modern-professional'}
+
+DESIGN ELEMENTS TO INCLUDE:
+- Professional typography with clear hierarchy
+- Brand-consistent color scheme
+- Modern visual elements (${elements.shapes?.join(', ') || 'geometric shapes, gradients'})
+- Clean, readable text layout
+- Contemporary design trends (glassmorphism, modern gradients, clean typography)
+- Appropriate for ${businessType} industry
+- Optimized for ${platform} social media platform
+
+TECHNICAL REQUIREMENTS:
+- High quality, professional appearance
+- Clear text readability
+- Brand color integration
+- Modern, engaging visual design
+- Social media optimized composition
+
+Create a visually striking, professional design that effectively communicates the brand message while maintaining modern design standards.`;
 }
 
 /**
@@ -225,7 +326,327 @@ function parseDesignSpecsFromText(text: string, input: Gemini25DesignInput): any
 }
 
 /**
- * Create SVG design from specifications
+ * Create DYNAMIC SVG design that actually uses the AI specifications
+ * This replaces the hardcoded template with spec-driven generation
+ */
+async function createDynamicSVGFromSpecs(specs: any, input: Gemini25DesignInput): Promise<string> {
+  const { colors = {}, layout = {}, typography = {}, elements = {} } = specs || {};
+  const { width = 1080, height = 1080 } = layout?.dimensions || {};
+
+  // Extract design style from specs
+  const designStyle = layout?.style || input.visualStyle || 'modern';
+  const layoutType = layout?.textPlacement || 'center';
+
+  // Dynamic color palette based on specs and brand
+  const primaryColor = colors.primary || input.brandProfile.primaryColor || '#6366f1';
+  const secondaryColor = colors.secondary || input.brandProfile.accentColor || '#8b5cf6';
+  const backgroundColor = colors.background || input.brandProfile.backgroundColor || '#ffffff';
+  const textColor = colors.text || '#1f2937';
+
+  // Parse text content dynamically
+  const textLines = input.imageText.split('\n').filter(line => line.trim());
+  const mainText = textLines[0] || input.brandProfile.businessName || 'Business';
+  const subText = textLines[1] || '';
+  const ctaText = textLines[2] || 'Learn More';
+
+  // Generate layout based on business type and style
+  return generateLayoutBasedOnSpecs(designStyle, {
+    width,
+    height,
+    primaryColor,
+    secondaryColor,
+    backgroundColor,
+    textColor,
+    mainText,
+    subText,
+    ctaText,
+    businessType: input.businessType,
+    brandName: input.brandProfile.businessName,
+    elements: elements.shapes || [],
+    typography
+  });
+}
+
+/**
+ * Generate different layouts based on design specifications
+ */
+function generateLayoutBasedOnSpecs(designStyle: string, params: any): string {
+  const { width, height, primaryColor, secondaryColor, backgroundColor, textColor, mainText, subText, ctaText, businessType, brandName, elements, typography } = params;
+
+  // Choose layout based on design style and business type
+  if (designStyle.includes('minimal') || businessType.includes('tech')) {
+    return generateMinimalLayout(params);
+  } else if (designStyle.includes('bold') || businessType.includes('fitness') || businessType.includes('food')) {
+    return generateBoldLayout(params);
+  } else if (designStyle.includes('elegant') || businessType.includes('fashion') || businessType.includes('beauty')) {
+    return generateElegantLayout(params);
+  } else if (businessType.includes('medical') || businessType.includes('professional')) {
+    return generateProfessionalLayout(params);
+  } else {
+    return generateModernLayout(params);
+  }
+}
+
+/**
+ * Generate minimal tech-focused layout
+ */
+function generateMinimalLayout(params: any): string {
+  const { width, height, primaryColor, secondaryColor, textColor, mainText, subText, ctaText, brandName } = params;
+
+  return `
+    <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="minimalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:${primaryColor};stop-opacity:0.1" />
+          <stop offset="100%" style="stop-color:${secondaryColor};stop-opacity:0.05" />
+        </linearGradient>
+      </defs>
+
+      <!-- Clean background -->
+      <rect width="100%" height="100%" fill="#ffffff" />
+      <rect width="100%" height="100%" fill="url(#minimalGrad)" />
+
+      <!-- Minimal geometric accent -->
+      <rect x="80" y="80" width="4" height="200" fill="${primaryColor}" />
+      <rect x="80" y="800" width="200" height="4" fill="${primaryColor}" />
+
+      <!-- Content area -->
+      <g transform="translate(540, 400)">
+        <!-- Brand initial -->
+        <rect x="-25" y="-120" width="50" height="50" fill="${primaryColor}" />
+        <text x="0" y="-85" text-anchor="middle" fill="white" font-family="system-ui" font-size="20" font-weight="600">
+          ${brandName?.charAt(0) || 'B'}
+        </text>
+
+        <!-- Main text -->
+        <text x="0" y="0" text-anchor="middle" fill="${textColor}" font-family="system-ui" font-size="48" font-weight="300" letter-spacing="-0.02em">
+          ${mainText}
+        </text>
+
+        ${subText ? `
+        <text x="0" y="60" text-anchor="middle" fill="${textColor}" font-family="system-ui" font-size="16" font-weight="400" opacity="0.7">
+          ${subText}
+        </text>
+        ` : ''}
+
+        <!-- Minimal CTA -->
+        <text x="0" y="140" text-anchor="middle" fill="${primaryColor}" font-family="system-ui" font-size="14" font-weight="500" text-decoration="underline">
+          ${ctaText}
+        </text>
+      </g>
+    </svg>
+  `;
+}
+
+/**
+ * Generate bold, energetic layout for fitness/food businesses
+ */
+function generateBoldLayout(params: any): string {
+  const { width, height, primaryColor, secondaryColor, textColor, mainText, subText, ctaText, brandName } = params;
+
+  return `
+    <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="boldGrad" cx="50%" cy="50%" r="70%">
+          <stop offset="0%" style="stop-color:${primaryColor};stop-opacity:0.8" />
+          <stop offset="100%" style="stop-color:${secondaryColor};stop-opacity:0.4" />
+        </radialGradient>
+        <filter id="boldShadow">
+          <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="rgba(0,0,0,0.3)"/>
+        </filter>
+      </defs>
+
+      <!-- Dynamic background -->
+      <rect width="100%" height="100%" fill="url(#boldGrad)" />
+
+      <!-- Bold geometric shapes -->
+      <polygon points="0,0 300,0 200,200" fill="${primaryColor}" opacity="0.2" />
+      <polygon points="1080,1080 780,1080 880,880" fill="${secondaryColor}" opacity="0.2" />
+
+      <!-- Content area -->
+      <g transform="translate(540, 540)">
+        <!-- Bold brand circle -->
+        <circle cx="0" cy="-150" r="50" fill="${primaryColor}" filter="url(#boldShadow)" />
+        <text x="0" y="-135" text-anchor="middle" fill="white" font-family="system-ui" font-size="32" font-weight="900">
+          ${brandName?.charAt(0) || 'B'}
+        </text>
+
+        <!-- Bold main text -->
+        <text x="0" y="0" text-anchor="middle" fill="white" font-family="system-ui" font-size="56" font-weight="900" letter-spacing="-0.03em" filter="url(#boldShadow)">
+          ${mainText.toUpperCase()}
+        </text>
+
+        ${subText ? `
+        <text x="0" y="80" text-anchor="middle" fill="white" font-family="system-ui" font-size="20" font-weight="600" opacity="0.9">
+          ${subText}
+        </text>
+        ` : ''}
+
+        <!-- Bold CTA button -->
+        <rect x="-100" y="120" width="200" height="60" rx="30" fill="white" filter="url(#boldShadow)" />
+        <text x="0" y="160" text-anchor="middle" fill="${primaryColor}" font-family="system-ui" font-size="18" font-weight="700">
+          ${ctaText.toUpperCase()}
+        </text>
+      </g>
+    </svg>
+  `;
+}
+
+/**
+ * Generate elegant layout for fashion/beauty businesses
+ */
+function generateElegantLayout(params: any): string {
+  const { width, height, primaryColor, secondaryColor, textColor, mainText, subText, ctaText, brandName } = params;
+
+  return `
+    <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="elegantGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#f8f9fa;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:${primaryColor};stop-opacity:0.1" />
+        </linearGradient>
+      </defs>
+
+      <!-- Elegant background -->
+      <rect width="100%" height="100%" fill="url(#elegantGrad)" />
+
+      <!-- Elegant decorative elements -->
+      <circle cx="150" cy="150" r="80" fill="none" stroke="${primaryColor}" stroke-width="1" opacity="0.3" />
+      <circle cx="930" cy="930" r="60" fill="none" stroke="${secondaryColor}" stroke-width="1" opacity="0.3" />
+
+      <!-- Content area -->
+      <g transform="translate(540, 450)">
+        <!-- Elegant brand mark -->
+        <rect x="-30" y="-120" width="60" height="60" fill="none" stroke="${primaryColor}" stroke-width="2" />
+        <text x="0" y="-75" text-anchor="middle" fill="${primaryColor}" font-family="serif" font-size="24" font-weight="400" font-style="italic">
+          ${brandName?.charAt(0) || 'B'}
+        </text>
+
+        <!-- Elegant main text -->
+        <text x="0" y="0" text-anchor="middle" fill="${textColor}" font-family="serif" font-size="44" font-weight="300" letter-spacing="0.02em">
+          ${mainText}
+        </text>
+
+        ${subText ? `
+        <text x="0" y="60" text-anchor="middle" fill="${textColor}" font-family="serif" font-size="16" font-weight="300" opacity="0.8" font-style="italic">
+          ${subText}
+        </text>
+        ` : ''}
+
+        <!-- Elegant CTA -->
+        <rect x="-80" y="120" width="160" height="40" fill="none" stroke="${primaryColor}" stroke-width="1" />
+        <text x="0" y="145" text-anchor="middle" fill="${primaryColor}" font-family="serif" font-size="14" font-weight="400" letter-spacing="0.1em">
+          ${ctaText.toUpperCase()}
+        </text>
+      </g>
+    </svg>
+  `;
+}
+
+/**
+ * Generate professional layout for medical/corporate businesses
+ */
+function generateProfessionalLayout(params: any): string {
+  const { width, height, primaryColor, secondaryColor, textColor, mainText, subText, ctaText, brandName } = params;
+
+  return `
+    <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="profGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:${primaryColor};stop-opacity:0.05" />
+        </linearGradient>
+      </defs>
+
+      <!-- Professional background -->
+      <rect width="100%" height="100%" fill="url(#profGrad)" />
+
+      <!-- Professional header bar -->
+      <rect x="0" y="0" width="100%" height="120" fill="${primaryColor}" />
+
+      <!-- Content area -->
+      <g transform="translate(540, 500)">
+        <!-- Professional logo area -->
+        <rect x="-40" y="-200" width="80" height="80" fill="white" />
+        <text x="0" y="-145" text-anchor="middle" fill="${primaryColor}" font-family="system-ui" font-size="28" font-weight="600">
+          ${brandName?.charAt(0) || 'B'}
+        </text>
+
+        <!-- Professional main text -->
+        <text x="0" y="0" text-anchor="middle" fill="${textColor}" font-family="system-ui" font-size="40" font-weight="600" letter-spacing="-0.01em">
+          ${mainText}
+        </text>
+
+        ${subText ? `
+        <text x="0" y="50" text-anchor="middle" fill="${textColor}" font-family="system-ui" font-size="18" font-weight="400" opacity="0.8">
+          ${subText}
+        </text>
+        ` : ''}
+
+        <!-- Professional CTA -->
+        <rect x="-120" y="100" width="240" height="50" fill="${primaryColor}" />
+        <text x="0" y="130" text-anchor="middle" fill="white" font-family="system-ui" font-size="16" font-weight="500">
+          ${ctaText}
+        </text>
+      </g>
+    </svg>
+  `;
+}
+
+/**
+ * Generate modern default layout
+ */
+function generateModernLayout(params: any): string {
+  const { width, height, primaryColor, secondaryColor, textColor, mainText, subText, ctaText, brandName } = params;
+
+  return `
+    <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="modernGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:${primaryColor};stop-opacity:0.1" />
+          <stop offset="100%" style="stop-color:${secondaryColor};stop-opacity:0.05" />
+        </linearGradient>
+      </defs>
+
+      <!-- Modern background -->
+      <rect width="100%" height="100%" fill="#ffffff" />
+      <rect width="100%" height="100%" fill="url(#modernGrad)" />
+
+      <!-- Modern accent shapes -->
+      <circle cx="200" cy="200" r="100" fill="${primaryColor}" opacity="0.1" />
+      <rect x="700" y="700" width="200" height="200" rx="20" fill="${secondaryColor}" opacity="0.1" />
+
+      <!-- Content area -->
+      <g transform="translate(540, 450)">
+        <!-- Modern brand mark -->
+        <circle cx="0" cy="-100" r="40" fill="${primaryColor}" />
+        <text x="0" y="-90" text-anchor="middle" fill="white" font-family="system-ui" font-size="24" font-weight="600">
+          ${brandName?.charAt(0) || 'B'}
+        </text>
+
+        <!-- Modern main text -->
+        <text x="0" y="0" text-anchor="middle" fill="${textColor}" font-family="system-ui" font-size="46" font-weight="700" letter-spacing="-0.02em">
+          ${mainText}
+        </text>
+
+        ${subText ? `
+        <text x="0" y="60" text-anchor="middle" fill="${textColor}" font-family="system-ui" font-size="18" font-weight="400" opacity="0.8">
+          ${subText}
+        </text>
+        ` : ''}
+
+        <!-- Modern CTA -->
+        <rect x="-100" y="120" width="200" height="50" rx="25" fill="${primaryColor}" />
+        <text x="0" y="150" text-anchor="middle" fill="white" font-family="system-ui" font-size="16" font-weight="600">
+          ${ctaText}
+        </text>
+      </g>
+    </svg>
+  `;
+}
+
+/**
+ * Create SVG design from specifications (LEGACY - keeping for compatibility)
  */
 async function createSVGFromSpecs(specs: any, input: Gemini25DesignInput): Promise<string> {
   const { colors = {}, layout = {}, typography = {}, elements = {} } = specs || {};
