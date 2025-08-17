@@ -15,10 +15,16 @@ export async function GET(request: NextRequest) {
 
     switch (action) {
       case 'list':
-        const artifacts = await artifactsService.getArtifacts({
-          category: category as any,
-          isActive: searchParams.get('active') === 'true' ? true : undefined
-        });
+        let artifacts = artifactsService.getAllArtifacts();
+
+        // Apply filters
+        if (category) {
+          artifacts = artifacts.filter(a => a.category === category);
+        }
+        if (searchParams.get('active') === 'true') {
+          artifacts = artifacts.filter(a => a.isActive);
+        }
+
         return NextResponse.json({ success: true, artifacts });
 
       case 'get':
@@ -88,7 +94,7 @@ export async function POST(request: NextRequest) {
         if (!artifactId) {
           return NextResponse.json({ success: false, error: 'Artifact ID required' }, { status: 400 });
         }
-        
+
         await artifactsService.activateArtifact(artifactId);
         return NextResponse.json({ success: true });
 
@@ -97,7 +103,7 @@ export async function POST(request: NextRequest) {
         if (!deactivateId) {
           return NextResponse.json({ success: false, error: 'Artifact ID required' }, { status: 400 });
         }
-        
+
         await artifactsService.deactivateArtifact(deactivateId);
         return NextResponse.json({ success: true });
 
