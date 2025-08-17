@@ -34,6 +34,7 @@ export const BrandProfileDocumentSchema = BaseDocumentSchema.extend({
   description: z.string().optional(),
   location: z.string().optional(),
   website: z.string().optional(),
+  logoDataUrl: z.string().optional(), // Added logo support
   socialMedia: z.object({
     instagram: z.string().optional(),
     facebook: z.string().optional(),

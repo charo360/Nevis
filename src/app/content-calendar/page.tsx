@@ -14,9 +14,9 @@ import { useToast } from "@/hooks/use-toast";
 import type { BrandProfile } from "@/lib/types";
 import type { CompleteBrandProfile } from "@/components/cbrand/cbrand-wizard";
 import { useRouter } from "next/navigation";
-
-const CBRAND_PROFILE_KEY = "completeBrandProfile";
-const CONTENT_SCHEDULE_KEY = "contentSchedule";
+import { useUnifiedBrand, useBrandStorage, useBrandChangeListener } from "@/contexts/unified-brand-context";
+import { UnifiedBrandLayout, BrandContent, BrandSwitchingStatus } from "@/components/layout/unified-brand-layout";
+import { STORAGE_FEATURES } from "@/lib/services/brand-scoped-storage";
 
 interface ScheduledContent {
   id: string;
@@ -54,9 +54,10 @@ const SERVICE_COLORS = [
   { bg: '#0EA5E9', text: '#FFFFFF' }, // Sky
 ];
 
-function ContentCalendarPage() {
+function ContentCalendarPageContent() {
+  const { currentBrand, brands, loading: brandLoading, selectBrand } = useUnifiedBrand();
+  const scheduleStorage = useBrandStorage(STORAGE_FEATURES.CONTENT_CALENDAR);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [brandProfile, setBrandProfile] = useState<CompleteBrandProfile | null>(null);
   const [scheduledContent, setScheduledContent] = useState<ScheduledContent[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>('');
@@ -66,48 +67,81 @@ function ContentCalendarPage() {
   const { toast } = useToast();
 
   // Load CBrand profile and services
-  useEffect(() => {
+  // Load content when brand changes using unified brand system
+  useBrandChangeListener(React.useCallback((brand) => {
+    const brandName = brand?.businessName || brand?.name || 'none';
+    console.log('🔄 Content Calendar: brand changed to:', brandName);
+
+    if (!brand) {
+      setScheduledContent([]);
+      setServices([]);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
+
     try {
-      const storedProfile = localStorage.getItem(CBRAND_PROFILE_KEY);
-      if (storedProfile) {
-        const profile = JSON.parse(storedProfile);
-        setBrandProfile(profile);
+      // CBrand services are already in the correct format: Array<{name: string, description: string}>
+      if (brand.services && Array.isArray(brand.services)) {
+        const serviceObjects = brand.services.map((service: any, index: number) => ({
+          id: `service-${index}`,
+          name: service.name || service,
+          description: service.description || ''
+        }));
+        setServices(serviceObjects);
+        console.log(`✅ Loaded ${serviceObjects.length} services for brand ${brandName}`);
+      }
 
-        // CBrand services are already in the correct format: Array<{name: string, description: string}>
-        if (profile.services && Array.isArray(profile.services)) {
-          const serviceObjects = profile.services.map((service: any, index: number) => ({
-            id: `service-${index}`,
-            name: service.name || service,
-            description: service.description || ''
-          }));
-          setServices(serviceObjects);
-        }
-
-        // Load scheduled content
-        const storedSchedule = localStorage.getItem(CONTENT_SCHEDULE_KEY);
-        if (storedSchedule) {
-          setScheduledContent(JSON.parse(storedSchedule));
-        }
-      } else {
-        router.push('/cbrand');
+      // Load scheduled content from brand-scoped storage
+      if (scheduleStorage) {
+        const storedSchedule = scheduleStorage.getItem<ScheduledContent[]>() || [];
+        setScheduledContent(storedSchedule);
+        console.log(`✅ Loaded ${storedSchedule.length} scheduled items for brand ${brandName}`);
       }
     } catch (error) {
+      console.error('Failed to load content calendar data for brand:', brandName, error);
       toast({
         variant: "destructive",
         title: "Failed to load data",
-        description: "Could not read your CBrand profile from local storage.",
+        description: "Could not read your content calendar data.",
       });
     } finally {
       setIsLoading(false);
     }
-  }, [router, toast]);
+  }, [scheduleStorage, toast]));
 
-  // Save scheduled content to localStorage
+  // Handle brand selection logic - only when truly needed
+  useEffect(() => {
+    if (!brandLoading) {
+      // Only redirect if we're sure there are no brands AND no current brand is selected
+      // This prevents premature redirects during the loading process
+      if (!currentBrand && brands.length === 0) {
+        console.log('🔄 Content Calendar: No brands found after loading completed, redirecting to brand setup');
+        router.push('/brand-profile');
+      } else if (currentBrand) {
+        console.log(`✅ Content Calendar: Brand available: ${currentBrand.businessName || currentBrand.name}`);
+      } else if (brands.length > 0) {
+        console.log(`✅ Content Calendar: ${brands.length} brands available, waiting for brand selection`);
+      }
+      // Removed auto-selection to prevent unwanted brand switching
+      // Let the unified brand context handle brand restoration from localStorage
+    } else {
+      console.log('🔄 Content Calendar: Still loading brands...');
+    }
+  }, [currentBrand, brands.length, brandLoading, router]);
+
+  // Save scheduled content to brand-scoped storage
   const saveScheduledContent = (content: ScheduledContent[]) => {
+    if (!scheduleStorage) {
+      console.warn('No schedule storage available for current brand');
+      return;
+    }
+
     try {
-      localStorage.setItem(CONTENT_SCHEDULE_KEY, JSON.stringify(content));
+      scheduleStorage.setItem(content);
       setScheduledContent(content);
+      console.log(`💾 Saved ${content.length} scheduled items for brand ${currentBrand?.businessName || currentBrand?.name}`);
     } catch (error) {
       toast({
         variant: "destructive",
@@ -507,4 +541,31 @@ function ScheduleContentDialog({ isOpen, onClose, selectedDate, services, onSche
   );
 }
 
-export default ContentCalendarPage;
+function ContentCalendarPage() {
+  return (
+    <BrandContent fallback={
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Calendar className="w-8 h-8 text-gray-400" />
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">No Brand Selected</h2>
+          <p className="text-gray-600">Please select a brand to view and manage your content calendar.</p>
+        </div>
+      </div>
+    }>
+      {() => <ContentCalendarPageContent />}
+    </BrandContent>
+  );
+}
+
+function ContentCalendarPageWithUnifiedBrand() {
+  return (
+    <UnifiedBrandLayout>
+      <ContentCalendarPage />
+      <BrandSwitchingStatus />
+    </UnifiedBrandLayout>
+  );
+}
+
+export default ContentCalendarPageWithUnifiedBrand;

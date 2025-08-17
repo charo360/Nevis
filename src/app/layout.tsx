@@ -7,7 +7,9 @@ import { Toaster } from "@/components/ui/toaster"
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import { AuthWrapper } from '@/components/auth/auth-wrapper';
+import { UnifiedBrandProvider } from '@/contexts/unified-brand-context';
 import React, { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import type { BrandProfile } from '@/lib/types';
 
 // Import test function for development
@@ -65,6 +67,37 @@ function BrandThemeLoader({ children }: { children: React.ReactNode }) {
   )
 }
 
+function ConditionalLayout({ children }: { children: React.ReactNode }) {
+  const [pathname, setPathname] = useState('');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setPathname(window.location.pathname);
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return <div>Loading...</div>;
+  }
+
+  // Pages that should NOT show the sidebar (public pages only)
+  const pagesWithoutSidebar = ['/', '/auth'];
+  const shouldHideSidebar = pagesWithoutSidebar.includes(pathname);
+
+  if (shouldHideSidebar) {
+    return <div className="w-full">{children}</div>;
+  }
+
+  return (
+    <SidebarProvider>
+      <AppSidebar />
+      <BrandThemeLoader>
+        {children}
+      </BrandThemeLoader>
+    </SidebarProvider>
+  );
+}
+
 
 export default function RootLayout({
   children,
@@ -75,17 +108,16 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <title>LocalBuzz</title>
-        <meta name="description" content="Hyper-local, relevant social media content generation for local businesses" />
+        <title>Crevo - AI-Powered Content Creation</title>
+        <meta name="description" content="Transform your ideas into professional social media content with AI. Generate posts, designs, and campaigns that engage your audience and grow your brand." />
       </head>
       <body className="font-body antialiased" suppressHydrationWarning>
         <AuthWrapper requireAuth={false}>
-          <SidebarProvider>
-            <AppSidebar />
-            <BrandThemeLoader>
+          <UnifiedBrandProvider>
+            <ConditionalLayout>
               {children}
-            </BrandThemeLoader>
-          </SidebarProvider>
+            </ConditionalLayout>
+          </UnifiedBrandProvider>
         </AuthWrapper>
         <Toaster />
       </body>

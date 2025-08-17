@@ -24,7 +24,7 @@ function getCurrentUserId(): Promise<string | null> {
 // Save brand profile to Firestore
 export async function saveBrandProfile(profile: CompleteBrandProfile): Promise<SavedBrandProfile> {
   const userId = await getCurrentUserId();
-  
+
   if (!userId) {
     // Fallback to localStorage if user is not authenticated
     return saveBrandProfileToLocalStorage(profile);
@@ -33,7 +33,7 @@ export async function saveBrandProfile(profile: CompleteBrandProfile): Promise<S
   try {
     const profileId = await brandProfileFirebaseService.saveBrandProfile(profile, userId);
     const savedProfile = await brandProfileFirebaseService.getBrandProfileById(profileId);
-    
+
     if (!savedProfile) {
       throw new Error('Failed to retrieve saved profile');
     }
@@ -48,7 +48,7 @@ export async function saveBrandProfile(profile: CompleteBrandProfile): Promise<S
 // Load brand profile from Firestore
 export async function loadBrandProfile(): Promise<SavedBrandProfile | null> {
   const userId = await getCurrentUserId();
-  
+
   if (!userId) {
     // Fallback to localStorage if user is not authenticated
     return loadBrandProfileFromLocalStorage();
@@ -66,7 +66,7 @@ export async function loadBrandProfile(): Promise<SavedBrandProfile | null> {
 // Get all saved profiles from Firestore
 export async function getSavedProfiles(): Promise<SavedBrandProfile[]> {
   const userId = await getCurrentUserId();
-  
+
   if (!userId) {
     // Fallback to localStorage if user is not authenticated
     return getSavedProfilesFromLocalStorage();
@@ -84,7 +84,7 @@ export async function getSavedProfiles(): Promise<SavedBrandProfile[]> {
 // Delete a saved profile from Firestore
 export async function deleteBrandProfile(id: string): Promise<void> {
   const userId = await getCurrentUserId();
-  
+
   if (!userId) {
     // Fallback to localStorage if user is not authenticated
     return deleteBrandProfileFromLocalStorage(id);
@@ -100,11 +100,11 @@ export async function deleteBrandProfile(id: string): Promise<void> {
 
 // Update brand profile in Firestore
 export async function updateBrandProfile(
-  id: string, 
+  id: string,
   updates: Partial<CompleteBrandProfile>
 ): Promise<void> {
   const userId = await getCurrentUserId();
-  
+
   if (!userId) {
     throw new Error('User must be authenticated to update profile');
   }
@@ -126,7 +126,7 @@ const CBRAND_PROFILES_KEY = 'completeBrandProfiles';
 
 function saveBrandProfileToLocalStorage(profile: CompleteBrandProfile): SavedBrandProfile {
   const now = new Date().toISOString();
-  
+
   const savedProfile: SavedBrandProfile = {
     ...profile,
     id: generateId(),
@@ -137,7 +137,7 @@ function saveBrandProfileToLocalStorage(profile: CompleteBrandProfile): SavedBra
 
   try {
     localStorage.setItem(CBRAND_PROFILE_KEY, JSON.stringify(savedProfile));
-    
+
     const existingProfiles = getSavedProfilesFromLocalStorage();
     const updatedProfiles = [savedProfile, ...existingProfiles.filter(p => p.id !== savedProfile.id)];
     localStorage.setItem(CBRAND_PROFILES_KEY, JSON.stringify(updatedProfiles));
@@ -145,14 +145,14 @@ function saveBrandProfileToLocalStorage(profile: CompleteBrandProfile): SavedBra
     return savedProfile;
   } catch (error) {
     console.warn('Storage failed, trying without design examples:', error);
-    
+
     const profileWithoutDesigns = {
       ...savedProfile,
       designExamples: [],
     };
 
     localStorage.setItem(CBRAND_PROFILE_KEY, JSON.stringify(profileWithoutDesigns));
-    
+
     const existingProfiles = getSavedProfilesFromLocalStorage();
     const updatedProfiles = [profileWithoutDesigns, ...existingProfiles.filter(p => p.id !== profileWithoutDesigns.id)];
     localStorage.setItem(CBRAND_PROFILES_KEY, JSON.stringify(updatedProfiles));
@@ -284,8 +284,8 @@ export function isProfileComplete(profile: CompleteBrandProfile): boolean {
     'businessType',
     'location',
     'description',
-    'services',
-    'logoDataUrl'
+    'services'
+    // Temporarily removed 'logoDataUrl' to test logo persistence
   ];
 
   return requiredFields.every(field => {

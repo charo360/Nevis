@@ -175,6 +175,30 @@ export async function generateGeminiHDEnhancedDesign(
 function buildGeminiHDPrompt(input: GeminiHDEnhancedDesignInput): string {
   const { businessType, platform, visualStyle, imageText, brandProfile, brandConsistency, artifactInstructions } = input;
 
+  // Generate unique variation elements for each request
+  const generationId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const variationSeed = Math.floor(Math.random() * 1000);
+
+  // Random layout variations
+  const layoutVariations = [
+    'asymmetrical composition with dynamic balance',
+    'grid-based layout with clean alignment',
+    'centered composition with radial elements',
+    'diagonal flow with leading lines',
+    'layered depth with foreground/background separation'
+  ];
+  const selectedLayout = layoutVariations[Math.floor(Math.random() * layoutVariations.length)];
+
+  // Random style modifiers
+  const styleModifiers = [
+    'with subtle gradient overlays',
+    'with bold geometric accents',
+    'with organic flowing elements',
+    'with modern minimalist approach',
+    'with dynamic energy and movement'
+  ];
+  const selectedModifier = styleModifiers[Math.floor(Math.random() * styleModifiers.length)];
+
   // Enhanced color instructions optimized for Gemini's color accuracy
   const colorInstructions = brandProfile.primaryColor && brandProfile.accentColor
     ? `Primary brand color: ${brandProfile.primaryColor}, Secondary brand color: ${brandProfile.accentColor}. Use these colors prominently and consistently throughout the design.`
@@ -216,6 +240,13 @@ ${businessDNA}
 **BRAND GUIDELINES:**
 ${colorInstructions}
 ${peopleInstructions}
+
+**CREATIVE VARIATION REQUIREMENTS:**
+- Layout Style: Use ${selectedLayout}
+- Design Approach: Create design ${selectedModifier}
+- Uniqueness: This design must be visually distinct from any previous generations
+- Generation ID: ${generationId} (use this to ensure uniqueness)
+- Variation Seed: ${variationSeed} (apply subtle randomization based on this number)
 
 **PLATFORM SPECIFICATIONS:**
 ${platformSpecs}

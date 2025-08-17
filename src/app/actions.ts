@@ -13,24 +13,90 @@ import { generateEnhancedDesign } from "@/ai/gemini-2.5-design";
 
 // --- AI Flow Actions ---
 
+type AnalysisResult = {
+  success: true;
+  data: BrandAnalysisResult;
+} | {
+  success: false;
+  error: string;
+  errorType: 'blocked' | 'timeout' | 'error';
+};
+
 export async function analyzeBrandAction(
   websiteUrl: string,
   designImageUris: string[],
-): Promise<BrandAnalysisResult> {
+): Promise<AnalysisResult> {
   try {
     console.log("🔍 Starting brand analysis for URL:", websiteUrl);
     console.log("🖼️ Design images count:", designImageUris.length);
 
-    const result = await analyzeBrandFlow({ websiteUrl, designImageUris });
+    // Validate URL format
+    if (!websiteUrl || !websiteUrl.trim()) {
+      return {
+        success: false,
+        error: "Website URL is required",
+        errorType: 'error'
+      };
+    }
+
+    // Ensure URL has protocol
+    let validUrl = websiteUrl.trim();
+    if (!validUrl.startsWith('http://') && !validUrl.startsWith('https://')) {
+      validUrl = 'https://' + validUrl;
+    }
+
+    const result = await analyzeBrandFlow({
+      websiteUrl: validUrl,
+      designImageUris: designImageUris || []
+    });
 
     console.log("✅ Brand analysis result:", JSON.stringify(result, null, 2));
     console.log("🔍 Result type:", typeof result);
     console.log("🔍 Result keys:", result ? Object.keys(result) : "No result");
 
-    return result;
+    if (!result) {
+      return {
+        success: false,
+        error: "Analysis returned empty result",
+        errorType: 'error'
+      };
+    }
+
+    return {
+      success: true,
+      data: result
+    };
   } catch (error) {
     console.error("❌ Error analyzing brand:", error);
-    throw new Error("Failed to analyze brand. Please check the URL and try again.");
+
+    // Return structured error response instead of throwing
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+
+    if (errorMessage.includes('fetch') || errorMessage.includes('403') || errorMessage.includes('blocked')) {
+      return {
+        success: false,
+        error: "Website blocks automated access. This is common for security reasons.",
+        errorType: 'blocked'
+      };
+    } else if (errorMessage.includes('timeout')) {
+      return {
+        success: false,
+        error: "Website analysis timed out. Please try again or check if the website is accessible.",
+        errorType: 'timeout'
+      };
+    } else if (errorMessage.includes('CORS')) {
+      return {
+        success: false,
+        error: "Website blocks automated access. This is common for security reasons.",
+        errorType: 'blocked'
+      };
+    } else {
+      return {
+        success: false,
+        error: `Analysis failed: ${errorMessage}`,
+        errorType: 'error'
+      };
+    }
   }
 }
 
@@ -73,12 +139,16 @@ export async function generateContentAction(
       ? profile.competitiveAdvantages.join('\n')
       : profile.competitiveAdvantages || '';
 
-    console.log('🔍 Data transformation debug:');
-    console.log('- keyFeatures type:', typeof profile.keyFeatures);
-    console.log('- keyFeatures value:', profile.keyFeatures);
-    console.log('- keyFeaturesString:', keyFeaturesString);
-    console.log('- competitiveAdvantages type:', typeof profile.competitiveAdvantages);
-    console.log('- competitiveAdvantagesString:', competitiveAdvantagesString);
+    // Convert services array to newline-separated string
+    const servicesString = Array.isArray(profile.services)
+      ? profile.services.map(service =>
+        typeof service === 'object' && service.name
+          ? `${service.name}: ${service.description || ''}`
+          : service
+      ).join('\n')
+      : profile.services || '';
+
+
 
     const postDetails = await generatePostFromProfileFlow({
       businessType: profile.businessType,
@@ -98,7 +168,7 @@ export async function generateContentAction(
         aspectRatio: getAspectRatioForPlatform(platform),
       }],
       // Pass new detailed fields
-      services: profile.services,
+      services: servicesString,
       targetAudience: profile.targetAudience,
       keyFeatures: keyFeaturesString,
       competitiveAdvantages: competitiveAdvantagesString,
