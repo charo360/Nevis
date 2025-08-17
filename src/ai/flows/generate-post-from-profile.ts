@@ -407,12 +407,13 @@ async function generateImageForVariant(
         prompt: promptParts,
         config: {
           responseModalities: ['TEXT', 'IMAGE'],
-          imageGenerationConfig: {
-            aspectRatio: variant.aspectRatio === '9:16' ? '9:16' : variant.aspectRatio === '16:9' ? '16:9' : '1:1',
-            negativePrompt: 'low quality, blurry, pixelated, distorted faces, missing features, text errors, random text, lorem ipsum, placeholder text',
-            guidanceScale: 20, // Higher guidance for better prompt adherence and quality
-            seed: Math.floor(Math.random() * 1000000), // Random seed for variety
-          },
+          // Temporarily removed imageGenerationConfig to test if it's causing 500 error
+          // imageGenerationConfig: {
+          //   aspectRatio: variant.aspectRatio === '9:16' ? '9:16' : variant.aspectRatio === '16:9' ? '16:9' : '1:1',
+          //   negativePrompt: 'low quality, blurry, pixelated, distorted faces, missing features, text errors, random text, lorem ipsum, placeholder text',
+          //   guidanceScale: 20, // Higher guidance for better prompt adherence and quality
+          //   seed: Math.floor(Math.random() * 1000000), // Random seed for variety
+          // },
         },
       });
 

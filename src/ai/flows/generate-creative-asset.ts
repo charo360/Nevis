@@ -415,12 +415,13 @@ Ensure the text is readable and well-composed.`
                         prompt: promptParts,
                         config: {
                             responseModalities: ['TEXT', 'IMAGE'],
-                            imageGenerationConfig: {
-                                aspectRatio: '1:1', // Standard square format for social media
-                                negativePrompt: 'low quality, blurry, pixelated, distorted faces, missing features, text errors, random text, lorem ipsum, placeholder text',
-                                guidanceScale: 20, // Higher guidance for better prompt adherence and quality
-                                seed: Math.floor(Math.random() * 1000000), // Random seed for variety
-                            },
+                            // Temporarily removed imageGenerationConfig to test if it's causing 500 error
+                            // imageGenerationConfig: {
+                            //     aspectRatio: '1:1', // Standard square format for social media
+                            //     negativePrompt: 'low quality, blurry, pixelated, distorted faces, missing features, text errors, random text, lorem ipsum, placeholder text',
+                            //     guidanceScale: 20, // Higher guidance for better prompt adherence and quality
+                            //     seed: Math.floor(Math.random() * 1000000), // Random seed for variety
+                            // },
                         },
                     });
 
