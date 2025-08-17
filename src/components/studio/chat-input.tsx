@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { RevoModelSelector, type RevoModel } from '@/components/ui/revo-model-selector';
 import Image from "next/image";
 import { cn } from '@/lib/utils';
 
@@ -28,8 +29,8 @@ interface ChatInputProps {
   onEditImage: (url: string) => void;
   aspectRatio: '16:9' | '9:16';
   setAspectRatio: (value: '16:9' | '9:16') => void;
-  useEnhancedDesign: boolean;
-  setUseEnhancedDesign: (value: boolean) => void;
+  selectedRevoModel: RevoModel;
+  setSelectedRevoModel: (value: RevoModel) => void;
 }
 
 export function ChatInput({
@@ -49,8 +50,8 @@ export function ChatInput({
   onEditImage,
   aspectRatio,
   setAspectRatio,
-  useEnhancedDesign,
-  setUseEnhancedDesign,
+  selectedRevoModel,
+  setSelectedRevoModel,
 }: ChatInputProps) {
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -178,28 +179,12 @@ export function ChatInput({
           </div>
 
           <div className="flex items-center space-x-2">
-            <Switch
-              id="enhanced-design-switch"
-              checked={useEnhancedDesign}
-              onCheckedChange={setUseEnhancedDesign}
+            <Label>AI Model:</Label>
+            <RevoModelSelector
+              selectedModel={selectedRevoModel}
+              onModelChange={setSelectedRevoModel}
               disabled={!isBrandProfileAvailable || outputType !== 'image'}
             />
-            <Label htmlFor="enhanced-design-switch" className="flex items-center gap-2">
-              <Wand className="h-4 w-4 text-purple-500" />
-              Enhanced Design
-            </Label>
-            {useEnhancedDesign && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="text-xs text-purple-600 font-medium">✨ AI+</span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Professional design principles, quality validation, and platform optimization</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
           </div>
 
           <Separator orientation="vertical" className="h-6 hidden sm:block" />

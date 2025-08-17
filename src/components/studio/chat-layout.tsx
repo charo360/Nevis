@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Bot } from 'lucide-react';
 import { generateCreativeAssetAction, generateEnhancedDesignAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
+import { type RevoModel } from '@/components/ui/revo-model-selector';
 
 
 interface ChatLayoutProps {
@@ -24,7 +25,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
     const [useBrandProfile, setUseBrandProfile] = React.useState(!!brandProfile);
     const [outputType, setOutputType] = React.useState<'image' | 'video'>('image');
     const [aspectRatio, setAspectRatio] = React.useState<'16:9' | '9:16'>('16:9');
-    const [useEnhancedDesign, setUseEnhancedDesign] = React.useState(true);
+    const [selectedRevoModel, setSelectedRevoModel] = React.useState<RevoModel>('revo-1.5');
     const { toast } = useToast();
 
 
@@ -85,7 +86,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
             let result;
             let aiResponse: Message;
 
-            if (useEnhancedDesign && outputType === 'image' && brandProfile) {
+            if (selectedRevoModel === 'revo-1.5' && outputType === 'image' && brandProfile) {
                 // Use enhanced design generation for images with brand profile
                 const enhancedResult = await generateEnhancedDesignAction(
                     brandProfile.businessType || 'business',
@@ -100,11 +101,12 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 aiResponse = {
                     id: (Date.now() + 1).toString(),
                     role: 'assistant',
-                    content: `✨ Enhanced Design Generated!\n\nQuality Score: ${enhancedResult.qualityScore}/10\nEnhancements: ${enhancedResult.enhancementsApplied.join(', ')}\nProcessing Time: ${enhancedResult.processingTime}ms\n\nThis design uses professional design principles, platform optimization, and quality validation for superior results.`,
+                    content: `✨ ${selectedRevoModel} Enhanced Design Generated!\n\nQuality Score: ${enhancedResult.qualityScore}/10\nEnhancements: ${enhancedResult.enhancementsApplied.join(', ')}\nProcessing Time: ${enhancedResult.processingTime}ms\n\nThis design uses professional design principles, platform optimization, and quality validation for superior results.`,
                     imageUrl: enhancedResult.imageUrl,
                 };
             } else {
                 // Use standard creative asset generation
+                console.log(`🚀 Using ${selectedRevoModel} for standard generation`);
                 result = await generateCreativeAssetAction(
                     currentInput,
                     outputType,
@@ -187,8 +189,8 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 onEditImage={onEditImage}
                 aspectRatio={aspectRatio}
                 setAspectRatio={setAspectRatio}
-                useEnhancedDesign={useEnhancedDesign}
-                setUseEnhancedDesign={setUseEnhancedDesign}
+                selectedRevoModel={selectedRevoModel}
+                setSelectedRevoModel={setSelectedRevoModel}
             />
         </div>
     );
