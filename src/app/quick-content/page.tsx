@@ -114,22 +114,32 @@ function QuickContentPage() {
     }
   }, [postsStorage, toast]));
 
-  // Handle brand selection logic - only when truly needed
-  // Add a delay to prevent premature redirects during brand loading
+  // Handle brand selection logic - ensure a brand is always selected
   useEffect(() => {
+    console.log('🔍 Brand selection check:', {
+      brandLoading,
+      brandsCount: brands.length,
+      currentBrand: currentBrand?.businessName || currentBrand?.name || 'null',
+      postsStorageAvailable: !!postsStorage
+    });
+
     if (!brandLoading) {
       // Add a small delay to ensure brands have time to load
       const timer = setTimeout(() => {
-        if (!currentBrand && brands.length === 0) {
+        if (brands.length === 0) {
           // No brands exist, redirect to brand setup
           console.log('🔄 Quick Content: No brands found, redirecting to brand setup');
           router.push('/brand-profile');
+        } else if (brands.length > 0 && !currentBrand) {
+          // If we have brands but no current brand selected, auto-select the first one
+          console.log('🎯 Auto-selecting first available brand:', brands[0].businessName || brands[0].name);
+          selectBrand(brands[0]);
         }
       }, 1000); // 1 second delay
 
       return () => clearTimeout(timer);
     }
-  }, [currentBrand, brands.length, brandLoading, router]);
+  }, [currentBrand, brands.length, brandLoading, router, selectBrand]);
 
 
   const handlePostGenerated = (post: GeneratedPost) => {
@@ -138,7 +148,12 @@ function QuickContentPage() {
     setGeneratedPosts(newPosts);
 
     if (!postsStorage) {
-      console.warn('No posts storage available for current brand');
+      console.warn('No posts storage available for current brand - keeping in memory only');
+      toast({
+        title: "Storage Unavailable",
+        description: "Post generated but couldn't be saved. Please select a brand.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -291,9 +306,33 @@ function QuickContentPage() {
         </DropdownMenu>
       </header>
       <main className="flex-1 overflow-auto p-4 lg:p-6">
-        {isLoading || brandLoading || !currentBrand ? (
+        {isLoading || brandLoading ? (
           <div className="flex h-full items-center justify-center">
             <p>Loading Content Calendar...</p>
+          </div>
+        ) : !currentBrand ? (
+          <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+            <h2 className="text-xl font-semibold">Select a Brand</h2>
+            <p className="text-muted-foreground text-center">
+              Please select a brand to start generating content.
+            </p>
+            {brands.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {brands.map((brand) => (
+                  <Button
+                    key={brand.id}
+                    onClick={() => selectBrand(brand)}
+                    variant="outline"
+                  >
+                    {brand.businessName || brand.name}
+                  </Button>
+                ))}
+              </div>
+            ) : (
+              <Button onClick={() => router.push('/brand-profile')}>
+                Create Brand Profile
+              </Button>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
