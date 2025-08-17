@@ -51,12 +51,12 @@ const REVO_MODELS: RevoModelOption[] = [
   {
     id: 'revo-2.0',
     name: 'Revo 2.0',
-    description: 'Next Generation - Future Development',
+    description: 'Next Generation - Revolutionary AI',
     icon: Rocket,
-    badge: 'Coming Soon',
-    badgeVariant: 'outline',
-    features: ['Next-Gen AI Engine', 'Multi Aspect Ratios', 'Revolutionary Features', 'Advanced UI'],
-    status: 'development'
+    badge: 'Ultra',
+    badgeVariant: 'default',
+    features: ['Next-Gen AI Engine', 'Multi Aspect Ratios', 'Ultra Quality', 'Advanced Styles'],
+    status: 'enhanced'
   }
 ]
 

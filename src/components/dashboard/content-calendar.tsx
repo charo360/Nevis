@@ -6,6 +6,7 @@ import { Loader2, Facebook, Instagram, Linkedin, Twitter, Settings, Palette, Spa
 import { Button } from "@/components/ui/button";
 import { PostCard } from "@/components/dashboard/post-card";
 import { generateContentAction, generateEnhancedDesignAction, generateContentWithArtifactsAction } from "@/app/actions";
+import { generateRevo2ContentAction } from "@/app/actions/revo-2-actions";
 import { RevoModelSelector, type RevoModel } from "@/components/ui/revo-model-selector";
 import { useToast } from "@/hooks/use-toast";
 import { useGeneratedPosts } from "@/hooks/use-generated-posts";
@@ -83,22 +84,38 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
       // Check if artifacts are enabled (simple toggle approach)
       const artifactsEnabled = selectedArtifacts.length > 0;
 
-      const useEnhancedGeneration = artifactsEnabled || selectedRevoModel === 'revo-1.5';
-
-      if (useEnhancedGeneration) {
-        console.log(`✨ Using enhanced generation with ${selectedRevoModel} model`);
-        // Use artifact-enhanced generation - will automatically use active artifacts from artifacts page
-        newPost = await generateContentWithArtifactsAction(
+      if (selectedRevoModel === 'revo-2.0') {
+        console.log(`🌟 Using Revo 2.0 next-generation AI for ${platform}`);
+        // Use Revo 2.0 next-generation content generation
+        newPost = await generateRevo2ContentAction(
           brandProfile,
           platform,
           brandConsistency,
-          [], // Empty array - let the action use active artifacts from artifacts service
-          selectedRevoModel === 'revo-1.5' // Enhanced design for Revo 1.5
+          undefined, // Let Revo 2.0 generate its own prompt
+          {
+            quality: 'ultra',
+            style: 'photographic',
+            mood: 'professional'
+          }
         );
       } else {
-        console.log(`📝 Using standard content generation with ${selectedRevoModel} model`);
-        // Use standard content generation
-        newPost = await generateContentAction(brandProfile, platform, brandConsistency);
+        const useEnhancedGeneration = artifactsEnabled || selectedRevoModel === 'revo-1.5';
+
+        if (useEnhancedGeneration) {
+          console.log(`✨ Using enhanced generation with ${selectedRevoModel} model`);
+          // Use artifact-enhanced generation - will automatically use active artifacts from artifacts page
+          newPost = await generateContentWithArtifactsAction(
+            brandProfile,
+            platform,
+            brandConsistency,
+            [], // Empty array - let the action use active artifacts from artifacts service
+            selectedRevoModel === 'revo-1.5' // Enhanced design for Revo 1.5
+          );
+        } else {
+          console.log(`📝 Using standard content generation with ${selectedRevoModel} model`);
+          // Use standard content generation
+          newPost = await generateContentAction(brandProfile, platform, brandConsistency);
+        }
       }
 
       console.log('📄 Generated post:', newPost.content.substring(0, 100) + '...');
@@ -125,6 +142,9 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
       if (selectedArtifacts.length > 0) {
         title = "Content Generated with References! 📎";
         description = `A new ${platform} post using ${selectedArtifacts.length} reference${selectedArtifacts.length !== 1 ? 's' : ''} has been saved.`;
+      } else if (selectedRevoModel === 'revo-2.0') {
+        title = "Revolutionary Content Generated! 🌟";
+        description = `A new ultra-quality ${platform} post with ${selectedRevoModel} next-gen AI has been saved.`;
       } else if (selectedRevoModel === 'revo-1.5') {
         title = "Enhanced Content Generated! ✨";
         description = `A new enhanced ${platform} post with ${selectedRevoModel} has been saved.`;
@@ -187,11 +207,13 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
           </div>
         </div>
         <p className="text-xs text-gray-500 mt-2">
-          {selectedRevoModel === 'revo-1.5'
-            ? `✨ ${selectedRevoModel}: Enhanced AI with professional design principles + ${brandConsistency.strictConsistency ? "strict consistency" : "brand colors"}`
-            : selectedRevoModel === 'revo-1.0'
-              ? `🚀 ${selectedRevoModel}: Standard reliable AI + ${brandConsistency.strictConsistency ? "strict consistency" : "brand colors"}`
-              : `🌟 ${selectedRevoModel}: Next-generation AI (coming soon)`
+          {selectedRevoModel === 'revo-2.0'
+            ? `🌟 ${selectedRevoModel}: Revolutionary next-gen AI with ultra-quality + multi-aspect ratios + ${brandConsistency.strictConsistency ? "strict consistency" : "brand colors"}`
+            : selectedRevoModel === 'revo-1.5'
+              ? `✨ ${selectedRevoModel}: Enhanced AI with professional design principles + ${brandConsistency.strictConsistency ? "strict consistency" : "brand colors"}`
+              : selectedRevoModel === 'revo-1.0'
+                ? `🚀 ${selectedRevoModel}: Standard reliable AI + ${brandConsistency.strictConsistency ? "strict consistency" : "brand colors"}`
+                : `🌟 ${selectedRevoModel}: Next-generation AI`
           }
         </p>
       </div>
