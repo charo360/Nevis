@@ -25,7 +25,7 @@ import { useUnifiedBrand, useBrandStorage, useBrandChangeListener } from "@/cont
 import { UnifiedBrandLayout, BrandContent, BrandSwitchingStatus } from "@/components/layout/unified-brand-layout";
 import { STORAGE_FEATURES, getStorageUsage, cleanupAllStorage } from "@/lib/services/brand-scoped-storage";
 
-const MAX_POSTS_TO_STORE = 10;
+const MAX_POSTS_TO_STORE = 5; // Reduced to prevent storage issues
 
 // Brand-scoped storage cleanup utility
 const cleanupBrandScopedStorage = (brandStorage: any) => {
