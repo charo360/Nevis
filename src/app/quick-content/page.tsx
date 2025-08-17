@@ -23,7 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { User, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useUnifiedBrand, useBrandStorage, useBrandChangeListener } from "@/contexts/unified-brand-context";
 import { UnifiedBrandLayout, BrandContent, BrandSwitchingStatus } from "@/components/layout/unified-brand-layout";
-import { STORAGE_FEATURES } from "@/lib/services/brand-scoped-storage";
+import { STORAGE_FEATURES, getStorageUsage, cleanupAllStorage } from "@/lib/services/brand-scoped-storage";
 
 const MAX_POSTS_TO_STORE = 10;
 
@@ -143,43 +143,21 @@ function QuickContentPage() {
     }
 
     try {
-      // Check storage size before saving
-      const postsData = JSON.stringify(newPosts);
-      const maxSize = 5 * 1024 * 1024; // 5MB limit
-
-      if (postsData.length > maxSize) {
-        // If too large, keep fewer posts
-        const reducedPosts = newPosts.slice(0, Math.max(1, Math.floor(MAX_POSTS_TO_STORE / 2)));
-        postsStorage.setItem(reducedPosts);
-        setGeneratedPosts(reducedPosts);
-
-        toast({
-          title: "Storage Optimized",
-          description: "Reduced stored posts to prevent storage overflow. Older posts were removed.",
-        });
-      } else {
-        postsStorage.setItem(newPosts);
-      }
-
+      // The BrandScopedStorage now handles quota management automatically
+      postsStorage.setItem(newPosts);
       console.log(`💾 Saved ${newPosts.length} posts for brand ${currentBrand?.businessName || currentBrand?.name}`);
     } catch (error) {
-      // If storage fails, try with just the current post
-      try {
-        const singlePost = [post];
-        postsStorage.setItem(singlePost);
-        setGeneratedPosts(singlePost);
+      console.error('Storage error in handlePostGenerated:', error);
 
-        toast({
-          title: "Storage Limited",
-          description: "Only the latest post was saved due to storage limitations.",
-        });
-      } catch (fallbackError) {
-        toast({
-          variant: "destructive",
-          title: "Storage Failed",
-          description: "Unable to save posts. Your browser storage may be full.",
-        });
-      }
+      // Show user-friendly error message
+      toast({
+        title: "Storage Issue",
+        description: "Post generated successfully but couldn't be saved. Storage may be full.",
+        variant: "destructive",
+      });
+
+      // Keep the post in memory even if storage fails
+      console.log('Post kept in memory despite storage failure');
     }
   };
 
