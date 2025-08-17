@@ -107,7 +107,7 @@ export async function generateRevo2CreativeAssetAction(
     // Prepare Revo 2.0 input
     const revo2Input: Revo2GenerationInput = {
       prompt,
-      platform: options?.platform || 'instagram',
+      platform: options?.platform || 'Instagram',
       aspectRatio: options?.aspectRatio,
       brandProfile,
       style: options?.style || 'photographic',
@@ -156,18 +156,15 @@ This image was created using our next-generation AI engine with revolutionary ca
 function generateContentPrompt(brandProfile: BrandProfile, platform: Platform): string {
   const businessType = brandProfile.businessType || 'business';
   const visualStyle = brandProfile.visualStyle || 'modern';
-  
+
   const platformPrompts = {
-    instagram: `Create an engaging Instagram post for a ${businessType} with ${visualStyle} style`,
-    facebook: `Design a shareable Facebook post for a ${businessType} with ${visualStyle} aesthetic`,
-    twitter: `Generate a Twitter-optimized image for a ${businessType} with ${visualStyle} design`,
-    linkedin: `Create a professional LinkedIn post for a ${businessType} with ${visualStyle} style`,
-    tiktok: `Design a trendy TikTok-style image for a ${businessType} with ${visualStyle} aesthetic`,
-    youtube: `Create a YouTube thumbnail for a ${businessType} with ${visualStyle} design`,
-    pinterest: `Generate a Pinterest-optimized pin for a ${businessType} with ${visualStyle} style`
+    Instagram: `Create an engaging Instagram post for a ${businessType} with ${visualStyle} style`,
+    Facebook: `Design a shareable Facebook post for a ${businessType} with ${visualStyle} aesthetic`,
+    Twitter: `Generate a Twitter-optimized image for a ${businessType} with ${visualStyle} design`,
+    LinkedIn: `Create a professional LinkedIn post for a ${businessType} with ${visualStyle} style`,
   };
 
-  let prompt = platformPrompts[platform] || platformPrompts.instagram;
+  let prompt = platformPrompts[platform] || platformPrompts.Instagram;
 
   // Add brand-specific context
   if (brandProfile.businessName) {
@@ -224,7 +221,7 @@ export async function getRevo2CapabilitiesAction() {
       { id: '21:9', name: 'Ultra Wide', description: 'Cinematic wide format' },
       { id: '4:5', name: 'Tall', description: 'Perfect for Pinterest' }
     ],
-    supportedPlatforms: ['instagram', 'facebook', 'twitter', 'linkedin', 'tiktok', 'youtube', 'pinterest'],
+    supportedPlatforms: ['Instagram', 'Facebook', 'Twitter', 'LinkedIn'],
     qualityRange: '8.5-10.0/10',
     status: 'Revolutionary'
   };
