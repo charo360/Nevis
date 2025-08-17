@@ -42,9 +42,11 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 // Helper function to validate URLs
 const isValidUrl = (url: string): boolean => {
   if (!url || typeof url !== 'string') {
-    if (url) {
-      console.warn('Invalid URL type:', typeof url, url);
-    }
+    return false;
+  }
+
+  // Handle compression placeholders
+  if (url === '[COMPRESSED_IMAGE]' || url === '[TRUNCATED]' || url.includes('[') && url.includes(']')) {
     return false;
   }
 
@@ -58,7 +60,10 @@ const isValidUrl = (url: string): boolean => {
     const parsedUrl = new URL(url);
     return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
   } catch (error) {
-    console.warn('URL validation failed for:', url, error);
+    // Don't log compression placeholders as errors
+    if (!url.includes('[') || !url.includes(']')) {
+      console.warn('URL validation failed for:', url.substring(0, 50) + '...', error.message);
+    }
     return false;
   }
 };

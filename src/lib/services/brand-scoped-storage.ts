@@ -352,8 +352,15 @@ export class BrandScopedStorage {
     brandKeys.forEach(key => {
       const item = localStorage.getItem(key);
       if (item) {
-        totalFreed += new Blob([item]).size;
-        localStorage.removeItem(key);
+        // Check if the data contains old compression placeholders
+        if (item.includes('[COMPRESSED_IMAGE]') || item.includes('[TRUNCATED]')) {
+          console.log(`🧹 Removing old compressed data with placeholders: ${key}`);
+          totalFreed += new Blob([item]).size;
+          localStorage.removeItem(key);
+        } else {
+          totalFreed += new Blob([item]).size;
+          localStorage.removeItem(key);
+        }
       }
     });
 
@@ -411,13 +418,19 @@ export class BrandScopedStorage {
 
     // Remove or compress large base64 images
     if (compressed.variants && Array.isArray(compressed.variants)) {
-      compressed.variants = compressed.variants.map((variant: any) => ({
-        platform: variant.platform,
-        // Remove base64 images completely to save space, use undefined instead of null
-        imageUrl: variant.imageUrl && variant.imageUrl.startsWith('data:')
-          ? undefined // Remove base64 completely
-          : variant.imageUrl
-      }));
+      compressed.variants = compressed.variants.map((variant: any) => {
+        const newVariant: any = {
+          platform: variant.platform
+        };
+
+        // Only include imageUrl if it's not a base64 image
+        if (variant.imageUrl && !variant.imageUrl.startsWith('data:')) {
+          newVariant.imageUrl = variant.imageUrl;
+        }
+        // For base64 images, simply omit the imageUrl property entirely
+
+        return newVariant;
+      });
     }
 
     // Compress content fields
