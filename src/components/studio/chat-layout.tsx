@@ -93,7 +93,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     currentInput,
                     brandProfile,
                     {
-                        platform: 'instagram', // Default platform for Creative Studio
+                        platform: 'Instagram', // Default platform for Creative Studio
                         aspectRatio: '1:1', // Default to square for Creative Studio
                         style: 'photographic',
                         quality: 'ultra',
@@ -111,7 +111,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 // Use enhanced design generation for images with brand profile
                 const enhancedResult = await generateEnhancedDesignAction(
                     brandProfile.businessType || 'business',
-                    'instagram', // Default platform, could be made configurable
+                    'Instagram', // Default platform, could be made configurable
                     brandProfile.visualStyle || 'modern',
                     currentInput, // Creative Studio uses simple text input for now
                     brandProfile,

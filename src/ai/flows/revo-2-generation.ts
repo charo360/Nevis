@@ -41,15 +41,12 @@ export interface Revo2GenerationResult {
  */
 function getPlatformAspectRatio(platform: Platform): Revo2AspectRatio {
   const platformMap: Record<Platform, Revo2AspectRatio> = {
-    instagram: REVO_2_ASPECT_RATIOS.SQUARE,
-    facebook: REVO_2_ASPECT_RATIOS.LANDSCAPE,
-    twitter: REVO_2_ASPECT_RATIOS.LANDSCAPE,
-    linkedin: REVO_2_ASPECT_RATIOS.LANDSCAPE,
-    tiktok: REVO_2_ASPECT_RATIOS.PORTRAIT,
-    youtube: REVO_2_ASPECT_RATIOS.LANDSCAPE,
-    pinterest: REVO_2_ASPECT_RATIOS.TALL,
+    Instagram: REVO_2_ASPECT_RATIOS.SQUARE,
+    Facebook: REVO_2_ASPECT_RATIOS.LANDSCAPE,
+    Twitter: REVO_2_ASPECT_RATIOS.LANDSCAPE,
+    LinkedIn: REVO_2_ASPECT_RATIOS.LANDSCAPE,
   };
-  
+
   return platformMap[platform] || REVO_2_ASPECT_RATIOS.SQUARE;
 }
 
@@ -63,27 +60,24 @@ function generateRevo2Prompt(
   style?: string
 ): string {
   const platformContext = {
-    instagram: 'Instagram post, visually striking, social media optimized',
-    facebook: 'Facebook post, engaging and shareable, community-focused',
-    twitter: 'Twitter post, attention-grabbing, news-worthy',
-    linkedin: 'LinkedIn post, professional and business-focused',
-    tiktok: 'TikTok content, trendy and youth-oriented',
-    youtube: 'YouTube thumbnail, clickable and engaging',
-    pinterest: 'Pinterest pin, inspirational and discoverable'
+    Instagram: 'Instagram post, visually striking, social media optimized',
+    Facebook: 'Facebook post, engaging and shareable, community-focused',
+    Twitter: 'Twitter post, attention-grabbing, news-worthy',
+    LinkedIn: 'LinkedIn post, professional and business-focused',
   };
 
-  let enhancedPrompt = `${basePrompt}. ${platformContext[platform]}.`;
+  let enhancedPrompt = `${basePrompt}. ${platformContext[platform] || platformContext.Instagram}.`;
 
   // Add brand context if available
   if (brandProfile) {
     if (brandProfile.businessType) {
       enhancedPrompt += ` ${brandProfile.businessType} business context.`;
     }
-    
+
     if (brandProfile.visualStyle) {
       enhancedPrompt += ` ${brandProfile.visualStyle} visual style.`;
     }
-    
+
     if (brandProfile.targetAudience) {
       enhancedPrompt += ` Targeting ${brandProfile.targetAudience}.`;
     }
@@ -99,7 +93,7 @@ function generateRevo2Prompt(
       anime: 'Anime art style, vibrant, stylized',
       sketch: 'Hand-drawn aesthetic, artistic, creative'
     };
-    
+
     enhancedPrompt += ` ${styleEnhancements[style as keyof typeof styleEnhancements]}.`;
   }
 
@@ -116,15 +110,12 @@ function generateRevo2Caption(
 ): string {
   // This is a simplified caption generation
   // In a real implementation, you might use another AI model for this
-  
+
   const platformStyles = {
-    instagram: '✨ ',
-    facebook: '🚀 ',
-    twitter: '💡 ',
-    linkedin: '📈 ',
-    tiktok: '🔥 ',
-    youtube: '🎯 ',
-    pinterest: '💫 '
+    Instagram: '✨ ',
+    Facebook: '🚀 ',
+    Twitter: '💡 ',
+    LinkedIn: '📈 ',
   };
 
   const emoji = platformStyles[platform] || '✨ ';
@@ -145,23 +136,23 @@ function generateRevo2Hashtags(
   brandProfile?: BrandProfile
 ): string[] {
   const baseHashtags = {
-    instagram: ['#instagram', '#content', '#creative', '#design'],
-    facebook: ['#facebook', '#social', '#community', '#engagement'],
-    twitter: ['#twitter', '#trending', '#news', '#update'],
-    linkedin: ['#linkedin', '#professional', '#business', '#networking'],
-    tiktok: ['#tiktok', '#viral', '#trending', '#fyp'],
-    youtube: ['#youtube', '#video', '#content', '#creator'],
-    pinterest: ['#pinterest', '#inspiration', '#ideas', '#discover']
+    Instagram: ['#instagram', '#content', '#creative', '#design'],
+    Facebook: ['#facebook', '#social', '#community', '#engagement'],
+    Twitter: ['#twitter', '#trending', '#news', '#update'],
+    LinkedIn: ['#linkedin', '#professional', '#business', '#networking'],
+    TikTok: ['#tiktok', '#viral', '#trending', '#fyp'],
+    YouTube: ['#youtube', '#video', '#content', '#creator'],
+    Pinterest: ['#pinterest', '#inspiration', '#ideas', '#discover']
   };
 
-  let hashtags = [...baseHashtags[platform]];
+  let hashtags = [...(baseHashtags[platform] || baseHashtags.Instagram)];
 
   // Add brand-specific hashtags
   if (brandProfile) {
     if (brandProfile.businessType) {
       hashtags.push(`#${brandProfile.businessType.replace(/\s+/g, '')}`);
     }
-    
+
     if (brandProfile.businessName) {
       hashtags.push(`#${brandProfile.businessName.replace(/\s+/g, '')}`);
     }
@@ -180,7 +171,7 @@ export async function generateRevo2Content(
   input: Revo2GenerationInput
 ): Promise<Revo2GenerationResult> {
   const startTime = Date.now();
-  
+
   try {
     console.log('🌟 Starting Revo 2.0 next-generation content creation...');
     console.log(`📱 Platform: ${input.platform}`);
@@ -189,7 +180,7 @@ export async function generateRevo2Content(
 
     // Determine optimal aspect ratio
     const aspectRatio = input.aspectRatio || getPlatformAspectRatio(input.platform);
-    
+
     // Generate enhanced prompt
     const enhancedPrompt = generateRevo2Prompt(
       input.prompt,
@@ -274,7 +265,7 @@ export function getRevo2Capabilities() {
       'Smart caption generation',
       'Intelligent hashtag strategy'
     ],
-    supportedPlatforms: ['instagram', 'facebook', 'twitter', 'linkedin', 'tiktok', 'youtube', 'pinterest'],
+    supportedPlatforms: ['Instagram', 'Facebook', 'Twitter', 'LinkedIn'],
     qualityRange: '8.0-10.0/10',
     status: 'Next-Generation'
   };
