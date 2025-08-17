@@ -49,36 +49,44 @@ export class BrandScopedStorage {
    */
   setItem(data: any): void {
     try {
+      // AGGRESSIVE APPROACH: Strip all image data before storage
+      const strippedData = this.stripImageData(data);
       const key = this.getStorageKey();
-      const serialized = JSON.stringify(data);
+      const serialized = JSON.stringify(strippedData);
 
       // Check storage stats before attempting to store
       const stats = this.getStorageStats();
       const dataSize = new Blob([serialized]).size;
-      const maxSize = 2 * 1024 * 1024; // 2MB limit per item (reduced for better management)
+      const maxSize = 500 * 1024; // 500KB limit per item (much more aggressive)
 
       console.log(`📊 Storage stats before save: Total: ${stats.totalUsage}, Available: ${stats.available}, New data: ${this.formatBytes(dataSize)}`);
 
-      // If available space is low, proactively clean up
-      if (dataSize > 1024 * 1024 && stats.available.includes('KB')) { // Less than 1MB available and data > 1MB
-        console.log('⚠️ Low storage space detected, performing proactive cleanup...');
-        this.aggressiveCleanup();
-      }
+      // Always perform cleanup before saving to ensure maximum space
+      this.aggressiveCleanup();
 
       if (dataSize > maxSize) {
-        console.warn(`⚠️ Data too large for ${this.feature} (${this.formatBytes(dataSize)}), applying compression...`);
+        console.warn(`⚠️ Data too large for ${this.feature} (${this.formatBytes(dataSize)}), using minimal data...`);
 
-        // Try to compress the data by removing large base64 images
-        const compressedData = this.compressDataForStorage(data);
-        const compressedSerialized = JSON.stringify(compressedData);
-        const compressedSize = new Blob([compressedSerialized]).size;
+        // Use minimal data instead of compression
+        const minimalData = this.extractMinimalData(strippedData);
+        const minimalSerialized = JSON.stringify(minimalData);
+        const minimalSize = new Blob([minimalSerialized]).size;
 
-        if (compressedSize > maxSize) {
-          throw new Error(`Data still too large after compression: ${this.formatBytes(compressedSize)}`);
+        if (minimalSize > maxSize) {
+          console.error(`💥 Cannot store even minimal data. Clearing storage.`);
+          this.removeItem(); // Clear existing data
+          // Store emergency placeholder
+          const emergency = {
+            id: Date.now().toString(),
+            date: new Date().toISOString(),
+            content: 'Content generated but not stored due to size limits',
+            platform: 'instagram'
+          };
+          localStorage.setItem(key, JSON.stringify([emergency]));
+        } else {
+          localStorage.setItem(key, minimalSerialized);
         }
-
-        localStorage.setItem(key, compressedSerialized);
-        console.log(`💾 Saved compressed ${this.feature} data for brand ${this.brandId} (${this.formatBytes(compressedSize)})`);
+        console.log(`💾 Saved minimal ${this.feature} data for brand ${this.brandId} (${this.formatBytes(minimalSize || 0)})`);
         return;
       }
 
@@ -279,50 +287,42 @@ export class BrandScopedStorage {
    * Handle quota exceeded error by cleaning up old data
    */
   private handleQuotaExceeded(data: any): void {
-    console.log(`🧹 Handling quota exceeded for ${this.feature} brand ${this.brandId}`);
+    console.log(`🧹 EMERGENCY: Handling quota exceeded for ${this.feature} brand ${this.brandId}`);
 
     try {
-      // Step 1: Aggressive cleanup of all old data
-      this.aggressiveCleanup();
+      // Step 1: Nuclear cleanup - clear ALL localStorage data
+      console.log(`💥 Performing nuclear cleanup of ALL localStorage data...`);
+      const allKeys = Object.keys(localStorage);
+      let totalCleared = 0;
 
-      // Step 2: Try to compress and save again
-      const compressedData = this.compressDataForStorage(data);
-      const key = this.getStorageKey();
-      const serialized = JSON.stringify(compressedData);
-
-      // Check size after compression
-      const compressedSize = new Blob([serialized]).size;
-      console.log(`📦 Compressed data size: ${this.formatBytes(compressedSize)}`);
-
-      localStorage.setItem(key, serialized);
-      console.log(`✅ Successfully saved after cleanup and compression for ${this.feature}`);
-    } catch (retryError) {
-      console.error(`❌ Failed to save even after cleanup: ${retryError.message}`);
-
-      // Step 3: Try with only essential data
-      try {
-        const essentialData = this.extractEssentialData(data);
-        const key = this.getStorageKey();
-        const serialized = JSON.stringify(essentialData);
-        const essentialSize = new Blob([serialized]).size;
-
-        console.log(`📦 Essential data size: ${this.formatBytes(essentialSize)}`);
-        localStorage.setItem(key, serialized);
-        console.log(`⚠️ Saved only essential data for ${this.feature} due to quota limits`);
-      } catch (finalError) {
-        console.error(`💥 Complete storage failure for ${this.feature}:`, finalError);
-
-        // Step 4: Clear current feature data and try minimal save
-        this.removeItem();
-        try {
-          const minimalData = this.extractMinimalData(data);
-          const key = this.getStorageKey();
-          localStorage.setItem(key, JSON.stringify(minimalData));
-          console.log(`🔥 Saved minimal data after clearing existing data`);
-        } catch (criticalError) {
-          console.error(`💀 Critical storage failure - cannot save any data:`, criticalError);
+      allKeys.forEach(key => {
+        const item = localStorage.getItem(key);
+        if (item) {
+          totalCleared += new Blob([item]).size;
+          localStorage.removeItem(key);
         }
-      }
+      });
+
+      console.log(`🧹 Cleared ALL localStorage data: ${this.formatBytes(totalCleared)}`);
+
+      // Step 2: Try to save only the most essential data
+      const emergency = {
+        id: Date.now().toString(),
+        date: new Date().toISOString(),
+        content: Array.isArray(data) && data.length > 0 ?
+          (data[0].content ? data[0].content.substring(0, 50) + '...' : 'Generated content') :
+          (data.content ? data.content.substring(0, 50) + '...' : 'Generated content'),
+        platform: 'instagram',
+        note: 'Storage quota exceeded - full data not saved'
+      };
+
+      const key = this.getStorageKey();
+      localStorage.setItem(key, JSON.stringify([emergency]));
+      console.log(`🆘 Saved emergency data only for ${this.feature}`);
+
+    } catch (criticalError) {
+      console.error(`💀 CRITICAL: Cannot save any data even after nuclear cleanup:`, criticalError);
+      // At this point, we just give up on localStorage entirely
     }
   }
 
@@ -368,16 +368,55 @@ export class BrandScopedStorage {
   }
 
   /**
+   * Strip all image data to prevent storage quota issues
+   */
+  private stripImageData(data: any): any {
+    if (!data) return data;
+
+    if (Array.isArray(data)) {
+      return data.slice(0, 3).map(item => this.stripImageFromItem(item)); // Keep only 3 most recent
+    }
+
+    return this.stripImageFromItem(data);
+  }
+
+  /**
+   * Strip image data from individual items
+   */
+  private stripImageFromItem(item: any): any {
+    if (!item || typeof item !== 'object') return item;
+
+    const stripped = {
+      id: item.id,
+      date: item.date,
+      content: item.content ? (item.content.length > 300 ? item.content.substring(0, 300) + '...' : item.content) : '',
+      hashtags: item.hashtags,
+      platform: item.platform || 'instagram',
+      status: item.status,
+      catchyWords: item.catchyWords,
+      subheadline: item.subheadline,
+      callToAction: item.callToAction,
+      // Completely omit variants with images to save space
+      variants: item.variants ? item.variants.map((variant: any) => ({
+        platform: variant.platform,
+        // No imageUrl at all - will be regenerated if needed
+      })) : []
+    };
+
+    return stripped;
+  }
+
+  /**
    * Extract minimal data (only the most recent items)
    */
   private extractMinimalData(data: any): any {
     if (!data) return null;
 
     if (Array.isArray(data)) {
-      // Keep only the 2 most recent items
-      return data.slice(0, 2).map(item => ({
+      // Keep only the 1 most recent item
+      return data.slice(0, 1).map(item => ({
         id: item.id,
-        content: item.content ? item.content.substring(0, 200) + '...' : '',
+        content: item.content ? item.content.substring(0, 100) + '...' : '',
         date: item.date,
         platform: item.platform || 'instagram'
       }));
@@ -386,7 +425,7 @@ export class BrandScopedStorage {
     // For single items, return basic info only
     return {
       id: data.id,
-      content: data.content ? data.content.substring(0, 200) + '...' : '',
+      content: data.content ? data.content.substring(0, 100) + '...' : '',
       date: data.date || new Date().toISOString(),
       platform: data.platform || 'instagram'
     };
