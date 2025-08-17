@@ -69,12 +69,10 @@ const isValidUrl = (url: string): boolean => {
 };
 
 /**
- * Utility function to detect and handle different image data URL formats
+ * Utility function to detect image format from data URL
  */
 function getImageFormatFromDataUrl(dataUrl: string): { format: string; extension: string } {
-  if (dataUrl.startsWith('data:image/svg+xml;base64,')) {
-    return { format: 'svg', extension: 'svg' };
-  } else if (dataUrl.startsWith('data:image/svg+xml;charset=utf-8,')) {
+  if (dataUrl.startsWith('data:image/svg+xml')) {
     return { format: 'svg', extension: 'svg' };
   } else if (dataUrl.startsWith('data:image/png;base64,')) {
     return { format: 'png', extension: 'png' };
@@ -84,31 +82,6 @@ function getImageFormatFromDataUrl(dataUrl: string): { format: string; extension
     return { format: 'webp', extension: 'webp' };
   }
   return { format: 'png', extension: 'png' }; // default fallback
-}
-
-/**
- * Convert SVG data URL to a more compatible format for download
- */
-function processSvgDataUrl(dataUrl: string): string {
-  // If it's already a proper SVG data URL, return as is
-  if (dataUrl.startsWith('data:image/svg+xml;charset=utf-8,')) {
-    return dataUrl;
-  }
-
-  // If it's base64 encoded, decode and re-encode properly
-  if (dataUrl.startsWith('data:image/svg+xml;base64,')) {
-    try {
-      const base64Data = dataUrl.split(',')[1];
-      const svgContent = atob(base64Data);
-      // Re-encode as UTF-8 for better compatibility
-      return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`;
-    } catch (error) {
-      console.warn('Failed to process SVG data URL:', error);
-      return dataUrl; // return original if processing fails
-    }
-  }
-
-  return dataUrl;
 }
 
 const platformIcons: { [key in Platform]: React.ReactElement } = {
@@ -160,25 +133,26 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
         if (activeVariant.imageUrl.startsWith('data:')) {
           const { format, extension } = getImageFormatFromDataUrl(activeVariant.imageUrl);
 
-          // Process SVG data URLs for better compatibility
-          let processedUrl = activeVariant.imageUrl;
+          // For social media posts, we need raster images (PNG/JPEG), not SVG
           if (format === 'svg') {
-            processedUrl = processSvgDataUrl(activeVariant.imageUrl);
+            console.log('🎨 Converting SVG to PNG for social media compatibility...');
+            // Fall through to the canvas conversion method below
+            // This will convert the SVG to a high-quality PNG
+          } else {
+            // Handle other data URL formats (PNG, JPEG, etc.) directly
+            const link = document.createElement('a');
+            link.href = activeVariant.imageUrl;
+            link.download = `nevis-hd-${post.id}-${activeTab}.${extension}`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            toast({
+              title: "HD Download Complete",
+              description: `High-definition ${format.toUpperCase()} image downloaded successfully.`,
+            });
+            return;
           }
-
-          // Handle data URL directly
-          const link = document.createElement('a');
-          link.href = processedUrl;
-          link.download = `nevis-hd-${post.id}-${activeTab}.${extension}`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-
-          toast({
-            title: "HD Download Complete",
-            description: `High-definition ${format.toUpperCase()} image downloaded successfully.`,
-          });
-          return;
         }
 
         // Handle regular image URLs (PNG, JPEG, etc.)
@@ -227,26 +201,48 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
     }
 
     try {
-      // For SVG data URLs, we need special handling to ensure high quality conversion
+      // Check if we're converting an SVG enhanced design
       const activeVariant = post.variants.find(v => v.platform === activeTab);
       const isSvgDataUrl = activeVariant?.imageUrl?.startsWith('data:image/svg+xml');
 
-      const dataUrl = await toPng(nodeToCapture, {
+      // Optimized settings for social media posts
+      const socialMediaSettings = {
         cacheBust: true,
-        canvasWidth: isSvgDataUrl ? 3240 : 2160, // Higher resolution for SVG conversion
-        canvasHeight: isSvgDataUrl ? 3240 : 2160, // Higher resolution for SVG conversion
-        pixelRatio: isSvgDataUrl ? 4 : 3, // Higher pixel ratio for SVG conversion
+        canvasWidth: 1080, // Instagram standard resolution
+        canvasHeight: 1080, // Square format for social media
+        pixelRatio: 3, // High DPI for crisp images
         quality: 1.0, // Maximum quality
+        backgroundColor: '#ffffff', // White background for transparency
         style: {
           borderRadius: '0',
           border: 'none',
         }
-      });
+      };
+
+      // Enhanced settings for SVG conversion
+      if (isSvgDataUrl) {
+        socialMediaSettings.canvasWidth = 1080; // Keep social media standard
+        socialMediaSettings.canvasHeight = 1080;
+        socialMediaSettings.pixelRatio = 4; // Extra high DPI for SVG conversion
+        console.log('🎨 Converting enhanced SVG design to social media PNG...');
+      }
+
+      const dataUrl = await toPng(nodeToCapture, socialMediaSettings);
 
       const link = document.createElement('a');
       link.href = dataUrl;
-      link.download = `nevis-hd-${post.id}-${activeTab}.png`;
+      link.download = `nevis-social-${post.id}-${activeTab}.png`;
       link.click();
+
+      // Provide specific feedback based on content type
+      const successMessage = isSvgDataUrl
+        ? "Enhanced design converted to PNG for social media use."
+        : "High-definition image ready for social media posting.";
+
+      toast({
+        title: "Social Media Image Ready",
+        description: successMessage,
+      });
 
     } catch (err) {
       console.error(err);
