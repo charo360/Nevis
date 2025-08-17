@@ -6,6 +6,7 @@ import { Loader2, Facebook, Instagram, Linkedin, Twitter, Settings, Palette, Spa
 import { Button } from "@/components/ui/button";
 import { PostCard } from "@/components/dashboard/post-card";
 import { generateContentAction, generateEnhancedDesignAction, generateContentWithArtifactsAction } from "@/app/actions";
+import { RevoModelSelector, type RevoModel } from "@/components/ui/revo-model-selector";
 import { useToast } from "@/hooks/use-toast";
 import { useGeneratedPosts } from "@/hooks/use-generated-posts";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
@@ -43,8 +44,8 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
     followBrandColors: true, // Always follow brand colors
   });
 
-  // Enhanced design preference
-  const [useEnhancedDesign, setUseEnhancedDesign] = React.useState(true);
+  // Revo model selection
+  const [selectedRevoModel, setSelectedRevoModel] = React.useState<RevoModel>('revo-1.5');
 
   // Artifact selection for content generation
   const [selectedArtifacts, setSelectedArtifacts] = React.useState<string[]>([]);
@@ -56,9 +57,9 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
       setBrandConsistency(JSON.parse(savedPreferences));
     }
 
-    const savedEnhancedDesign = localStorage.getItem('useEnhancedDesign');
-    if (savedEnhancedDesign !== null) {
-      setUseEnhancedDesign(JSON.parse(savedEnhancedDesign));
+    const savedRevoModel = localStorage.getItem('selectedRevoModel');
+    if (savedRevoModel) {
+      setSelectedRevoModel(savedRevoModel as RevoModel);
     }
   }, []);
 
@@ -67,8 +68,8 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
   }, [brandConsistency]);
 
   React.useEffect(() => {
-    localStorage.setItem('useEnhancedDesign', JSON.stringify(useEnhancedDesign));
-  }, [useEnhancedDesign]);
+    localStorage.setItem('selectedRevoModel', selectedRevoModel);
+  }, [selectedRevoModel]);
 
   const handleGenerateClick = async (platform: Platform) => {
     setIsGenerating(platform);
@@ -82,18 +83,20 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
       // Check if artifacts are enabled (simple toggle approach)
       const artifactsEnabled = selectedArtifacts.length > 0;
 
-      if (artifactsEnabled || useEnhancedDesign) {
-        console.log('✨ Using enhanced generation with artifacts/design');
+      const useEnhancedGeneration = artifactsEnabled || selectedRevoModel === 'revo-1.5';
+
+      if (useEnhancedGeneration) {
+        console.log(`✨ Using enhanced generation with ${selectedRevoModel} model`);
         // Use artifact-enhanced generation - will automatically use active artifacts from artifacts page
         newPost = await generateContentWithArtifactsAction(
           brandProfile,
           platform,
           brandConsistency,
           [], // Empty array - let the action use active artifacts from artifacts service
-          useEnhancedDesign
+          selectedRevoModel === 'revo-1.5' // Enhanced design for Revo 1.5
         );
       } else {
-        console.log('📝 Using standard content generation');
+        console.log(`📝 Using standard content generation with ${selectedRevoModel} model`);
         // Use standard content generation
         newPost = await generateContentAction(brandProfile, platform, brandConsistency);
       }
@@ -122,9 +125,12 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
       if (selectedArtifacts.length > 0) {
         title = "Content Generated with References! 📎";
         description = `A new ${platform} post using ${selectedArtifacts.length} reference${selectedArtifacts.length !== 1 ? 's' : ''} has been saved.`;
-      } else if (useEnhancedDesign) {
+      } else if (selectedRevoModel === 'revo-1.5') {
         title = "Enhanced Content Generated! ✨";
-        description = `A new enhanced ${platform} post with professional design has been saved.`;
+        description = `A new enhanced ${platform} post with ${selectedRevoModel} has been saved.`;
+      } else {
+        title = "Content Generated! 🚀";
+        description = `A new ${platform} post with ${selectedRevoModel} has been saved.`;
       }
 
       toast({ title, description });
@@ -171,24 +177,21 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
             </div>
             <Separator orientation="vertical" className="h-4" />
             <div className="flex items-center gap-2">
-              <div className="h-3 w-3 rounded-full bg-gradient-to-r from-purple-500 to-blue-500" />
-              <span className="text-xs text-gray-600">Enhanced</span>
-              <Switch
-                checked={useEnhancedDesign}
-                onCheckedChange={setUseEnhancedDesign}
+              <span className="text-xs text-gray-600">AI Model:</span>
+              <RevoModelSelector
+                selectedModel={selectedRevoModel}
+                onModelChange={setSelectedRevoModel}
+                className="min-w-[140px]"
               />
-              {useEnhancedDesign && (
-                <span className="text-xs text-purple-600 font-medium">✨ AI+</span>
-              )}
             </div>
           </div>
         </div>
         <p className="text-xs text-gray-500 mt-2">
-          {useEnhancedDesign
-            ? `✨ Enhanced AI: Professional design principles + ${brandConsistency.strictConsistency ? "strict consistency" : "brand colors"}`
-            : brandConsistency.strictConsistency
-              ? "🎯 Consistent content matching your design examples"
-              : "✨ Varied content using your brand colors"
+          {selectedRevoModel === 'revo-1.5'
+            ? `✨ ${selectedRevoModel}: Enhanced AI with professional design principles + ${brandConsistency.strictConsistency ? "strict consistency" : "brand colors"}`
+            : selectedRevoModel === 'revo-1.0'
+              ? `🚀 ${selectedRevoModel}: Standard reliable AI + ${brandConsistency.strictConsistency ? "strict consistency" : "brand colors"}`
+              : `🌟 ${selectedRevoModel}: Next-generation AI (coming soon)`
           }
         </p>
       </div>
