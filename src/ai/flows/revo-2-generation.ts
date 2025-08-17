@@ -135,6 +135,8 @@ function generateRevo2Hashtags(
   platform: Platform,
   brandProfile?: BrandProfile
 ): string[] {
+  console.log('🏷️ Generating hashtags for platform:', platform, 'type:', typeof platform);
+
   const baseHashtags: Record<string, string[]> = {
     instagram: ['#instagram', '#content', '#creative', '#design'],
     facebook: ['#facebook', '#social', '#community', '#engagement'],
@@ -145,9 +147,19 @@ function generateRevo2Hashtags(
     pinterest: ['#pinterest', '#inspiration', '#ideas', '#discover']
   };
 
-  // Normalize platform to lowercase
-  const normalizedPlatform = platform.toLowerCase();
-  let hashtags = [...(baseHashtags[normalizedPlatform] || baseHashtags.instagram)];
+  // Normalize platform to lowercase and handle edge cases
+  const normalizedPlatform = String(platform || 'instagram').toLowerCase().trim();
+  console.log('🏷️ Normalized platform:', normalizedPlatform);
+
+  const selectedHashtags = baseHashtags[normalizedPlatform] || baseHashtags.instagram;
+  console.log('🏷️ Selected hashtags:', selectedHashtags);
+
+  if (!Array.isArray(selectedHashtags)) {
+    console.error('❌ Selected hashtags is not an array:', selectedHashtags);
+    return [...baseHashtags.instagram];
+  }
+
+  let hashtags = [...selectedHashtags];
 
   // Add brand-specific hashtags
   if (brandProfile) {
