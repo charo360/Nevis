@@ -475,7 +475,7 @@ export default function HomePage() {
                   <Star className="w-6 h-6 text-gray-500" />
                 </div>
                 <h3 className="text-xl font-bold mb-2">Free Plan</h3>
-                <p className="text-sm text-gray-600 mb-4">Perfect for trying out Nevis AI</p>
+                <p className="text-sm text-gray-600 mb-4">Perfect for trying out Crevo AI</p>
 
                 <div className="mb-4">
                   <span className="text-3xl font-bold">$0</span>
@@ -498,6 +498,10 @@ export default function HomePage() {
                   <li className="flex items-start">
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
                     <span>Limited support</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="w-4 h-4 text-orange-500 mr-2 mt-0.5 flex-shrink-0" />
+                    <span>Images include watermark</span>
                   </li>
                 </ul>
 

@@ -1,8 +1,8 @@
-# 💰 Nevis AI Pricing System
+# 💰 Crevo AI Pricing System
 
 ## 🎯 Overview
 
-The Nevis AI Pricing System is a comprehensive **credit-based monetization solution** with variable costs based on AI model quality. Users purchase credits once and use them across different AI models with transparent, fair pricing.
+The Crevo AI Pricing System is a comprehensive **credit-based monetization solution** with variable costs based on AI model quality. Users purchase credits once and use them across different AI models with transparent, fair pricing.
 
 ## ✨ Key Features
 
@@ -261,7 +261,7 @@ if (purchase.checkoutUrl) {
 
 ## 🏆 **Status: Production Ready**
 
-The Nevis AI Pricing System is fully implemented, documented, and ready for production deployment. All components are tested, secure, and optimized for scale.
+The Crevo AI Pricing System is fully implemented, documented, and ready for production deployment. All components are tested, secure, and optimized for scale.
 
 **Version**: 1.0.0  
 **Last Updated**: December 2024  
@@ -269,4 +269,4 @@ The Nevis AI Pricing System is fully implemented, documented, and ready for prod
 
 ---
 
-*Built with ❤️ by the Nevis AI Team*
+*Built with ❤️ by the Crevo AI Team*
