@@ -55,12 +55,21 @@ export async function generateRevo2ContentAction(
     // Convert to GeneratedPost format
     const generatedPost: GeneratedPost = {
       id: `revo2-${Date.now()}`,
-      platform,
+      date: new Date().toISOString(),
+      platform: platform.toLowerCase() as Platform, // Fix: Ensure lowercase for Firestore compatibility
+      postType: 'post',
       imageUrl: result.imageUrl,
-      caption: result.caption,
+      content: result.caption, // Fix: Use 'content' instead of 'caption'
       hashtags: result.hashtags,
+      status: 'generated',
+      variants: [{
+        platform: platform.toLowerCase() as Platform, // Fix: Ensure lowercase for Firestore compatibility
+        imageUrl: result.imageUrl
+      }],
+      catchyWords: '', // Will be populated from result if available
       createdAt: new Date(),
       brandProfileId: brandProfile.id || 'unknown',
+      qualityScore: result.qualityScore,
       metadata: {
         model: 'revo-2.0',
         qualityScore: result.qualityScore,
