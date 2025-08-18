@@ -16,6 +16,7 @@ import {
   LayoutDashboard,
   Building2,
   Palette,
+  CreditCard,
 } from "lucide-react";
 import { UnifiedBrandSelector } from '@/components/brand/unified-brand-selector';
 import { usePathname } from "next/navigation";
@@ -152,6 +153,19 @@ export function AppSidebar() {
               <Link href="/social-connect">
                 <LinkIcon />
                 <span>Social Media Connect</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={isActive("/pricing")}
+              tooltip="Pricing & Credits"
+            >
+              <Link href="/pricing">
+                <CreditCard />
+                <span>Pricing & Credits</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
