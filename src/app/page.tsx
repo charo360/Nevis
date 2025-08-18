@@ -66,7 +66,7 @@ export default function HomePage() {
 
           <div className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">Features</a>
-            <a href="#pricing" className="text-gray-600 hover:text-gray-900 transition-colors">Pricing</a>
+            <a href="/pricing" className="text-gray-600 hover:text-gray-900 transition-colors">Pricing</a>
             <a href="#about" className="text-gray-600 hover:text-gray-900 transition-colors">About</a>
             <Button
               onClick={handleSignIn}
@@ -794,7 +794,7 @@ export default function HomePage() {
               <h3 className="font-semibold mb-4">Product</h3>
               <ul className="space-y-2 text-gray-400">
                 <li><a href="#" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="#pricing" className="hover:text-white transition-colors">Pricing</a></li>
+                <li><a href="/pricing" className="hover:text-white transition-colors">Pricing</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Templates</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">API</a></li>
               </ul>

@@ -79,22 +79,22 @@ export default function PaymentSuccessPage() {
                 <p className="text-sm text-gray-600 mb-3">
                   Use your credits to generate stunning AI-powered designs
                 </p>
-                <Link href="/quick-content">
+                <Link href="/auth">
                   <Button variant="outline" size="sm" className="w-full">
-                    Quick Content
+                    Sign In to Dashboard
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>
               </div>
               
               <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                <h4 className="font-medium mb-2">Creative Studio</h4>
+                <h4 className="font-medium mb-2">Learn More</h4>
                 <p className="text-sm text-gray-600 mb-3">
-                  Access advanced design tools and customization options
+                  Discover all the features and AI models available
                 </p>
-                <Link href="/creative-studio">
+                <Link href="/#features">
                   <Button variant="outline" size="sm" className="w-full">
-                    Creative Studio
+                    View Features
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>
@@ -129,12 +129,12 @@ export default function PaymentSuccessPage() {
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
-            <Link href="/dashboard" className="flex-1">
+            <Link href="/" className="flex-1">
               <Button variant="outline" className="w-full">
-                Go to Dashboard
+                Back to Home
               </Button>
             </Link>
-            <Link href="/quick-content" className="flex-1">
+            <Link href="/auth" className="flex-1">
               <Button className="w-full">
                 Start Creating
                 <Sparkles className="w-4 h-4 ml-2" />
