@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Check, ChevronDown, Sparkles, Zap, Rocket } from "lucide-react"
+import { Check, ChevronDown, Sparkles, Zap, Rocket, Coins } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
+import { revoCreditCosts } from "@/lib/pricing-data"
 
 export type RevoModel = 'revo-1.0' | 'revo-1.5' | 'revo-2.0'
 
@@ -25,6 +26,7 @@ interface RevoModelOption {
   badgeVariant?: 'default' | 'secondary' | 'destructive' | 'outline'
   features: string[]
   status: 'stable' | 'enhanced' | 'development'
+  credits: number
 }
 
 const REVO_MODELS: RevoModelOption[] = [
@@ -36,7 +38,8 @@ const REVO_MODELS: RevoModelOption[] = [
     badge: 'Stable',
     badgeVariant: 'secondary',
     features: ['Reliable AI Engine', '1:1 Images', 'Core Features', 'Proven Performance'],
-    status: 'stable'
+    status: 'stable',
+    credits: revoCreditCosts['revo-1.0']
   },
   {
     id: 'revo-1.5',
@@ -46,7 +49,8 @@ const REVO_MODELS: RevoModelOption[] = [
     badge: 'Enhanced',
     badgeVariant: 'default',
     features: ['Advanced AI Engine', 'Superior Quality', 'Enhanced Design', 'Smart Optimizations'],
-    status: 'enhanced'
+    status: 'enhanced',
+    credits: revoCreditCosts['revo-1.5']
   },
   {
     id: 'revo-2.0',
@@ -56,7 +60,8 @@ const REVO_MODELS: RevoModelOption[] = [
     badge: 'Ultra',
     badgeVariant: 'default',
     features: ['Next-Gen AI Engine', 'Multi Aspect Ratios', 'Ultra Quality', 'Advanced Styles'],
-    status: 'enhanced'
+    status: 'enhanced',
+    credits: revoCreditCosts['revo-2.0']
   }
 ]
 
@@ -65,13 +70,17 @@ interface RevoModelSelectorProps {
   onModelChange: (model: RevoModel) => void
   disabled?: boolean
   className?: string
+  showCredits?: boolean
+  userCredits?: number
 }
 
 export function RevoModelSelector({
   selectedModel,
   onModelChange,
   disabled = false,
-  className
+  className,
+  showCredits = false,
+  userCredits
 }: RevoModelSelectorProps) {
   const [isOpen, setIsOpen] = React.useState(false)
 
@@ -97,6 +106,12 @@ export function RevoModelSelector({
                 {currentModel.badge}
               </Badge>
             )}
+            {showCredits && (
+              <div className="flex items-center gap-1 text-xs text-blue-600">
+                <Coins className="h-3 w-3" />
+                <span>{currentModel.credits}</span>
+              </div>
+            )}
           </div>
           <ChevronDown className="h-4 w-4 opacity-50" />
         </Button>
@@ -113,20 +128,22 @@ export function RevoModelSelector({
           const IconComponent = model.icon
           const isSelected = selectedModel === model.id
           const isAvailable = model.status !== 'development'
+          const canAfford = !showCredits || !userCredits || userCredits >= model.credits
+          const isClickable = isAvailable && canAfford
 
           return (
             <DropdownMenuItem
               key={model.id}
               onClick={() => {
-                if (isAvailable) {
+                if (isClickable) {
                   onModelChange(model.id)
                   setIsOpen(false)
                 }
               }}
-              disabled={!isAvailable}
+              disabled={!isClickable}
               className={cn(
                 "flex flex-col items-start gap-2 p-4 cursor-pointer",
-                !isAvailable && "opacity-50 cursor-not-allowed"
+                !isClickable && "opacity-50 cursor-not-allowed"
               )}
             >
               <div className="flex items-center justify-between w-full">
@@ -138,8 +155,24 @@ export function RevoModelSelector({
                       {model.badge}
                     </Badge>
                   )}
+                  {showCredits && (
+                    <div className={cn(
+                      "flex items-center gap-1 text-xs",
+                      canAfford ? "text-blue-600" : "text-red-500"
+                    )}>
+                      <Coins className="h-3 w-3" />
+                      <span>{model.credits} credits</span>
+                    </div>
+                  )}
                 </div>
-                {isSelected && <Check className="h-4 w-4 text-green-600" />}
+                <div className="flex items-center gap-2">
+                  {showCredits && !canAfford && (
+                    <Badge variant="destructive" className="text-xs">
+                      Insufficient
+                    </Badge>
+                  )}
+                  {isSelected && <Check className="h-4 w-4 text-green-600" />}
+                </div>
               </div>
 
               <p className="text-sm text-muted-foreground">
@@ -159,7 +192,14 @@ export function RevoModelSelector({
 
         <DropdownMenuSeparator />
         <div className="p-2 text-xs text-muted-foreground">
-          Each Revo model offers different capabilities and features
+          {showCredits && userCredits !== undefined ? (
+            <div className="space-y-1">
+              <div>Your balance: {userCredits} credits</div>
+              <div>Higher models provide better quality but cost more credits</div>
+            </div>
+          ) : (
+            <div>Each Revo model offers different capabilities and features</div>
+          )}
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
