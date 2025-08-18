@@ -14,7 +14,7 @@ export default function CheckoutPage() {
   const searchParams = useSearchParams();
   const planId = searchParams.get('plan');
   const userId = searchParams.get('user');
-
+  
   const [plan, setPlan] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
@@ -27,18 +27,18 @@ export default function CheckoutPage() {
 
   const handlePayment = async () => {
     setLoading(true);
-
+    
     // TODO: Integrate with Stripe or payment processor
     try {
       // Simulate payment processing
       await new Promise(resolve => setTimeout(resolve, 2000));
-
+      
       // TODO: Process actual payment
       alert('Payment simulation - In production, this would process the payment');
-
+      
       // Redirect to success page
-      window.location.href = '/payment/success';
-
+      window.location.href = '/success';
+      
     } catch (error) {
       console.error('Payment error:', error);
       alert('Payment failed. Please try again.');
@@ -101,7 +101,7 @@ export default function CheckoutPage() {
                     <Badge className="bg-blue-500">Most Popular</Badge>
                   )}
                 </div>
-
+                
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
                     <div className="text-2xl font-bold text-blue-600">{plan.credits}</div>
@@ -210,8 +210,8 @@ export default function CheckoutPage() {
               </div>
 
               {/* Payment Button */}
-              <Button
-                className="w-full"
+              <Button 
+                className="w-full" 
                 size="lg"
                 onClick={handlePayment}
                 disabled={loading}
