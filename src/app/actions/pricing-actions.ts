@@ -1,6 +1,6 @@
 'use server';
 
-import { getPlanById } from '@/lib/pricing-data';
+import { getPlanById, getCreditCostForRevo, calculateGenerationCost, canAffordGeneration } from '@/lib/pricing-data';
 
 export interface PurchaseResult {
   success: boolean;
@@ -23,7 +23,7 @@ export interface UserCredits {
 export async function initiatePurchase(planId: string, userId: string): Promise<PurchaseResult> {
   try {
     const plan = getPlanById(planId);
-    
+
     if (!plan) {
       return {
         success: false,
@@ -45,7 +45,7 @@ export async function initiatePurchase(planId: string, userId: string): Promise<
       const result = await addCreditsToUser(userId, plan.credits);
       return {
         success: result.success,
-        message: result.success 
+        message: result.success
           ? `${plan.credits} free credits added to your account!`
           : 'Failed to add free credits'
       };
@@ -53,10 +53,10 @@ export async function initiatePurchase(planId: string, userId: string): Promise<
 
     // TODO: Create Stripe checkout session
     // const checkoutSession = await createStripeCheckout(plan, userId);
-    
+
     // For now, simulate payment process
     console.log(`Initiating purchase for plan: ${plan.name}, user: ${userId}`);
-    
+
     return {
       success: true,
       message: 'Redirecting to payment...',
@@ -81,22 +81,22 @@ export async function addCreditsToUser(userId: string, credits: number): Promise
   try {
     // TODO: Update user credits in database
     console.log(`Adding ${credits} credits to user: ${userId}`);
-    
+
     // Simulate database update
     const currentCredits = await getUserCredits(userId);
     const newTotal = currentCredits.remainingCredits + credits;
-    
+
     // TODO: Update in Firestore
     // await updateDoc(doc(db, 'users', userId), {
     //   totalCredits: newTotal,
     //   lastUpdated: new Date()
     // });
-    
+
     return {
       success: true,
       newTotal
     };
-    
+
   } catch (error) {
     console.error('Add credits error:', error);
     return {
@@ -113,7 +113,7 @@ export async function getUserCredits(userId: string): Promise<UserCredits> {
   try {
     // TODO: Fetch from database
     console.log(`Fetching credits for user: ${userId}`);
-    
+
     // Simulate database fetch
     return {
       totalCredits: 10, // Placeholder
@@ -121,7 +121,7 @@ export async function getUserCredits(userId: string): Promise<UserCredits> {
       remainingCredits: 10,
       lastUpdated: new Date()
     };
-    
+
   } catch (error) {
     console.error('Get credits error:', error);
     return {
@@ -140,26 +140,56 @@ export async function getUserCredits(userId: string): Promise<UserCredits> {
 export async function deductCredits(userId: string, amount: number = 1): Promise<{ success: boolean; remainingCredits?: number }> {
   try {
     const currentCredits = await getUserCredits(userId);
-    
+
     if (currentCredits.remainingCredits < amount) {
       return {
         success: false
       };
     }
-    
+
     const newRemaining = currentCredits.remainingCredits - amount;
     const newUsed = currentCredits.usedCredits + amount;
-    
+
     // TODO: Update in database
     console.log(`Deducting ${amount} credits from user: ${userId}. Remaining: ${newRemaining}`);
-    
+
     return {
       success: true,
       remainingCredits: newRemaining
     };
-    
+
   } catch (error) {
     console.error('Deduct credits error:', error);
+    return {
+      success: false
+    };
+  }
+}
+
+/**
+ * Deduct credits for specific Revo version generation
+ */
+export async function deductCreditsForRevo(userId: string, revoVersion: string, generations: number = 1): Promise<{ success: boolean; remainingCredits?: number; creditsCost?: number }> {
+  try {
+    const creditsCost = calculateGenerationCost(revoVersion, generations);
+    const currentCredits = await getUserCredits(userId);
+
+    if (!canAffordGeneration(currentCredits.remainingCredits, revoVersion, generations)) {
+      return {
+        success: false,
+        creditsCost
+      };
+    }
+
+    const result = await deductCredits(userId, creditsCost);
+
+    return {
+      ...result,
+      creditsCost
+    };
+
+  } catch (error) {
+    console.error('Deduct credits for Revo error:', error);
     return {
       success: false
     };
@@ -174,19 +204,19 @@ export async function handlePaymentSuccess(sessionId: string, planId: string, us
   try {
     const plan = getPlanById(planId);
     if (!plan) return false;
-    
+
     // Add credits to user account
     const result = await addCreditsToUser(userId, plan.credits);
-    
+
     if (result.success) {
       // TODO: Send confirmation email
       // TODO: Log purchase in database
       console.log(`Payment successful for user: ${userId}, plan: ${plan.name}, credits: ${plan.credits}`);
       return true;
     }
-    
+
     return false;
-    
+
   } catch (error) {
     console.error('Payment success handler error:', error);
     return false;
@@ -203,5 +233,29 @@ export async function validateCredits(userId: string, requiredCredits: number = 
   } catch (error) {
     console.error('Credit validation error:', error);
     return false;
+  }
+}
+
+/**
+ * Validate if user has enough credits for specific Revo version
+ */
+export async function validateCreditsForRevo(userId: string, revoVersion: string, generations: number = 1): Promise<{ canAfford: boolean; creditsCost: number; remainingCredits: number }> {
+  try {
+    const credits = await getUserCredits(userId);
+    const creditsCost = calculateGenerationCost(revoVersion, generations);
+    const canAfford = canAffordGeneration(credits.remainingCredits, revoVersion, generations);
+
+    return {
+      canAfford,
+      creditsCost,
+      remainingCredits: credits.remainingCredits
+    };
+  } catch (error) {
+    console.error('Credit validation for Revo error:', error);
+    return {
+      canAfford: false,
+      creditsCost: 0,
+      remainingCredits: 0
+    };
   }
 }
