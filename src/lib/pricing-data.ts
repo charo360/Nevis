@@ -50,8 +50,8 @@ export const pricingPlans: PricingPlan[] = [
     icon: 'zap',
     description: 'Ideal for occasional users or testers',
     features: [
-      'All Free Plan features',
       'HD image generation',
+      'No watermark on images',
       'Basic templates',
       'Email support'
     ]
@@ -66,7 +66,7 @@ export const pricingPlans: PricingPlan[] = [
     popular: true,
     description: 'Most popular for growing businesses',
     features: [
-      'All Starter Pack features',
+      'HD images without watermark',
       'Advanced AI models',
       'Brand consistency tools',
       'Priority support'
