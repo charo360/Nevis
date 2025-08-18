@@ -8,6 +8,7 @@ import { PostCard } from "@/components/dashboard/post-card";
 import { generateContentAction, generateEnhancedDesignAction, generateContentWithArtifactsAction } from "@/app/actions";
 import { generateRevo2ContentAction } from "@/app/actions/revo-2-actions";
 import { RevoModelSelector, type RevoModel } from "@/components/ui/revo-model-selector";
+import { getUserCredits } from "@/app/actions/pricing-actions";
 import { useToast } from "@/hooks/use-toast";
 import { useGeneratedPosts } from "@/hooks/use-generated-posts";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
@@ -48,6 +49,9 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
   // Revo model selection
   const [selectedRevoModel, setSelectedRevoModel] = React.useState<RevoModel>('revo-1.5');
 
+  // User credits for AI model selection
+  const [userCredits, setUserCredits] = React.useState<number>(0);
+
   // Artifact selection for content generation
   const [selectedArtifacts, setSelectedArtifacts] = React.useState<string[]>([]);
 
@@ -63,6 +67,21 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
       setSelectedRevoModel(savedRevoModel as RevoModel);
     }
   }, []);
+
+  // Load user credits
+  React.useEffect(() => {
+    async function loadCredits() {
+      if (user?.uid) {
+        try {
+          const credits = await getUserCredits(user.uid);
+          setUserCredits(credits.remainingCredits);
+        } catch (error) {
+          console.error('Failed to load user credits:', error);
+        }
+      }
+    }
+    loadCredits();
+  }, [user?.uid]);
 
   React.useEffect(() => {
     localStorage.setItem('brandConsistencyPreferences', JSON.stringify(brandConsistency));
@@ -202,6 +221,8 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
                 selectedModel={selectedRevoModel}
                 onModelChange={setSelectedRevoModel}
                 className="min-w-[140px]"
+                showCredits={true}
+                userCredits={userCredits}
               />
             </div>
           </div>
