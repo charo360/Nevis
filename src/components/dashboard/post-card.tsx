@@ -110,6 +110,9 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   const [activeTab, setActiveTab] = React.useState<Platform>(post.variants[0]?.platform || 'Instagram');
   const downloadRefs = React.useRef<Record<Platform, HTMLDivElement | null>>({} as Record<Platform, HTMLDivElement | null>);
 
+  // Check if this is a Revo 2.0 post (single platform)
+  const isRevo2Post = post.id?.startsWith('revo2-') || post.variants.length === 1;
+
   const formattedDate = React.useMemo(() => {
     try {
       const date = new Date(post.date);
@@ -125,17 +128,17 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   }, [post.date]);
   const { toast } = useToast();
 
-  // Platform-specific dimensions
+  // Platform-specific dimensions - MUST match backend Revo 2.0 generation
   const getPlatformDimensions = React.useCallback((platform: Platform) => {
     switch (platform.toLowerCase()) {
       case 'instagram':
         return { width: 1080, height: 1080, aspectClass: 'aspect-square' };
       case 'facebook':
-        return { width: 1200, height: 630, aspectClass: 'aspect-[1200/630]' };
+        return { width: 1200, height: 675, aspectClass: 'aspect-[16/9]' };
       case 'twitter':
-        return { width: 1200, height: 675, aspectClass: 'aspect-[1200/675]' };
+        return { width: 1200, height: 675, aspectClass: 'aspect-[16/9]' };
       case 'linkedin':
-        return { width: 1200, height: 627, aspectClass: 'aspect-[1200/627]' };
+        return { width: 1200, height: 675, aspectClass: 'aspect-[16/9]' };
       case 'tiktok':
         return { width: 1080, height: 1920, aspectClass: 'aspect-[9/16]' };
       default:
@@ -431,18 +434,22 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
           </DropdownMenu>
         </CardHeader>
         <CardContent className="flex-grow space-y-4 p-4 pt-0">
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Platform)} className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              {post.variants.map(variant => (
-                <TabsTrigger key={variant.platform} value={variant.platform}>
-                  {platformIcons[variant.platform]}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            {post.variants.map(variant => {
-              const dimensions = getPlatformDimensions(variant.platform);
-              return (
-                <TabsContent key={variant.platform} value={variant.platform}>
+          {isRevo2Post ? (
+            // Revo 2.0 single-platform layout with platform icon at top left
+            <div className="space-y-4">
+              {/* Platform Icon Header - Left aligned */}
+              <div className="flex items-center justify-start p-3 bg-muted/30 rounded-lg">
+                <div className="flex items-center gap-2">
+                  {platformIcons[post.variants[0]?.platform || 'Instagram']}
+                </div>
+              </div>
+
+              {/* Single Image Display - Platform-specific dimensions */}
+              {(() => {
+                const variant = post.variants[0];
+                const dimensions = getPlatformDimensions(variant?.platform || 'Instagram');
+
+                return (
                   <div className={`relative ${dimensions.aspectClass} w-full overflow-hidden`}>
                     {(isRegenerating || isGeneratingVideo) && (
                       <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/80">
@@ -450,8 +457,8 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
                         <span className="sr-only">{isRegenerating ? 'Regenerating image...' : 'Generating video...'}</span>
                       </div>
                     )}
-                    <div ref={el => (downloadRefs.current[variant.platform] = el)} className={`relative ${dimensions.aspectClass} w-full overflow-hidden rounded-md border group`}>
-                      {variant.imageUrl && isValidUrl(variant.imageUrl) ? (
+                    <div ref={el => (downloadRefs.current[variant?.platform || 'Instagram'] = el)} className={`relative ${dimensions.aspectClass} w-full overflow-hidden rounded-md border group`}>
+                      {variant?.imageUrl && isValidUrl(variant.imageUrl) ? (
                         <div
                           className="relative h-full w-full cursor-pointer"
                           onClick={() => handleImagePreview(variant.imageUrl)}
@@ -476,7 +483,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
                       ) : (
                         <div className="flex h-full w-full items-center justify-center bg-muted">
                           <ImageOff className="h-12 w-12 text-muted-foreground" />
-                          {variant.imageUrl && !isValidUrl(variant.imageUrl) && (
+                          {variant?.imageUrl && !isValidUrl(variant.imageUrl) && (
                             <div className="absolute bottom-2 left-2 right-2">
                               <p className="text-xs text-red-500 bg-white/90 p-1 rounded">
                                 Invalid image URL
@@ -487,10 +494,72 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
                       )}
                     </div>
                   </div>
-                </TabsContent>
-              );
-            })}
-          </Tabs>
+                );
+              })()}
+            </div>
+          ) : (
+            // Multi-platform tab layout for Revo 1.0/1.5
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Platform)} className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                {post.variants.map(variant => (
+                  <TabsTrigger key={variant.platform} value={variant.platform}>
+                    {platformIcons[variant.platform]}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              {post.variants.map(variant => {
+                const dimensions = getPlatformDimensions(variant.platform);
+                return (
+                  <TabsContent key={variant.platform} value={variant.platform}>
+                    <div className={`relative ${dimensions.aspectClass} w-full overflow-hidden`}>
+                      {(isRegenerating || isGeneratingVideo) && (
+                        <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/80">
+                          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                          <span className="sr-only">{isRegenerating ? 'Regenerating image...' : 'Generating video...'}</span>
+                        </div>
+                      )}
+                      <div ref={el => (downloadRefs.current[variant.platform] = el)} className={`relative ${dimensions.aspectClass} w-full overflow-hidden rounded-md border group`}>
+                        {variant.imageUrl && isValidUrl(variant.imageUrl) ? (
+                          <div
+                            className="relative h-full w-full cursor-pointer"
+                            onClick={() => handleImagePreview(variant.imageUrl)}
+                          >
+                            <Image
+                              alt={`Generated post image for ${variant.platform}`}
+                              className={cn('h-full w-full object-cover transition-opacity', (isRegenerating || isGeneratingVideo) ? 'opacity-50' : 'opacity-100')}
+                              height={dimensions.height}
+                              src={variant.imageUrl}
+                              data-ai-hint="social media post"
+                              width={dimensions.width}
+                              crossOrigin="anonymous"
+                              unoptimized={variant.imageUrl.startsWith('data:')} // Don't optimize data URLs
+                            />
+                            {/* Preview overlay */}
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                              <div className="bg-white/90 rounded-full p-2">
+                                <Eye className="h-5 w-5 text-gray-700" />
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center bg-muted">
+                            <ImageOff className="h-12 w-12 text-muted-foreground" />
+                            {variant.imageUrl && !isValidUrl(variant.imageUrl) && (
+                              <div className="absolute bottom-2 left-2 right-2">
+                                <p className="text-xs text-red-500 bg-white/90 p-1 rounded">
+                                  Invalid image URL
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </TabsContent>
+                );
+              })}
+            </Tabs>
+          )}
 
           <div className="space-y-2">
             <div className="flex items-start justify-between gap-2">
@@ -510,11 +579,20 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
         <CardFooter className="p-4 pt-0">
           <div className="flex items-start justify-between gap-2">
             <div className="flex flex-wrap gap-1 flex-1">
-              {post.hashtags && post.hashtags.split(" ").map((tag, index) => (
-                <Badge key={index} variant="secondary" className="font-normal">
-                  {tag}
-                </Badge>
-              ))}
+              {post.hashtags && (() => {
+                // Handle both string and array formats for hashtags
+                const hashtagsArray = typeof post.hashtags === 'string'
+                  ? post.hashtags.split(" ")
+                  : Array.isArray(post.hashtags)
+                    ? post.hashtags
+                    : [];
+
+                return hashtagsArray.map((tag, index) => (
+                  <Badge key={index} variant="secondary" className="font-normal">
+                    {tag}
+                  </Badge>
+                ));
+              })()}
               {!post.hashtags && (
                 <Badge variant="secondary" className="font-normal">
                   #enhanced #ai #design

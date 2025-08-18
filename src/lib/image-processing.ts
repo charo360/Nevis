@@ -23,29 +23,29 @@ export interface PlatformDimensions {
 export function getPlatformDimensions(platform: string): PlatformDimensions {
   const platformLower = platform.toLowerCase();
 
-  // LinkedIn - 16:9 landscape
+  // LinkedIn - 16:9 landscape (matches Revo 2.0 backend)
   if (platformLower.includes('linkedin')) {
     return {
       width: 1200,
-      height: 627, // LinkedIn's recommended size
+      height: 675, // Standardized to match backend generation
       aspectRatio: '16:9'
     };
   }
 
-  // Facebook - 16:9 landscape  
+  // Facebook - 16:9 landscape (matches Revo 2.0 backend)
   if (platformLower.includes('facebook')) {
     return {
       width: 1200,
-      height: 630, // Facebook's recommended size
+      height: 675, // Standardized to match backend generation
       aspectRatio: '16:9'
     };
   }
 
-  // Twitter - 16:9 landscape
+  // Twitter - 16:9 landscape (matches Revo 2.0 backend)
   if (platformLower.includes('twitter')) {
     return {
       width: 1200,
-      height: 675, // Twitter's recommended size
+      height: 675, // Standardized to match backend generation
       aspectRatio: '16:9'
     };
   }

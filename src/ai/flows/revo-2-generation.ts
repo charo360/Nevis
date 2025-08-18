@@ -66,7 +66,16 @@ function generateRevo2Prompt(
     LinkedIn: 'LinkedIn post, professional and business-focused',
   };
 
-  let enhancedPrompt = `${basePrompt}. ${platformContext[platform] || platformContext.Instagram}.`;
+  let enhancedPrompt = `🎨 REVO 2.0 AI DESIGN GENERATION 🎨
+
+${basePrompt}. ${platformContext[platform] || platformContext.Instagram}.
+
+**TEXT READABILITY REQUIREMENTS:**
+- NO unreadable, blurry, or distorted text
+- Any text in the image must be clear, legible, and professional
+- Use high contrast between text and background
+- Avoid text that appears corrupted, pixelated, or illegible
+- If text is included, ensure it's crisp and readable at all sizes`;
 
   // Add brand context if available
   if (brandProfile) {
@@ -86,12 +95,12 @@ function generateRevo2Prompt(
   // Add style-specific enhancements
   if (style) {
     const styleEnhancements = {
-      photographic: 'Professional photography, realistic, high-quality',
-      artistic: 'Creative artistic interpretation, expressive, unique',
-      digital_art: 'Modern digital art, clean, contemporary',
-      cinematic: 'Movie-like quality, dramatic, cinematic composition',
-      anime: 'Anime art style, vibrant, stylized',
-      sketch: 'Hand-drawn aesthetic, artistic, creative'
+      photographic: 'Professional photography, realistic, high-quality, ultra-sharp details, professional lighting',
+      artistic: 'Creative artistic interpretation, expressive, unique, vibrant colors',
+      digital_art: 'Modern digital art, clean, contemporary, crisp graphics',
+      cinematic: 'Movie-like quality, dramatic, cinematic composition, professional grade',
+      anime: 'Anime art style, vibrant, stylized, clean lines',
+      sketch: 'Hand-drawn aesthetic, artistic, creative, clear strokes'
     };
 
     enhancedPrompt += ` ${styleEnhancements[style as keyof typeof styleEnhancements]}.`;
@@ -203,7 +212,7 @@ export async function generateRevo2Content(
       input.style
     );
 
-    // Prepare Imagen 4 options
+    // Prepare Imagen 4 options with Revo 2.0 enhancements
     const imagen4Options: Imagen4GenerationOptions = {
       aspectRatio,
       quality: input.quality || 'high',
@@ -211,7 +220,11 @@ export async function generateRevo2Content(
       mood: input.mood || 'professional',
       enhancePrompt: input.enhancePrompt !== false,
       colorScheme: input.brandProfile?.primaryColor ? [input.brandProfile.primaryColor] : undefined,
-      safetyLevel: 'moderate'
+      safetyLevel: 'moderate',
+      // Revo 2.0 specific options for design generation
+      brandProfile: input.brandProfile,
+      brandConsistency: input.brandConsistency,
+      platform: input.platform
     };
 
     // Generate image with Imagen 4
