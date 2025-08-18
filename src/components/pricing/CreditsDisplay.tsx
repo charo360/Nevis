@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Coins, Plus, AlertCircle } from 'lucide-react';
 import { getUserCredits, type UserCredits } from '@/app/actions/pricing-actions';
+import { RevoCreditCosts } from './RevoCreditCosts';
 import Link from 'next/link';
 
 interface CreditsDisplayProps {
@@ -66,8 +67,8 @@ export function CreditsDisplay({ userId, showBuyButton = true, compact = false }
     );
   }
 
-  const usagePercentage = credits.totalCredits > 0 
-    ? (credits.usedCredits / credits.totalCredits) * 100 
+  const usagePercentage = credits.totalCredits > 0
+    ? (credits.usedCredits / credits.totalCredits) * 100
     : 0;
 
   const isLowCredits = credits.remainingCredits <= 5;
@@ -83,7 +84,7 @@ export function CreditsDisplay({ userId, showBuyButton = true, compact = false }
           </span>
           <span className="text-sm text-gray-500">credits</span>
         </div>
-        
+
         {isLowCredits && showBuyButton && (
           <Link href="/pricing">
             <Button size="sm" variant="outline">
@@ -134,8 +135,8 @@ export function CreditsDisplay({ userId, showBuyButton = true, compact = false }
               <span>Usage</span>
               <span>{usagePercentage.toFixed(0)}%</span>
             </div>
-            <Progress 
-              value={usagePercentage} 
+            <Progress
+              value={usagePercentage}
               className="h-2"
             />
           </div>
@@ -150,7 +151,7 @@ export function CreditsDisplay({ userId, showBuyButton = true, compact = false }
                 {isOutOfCredits ? 'Buy Credits Now' : 'Buy More Credits'}
               </Button>
             </Link>
-            
+
             {isOutOfCredits && (
               <p className="text-sm text-center text-gray-600">
                 You need credits to generate new content
@@ -158,6 +159,11 @@ export function CreditsDisplay({ userId, showBuyButton = true, compact = false }
             )}
           </div>
         )}
+
+        {/* Credit Usage Guide */}
+        <div className="mt-4">
+          <RevoCreditCosts compact={true} showTitle={true} />
+        </div>
 
         {/* Last Updated */}
         <div className="text-xs text-gray-400 text-center">

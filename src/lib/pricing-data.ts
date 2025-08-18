@@ -125,16 +125,22 @@ export const addOns: AddOn[] = [
   }
 ];
 
+export const revoCreditCosts = {
+  'revo-1.0': 1,
+  'revo-1.5': 1.5,
+  'revo-2.0': 2
+};
+
 export const pricingFeatures = {
   keyBenefits: [
-    '1 Credit = 1 HD Image',
+    'Variable Credit Cost by AI Model',
     'Credits Never Expire',
     'No Monthly Commitment'
   ],
   faq: [
     {
       question: 'How do credits work?',
-      answer: '1 credit = 1 HD image generation. If you regenerate an image, it costs 1 additional credit per attempt.'
+      answer: 'Credits vary by AI model: Revo 1.0 = 1 credit, Revo 1.5 = 1.5 credits, Revo 2.0 = 2 credits per generation. Regenerating costs the same amount per attempt.'
     },
     {
       question: 'Do credits expire?',
@@ -147,6 +153,10 @@ export const pricingFeatures = {
     {
       question: "What's included in HD generation?",
       answer: 'High-resolution images optimized for social media platforms with professional quality.'
+    },
+    {
+      question: 'What are the different Revo versions?',
+      answer: 'Revo 1.0 (1 credit) - Basic AI, Revo 1.5 (1.5 credits) - Enhanced AI with better quality, Revo 2.0 (2 credits) - Latest AI with premium features and highest quality.'
     },
     {
       question: 'Can I get a refund?',
@@ -167,16 +177,30 @@ export function getPlanById(planId: string): PricingPlan | undefined {
 export function calculateSavings(planId: string): number {
   const plan = getPlanById(planId);
   if (!plan || plan.price === 0) return 0;
-  
+
   const starterPlan = getPlanById('starter');
   if (!starterPlan) return 0;
-  
+
   const regularPrice = plan.credits * starterPlan.costPerCredit;
   const savings = regularPrice - plan.price;
-  
+
   return Math.max(0, savings);
 }
 
 export function getBestValuePlan(): PricingPlan {
   return pricingPlans.find(plan => plan.popular) || pricingPlans[2];
+}
+
+export function getCreditCostForRevo(revoVersion: string): number {
+  return revoCreditCosts[revoVersion as keyof typeof revoCreditCosts] || 1;
+}
+
+export function calculateGenerationCost(revoVersion: string, generations: number = 1): number {
+  const costPerGeneration = getCreditCostForRevo(revoVersion);
+  return costPerGeneration * generations;
+}
+
+export function canAffordGeneration(userCredits: number, revoVersion: string, generations: number = 1): boolean {
+  const totalCost = calculateGenerationCost(revoVersion, generations);
+  return userCredits >= totalCost;
 }

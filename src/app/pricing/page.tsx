@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Check, Star, Zap, Crown, Rocket } from 'lucide-react';
 import { PricingCard } from '@/components/pricing/PricingCard';
+import { RevoCreditCosts } from '@/components/pricing/RevoCreditCosts';
 import { pricingPlans, addOns, pricingFeatures } from '@/lib/pricing-data';
 import { initiatePurchase } from '@/app/actions/pricing-actions';
 
@@ -69,6 +70,11 @@ export default function PricingPage() {
                 {benefit}
               </Badge>
             ))}
+          </div>
+
+          {/* Credit Costs by AI Model */}
+          <div className="max-w-2xl mx-auto mb-12">
+            <RevoCreditCosts compact={true} />
           </div>
         </div>
 
@@ -149,6 +155,11 @@ export default function PricingPage() {
               </CardFooter>
             </Card>
           ))}
+        </div>
+
+        {/* Detailed Credit Costs Section */}
+        <div className="max-w-4xl mx-auto mb-16">
+          <RevoCreditCosts compact={false} />
         </div>
 
         {/* Future Add-ons Section */}

@@ -7,13 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, CreditCard, Shield, Check } from 'lucide-react';
 import { getPlanById } from '@/lib/pricing-data';
+import { RevoCreditCosts } from '@/components/pricing/RevoCreditCosts';
 import Link from 'next/link';
 
 export default function CheckoutPage() {
   const searchParams = useSearchParams();
   const planId = searchParams.get('plan');
   const userId = searchParams.get('user');
-  
+
   const [plan, setPlan] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
@@ -26,18 +27,18 @@ export default function CheckoutPage() {
 
   const handlePayment = async () => {
     setLoading(true);
-    
+
     // TODO: Integrate with Stripe or payment processor
     try {
       // Simulate payment processing
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       // TODO: Process actual payment
       alert('Payment simulation - In production, this would process the payment');
-      
+
       // Redirect to success page
       window.location.href = '/payment/success';
-      
+
     } catch (error) {
       console.error('Payment error:', error);
       alert('Payment failed. Please try again.');
@@ -100,7 +101,7 @@ export default function CheckoutPage() {
                     <Badge className="bg-blue-500">Most Popular</Badge>
                   )}
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
                     <div className="text-2xl font-bold text-blue-600">{plan.credits}</div>
@@ -115,6 +116,11 @@ export default function CheckoutPage() {
                 <div className="text-sm text-gray-600">
                   Cost per credit: ${plan.costPerCredit.toFixed(3)}
                 </div>
+              </div>
+
+              {/* Credit Usage Info */}
+              <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                <RevoCreditCosts compact={true} showTitle={true} />
               </div>
 
               {/* Features */}
@@ -204,8 +210,8 @@ export default function CheckoutPage() {
               </div>
 
               {/* Payment Button */}
-              <Button 
-                className="w-full" 
+              <Button
+                className="w-full"
                 size="lg"
                 onClick={handlePayment}
                 disabled={loading}
