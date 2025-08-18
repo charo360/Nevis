@@ -86,7 +86,7 @@ export default function PaymentSuccessPage() {
                   </Button>
                 </Link>
               </div>
-              
+
               <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                 <h4 className="font-medium mb-2">Learn More</h4>
                 <p className="text-sm text-gray-600 mb-3">
@@ -114,7 +114,7 @@ export default function PaymentSuccessPage() {
                   Download Receipt
                 </Button>
               </div>
-              
+
               <div>
                 <h4 className="font-medium mb-2">Need Help?</h4>
                 <p className="text-sm text-gray-600 mb-3">
@@ -145,7 +145,7 @@ export default function PaymentSuccessPage() {
           {/* Thank You Message */}
           <div className="text-center pt-4 border-t">
             <p className="text-gray-600">
-              Thank you for choosing Nevis AI! We're excited to see what you create.
+              Thank you for choosing Crevo AI! We're excited to see what you create.
             </p>
           </div>
         </CardContent>

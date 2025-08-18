@@ -1,8 +1,8 @@
-# Nevis AI Pricing System Documentation
+# Crevo AI Pricing System Documentation
 
 ## Overview
 
-The Nevis AI pricing system implements a **credit-based model** with variable costs depending on the AI model (Revo version) used. This documentation covers the complete pricing architecture, components, and integration guide.
+The Crevo AI pricing system implements a **credit-based model** with variable costs depending on the AI model (Revo version) used. This documentation covers the complete pricing architecture, components, and integration guide.
 
 ## Credit System Architecture
 
@@ -422,7 +422,7 @@ export async function createCheckoutSession(planId: string, userId: string) {
         currency: 'usd',
         product_data: {
           name: plan.name,
-          description: `${plan.credits} credits for Nevis AI`,
+          description: `${plan.credits} credits for Crevo AI`,
         },
         unit_amount: plan.price * 100,
       },

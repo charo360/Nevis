@@ -1,4 +1,4 @@
-# Nevis AI Pricing System Troubleshooting Guide
+# Crevo AI Pricing System Troubleshooting Guide
 
 ## Common Issues & Solutions
 

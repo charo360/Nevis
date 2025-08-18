@@ -32,12 +32,13 @@ export const pricingPlans: PricingPlan[] = [
     credits: 10,
     costPerCredit: 0,
     icon: 'star',
-    description: 'Perfect for trying out Nevis AI',
+    description: 'Perfect for trying out Crevo AI',
     features: [
       'Access to basic AI design generation',
       'Manual approval & download',
       'Limited support',
-      '10 free credits (one-time)'
+      '10 free credits (one-time)',
+      'Images include watermark'
     ]
   },
   {

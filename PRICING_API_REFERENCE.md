@@ -1,8 +1,8 @@
-# Nevis AI Pricing System API Reference
+# Crevo AI Pricing System API Reference
 
 ## Overview
 
-This document provides a comprehensive API reference for the Nevis AI pricing system, including all server actions, database operations, and integration endpoints.
+This document provides a comprehensive API reference for the Crevo AI pricing system, including all server actions, database operations, and integration endpoints.
 
 ## Server Actions API
 

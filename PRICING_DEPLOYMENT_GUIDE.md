@@ -1,8 +1,8 @@
-# Nevis AI Pricing System Deployment Guide
+# Crevo AI Pricing System Deployment Guide
 
 ## Overview
 
-This guide covers the complete deployment process for the Nevis AI pricing system, including environment setup, database configuration, payment integration, and production deployment.
+This guide covers the complete deployment process for the Crevo AI pricing system, including environment setup, database configuration, payment integration, and production deployment.
 
 ## Prerequisites
 
@@ -182,16 +182,16 @@ interface GenerationDocument {
 #### Create Products and Prices
 ```bash
 # Using Stripe CLI
-stripe products create --name "Starter Pack" --description "50 credits for Nevis AI"
+stripe products create --name "Starter Pack" --description "50 credits for Crevo AI"
 stripe prices create --product prod_xxx --unit-amount 1000 --currency usd
 
-stripe products create --name "Growth Pack" --description "150 credits for Nevis AI"  
+stripe products create --name "Growth Pack" --description "150 credits for Crevo AI"
 stripe prices create --product prod_xxx --unit-amount 2900 --currency usd
 
-stripe products create --name "Pro Pack" --description "250 credits for Nevis AI"
+stripe products create --name "Pro Pack" --description "250 credits for Crevo AI"
 stripe prices create --product prod_xxx --unit-amount 4900 --currency usd
 
-stripe products create --name "Power Users Pack" --description "550 credits for Nevis AI"
+stripe products create --name "Power Users Pack" --description "550 credits for Crevo AI"
 stripe prices create --product prod_xxx --unit-amount 9900 --currency usd
 ```
 
