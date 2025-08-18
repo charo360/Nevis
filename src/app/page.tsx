@@ -542,6 +542,10 @@ export default function HomePage() {
                   </li>
                   <li className="flex items-start">
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                    <span>No watermark on images</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
                     <span>Basic templates</span>
                   </li>
                   <li className="flex items-start">
