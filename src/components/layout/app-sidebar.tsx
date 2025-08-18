@@ -16,10 +16,12 @@ import {
   LayoutDashboard,
   Building2,
   Palette,
-  CreditCard,
+  Coins,
 } from "lucide-react";
 import { UnifiedBrandSelector } from '@/components/brand/unified-brand-selector';
 import { usePathname } from "next/navigation";
+import { CreditsIndicator } from "@/components/pricing/CreditsDisplay";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Sidebar,
   SidebarHeader,
@@ -157,18 +159,7 @@ export function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
 
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={isActive("/pricing")}
-              tooltip="Pricing & Credits"
-            >
-              <Link href="/pricing">
-                <CreditCard />
-                <span>Pricing & Credits</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter>

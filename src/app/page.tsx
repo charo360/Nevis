@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 export default function HomePage() {
   const router = useRouter();
@@ -405,6 +406,335 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Pricing Section */}
+      <section id="pricing" className="relative px-6 py-20 bg-gradient-to-br from-gray-50 to-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+              Simple, Credit-Based
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Pricing</span>
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
+              Pay once, use anytime. Credits never expire. Choose the AI quality that fits your needs.
+            </p>
+
+            {/* Key Benefits */}
+            <div className="flex flex-wrap justify-center gap-4 mb-12">
+              <Badge variant="secondary" className="px-4 py-2 text-sm">
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Credits Never Expire
+              </Badge>
+              <Badge variant="secondary" className="px-4 py-2 text-sm">
+                <CheckCircle className="w-4 h-4 mr-2" />
+                No Monthly Commitment
+              </Badge>
+              <Badge variant="secondary" className="px-4 py-2 text-sm">
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Variable AI Quality
+              </Badge>
+            </div>
+
+            {/* AI Model Costs */}
+            <div className="max-w-2xl mx-auto mb-12">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Credit Costs by AI Model:</h3>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="p-4 border rounded-lg bg-white">
+                  <div className="flex items-center justify-center mb-2">
+                    <Zap className="w-5 h-5 text-blue-500" />
+                  </div>
+                  <div className="text-sm font-medium">Revo 1.0</div>
+                  <div className="text-lg font-bold text-blue-600">1 credit</div>
+                  <div className="text-xs text-gray-500">Basic AI</div>
+                </div>
+                <div className="p-4 border rounded-lg bg-white">
+                  <div className="flex items-center justify-center mb-2">
+                    <Sparkles className="w-5 h-5 text-purple-500" />
+                  </div>
+                  <div className="text-sm font-medium">Revo 1.5</div>
+                  <div className="text-lg font-bold text-purple-600">1.5 credits</div>
+                  <div className="text-xs text-gray-500">Enhanced AI</div>
+                </div>
+                <div className="p-4 border rounded-lg bg-white">
+                  <div className="flex items-center justify-center mb-2">
+                    <Brain className="w-5 h-5 text-indigo-500" />
+                  </div>
+                  <div className="text-sm font-medium">Revo 2.0</div>
+                  <div className="text-lg font-bold text-indigo-600">2 credits</div>
+                  <div className="text-xs text-gray-500">Premium AI</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Pricing Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-16">
+            {/* Free Plan */}
+            <Card className="relative transition-all duration-300 hover:shadow-lg border-2 border-gray-200">
+              <CardContent className="p-6 text-center">
+                <div className="flex justify-center mb-4">
+                  <Star className="w-6 h-6 text-gray-500" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">Free Plan</h3>
+                <p className="text-sm text-gray-600 mb-4">Perfect for trying out Nevis AI</p>
+
+                <div className="mb-4">
+                  <span className="text-3xl font-bold">$0</span>
+                </div>
+
+                <div className="mb-4">
+                  <div className="text-2xl font-semibold text-blue-600">10</div>
+                  <div className="text-sm text-gray-500">credits (one-time)</div>
+                </div>
+
+                <ul className="text-sm text-left space-y-2 mb-6">
+                  <li className="flex items-start">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                    <span>Basic AI generation</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                    <span>Manual approval</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                    <span>Limited support</span>
+                  </li>
+                </ul>
+
+                <Button
+                  onClick={handleGetStarted}
+                  className="w-full"
+                  variant="outline"
+                >
+                  Get Started Free
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Starter Pack */}
+            <Card className="relative transition-all duration-300 hover:shadow-lg border-2 border-gray-200">
+              <CardContent className="p-6 text-center">
+                <div className="flex justify-center mb-4">
+                  <Zap className="w-6 h-6 text-blue-500" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">Starter Pack</h3>
+                <p className="text-sm text-gray-600 mb-4">Ideal for occasional users</p>
+
+                <div className="mb-4">
+                  <span className="text-3xl font-bold">$10</span>
+                  <span className="text-gray-500 text-sm"> one-time</span>
+                </div>
+
+                <div className="mb-4">
+                  <div className="text-2xl font-semibold text-blue-600">50</div>
+                  <div className="text-sm text-gray-500">credits</div>
+                  <div className="text-xs text-gray-400 mt-1">$0.20 per credit</div>
+                </div>
+
+                <ul className="text-sm text-left space-y-2 mb-6">
+                  <li className="flex items-start">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                    <span>HD image generation</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                    <span>Basic templates</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                    <span>Email support</span>
+                  </li>
+                </ul>
+
+                <Button
+                  onClick={handleGetStarted}
+                  className="w-full"
+                  variant="outline"
+                >
+                  Buy Credits
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Growth Pack - Most Popular */}
+            <Card className="relative transition-all duration-300 hover:shadow-lg border-2 border-blue-500 scale-105">
+              <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-blue-500">
+                Most Popular
+              </Badge>
+
+              <CardContent className="p-6 text-center">
+                <div className="flex justify-center mb-4">
+                  <Target className="w-6 h-6 text-blue-500" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">Growth Pack</h3>
+                <p className="text-sm text-gray-600 mb-4">Most popular for growing businesses</p>
+
+                <div className="mb-4">
+                  <span className="text-3xl font-bold">$29</span>
+                  <span className="text-gray-500 text-sm"> one-time</span>
+                </div>
+
+                <div className="mb-4">
+                  <div className="text-2xl font-semibold text-blue-600">150</div>
+                  <div className="text-sm text-gray-500">credits</div>
+                  <div className="text-xs text-gray-400 mt-1">$0.19 per credit</div>
+                </div>
+
+                <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                  <div className="text-sm font-semibold text-blue-800 mb-1">Bonus:</div>
+                  <div className="text-sm text-blue-700">Priority generation speed</div>
+                </div>
+
+                <ul className="text-sm text-left space-y-2 mb-6">
+                  <li className="flex items-start">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                    <span>Advanced AI models</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                    <span>Brand consistency tools</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                    <span>Priority support</span>
+                  </li>
+                </ul>
+
+                <Button
+                  onClick={handleGetStarted}
+                  className="w-full"
+                >
+                  Buy Credits
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Pro Pack */}
+            <Card className="relative transition-all duration-300 hover:shadow-lg border-2 border-gray-200">
+              <CardContent className="p-6 text-center">
+                <div className="flex justify-center mb-4">
+                  <BarChart3 className="w-6 h-6 text-purple-500" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">Pro Pack</h3>
+                <p className="text-sm text-gray-600 mb-4">For professional creators</p>
+
+                <div className="mb-4">
+                  <span className="text-3xl font-bold">$49</span>
+                  <span className="text-gray-500 text-sm"> one-time</span>
+                </div>
+
+                <div className="mb-4">
+                  <div className="text-2xl font-semibold text-blue-600">250</div>
+                  <div className="text-sm text-gray-500">credits</div>
+                  <div className="text-xs text-gray-400 mt-1">$0.196 per credit</div>
+                </div>
+
+                <div className="mb-4 p-3 bg-purple-50 rounded-lg">
+                  <div className="text-sm font-semibold text-purple-800 mb-1">Bonus:</div>
+                  <div className="text-sm text-purple-700">Early access to new features</div>
+                </div>
+
+                <ul className="text-sm text-left space-y-2 mb-6">
+                  <li className="flex items-start">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                    <span>Advanced customization</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                    <span>Bulk generation</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                    <span>API access</span>
+                  </li>
+                </ul>
+
+                <Button
+                  onClick={handleGetStarted}
+                  className="w-full"
+                  variant="outline"
+                >
+                  Buy Credits
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Power Users Pack */}
+            <Card className="relative transition-all duration-300 hover:shadow-lg border-2 border-gray-200">
+              <CardContent className="p-6 text-center">
+                <div className="flex justify-center mb-4">
+                  <Brain className="w-6 h-6 text-indigo-500" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">Power Users</h3>
+                <p className="text-sm text-gray-600 mb-4">For agencies & power users</p>
+
+                <div className="mb-4">
+                  <span className="text-3xl font-bold">$99</span>
+                  <span className="text-gray-500 text-sm"> one-time</span>
+                </div>
+
+                <div className="mb-4">
+                  <div className="text-2xl font-semibold text-blue-600">550</div>
+                  <div className="text-sm text-gray-500">credits</div>
+                  <div className="text-xs text-gray-400 mt-1">$0.18 per credit</div>
+                </div>
+
+                <div className="mb-4 p-3 bg-indigo-50 rounded-lg">
+                  <div className="text-sm font-semibold text-indigo-800 mb-1">Bonus:</div>
+                  <div className="text-sm text-indigo-700">Dedicated support + Custom styles</div>
+                </div>
+
+                <ul className="text-sm text-left space-y-2 mb-6">
+                  <li className="flex items-start">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                    <span>White-label options</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                    <span>Team collaboration</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                    <span>Custom integrations</span>
+                  </li>
+                </ul>
+
+                <Button
+                  onClick={handleGetStarted}
+                  className="w-full"
+                  variant="outline"
+                >
+                  Buy Credits
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* FAQ Section */}
+          <div className="max-w-4xl mx-auto">
+            <h3 className="text-2xl font-bold text-center mb-8">Frequently Asked Questions</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div>
+                <h4 className="font-semibold mb-2">How do credits work?</h4>
+                <p className="text-gray-600 text-sm">Credits vary by AI model: Revo 1.0 = 1 credit, Revo 1.5 = 1.5 credits, Revo 2.0 = 2 credits per generation.</p>
+              </div>
+              <div>
+                <h4 className="font-semibold mb-2">Do credits expire?</h4>
+                <p className="text-gray-600 text-sm">No! Your credits never expire. Use them whenever you need them.</p>
+              </div>
+              <div>
+                <h4 className="font-semibold mb-2">Can I upgrade anytime?</h4>
+                <p className="text-gray-600 text-sm">Yes! You can purchase additional credit packs anytime. Credits stack up.</p>
+              </div>
+              <div>
+                <h4 className="font-semibold mb-2">What's the difference between AI models?</h4>
+                <p className="text-gray-600 text-sm">Higher versions provide better quality, more features, and enhanced AI capabilities but cost more credits.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Final CTA Section */}
       <section className="relative px-6 py-20">
         <div className="max-w-4xl mx-auto text-center">
@@ -464,7 +794,7 @@ export default function HomePage() {
               <h3 className="font-semibold mb-4">Product</h3>
               <ul className="space-y-2 text-gray-400">
                 <li><a href="#" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Pricing</a></li>
+                <li><a href="#pricing" className="hover:text-white transition-colors">Pricing</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Templates</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">API</a></li>
               </ul>
