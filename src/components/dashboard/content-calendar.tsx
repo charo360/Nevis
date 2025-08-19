@@ -6,11 +6,13 @@ import { Loader2, Facebook, Instagram, Linkedin, Twitter, Settings, Palette, Spa
 import { Button } from "@/components/ui/button";
 import { PostCard } from "@/components/dashboard/post-card";
 import { generateContentAction, generateEnhancedDesignAction, generateContentWithArtifactsAction } from "@/app/actions";
-import { RevoModelSelector, type RevoModel } from "@/components/ui/revo-model-selector";
+
 import { useToast } from "@/hooks/use-toast";
 import { useGeneratedPosts } from "@/hooks/use-generated-posts";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import type { BrandProfile, GeneratedPost, Platform, BrandConsistencyPreferences } from "@/lib/types";
+
+type RevoModel = 'revo-1.0' | 'revo-1.5' | 'revo-2.0';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -178,11 +180,15 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
             <Separator orientation="vertical" className="h-4" />
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-600">AI Model:</span>
-              <RevoModelSelector
-                selectedModel={selectedRevoModel}
-                onModelChange={setSelectedRevoModel}
-                className="min-w-[140px]"
-              />
+              <select
+                value={selectedRevoModel}
+                onChange={(e) => setSelectedRevoModel(e.target.value as RevoModel)}
+                className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-1 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="revo-1.0">Revo 1.0</option>
+                <option value="revo-1.5">Revo 1.5</option>
+                <option value="revo-2.0">Revo 2.0</option>
+              </select>
             </div>
           </div>
         </div>
