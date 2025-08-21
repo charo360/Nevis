@@ -89,7 +89,9 @@ export function CbrandWizard({ mode, brandId }: CbrandWizardProps = {}) {
   const { currentBrand, loading: brandLoading } = useUnifiedBrand();
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
-  const [brandProfile, setBrandProfile] = useState<CompleteBrandProfile>({
+
+  // Default brand profile with all required fields and default colors
+  const defaultBrandProfile: CompleteBrandProfile = {
     businessName: '',
     businessType: '',
     location: '',
@@ -114,7 +116,9 @@ export function CbrandWizard({ mode, brandId }: CbrandWizardProps = {}) {
     websiteUrl: '',
     logoDataUrl: '',
     designExamples: [],
-  });
+  };
+
+  const [brandProfile, setBrandProfile] = useState<CompleteBrandProfile>(defaultBrandProfile);
 
   // Load existing profile on component mount
   useEffect(() => {
@@ -129,7 +133,8 @@ export function CbrandWizard({ mode, brandId }: CbrandWizardProps = {}) {
           // For now, we'll use the current brand from context if it matches
           if (currentBrand && (currentBrand as any).id === brandId) {
             console.log('✅ Using current brand from context for edit');
-            setBrandProfile(currentBrand);
+            // Merge with defaults to ensure all color properties exist
+            setBrandProfile({ ...defaultBrandProfile, ...currentBrand });
             return;
           }
         }
@@ -137,7 +142,8 @@ export function CbrandWizard({ mode, brandId }: CbrandWizardProps = {}) {
         // If we have a current brand selected and we're not in create mode, use it
         if (currentBrand && mode !== 'create') {
           console.log('✅ Using current brand from context:', currentBrand.businessName);
-          setBrandProfile(currentBrand);
+          // Merge with defaults to ensure all color properties exist
+          setBrandProfile({ ...defaultBrandProfile, ...currentBrand });
           return;
         }
 
@@ -148,8 +154,10 @@ export function CbrandWizard({ mode, brandId }: CbrandWizardProps = {}) {
         const savedProfile = localStorage.getItem('completeBrandProfile');
         if (savedProfile) {
           const parsedProfile = JSON.parse(savedProfile);
-          setBrandProfile(parsedProfile);
-          console.log('Loaded existing complete profile:', parsedProfile);
+          // Merge with defaults to ensure all color properties exist
+          const mergedProfile = { ...defaultBrandProfile, ...parsedProfile };
+          setBrandProfile(mergedProfile);
+          console.log('Loaded existing complete profile:', mergedProfile);
           return;
         }
 
@@ -196,8 +204,10 @@ export function CbrandWizard({ mode, brandId }: CbrandWizardProps = {}) {
             linkedinUrl: parsedLegacy.socialMedia?.linkedin || '',
           };
 
-          setBrandProfile(convertedProfile);
-          console.log('Loaded and converted legacy profile:', convertedProfile);
+          // Merge with defaults to ensure all color properties exist
+          const mergedProfile = { ...defaultBrandProfile, ...convertedProfile };
+          setBrandProfile(mergedProfile);
+          console.log('Loaded and converted legacy profile:', mergedProfile);
         }
       } catch (error) {
         console.error('Error loading existing profile:', error);

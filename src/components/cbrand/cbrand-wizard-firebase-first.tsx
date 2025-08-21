@@ -46,7 +46,7 @@ export function CbrandWizardFirebaseFirst({ mode, brandId }: CbrandWizardFirebas
     updatedAt: new Date().toISOString(),
   });
 
-  const { currentBrand, selectBrand } = useBrandFirebaseFirst();
+  const { currentBrand, selectBrand, brands, refreshBrands } = useBrandFirebaseFirst();
   const userId = useUserId();
   const router = useRouter();
 
@@ -114,50 +114,74 @@ export function CbrandWizardFirebaseFirst({ mode, brandId }: CbrandWizardFirebas
     }
   };
 
-  const handleSaveComplete = (profileId: string) => {
+  const handleSaveComplete = async (profileId: string) => {
     console.log('✅ Profile saved successfully:', profileId);
-    
-    // Update the brand context with the saved profile
-    const savedProfile = { ...brandProfile, id: profileId };
-    selectBrand(savedProfile);
-    
+
+    try {
+      // Refresh brands from Firebase to get the latest data (including updated colors)
+      console.log('🔄 Refreshing brands from Firebase to get updated colors...');
+      await refreshBrands();
+
+      // Find the saved profile from the refreshed brands list
+      const updatedProfile = brands.find(brand => brand.id === profileId);
+      if (updatedProfile) {
+        console.log('✅ Found updated profile with fresh colors:', updatedProfile.businessName);
+        console.log('🎨 Updated colors:', {
+          primaryColor: updatedProfile.primaryColor,
+          accentColor: updatedProfile.accentColor,
+          backgroundColor: updatedProfile.backgroundColor
+        });
+        selectBrand(updatedProfile);
+      } else {
+        console.warn('⚠️ Could not find updated profile, using local data');
+        // Fallback to local data if refresh fails
+        const savedProfile = { ...brandProfile, id: profileId };
+        selectBrand(savedProfile);
+      }
+    } catch (error) {
+      console.error('❌ Failed to refresh brands after save:', error);
+      // Fallback to local data if refresh fails
+      const savedProfile = { ...brandProfile, id: profileId };
+      selectBrand(savedProfile);
+    }
+
     // Navigate to content calendar or dashboard
     router.push('/content-calendar');
   };
 
   const calculateProgress = () => {
     let progress = 0;
-    
+
     // Website Analysis (Step 1) - 20%
     if (brandProfile.websiteUrl || brandProfile.designExamples?.length > 0) {
       progress += 20;
     }
-    
+
     // Brand Details (Step 2) - 50%
     const requiredFields = [
       'businessName',
-      'businessType', 
+      'businessType',
       'location',
       'description',
       'services'
     ];
-    
+
     const completedFields = requiredFields.filter(field => {
       const value = brandProfile[field as keyof CompleteBrandProfile];
       return value && (
         typeof value === 'string' ? value.trim().length > 0 :
-        Array.isArray(value) ? value.length > 0 :
-        true
+          Array.isArray(value) ? value.length > 0 :
+            true
       );
     });
-    
+
     progress += Math.round((completedFields.length / requiredFields.length) * 50);
-    
+
     // Logo Upload (Step 3) - 30%
     if (brandProfile.logoDataUrl) {
       progress += 30;
     }
-    
+
     return Math.min(progress, 100);
   };
 
@@ -171,8 +195,8 @@ export function CbrandWizardFirebaseFirst({ mode, brandId }: CbrandWizardFirebas
           const value = brandProfile[field as keyof CompleteBrandProfile];
           return value && (
             typeof value === 'string' ? value.trim().length > 0 :
-            Array.isArray(value) ? value.length > 0 :
-            true
+              Array.isArray(value) ? value.length > 0 :
+                true
           );
         });
         return Math.round((completedFields.length / requiredFields.length) * 100);
@@ -226,7 +250,7 @@ export function CbrandWizardFirebaseFirst({ mode, brandId }: CbrandWizardFirebas
               {mode === 'create' ? 'Create New Brand Profile' : 'Brand Profile Setup'}
             </h1>
             <p className="text-gray-600">
-              {mode === 'create' 
+              {mode === 'create'
                 ? 'Create a new comprehensive brand profile with AI-powered analysis.'
                 : 'Create a comprehensive brand profile with AI-powered analysis, detailed information sections, and professional customization options.'
               }
@@ -254,7 +278,7 @@ export function CbrandWizardFirebaseFirst({ mode, brandId }: CbrandWizardFirebas
                   </div>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
+                  <div
                     className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${calculateProgress()}%` }}
                   ></div>
@@ -275,19 +299,17 @@ export function CbrandWizardFirebaseFirst({ mode, brandId }: CbrandWizardFirebas
                       <button
                         key={step}
                         onClick={() => setCurrentStep(step)}
-                        className={`flex items-center space-x-3 p-3 rounded-lg transition-colors ${
-                          currentStep === step
-                            ? 'bg-blue-50 border-2 border-blue-200'
-                            : 'hover:bg-gray-50'
-                        }`}
+                        className={`flex items-center space-x-3 p-3 rounded-lg transition-colors ${currentStep === step
+                          ? 'bg-blue-50 border-2 border-blue-200'
+                          : 'hover:bg-gray-50'
+                          }`}
                       >
-                        <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
-                          currentStep === step
-                            ? 'bg-blue-600 text-white'
-                            : getStepProgress(step) === 100
+                        <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${currentStep === step
+                          ? 'bg-blue-600 text-white'
+                          : getStepProgress(step) === 100
                             ? 'bg-green-500 text-white'
                             : 'bg-gray-200 text-gray-600'
-                        }`}>
+                          }`}>
                           {step}
                         </div>
                         <div className="text-left">
@@ -321,7 +343,7 @@ export function CbrandWizardFirebaseFirst({ mode, brandId }: CbrandWizardFirebas
                       <span className="text-sm text-gray-600">{calculateProgress()}% Complete</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
+                      <div
                         className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                         style={{ width: `${calculateProgress()}%` }}
                       ></div>
@@ -342,10 +364,9 @@ export function CbrandWizardFirebaseFirst({ mode, brandId }: CbrandWizardFirebas
                           <span className="text-sm text-gray-600">{getStepProgress(step)}%</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-1">
-                          <div 
-                            className={`h-1 rounded-full transition-all duration-300 ${
-                              getStepProgress(step) === 100 ? 'bg-green-500' : 'bg-blue-600'
-                            }`}
+                          <div
+                            className={`h-1 rounded-full transition-all duration-300 ${getStepProgress(step) === 100 ? 'bg-green-500' : 'bg-blue-600'
+                              }`}
                             style={{ width: `${getStepProgress(step)}%` }}
                           ></div>
                         </div>

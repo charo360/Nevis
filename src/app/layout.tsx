@@ -8,9 +8,9 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import { AuthWrapper } from '@/components/auth/auth-wrapper';
 import { UnifiedBrandProvider } from '@/contexts/unified-brand-context';
+import { BrandColorProvider } from '@/components/layout/brand-color-provider';
 import React, { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import type { BrandProfile } from '@/lib/types';
 
 // Import test function for development
 if (typeof window !== 'undefined') {
@@ -18,54 +18,7 @@ if (typeof window !== 'undefined') {
 }
 
 
-const BRAND_PROFILE_KEY = "brandProfile";
 
-function BrandThemeLoader({ children }: { children: React.ReactNode }) {
-  const [style, setStyle] = useState<React.CSSProperties>({});
-  const [profileLoaded, setProfileLoaded] = useState(false);
-
-  useEffect(() => {
-    const fetchProfileAndSetTheme = () => {
-      try {
-        const storedProfile = localStorage.getItem(BRAND_PROFILE_KEY);
-        if (storedProfile) {
-          const profile: BrandProfile = JSON.parse(storedProfile);
-          const newStyle: React.CSSProperties = {};
-          if (profile.primaryColor) {
-            newStyle['--primary-hsl'] = profile.primaryColor;
-          }
-          if (profile.accentColor) {
-            newStyle['--accent-hsl'] = profile.accentColor;
-          }
-          if (profile.backgroundColor) {
-            newStyle['--background-hsl'] = profile.backgroundColor;
-          }
-          setStyle(newStyle);
-        }
-      } catch (error) {
-        console.error("Failed to apply brand colors from localStorage", error);
-      } finally {
-        setProfileLoaded(true);
-      }
-    };
-
-    fetchProfileAndSetTheme();
-  }, []);
-
-  if (!profileLoaded) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <p>Loading Brand Profile...</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-1" style={style}>
-      {children}
-    </div>
-  )
-}
 
 function ConditionalLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -92,9 +45,9 @@ function ConditionalLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <BrandThemeLoader>
+      <BrandColorProvider>
         {children}
-      </BrandThemeLoader>
+      </BrandColorProvider>
     </SidebarProvider>
   );
 }

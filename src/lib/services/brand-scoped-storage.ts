@@ -49,10 +49,10 @@ export class BrandScopedStorage {
    */
   setItem(data: any): void {
     try {
-      // AGGRESSIVE APPROACH: Strip all image data before storage
-      const strippedData = this.stripImageData(data);
+      // SMART APPROACH: Only strip large image data, keep URLs
+      const optimizedData = this.optimizeImageData(data);
       const key = this.getStorageKey();
-      const serialized = JSON.stringify(strippedData);
+      const serialized = JSON.stringify(optimizedData);
 
       // Check storage stats before attempting to store
       const stats = this.getStorageStats();
@@ -65,9 +65,20 @@ export class BrandScopedStorage {
       this.aggressiveCleanup();
 
       if (dataSize > maxSize) {
-        console.warn(`⚠️ Data too large for ${this.feature} (${this.formatBytes(dataSize)}), using minimal data...`);
+        console.warn(`⚠️ Data too large for ${this.feature} (${this.formatBytes(dataSize)}), trying fallback approaches...`);
 
-        // Use minimal data instead of compression
+        // Try fallback 1: Use aggressive stripping (old method)
+        const strippedData = this.stripImageData(data);
+        const strippedSerialized = JSON.stringify(strippedData);
+        const strippedSize = new Blob([strippedSerialized]).size;
+
+        if (strippedSize <= maxSize) {
+          localStorage.setItem(key, strippedSerialized);
+          console.log(`💾 Saved stripped ${this.feature} data for brand ${this.brandId} (${this.formatBytes(strippedSize)})`);
+          return;
+        }
+
+        // Try fallback 2: Use minimal data
         const minimalData = this.extractMinimalData(strippedData);
         const minimalSerialized = JSON.stringify(minimalData);
         const minimalSize = new Blob([minimalSerialized]).size;
@@ -368,7 +379,69 @@ export class BrandScopedStorage {
   }
 
   /**
-   * Strip all image data to prevent storage quota issues
+   * Smart image data optimization - keep URLs but remove large data
+   */
+  private optimizeImageData(data: any): any {
+    if (!data) return data;
+
+    if (Array.isArray(data)) {
+      // Keep more items but optimize each one
+      return data.slice(0, 5).map(item => this.optimizeImageFromItem(item));
+    }
+
+    return this.optimizeImageFromItem(data);
+  }
+
+  /**
+   * Optimize image data in a single item - preserve all valid URLs, handle base64 smartly
+   */
+  private optimizeImageFromItem(item: any): any {
+    if (!item || typeof item !== 'object') return item;
+
+    const optimized = { ...item };
+
+    // Keep image URLs but handle base64 data smartly
+    Object.keys(optimized).forEach(key => {
+      const value = optimized[key];
+
+      if (typeof value === 'string') {
+        // Keep ALL valid URLs (HTTP, HTTPS, blob, data URLs under size limit)
+        if (value.startsWith('http://') || value.startsWith('https://')) {
+          // Keep HTTP/HTTPS URLs as-is
+          console.log(`📸 Preserving HTTP/HTTPS URL for ${key}: ${value.substring(0, 50)}...`);
+          return;
+        }
+
+        if (value.startsWith('blob:')) {
+          // Keep blob URLs but warn they might be temporary
+          console.log(`⚠️ Preserving blob URL for ${key} (may be temporary): ${value.substring(0, 50)}...`);
+          return;
+        }
+
+        if (value.startsWith('data:image/')) {
+          // For data URLs, keep smaller ones and convert large ones to placeholder
+          if (value.length <= 50000) { // Increased limit to 50KB for small images
+            console.log(`📸 Preserving small data URL for ${key} (${this.formatBytes(value.length)})`);
+            return;
+          } else {
+            // For large data URLs, create a more informative placeholder
+            console.log(`🗜️ Converting large data URL to placeholder for ${key} (${this.formatBytes(value.length)})`);
+            const mimeType = value.split(';')[0].split(':')[1] || 'image/png';
+            optimized[key] = `[Image data preserved but too large for storage - ${mimeType} - ${this.formatBytes(value.length)}]`;
+          }
+        }
+      } else if (Array.isArray(value)) {
+        optimized[key] = value.map(v => this.optimizeImageFromItem(v));
+      } else if (typeof value === 'object' && value !== null) {
+        optimized[key] = this.optimizeImageFromItem(value);
+      }
+    });
+
+    return optimized;
+  }
+
+  /**
+   * Strip all image data to prevent storage quota issues (fallback method)
    */
   private stripImageData(data: any): any {
     if (!data) return data;
