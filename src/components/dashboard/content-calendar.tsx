@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useGeneratedPosts } from "@/hooks/use-generated-posts";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import type { BrandProfile, GeneratedPost, Platform, BrandConsistencyPreferences } from "@/lib/types";
+
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";

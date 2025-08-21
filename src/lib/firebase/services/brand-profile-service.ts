@@ -55,6 +55,10 @@ export class BrandProfileService extends DatabaseService<BrandProfileDocument> {
       location: cleanObject(profile.location),
       website: cleanUrl(profile.websiteUrl || (profile as any).website),
       logoDataUrl: profile.logoDataUrl || '', // Added logo support
+      // Brand colors - essential for brand consistency
+      primaryColor: profile.primaryColor || '#3B82F6',
+      accentColor: profile.accentColor || '#10B981',
+      backgroundColor: profile.backgroundColor || '#F8FAFC',
       socialMedia: cleanObject({
         instagram: profile.socialMedia?.instagram || '',
         facebook: profile.socialMedia?.facebook || '',
@@ -126,9 +130,9 @@ export class BrandProfileService extends DatabaseService<BrandProfileDocument> {
       contentThemes: '', // Not stored in Firebase yet
 
       // Brand Colors
-      primaryColor: '#3B82F6', // Default values
-      accentColor: '#10B981',
-      backgroundColor: '#F8FAFC',
+      primaryColor: doc.primaryColor || '#3B82F6',
+      accentColor: doc.accentColor || '#10B981',
+      backgroundColor: doc.backgroundColor || '#F8FAFC',
 
       // Social Media
       facebookUrl: doc.socialMedia?.facebook || '',

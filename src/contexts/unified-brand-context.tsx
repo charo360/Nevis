@@ -154,12 +154,35 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
       currentProfile: currentProfile?.businessName || currentProfile?.name
     });
 
+    // Log color information for debugging
+    if (brand) {
+      console.log('🎨 Selecting brand with colors:', {
+        primaryColor: brand.primaryColor,
+        accentColor: brand.accentColor,
+        backgroundColor: brand.backgroundColor
+      });
+    }
+
     // Update both states immediately
     setCurrentBrand(brand);
     setCurrentProfile(brand);
 
     // Update all brand-scoped services
     updateAllBrandScopedServices(brand);
+
+    // Force update color persistence immediately
+    if (brand) {
+      const colorData = {
+        primaryColor: brand.primaryColor,
+        accentColor: brand.accentColor,
+        backgroundColor: brand.backgroundColor,
+        brandId: brand.id,
+        brandName: brand.businessName || brand.name,
+        updatedAt: new Date().toISOString()
+      };
+      localStorage.setItem('brandColors', JSON.stringify(colorData));
+      console.log('💾 Force updated color persistence:', colorData);
+    }
 
     // Trigger a custom event for other components to listen to
     const event = new CustomEvent('brandChanged', {
@@ -176,12 +199,29 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
 
   // localStorage restoration is now handled in the main sync effect above
 
-  // Save selected brand ID to localStorage for UX continuity
+  // Enhanced brand persistence - save both ID and full data
   useEffect(() => {
     if (currentBrand?.id) {
       localStorage.setItem('selectedBrandId', currentBrand.id);
+      // Also save the full brand data for immediate restoration
+      localStorage.setItem('currentBrandData', JSON.stringify({
+        id: currentBrand.id,
+        businessName: currentBrand.businessName,
+        name: currentBrand.name,
+        primaryColor: currentBrand.primaryColor,
+        accentColor: currentBrand.accentColor,
+        backgroundColor: currentBrand.backgroundColor,
+        logoDataUrl: currentBrand.logoDataUrl,
+        // Store essential data for immediate UI restoration
+        businessType: currentBrand.businessType,
+        location: currentBrand.location,
+        description: currentBrand.description
+      }));
+      console.log('💾 Saved brand data to localStorage for persistence:', currentBrand.businessName || currentBrand.name);
     } else {
       localStorage.removeItem('selectedBrandId');
+      localStorage.removeItem('currentBrandData');
+      console.log('🗑️ Cleared brand data from localStorage');
     }
   }, [currentBrand]);
 
