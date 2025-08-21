@@ -101,6 +101,14 @@ export type LocalContext = {
   events?: LocalEvent[];
 };
 
+// Post variant for different platforms
+export type PostVariant = {
+  platform: string;
+  imageUrl: string;
+  caption: string;
+  hashtags: string[];
+};
+
 export type GeneratedPost = {
   id: string;
   date: string;

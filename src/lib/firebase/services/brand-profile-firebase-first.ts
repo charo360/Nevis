@@ -1,16 +1,16 @@
 // Firebase-first brand profile service
 // This service uses Firebase as the single source of truth with localStorage as cache only
 
-import { 
-  collection, 
-  doc, 
-  setDoc, 
-  getDoc, 
-  getDocs, 
-  deleteDoc, 
-  query, 
-  where, 
-  orderBy, 
+import {
+  collection,
+  doc,
+  setDoc,
+  getDoc,
+  getDocs,
+  deleteDoc,
+  query,
+  where,
+  orderBy,
   onSnapshot,
   Timestamp,
   limit
@@ -32,13 +32,13 @@ function getCachedProfile(userId: string): CompleteBrandProfile | null {
   try {
     const cached = localStorage.getItem(`${CACHE_KEY_PREFIX}_${userId}`);
     if (!cached) return null;
-    
+
     const { data, timestamp }: CachedData = JSON.parse(cached);
     if (Date.now() - timestamp > CACHE_EXPIRY) {
       localStorage.removeItem(`${CACHE_KEY_PREFIX}_${userId}`);
       return null;
     }
-    
+
     console.log('📦 Using cached profile for user:', userId);
     return data;
   } catch (error) {
@@ -74,7 +74,7 @@ function cleanObject(obj: any): any {
   if (obj === null || obj === undefined) return '';
   if (typeof obj === 'string') return obj.trim();
   if (typeof obj !== 'object') return obj;
-  
+
   const cleaned: any = {};
   for (const [key, value] of Object.entries(obj)) {
     if (value !== undefined && value !== null && value !== '') {
@@ -89,7 +89,7 @@ function cleanUrl(url: string | undefined): string {
   if (!url) return '';
   const trimmed = url.trim();
   if (!trimmed) return '';
-  
+
   // Add https:// if no protocol is specified
   if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
     return `https://${trimmed}`;
@@ -101,7 +101,7 @@ function cleanUrl(url: string | undefined): string {
 export async function saveBrandProfileFirebaseFirst(profile: CompleteBrandProfile, userId: string): Promise<string> {
   try {
     console.log('🔄 Saving brand profile to Firebase (Firebase-first):', profile.businessName);
-    
+
     // Create the document data
     const data = {
       userId,
@@ -111,6 +111,10 @@ export async function saveBrandProfileFirebaseFirst(profile: CompleteBrandProfil
       location: cleanObject(profile.location),
       website: cleanUrl(profile.websiteUrl || (profile as any).website),
       logoDataUrl: profile.logoDataUrl || '', // Logo support - this is key!
+      // Brand colors - essential for brand consistency
+      primaryColor: profile.primaryColor || '#3B82F6',
+      accentColor: profile.accentColor || '#10B981',
+      backgroundColor: profile.backgroundColor || '#F8FAFC',
       socialMedia: cleanObject({
         instagram: profile.socialMedia?.instagram || '',
         facebook: profile.socialMedia?.facebook || '',
@@ -123,7 +127,7 @@ export async function saveBrandProfileFirebaseFirst(profile: CompleteBrandProfil
       visualStyle: profile.visualStyle || '',
       targetAudience: profile.targetAudience || '',
       brandVoice: profile.brandVoice || '',
-      
+
       // Services
       services: Array.isArray(profile.services) ? profile.services.map(service => ({
         name: service.name || '',
@@ -131,21 +135,21 @@ export async function saveBrandProfileFirebaseFirst(profile: CompleteBrandProfil
         price: service.price || '',
         category: service.category || ''
       })) : [],
-      
+
       // Contact information
       contactPhone: profile.contactPhone || '',
       contactEmail: profile.contactEmail || '',
       contactAddress: profile.contactAddress || '',
-      
+
       // Brand identity
       writingTone: profile.writingTone || '',
       contentThemes: profile.contentThemes || '',
       keyFeatures: profile.keyFeatures || '',
       competitiveAdvantages: profile.competitiveAdvantages || '',
-      
+
       // Design examples
       designExamples: Array.isArray(profile.designExamples) ? profile.designExamples : [],
-      
+
       // Metadata
       isComplete: true,
       version: profile.version || '1.0',
@@ -156,11 +160,11 @@ export async function saveBrandProfileFirebaseFirst(profile: CompleteBrandProfil
     // Use existing ID or generate new one
     const docId = profile.id || doc(collection(db, COLLECTION_NAME)).id;
     const docRef = doc(db, COLLECTION_NAME, docId);
-    
+
     // Save to Firebase first (primary storage)
     await setDoc(docRef, data, { merge: true });
     console.log('✅ Brand profile saved to Firebase successfully');
-    
+
     // Update the profile with the ID and timestamps
     const savedProfile: CompleteBrandProfile = {
       ...profile,
@@ -168,10 +172,10 @@ export async function saveBrandProfileFirebaseFirst(profile: CompleteBrandProfil
       createdAt: data.createdAt.toDate().toISOString(),
       updatedAt: data.updatedAt.toDate().toISOString(),
     };
-    
+
     // Cache the saved profile for performance
     setCachedProfile(userId, savedProfile);
-    
+
     return docId;
   } catch (error) {
     console.error('❌ Failed to save brand profile to Firebase:', error);
@@ -183,7 +187,7 @@ export async function saveBrandProfileFirebaseFirst(profile: CompleteBrandProfil
 export async function loadBrandProfileFirebaseFirst(userId: string): Promise<CompleteBrandProfile | null> {
   try {
     console.log('🔄 Loading brand profile from Firebase (Firebase-first) for user:', userId);
-    
+
     // Try to get from cache first for performance
     const cached = getCachedProfile(userId);
     if (cached) {
@@ -191,19 +195,19 @@ export async function loadBrandProfileFirebaseFirst(userId: string): Promise<Com
       loadFromFirebaseInBackground(userId);
       return cached;
     }
-    
+
     // Load from Firebase (primary storage)
     return await loadFromFirebase(userId);
   } catch (error) {
     console.error('❌ Failed to load from Firebase, trying cache:', error);
-    
+
     // Fallback to cache if Firebase fails
     const cached = getCachedProfile(userId);
     if (cached) {
       console.log('📦 Using cached profile as fallback');
       return cached;
     }
-    
+
     console.error('❌ No cached profile available');
     return null;
   }
@@ -226,12 +230,12 @@ async function loadFromFirebase(userId: string): Promise<CompleteBrandProfile | 
 
   const doc = querySnapshot.docs[0];
   const data = doc.data();
-  
+
   const profile = convertFirebaseToProfile(doc.id, data);
-  
+
   // Cache the loaded profile
   setCachedProfile(userId, profile);
-  
+
   console.log('✅ Brand profile loaded from Firebase:', profile.businessName);
   return profile;
 }
@@ -256,10 +260,15 @@ function convertFirebaseToProfile(id: string, data: any): CompleteBrandProfile {
     location: data.location || '',
     websiteUrl: data.website || '',
     logoDataUrl: data.logoDataUrl || '', // Important: preserve logo data
-    
+
     // Social media
     socialMedia: data.socialMedia || {},
-    
+
+    // Brand colors - individual color properties for brand consistency
+    primaryColor: data.primaryColor || '#3B82F6',
+    accentColor: data.accentColor || '#10B981',
+    backgroundColor: data.backgroundColor || '#F8FAFC',
+
     // Brand identity
     brandColors: data.brandColors || [],
     brandFonts: data.brandFonts || [],
@@ -270,18 +279,18 @@ function convertFirebaseToProfile(id: string, data: any): CompleteBrandProfile {
     contentThemes: data.contentThemes || '',
     keyFeatures: data.keyFeatures || '',
     competitiveAdvantages: data.competitiveAdvantages || '',
-    
+
     // Services
     services: data.services || [],
-    
+
     // Contact information
     contactPhone: data.contactPhone || '',
     contactEmail: data.contactEmail || '',
     contactAddress: data.contactAddress || '',
-    
+
     // Design examples
     designExamples: data.designExamples || [],
-    
+
     // Metadata
     isComplete: data.isComplete || false,
     version: data.version || '1.0',
@@ -294,7 +303,7 @@ function convertFirebaseToProfile(id: string, data: any): CompleteBrandProfile {
 export async function getUserBrandProfilesFirebaseFirst(userId: string): Promise<CompleteBrandProfile[]> {
   try {
     console.log('🔄 Loading all brand profiles from Firebase for user:', userId);
-    
+
     const q = query(
       collection(db, COLLECTION_NAME),
       where('userId', '==', userId),
@@ -302,10 +311,10 @@ export async function getUserBrandProfilesFirebaseFirst(userId: string): Promise
     );
 
     const querySnapshot = await getDocs(q);
-    const profiles = querySnapshot.docs.map(doc => 
+    const profiles = querySnapshot.docs.map(doc =>
       convertFirebaseToProfile(doc.id, doc.data())
     );
-    
+
     console.log(`✅ Loaded ${profiles.length} brand profiles from Firebase`);
     return profiles;
   } catch (error) {
@@ -318,13 +327,13 @@ export async function getUserBrandProfilesFirebaseFirst(userId: string): Promise
 export async function deleteBrandProfileFirebaseFirst(profileId: string, userId: string): Promise<void> {
   try {
     console.log('🗑️ Deleting brand profile from Firebase:', profileId);
-    
+
     // Delete from Firebase
     await deleteDoc(doc(db, COLLECTION_NAME, profileId));
-    
+
     // Clear cache
     clearCachedProfile(userId);
-    
+
     console.log('✅ Brand profile deleted successfully');
   } catch (error) {
     console.error('❌ Failed to delete brand profile:', error);

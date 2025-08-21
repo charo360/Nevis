@@ -481,13 +481,25 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
                           </div>
                         </div>
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-muted">
+                        <div className="flex h-full w-full items-center justify-center bg-muted flex-col gap-2">
                           <ImageOff className="h-12 w-12 text-muted-foreground" />
                           {variant?.imageUrl && !isValidUrl(variant.imageUrl) && (
                             <div className="absolute bottom-2 left-2 right-2">
-                              <p className="text-xs text-red-500 bg-white/90 p-1 rounded">
-                                Invalid image URL
-                              </p>
+                              <div className="text-xs text-red-500 bg-white/90 p-2 rounded">
+                                {variant.imageUrl.includes('[') && variant.imageUrl.includes(']') ? (
+                                  <div>
+                                    <p className="font-medium">Image temporarily unavailable</p>
+                                    <p className="text-gray-600 mt-1">
+                                      {variant.imageUrl.includes('Large image data removed')
+                                        ? 'Image was too large for storage. Try regenerating.'
+                                        : 'Image data was optimized for storage.'
+                                      }
+                                    </p>
+                                  </div>
+                                ) : (
+                                  <p>Invalid image URL</p>
+                                )}
+                              </div>
                             </div>
                           )}
                         </div>
