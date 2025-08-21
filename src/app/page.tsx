@@ -20,12 +20,18 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useFirebaseAuth } from '@/hooks/use-firebase-auth';
+import { useToast } from '@/hooks/use-toast';
+import { loadStripe } from '@stripe/stripe-js';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
 export default function HomePage() {
   const router = useRouter();
   const [isVisible, setIsVisible] = useState(false);
+  const { user } = useFirebaseAuth();
+  const { toast } = useToast();
+  const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
 
   useEffect(() => {
     setIsVisible(true);
@@ -37,6 +43,36 @@ export default function HomePage() {
       router.push('/auth');
     } catch (error) {
       console.error('Navigation error:', error);
+    }
+  };
+
+  const createCheckout = async (priceId: string) => {
+    if (!user || !user.uid) {
+      router.push('/auth');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priceId, quantity: 1, mode: 'payment', customerEmail: user.email, metadata: { userId: user.uid, priceId } })
+      });
+
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      const stripe = await stripePromise;
+      if (!stripe) throw new Error('Stripe failed to load');
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else if (data.id) {
+        await stripe.redirectToCheckout({ sessionId: data.id });
+      }
+    } catch (err: any) {
+      console.error('Checkout error', err);
+      toast({ variant: 'destructive', title: 'Checkout failed', description: String(err.message || err) });
     }
   };
 
@@ -555,7 +591,7 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={handleGetStarted}
+                  onClick={() => createCheckout('price_1RxYHyFptxIKIuiwekVOOCf3')}
                   className="w-full"
                   variant="outline"
                 >
@@ -609,7 +645,7 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={handleGetStarted}
+                  onClick={() => createCheckout('price_1RxYIwFptxIKIuiwMVPibdo5')}
                   className="w-full"
                 >
                   Buy Credits
@@ -658,7 +694,7 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={handleGetStarted}
+                  onClick={() => createCheckout('price_1RxYJzFptxIKIuiwqcRemLE8')}
                   className="w-full"
                   variant="outline"
                 >
@@ -708,7 +744,7 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={handleGetStarted}
+                  onClick={() => createCheckout('price_1RxYKfFptxIKIuiwCql1Wj0u')}
                   className="w-full"
                   variant="outline"
                 >

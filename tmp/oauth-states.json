@@ -1,0 +1,171 @@
+{
+  "a991fd84bbb615eac25395f3": {
+    "createdAt": 1755200915683
+  },
+  "4a1b498705cc7518cac953b6": {
+    "createdAt": 1755200919113
+  },
+  "4cf99beb1c41f6b0bad2cc0c": {
+    "createdAt": 1755202551839,
+    "error": "request-token-failed",
+    "resp": "<?xml version='1.0' encoding='UTF-8'?><errors><error code=\"417\">Desktop applications only support the oauth_callback value 'oob'</error></errors>"
+  },
+  "409237c78238b0ac79346268": {
+    "createdAt": 1755202851422,
+    "error": "request-token-failed",
+    "resp": "<?xml version='1.0' encoding='UTF-8'?><errors><error code=\"417\">Desktop applications only support the oauth_callback value 'oob'</error></errors>"
+  },
+  "f224e5b6f1a9c9ac3af5b2a6": {
+    "demoUser": "demo-user",
+    "createdAt": 1755202862569
+  },
+  "ad1ebb4f3892e74a0e876b4d": {
+    "demoUser": "demo-user",
+    "createdAt": 1755202909778
+  },
+  "cb08248fa2f1a8742d733521": {
+    "createdAt": 1755280422350,
+    "error": "request-token-failed",
+    "resp": "<?xml version='1.0' encoding='UTF-8'?><errors><error code=\"417\">Desktop applications only support the oauth_callback value 'oob'</error></errors>"
+  },
+  "7a2e4632f588f45c83fb21a7": {
+    "createdAt": 1755281718121,
+    "error": "request-token-failed",
+    "resp": "<?xml version='1.0' encoding='UTF-8'?><errors><error code=\"417\">Desktop applications only support the oauth_callback value 'oob'</error></errors>"
+  },
+  "7480436c1c676d3e698ac777": {
+    "createdAt": 1755282048138,
+    "error": "request-token-failed",
+    "resp": "<?xml version='1.0' encoding='UTF-8'?><errors><error code=\"417\">Desktop applications only support the oauth_callback value 'oob'</error></errors>"
+  },
+  "245f2aeeb110f156a0c0e236": {
+    "createdAt": 1755285000881,
+    "error": "request-token-failed",
+    "resp": "<?xml version='1.0' encoding='UTF-8'?><errors><error code=\"417\">Desktop applications only support the oauth_callback value 'oob'</error></errors>"
+  },
+  "d7c57b1bdbf41d3d4423bad0": {
+    "createdAt": 1755285455026,
+    "error": "request-token-failed",
+    "resp": "<?xml version='1.0' encoding='UTF-8'?><errors><error code=\"417\">Desktop applications only support the oauth_callback value 'oob'</error></errors>"
+  },
+  "d4fba1fdfdb4d792f88ddbaa": {
+    "createdAt": 1755285553407,
+    "error": "request-token-failed",
+    "resp": "<?xml version='1.0' encoding='UTF-8'?><errors><error code=\"417\">Desktop applications only support the oauth_callback value 'oob'</error></errors>"
+  },
+  "09ca766d0cdf291370b49ee5": {
+    "createdAt": 1755290567906,
+    "error": "request-token-failed",
+    "resp": "<?xml version='1.0' encoding='UTF-8'?><errors><error code=\"415\">Callback URL not approved for this client application. Approved callback URLs can be adjusted in your application settings</error></errors>"
+  },
+  "91b76e76134548fafb073a54": {
+    "createdAt": 1755290709910,
+    "error": "request-token-failed",
+    "resp": "<?xml version='1.0' encoding='UTF-8'?><errors><error code=\"415\">Callback URL not approved for this client application. Approved callback URLs can be adjusted in your application settings</error></errors>"
+  },
+  "fd7ef69b92050f0b9dc8720e": {
+    "createdAt": 1755336482190,
+    "error": "request-token-failed",
+    "resp": "<?xml version='1.0' encoding='UTF-8'?><errors><error code=\"415\">Callback URL not approved for this client application. Approved callback URLs can be adjusted in your application settings</error></errors>"
+  },
+  "106d7e2612f8ee22ad77b47e": {
+    "createdAt": 1755337869200,
+    "error": "request-token-failed",
+    "resp": "<?xml version='1.0' encoding='UTF-8'?><errors><error code=\"415\">Callback URL not approved for this client application. Approved callback URLs can be adjusted in your application settings</error></errors>"
+  },
+  "f0eabb9021880179d089d1ab": {
+    "createdAt": 1755338008619,
+    "error": "request-token-failed",
+    "resp": "<?xml version='1.0' encoding='UTF-8'?><errors><error code=\"415\">Callback URL not approved for this client application. Approved callback URLs can be adjusted in your application settings</error></errors>"
+  },
+  "bfa6167cb2065f455544de8e": {
+    "createdAt": 1755339543731,
+    "requestTokenSecret": "RVtpTuo9AqMdbajCX3kTBJZ5ZgT507q6",
+    "demoUser": "demo-user"
+  },
+  "9a7acf0e860b84df8792f741": {
+    "createdAt": 1755339626813,
+    "requestTokenSecret": "3r1uCfA53GFCKvRRDlruT6dzPbIumR7u",
+    "demoUser": "xuSu10IBgrc4V9yNkoPJL8zC5TI3"
+  },
+  "d3107299c77227d2965aa81a": {
+    "demoUser": "xuSu10IBgrc4V9yNkoPJL8zC5TI3",
+    "createdAt": 1755339905840
+  },
+  "b9ae65ce6a4adc42ea15c226": {
+    "demoUser": "xuSu10IBgrc4V9yNkoPJL8zC5TI3",
+    "createdAt": 1755340278784
+  },
+  "99ae333179be4ad0d8878ad8": {
+    "demoUser": "xuSu10IBgrc4V9yNkoPJL8zC5TI3",
+    "createdAt": 1755341326965
+  },
+  "606471e16b3ccfdb6ffe4da3": {
+    "demoUser": "xuSu10IBgrc4V9yNkoPJL8zC5TI3",
+    "createdAt": 1755341729475
+  },
+  "988eaf984307dd38c34e250c": {
+    "demoUser": "demo-user",
+    "createdAt": 1755341755526
+  },
+  "d1bb89036460dd83e36fd724": {
+    "demoUser": "xuSu10IBgrc4V9yNkoPJL8zC5TI3",
+    "createdAt": 1755356884505
+  },
+  "72b27878c4869a3252db3423": {
+    "demoUser": "TDv3QDEp7mNT8wzOh9OH1357ARG3",
+    "createdAt": 1755357019610
+  },
+  "a82ae233611d4a3d414f6b30": {
+    "demoUser": "TDv3QDEp7mNT8wzOh9OH1357ARG3",
+    "createdAt": 1755357404536
+  },
+  "4c58cd2960b43ab0b78f953c": {
+    "demoUser": "TDv3QDEp7mNT8wzOh9OH1357ARG3",
+    "createdAt": 1755362865391
+  },
+  "5ffadcbe76dc9b534c83e17b": {
+    "demoUser": "U3FHZNsvEwO0NqrLKIzO6PcuCPj2",
+    "createdAt": 1755363068512
+  },
+  "358239a5d115d4e27fba1216": {
+    "demoUser": "TDv3QDEp7mNT8wzOh9OH1357ARG3",
+    "createdAt": 1755363667944
+  },
+  "50c18095a0f88701778b553e": {
+    "demoUser": "TDv3QDEp7mNT8wzOh9OH1357ARG3",
+    "createdAt": 1755363669609
+  },
+  "1eab39cdae3c5a0e68331fae": {
+    "demoUser": "TDv3QDEp7mNT8wzOh9OH1357ARG3",
+    "createdAt": 1755363682586
+  },
+  "02cf531b059b4714e6000de4": {
+    "demoUser": "TDv3QDEp7mNT8wzOh9OH1357ARG3",
+    "createdAt": 1755364259808
+  },
+  "be14d5dbe096ab87902c343b": {
+    "demoUser": "TDv3QDEp7mNT8wzOh9OH1357ARG3",
+    "createdAt": 1755364695173
+  },
+  "6f8f2ada5525a519c715cc0e": {
+    "demoUser": "TDv3QDEp7mNT8wzOh9OH1357ARG3",
+    "createdAt": 1755364823223
+  },
+  "399d9e20853acc8b4402ee95": {
+    "demoUser": "TDv3QDEp7mNT8wzOh9OH1357ARG3",
+    "createdAt": 1755365052803
+  },
+  "743f6ef9802df4775b3e739d": {
+    "demoUser": "c0C4O126lAOAffoybxmwiZ1y6nI3",
+    "createdAt": 1755365142608
+  },
+  "4a3566f118e7c80453856b40": {
+    "demoUser": "xuSu10IBgrc4V9yNkoPJL8zC5TI3",
+    "createdAt": 1755367398235
+  },
+  "21ac649d79e9ec620168175d": {
+    "demoUser": "xuSu10IBgrc4V9yNkoPJL8zC5TI3",
+    "createdAt": 1755367759606
+  }
+}

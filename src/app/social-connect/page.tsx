@@ -34,9 +34,10 @@ interface SocialConnection {
   status: 'connected' | 'disconnected' | 'error';
 }
 
-
 function SocialConnectPage() {
   const { currentBrand, loading: brandLoading } = useUnifiedBrand();
+  // Prefer businessName; fall back safely if older shape includes `name`.
+  const brandLabel = currentBrand?.businessName ?? (currentBrand as unknown as { name?: string })?.name ?? 'Unnamed Brand';
   const socialStorage = useBrandStorage(STORAGE_FEATURES.SOCIAL_MEDIA);
   const [connections, setConnections] = useState<SocialConnection[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -51,7 +52,7 @@ function SocialConnectPage() {
 
   // Load connections when brand changes using unified brand system
   useBrandChangeListener(React.useCallback((brand) => {
-    const brandName = brand?.businessName || brand?.name || 'none';
+    const brandName = brand?.businessName ?? (brand as unknown as { name?: string })?.name ?? 'none';
     console.log('🔄 Social Connect: brand changed to:', brandName);
 
     if (!brand) {
@@ -87,23 +88,25 @@ function SocialConnectPage() {
     try {
       socialStorage.setItem(newConnections);
       setConnections(newConnections);
-      console.log(`💾 Saved social connections for brand ${currentBrand?.businessName || currentBrand?.name}`);
+      console.log(`💾 Saved social connections for brand ${brandLabel}`);
     } catch (error) {
       console.error('Failed to save social connections:', error);
     }
   };
 
   const toggleConnection = (platform: string) => {
-    const updatedConnections = connections.map(conn =>
+    const updatedConnections = connections.map<SocialConnection>(conn =>
       conn.platform === platform
         ? {
           ...conn,
           connected: !conn.connected,
-          status: !conn.connected ? 'connected' : 'disconnected',
+          // keep literal union types for `status`
+          status: !conn.connected ? ('connected' as const) : ('disconnected' as const),
           lastSync: !conn.connected ? new Date().toISOString() : undefined
         }
         : conn
     );
+
     saveConnections(updatedConnections);
   };
 
@@ -185,7 +188,7 @@ function SocialConnectPage() {
               </Badge>
             </div>
             <p className="text-muted-foreground">
-              Connect social media accounts for <strong>{currentBrand.businessName || currentBrand.name}</strong> to allow the AI to learn your brand's unique
+              Connect social media accounts for <strong>{brandLabel}</strong> to allow the AI to learn your brand's unique
               voice and visual style from your past posts.
             </p>
           </div>
@@ -193,7 +196,7 @@ function SocialConnectPage() {
             <CardHeader>
               <CardTitle>Platform Connections</CardTitle>
               <CardDescription>
-                Manage your connected social media accounts for {currentBrand.businessName || currentBrand.name}.
+                Manage your connected social media accounts for {brandLabel}.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

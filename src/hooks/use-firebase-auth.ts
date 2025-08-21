@@ -34,7 +34,7 @@ export function useFirebaseAuth() {
   });
 
   useEffect(() => {
-    // If Firebase auth is not available, create a mock user
+    // If Firebase auth is not available, create a mock user for demo mode
     if (!auth) {
       console.log('🔄 Using demo mode - no Firebase auth');
       const mockUser: AuthUser = {
@@ -45,18 +45,17 @@ export function useFirebaseAuth() {
         isAnonymous: true,
       };
 
-      setAuthState({
-        user: mockUser,
-        loading: false,
-        error: null,
-      });
+      setAuthState({ user: mockUser, loading: false, error: null });
       return;
     }
 
+    let mounted = true;
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (!mounted) return;
+
       if (firebaseUser) {
-        console.log('🔐 User authenticated:', firebaseUser.uid, firebaseUser.isAnonymous ? '(anonymous)' : '(registered)');
-        const user: AuthUser = {
+        const userObj: AuthUser = {
           uid: firebaseUser.uid,
           email: firebaseUser.email,
           displayName: firebaseUser.displayName,
@@ -64,7 +63,7 @@ export function useFirebaseAuth() {
           isAnonymous: firebaseUser.isAnonymous,
         };
 
-        // Create or update user document in Firestore
+        // Ensure user document exists (best-effort)
         try {
           const existingUser = await userService.getById(firebaseUser.uid);
           if (!existingUser) {
@@ -73,56 +72,50 @@ export function useFirebaseAuth() {
               email: firebaseUser.email || '',
               displayName: firebaseUser.displayName || '',
               photoURL: firebaseUser.photoURL || '',
-              preferences: {
-                theme: 'system',
-                notifications: true,
-                autoSave: true,
-              },
-              subscription: {
-                plan: 'free',
-                status: 'active',
-              },
+              preferences: { theme: 'system', notifications: true, autoSave: true },
+              subscription: { plan: 'free', status: 'active' },
             });
           }
-        } catch (error) {
-          console.error('Failed to create/update user document:', error);
+        } catch (err) {
+          console.error('Failed to create/update user document:', err);
         }
 
-        setAuthState({
-          user,
-          loading: false,
-          error: null,
-        });
+        setAuthState({ user: userObj, loading: false, error: null });
       } else {
-        console.log('🔐 No user authenticated, signing in anonymously...');
-        // Automatically sign in anonymously if no user is authenticated
+        // No user signed in: attempt anonymous sign-in and set user
         try {
-          await signInAnonymously(auth);
-        } catch (error) {
-          console.error('Failed to sign in anonymously:', error);
-          setAuthState({
-            user: null,
-            loading: false,
-            error: null,
-          });
+          const credential = await signInAnonymously(auth);
+          if (!mounted) return;
+          const anonUser = credential.user;
+          const anon: AuthUser = {
+            uid: anonUser.uid,
+            email: anonUser.email,
+            displayName: anonUser.displayName,
+            photoURL: anonUser.photoURL,
+            isAnonymous: anonUser.isAnonymous,
+          };
+          setAuthState({ user: anon, loading: false, error: null });
+        } catch (err) {
+          console.error('Failed to sign in anonymously:', err);
+          if (!mounted) return;
+          setAuthState({ user: null, loading: false, error: err instanceof Error ? err.message : String(err) });
         }
       }
     });
 
-    return unsubscribe;
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
   }, []);
 
-  // Sign in anonymously (for demo/trial users)
+  // Sign in anonymously (for demo/trial users) - wrapper
   const signInAnonymous = async (): Promise<void> => {
     try {
-      setAuthState(prev => ({ ...prev, loading: true, error: null }));
+      setAuthState((prev) => ({ ...prev, loading: true, error: null }));
       await signInAnonymously(auth);
     } catch (error) {
-      setAuthState(prev => ({
-        ...prev,
-        loading: false,
-        error: error instanceof Error ? error.message : 'Failed to sign in',
-      }));
+      setAuthState((prev) => ({ ...prev, loading: false, error: error instanceof Error ? error.message : 'Failed to sign in' }));
       throw error;
     }
   };
