@@ -68,6 +68,42 @@ function QuickContentPage() {
   const { toast } = useToast();
   const { open: sidebarOpen, toggleSidebar } = useSidebar();
 
+  // Inline brand restoration function
+  const forceBrandRestore = React.useCallback(() => {
+    try {
+      // Try to restore from full brand data first
+      const savedBrandData = localStorage.getItem('currentBrandData');
+      if (savedBrandData) {
+        const parsedData = JSON.parse(savedBrandData);
+        console.log('🔄 Attempting to restore brand from full data:', parsedData.businessName || parsedData.name);
+
+        // Find matching brand in current brands list
+        const matchingBrand = brands.find(b => b.id === parsedData.id);
+        if (matchingBrand) {
+          console.log('✅ Found matching brand in brands list, using fresh data');
+          selectBrand(matchingBrand);
+          return true;
+        }
+      }
+
+      // Fallback to brand ID restoration
+      const savedBrandId = localStorage.getItem('selectedBrandId');
+      if (savedBrandId && brands.length > 0) {
+        const savedBrand = brands.find(b => b.id === savedBrandId);
+        if (savedBrand) {
+          console.log('🔄 Restored brand from ID:', savedBrand.businessName || savedBrand.name);
+          selectBrand(savedBrand);
+          return true;
+        }
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Failed to restore brand from storage:', error);
+      return false;
+    }
+  }, [brands, selectBrand]);
+
   // Load posts when brand changes using unified brand system
   useBrandChangeListener(React.useCallback((brand) => {
     const brandName = brand?.businessName || brand?.name || 'none';
@@ -114,9 +150,9 @@ function QuickContentPage() {
     }
   }, [postsStorage, toast]));
 
-  // Handle brand selection logic - ensure a brand is always selected
+  // Enhanced brand selection logic with persistence recovery
   useEffect(() => {
-    console.log('🔍 Brand selection check:', {
+    console.log('🔍 Enhanced brand selection check:', {
       brandLoading,
       brandsCount: brands.length,
       currentBrand: currentBrand?.businessName || currentBrand?.name || 'null',
@@ -131,20 +167,102 @@ function QuickContentPage() {
           console.log('🔄 Quick Content: No brands found, redirecting to brand setup');
           router.push('/brand-profile');
         } else if (brands.length > 0 && !currentBrand) {
-          // If we have brands but no current brand selected, auto-select the first one
-          console.log('🎯 Auto-selecting first available brand:', brands[0].businessName || brands[0].name);
-          selectBrand(brands[0]);
+          // Try to restore from persistence first
+          console.log('🔧 Attempting brand restoration from persistence...');
+          const restored = forceBrandRestore();
+
+          if (!restored) {
+            // If restoration failed, auto-select the first brand
+            console.log('🎯 Auto-selecting first available brand:', brands[0].businessName || brands[0].name);
+            selectBrand(brands[0]);
+          }
         }
       }, 1000); // 1 second delay
 
       return () => clearTimeout(timer);
     }
-  }, [currentBrand, brands.length, brandLoading, router, selectBrand]);
+  }, [currentBrand, brands.length, brandLoading, router, selectBrand, forceBrandRestore]);
 
 
-  const handlePostGenerated = (post: GeneratedPost) => {
-    // Add the new post and slice the array to only keep the most recent ones
-    const newPosts = [post, ...generatedPosts].slice(0, MAX_POSTS_TO_STORE);
+  // Inline image persistence function
+  const persistImageUrl = async (url: string): Promise<string> => {
+    try {
+      // If it's already a data URL and not too large, keep it
+      if (url.startsWith('data:')) {
+        const sizeInBytes = Math.round((url.length * 3) / 4);
+        if (sizeInBytes <= 500 * 1024) { // 500KB limit
+          console.log('📸 Keeping small data URL as-is');
+          return url;
+        }
+      }
+
+      // If it's a blob URL or HTTP URL, try to fetch and convert
+      if (url.startsWith('blob:') || url.startsWith('http')) {
+        console.log('🔄 Converting URL to persistent data URL:', url.substring(0, 50) + '...');
+
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const blob = await response.blob();
+
+        // If blob is too large, skip persistence
+        if (blob.size > 1024 * 1024) { // 1MB limit
+          console.warn('⚠️ Image too large, keeping original URL');
+          return url;
+        }
+
+        // Convert to data URL
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => reject(new Error('Failed to read blob'));
+          reader.readAsDataURL(blob);
+        });
+      }
+
+      // Return original URL if we can't process it
+      return url;
+    } catch (error) {
+      console.warn('⚠️ Failed to persist image URL:', error);
+      return url; // Return original URL on failure
+    }
+  };
+
+  const handlePostGenerated = async (post: GeneratedPost) => {
+    console.log('📝 Processing generated post...');
+
+    // Simple approach: try to persist images but don't block if it fails
+    let processedPost = { ...post };
+
+    try {
+      // Persist main image URL if exists
+      if (post.imageUrl) {
+        const persistedUrl = await persistImageUrl(post.imageUrl);
+        processedPost.imageUrl = persistedUrl;
+      }
+
+      // Persist variant image URLs
+      if (post.variants && post.variants.length > 0) {
+        const persistedVariants = await Promise.all(
+          post.variants.map(async (variant) => {
+            if (variant.imageUrl) {
+              const persistedUrl = await persistImageUrl(variant.imageUrl);
+              return { ...variant, imageUrl: persistedUrl };
+            }
+            return variant;
+          })
+        );
+        processedPost.variants = persistedVariants;
+      }
+
+      console.log('✅ Image persistence completed');
+    } catch (error) {
+      console.warn('⚠️ Image persistence failed, using original post:', error);
+      processedPost = post; // Use original post if persistence fails
+    }
+
+    // Add the processed post and slice the array to only keep the most recent ones
+    const newPosts = [processedPost, ...generatedPosts].slice(0, MAX_POSTS_TO_STORE);
     setGeneratedPosts(newPosts);
 
     if (!postsStorage) {

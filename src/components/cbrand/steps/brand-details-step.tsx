@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useUnifiedBrand } from '@/contexts/unified-brand-context';
 import {
   Building2,
   Users,
@@ -35,9 +36,38 @@ export function BrandDetailsStep({
   onPrevious
 }: BrandDetailsStepProps) {
   const [activeTab, setActiveTab] = useState('basic');
+  const { currentBrand, updateProfile, selectBrand } = useUnifiedBrand();
 
-  const handleInputChange = (field: keyof CompleteBrandProfile, value: string) => {
+  const handleInputChange = async (field: keyof CompleteBrandProfile, value: string) => {
+    console.log('🔧 handleInputChange called:', { field, value });
+    console.log('🔧 updateBrandProfile function:', typeof updateBrandProfile, updateBrandProfile);
+
+    // Update local state immediately
     updateBrandProfile({ [field]: value });
+
+    // If this is a color update and we have a current brand with an ID, save to Firebase immediately
+    const isColorUpdate = field === 'primaryColor' || field === 'accentColor' || field === 'backgroundColor';
+    if (isColorUpdate && currentBrand?.id) {
+      try {
+        console.log('🎨 Color update detected in BrandDetailsStep, saving to Firebase:', {
+          brandId: currentBrand.id,
+          field,
+          value
+        });
+
+        // Save color changes to Firebase immediately
+        await updateProfile(currentBrand.id, { [field]: value });
+
+        // Update the current brand in the unified context with new colors
+        const updatedBrand = { ...currentBrand, [field]: value };
+        selectBrand(updatedBrand);
+
+        console.log('✅ Color changes saved to Firebase and context updated from BrandDetailsStep');
+      } catch (error) {
+        console.error('❌ Failed to save color changes to Firebase from BrandDetailsStep:', error);
+        // Don't throw error to avoid disrupting user experience
+      }
+    }
   };
 
   const addService = () => {
@@ -102,7 +132,7 @@ export function BrandDetailsStep({
                   <Label htmlFor="businessName">Business Name *</Label>
                   <Input
                     id="businessName"
-                    value={brandProfile.businessName}
+                    value={brandProfile.businessName || ''}
                     onChange={(e) => handleInputChange('businessName', e.target.value)}
                     placeholder="e.g., ABC Development Company, Metro Properties, The Corner Cafe"
                     className="mt-1"
@@ -115,7 +145,7 @@ export function BrandDetailsStep({
                   <Label htmlFor="businessType">Business Type *</Label>
                   <Input
                     id="businessType"
-                    value={brandProfile.businessType}
+                    value={brandProfile.businessType || ''}
                     onChange={(e) => handleInputChange('businessType', e.target.value)}
                     placeholder="e.g., Real Estate Development, Restaurant, Tech Startup"
                     className="mt-1"
@@ -130,7 +160,7 @@ export function BrandDetailsStep({
                 <Label htmlFor="location">Location *</Label>
                 <Input
                   id="location"
-                  value={brandProfile.location}
+                  value={brandProfile.location || ''}
                   onChange={(e) => handleInputChange('location', e.target.value)}
                   placeholder="City, State/Country"
                   className="mt-1"
@@ -141,7 +171,7 @@ export function BrandDetailsStep({
                 <Label htmlFor="description">Business Description *</Label>
                 <Textarea
                   id="description"
-                  value={brandProfile.description}
+                  value={brandProfile.description || ''}
                   onChange={(e) => handleInputChange('description', e.target.value)}
                   placeholder="Describe what your business does, your mission, and what makes you unique..."
                   rows={4}
@@ -186,12 +216,12 @@ export function BrandDetailsStep({
                         <div className="flex items-center gap-3">
                           <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
                             <Input
-                              value={service.name}
+                              value={service.name || ''}
                               onChange={(e) => updateService(index, 'name', e.target.value)}
                               placeholder="e.g., Web Design, Consulting"
                             />
                             <Input
-                              value={service.description}
+                              value={service.description || ''}
                               onChange={(e) => updateService(index, 'description', e.target.value)}
                               placeholder="Brief description..."
                             />
@@ -231,7 +261,7 @@ export function BrandDetailsStep({
                 <Label htmlFor="targetAudience">Target Audience</Label>
                 <Textarea
                   id="targetAudience"
-                  value={brandProfile.targetAudience}
+                  value={brandProfile.targetAudience || ''}
                   onChange={(e) => handleInputChange('targetAudience', e.target.value)}
                   placeholder="Describe your ideal customers, their demographics, interests, and needs..."
                   rows={3}
@@ -243,7 +273,7 @@ export function BrandDetailsStep({
                 <Label htmlFor="keyFeatures">Key Features</Label>
                 <Textarea
                   id="keyFeatures"
-                  value={brandProfile.keyFeatures}
+                  value={brandProfile.keyFeatures || ''}
                   onChange={(e) => handleInputChange('keyFeatures', e.target.value)}
                   placeholder="What are the standout features of your products/services?"
                   rows={3}
@@ -255,7 +285,7 @@ export function BrandDetailsStep({
                 <Label htmlFor="competitiveAdvantages">Competitive Advantages</Label>
                 <Textarea
                   id="competitiveAdvantages"
-                  value={brandProfile.competitiveAdvantages}
+                  value={brandProfile.competitiveAdvantages || ''}
                   onChange={(e) => handleInputChange('competitiveAdvantages', e.target.value)}
                   placeholder="What sets you apart from competitors?"
                   rows={3}
@@ -272,7 +302,7 @@ export function BrandDetailsStep({
                   <Input
                     id="contactPhone"
                     type="tel"
-                    value={brandProfile.contactPhone}
+                    value={brandProfile.contactPhone || ''}
                     onChange={(e) => handleInputChange('contactPhone', e.target.value)}
                     placeholder="+1 (555) 123-4567"
                     className="mt-1"
@@ -283,7 +313,7 @@ export function BrandDetailsStep({
                   <Input
                     id="contactEmail"
                     type="email"
-                    value={brandProfile.contactEmail}
+                    value={brandProfile.contactEmail || ''}
                     onChange={(e) => handleInputChange('contactEmail', e.target.value)}
                     placeholder="contact@yourbusiness.com"
                     className="mt-1"
@@ -295,7 +325,7 @@ export function BrandDetailsStep({
                 <Label htmlFor="contactAddress">Physical Address</Label>
                 <Textarea
                   id="contactAddress"
-                  value={brandProfile.contactAddress}
+                  value={brandProfile.contactAddress || ''}
                   onChange={(e) => handleInputChange('contactAddress', e.target.value)}
                   placeholder="Street address, city, state, zip code"
                   rows={3}
@@ -310,7 +340,7 @@ export function BrandDetailsStep({
                 <Label htmlFor="visualStyle">Visual Style</Label>
                 <Textarea
                   id="visualStyle"
-                  value={brandProfile.visualStyle}
+                  value={brandProfile.visualStyle || ''}
                   onChange={(e) => handleInputChange('visualStyle', e.target.value)}
                   placeholder="Describe your brand's visual style, colors, fonts, imagery preferences..."
                   rows={3}
@@ -322,7 +352,7 @@ export function BrandDetailsStep({
                 <Label htmlFor="writingTone">Writing Tone</Label>
                 <Textarea
                   id="writingTone"
-                  value={brandProfile.writingTone}
+                  value={brandProfile.writingTone || ''}
                   onChange={(e) => handleInputChange('writingTone', e.target.value)}
                   placeholder="How does your brand communicate? (e.g., professional, friendly, casual, authoritative)"
                   rows={3}
@@ -334,7 +364,7 @@ export function BrandDetailsStep({
                 <Label htmlFor="contentThemes">Content Themes</Label>
                 <Textarea
                   id="contentThemes"
-                  value={brandProfile.contentThemes}
+                  value={brandProfile.contentThemes || ''}
                   onChange={(e) => handleInputChange('contentThemes', e.target.value)}
                   placeholder="What topics and themes does your brand focus on in content?"
                   rows={3}
@@ -352,12 +382,12 @@ export function BrandDetailsStep({
                     <input
                       type="color"
                       id="primaryColor"
-                      value={brandProfile.primaryColor}
+                      value={brandProfile.primaryColor || '#3B82F6'}
                       onChange={(e) => handleInputChange('primaryColor', e.target.value)}
                       className="w-12 h-10 rounded border border-gray-300"
                     />
                     <Input
-                      value={brandProfile.primaryColor}
+                      value={brandProfile.primaryColor || ''}
                       onChange={(e) => handleInputChange('primaryColor', e.target.value)}
                       placeholder="#3B82F6"
                       className="flex-1"
@@ -371,12 +401,12 @@ export function BrandDetailsStep({
                     <input
                       type="color"
                       id="accentColor"
-                      value={brandProfile.accentColor}
+                      value={brandProfile.accentColor || '#10B981'}
                       onChange={(e) => handleInputChange('accentColor', e.target.value)}
                       className="w-12 h-10 rounded border border-gray-300"
                     />
                     <Input
-                      value={brandProfile.accentColor}
+                      value={brandProfile.accentColor || ''}
                       onChange={(e) => handleInputChange('accentColor', e.target.value)}
                       placeholder="#10B981"
                       className="flex-1"
@@ -390,12 +420,12 @@ export function BrandDetailsStep({
                     <input
                       type="color"
                       id="backgroundColor"
-                      value={brandProfile.backgroundColor}
+                      value={brandProfile.backgroundColor || '#F8FAFC'}
                       onChange={(e) => handleInputChange('backgroundColor', e.target.value)}
                       className="w-12 h-10 rounded border border-gray-300"
                     />
                     <Input
-                      value={brandProfile.backgroundColor}
+                      value={brandProfile.backgroundColor || ''}
                       onChange={(e) => handleInputChange('backgroundColor', e.target.value)}
                       placeholder="#F8FAFC"
                       className="flex-1"
@@ -439,7 +469,7 @@ export function BrandDetailsStep({
                   <Input
                     id="facebookUrl"
                     type="url"
-                    value={brandProfile.facebookUrl}
+                    value={brandProfile.facebookUrl || ''}
                     onChange={(e) => handleInputChange('facebookUrl', e.target.value)}
                     placeholder="https://facebook.com/yourbusiness"
                     className="mt-1"
@@ -450,7 +480,7 @@ export function BrandDetailsStep({
                   <Input
                     id="instagramUrl"
                     type="url"
-                    value={brandProfile.instagramUrl}
+                    value={brandProfile.instagramUrl || ''}
                     onChange={(e) => handleInputChange('instagramUrl', e.target.value)}
                     placeholder="https://instagram.com/yourbusiness"
                     className="mt-1"
@@ -461,7 +491,7 @@ export function BrandDetailsStep({
                   <Input
                     id="twitterUrl"
                     type="url"
-                    value={brandProfile.twitterUrl}
+                    value={brandProfile.twitterUrl || ''}
                     onChange={(e) => handleInputChange('twitterUrl', e.target.value)}
                     placeholder="https://twitter.com/yourbusiness"
                     className="mt-1"
@@ -472,7 +502,7 @@ export function BrandDetailsStep({
                   <Input
                     id="linkedinUrl"
                     type="url"
-                    value={brandProfile.linkedinUrl}
+                    value={brandProfile.linkedinUrl || ''}
                     onChange={(e) => handleInputChange('linkedinUrl', e.target.value)}
                     placeholder="https://linkedin.com/company/yourbusiness"
                     className="mt-1"
