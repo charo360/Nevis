@@ -107,7 +107,7 @@ export default function HomePage() {
             <Button
               onClick={handleSignIn}
               variant="outline"
-              className="border-gray-300 hover:bg-gray-50 cursor-pointer z-10 relative"
+              className="border-gray-300  text-black cursor-pointer z-10 relative"
             >
               Sign In
             </Button>
