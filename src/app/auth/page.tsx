@@ -1,4 +1,4 @@
-'use client';
+ 'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -23,6 +23,9 @@ import {
 import { useFirebaseAuth } from '@/hooks/use-firebase-auth';
 import { useToast } from '@/hooks/use-toast';
 import { auth } from '@/lib/firebase/config';
+import VerifyEmail from '@/components/auth/VerifyEmail';
+import LoginForm from '@/components/auth/LoginForm';
+import SignupForm from '@/components/auth/SignupForm';
 
 export default function AuthPage() {
   const router = useRouter();
@@ -34,12 +37,21 @@ export default function AuthPage() {
     password: ''
   });
 
-  const [signUpData, setSignUpData] = useState({
+  const [signUpData, setSignUpData] = useState<{
+    name?: string;
+    email: string;
+    password: string;
+    confirmPassword?: string;
+  }>({
     name: '',
     email: '',
     password: '',
     confirmPassword: ''
   });
+
+  // Signup verification flow
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [pendingSignUp, setPendingSignUp] = useState<typeof signUpData | null>(null);
 
   // Password visibility toggles
   const [showSignInPassword, setShowSignInPassword] = useState(false);
@@ -77,25 +89,35 @@ export default function AuthPage() {
     }
 
     try {
-      await signUp(signUpData.email, signUpData.password, signUpData.name);
-      console.log('signed up (raw firebase.currentUser):', auth.currentUser);
-        console.log('signed up (fields):', {
-          uid: auth.currentUser?.uid,
-          email: auth.currentUser?.email,
-          displayName: auth.currentUser?.displayName,
-          isAnonymous: auth.currentUser?.isAnonymous,
-        });
-      toast({
-        title: "Account created!",
-        description: "Welcome to Crevo! Explore your dashboard to get started.",
+      // Send verification code first. Do not create user until verified.
+      const res = await fetch('/api/auth/send-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: signUpData.email, type: 'signup' }),
       });
+      const body = await res.json();
+      if (res.ok && body.ok) {
+  setPendingSignUp(signUpData);
+  setShowVerifyModal(true);
+  toast({ title: 'Verification code sent', description: 'Check your inbox for the 5-digit code.' });
+      } else {
+        toast({ variant: 'destructive', title: 'Failed to send verification', description: body.error || 'Please try again.' });
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Sign up failed', description: error instanceof Error ? error.message : 'Please try again.' });
+    }
+  };
+
+  const finishSignUpAfterVerification = async () => {
+    if (!pendingSignUp) return;
+    try {
+      await signUp(pendingSignUp.email, pendingSignUp.password, pendingSignUp.name);
+      toast({ title: 'Account created!', description: 'Welcome — your account is ready.' });
+      setShowVerifyModal(false);
+      setPendingSignUp(null);
       router.push('/dashboard');
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Sign up failed",
-        description: error instanceof Error ? error.message : "Please try again.",
-      });
+      toast({ variant: 'destructive', title: 'Sign up failed', description: error instanceof Error ? error.message : 'Please try again.' });
     }
   };
 
@@ -183,153 +205,28 @@ export default function AuthPage() {
               </TabsList>
 
               <TabsContent value="signin" className="space-y-4 mt-6">
-                <form onSubmit={handleSignIn} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="signin-email"
-                        type="email"
-                        placeholder="Enter your email"
-                        className="pl-10"
-                        value={signInData.email}
-                        onChange={(e) => setSignInData(prev => ({ ...prev, email: e.target.value }))}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-password">Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input
-                          id="signin-password"
-                          type={showSignInPassword ? 'text' : 'password'}
-                          placeholder="Enter your password"
-                          className="pl-10"
-                          value={signInData.password}
-                          onChange={(e) => setSignInData(prev => ({ ...prev, password: e.target.value }))}
-                          required
-                        />
-                        <button
-                          type="button"
-                          aria-label={showSignInPassword ? 'Hide password' : 'Show password'}
-                          onClick={() => setShowSignInPassword(s => !s)}
-                          className="absolute right-3 top-2 text-gray-500 hover:text-gray-700"
-                        >
-                          {showSignInPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                    </div>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : null}
-                    Sign In
-                  </Button>
-                </form>
+                <LoginForm
+                  signInData={signInData}
+                  setSignInData={setSignInData}
+                  showSignInPassword={showSignInPassword}
+                  setShowSignInPassword={setShowSignInPassword}
+                  loading={loading}
+                  handleSignIn={handleSignIn}
+                />
               </TabsContent>
 
               <TabsContent value="signup" className="space-y-4 mt-6">
-                <form onSubmit={handleSignUp} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-name">Full Name</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="signup-name"
-                        type="text"
-                        placeholder="Enter your full name"
-                        className="pl-10"
-                        value={signUpData.name}
-                        onChange={(e) => setSignUpData(prev => ({ ...prev, name: e.target.value }))}
-                        required
-                      />
-                    </div>
+                <SignupForm
+                  signUpData={signUpData}
+                  setSignUpData={setSignUpData}
+                  loading={loading}
+                  handleSignUp={handleSignUp}
+                />
+                {showVerifyModal && pendingSignUp && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center">
+                    <VerifyEmail email={pendingSignUp.email} onSuccess={finishSignUpAfterVerification} type="signup" />
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="signup-email"
-                        type="email"
-                        placeholder="Enter your email"
-                        className="pl-10"
-                        value={signUpData.email}
-                        onChange={(e) => setSignUpData(prev => ({ ...prev, email: e.target.value }))}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="signup-password"
-                        type={showSignUpPassword ? 'text' : 'password'}
-                        placeholder="Create a password"
-                        className="pl-10"
-                        value={signUpData.password}
-                        onChange={(e) => setSignUpData(prev => ({ ...prev, password: e.target.value }))}
-                        required
-                      />
-                      <button
-                        type="button"
-                        aria-label={showSignUpPassword ? 'Hide password' : 'Show password'}
-                        onClick={() => setShowSignUpPassword(s => !s)}
-                        className="absolute right-3 top-2 text-gray-500 hover:text-gray-700"
-                      >
-                        {showSignUpPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-confirm">Confirm Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="signup-confirm"
-                        type={showSignUpConfirm ? 'text' : 'password'}
-                        placeholder="Confirm your password"
-                        className="pl-10"
-                        value={signUpData.confirmPassword}
-                        onChange={(e) => setSignUpData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                        required
-                      />
-                      <button
-                        type="button"
-                        aria-label={showSignUpConfirm ? 'Hide password' : 'Show password'}
-                        onClick={() => setShowSignUpConfirm(s => !s)}
-                        className="absolute right-3 top-2 text-gray-500 hover:text-gray-700"
-                      >
-                        {showSignUpConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : null}
-                    Create Account
-                  </Button>
-                </form>
+                )}
               </TabsContent>
             </Tabs>
           </CardContent>

@@ -3,12 +3,14 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ResetPasswordModal from './ResetPasswordModal';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,8 +24,14 @@ export default function ForgotPassword() {
       const body = await res.json();
       if (res.ok && body.ok) {
         setShowModal(true);
+        toast({ title: 'Verification code sent', description: 'Check your inbox.' })
       } else {
-        alert(body.error || 'Failed to send code');
+        const msg = body.error || 'Failed to send code'
+        toast({ variant: 'destructive', title: 'Error', description: msg })
+        try {
+          // Fallback to a simple alert if sweetalert2 is not installed
+          window.alert(msg)
+        } catch (_) {}
       }
     } catch (err) {
       console.error(err);
@@ -38,7 +46,7 @@ export default function ForgotPassword() {
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-6">
           <div className="bg-white rounded-xl p-2 shadow-md">
-            <span className="font-bold text-xl text-purple-700">Nevis</span>
+            <span className="font-bold text-xl text-purple-700">Crevo</span>
           </div>
         </div>
 
