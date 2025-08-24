@@ -137,45 +137,7 @@ export const modelConfigs: Record<RevoModelId, RevoModel> = {
     lastUpdated: '2024-12-15'
   },
 
-  'revo-2.0': {
-    id: 'revo-2.0',
-    name: 'Revo 2.0',
-    version: '2.0.0',
-    description: 'Next Generation - Future Development',
-    longDescription: 'Next-generation AI engine with revolutionary features. Multi aspect ratio support, advanced text rendering, smart content optimization, and breakthrough performance improvements.',
-    icon: 'Rocket',
-    badge: 'Next-Gen',
-    badgeVariant: 'outline',
-    status: 'development',
-    capabilities: modelCapabilities['revo-2.0'],
-    config: {
-      ...baseConfigs['gemini-2.5'],
-      timeout: 60000,
-      qualitySettings: {
-        ...baseConfigs['gemini-2.5'].qualitySettings,
-        imageResolution: '2048x2048',
-        enhancementLevel: 9
-      },
-      promptSettings: {
-        ...baseConfigs['gemini-2.5'].promptSettings,
-        temperature: 0.9,
-        maxTokens: 6000
-      }
-    },
-    pricing: modelPricing['revo-2.0'],
-    features: [
-      'Next-Gen AI Engine',
-      'Multi Aspect Ratios',
-      'Revolutionary Features',
-      'Advanced UI',
-      'A/B Testing Capabilities',
-      'Performance Breakthroughs',
-      'Advanced Text Rendering',
-      'Smart Content Optimization'
-    ],
-    releaseDate: '2024-11-01',
-    lastUpdated: '2024-12-19'
-  },
+
 
   'imagen-4': {
     id: 'imagen-4',
@@ -267,7 +229,7 @@ export function compareModels(modelA: RevoModelId, modelB: RevoModelId) {
     status: {
       a: configA.status,
       b: configB.status,
-      recommendation: configA.status === 'stable' || configB.status === 'stable' ? 
+      recommendation: configA.status === 'stable' || configB.status === 'stable' ?
         (configA.status === 'stable' ? modelA : modelB) : modelA
     }
   };

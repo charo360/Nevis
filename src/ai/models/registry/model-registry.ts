@@ -3,10 +3,10 @@
  * Central registry for managing all Revo model implementations
  */
 
-import type { 
-  RevoModelId, 
-  ModelStatus, 
-  IModelImplementation, 
+import type {
+  RevoModelId,
+  ModelStatus,
+  IModelImplementation,
   IModelRegistry,
   ModelSelectionCriteria,
   ModelCapabilities
@@ -21,11 +21,11 @@ class ModelRegistry implements IModelRegistry {
    */
   registerModel(implementation: IModelImplementation): void {
     const modelId = implementation.model.id;
-    
+
     if (this.models.has(modelId)) {
       console.warn(`⚠️ Model ${modelId} is already registered. Overwriting...`);
     }
-    
+
     this.models.set(modelId, implementation);
     console.log(`✅ Registered model: ${implementation.model.name} (${modelId})`);
   }
@@ -57,7 +57,7 @@ class ModelRegistry implements IModelRegistry {
     );
 
     return availabilityChecks
-      .filter((result): result is PromiseFulfilledResult<{model: IModelImplementation, available: boolean}> => 
+      .filter((result): result is PromiseFulfilledResult<{ model: IModelImplementation, available: boolean }> =>
         result.status === 'fulfilled' && result.value.available
       )
       .map(result => result.value.model);
@@ -82,7 +82,7 @@ class ModelRegistry implements IModelRegistry {
    */
   async selectBestModel(criteria: ModelSelectionCriteria): Promise<IModelImplementation | null> {
     const availableModels = await this.getAvailableModels();
-    
+
     if (availableModels.length === 0) {
       console.warn('⚠️ No available models found');
       return null;
@@ -155,8 +155,8 @@ class ModelRegistry implements IModelRegistry {
           break;
         case 'speed':
           // Prefer models with faster processing (lower tier = faster)
-          score += model.model.pricing.tier === 'basic' ? 20 : 
-                   model.model.pricing.tier === 'premium' ? 10 : 5;
+          score += model.model.pricing.tier === 'basic' ? 20 :
+            model.model.pricing.tier === 'premium' ? 10 : 5;
           break;
         case 'balanced':
           score += model.model.capabilities.maxQuality;
@@ -235,12 +235,10 @@ class ModelRegistry implements IModelRegistry {
       // Import and register all model implementations
       const { Revo10Implementation } = await import('../versions/revo-1.0');
       const { Revo15Implementation } = await import('../versions/revo-1.5');
-      const { Revo20Implementation } = await import('../versions/revo-2.0');
       const { Imagen4Implementation } = await import('../versions/imagen-4');
 
       this.registerModel(new Revo10Implementation());
       this.registerModel(new Revo15Implementation());
-      this.registerModel(new Revo20Implementation());
       this.registerModel(new Imagen4Implementation());
 
       this.initialized = true;

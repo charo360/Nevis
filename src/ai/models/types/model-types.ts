@@ -6,7 +6,7 @@
 import type { BrandProfile, Platform } from '@/lib/types';
 
 // Core model identifier type
-export type RevoModelId = 'revo-1.0' | 'revo-1.5' | 'revo-2.0' | 'imagen-4';
+export type RevoModelId = 'revo-1.0' | 'revo-1.5' | 'imagen-4';
 
 // Model status types
 export type ModelStatus = 'stable' | 'enhanced' | 'development' | 'beta' | 'deprecated';

@@ -38,20 +38,7 @@ export const modelCapabilities: Record<RevoModelId, ModelCapabilities> = {
     realTimeContext: true // Real-time context and trends
   },
 
-  'revo-2.0': {
-    // Next-generation model with cutting-edge features
-    contentGeneration: true,
-    designGeneration: true,
-    videoGeneration: true, // Full video support
-    enhancedFeatures: true,
-    artifactSupport: true, // Advanced artifact support
-    aspectRatios: ['1:1', '16:9', '9:16', '4:3', '3:4'], // All aspect ratios
-    maxQuality: 9, // Near-perfect quality
-    supportedPlatforms: ['Instagram', 'Facebook', 'Twitter', 'LinkedIn'] as Platform[],
-    advancedPrompting: true,
-    brandConsistency: true, // Revolutionary brand consistency
-    realTimeContext: true // Advanced real-time features
-  },
+
 
   'imagen-4': {
     // Premium Google Imagen 4 model
@@ -74,31 +61,26 @@ export const capabilityMatrix = {
   contentGeneration: {
     'revo-1.0': 'standard',
     'revo-1.5': 'enhanced',
-    'revo-2.0': 'advanced',
     'imagen-4': 'premium'
   },
   designGeneration: {
     'revo-1.0': 'basic',
     'revo-1.5': 'enhanced',
-    'revo-2.0': 'advanced',
     'imagen-4': 'premium'
   },
   videoGeneration: {
     'revo-1.0': 'none',
     'revo-1.5': 'none',
-    'revo-2.0': 'advanced',
     'imagen-4': 'none'
   },
   artifactSupport: {
     'revo-1.0': 'none',
     'revo-1.5': 'full',
-    'revo-2.0': 'advanced',
     'imagen-4': 'premium'
   },
   brandConsistency: {
     'revo-1.0': 'basic',
     'revo-1.5': 'advanced',
-    'revo-2.0': 'revolutionary',
     'imagen-4': 'perfect'
   }
 } as const;
@@ -106,34 +88,29 @@ export const capabilityMatrix = {
 // Feature availability by model
 export const featureAvailability = {
   // Content features
-  hashtagGeneration: ['revo-1.0', 'revo-1.5', 'revo-2.0', 'imagen-4'],
-  catchyWords: ['revo-1.0', 'revo-1.5', 'revo-2.0', 'imagen-4'],
-  subheadlines: ['revo-1.5', 'revo-2.0', 'imagen-4'],
-  callToAction: ['revo-1.5', 'revo-2.0', 'imagen-4'],
-  contentVariants: ['revo-1.5', 'revo-2.0', 'imagen-4'],
+  hashtagGeneration: ['revo-1.0', 'revo-1.5', 'imagen-4'],
+  catchyWords: ['revo-1.0', 'revo-1.5', 'imagen-4'],
+  subheadlines: ['revo-1.5', 'imagen-4'],
+  callToAction: ['revo-1.5', 'imagen-4'],
+  contentVariants: ['revo-1.5', 'imagen-4'],
 
   // Design features
-  logoIntegration: ['revo-1.0', 'revo-1.5', 'revo-2.0', 'imagen-4'],
-  brandColors: ['revo-1.0', 'revo-1.5', 'revo-2.0', 'imagen-4'],
-  designExamples: ['revo-1.5', 'revo-2.0', 'imagen-4'],
-  textOverlay: ['revo-1.5', 'revo-2.0', 'imagen-4'],
-  multipleAspectRatios: ['revo-1.5', 'revo-2.0', 'imagen-4'],
+  logoIntegration: ['revo-1.0', 'revo-1.5', 'imagen-4'],
+  brandColors: ['revo-1.0', 'revo-1.5', 'imagen-4'],
+  designExamples: ['revo-1.5', 'imagen-4'],
+  textOverlay: ['revo-1.5', 'imagen-4'],
+  multipleAspectRatios: ['revo-1.5', 'imagen-4'],
 
   // Advanced features
-  realTimeContext: ['revo-1.5', 'revo-2.0', 'imagen-4'],
-  trendingTopics: ['revo-1.5', 'revo-2.0', 'imagen-4'],
-  marketIntelligence: ['revo-1.5', 'revo-2.0', 'imagen-4'],
-  competitorAnalysis: ['revo-2.0', 'imagen-4'],
+  realTimeContext: ['revo-1.5', 'imagen-4'],
+  trendingTopics: ['revo-1.5', 'imagen-4'],
+  marketIntelligence: ['revo-1.5', 'imagen-4'],
+  competitorAnalysis: ['imagen-4'],
 
   // Artifact features
-  artifactReference: ['revo-1.5', 'revo-2.0', 'imagen-4'],
-  exactUseArtifacts: ['revo-1.5', 'revo-2.0', 'imagen-4'],
-  textOverlayArtifacts: ['revo-1.5', 'revo-2.0', 'imagen-4'],
-
-  // Video features
-  videoGeneration: ['revo-2.0'],
-  videoTemplates: ['revo-2.0'],
-  videoTransitions: ['revo-2.0'],
+  artifactReference: ['revo-1.5', 'imagen-4'],
+  exactUseArtifacts: ['revo-1.5', 'imagen-4'],
+  textOverlayArtifacts: ['revo-1.5', 'imagen-4'],
 
   // Premium features
   fourKResolution: ['imagen-4'],
@@ -155,11 +132,7 @@ export const platformCapabilities = {
       maxQuality: 8,
       features: ['enhanced-design', 'hashtags', 'stories', 'reels-ready']
     },
-    'revo-2.0': {
-      aspectRatios: ['1:1', '9:16', '16:9'],
-      maxQuality: 9,
-      features: ['advanced-design', 'hashtags', 'stories', 'reels', 'video']
-    },
+
     'imagen-4': {
       aspectRatios: ['1:1', '9:16', '16:9'],
       maxQuality: 10,
@@ -177,11 +150,7 @@ export const platformCapabilities = {
       maxQuality: 8,
       features: ['enhanced-design', 'page-posts', 'stories']
     },
-    'revo-2.0': {
-      aspectRatios: ['16:9', '1:1', '9:16'],
-      maxQuality: 9,
-      features: ['advanced-design', 'page-posts', 'stories', 'video']
-    },
+
     'imagen-4': {
       aspectRatios: ['16:9', '1:1', '9:16'],
       maxQuality: 10,
@@ -199,11 +168,7 @@ export const platformCapabilities = {
       maxQuality: 8,
       features: ['enhanced-design', 'tweets', 'threads']
     },
-    'revo-2.0': {
-      aspectRatios: ['16:9', '1:1', '9:16'],
-      maxQuality: 9,
-      features: ['advanced-design', 'tweets', 'threads', 'video']
-    },
+
     'imagen-4': {
       aspectRatios: ['16:9', '1:1', '9:16'],
       maxQuality: 10,
@@ -221,11 +186,7 @@ export const platformCapabilities = {
       maxQuality: 8,
       features: ['enhanced-design', 'professional-posts', 'articles']
     },
-    'revo-2.0': {
-      aspectRatios: ['16:9', '1:1', '9:16'],
-      maxQuality: 9,
-      features: ['advanced-design', 'professional-posts', 'articles', 'video']
-    },
+
     'imagen-4': {
       aspectRatios: ['16:9', '1:1', '9:16'],
       maxQuality: 10,

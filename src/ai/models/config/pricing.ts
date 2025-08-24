@@ -21,12 +21,7 @@ export const modelPricing: Record<RevoModelId, ModelPricing> = {
     tier: 'premium'
   },
 
-  'revo-2.0': {
-    creditsPerGeneration: 5,
-    creditsPerDesign: 5,
-    creditsPerVideo: 10, // Video generation available
-    tier: 'premium'
-  },
+
 
   'imagen-4': {
     creditsPerGeneration: 10,
@@ -108,7 +103,6 @@ export const creditPackages = {
     estimatedGenerations: {
       'revo-1.0': 50,
       'revo-1.5': 25,
-      'revo-2.0': 10,
       'imagen-4': 5
     }
   },
@@ -121,7 +115,6 @@ export const creditPackages = {
     estimatedGenerations: {
       'revo-1.0': 200,
       'revo-1.5': 100,
-      'revo-2.0': 40,
       'imagen-4': 20
     }
   },
@@ -130,11 +123,10 @@ export const creditPackages = {
     credits: 500,
     price: 59.99,
     pricePerCredit: 0.12,
-    bestFor: 'revo-2.0',
+    bestFor: 'imagen-4',
     estimatedGenerations: {
       'revo-1.0': 500,
       'revo-1.5': 250,
-      'revo-2.0': 100,
       'imagen-4': 50
     }
   },
@@ -158,7 +150,7 @@ export const usageCalculations = {
   // Calculate cost for a specific generation request
   calculateGenerationCost(modelId: RevoModelId, type: 'content' | 'design' | 'video' = 'content'): number {
     const pricing = modelPricing[modelId];
-    
+
     switch (type) {
       case 'content':
         return pricing.creditsPerGeneration;
@@ -190,20 +182,20 @@ export const usageCalculations = {
     recommendedPackage: keyof typeof creditPackages;
   } {
     const pricing = modelPricing[usage.modelId];
-    
-    const dailyCost = 
+
+    const dailyCost =
       (usage.generationsPerDay * pricing.creditsPerGeneration) +
       (usage.designsPerDay * pricing.creditsPerDesign) +
       ((usage.videosPerDay || 0) * (pricing.creditsPerVideo || 0));
-    
+
     const monthlyCost = dailyCost * 30;
-    
+
     // Recommend package based on monthly cost
     let recommendedPackage: keyof typeof creditPackages = 'starter';
     if (monthlyCost > 400) recommendedPackage = 'enterprise';
     else if (monthlyCost > 150) recommendedPackage = 'business';
     else if (monthlyCost > 50) recommendedPackage = 'professional';
-    
+
     return {
       dailyCost,
       monthlyCost,
@@ -220,17 +212,17 @@ export const usageCalculations = {
   // Get the best model within budget
   getBestModelForBudget(availableCredits: number, type: 'content' | 'design' | 'video' = 'content'): RevoModelId[] {
     const affordableModels: RevoModelId[] = [];
-    
+
     for (const [modelId, pricing] of Object.entries(modelPricing)) {
       const cost = type === 'content' ? pricing.creditsPerGeneration :
-                   type === 'design' ? pricing.creditsPerDesign :
-                   pricing.creditsPerVideo || 0;
-      
+        type === 'design' ? pricing.creditsPerDesign :
+          pricing.creditsPerVideo || 0;
+
       if (cost <= availableCredits && cost > 0) {
         affordableModels.push(modelId as RevoModelId);
       }
     }
-    
+
     // Sort by quality (higher credit cost usually means higher quality)
     return affordableModels.sort((a, b) => {
       const costA = this.calculateGenerationCost(a, type);
@@ -265,10 +257,10 @@ export const pricingDisplay = {
   compareCosts(modelA: RevoModelId, modelB: RevoModelId) {
     const costA = modelPricing[modelA].creditsPerGeneration;
     const costB = modelPricing[modelB].creditsPerGeneration;
-    
+
     const difference = Math.abs(costA - costB);
     const percentDifference = ((difference / Math.min(costA, costB)) * 100).toFixed(0);
-    
+
     return {
       cheaper: costA < costB ? modelA : modelB,
       moreExpensive: costA > costB ? modelA : modelB,
@@ -282,7 +274,7 @@ export const pricingDisplay = {
   getValueProposition(modelId: RevoModelId) {
     const pricing = modelPricing[modelId];
     const tierInfo = pricingTiers[pricing.tier];
-    
+
     return {
       model: modelId,
       tier: pricing.tier,
@@ -313,7 +305,7 @@ export function getCheapestModel(): RevoModelId {
   return Object.entries(modelPricing)
     .reduce((cheapest, [modelId, pricing]) => {
       const currentCheapest = modelPricing[cheapest as RevoModelId];
-      return pricing.creditsPerGeneration < currentCheapest.creditsPerGeneration ? 
+      return pricing.creditsPerGeneration < currentCheapest.creditsPerGeneration ?
         modelId as RevoModelId : cheapest as RevoModelId;
     }, 'revo-1.0' as RevoModelId);
 }
@@ -322,7 +314,7 @@ export function getMostExpensiveModel(): RevoModelId {
   return Object.entries(modelPricing)
     .reduce((mostExpensive, [modelId, pricing]) => {
       const currentMostExpensive = modelPricing[mostExpensive as RevoModelId];
-      return pricing.creditsPerGeneration > currentMostExpensive.creditsPerGeneration ? 
+      return pricing.creditsPerGeneration > currentMostExpensive.creditsPerGeneration ?
         modelId as RevoModelId : mostExpensive as RevoModelId;
     }, 'revo-1.0' as RevoModelId);
 }

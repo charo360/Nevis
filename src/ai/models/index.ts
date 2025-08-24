@@ -107,7 +107,7 @@ export type { IModelSelectionService } from './services/model-selection-service'
 // Model versions (will be created next)
 export type { Revo10Implementation } from './versions/revo-1.0';
 export type { Revo15Implementation } from './versions/revo-1.5';
-export type { Revo20Implementation } from './versions/revo-2.0';
+
 export type { Imagen4Implementation } from './versions/imagen-4';
 
 // Utility functions
