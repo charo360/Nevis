@@ -12,7 +12,7 @@ import { useGeneratedPosts } from "@/hooks/use-generated-posts";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import type { BrandProfile, GeneratedPost, Platform, BrandConsistencyPreferences } from "@/lib/types";
 
-type RevoModel = 'revo-1.0' | 'revo-1.5' | 'revo-2.0';
+type RevoModel = 'revo-1.0' | 'revo-1.5';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -187,7 +187,6 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
               >
                 <option value="revo-1.0">Revo 1.0</option>
                 <option value="revo-1.5">Revo 1.5</option>
-                <option value="revo-2.0">Revo 2.0</option>
               </select>
             </div>
           </div>

@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 
-export type RevoModel = 'revo-1.0' | 'revo-1.5' | 'revo-2.0'
+export type RevoModel = 'revo-1.0' | 'revo-1.5'
 
 interface RevoModelOption {
   id: RevoModel
@@ -48,16 +48,7 @@ const REVO_MODELS: RevoModelOption[] = [
     features: ['Advanced AI Engine', 'Superior Quality', 'Enhanced Design', 'Smart Optimizations'],
     status: 'enhanced'
   },
-  {
-    id: 'revo-2.0',
-    name: 'Revo 2.0',
-    description: 'Next Generation - Future Development',
-    icon: Rocket,
-    badge: 'Coming Soon',
-    badgeVariant: 'outline',
-    features: ['Next-Gen AI Engine', 'Multi Aspect Ratios', 'Revolutionary Features', 'Advanced UI'],
-    status: 'development'
-  }
+
 ]
 
 interface RevoModelSelectorProps {
