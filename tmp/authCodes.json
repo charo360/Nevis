@@ -1,0 +1,274 @@
+[
+  {
+    "email": "josephwamiti8711@gmail.com",
+    "code": "86693",
+    "type": "signup",
+    "used": true,
+    "createdAt": "2025-08-21T18:54:09.613Z",
+    "expiresAt": "2025-08-21T19:09:09.613Z"
+  },
+  {
+    "email": "test@example.com",
+    "code": "64631",
+    "type": "signup",
+    "used": false,
+    "createdAt": "2025-08-21T18:54:48.256Z",
+    "expiresAt": "2025-08-21T19:09:48.256Z"
+  },
+  {
+    "email": "test@example.com",
+    "code": "06030",
+    "type": "signup",
+    "used": false,
+    "createdAt": "2025-08-21T18:55:40.563Z",
+    "expiresAt": "2025-08-21T19:10:40.563Z"
+  },
+  {
+    "email": "josephwamiti8711@gmail.com",
+    "code": "01801",
+    "type": "signup",
+    "used": true,
+    "createdAt": "2025-08-21T18:56:23.274Z",
+    "expiresAt": "2025-08-21T19:11:23.274Z"
+  },
+  {
+    "email": "josephwamiti8711@gmail.com",
+    "code": "58225",
+    "type": "signup",
+    "used": true,
+    "createdAt": "2025-08-21T18:58:41.034Z",
+    "expiresAt": "2025-08-21T19:13:41.034Z"
+  },
+  {
+    "email": "josephwamiti8711@gmail.com",
+    "code": "55697",
+    "type": "signup",
+    "used": true,
+    "createdAt": "2025-08-21T19:01:22.433Z",
+    "expiresAt": "2025-08-21T19:16:22.433Z"
+  },
+  {
+    "email": "youremail@example.com",
+    "code": "83680",
+    "type": "signup",
+    "used": false,
+    "createdAt": "2025-08-21T19:05:50.213Z",
+    "expiresAt": "2025-08-21T19:20:50.213Z"
+  },
+  {
+    "email": "youremail@example.com",
+    "code": "80771",
+    "type": "signup",
+    "used": false,
+    "createdAt": "2025-08-21T19:06:38.734Z",
+    "expiresAt": "2025-08-21T19:21:38.734Z"
+  },
+  {
+    "email": "josephwamiti8711@gmail.com",
+    "code": "15373",
+    "type": "signup",
+    "used": true,
+    "createdAt": "2025-08-21T19:07:34.852Z",
+    "expiresAt": "2025-08-21T19:22:34.852Z"
+  },
+  {
+    "email": "josephwamiti8711@gmail.com",
+    "code": "09496",
+    "type": "signup",
+    "used": true,
+    "createdAt": "2025-08-22T16:37:05.901Z",
+    "expiresAt": "2025-08-22T16:52:05.901Z"
+  },
+  {
+    "email": "josephwamiti8711@gmail.com",
+    "code": "87428",
+    "type": "signup",
+    "used": true,
+    "createdAt": "2025-08-22T16:38:52.142Z",
+    "expiresAt": "2025-08-22T16:53:52.142Z"
+  },
+  {
+    "email": "josephwamiti8711@gmail.com",
+    "code": "42381",
+    "type": "signup",
+    "used": true,
+    "createdAt": "2025-08-22T16:43:23.748Z",
+    "expiresAt": "2025-08-22T16:58:23.748Z"
+  },
+  {
+    "email": "josephwamiti8711@gmail.com",
+    "code": "52224",
+    "type": "signup",
+    "used": true,
+    "createdAt": "2025-08-22T16:47:37.448Z",
+    "expiresAt": "2025-08-22T17:02:37.448Z"
+  },
+  {
+    "email": "josephwamiti8711@gmail.com",
+    "code": "41307",
+    "type": "signup",
+    "used": true,
+    "createdAt": "2025-08-22T16:50:06.881Z",
+    "expiresAt": "2025-08-22T17:05:06.881Z"
+  },
+  {
+    "email": "josephwamiti8711@gmail.com",
+    "code": "50464",
+    "type": "signup",
+    "used": true,
+    "createdAt": "2025-08-22T17:01:23.078Z",
+    "expiresAt": "2025-08-22T17:16:23.078Z"
+  },
+  {
+    "email": "josephwamiti8711@gmail.com",
+    "code": "46341",
+    "type": "signup",
+    "used": true,
+    "createdAt": "2025-08-22T17:07:43.716Z",
+    "expiresAt": "2025-08-22T17:22:43.716Z"
+  },
+  {
+    "email": "josephwamiti8711@gmail.com",
+    "code": "37896",
+    "type": "signup",
+    "used": true,
+    "createdAt": "2025-08-22T17:53:00.268Z",
+    "expiresAt": "2025-08-22T18:08:00.268Z"
+  },
+  {
+    "email": "josephwamiti8711@gmail.com",
+    "code": "71265",
+    "type": "signup",
+    "used": true,
+    "createdAt": "2025-08-22T18:00:43.365Z",
+    "expiresAt": "2025-08-22T18:15:43.365Z"
+  },
+  {
+    "email": "josephwamiti8711@gmail.com",
+    "code": "25826",
+    "type": "signup",
+    "used": true,
+    "createdAt": "2025-08-22T18:45:17.072Z",
+    "expiresAt": "2025-08-22T19:00:17.072Z"
+  },
+  {
+    "email": "josephwamiti8711@gmail.com",
+    "code": "84343",
+    "type": "signup",
+    "used": true,
+    "createdAt": "2025-08-22T18:45:50.288Z",
+    "expiresAt": "2025-08-22T19:00:50.288Z"
+  },
+  {
+    "email": "josephwamiti8711@gmail.com",
+    "code": "02565",
+    "type": "signup",
+    "used": true,
+    "createdAt": "2025-08-22T18:46:46.213Z",
+    "expiresAt": "2025-08-22T19:01:46.213Z"
+  },
+  {
+    "email": "josephwamiti8711@gmail.com",
+    "code": "34059",
+    "type": "signup",
+    "used": true,
+    "createdAt": "2025-08-22T18:49:10.500Z",
+    "expiresAt": "2025-08-22T19:04:10.500Z"
+  },
+  {
+    "email": "josephwamiti8711@gmail.com",
+    "code": "26858",
+    "type": "reset",
+    "used": true,
+    "createdAt": "2025-08-22T19:26:00.818Z",
+    "expiresAt": "2025-08-22T19:41:00.818Z"
+  },
+  {
+    "email": "josephwamiti8711@gmail.com",
+    "code": "49383",
+    "type": "reset",
+    "used": true,
+    "createdAt": "2025-08-22T19:26:28.684Z",
+    "expiresAt": "2025-08-22T19:41:28.684Z"
+  },
+  {
+    "email": "josephwamiti8711@gmail.com",
+    "code": "69191",
+    "type": "reset",
+    "used": true,
+    "createdAt": "2025-08-22T20:10:26.217Z",
+    "expiresAt": "2025-08-22T20:25:26.217Z"
+  },
+  {
+    "email": "josephwamiti8711@gmail.com",
+    "code": "19402",
+    "type": "reset",
+    "used": true,
+    "createdAt": "2025-08-22T20:32:27.943Z",
+    "expiresAt": "2025-08-22T20:47:27.943Z"
+  },
+  {
+    "email": "josephwamiti8711@gmail.com",
+    "code": "81602",
+    "type": "signup",
+    "used": true,
+    "createdAt": "2025-08-23T12:20:29.954Z",
+    "expiresAt": "2025-08-23T12:35:29.954Z"
+  },
+  {
+    "email": "josephwamiti8711@gmail.com",
+    "code": "36423",
+    "type": "signup",
+    "used": true,
+    "createdAt": "2025-08-23T12:20:35.778Z",
+    "expiresAt": "2025-08-23T12:35:35.778Z"
+  },
+  {
+    "email": "josephwamiti8711@gmail.com",
+    "code": "10036",
+    "type": "signup",
+    "used": true,
+    "createdAt": "2025-08-23T13:43:51.616Z",
+    "expiresAt": "2025-08-23T13:58:51.616Z"
+  },
+  {
+    "email": "josephwamiti8711@gmail.com",
+    "code": "90089",
+    "type": "signup",
+    "used": true,
+    "createdAt": "2025-08-23T13:46:37.586Z",
+    "expiresAt": "2025-08-23T14:01:37.586Z"
+  },
+  {
+    "email": "josephwamiti8711@gmail.com",
+    "code": "60802",
+    "type": "signup",
+    "used": true,
+    "createdAt": "2025-08-23T13:50:14.833Z",
+    "expiresAt": "2025-08-23T14:05:14.833Z"
+  },
+  {
+    "email": "josephwamiti8711@gmail.com",
+    "code": "95304",
+    "type": "signup",
+    "used": true,
+    "createdAt": "2025-08-23T13:52:32.565Z",
+    "expiresAt": "2025-08-23T14:07:32.565Z"
+  },
+  {
+    "email": "josephwamiti8711@gmail.com",
+    "code": "40042",
+    "type": "signup",
+    "used": true,
+    "createdAt": "2025-08-23T14:07:56.227Z",
+    "expiresAt": "2025-08-23T14:22:56.227Z"
+  },
+  {
+    "email": "josephwamiti8711@gmail.com",
+    "code": "66024",
+    "type": "signup",
+    "used": true,
+    "createdAt": "2025-08-23T15:01:01.360Z",
+    "expiresAt": "2025-08-23T15:16:01.360Z"
+  }
+]

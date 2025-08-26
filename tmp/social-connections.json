@@ -1,0 +1,28 @@
+{
+  "demo-user_instagram": {
+    "userId": "demo-user",
+    "platform": "instagram",
+    "socialId": "instagram_user_1755197889722",
+    "accessToken": "fake-token-instagram-1755197889722",
+    "refreshToken": null,
+    "expiresAt": null,
+    "profile": {
+      "displayName": "instagram demo"
+    },
+    "createdAt": "2025-08-14T18:58:10.343Z",
+    "updatedAt": "2025-08-14T18:58:10.343Z"
+  },
+  "demo-user_linkedin": {
+    "userId": "demo-user",
+    "platform": "linkedin",
+    "socialId": "linkedin_user_1755198009117",
+    "accessToken": "fake-token-linkedin-1755198009117",
+    "refreshToken": null,
+    "expiresAt": null,
+    "profile": {
+      "displayName": "linkedin demo"
+    },
+    "createdAt": "2025-08-14T19:00:09.764Z",
+    "updatedAt": "2025-08-14T19:00:09.764Z"
+  }
+}
