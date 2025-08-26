@@ -161,11 +161,11 @@ function QuickContentPage() {
 
     if (!brandLoading) {
       // Add a small delay to ensure brands have time to load
-          const timer = setTimeout(() => {
+      const timer = setTimeout(() => {
         if (brands.length === 0) {
           // No brands exist, redirect to brand setup
           console.log('🔄 Quick Content: No brands found, redirecting to brand setup');
-          try { router.prefetch('/brand-profile'); } catch {}
+          try { router.prefetch('/brand-profile'); } catch { }
           router.push('/brand-profile');
         } else if (brands.length > 0 && !currentBrand) {
           // Try to restore from persistence first
@@ -425,7 +425,7 @@ function QuickContentPage() {
         </DropdownMenu>
       </header>
       <main className="flex-1 overflow-auto">
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="min-h-full bg-gradient-to-br from-blue-50 to-indigo-100">
           <div className="container mx-auto px-4 py-8">
             <div className="max-w-7xl mx-auto">
               {isLoading || brandLoading ? (
@@ -435,33 +435,33 @@ function QuickContentPage() {
                   </div>
                 </div>
               ) : !currentBrand ? (
-          <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
-            <h2 className="text-xl font-semibold">Select a Brand</h2>
-            <p className="text-muted-foreground text-center">
-              Please select a brand to start generating content.
-            </p>
-            {brands.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {brands.map((brand) => (
-                  <Button
-                    key={brand.id}
-                    onClick={() => selectBrand(brand)}
-                    variant="outline"
-                  >
-                    {brand.businessName || brand.name}
-                  </Button>
-                ))}
-              </div>
-            ) : (
-                <Button onMouseEnter={() => router.prefetch('/brand-profile')} onFocus={() => router.prefetch('/brand-profile')} onClick={() => router.push('/brand-profile')}>
-                Create Brand Profile
-              </Button>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {/* TODO: Re-enable Active Artifacts Indicator once component is set up */}
-            {/* <ActiveArtifactsIndicator
+                <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+                  <h2 className="text-xl font-semibold">Select a Brand</h2>
+                  <p className="text-muted-foreground text-center">
+                    Please select a brand to start generating content.
+                  </p>
+                  {brands.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {brands.map((brand) => (
+                        <Button
+                          key={brand.id}
+                          onClick={() => selectBrand(brand)}
+                          variant="outline"
+                        >
+                          {brand.businessName || brand.name}
+                        </Button>
+                      ))}
+                    </div>
+                  ) : (
+                    <Button onMouseEnter={() => router.prefetch('/brand-profile')} onFocus={() => router.prefetch('/brand-profile')} onClick={() => router.push('/brand-profile')}>
+                      Create Brand Profile
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* TODO: Re-enable Active Artifacts Indicator once component is set up */}
+                  {/* <ActiveArtifactsIndicator
               onArtifactDeactivate={() => {
                 // Refresh content when artifacts are deactivated
                 console.log('Artifact deactivated, content generation will use updated active artifacts');
@@ -472,55 +472,55 @@ function QuickContentPage() {
               }}
             /> */}
 
-            {/* Content Calendar */}
-            {/* Map unified CompleteBrandProfile to the simplified BrandProfile expected by ContentCalendar */}
-            {currentBrand && (
-              <ContentCalendar
-                brandProfile={{
-                  businessName: currentBrand.businessName,
-                  businessType: currentBrand.businessType || '',
-                  location: currentBrand.location || '',
-                  logoDataUrl: currentBrand.logoDataUrl || '',
-                  visualStyle: currentBrand.visualStyle || '',
-                  writingTone: currentBrand.writingTone || '',
-                  contentThemes: currentBrand.contentThemes || '',
-                  websiteUrl: currentBrand.websiteUrl || '',
-                  description: currentBrand.description || '',
-                  // Convert services array to newline-separated string to match BrandProfile.services
-                  services: Array.isArray((currentBrand as any).services)
-                    ? (currentBrand as any).services.map((s: any) => s.name).join('\n')
-                    : (currentBrand as any).services || '',
-                  targetAudience: currentBrand.targetAudience || '',
-                  keyFeatures: currentBrand.keyFeatures || '',
-                  competitiveAdvantages: currentBrand.competitiveAdvantages || '',
-                  contactInfo: {
-                    phone: currentBrand.contactPhone || '',
-                    email: currentBrand.contactEmail || '',
-                    address: currentBrand.contactAddress || '',
-                  },
-                  socialMedia: {
-                    facebook: currentBrand.facebookUrl || '',
-                    instagram: currentBrand.instagramUrl || '',
-                    twitter: currentBrand.twitterUrl || '',
-                    linkedin: currentBrand.linkedinUrl || '',
-                  },
-                  primaryColor: currentBrand.primaryColor || undefined,
-                  accentColor: currentBrand.accentColor || undefined,
-                  backgroundColor: currentBrand.backgroundColor || undefined,
-                  designExamples: currentBrand.designExamples || [],
-                }}
-                posts={generatedPosts}
-                onPostGenerated={handlePostGenerated}
-                onPostUpdated={handlePostUpdated}
-              />
-            )}
+                  {/* Content Calendar */}
+                  {/* Map unified CompleteBrandProfile to the simplified BrandProfile expected by ContentCalendar */}
+                  {currentBrand && (
+                    <ContentCalendar
+                      brandProfile={{
+                        businessName: currentBrand.businessName,
+                        businessType: currentBrand.businessType || '',
+                        location: currentBrand.location || '',
+                        logoDataUrl: currentBrand.logoDataUrl || '',
+                        visualStyle: currentBrand.visualStyle || '',
+                        writingTone: currentBrand.writingTone || '',
+                        contentThemes: currentBrand.contentThemes || '',
+                        websiteUrl: currentBrand.websiteUrl || '',
+                        description: currentBrand.description || '',
+                        // Convert services array to newline-separated string to match BrandProfile.services
+                        services: Array.isArray((currentBrand as any).services)
+                          ? (currentBrand as any).services.map((s: any) => s.name).join('\n')
+                          : (currentBrand as any).services || '',
+                        targetAudience: currentBrand.targetAudience || '',
+                        keyFeatures: currentBrand.keyFeatures || '',
+                        competitiveAdvantages: currentBrand.competitiveAdvantages || '',
+                        contactInfo: {
+                          phone: currentBrand.contactPhone || '',
+                          email: currentBrand.contactEmail || '',
+                          address: currentBrand.contactAddress || '',
+                        },
+                        socialMedia: {
+                          facebook: currentBrand.facebookUrl || '',
+                          instagram: currentBrand.instagramUrl || '',
+                          twitter: currentBrand.twitterUrl || '',
+                          linkedin: currentBrand.linkedinUrl || '',
+                        },
+                        primaryColor: currentBrand.primaryColor || undefined,
+                        accentColor: currentBrand.accentColor || undefined,
+                        backgroundColor: currentBrand.backgroundColor || undefined,
+                        designExamples: currentBrand.designExamples || [],
+                      }}
+                      posts={generatedPosts}
+                      onPostGenerated={handlePostGenerated}
+                      onPostUpdated={handlePostUpdated}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        )}
-      </div>
-    </div>
-  </div>
-  </main>
-  </SidebarInset>
+        </div>
+      </main>
+    </SidebarInset>
   );
 }
 
