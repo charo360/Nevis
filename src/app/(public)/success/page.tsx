@@ -1,6 +1,9 @@
-'use client';
+"use client";
 
 import { useState, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { auth } from '@/lib/firebase/config';
+import { useFirebaseAuth } from '@/hooks/use-firebase-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Sparkles, ArrowRight } from 'lucide-react';
@@ -8,12 +11,58 @@ import Link from 'next/link';
 
 export default function PaymentSuccessPage() {
   const [confetti, setConfetti] = useState(true);
+  const [recording, setRecording] = useState<'idle' | 'loading' | 'done' | 'failed'>('idle');
+  const search = useSearchParams();
+  const router = useRouter();
+  const { user } = useFirebaseAuth();
+
+  const sessionId = search?.get('session_id') || null;
 
   useEffect(() => {
     // Hide confetti effect after 3 seconds
     const timer = setTimeout(() => setConfetti(false), 3000);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    // If we have a session_id and user is logged in, attempt to record payment
+    if (!sessionId) return;
+
+    const record = async () => {
+      setRecording('loading');
+      try {
+        const idToken = auth?.currentUser ? await auth.currentUser.getIdToken() : null;
+        if (!idToken) {
+          setRecording('failed');
+          return;
+        }
+
+        const res = await fetch('/api/payments/record', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken, sessionId, planId: 'growth', amount: 29, currency: 'usd' })
+        });
+
+        const json = await res.json();
+        if (res.ok && json.ok) {
+          setRecording('done');
+        } else {
+          console.warn('Failed to record payment', json);
+          setRecording('failed');
+        }
+      } catch (e) {
+        console.error('Record payment failed', e);
+        setRecording('failed');
+      }
+    };
+
+    // Delay a little to ensure Stripe redirect settled
+    const t = setTimeout(() => {
+      record();
+    }, 800);
+
+    return () => clearTimeout(t);
+  }, [sessionId, user]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center py-12 px-4">

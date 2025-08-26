@@ -34,18 +34,10 @@ export function useFirebaseAuth() {
   });
 
   useEffect(() => {
-    // If Firebase auth is not available, create a mock user for demo mode
+    // If Firebase auth is not available, do not create demo users — require explicit authentication
     if (!auth) {
-      console.log('🔄 Using demo mode - no Firebase auth');
-      const mockUser: AuthUser = {
-        uid: 'demo-user-' + Date.now(),
-        email: 'demo@example.com',
-        displayName: 'Demo User',
-        photoURL: null,
-        isAnonymous: true,
-      };
-
-      setAuthState({ user: mockUser, loading: false, error: null });
+      console.warn('Firebase auth not available; authentication is required. No demo user will be created.');
+      setAuthState({ user: null, loading: false, error: null });
       return;
     }
 
@@ -67,7 +59,8 @@ export function useFirebaseAuth() {
         try {
           const existingUser = await userService.getById(firebaseUser.uid);
           if (!existingUser) {
-            await userService.create({
+            // Create the user document using the auth uid as the document id to avoid duplicate auto-id docs
+            await userService.createWithId(firebaseUser.uid, {
               userId: firebaseUser.uid,
               email: firebaseUser.email || '',
               displayName: firebaseUser.displayName || '',
@@ -82,24 +75,9 @@ export function useFirebaseAuth() {
 
         setAuthState({ user: userObj, loading: false, error: null });
       } else {
-        // No user signed in: attempt anonymous sign-in and set user
-        try {
-          const credential = await signInAnonymously(auth);
-          if (!mounted) return;
-          const anonUser = credential.user;
-          const anon: AuthUser = {
-            uid: anonUser.uid,
-            email: anonUser.email,
-            displayName: anonUser.displayName,
-            photoURL: anonUser.photoURL,
-            isAnonymous: anonUser.isAnonymous,
-          };
-          setAuthState({ user: anon, loading: false, error: null });
-        } catch (err) {
-          console.error('Failed to sign in anonymously:', err);
-          if (!mounted) return;
-          setAuthState({ user: null, loading: false, error: err instanceof Error ? err.message : String(err) });
-        }
+        // No user signed in — require explicit sign-in
+        if (!mounted) return;
+        setAuthState({ user: null, loading: false, error: null });
       }
     });
 
@@ -111,13 +89,19 @@ export function useFirebaseAuth() {
 
   // Sign in anonymously (for demo/trial users) - wrapper
   const signInAnonymous = async (): Promise<void> => {
-    try {
-      setAuthState((prev) => ({ ...prev, loading: true, error: null }));
-      await signInAnonymously(auth);
-    } catch (error) {
-      setAuthState((prev) => ({ ...prev, loading: false, error: error instanceof Error ? error.message : 'Failed to sign in' }));
-      throw error;
-    }
+      if (!auth) {
+        const err = new Error('Firebase auth not initialized');
+        setAuthState((prev) => ({ ...prev, loading: false, error: err.message }));
+        throw err;
+      }
+
+      try {
+        setAuthState((prev) => ({ ...prev, loading: true, error: null }));
+        await signInAnonymously(auth);
+      } catch (error) {
+        setAuthState((prev) => ({ ...prev, loading: false, error: error instanceof Error ? error.message : 'Failed to sign in' }));
+        throw error;
+      }
   };
 
   // Sign in with email and password
