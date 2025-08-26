@@ -16,9 +16,12 @@ import {
   LayoutDashboard,
   Building2,
   Palette,
+  Coins,
 } from "lucide-react";
 import { UnifiedBrandSelector } from '@/components/brand/unified-brand-selector';
 import { usePathname } from "next/navigation";
+import { CreditsIndicator } from "@/components/pricing/CreditsDisplay";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Sidebar,
   SidebarHeader,
@@ -155,6 +158,8 @@ export function AppSidebar() {
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
+
+
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter>

@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { RevoModelSelector, type RevoModel } from '@/components/ui/revo-model-selector';
+import { getUserCredits } from '@/app/actions/pricing-actions';
 import Image from "next/image";
 import { cn } from '@/lib/utils';
 
@@ -31,6 +32,7 @@ interface ChatInputProps {
   setAspectRatio: (value: '16:9' | '9:16') => void;
   selectedRevoModel: RevoModel;
   setSelectedRevoModel: (value: RevoModel) => void;
+  userCredits?: number;
 }
 
 export function ChatInput({
@@ -52,6 +54,7 @@ export function ChatInput({
   setAspectRatio,
   selectedRevoModel,
   setSelectedRevoModel,
+  userCredits,
 }: ChatInputProps) {
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -184,6 +187,8 @@ export function ChatInput({
               selectedModel={selectedRevoModel}
               onModelChange={setSelectedRevoModel}
               disabled={!isBrandProfileAvailable || outputType !== 'image'}
+              showCredits={true}
+              userCredits={userCredits}
             />
           </div>
 

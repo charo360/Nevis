@@ -307,8 +307,8 @@ export function BrandSetup({ initialProfile, onProfileSaved }: BrandSetupProps) 
   };
 
   return (
-    <div className="mx-auto grid max-w-4xl gap-6">
-      <div className="text-center">
+    <div className="w-full px-6 lg:px-12 grid gap-6">
+      <div className="text-center w-full max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold font-headline">{initialProfile ? "Manage Brand Profile" : "Welcome to LocalBuzz"}</h1>
         <p className="text-muted-foreground">
           {initialProfile ? "Update your brand details below." : "Let's set up your brand profile to generate perfectly tailored content."}
