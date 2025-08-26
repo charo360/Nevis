@@ -327,8 +327,8 @@ const SidebarInset = React.forwardRef<
       <main
         ref={ref}
         className={cn(
-          // Position absolutely to break out of flex layout constraints
-          "fixed inset-0 z-0 bg-background",
+          // Use fixed positioning but ensure proper flex layout for scrolling
+          "fixed inset-0 z-0 bg-background flex flex-col",
           // Add left margin to account for sidebar when it's open
           "md:ml-[--sidebar-width] md:peer-data-[state=collapsed]:ml-[--sidebar-width-icon] md:peer-data-[collapsible=offcanvas]:ml-0",
           className
@@ -634,7 +634,7 @@ const SidebarMenuAction = React.forwardRef<
         "peer-data-[size=lg]/menu-button:top-2.5",
         "group-data-[collapsible=icon]:hidden",
         showOnHover &&
-          "group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 peer-data-[active=true]/menu-button:text-sidebar-accent-foreground md:opacity-0",
+        "group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 peer-data-[active=true]/menu-button:text-sidebar-accent-foreground md:opacity-0",
         className
       )}
       {...props}

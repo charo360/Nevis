@@ -149,156 +149,156 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
 
   // Ensure this component is always full-bleed inside the app shell and does not cause horizontal overflow.
   return (
-    <div className="w-full max-w-[100vw] box-border overflow-x-hidden min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="w-full max-w-[100vw] box-border overflow-x-hidden">
       <div className="w-full px-6 py-10 lg:py-16 lg:px-12">
         <div className="w-full box-border space-y-6">
-      {/* Compact Brand Consistency Controls */}
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Settings className="h-4 w-4 text-blue-600" />
-            <span className="font-medium text-sm">Brand Consistency</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Palette className="h-3 w-3 text-gray-500" />
-              <span className="text-xs text-gray-600">Strict</span>
-              <Switch
-                checked={brandConsistency.strictConsistency}
-                onCheckedChange={(checked) =>
-                  setBrandConsistency(prev => ({ ...prev, strictConsistency: checked }))
-                }
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-3 w-3 text-gray-500" />
-              <span className="text-xs text-gray-600">Colors</span>
-              <Switch
-                checked={brandConsistency.followBrandColors}
-                onCheckedChange={(checked) =>
-                  setBrandConsistency(prev => ({ ...prev, followBrandColors: checked }))
-                }
-              />
-            </div>
-            <Separator orientation="vertical" className="h-4" />
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-600">AI Model:</span>
-              <select
-                value={selectedRevoModel}
-                onChange={(e) => setSelectedRevoModel(e.target.value as RevoModel)}
-                className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-1 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="revo-1.0">Revo 1.0</option>
-                <option value="revo-1.5">Revo 1.5</option>
-              </select>
-            </div>
-          </div>
-        </div>
-        <p className="text-xs text-gray-500 mt-2">
-          {selectedRevoModel === 'revo-1.5'
-            ? `✨ ${selectedRevoModel}: Enhanced AI with professional design principles + ${brandConsistency.strictConsistency ? "strict consistency" : "brand colors"}`
-            : selectedRevoModel === 'revo-1.0'
-              ? `🚀 ${selectedRevoModel}: Standard reliable AI + ${brandConsistency.strictConsistency ? "strict consistency" : "brand colors"}`
-              : `🌟 ${selectedRevoModel}: Next-generation AI (coming soon)`
-          }
-        </p>
-      </div>
-
-      {/* Simple Artifacts Toggle */}
-      <div className="mb-6">
-        <Card>
-          <CardContent className="p-4">
+          {/* Compact Brand Consistency Controls */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
             <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label className="text-sm font-medium">Use Artifacts</Label>
-                <p className="text-xs text-muted-foreground">
-                  Enable to use your uploaded reference materials and exact-use content
-                </p>
-              </div>
               <div className="flex items-center gap-2">
-                <Switch
-                  checked={selectedArtifacts.length > 0}
-                  onCheckedChange={(checked) => {
-                    if (checked) {
-                      // Enable artifacts - this will use active artifacts from the artifacts page
-                      setSelectedArtifacts(['active']);
-                    } else {
-                      // Disable artifacts
-                      setSelectedArtifacts([]);
+                <Settings className="h-4 w-4 text-blue-600" />
+                <span className="font-medium text-sm">Brand Consistency</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Palette className="h-3 w-3 text-gray-500" />
+                  <span className="text-xs text-gray-600">Strict</span>
+                  <Switch
+                    checked={brandConsistency.strictConsistency}
+                    onCheckedChange={(checked) =>
+                      setBrandConsistency(prev => ({ ...prev, strictConsistency: checked }))
                     }
-                  }}
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => window.open('/artifacts', '_blank')}
-                  className="text-xs"
-                >
-                  Manage
-                </Button>
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-3 w-3 text-gray-500" />
+                  <span className="text-xs text-gray-600">Colors</span>
+                  <Switch
+                    checked={brandConsistency.followBrandColors}
+                    onCheckedChange={(checked) =>
+                      setBrandConsistency(prev => ({ ...prev, followBrandColors: checked }))
+                    }
+                  />
+                </div>
+                <Separator orientation="vertical" className="h-4" />
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-600">AI Model:</span>
+                  <select
+                    value={selectedRevoModel}
+                    onChange={(e) => setSelectedRevoModel(e.target.value as RevoModel)}
+                    className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-1 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="revo-1.0">Revo 1.0</option>
+                    <option value="revo-1.5">Revo 1.5</option>
+                  </select>
+                </div>
               </div>
             </div>
-            {selectedArtifacts.length > 0 && (
-              <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-md">
-                <p className="text-xs text-blue-700">
-                  ✓ Artifacts enabled - Content will use your reference materials and exact-use items from the Artifacts page
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+            <p className="text-xs text-gray-500 mt-2">
+              {selectedRevoModel === 'revo-1.5'
+                ? `✨ ${selectedRevoModel}: Enhanced AI with professional design principles + ${brandConsistency.strictConsistency ? "strict consistency" : "brand colors"}`
+                : selectedRevoModel === 'revo-1.0'
+                  ? `🚀 ${selectedRevoModel}: Standard reliable AI + ${brandConsistency.strictConsistency ? "strict consistency" : "brand colors"}`
+                  : `🌟 ${selectedRevoModel}: Next-generation AI (coming soon)`
+              }
+            </p>
+          </div>
 
-      <div className="flex flex-col items-start gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight font-headline">Content Calendar</h1>
-          <p className="text-muted-foreground">
-            Here's your generated content. Click a post to edit or regenerate.
-          </p>
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button disabled={!!isGenerating}>
-              {isGenerating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating for {isGenerating}...
-                </>
-              ) : (
-                "✨ Generate New Post"
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            {platforms.map((p) => (
-              <DropdownMenuItem key={p.name} onClick={() => handleGenerateClick(p.name)} disabled={!!isGenerating}>
-                <p.icon className="mr-2 h-4 w-4" />
-                <span>{p.name}</span>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+          {/* Simple Artifacts Toggle */}
+          <div className="mb-6">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium">Use Artifacts</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Enable to use your uploaded reference materials and exact-use content
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={selectedArtifacts.length > 0}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          // Enable artifacts - this will use active artifacts from the artifacts page
+                          setSelectedArtifacts(['active']);
+                        } else {
+                          // Disable artifacts
+                          setSelectedArtifacts([]);
+                        }
+                      }}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open('/artifacts', '_blank')}
+                      className="text-xs"
+                    >
+                      Manage
+                    </Button>
+                  </div>
+                </div>
+                {selectedArtifacts.length > 0 && (
+                  <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-md">
+                    <p className="text-xs text-blue-700">
+                      ✓ Artifacts enabled - Content will use your reference materials and exact-use items from the Artifacts page
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
 
-      {posts.length > 0 ? (
-        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 w-full max-w-none">
-          {posts.map((post) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              brandProfile={brandProfile}
-              onPostUpdated={onPostUpdated}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-card p-12 text-center w-full">
-          <h3 className="text-xl font-semibold">Your calendar is empty</h3>
-          <p className="text-muted-foreground mt-2">
-            Click the "Generate" button to create your first social media post!
-          </p>
-        </div>
-      )}
+          <div className="flex flex-col items-start gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight font-headline">Content Calendar</h1>
+              <p className="text-muted-foreground">
+                Here's your generated content. Click a post to edit or regenerate.
+              </p>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button disabled={!!isGenerating}>
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating for {isGenerating}...
+                    </>
+                  ) : (
+                    "✨ Generate New Post"
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {platforms.map((p) => (
+                  <DropdownMenuItem key={p.name} onClick={() => handleGenerateClick(p.name)} disabled={!!isGenerating}>
+                    <p.icon className="mr-2 h-4 w-4" />
+                    <span>{p.name}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {posts.length > 0 ? (
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 w-full max-w-none">
+              {posts.map((post) => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  brandProfile={brandProfile}
+                  onPostUpdated={onPostUpdated}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-card p-12 text-center w-full">
+              <h3 className="text-xl font-semibold">Your calendar is empty</h3>
+              <p className="text-muted-foreground mt-2">
+                Click the "Generate" button to create your first social media post!
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
