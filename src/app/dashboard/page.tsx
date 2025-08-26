@@ -208,7 +208,7 @@ export default function DashboardPage() {
 
   return (
     <SidebarInset key={brandKey}>
-      <div className="flex-1 space-y-6 p-6">
+  <div className="flex-1 w-full max-w-[100vw] overflow-x-hidden space-y-6 px-6 py-6 lg:py-10 lg:px-12">
         {/* Top navbar - visible navigation and user menu */}
         <div className="flex items-center justify-between mb-6 bg-white/80 backdrop-blur-sm border rounded-lg p-3 shadow-sm">
           <div className="flex items-center gap-6">
@@ -295,6 +295,8 @@ export default function DashboardPage() {
             <CardContent>
               <div className="flex gap-3">
                 <Button
+                  onMouseEnter={() => router.prefetch('/brand-profile?mode=create')}
+                  onFocus={() => router.prefetch('/brand-profile?mode=create')}
                   onClick={() => router.push('/brand-profile?mode=create')}
                   className="bg-blue-600 hover:bg-blue-700"
                 >
@@ -305,6 +307,8 @@ export default function DashboardPage() {
                 {hasBrands && (
                   <Button
                     variant="outline"
+                    onMouseEnter={() => router.prefetch('/brands')}
+                    onFocus={() => router.prefetch('/brands')}
                     onClick={() => router.push('/brands')}
                     className="border-blue-200 text-blue-700 hover:bg-blue-50"
                   >

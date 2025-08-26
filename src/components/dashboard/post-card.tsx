@@ -393,7 +393,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
 
   return (
     <>
-      <Card className="flex flex-col">
+  <Card className="flex flex-col w-full">
         <CardHeader className="flex-row items-center justify-between gap-4 p-4">
           <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <CalendarIcon className="h-4 w-4" />

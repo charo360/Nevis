@@ -20,6 +20,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { auth } from '@/lib/firebase/config';
 import { useFirebaseAuth } from '@/hooks/use-firebase-auth';
 import { useToast } from '@/hooks/use-toast';
 import { loadStripe } from '@stripe/stripe-js';
@@ -29,13 +30,131 @@ import { Badge } from '@/components/ui/badge';
 export default function HomePage() {
   const router = useRouter();
   const [isVisible, setIsVisible] = useState(false);
-  const { user } = useFirebaseAuth();
+  const { user, signOut } = useFirebaseAuth();
+  const [sessionActive, setSessionActive] = useState<boolean>(false);
   const { toast } = useToast();
   const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
 
   useEffect(() => {
     setIsVisible(true);
   }, []);
+
+  // Heartbeat: ping server every 5 minutes to extend session (only for logged in users)
+  useEffect(() => {
+    let mounted = true;
+    let interval: any = null;
+
+    async function getIdTokenSafe() {
+      try {
+        if (!auth || !auth.currentUser) return null;
+        return await auth.currentUser.getIdToken();
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function sendHeartbeat() {
+      if (!user || !user.uid) return;
+      try {
+        const idToken = await getIdTokenSafe();
+        const headers: any = { 'Content-Type': 'application/json' };
+        if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
+
+        await fetch('/api/auth/heartbeat', { method: 'POST', headers });
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    async function checkSession() {
+      if (!user || !user.uid) return;
+      try {
+        const idToken = await getIdTokenSafe();
+        const headers: any = { 'Content-Type': 'application/json' };
+        if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
+
+        const res = await fetch('/api/auth/check-session', { method: 'POST', headers });
+        const json = await res.json();
+        if (!json.ok) {
+          // If session inactive or expired, sign user out on client
+          if (json.reason === 'inactive' || json.reason === 'expired') {
+            try {
+              await signOut();
+              // reload to reflect logged-out state
+              window.location.reload();
+            } catch (e) {
+              window.location.href = '/auth';
+            }
+          }
+        }
+      } catch (e) {
+        // ignore network errors
+      }
+    }
+
+    // Start initial check and heartbeat
+    if (user && user.uid) {
+      sendHeartbeat();
+      checkSession();
+      interval = setInterval(() => {
+        sendHeartbeat();
+        checkSession();
+      }, 5 * 60 * 1000); // every 5 minutes
+    }
+
+    // Also run a one-off session check to update UI (dashboard link)
+    (async () => {
+      if (!user || !user.uid) {
+        setSessionActive(false);
+        return;
+      }
+
+      // Optimistically show dashboard while we verify session with server
+      setSessionActive(true);
+
+      try {
+        const idToken = await getIdTokenSafe();
+        const headers: any = { 'Content-Type': 'application/json' };
+        if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
+
+        const res = await fetch('/api/auth/check-session', { method: 'POST', headers });
+        const json = await res.json();
+
+        if (json.ok) {
+          setSessionActive(true);
+          return;
+        }
+
+        // Server explicitly invalidated session -> sign out
+        if (json.reason === 'inactive' || json.reason === 'expired') {
+          try {
+            await signOut();
+          } catch (e) {
+            // ignore
+          }
+          setSessionActive(false);
+          // reload to update UI
+          window.location.reload();
+          return;
+        }
+
+        // If server can't verify due to permission issues, keep showing dashboard but warn in console
+        if (json.reason === 'permission_denied') {
+          console.warn('check-session: server returned permission_denied - showing dashboard client-side until server is fixed', json.hint || json);
+          setSessionActive(true);
+          return;
+        }
+
+        // Default: keep dashboard visible
+        setSessionActive(true);
+      } catch (e) {
+        console.warn('check-session failed, defaulting to client-side session active', e);
+        setSessionActive(true);
+      }
+    })();
+
+    return () => { mounted = false; if (interval) clearInterval(interval); };
+  }, [user, signOut]);
 
   const handleGetStarted = () => {
     console.log('Get Started clicked - navigating to /auth');
@@ -104,19 +223,27 @@ export default function HomePage() {
             <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">Features</a>
             <a href="/pricing" className="text-gray-600 hover:text-gray-900 transition-colors">Pricing</a>
             <a href="#about" className="text-gray-600 hover:text-gray-900 transition-colors">About</a>
-            <Button
-              onClick={handleSignIn}
-              variant="outline"
-              className="border-gray-300  text-black cursor-pointer z-10 relative"
-            >
-              Sign In
-            </Button>
-            <Button
-              onClick={handleGetStarted}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 cursor-pointer z-10 relative"
-            >
-              Get Started
-            </Button>
+            {sessionActive ? (
+              <Button onClick={() => router.push('/dashboard')} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
+                Dashboard
+              </Button>
+            ) : (
+              <>
+                <Button
+                  onClick={handleSignIn}
+                  variant="outline"
+                  className="border-gray-300  text-black cursor-pointer z-10 relative"
+                >
+                  Sign In
+                </Button>
+                <Button
+                  onClick={handleGetStarted}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 cursor-pointer z-10 relative"
+                >
+                  Get Started
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </nav>

@@ -13,6 +13,7 @@ import {
 import { SidebarInset } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
 import {
   Card,
   CardContent,
@@ -138,9 +139,10 @@ function SocialConnectPage() {
     }
   };
 
+// when no brand is selected, show a fallback screen with SidebarInset for consistency
   if (!currentBrand) {
     return (
-      <SidebarInset>
+      <SidebarInset fullWidth>
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
           <div className="text-center">
             <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -154,8 +156,9 @@ function SocialConnectPage() {
     );
   }
 
+  // main render: use SidebarInset with fullWidth to match other dashboard pages
   return (
-    <SidebarInset>
+    <SidebarInset fullWidth>
       <header className="flex h-14 items-center justify-end gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -176,63 +179,67 @@ function SocialConnectPage() {
           </DropdownMenuContent>
         </DropdownMenu>
       </header>
-      <main className="flex-1 overflow-auto p-4 lg:p-6">
-        <div className="mx-auto max-w-2xl">
-          <div className="mb-8 text-center">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <h1 className="text-3xl font-bold font-headline">
-                Connect Your Social Media
-              </h1>
-              <Badge variant="secondary" className="bg-green-100 text-green-800">
-                🔥 Brand-Scoped
-              </Badge>
-            </div>
-            <p className="text-muted-foreground">
-              Connect social media accounts for <strong>{brandLabel}</strong> to allow the AI to learn your brand's unique
-              voice and visual style from your past posts.
-            </p>
-          </div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Platform Connections</CardTitle>
-              <CardDescription>
-                Manage your connected social media accounts for {brandLabel}.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {isLoading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                  <p className="text-gray-600">Loading connections...</p>
+      <main className="flex-1 overflow-auto">
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+          <div className="container mx-auto px-4 py-8">
+            <div className="max-w-7xl mx-auto">
+              <div className="mb-8 text-center">
+                <div className="flex items-center justify-center gap-2 mb-4">
+                  <h1 className="text-3xl font-bold font-headline">
+                    Connect Your Social Media
+                  </h1>
+                  <Badge variant="secondary" className="bg-green-100 text-green-800">
+                    🔥 Brand-Scoped
+                  </Badge>
                 </div>
-              ) : (
-                connections.map((connection) => (
-                  <div key={connection.platform} className="flex items-center justify-between rounded-lg border p-4">
-                    <div className="flex items-center gap-4">
-                      {getPlatformIcon(connection.platform)}
-                      <div>
-                        <span className="font-medium">{connection.platform}</span>
-                        {connection.lastSync && (
-                          <p className="text-sm text-gray-500">
-                            Last sync: {new Date(connection.lastSync).toLocaleDateString()}
-                          </p>
-                        )}
+                <p className="text-muted-foreground">
+                  Connect social media accounts for <strong>{brandLabel}</strong> to allow the AI to learn your brand's unique
+                  voice and visual style from your past posts.
+                </p>
+            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Platform Connections</CardTitle>
+                <CardDescription>
+                  Manage your connected social media accounts for {brandLabel}.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {isLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading connections...</p>
+                  </div>
+                ) : (
+                  connections.map((connection) => (
+                    <div key={connection.platform} className="flex items-center justify-between rounded-lg border p-4">
+                      <div className="flex items-center gap-4">
+                        {getPlatformIcon(connection.platform)}
+                        <div>
+                          <span className="font-medium">{connection.platform}</span>
+                          {connection.lastSync && (
+                            <p className="text-sm text-gray-500">
+                              Last sync: {new Date(connection.lastSync).toLocaleDateString()}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {getStatusBadge(connection)}
+                        <Button
+                          variant={connection.connected ? "outline" : "default"}
+                          onClick={() => toggleConnection(connection.platform)}
+                        >
+                          {connection.connected ? "Disconnect" : "Connect"}
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      {getStatusBadge(connection)}
-                      <Button
-                        variant={connection.connected ? "outline" : "default"}
-                        onClick={() => toggleConnection(connection.platform)}
-                      >
-                        {connection.connected ? "Disconnect" : "Connect"}
-                      </Button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+            </div>
+          </div>
         </div>
       </main>
     </SidebarInset>
