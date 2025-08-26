@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation";
 import { useUnifiedBrand, useBrandStorage, useBrandChangeListener } from "@/contexts/unified-brand-context";
 import { UnifiedBrandLayout, BrandContent, BrandSwitchingStatus } from "@/components/layout/unified-brand-layout";
 import { STORAGE_FEATURES } from "@/lib/services/brand-scoped-storage";
+import { SidebarInset } from "@/components/ui/sidebar";
 
 interface ScheduledContent {
   id: string;
@@ -239,15 +240,17 @@ function ContentCalendarPageContent() {
   }
 
   return (
-    <div className="w-full h-screen overflow-auto">
-      <div className="container mx-auto p-3 space-y-3 max-w-full">
-        {/* Compact Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Content Calendar</h1>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Schedule services for content generation
-            </p>
+    <SidebarInset fullWidth>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-7xl mx-auto">
+          {/* Compact Header */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-6">
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Content Calendar</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                Schedule services for content generation
+              </p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => navigateMonth('prev')}>
@@ -423,8 +426,10 @@ function ContentCalendarPageContent() {
           services={services}
           onSchedule={scheduleContent}
         />
+        </div>
       </div>
     </div>
+    </SidebarInset>
   );
 }
 

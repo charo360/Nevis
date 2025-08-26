@@ -13,6 +13,7 @@ import {
 import { SidebarInset } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
 import {
   Card,
   CardContent,
@@ -34,9 +35,10 @@ interface SocialConnection {
   status: 'connected' | 'disconnected' | 'error';
 }
 
-
 function SocialConnectPage() {
   const { currentBrand, loading: brandLoading } = useUnifiedBrand();
+  // Prefer businessName; fall back safely if older shape includes `name`.
+  const brandLabel = currentBrand?.businessName ?? (currentBrand as unknown as { name?: string })?.name ?? 'Unnamed Brand';
   const socialStorage = useBrandStorage(STORAGE_FEATURES.SOCIAL_MEDIA);
   const [connections, setConnections] = useState<SocialConnection[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -51,7 +53,7 @@ function SocialConnectPage() {
 
   // Load connections when brand changes using unified brand system
   useBrandChangeListener(React.useCallback((brand) => {
-    const brandName = brand?.businessName || brand?.name || 'none';
+    const brandName = brand?.businessName ?? (brand as unknown as { name?: string })?.name ?? 'none';
     console.log('🔄 Social Connect: brand changed to:', brandName);
 
     if (!brand) {
@@ -87,23 +89,25 @@ function SocialConnectPage() {
     try {
       socialStorage.setItem(newConnections);
       setConnections(newConnections);
-      console.log(`💾 Saved social connections for brand ${currentBrand?.businessName || currentBrand?.name}`);
+      console.log(`💾 Saved social connections for brand ${brandLabel}`);
     } catch (error) {
       console.error('Failed to save social connections:', error);
     }
   };
 
   const toggleConnection = (platform: string) => {
-    const updatedConnections = connections.map(conn =>
+    const updatedConnections = connections.map<SocialConnection>(conn =>
       conn.platform === platform
         ? {
           ...conn,
           connected: !conn.connected,
-          status: !conn.connected ? 'connected' : 'disconnected',
+          // keep literal union types for `status`
+          status: !conn.connected ? ('connected' as const) : ('disconnected' as const),
           lastSync: !conn.connected ? new Date().toISOString() : undefined
         }
         : conn
     );
+
     saveConnections(updatedConnections);
   };
 
@@ -135,9 +139,10 @@ function SocialConnectPage() {
     }
   };
 
+// when no brand is selected, show a fallback screen with SidebarInset for consistency
   if (!currentBrand) {
     return (
-      <SidebarInset>
+      <SidebarInset fullWidth>
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
           <div className="text-center">
             <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -151,8 +156,9 @@ function SocialConnectPage() {
     );
   }
 
+  // main render: use SidebarInset with fullWidth to match other dashboard pages
   return (
-    <SidebarInset>
+    <SidebarInset fullWidth>
       <header className="flex h-14 items-center justify-end gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -173,63 +179,67 @@ function SocialConnectPage() {
           </DropdownMenuContent>
         </DropdownMenu>
       </header>
-      <main className="flex-1 overflow-auto p-4 lg:p-6">
-        <div className="mx-auto max-w-2xl">
-          <div className="mb-8 text-center">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <h1 className="text-3xl font-bold font-headline">
-                Connect Your Social Media
-              </h1>
-              <Badge variant="secondary" className="bg-green-100 text-green-800">
-                🔥 Brand-Scoped
-              </Badge>
-            </div>
-            <p className="text-muted-foreground">
-              Connect social media accounts for <strong>{currentBrand.businessName || currentBrand.name}</strong> to allow the AI to learn your brand's unique
-              voice and visual style from your past posts.
-            </p>
-          </div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Platform Connections</CardTitle>
-              <CardDescription>
-                Manage your connected social media accounts for {currentBrand.businessName || currentBrand.name}.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {isLoading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                  <p className="text-gray-600">Loading connections...</p>
+      <main className="flex-1 overflow-auto">
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+          <div className="container mx-auto px-4 py-8">
+            <div className="max-w-7xl mx-auto">
+              <div className="mb-8 text-center">
+                <div className="flex items-center justify-center gap-2 mb-4">
+                  <h1 className="text-3xl font-bold font-headline">
+                    Connect Your Social Media
+                  </h1>
+                  <Badge variant="secondary" className="bg-green-100 text-green-800">
+                    🔥 Brand-Scoped
+                  </Badge>
                 </div>
-              ) : (
-                connections.map((connection) => (
-                  <div key={connection.platform} className="flex items-center justify-between rounded-lg border p-4">
-                    <div className="flex items-center gap-4">
-                      {getPlatformIcon(connection.platform)}
-                      <div>
-                        <span className="font-medium">{connection.platform}</span>
-                        {connection.lastSync && (
-                          <p className="text-sm text-gray-500">
-                            Last sync: {new Date(connection.lastSync).toLocaleDateString()}
-                          </p>
-                        )}
+                <p className="text-muted-foreground">
+                  Connect social media accounts for <strong>{brandLabel}</strong> to allow the AI to learn your brand's unique
+                  voice and visual style from your past posts.
+                </p>
+            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Platform Connections</CardTitle>
+                <CardDescription>
+                  Manage your connected social media accounts for {brandLabel}.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {isLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading connections...</p>
+                  </div>
+                ) : (
+                  connections.map((connection) => (
+                    <div key={connection.platform} className="flex items-center justify-between rounded-lg border p-4">
+                      <div className="flex items-center gap-4">
+                        {getPlatformIcon(connection.platform)}
+                        <div>
+                          <span className="font-medium">{connection.platform}</span>
+                          {connection.lastSync && (
+                            <p className="text-sm text-gray-500">
+                              Last sync: {new Date(connection.lastSync).toLocaleDateString()}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {getStatusBadge(connection)}
+                        <Button
+                          variant={connection.connected ? "outline" : "default"}
+                          onClick={() => toggleConnection(connection.platform)}
+                        >
+                          {connection.connected ? "Disconnect" : "Connect"}
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      {getStatusBadge(connection)}
-                      <Button
-                        variant={connection.connected ? "outline" : "default"}
-                        onClick={() => toggleConnection(connection.platform)}
-                      >
-                        {connection.connected ? "Disconnect" : "Connect"}
-                      </Button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+            </div>
+          </div>
         </div>
       </main>
     </SidebarInset>

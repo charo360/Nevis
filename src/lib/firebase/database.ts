@@ -5,6 +5,7 @@ import {
   getDoc,
   getDocs,
   addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   query,
@@ -46,6 +47,18 @@ export class DatabaseService<T extends { id: string; userId: string }> {
 
     const docRef = await addDoc(collection(db, this.collectionName), docData);
     return docRef.id;
+  }
+
+  // Create or set a document with a specific ID (useful for users so the doc ID == uid)
+  async createWithId(id: string, data: Omit<T, 'id' | 'createdAt' | 'updatedAt'>): Promise<void> {
+    const docRef = doc(db, this.collectionName, id);
+    const docData = {
+      ...data,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    await setDoc(docRef, docData);
   }
 
   // Get a document by ID

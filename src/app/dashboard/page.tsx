@@ -21,15 +21,38 @@ import {
   Plus
 } from 'lucide-react';
 import { useFirebaseAuth } from '@/hooks/use-firebase-auth';
+import { useToast } from '@/hooks/use-toast';
+import { loadStripe } from '@stripe/stripe-js'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { SidebarInset } from '@/components/ui/sidebar';
 import { useUnifiedBrand } from '@/contexts/unified-brand-context';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user } = useFirebaseAuth();
+  const { user, loading: authLoading, signOut } = useFirebaseAuth();
+  const { toast } = useToast();
+  // If auth is loading, show spinner; if user is missing or anonymous, redirect to /auth
+  React.useEffect(() => {
+    if (!authLoading) {
+      if (!user || user.isAnonymous) {
+        router.replace('/auth');
+      }
+    }
+  }, [authLoading, user, router]);
   const { currentBrand, brands } = useUnifiedBrand();
+  const brandLabel = currentBrand?.businessName ?? (currentBrand as unknown as { name?: string })?.name ?? 'Unnamed Brand';
   const hasBrands = brands.length > 0;
   const brandCount = brands.length;
+  // Safe stable key for React list/key usage: prefer explicit id if available, otherwise use brandLabel
+  const brandKey = (currentBrand as any)?.id ?? brandLabel ?? 'no-brand';
 
   const features = [
     {
@@ -148,9 +171,96 @@ export default function DashboardPage() {
   const coreFeatures = features.filter(f => f.isCore);
   const additionalFeatures = features.filter(f => !f.isCore);
 
+  const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
+
+  const createCheckout = async (priceId: string) => {
+    if (!user || !user.uid) {
+      // Ensure authenticated
+      router.push('/auth')
+      return
+    }
+
+    try {
+      const res = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priceId, quantity: 1, mode: 'payment', customerEmail: user.email, metadata: { userId: user.uid, priceId } })
+      })
+
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+
+      // Redirect to Stripe Checkout
+      const stripe = await stripePromise
+      if (!stripe) throw new Error('Stripe failed to load')
+
+      if (data.url) {
+        // prefer URL if returned
+        window.location.href = data.url
+      } else if (data.id) {
+        await stripe.redirectToCheckout({ sessionId: data.id })
+      }
+    } catch (err: any) {
+      console.error('Checkout error', err)
+      toast({ variant: 'destructive', title: 'Checkout failed', description: String(err.message || err) })
+    }
+  }
+
   return (
-    <SidebarInset key={currentBrand?.id || 'no-brand'}>
-      <div className="flex-1 space-y-6 p-6">
+    <SidebarInset key={brandKey}>
+  <div className="flex-1 w-full max-w-[100vw] overflow-x-hidden space-y-6 px-6 py-6 lg:py-10 lg:px-12">
+        {/* Top navbar - visible navigation and user menu */}
+        <div className="flex items-center justify-between mb-6 bg-white/80 backdrop-blur-sm border rounded-lg p-3 shadow-sm">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded flex items-center justify-center text-white font-semibold">
+                {brandLabel.slice(0,2).toUpperCase()}
+              </div>
+              <div className="hidden sm:block">
+                <div className="text-xs text-gray-500">Working on</div>
+                <div className="font-semibold text-sm">{brandLabel}</div>
+              </div>
+            </div>
+
+      
+          
+          </div>
+
+          {/* User icon + dropdown (visible) */}
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-right hidden sm:block">
+              <div className="font-medium">{user?.displayName || user?.email}</div>
+              <div className="text-xs text-muted-foreground">{user?.isAnonymous ? 'Demo' : 'Member'}</div>
+            </div>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button aria-label="Open user menu" className="flex items-center gap-3 rounded-full px-2 py-1 hover:bg-gray-50">
+                  <Avatar>
+                    <AvatarImage src={user?.photoURL || 'https://placehold.co/40x40.png'} alt={user?.displayName || 'User'} />
+                    <AvatarFallback>{(user?.displayName || user?.email || 'U').slice(0,2).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel className="font-medium">{user?.displayName || user?.email}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => router.push('/profile')}>Profile</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => router.push('/settings')}>Settings</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => router.push('/brand-profile')}>Brand Profile</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={async () => {
+                  try {
+                    await signOut();
+                    router.replace('/auth');
+                  } catch (e) {
+                    console.error('Sign out error', e);
+                  }
+                }}>Sign out</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
         {/* Welcome Header */}
         <div className="space-y-2">
           <h1 className="text-3xl font-bold text-gray-900">
@@ -159,7 +269,7 @@ export default function DashboardPage() {
           <p className="text-gray-600">
             {user?.displayName ? `Hi ${user.displayName}! ` : 'Hi there! '}
             {currentBrand
-              ? `You're working with ${currentBrand.businessName || currentBrand.name || 'your brand'}. Choose a feature to get started creating amazing content.`
+              ? `You're working with ${brandLabel}. Choose a feature to get started creating amazing content.`
               : hasBrands
                 ? `You have ${brandCount} brand${brandCount !== 1 ? 's' : ''}. Select one from the sidebar or create a new one to get started.`
                 : "Let's start by creating your first brand profile, then explore all the powerful features available to you."
@@ -185,6 +295,8 @@ export default function DashboardPage() {
             <CardContent>
               <div className="flex gap-3">
                 <Button
+                  onMouseEnter={() => router.prefetch('/brand-profile?mode=create')}
+                  onFocus={() => router.prefetch('/brand-profile?mode=create')}
                   onClick={() => router.push('/brand-profile?mode=create')}
                   className="bg-blue-600 hover:bg-blue-700"
                 >
@@ -195,6 +307,8 @@ export default function DashboardPage() {
                 {hasBrands && (
                   <Button
                     variant="outline"
+                    onMouseEnter={() => router.prefetch('/brands')}
+                    onFocus={() => router.prefetch('/brands')}
                     onClick={() => router.push('/brands')}
                     className="border-blue-200 text-blue-700 hover:bg-blue-50"
                   >
@@ -222,12 +336,12 @@ export default function DashboardPage() {
                     <img src={currentBrand.logoDataUrl} alt="Logo" className="w-8 h-8 rounded" />
                   ) : (
                     <span className="text-primary font-semibold">
-                      {(currentBrand.businessName || currentBrand.name || 'BR')?.slice(0, 2).toUpperCase()}
+                      {(brandLabel || 'BR').slice(0, 2).toUpperCase()}
                     </span>
                   )}
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">{currentBrand.businessName || currentBrand.name || 'Unnamed Brand'}</h3>
+                  <h3 className="font-semibold text-gray-900">{brandLabel}</h3>
                   <p className="text-sm text-gray-600">{currentBrand.businessType || 'General Business'}</p>
                   {currentBrand.location && (
                     <p className="text-xs text-gray-500">{currentBrand.location}</p>

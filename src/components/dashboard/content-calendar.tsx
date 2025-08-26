@@ -24,7 +24,7 @@ type ContentCalendarProps = {
   brandProfile: BrandProfile;
   posts: GeneratedPost[];
   onPostGenerated: (post: GeneratedPost) => void;
-  onPostUpdated: (post: GeneratedPost) => void;
+  onPostUpdated: (post: GeneratedPost) => Promise<void>;
 };
 
 const platforms: { name: Platform; icon: React.ElementType }[] = [
@@ -42,7 +42,7 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
 
   // Brand consistency preferences - default to consistent if design examples exist
   const [brandConsistency, setBrandConsistency] = React.useState<BrandConsistencyPreferences>({
-    strictConsistency: brandProfile.designExamples && brandProfile.designExamples.length > 0, // Auto-check if design examples exist
+    strictConsistency: !!(brandProfile.designExamples && brandProfile.designExamples.length > 0), // Auto-check if design examples exist
     followBrandColors: true, // Always follow brand colors
   });
 
@@ -147,8 +147,11 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
     }
   };
 
+  // Ensure this component is always full-bleed inside the app shell and does not cause horizontal overflow.
   return (
-    <div className="space-y-6">
+    <div className="w-full max-w-[100vw] box-border overflow-x-hidden min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="w-full px-6 py-10 lg:py-16 lg:px-12">
+        <div className="w-full box-border space-y-6">
       {/* Compact Brand Consistency Controls */}
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
         <div className="flex items-center justify-between">
@@ -279,7 +282,7 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
       </div>
 
       {posts.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 w-full max-w-none">
           {posts.map((post) => (
             <PostCard
               key={post.id}
@@ -290,13 +293,15 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-card p-12 text-center">
+        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-card p-12 text-center w-full">
           <h3 className="text-xl font-semibold">Your calendar is empty</h3>
           <p className="text-muted-foreground mt-2">
             Click the "Generate" button to create your first social media post!
           </p>
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 }

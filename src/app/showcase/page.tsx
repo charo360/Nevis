@@ -18,8 +18,8 @@ export default function ShowcasePage() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-auto p-6">
-        <div className="text-center space-y-6 p-8">
+      <main className="flex-1 overflow-auto w-full px-6 py-6 lg:py-10 lg:px-12">
+        <div className="text-center space-y-6 p-8 w-full">
           <h2 className="text-5xl font-bold text-foreground mb-4">
             World-Class Design
           </h2>
@@ -38,7 +38,7 @@ export default function ShowcasePage() {
           </div>
         </div>
 
-        <div className="container mx-auto px-6 space-y-12">
+  <div className="w-full max-w-[100%] box-border px-6 space-y-12">
           {/* Button Showcase */}
           <section className="space-y-6">
             <h3 className="text-3xl font-bold">Enhanced Buttons</h3>
