@@ -86,8 +86,12 @@ export async function generateGeminiHDEnhancedDesign(
     const cleanedText = validateAndCleanText(input.imageText);
     const inputWithCleanText = { ...input, imageText: cleanedText };
 
+    // Get platform-specific aspect ratio for proper image generation
+    const aspectRatio = getPlatformAspectRatio(input.platform);
+    console.log(`🎯 Generating ${aspectRatio} aspect ratio for ${input.platform}`);
+
     // Build enhanced prompt optimized for Gemini 2.0 Flash HD generation
-    const enhancedPrompt = buildGeminiHDPrompt(inputWithCleanText);
+    const enhancedPrompt = buildGeminiHDPrompt(inputWithCleanText, aspectRatio);
     enhancementsApplied.push('Gemini 2.0 Flash HD Optimized Prompting', 'Text Validation & Cleaning');
 
     console.log('🎨 Generating Ultra-HD design with Gemini 2.0 Flash...');
@@ -122,12 +126,14 @@ export async function generateGeminiHDEnhancedDesign(
       });
     }
 
-    // Generate image with Gemini 2.0 Flash with HD quality settings
+    // Generate image with Gemini 2.0 Flash with HD quality settings and platform-specific aspect ratio
     const { media } = await generateWithRetry({
       model: 'googleai/gemini-2.0-flash-preview-image-generation',
       prompt: promptParts,
       config: {
         responseModalities: ['TEXT', 'IMAGE'],
+        // Note: Gemini 2.0 Flash handles aspect ratio through prompt instructions
+        // The aspect ratio is specified in the prompt itself for better control
       },
     });
 
@@ -172,7 +178,7 @@ export async function generateGeminiHDEnhancedDesign(
  * Build optimized prompt for Gemini 2.0 Flash HD generation
  * Enhanced with best practices for maximum quality and accuracy
  */
-function buildGeminiHDPrompt(input: GeminiHDEnhancedDesignInput): string {
+function buildGeminiHDPrompt(input: GeminiHDEnhancedDesignInput, aspectRatio: string): string {
   const { businessType, platform, visualStyle, imageText, brandProfile, brandConsistency, artifactInstructions } = input;
 
   // Generate unique variation elements for each request
@@ -225,14 +231,17 @@ function buildGeminiHDPrompt(input: GeminiHDEnhancedDesignInput): string {
 **DESIGN BRIEF:**
 Create a professional, high-impact social media design for a ${businessType} business.
 
-🎯 CRITICAL ASPECT RATIO REQUIREMENT:
+🎯 CRITICAL PLATFORM-SPECIFIC DIMENSIONS:
 - Platform: ${platform}
-- MUST generate image in correct aspect ratio for ${platform}
-- Facebook/LinkedIn: 16:9 landscape (1920x1080px)
-- Instagram: 1:1 square (1080x1080px)
-- Twitter: 16:9 landscape (1920x1080px)
-- DO NOT generate square images for Facebook or LinkedIn
-- DO NOT generate portrait images unless specifically required
+- REQUIRED ASPECT RATIO: ${aspectRatio}
+- MUST generate image in EXACT ${aspectRatio} aspect ratio for ${platform}
+- Instagram: 1:1 square (1080x1080px) - Perfect for feed posts
+- Facebook: 16:9 landscape (1200x630px) - Optimized for news feed
+- LinkedIn: 16:9 landscape (1200x627px) - Professional networking format
+- Twitter: 16:9 landscape (1200x675px) - Timeline optimization
+- DO NOT generate wrong aspect ratios - this is CRITICAL for platform compatibility
+- ENSURE the generated image matches the platform's native ${aspectRatio} format
+- The image MUST be ${aspectRatio} aspect ratio - this is NON-NEGOTIABLE
 
 Visual Style: ${visualStyle} | Location: ${brandProfile.location || 'Global'}
 
@@ -422,6 +431,7 @@ function validateAndCleanText(text: string): string {
 
 /**
  * Get appropriate aspect ratio for platform (Gemini 2.0 Flash HD)
+ * Updated with optimal dimensions for each social media platform
  */
 function getPlatformAspectRatio(platform: string): string {
   const platformLower = platform.toLowerCase();
@@ -434,17 +444,27 @@ function getPlatformAspectRatio(platform: string): string {
     return '9:16';
   }
 
-  // Horizontal formats (16:9 aspect ratio)
-  if (platformLower.includes('linkedin') ||
-    platformLower.includes('twitter') ||
-    platformLower.includes('facebook') ||
-    platformLower.includes('youtube') ||
+  // Platform-specific optimized aspect ratios
+  if (platformLower.includes('linkedin')) {
+    return '16:9'; // LinkedIn posts: 1200x627 (optimal for professional content)
+  }
+
+  if (platformLower.includes('facebook')) {
+    return '16:9'; // Facebook posts: 1200x630 (optimal for news feed)
+  }
+
+  if (platformLower.includes('twitter')) {
+    return '16:9'; // Twitter posts: 1200x675 (optimal for timeline)
+  }
+
+  // Other horizontal formats
+  if (platformLower.includes('youtube') ||
     platformLower.includes('banner')) {
     return '16:9';
   }
 
-  // Square format (1:1 aspect ratio) - default for most social media posts
-  return '1:1';
+  // Instagram and default - Square format (1:1 aspect ratio)
+  return '1:1'; // Instagram posts: 1080x1080 (optimal for feed)
 }
 
 /**
@@ -522,7 +542,11 @@ export async function generateGeminiHDEnhancedDesignWithFallback(
     try {
       // Fallback: Standard Gemini generation with enhanced prompting
       const startTime = Date.now();
-      const enhancedPrompt = buildGeminiHDPrompt(input);
+      // Get platform-specific aspect ratio for fallback generation
+      const aspectRatio = getPlatformAspectRatio(input.platform);
+      console.log(`🎯 Fallback generating ${aspectRatio} aspect ratio for ${input.platform}`);
+
+      const enhancedPrompt = buildGeminiHDPrompt(input, aspectRatio);
 
       // Build prompt parts array with media inputs
       const promptParts: any[] = [{ text: enhancedPrompt }];
@@ -554,6 +578,8 @@ export async function generateGeminiHDEnhancedDesignWithFallback(
         prompt: promptParts,
         config: {
           responseModalities: ['TEXT', 'IMAGE'],
+          // Note: Gemini 2.0 Flash handles aspect ratio through prompt instructions
+          // The aspect ratio is specified in the prompt itself for better control
         },
       });
 

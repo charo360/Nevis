@@ -141,7 +141,8 @@ const SidebarProvider = React.forwardRef<
               } as React.CSSProperties
             }
             className={cn(
-              "group/sidebar-wrapper flex min-h-svh w-full has-[[data-variant=inset]]:bg-sidebar",
+              // Prevent horizontal overflow from nested elements inside the sidebar layout
+              "group/sidebar-wrapper flex min-h-svh w-full overflow-x-hidden has-[[data-variant=inset]]:bg-sidebar",
               className
             )}
             ref={ref}
@@ -316,14 +317,33 @@ SidebarRail.displayName = "SidebarRail"
 
 const SidebarInset = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<"main">
->(({ className, ...props }, ref) => {
+  React.ComponentProps<"main"> & {
+    fullWidth?: boolean
+  }
+>(({ className, fullWidth = false, ...props }, ref) => {
+  if (fullWidth) {
+    // For full-width mode, break out of the sidebar constraints entirely
+    return (
+      <main
+        ref={ref}
+        className={cn(
+          // Position absolutely to break out of flex layout constraints
+          "fixed inset-0 z-0 bg-background",
+          // Add left margin to account for sidebar when it's open
+          "md:ml-[--sidebar-width] md:peer-data-[state=collapsed]:ml-[--sidebar-width-icon] md:peer-data-[collapsible=offcanvas]:ml-0",
+          className
+        )}
+        {...props}
+      />
+    )
+  }
+
   return (
     <main
       ref={ref}
       className={cn(
+        // Standard inset mode with responsive margins
         "relative flex min-h-svh flex-1 flex-col bg-background",
-        "peer-data-[variant=inset]:min-h-[calc(100svh-theme(spacing.4))] md:peer-data-[variant=inset]:m-2 md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow",
         className
       )}
       {...props}

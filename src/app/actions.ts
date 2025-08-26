@@ -9,6 +9,7 @@ import type { BrandProfile, GeneratedPost, Platform, CreativeAsset } from "@/lib
 import { artifactsService } from "@/lib/services/artifacts-service";
 import type { Artifact } from "@/lib/types/artifacts";
 import { generateEnhancedDesign } from "@/ai/gemini-2.5-design";
+import { generateRevo2ContentAction, generateRevo2CreativeAssetAction } from "@/app/actions/revo-2-actions";
 
 
 // --- AI Flow Actions ---

@@ -161,10 +161,11 @@ function QuickContentPage() {
 
     if (!brandLoading) {
       // Add a small delay to ensure brands have time to load
-      const timer = setTimeout(() => {
+          const timer = setTimeout(() => {
         if (brands.length === 0) {
           // No brands exist, redirect to brand setup
           console.log('🔄 Quick Content: No brands found, redirecting to brand setup');
+          try { router.prefetch('/brand-profile'); } catch {}
           router.push('/brand-profile');
         } else if (brands.length > 0 && !currentBrand) {
           // Try to restore from persistence first
@@ -359,7 +360,7 @@ function QuickContentPage() {
   };
 
   return (
-    <SidebarInset key={currentBrand?.id || 'no-brand'}>
+    <SidebarInset key={currentBrand?.id || 'no-brand'} fullWidth>
       <header className="flex h-14 items-center justify-between gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
         <div className="flex items-center gap-2">
           <Button
@@ -423,12 +424,17 @@ function QuickContentPage() {
           </DropdownMenuContent>
         </DropdownMenu>
       </header>
-      <main className="flex-1 overflow-auto p-4 lg:p-6">
-        {isLoading || brandLoading ? (
-          <div className="flex h-full items-center justify-center">
-            <p>Loading Content Calendar...</p>
-          </div>
-        ) : !currentBrand ? (
+      <main className="flex-1 overflow-auto">
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+          <div className="container mx-auto px-4 py-8">
+            <div className="max-w-7xl mx-auto">
+              {isLoading || brandLoading ? (
+                <div className="flex w-full min-h-[300px] items-center justify-center">
+                  <div className="w-full max-w-3xl text-center">
+                    <p>Loading Quick Content...</p>
+                  </div>
+                </div>
+              ) : !currentBrand ? (
           <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
             <h2 className="text-xl font-semibold">Select a Brand</h2>
             <p className="text-muted-foreground text-center">
@@ -447,7 +453,7 @@ function QuickContentPage() {
                 ))}
               </div>
             ) : (
-              <Button onClick={() => router.push('/brand-profile')}>
+                <Button onMouseEnter={() => router.prefetch('/brand-profile')} onFocus={() => router.prefetch('/brand-profile')} onClick={() => router.push('/brand-profile')}>
                 Create Brand Profile
               </Button>
             )}
@@ -467,16 +473,54 @@ function QuickContentPage() {
             /> */}
 
             {/* Content Calendar */}
-            <ContentCalendar
-              brandProfile={currentBrand}
-              posts={generatedPosts}
-              onPostGenerated={handlePostGenerated}
-              onPostUpdated={handlePostUpdated}
-            />
+            {/* Map unified CompleteBrandProfile to the simplified BrandProfile expected by ContentCalendar */}
+            {currentBrand && (
+              <ContentCalendar
+                brandProfile={{
+                  businessName: currentBrand.businessName,
+                  businessType: currentBrand.businessType || '',
+                  location: currentBrand.location || '',
+                  logoDataUrl: currentBrand.logoDataUrl || '',
+                  visualStyle: currentBrand.visualStyle || '',
+                  writingTone: currentBrand.writingTone || '',
+                  contentThemes: currentBrand.contentThemes || '',
+                  websiteUrl: currentBrand.websiteUrl || '',
+                  description: currentBrand.description || '',
+                  // Convert services array to newline-separated string to match BrandProfile.services
+                  services: Array.isArray((currentBrand as any).services)
+                    ? (currentBrand as any).services.map((s: any) => s.name).join('\n')
+                    : (currentBrand as any).services || '',
+                  targetAudience: currentBrand.targetAudience || '',
+                  keyFeatures: currentBrand.keyFeatures || '',
+                  competitiveAdvantages: currentBrand.competitiveAdvantages || '',
+                  contactInfo: {
+                    phone: currentBrand.contactPhone || '',
+                    email: currentBrand.contactEmail || '',
+                    address: currentBrand.contactAddress || '',
+                  },
+                  socialMedia: {
+                    facebook: currentBrand.facebookUrl || '',
+                    instagram: currentBrand.instagramUrl || '',
+                    twitter: currentBrand.twitterUrl || '',
+                    linkedin: currentBrand.linkedinUrl || '',
+                  },
+                  primaryColor: currentBrand.primaryColor || undefined,
+                  accentColor: currentBrand.accentColor || undefined,
+                  backgroundColor: currentBrand.backgroundColor || undefined,
+                  designExamples: currentBrand.designExamples || [],
+                }}
+                posts={generatedPosts}
+                onPostGenerated={handlePostGenerated}
+                onPostUpdated={handlePostUpdated}
+              />
+            )}
           </div>
         )}
-      </main>
-    </SidebarInset>
+      </div>
+    </div>
+  </div>
+  </main>
+  </SidebarInset>
   );
 }
 

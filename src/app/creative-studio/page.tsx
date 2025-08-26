@@ -60,17 +60,21 @@ function CreativeStudioPageContent() {
     backgroundColor: currentBrand.backgroundColor,
     logoDataUrl: currentBrand.logoDataUrl,
     websiteUrl: currentBrand.websiteUrl,
-    facebookUrl: currentBrand.facebookUrl,
-    instagramUrl: currentBrand.instagramUrl,
-    twitterUrl: currentBrand.twitterUrl,
-    linkedinUrl: currentBrand.linkedinUrl,
-    contactPhone: currentBrand.contactPhone,
-    contactEmail: currentBrand.contactEmail,
-    contactAddress: currentBrand.contactAddress,
+    socialMedia: {
+      facebook: currentBrand.facebookUrl,
+      instagram: currentBrand.instagramUrl,
+      twitter: currentBrand.twitterUrl,
+      linkedin: currentBrand.linkedinUrl,
+    },
+    contactInfo: {
+      phone: currentBrand.contactPhone,
+      email: currentBrand.contactEmail,
+      address: currentBrand.contactAddress,
+    },
   } : null;
 
   return (
-    <SidebarInset>
+    <SidebarInset fullWidth>
       <header className="flex h-14 items-center justify-between border-b bg-card px-4 lg:h-[60px] lg:px-6">
         <div />
         <DropdownMenu>
@@ -93,18 +97,24 @@ function CreativeStudioPageContent() {
         </DropdownMenu>
       </header>
       <main className="flex-1 overflow-auto">
-        {editorImage ? (
-          <ImageEditor
-            imageUrl={editorImage}
-            onClose={() => setEditorImage(null)}
-            brandProfile={brandProfile}
-          />
-        ) : (
-          <ChatLayout
-            brandProfile={brandProfile}
-            onEditImage={setEditorImage}
-          />
-        )}
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+          <div className="container mx-auto px-4 py-8">
+            <div className="max-w-7xl mx-auto">
+              {editorImage ? (
+                <ImageEditor
+                  imageUrl={editorImage}
+                  onClose={() => setEditorImage(null)}
+                  brandProfile={brandProfile}
+                />
+              ) : (
+                <ChatLayout
+                  brandProfile={brandProfile}
+                  onEditImage={setEditorImage}
+                />
+              )}
+            </div>
+          </div>
+        </div>
       </main>
     </SidebarInset>
   );

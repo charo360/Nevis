@@ -718,8 +718,9 @@ async function createSVGFromSpecs(specs: any, input: Gemini25DesignInput): Promi
 }
 
 /**
- * Build comprehensive AI image prompt for Gemini 2.0 Flash
- * This creates detailed prompts that generate high-quality, professional designs
+ * Build comprehensive AI image prompt for Imagen 4
+ * This creates extremely detailed prompts that leverage Imagen 4's instruction-following capabilities
+ * for high-quality, professional designs with perfect text readability
  */
 function buildComprehensiveImagePrompt(input: Gemini25DesignInput): string {
   const { businessType, platform, visualStyle, imageText, brandProfile } = input;
@@ -730,48 +731,133 @@ function buildComprehensiveImagePrompt(input: Gemini25DesignInput): string {
   // Business type-specific design guidance
   const businessGuidance = getBusinessTypeGuidance(businessType);
 
-  // Brand color integration
-  const colorGuidance = brandProfile.primaryColor
-    ? `Primary brand color: ${brandProfile.primaryColor}. Use this color prominently in the design.`
-    : 'Use professional, modern colors that suit the business type.';
+  // Enhanced brand color integration with specific usage instructions
+  const brandColorSystem = buildBrandColorSystem(brandProfile);
 
-  // Visual style interpretation
-  const styleGuidance = getVisualStyleGuidance(visualStyle);
+  // Visual style interpretation with 2024-2025 trends
+  const styleGuidance = getAdvancedVisualStyleGuidance(visualStyle);
 
-  const prompt = `Create a professional, high-quality ${platformSpecs.name} design for ${businessType}.
+  // Typography system for perfect readability
+  const typographySystem = buildTypographySystem(businessType, platform);
 
-DESIGN REQUIREMENTS:
-- Dimensions: ${platformSpecs.dimensions}
-- Platform: ${platformSpecs.name} (${platformSpecs.description})
-- Business: ${brandProfile.businessName}
+  // Layout composition guidance
+  const layoutGuidance = buildLayoutGuidance(platform, businessType);
+
+  // Industry-specific visual elements
+  const industryElements = getIndustrySpecificElements(businessType);
+
+  const prompt = `Create a stunning, ultra-professional ${platformSpecs.name} design for ${brandProfile.businessName || businessType}.
+
+🎯 BUSINESS CONTEXT:
+- Company: ${brandProfile.businessName || 'Professional Business'}
 - Industry: ${businessType}
-- Style: ${visualStyle}
+- Target Audience: ${brandProfile.targetAudience || 'Professional audience'}
+- Services: ${Array.isArray(brandProfile.services) ? brandProfile.services.join(', ') : brandProfile.services || 'Professional services'}
+- Brand Voice: ${brandProfile.writingTone || 'Professional'}
+- Location: ${brandProfile.location || 'Global'}
 
-VISUAL ELEMENTS:
-- Main text: "${imageText}"
-- ${colorGuidance}
-- ${styleGuidance}
-- ${businessGuidance}
+📐 TECHNICAL SPECIFICATIONS:
+- Platform: ${platformSpecs.name}
+- Dimensions: ${platformSpecs.dimensions}
+- Aspect Ratio: ${platform.toLowerCase() === 'twitter' || platform.toLowerCase() === 'linkedin' ? '16:9 landscape' : '1:1 square'}
+- Resolution: Ultra-high definition (2K quality)
+- Format: Professional social media post
 
-QUALITY STANDARDS:
-- Ultra-high resolution and crisp details
-- Professional typography with excellent readability
-- Perfect color harmony and contrast
-- Modern, clean, and visually appealing
-- Optimized for ${platformSpecs.name} viewing
-- Brand-appropriate and industry-relevant
+🎨 BRAND COLOR SYSTEM (MANDATORY):
+${brandColorSystem}
 
-TECHNICAL REQUIREMENTS:
-- High contrast for text readability
-- Professional color palette
-- Clean, modern layout
-- Perfect alignment and spacing
-- Industry-appropriate imagery and icons
+📝 TYPOGRAPHY & TEXT REQUIREMENTS:
+${typographySystem}
+- Main Message: "${imageText}"
+- Text must be PERFECTLY READABLE with high contrast
+- Use modern, professional fonts (Helvetica, Arial, or similar sans-serif)
+- Ensure text stands out clearly against background
+- Apply subtle text shadows or background overlays if needed for readability
+
+🏗️ LAYOUT & COMPOSITION:
+${layoutGuidance}
+
+🎭 VISUAL STYLE & AESTHETICS:
+${styleGuidance}
+- Style: ${visualStyle} with 2024-2025 design trends
+- Modern, clean, and sophisticated appearance
+- Professional quality suitable for business use
+- Visually striking but not overwhelming
+
+🏢 INDUSTRY-SPECIFIC ELEMENTS:
+${industryElements}
+
+⚡ QUALITY REQUIREMENTS:
+- Ultra-high resolution and crystal-clear details
+- Perfect text readability (this is CRITICAL)
+- Exceptional color harmony and contrast
+- Professional typography with proper hierarchy
+- Clean, modern, and visually appealing design
+- Optimized for ${platformSpecs.name} viewing experience
+- Brand-appropriate and industry-relevant imagery
 - Mobile-friendly design elements
+- Perfect alignment and spacing throughout
 
-Create a stunning, professional design that perfectly represents ${brandProfile.businessName} and appeals to their target audience.`;
+🚫 AVOID:
+- Blurry or pixelated text
+- Low contrast text that's hard to read
+- Cluttered or busy compositions
+- Amateur or unprofessional appearance
+- Generic stock photo aesthetics
+- Overly complex designs that distract from the message
+
+Create a masterpiece-quality design that perfectly represents ${brandProfile.businessName || businessType} with exceptional visual appeal and perfect text readability.`;
 
   return prompt;
+}
+
+/**
+ * Build comprehensive brand color system with specific usage instructions
+ */
+function buildBrandColorSystem(brandProfile: BrandProfile): string {
+  const primaryColor = brandProfile.primaryColor || '#2563eb';
+  const accentColor = brandProfile.accentColor || '#7c3aed';
+  const backgroundColor = brandProfile.backgroundColor || '#ffffff';
+
+  return `- Primary Brand Color: ${primaryColor} (use for main brand elements, headlines, key accents)
+- Secondary/Accent Color: ${accentColor} (use for call-to-action elements, highlights, buttons)
+- Background Color: ${backgroundColor} (use as primary background or in gradients)
+- These colors MUST be prominently featured and used consistently
+- Create harmonious color combinations using these brand colors as the foundation
+- Ensure sufficient contrast between text and background colors
+- Use gradients and color variations that complement the brand palette`;
+}
+
+/**
+ * Build advanced typography system for perfect readability
+ */
+function buildTypographySystem(businessType: string, platform: string): string {
+  const isLandscape = platform.toLowerCase() === 'twitter' || platform.toLowerCase() === 'linkedin';
+
+  return `- Headline: Large, bold, highly readable font (${isLandscape ? '48-64px' : '36-48px'})
+- Subheadline: Medium weight, clear font (${isLandscape ? '24-32px' : '20-28px'})
+- Body Text: Clean, readable font (${isLandscape ? '16-20px' : '14-18px'})
+- Font Family: Modern sans-serif (Helvetica, Arial, Roboto, or similar)
+- Text Color: High contrast against background (dark text on light backgrounds, light text on dark backgrounds)
+- Text Effects: Subtle shadows, outlines, or background overlays to ensure readability
+- Letter Spacing: Optimal spacing for digital readability
+- Line Height: 1.2-1.4 for optimal readability`;
+}
+
+/**
+ * Build layout guidance for optimal composition
+ */
+function buildLayoutGuidance(platform: string, businessType: string): string {
+  const isLandscape = platform.toLowerCase() === 'twitter' || platform.toLowerCase() === 'linkedin';
+
+  return `- Composition: ${isLandscape ? 'Horizontal layout with left-right or center focus' : 'Vertical layout with top-bottom hierarchy'}
+- Visual Hierarchy: Clear focal points with proper element sizing
+- White Space: Generous use of negative space for clean, professional appearance
+- Alignment: Perfect alignment of all elements using invisible grid system
+- Balance: Harmonious distribution of visual weight across the design
+- Focus Areas: Clear primary and secondary focus points
+- Margins: Adequate padding from edges (${isLandscape ? '60-80px' : '40-60px'} minimum)
+- Grid System: Use professional grid-based layout for perfect alignment`;
 }
 
 /**
@@ -805,20 +891,69 @@ function getPlatformSpecifications(platform: string) {
 }
 
 /**
- * Get business type-specific design guidance
+ * Get business type-specific design guidance with industry elements
  */
 function getBusinessTypeGuidance(businessType: string): string {
   const guidance = {
-    'restaurant': 'Use warm, appetizing colors. Include food imagery or culinary elements. Focus on comfort and quality.',
-    'fitness': 'Use energetic, bold colors. Include dynamic elements suggesting movement and strength.',
-    'technology': 'Use clean, modern design with tech-inspired elements. Focus on innovation and reliability.',
-    'healthcare': 'Use calming, trustworthy colors. Focus on professionalism and care.',
-    'education': 'Use inspiring, approachable design. Focus on growth and learning.',
-    'retail': 'Use attractive, commercial design. Focus on products and customer appeal.',
-    'finance': 'Use professional, trustworthy design. Focus on security and reliability.',
-    'real estate': 'Use sophisticated, aspirational design. Focus on quality and lifestyle.',
-    'beauty': 'Use elegant, attractive design. Focus on aesthetics and transformation.',
-    'automotive': 'Use strong, reliable design. Focus on performance and quality.'
+    'restaurant': `- Warm, appetizing color palette (oranges, reds, warm browns)
+- Food-related imagery and culinary elements
+- Inviting, cozy atmosphere in design
+- Focus on creating hunger appeal and comfort
+- Use textures that evoke freshness and quality`,
+
+    'fitness': `- Energetic, dynamic color palette (vibrant oranges, reds, blues)
+- Strong, powerful visual elements
+- Motion and energy in design composition
+- Emphasis on strength, vitality, and achievement
+- Athletic and motivational visual language`,
+
+    'technology': `- Clean, futuristic design with tech-inspired elements
+- Cool color palette (blues, grays, whites)
+- Modern geometric shapes and digital aesthetics
+- Emphasis on innovation and cutting-edge feel
+- Sleek, high-tech visual language`,
+
+    'healthcare': `- Calming, trustworthy color palette (blues, greens, whites)
+- Clean, sterile aesthetic with medical professionalism
+- Focus on trust, care, and reliability
+- Soothing visual elements that inspire confidence
+- Professional medical imagery and symbols`,
+
+    'education': `- Inspiring, knowledge-focused design
+- Warm, encouraging color palette
+- Elements that suggest growth and learning
+- Professional yet approachable aesthetic
+- Symbols of knowledge, growth, and achievement`,
+
+    'retail': `- Attractive, product-focused design
+- Commercial appeal with shopping psychology
+- Colors that encourage purchasing decisions
+- Focus on quality, value, and desirability
+- Professional retail presentation standards`,
+
+    'finance': `- Professional, trustworthy design language
+- Conservative color palette (blues, grays, whites)
+- Emphasis on security, stability, and reliability
+- Corporate-level visual standards
+- Symbols of growth, security, and trust`,
+
+    'real estate': `- Sophisticated, aspirational design aesthetic
+- Premium color palette suggesting luxury and quality
+- Focus on lifestyle and investment appeal
+- Professional property presentation standards
+- Elements suggesting home, security, and success`,
+
+    'beauty': `- Elegant, attractive design with aesthetic appeal
+- Soft, beautiful color palette (pinks, golds, whites)
+- Focus on transformation and enhancement
+- Luxurious, premium visual language
+- Elements suggesting beauty, care, and self-improvement`,
+
+    'automotive': `- Strong, reliable design with performance appeal
+- Bold color palette (reds, blacks, metallics)
+- Focus on power, performance, and quality
+- Dynamic visual elements suggesting speed and strength
+- Professional automotive presentation standards`
   };
 
   const type = businessType.toLowerCase();
@@ -828,22 +963,65 @@ function getBusinessTypeGuidance(businessType: string): string {
     }
   }
 
-  return 'Use professional, modern design appropriate for the business industry.';
+  return `- Professional, versatile design appropriate for business
+- Balanced color palette suitable for general business use
+- Clean, modern aesthetic with broad appeal
+- Trustworthy and professional appearance
+- Industry-neutral visual elements`;
 }
 
 /**
- * Get visual style-specific guidance
+ * Get advanced visual style guidance with 2024-2025 trends
  */
-function getVisualStyleGuidance(visualStyle: string): string {
+function getAdvancedVisualStyleGuidance(visualStyle: string): string {
   const styles = {
-    'modern': 'Clean lines, minimalist approach, contemporary typography, subtle shadows',
-    'professional': 'Corporate aesthetic, structured layout, conservative colors, clear hierarchy',
-    'creative': 'Artistic elements, unique layouts, bold colors, experimental typography',
-    'minimalist': 'Maximum white space, simple elements, limited color palette, clean typography',
-    'bold': 'Strong contrasts, vibrant colors, large typography, impactful visuals',
-    'elegant': 'Sophisticated design, refined colors, premium typography, subtle details',
-    'playful': 'Fun elements, bright colors, casual typography, engaging visuals',
-    'luxury': 'Premium materials, gold accents, sophisticated typography, high-end aesthetic'
+    'modern': `- Clean, minimalist design with contemporary 2024-2025 aesthetics
+- Subtle gradients and soft shadows for depth
+- Modern geometric shapes and clean lines
+- Sophisticated color transitions and overlays
+- Contemporary typography with perfect spacing`,
+
+    'professional': `- Sophisticated, business-appropriate design
+- Premium quality appearance with polished finish
+- Corporate-level visual standards
+- Trustworthy and authoritative visual language
+- Executive-level presentation quality`,
+
+    'creative': `- Artistic and innovative design elements
+- Unique compositions with creative flair
+- Bold color combinations and artistic effects
+- Creative typography and layout experimentation
+- Inspiring and visually striking appearance`,
+
+    'elegant': `- Refined, luxurious aesthetic with premium feel
+- Sophisticated typography and perfect spacing
+- Subtle, high-end color palette
+- Graceful design elements and smooth transitions
+- Timeless elegance with modern touches`,
+
+    'bold': `- Strong visual impact with dynamic energy
+- Vibrant, attention-grabbing color schemes
+- Powerful typography and dramatic compositions
+- High-contrast elements for maximum impact
+- Confident and assertive visual language`,
+
+    'minimalist': `- Ultra-clean design with generous white space
+- Minimal elements with maximum impact
+- Perfect typography hierarchy and spacing
+- Subtle color palette with strategic accents
+- Zen-like simplicity with purposeful design`,
+
+    'playful': `- Fun, engaging design with creative energy
+- Bright, cheerful color combinations
+- Casual, approachable typography
+- Interactive visual elements and patterns
+- Youthful and energetic aesthetic`,
+
+    'luxury': `- Premium, high-end aesthetic with sophisticated appeal
+- Rich color palette with metallic accents
+- Elegant typography with refined spacing
+- Luxurious textures and premium materials feel
+- Exclusive, aspirational visual language`
   };
 
   const style = visualStyle.toLowerCase();
@@ -853,5 +1031,78 @@ function getVisualStyleGuidance(visualStyle: string): string {
     }
   }
 
-  return 'Modern, professional design with clean aesthetics and good visual hierarchy.';
+  return `- Modern, professional design with clean aesthetics
+- Contemporary visual language with 2024-2025 trends
+- Balanced composition with good visual hierarchy
+- Sophisticated color palette and typography
+- Versatile design suitable for professional use`;
+}
+
+/**
+ * Get industry-specific visual elements and symbols
+ */
+function getIndustrySpecificElements(businessType: string): string {
+  const elements = {
+    'restaurant': `- Subtle food-related icons or patterns
+- Warm lighting effects and cozy atmosphere
+- Natural textures (wood, stone) if appropriate
+- Appetizing color gradients and warm tones`,
+
+    'technology': `- Geometric patterns and digital elements
+- Circuit board inspired subtle patterns
+- Modern icons and tech symbols
+- Futuristic lighting effects and gradients`,
+
+    'healthcare': `- Medical cross or health symbols (subtle)
+- Clean, sterile visual elements
+- Calming nature elements (leaves, water)
+- Professional medical color schemes`,
+
+    'fitness': `- Dynamic shapes suggesting movement
+- Strength and energy visual metaphors
+- Athletic-inspired design elements
+- Motivational visual language`,
+
+    'education': `- Book, graduation, or learning symbols (subtle)
+- Growth metaphors (trees, arrows, stairs)
+- Knowledge-inspired visual elements
+- Academic color schemes and typography`,
+
+    'retail': `- Shopping and commerce visual elements
+- Product showcase design principles
+- Commercial appeal aesthetics
+- Quality and value visual indicators`,
+
+    'finance': `- Growth charts, arrows, or financial symbols (subtle)
+- Professional corporate design elements
+- Trust and security visual metaphors
+- Conservative, reliable aesthetic choices`,
+
+    'real estate': `- Home, building, or property symbols (subtle)
+- Architectural elements and clean lines
+- Luxury and quality visual indicators
+- Professional property presentation elements`,
+
+    'beauty': `- Elegant, aesthetic design elements
+- Soft, beautiful patterns and textures
+- Luxury and premium visual indicators
+- Transformation and enhancement metaphors`,
+
+    'automotive': `- Speed and performance visual elements
+- Dynamic lines and powerful shapes
+- Metallic textures and bold contrasts
+- Professional automotive presentation standards`
+  };
+
+  const type = businessType.toLowerCase();
+  for (const [key, value] of Object.entries(elements)) {
+    if (type.includes(key)) {
+      return value;
+    }
+  }
+
+  return `- Universal business symbols and elements
+- Professional geometric patterns
+- Versatile design elements suitable for any industry
+- Clean, modern visual language`;
 }
