@@ -5,18 +5,39 @@ import { getAuth } from 'firebase-admin/auth';
 import { getStorage } from 'firebase-admin/storage';
 
 // Initialize Firebase Admin
+let adminAppInstance: any = null;
+
 const initializeFirebaseAdmin = () => {
+  if (adminAppInstance) return adminAppInstance;
+  
   if (getApps().length === 0) {
     // In production, use service account key. Support two formats:
     // 1) Full JSON in FIREBASE_SERVICE_ACCOUNT_KEY
     // 2) Individual env vars FIREBASE_PRIVATE_KEY, FIREBASE_CLIENT_EMAIL, FIREBASE_PROJECT_ID
     if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
-      return initializeApp({
-        credential: cert(serviceAccount),
-        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'localbuzz-mpkuv',
-        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-      });
+      try {
+        // Clean up the service account key - remove any surrounding quotes and whitespace
+        let rawServiceKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY.trim();
+        
+        // Remove surrounding quotes if present
+        if ((rawServiceKey.startsWith('"') && rawServiceKey.endsWith('"')) || 
+            (rawServiceKey.startsWith("'") && rawServiceKey.endsWith("'"))) {
+          rawServiceKey = rawServiceKey.slice(1, -1);
+        }
+        
+        const serviceAccount = JSON.parse(rawServiceKey);
+        adminAppInstance = initializeApp({
+          credential: cert(serviceAccount),
+          projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'localbuzz-mpkuv',
+          storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+        });
+        return adminAppInstance;
+      } catch (error) {
+        console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY, falling back to individual env vars:', error);
+        console.error('Raw value length:', process.env.FIREBASE_SERVICE_ACCOUNT_KEY?.length);
+        console.error('First 20 chars:', process.env.FIREBASE_SERVICE_ACCOUNT_KEY?.substring(0, 20));
+        // Don't throw - fall through to try individual env vars instead
+      }
     }
 
     // Support separated service account env vars (useful on some hosting platforms)
@@ -36,46 +57,47 @@ const initializeFirebaseAdmin = () => {
         private_key: privateKey,
       } as any;
 
-      return initializeApp({
+      adminAppInstance = initializeApp({
         credential: cert(serviceAccount),
         projectId: process.env.FIREBASE_PROJECT_ID,
         storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
       });
+      return adminAppInstance;
     }
 
     // In development, use default credentials or emulator
-    return initializeApp({
+    adminAppInstance = initializeApp({
       projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'localbuzz-mpkuv',
     });
+    return adminAppInstance;
   }
 
-  return getApps()[0];
+  adminAppInstance = getApps()[0];
+  return adminAppInstance;
 };
 
-const app = initializeFirebaseAdmin();
+// Lazy getters for Firebase services
+export const getAdminApp = () => initializeFirebaseAdmin();
+export const getAdminDb = () => getFirestore(getAdminApp());
+export const getAdminAuth = () => getAuth(getAdminApp());
+export const getAdminStorage = () => getStorage(getAdminApp());
 
-// Initialize services
-export const adminDb = getFirestore(app);
-export const adminAuth = getAuth(app);
-export const adminStorage = getStorage(app);
+// Backward compatibility exports that initialize lazily
+export const adminDb = new Proxy({} as any, {
+  get: (target, prop) => (getAdminDb() as any)[prop]
+});
 
-// Debug: surface basic admin info (masked) to help diagnose auth/project issues
-try {
-  const proj = (app?.options && (app.options as any).projectId) || process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-  console.log('🔐 Firebase Admin initialized for project:', proj);
-} catch (e) {
-  console.warn('🔐 Firebase Admin info not available', e);
-}
+export const adminAuth = new Proxy({} as any, {
+  get: (target, prop) => (getAdminAuth() as any)[prop]
+});
 
-// DISABLED: Set emulator settings for development
-// The emulators are not running, so we'll connect directly to production Firebase
-//
-// if (process.env.NODE_ENV === 'development') {
-//   // Use emulator in development
-//   process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
-//   process.env.FIREBASE_AUTH_EMULATOR_HOST = 'localhost:9099';
-//   process.env.FIREBASE_STORAGE_EMULATOR_HOST = 'localhost:9199';
-// }
+export const adminStorage = new Proxy({} as any, {
+  get: (target, prop) => (getAdminStorage() as any)[prop]
+});
 
-export { app as adminApp };
-export default app;
+// Default export
+export const adminApp = new Proxy({} as any, {
+  get: (target, prop) => (getAdminApp() as any)[prop]
+});
+
+export default adminApp;
