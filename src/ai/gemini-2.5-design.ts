@@ -725,88 +725,38 @@ async function createSVGFromSpecs(specs: any, input: Gemini25DesignInput): Promi
 function buildComprehensiveImagePrompt(input: Gemini25DesignInput): string {
   const { businessType, platform, visualStyle, imageText, brandProfile } = input;
 
-  // Platform-specific dimensions and requirements
-  const platformSpecs = getPlatformSpecifications(platform);
+  // Simplified, focused prompt that works better for AI image generation
+  const prompt = `Create a stunning, professional ${platform} social media design for ${brandProfile.businessName || businessType}.
 
-  // Business type-specific design guidance
-  const businessGuidance = getBusinessTypeGuidance(businessType);
+BUSINESS: ${brandProfile.businessName || businessType} (${businessType})
+TEXT TO INCLUDE: "${imageText}"
+STYLE: ${visualStyle}, modern, clean, professional
 
-  // Enhanced brand color integration with specific usage instructions
-  const brandColorSystem = buildBrandColorSystem(brandProfile);
+BRAND COLORS (use these prominently):
+- Primary: ${brandProfile.primaryColor || '#2563eb'}
+- Accent: ${brandProfile.accentColor || '#7c3aed'}
+- Background: ${brandProfile.backgroundColor || '#ffffff'}
 
-  // Visual style interpretation with 2024-2025 trends
-  const styleGuidance = getAdvancedVisualStyleGuidance(visualStyle);
+REQUIREMENTS:
+- Square 1:1 aspect ratio for ${platform}
+- High-quality, professional design
+- Clear, readable text with good contrast
+- Modern typography (sans-serif fonts)
+- Clean composition with proper spacing
+- Brand colors prominently featured
+- ${visualStyle} aesthetic
+- Perfect for ${businessType} business
 
-  // Typography system for perfect readability
-  const typographySystem = buildTypographySystem(businessType, platform);
+STYLE DETAILS:
+- Clean, modern layout
+- Professional appearance
+- Eye-catching but not cluttered
+- Perfect text readability
+- Brand-appropriate imagery
+- High contrast for mobile viewing
+- Sophisticated color harmony
 
-  // Layout composition guidance
-  const layoutGuidance = buildLayoutGuidance(platform, businessType);
-
-  // Industry-specific visual elements
-  const industryElements = getIndustrySpecificElements(businessType);
-
-  const prompt = `Create a stunning, ultra-professional ${platformSpecs.name} design for ${brandProfile.businessName || businessType}.
-
-🎯 BUSINESS CONTEXT:
-- Company: ${brandProfile.businessName || 'Professional Business'}
-- Industry: ${businessType}
-- Target Audience: ${brandProfile.targetAudience || 'Professional audience'}
-- Services: ${Array.isArray(brandProfile.services) ? brandProfile.services.join(', ') : brandProfile.services || 'Professional services'}
-- Brand Voice: ${brandProfile.writingTone || 'Professional'}
-- Location: ${brandProfile.location || 'Global'}
-
-📐 TECHNICAL SPECIFICATIONS:
-- Platform: ${platformSpecs.name}
-- Dimensions: ${platformSpecs.dimensions}
-- Aspect Ratio: ${platform.toLowerCase() === 'twitter' || platform.toLowerCase() === 'linkedin' ? '16:9 landscape' : '1:1 square'}
-- Resolution: Ultra-high definition (2K quality)
-- Format: Professional social media post
-
-🎨 BRAND COLOR SYSTEM (MANDATORY):
-${brandColorSystem}
-
-📝 TYPOGRAPHY & TEXT REQUIREMENTS:
-${typographySystem}
-- Main Message: "${imageText}"
-- Text must be PERFECTLY READABLE with high contrast
-- Use modern, professional fonts (Helvetica, Arial, or similar sans-serif)
-- Ensure text stands out clearly against background
-- Apply subtle text shadows or background overlays if needed for readability
-
-🏗️ LAYOUT & COMPOSITION:
-${layoutGuidance}
-
-🎭 VISUAL STYLE & AESTHETICS:
-${styleGuidance}
-- Style: ${visualStyle} with 2024-2025 design trends
-- Modern, clean, and sophisticated appearance
-- Professional quality suitable for business use
-- Visually striking but not overwhelming
-
-🏢 INDUSTRY-SPECIFIC ELEMENTS:
-${industryElements}
-
-⚡ QUALITY REQUIREMENTS:
-- Ultra-high resolution and crystal-clear details
-- Perfect text readability (this is CRITICAL)
-- Exceptional color harmony and contrast
-- Professional typography with proper hierarchy
-- Clean, modern, and visually appealing design
-- Optimized for ${platformSpecs.name} viewing experience
-- Brand-appropriate and industry-relevant imagery
-- Mobile-friendly design elements
-- Perfect alignment and spacing throughout
-
-🚫 AVOID:
-- Blurry or pixelated text
-- Low contrast text that's hard to read
-- Cluttered or busy compositions
-- Amateur or unprofessional appearance
-- Generic stock photo aesthetics
-- Overly complex designs that distract from the message
-
-Create a masterpiece-quality design that perfectly represents ${brandProfile.businessName || businessType} with exceptional visual appeal and perfect text readability.`;
+Create a beautiful, professional design that represents ${brandProfile.businessName || businessType} perfectly.`;
 
   return prompt;
 }

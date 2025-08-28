@@ -215,35 +215,26 @@ The user's instruction is: "${remainingPrompt}"`;
             // Get business-specific design DNA
             const businessDNA = BUSINESS_TYPE_DESIGN_DNA[bp.businessType as keyof typeof BUSINESS_TYPE_DESIGN_DNA] || BUSINESS_TYPE_DESIGN_DNA.default;
 
-            let onBrandPrompt = `You are a world-class creative director and visual designer with expertise in social media marketing, brand design, and visual psychology.
+            let onBrandPrompt = `Create a stunning, professional social media ${input.outputType} for ${bp.businessName || 'this business'}.
 
-**CREATIVE BRIEF:**
-Create a professional, high-impact social media ${input.outputType} for a ${bp.businessType} business.
+BUSINESS: ${bp.businessName || 'Professional Business'} (${bp.businessType})
+CONTENT: "${remainingPrompt}"
+STYLE: ${bp.visualStyle}, modern, clean, professional
 
-🎯 CRITICAL ASPECT RATIO REQUIREMENT:
-${input.aspectRatio ? `- MUST generate ${input.outputType} in exactly ${input.aspectRatio} aspect ratio
-- Dimensions: ${input.aspectRatio === '16:9' ? '1920x1080px (landscape)' : input.aspectRatio === '9:16' ? '1080x1920px (portrait)' : '1080x1080px (square)'}
-- DO NOT generate square images unless aspect ratio is specifically 1:1
-- DO NOT generate portrait images unless aspect ratio is specifically 9:16` : '- Generate in appropriate aspect ratio for the content'}
+FORMAT: ${input.aspectRatio ? `${input.aspectRatio} aspect ratio` : 'Square 1:1 format'}
 
-Visual Style: ${bp.visualStyle} | Writing Tone: ${bp.writingTone}
-Content Themes: ${bp.contentThemes}
+BRAND COLORS (use prominently):
+${bp.primaryColor ? `- Primary: ${bp.primaryColor}` : ''}
+${bp.accentColor ? `- Accent: ${bp.accentColor}` : ''}
+${bp.backgroundColor ? `- Background: ${bp.backgroundColor}` : ''}
 
-${ADVANCED_DESIGN_PRINCIPLES}
-
-${businessDNA}
-
-**BRAND INTEGRATION:**
-- **Visual Style:** The design must be ${bp.visualStyle}. The writing tone is ${bp.writingTone} and content should align with these themes: ${bp.contentThemes}.
-- **Subject/Theme:** The core subject of the ${input.outputType} should be: "${remainingPrompt}".
-
-**MANDATORY BRAND COLORS:**
-${bp.primaryColor ? `- **Primary Color: ${bp.primaryColor}** - Use this as the dominant color (60% of design)` : ''}
-${bp.accentColor ? `- **Accent Color: ${bp.accentColor}** - Use for highlights and important elements (30% of design)` : ''}
-${bp.backgroundColor ? `- **Background Color: ${bp.backgroundColor}** - Use as base background color (10% of design)` : ''}
-${bp.primaryColor || bp.accentColor || bp.backgroundColor ? '- **CRITICAL:** These brand colors MUST be prominently featured and used exactly as specified' : '- Use colors appropriate for the business type and visual style'}
-
-${QUALITY_ENHANCEMENT_INSTRUCTIONS}`;
+REQUIREMENTS:
+- High-quality, professional design
+- ${bp.visualStyle} aesthetic
+- Clean, modern layout
+- Perfect for ${bp.businessType} business
+- Brand colors prominently featured
+- Professional social media appearance`;
 
             // Intelligent design examples processing
             let designDNA = '';
