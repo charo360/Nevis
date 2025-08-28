@@ -24,6 +24,8 @@ import { User, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useUnifiedBrand, useBrandStorage, useBrandChangeListener } from "@/contexts/unified-brand-context";
 import { UnifiedBrandLayout, BrandContent, BrandSwitchingStatus } from "@/components/layout/unified-brand-layout";
 import { STORAGE_FEATURES, getStorageUsage, cleanupAllStorage } from "@/lib/services/brand-scoped-storage";
+import { processGeneratedPost } from "@/lib/services/generated-post-storage";
+import { useFirebaseAuth } from "@/lib/hooks/use-firebase-auth";
 
 const MAX_POSTS_TO_STORE = 5; // Reduced to prevent storage issues
 
@@ -67,6 +69,7 @@ function QuickContentPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { open: sidebarOpen, toggleSidebar } = useSidebar();
+  const { user } = useFirebaseAuth();
 
   // Inline brand restoration function
   const forceBrandRestore = React.useCallback(() => {
@@ -185,82 +188,51 @@ function QuickContentPage() {
   }, [currentBrand, brands.length, brandLoading, router, selectBrand, forceBrandRestore]);
 
 
-  // Inline image persistence function
-  const persistImageUrl = async (url: string): Promise<string> => {
+  // Process generated post with Firebase Storage upload
+  const processPostImages = async (post: GeneratedPost): Promise<GeneratedPost> => {
     try {
-      // If it's already a data URL and not too large, keep it
-      if (url.startsWith('data:')) {
-        const sizeInBytes = Math.round((url.length * 3) / 4);
-        if (sizeInBytes <= 500 * 1024) { // 500KB limit
-          console.log('📸 Keeping small data URL as-is');
-          return url;
-        }
-      }
-
-      // If it's a blob URL or HTTP URL, try to fetch and convert
-      if (url.startsWith('blob:') || url.startsWith('http')) {
-        console.log('🔄 Converting URL to persistent data URL:', url.substring(0, 50) + '...');
-
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-        const blob = await response.blob();
-
-        // If blob is too large, skip persistence
-        if (blob.size > 1024 * 1024) { // 1MB limit
-          console.warn('⚠️ Image too large, keeping original URL');
-          return url;
-        }
-
-        // Convert to data URL
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = () => reject(new Error('Failed to read blob'));
-          reader.readAsDataURL(blob);
+      // Check if user is authenticated for Firebase Storage
+      if (!user) {
+        console.log('⚠️ User not authenticated, keeping images as data URLs');
+        toast({
+          title: "Images Stored Locally",
+          description: "Sign in to save images permanently in the cloud.",
+          variant: "default",
         });
+        return post; // Return original post with data URLs
       }
 
-      // Return original URL if we can't process it
-      return url;
+      console.log('🔄 Processing post images for permanent storage...');
+
+      // Use the new Firebase Storage service to upload images
+      const processedPost = await processGeneratedPost(post);
+
+      console.log('✅ Post images processed successfully');
+
+      // Show success message
+      toast({
+        title: "Images Saved",
+        description: "Images have been permanently saved to the cloud.",
+        variant: "default",
+      });
+
+      return processedPost;
     } catch (error) {
-      console.warn('⚠️ Failed to persist image URL:', error);
-      return url; // Return original URL on failure
+      console.warn('⚠️ Failed to process post images, using original post:', error);
+      toast({
+        title: "Image Upload Failed",
+        description: "Images will be stored locally. They may disappear when you navigate away.",
+        variant: "destructive",
+      });
+      return post; // Return original post if processing fails
     }
   };
 
   const handlePostGenerated = async (post: GeneratedPost) => {
     console.log('📝 Processing generated post...');
 
-    // Simple approach: try to persist images but don't block if it fails
-    let processedPost = { ...post };
-
-    try {
-      // Persist main image URL if exists
-      if (post.imageUrl) {
-        const persistedUrl = await persistImageUrl(post.imageUrl);
-        processedPost.imageUrl = persistedUrl;
-      }
-
-      // Persist variant image URLs
-      if (post.variants && post.variants.length > 0) {
-        const persistedVariants = await Promise.all(
-          post.variants.map(async (variant) => {
-            if (variant.imageUrl) {
-              const persistedUrl = await persistImageUrl(variant.imageUrl);
-              return { ...variant, imageUrl: persistedUrl };
-            }
-            return variant;
-          })
-        );
-        processedPost.variants = persistedVariants;
-      }
-
-      console.log('✅ Image persistence completed');
-    } catch (error) {
-      console.warn('⚠️ Image persistence failed, using original post:', error);
-      processedPost = post; // Use original post if persistence fails
-    }
+    // Process images with Firebase Storage upload
+    let processedPost = await processPostImages(post);
 
     // Add the processed post and slice the array to only keep the most recent ones
     const newPosts = [processedPost, ...generatedPosts].slice(0, MAX_POSTS_TO_STORE);
