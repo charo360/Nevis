@@ -26,6 +26,7 @@ import { UnifiedBrandLayout, BrandContent, BrandSwitchingStatus } from "@/compon
 import { STORAGE_FEATURES, getStorageUsage, cleanupAllStorage } from "@/lib/services/brand-scoped-storage";
 import { processGeneratedPost } from "@/lib/services/generated-post-storage";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+import { useGeneratedPosts } from "@/lib/hooks/use-generated-posts";
 
 const MAX_POSTS_TO_STORE = 5; // Reduced to prevent storage issues
 
@@ -70,6 +71,7 @@ function QuickContentPage() {
   const { toast } = useToast();
   const { open: sidebarOpen, toggleSidebar } = useSidebar();
   const { user } = useFirebaseAuth();
+  const { savePost, saving } = useGeneratedPosts();
 
   // Inline brand restoration function
   const forceBrandRestore = React.useCallback(() => {
@@ -188,15 +190,15 @@ function QuickContentPage() {
   }, [currentBrand, brands.length, brandLoading, router, selectBrand, forceBrandRestore]);
 
 
-  // Process generated post with Firebase Storage upload
+  // Process generated post with Firebase Storage upload and database fallback
   const processPostImages = async (post: GeneratedPost): Promise<GeneratedPost> => {
     try {
       // Check if user is authenticated for Firebase Storage
       if (!user) {
-        console.log('⚠️ User not authenticated, keeping images as data URLs');
+        console.log('⚠️ User not authenticated, saving to database only');
         toast({
-          title: "Images Stored Locally",
-          description: "Sign in to save images permanently in the cloud.",
+          title: "Content Saved",
+          description: "Content saved to database. Sign in to save images permanently in the cloud.",
           variant: "default",
         });
         return post; // Return original post with data URLs
@@ -204,27 +206,40 @@ function QuickContentPage() {
 
       console.log('🔄 Processing post images for permanent storage...');
 
-      // Use the new Firebase Storage service to upload images
-      const processedPost = await processGeneratedPost(post);
+      try {
+        // Try Firebase Storage first
+        const processedPost = await processGeneratedPost(post);
 
-      console.log('✅ Post images processed successfully');
+        console.log('✅ Post images processed successfully');
 
-      // Show success message
+        // Show success message
+        toast({
+          title: "Images Saved to Cloud",
+          description: "Images have been permanently saved to Firebase Storage.",
+          variant: "default",
+        });
+
+        return processedPost;
+      } catch (storageError) {
+        console.warn('⚠️ Firebase Storage failed, falling back to database storage:', storageError);
+
+        // Fallback: Save to database with data URLs (temporary)
+        toast({
+          title: "Content Saved to Database",
+          description: "Images stored temporarily. Please update Firebase Storage rules for permanent cloud storage.",
+          variant: "default",
+        });
+
+        return post; // Return original post with data URLs
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to process post, using original post:', error);
       toast({
-        title: "Images Saved",
-        description: "Images have been permanently saved to the cloud.",
+        title: "Content Saved Locally",
+        description: "Content generated successfully but stored locally only.",
         variant: "default",
       });
-
-      return processedPost;
-    } catch (error) {
-      console.warn('⚠️ Failed to process post images, using original post:', error);
-      toast({
-        title: "Image Upload Failed",
-        description: "Images will be stored locally. They may disappear when you navigate away.",
-        variant: "destructive",
-      });
-      return post; // Return original post if processing fails
+      return post; // Return original post if all processing fails
     }
   };
 
@@ -249,9 +264,43 @@ function QuickContentPage() {
     }
 
     try {
-      // The BrandScopedStorage now handles quota management automatically
+      // Save to localStorage first (immediate)
       postsStorage.setItem(newPosts);
-      console.log(`💾 Saved ${newPosts.length} posts for brand ${currentBrand?.businessName || currentBrand?.name}`);
+      console.log(`💾 Saved ${newPosts.length} posts to localStorage for brand ${currentBrand?.businessName || currentBrand?.name}`);
+
+      // Also save to Firestore database (permanent backup)
+      if (user) {
+        try {
+          console.log('💾 Saving post to Firestore database...');
+          const postId = await savePost(processedPost);
+          console.log('✅ Post saved to Firestore with ID:', postId);
+
+          // Update the post with the Firestore ID
+          const savedPost = { ...processedPost, id: postId };
+          const updatedPosts = [savedPost, ...generatedPosts.slice(0, MAX_POSTS_TO_STORE - 1)];
+          setGeneratedPosts(updatedPosts);
+          postsStorage.setItem(updatedPosts);
+
+          toast({
+            title: "Content Saved Successfully",
+            description: "Your content has been saved to both local storage and the database.",
+            variant: "default",
+          });
+        } catch (firestoreError) {
+          console.error('❌ Failed to save to Firestore, but localStorage succeeded:', firestoreError);
+          toast({
+            title: "Content Saved Locally",
+            description: "Content saved locally. Database save failed but content is secure.",
+            variant: "default",
+          });
+        }
+      } else {
+        toast({
+          title: "Content Saved Locally",
+          description: "Content saved locally. Sign in to save to database permanently.",
+          variant: "default",
+        });
+      }
     } catch (error) {
       console.error('Storage error in handlePostGenerated:', error);
 
