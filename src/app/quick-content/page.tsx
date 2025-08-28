@@ -26,9 +26,9 @@ import { UnifiedBrandLayout, BrandContent, BrandSwitchingStatus } from "@/compon
 import { STORAGE_FEATURES, getStorageUsage, cleanupAllStorage } from "@/lib/services/brand-scoped-storage";
 import { processGeneratedPost } from "@/lib/services/generated-post-storage";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
-import { useGeneratedPosts } from "@/lib/hooks/use-generated-posts";
+import { useGeneratedPosts } from "@/hooks/use-generated-posts";
 
-const MAX_POSTS_TO_STORE = 5; // Reduced to prevent storage issues
+// No limit on posts - store all generated content
 
 // Brand-scoped storage cleanup utility
 const cleanupBrandScopedStorage = (brandStorage: any) => {
@@ -249,8 +249,8 @@ function QuickContentPage() {
     // Process images with Firebase Storage upload
     let processedPost = await processPostImages(post);
 
-    // Add the processed post and slice the array to only keep the most recent ones
-    const newPosts = [processedPost, ...generatedPosts].slice(0, MAX_POSTS_TO_STORE);
+    // Add the processed post to the beginning of the array (no limit)
+    const newPosts = [processedPost, ...generatedPosts];
     setGeneratedPosts(newPosts);
 
     if (!postsStorage) {
@@ -277,7 +277,7 @@ function QuickContentPage() {
 
           // Update the post with the Firestore ID
           const savedPost = { ...processedPost, id: postId };
-          const updatedPosts = [savedPost, ...generatedPosts.slice(0, MAX_POSTS_TO_STORE - 1)];
+          const updatedPosts = [savedPost, ...generatedPosts];
           setGeneratedPosts(updatedPosts);
           postsStorage.setItem(updatedPosts);
 
