@@ -4,6 +4,7 @@
  */
 
 import { uploadDataUrlAsImage } from '@/lib/firebase/storage-service';
+import { testFirebaseStorageConnection, getFirebaseStorageStatus } from '@/lib/firebase/storage-test';
 import type { GeneratedPost } from '@/lib/types';
 
 export interface ImageUploadResult {
@@ -14,16 +15,49 @@ export interface ImageUploadResult {
 
 export class GeneratedPostStorageService {
   /**
+   * Test Firebase Storage connection and permissions
+   */
+  async testConnection(): Promise<ImageUploadResult> {
+    try {
+      console.log('🧪 Testing Firebase Storage connection...');
+
+      const testResult = await testFirebaseStorageConnection();
+
+      if (testResult.success) {
+        console.log('✅ Firebase Storage connection test passed');
+        return {
+          success: true,
+          url: 'test-connection-successful'
+        };
+      } else {
+        console.error('❌ Firebase Storage connection test failed:', testResult.error);
+        console.log('📊 Firebase Storage status:', getFirebaseStorageStatus());
+
+        return {
+          success: false,
+          error: `Connection test failed: ${testResult.error}`
+        };
+      }
+    } catch (error) {
+      console.error('❌ Connection test error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown connection test error'
+      };
+    }
+  }
+
+  /**
    * Upload a data URL image to Firebase Storage and return the permanent URL
    */
   async uploadImageDataUrl(
-    dataUrl: string, 
-    postId: string, 
+    dataUrl: string,
+    postId: string,
     imageType: 'main' | 'variant' = 'main'
   ): Promise<ImageUploadResult> {
     try {
       console.log(`🔄 Uploading ${imageType} image for post ${postId}...`);
-      
+
       const fileName = `post-${postId}-${imageType}-${Date.now()}.png`;
       const result = await uploadDataUrlAsImage(dataUrl, fileName, postId, {
         customMetadata: {
@@ -34,7 +68,7 @@ export class GeneratedPostStorageService {
       });
 
       console.log(`✅ Successfully uploaded ${imageType} image:`, result.url);
-      
+
       return {
         success: true,
         url: result.url
@@ -53,7 +87,14 @@ export class GeneratedPostStorageService {
    */
   async processGeneratedPost(post: GeneratedPost): Promise<GeneratedPost> {
     console.log('🔄 Processing generated post images for permanent storage...');
-    
+
+    // Test connection first
+    const connectionTest = await this.testConnection();
+    if (!connectionTest.success) {
+      console.error('❌ Firebase Storage connection failed, cannot upload images');
+      throw new Error(`Firebase Storage not available: ${connectionTest.error}`);
+    }
+
     const processedPost = { ...post };
     let uploadCount = 0;
     let successCount = 0;
@@ -79,8 +120,8 @@ export class GeneratedPostStorageService {
             if (variant.imageUrl && variant.imageUrl.startsWith('data:')) {
               uploadCount++;
               const result = await this.uploadImageDataUrl(
-                variant.imageUrl, 
-                post.id, 
+                variant.imageUrl,
+                post.id,
                 `variant-${index}`
               );
               if (result.success && result.url) {
@@ -98,7 +139,7 @@ export class GeneratedPostStorageService {
       }
 
       console.log(`✅ Image processing complete: ${successCount}/${uploadCount} images uploaded successfully`);
-      
+
       // Add metadata about the upload process
       processedPost.metadata = {
         ...processedPost.metadata,
@@ -127,9 +168,9 @@ export class GeneratedPostStorageService {
    * Check if an image URL is a permanent Firebase Storage URL
    */
   isPermanentUrl(imageUrl: string): boolean {
-    return imageUrl.includes('firebasestorage.googleapis.com') || 
-           imageUrl.startsWith('https://') || 
-           imageUrl.startsWith('http://');
+    return imageUrl.includes('firebasestorage.googleapis.com') ||
+      imageUrl.startsWith('https://') ||
+      imageUrl.startsWith('http://');
   }
 
   /**
@@ -137,17 +178,17 @@ export class GeneratedPostStorageService {
    */
   async batchProcessPosts(posts: GeneratedPost[]): Promise<GeneratedPost[]> {
     console.log(`🔄 Batch processing ${posts.length} posts...`);
-    
+
     const processedPosts = await Promise.all(
       posts.map(post => this.processGeneratedPost(post))
     );
 
-    const totalUploaded = processedPosts.reduce((sum, post) => 
+    const totalUploaded = processedPosts.reduce((sum, post) =>
       sum + (post.metadata?.imagesUploaded || 0), 0
     );
 
     console.log(`✅ Batch processing complete: ${totalUploaded} total images uploaded`);
-    
+
     return processedPosts;
   }
 }
@@ -156,7 +197,7 @@ export class GeneratedPostStorageService {
 export const generatedPostStorageService = new GeneratedPostStorageService();
 
 // Export utility functions
-export const processGeneratedPost = (post: GeneratedPost) => 
+export const processGeneratedPost = (post: GeneratedPost) =>
   generatedPostStorageService.processGeneratedPost(post);
 
 export const batchProcessPosts = (posts: GeneratedPost[]) =>

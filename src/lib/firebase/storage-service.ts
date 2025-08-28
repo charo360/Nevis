@@ -42,6 +42,13 @@ export interface UploadResult {
 // Get current user ID
 function getCurrentUserId(): Promise<string | null> {
   return new Promise((resolve) => {
+    // First try to get the current user directly
+    if (auth?.currentUser) {
+      resolve(auth.currentUser.uid);
+      return;
+    }
+
+    // If no current user, wait for auth state change
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       unsubscribe();
       resolve(user?.uid || null);
@@ -56,7 +63,12 @@ async function createUserStorageRef(basePath: string, fileName: string): Promise
     throw new Error('User must be authenticated to upload files');
   }
 
-  return ref(storage, `${basePath}/${userId}/${fileName}`);
+  const fullPath = `${basePath}/${userId}/${fileName}`;
+  console.log(`🔄 Creating storage reference: ${fullPath}`);
+  console.log(`👤 User ID: ${userId}`);
+  console.log(`🔐 Auth state:`, auth?.currentUser ? 'authenticated' : 'not authenticated');
+
+  return ref(storage, fullPath);
 }
 
 // Upload file to Firebase Storage
@@ -66,6 +78,16 @@ export async function uploadFile(
   fileName?: string,
   options?: UploadOptions
 ): Promise<UploadResult> {
+  // Check if Firebase Storage is available
+  if (!storage) {
+    throw new Error('Firebase Storage is not initialized. Please check your Firebase configuration.');
+  }
+
+  // Check if user is authenticated
+  if (!auth?.currentUser) {
+    throw new Error('User must be authenticated to upload files. Please sign in first.');
+  }
+
   const finalFileName = fileName || `${Date.now()}-${file.name}`;
   const storageRef = await createUserStorageRef(basePath, finalFileName);
 
@@ -81,22 +103,34 @@ export async function uploadFile(
   };
 
   // Upload file
-  const snapshot = await uploadBytes(storageRef, file, metadata);
-  const url = await getDownloadURL(snapshot.ref);
+  console.log(`📤 Uploading file to: ${storageRef.fullPath}`);
+  console.log(`📊 File size: ${file.size} bytes`);
+  console.log(`🏷️ File type: ${file.type}`);
 
-  // Get metadata for response
-  const fileMetadata = await getMetadata(snapshot.ref);
+  try {
+    const snapshot = await uploadBytes(storageRef, file, metadata);
+    console.log(`✅ Upload successful: ${snapshot.ref.fullPath}`);
 
-  return {
-    url,
-    path: snapshot.ref.fullPath,
-    metadata: {
-      size: fileMetadata.size,
-      contentType: fileMetadata.contentType || file.type,
-      timeCreated: fileMetadata.timeCreated,
-      updated: fileMetadata.updated,
-    },
-  };
+    const url = await getDownloadURL(snapshot.ref);
+    console.log(`🔗 Download URL generated: ${url.substring(0, 100)}...`);
+
+    // Get metadata for response
+    const fileMetadata = await getMetadata(snapshot.ref);
+
+    return {
+      url,
+      path: snapshot.ref.fullPath,
+      metadata: {
+        size: fileMetadata.size,
+        contentType: fileMetadata.contentType || file.type,
+        timeCreated: fileMetadata.timeCreated,
+        updated: fileMetadata.updated,
+      },
+    };
+  } catch (error) {
+    console.error(`❌ Upload failed for ${storageRef.fullPath}:`, error);
+    throw error;
+  }
 }
 
 // Upload artifact file
