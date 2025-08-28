@@ -1,13 +1,13 @@
 // Firebase Storage service for file management
-import { 
-  ref, 
-  uploadBytes, 
-  getDownloadURL, 
-  deleteObject, 
-  listAll, 
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject,
+  listAll,
   getMetadata,
   updateMetadata,
-  StorageReference 
+  StorageReference
 } from 'firebase/storage';
 import { storage, auth } from './config';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -55,7 +55,7 @@ async function createUserStorageRef(basePath: string, fileName: string): Promise
   if (!userId) {
     throw new Error('User must be authenticated to upload files');
   }
-  
+
   return ref(storage, `${basePath}/${userId}/${fileName}`);
 }
 
@@ -68,7 +68,7 @@ export async function uploadFile(
 ): Promise<UploadResult> {
   const finalFileName = fileName || `${Date.now()}-${file.name}`;
   const storageRef = await createUserStorageRef(basePath, finalFileName);
-  
+
   // Set metadata
   const metadata = {
     contentType: options?.contentType || file.type,
@@ -79,14 +79,14 @@ export async function uploadFile(
       ...options?.customMetadata,
     },
   };
-  
+
   // Upload file
   const snapshot = await uploadBytes(storageRef, file, metadata);
   const url = await getDownloadURL(snapshot.ref);
-  
+
   // Get metadata for response
   const fileMetadata = await getMetadata(snapshot.ref);
-  
+
   return {
     url,
     path: snapshot.ref.fullPath,
@@ -169,6 +169,38 @@ export async function uploadGeneratedContent(
   });
 }
 
+// Upload data URL as image to Firebase Storage
+export async function uploadDataUrlAsImage(
+  dataUrl: string,
+  fileName?: string,
+  postId?: string,
+  options?: UploadOptions
+): Promise<UploadResult> {
+  try {
+    // Convert data URL to blob
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
+
+    // Create file from blob
+    const file = new File([blob], fileName || `generated-image-${Date.now()}.png`, {
+      type: blob.type || 'image/png'
+    });
+
+    // Upload to Firebase Storage
+    return await uploadGeneratedContent(file, 'image', postId, {
+      ...options,
+      customMetadata: {
+        source: 'ai-generated',
+        originalFormat: 'data-url',
+        ...options?.customMetadata,
+      },
+    });
+  } catch (error) {
+    console.error('Failed to upload data URL as image:', error);
+    throw error;
+  }
+}
+
 // Delete file from storage
 export async function deleteFile(filePath: string): Promise<void> {
   try {
@@ -205,16 +237,16 @@ export async function listUserFiles(basePath: string): Promise<{
   if (!userId) {
     throw new Error('User must be authenticated to list files');
   }
-  
+
   const userRef = ref(storage, `${basePath}/${userId}`);
   const result = await listAll(userRef);
-  
+
   // Get file details
   const files = await Promise.all(
     result.items.map(async (itemRef) => {
       const url = await getDownloadURL(itemRef);
       const metadata = await getMetadata(itemRef);
-      
+
       return {
         name: itemRef.name,
         path: itemRef.fullPath,
@@ -223,10 +255,10 @@ export async function listUserFiles(basePath: string): Promise<{
       };
     })
   );
-  
+
   // Get folder names
   const folders = result.prefixes.map(prefix => prefix.name);
-  
+
   return { files, folders };
 }
 
@@ -243,7 +275,7 @@ export async function getFileMetadata(filePath: string) {
 
 // Update file metadata
 export async function updateFileMetadata(
-  filePath: string, 
+  filePath: string,
   metadata: { customMetadata?: Record<string, string> }
 ): Promise<void> {
   try {
@@ -266,11 +298,11 @@ export async function generateThumbnail(
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const img = new Image();
-    
+
     img.onload = () => {
       // Calculate new dimensions
       let { width, height } = img;
-      
+
       if (width > height) {
         if (width > maxWidth) {
           height = (height * maxWidth) / width;
@@ -282,20 +314,20 @@ export async function generateThumbnail(
           height = maxHeight;
         }
       }
-      
+
       // Set canvas dimensions
       canvas.width = width;
       canvas.height = height;
-      
+
       // Draw and compress
       ctx?.drawImage(img, 0, 0, width, height);
-      
+
       canvas.toBlob(
         (blob) => {
           if (blob) {
             const thumbnailFile = new File(
-              [blob], 
-              `thumb-${imageFile.name}`, 
+              [blob],
+              `thumb-${imageFile.name}`,
               { type: 'image/jpeg' }
             );
             resolve(thumbnailFile);
@@ -307,7 +339,7 @@ export async function generateThumbnail(
         quality
       );
     };
-    
+
     img.onerror = () => reject(new Error('Failed to load image'));
     img.src = URL.createObjectURL(imageFile);
   });
@@ -324,30 +356,30 @@ export async function compressImage(
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const img = new Image();
-    
+
     img.onload = () => {
       // Calculate new dimensions
       let { width, height } = img;
-      
+
       if (width > maxWidth || height > maxHeight) {
         const ratio = Math.min(maxWidth / width, maxHeight / height);
         width *= ratio;
         height *= ratio;
       }
-      
+
       // Set canvas dimensions
       canvas.width = width;
       canvas.height = height;
-      
+
       // Draw and compress
       ctx?.drawImage(img, 0, 0, width, height);
-      
+
       canvas.toBlob(
         (blob) => {
           if (blob) {
             const compressedFile = new File(
-              [blob], 
-              imageFile.name, 
+              [blob],
+              imageFile.name,
               { type: 'image/jpeg' }
             );
             resolve(compressedFile);
@@ -359,7 +391,7 @@ export async function compressImage(
         quality
       );
     };
-    
+
     img.onerror = () => reject(new Error('Failed to load image'));
     img.src = URL.createObjectURL(imageFile);
   });
@@ -371,19 +403,19 @@ export async function cleanupTempFiles(olderThanHours: number = 24): Promise<num
   if (!userId) {
     return 0;
   }
-  
+
   try {
     const tempRef = ref(storage, `${STORAGE_PATHS.TEMP}/${userId}`);
     const result = await listAll(tempRef);
-    
+
     const cutoffTime = Date.now() - (olderThanHours * 60 * 60 * 1000);
     let deletedCount = 0;
-    
+
     for (const itemRef of result.items) {
       try {
         const metadata = await getMetadata(itemRef);
         const createdTime = new Date(metadata.timeCreated).getTime();
-        
+
         if (createdTime < cutoffTime) {
           await deleteObject(itemRef);
           deletedCount++;
@@ -392,7 +424,7 @@ export async function cleanupTempFiles(olderThanHours: number = 24): Promise<num
         console.warn(`Failed to process temp file ${itemRef.name}:`, error);
       }
     }
-    
+
     return deletedCount;
   } catch (error) {
     console.error('Failed to cleanup temp files:', error);

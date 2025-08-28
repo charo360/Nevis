@@ -407,8 +407,12 @@ export class BrandScopedStorage {
       if (typeof value === 'string') {
         // Keep ALL valid URLs (HTTP, HTTPS, blob, data URLs under size limit)
         if (value.startsWith('http://') || value.startsWith('https://')) {
-          // Keep HTTP/HTTPS URLs as-is
-          console.log(`📸 Preserving HTTP/HTTPS URL for ${key}: ${value.substring(0, 50)}...`);
+          // Keep HTTP/HTTPS URLs as-is, especially Firebase Storage URLs
+          if (value.includes('firebasestorage.googleapis.com')) {
+            console.log(`🔥 Preserving Firebase Storage URL for ${key}: ${value.substring(0, 50)}...`);
+          } else {
+            console.log(`📸 Preserving HTTP/HTTPS URL for ${key}: ${value.substring(0, 50)}...`);
+          }
           return;
         }
 
