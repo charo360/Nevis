@@ -271,53 +271,32 @@ async function generateImageForVariant(
     input.visualStyle
   );
 
-  let imagePrompt = `You are a world-class creative director and visual designer with expertise in social media marketing, brand design, and visual psychology.
+  let imagePrompt = `Create a stunning, professional social media design for ${input.businessType} business.
 
-    **DESIGN BRIEF:**
-    Create a professional, high-impact social media design for a ${input.businessType} business.
+    BUSINESS: ${input.businessType}
+    PLATFORM: ${variant.platform} (${variant.aspectRatio} aspect ratio)
+    LOCATION: ${input.location}
+    STYLE: ${input.visualStyle}, modern, clean, professional
 
-    🎯 CRITICAL ASPECT RATIO REQUIREMENT:
-    - MUST generate image in exactly ${variant.aspectRatio} aspect ratio
-    - Platform: ${variant.platform} (optimized for ${variant.aspectRatio} format)
-    - Dimensions: ${variant.aspectRatio === '16:9' ? '1920x1080px (landscape)' : variant.aspectRatio === '9:16' ? '1080x1920px (portrait)' : '1080x1080px (square)'}
-    - DO NOT generate square images unless aspect ratio is specifically 1:1
-    - DO NOT generate portrait images unless aspect ratio is specifically 9:16
-    - FOR FACEBOOK AND LINKEDIN: Generate landscape (16:9) format images
+    TEXT TO INCLUDE: "${combineTextComponents(textOutput.catchyWords, textOutput.subheadline, textOutput.callToAction)}"
 
-    Target Platform: ${variant.platform} | Aspect Ratio: ${variant.aspectRatio}
-    Visual Style: ${input.visualStyle} | Location: ${input.location}
+    BRAND COLORS (use prominently):
+    ${input.primaryColor ? `- Primary: ${input.primaryColor}` : ''}
+    ${input.accentColor ? `- Accent: ${input.accentColor}` : ''}
+    ${input.backgroundColor ? `- Background: ${input.backgroundColor}` : ''}
 
-    ⚡ GEMINI 2.0 FLASH HD QUALITY ENHANCEMENTS:
-    - MAXIMUM RESOLUTION: Ultra-high definition rendering (4K+ quality)
-    - SMALL FONT SIZE EXCELLENCE: Perfect rendering at 8pt, 10pt, 12pt, and all small font sizes
-    - TINY TEXT PRECISION: Every character sharp and legible even when font size is very small
-    - HIGH-DPI SMALL TEXT: Render small fonts as if on 300+ DPI display for maximum sharpness
-    - PERFECT ANATOMY: Complete, symmetrical faces with natural expressions
-    - SHARP DETAILS: Crystal-clear textures, no blur or artifacts
-    - PROFESSIONAL LIGHTING: Studio-quality lighting with proper shadows
-    - PREMIUM COMPOSITION: Golden ratio layouts with perfect balance
-    - ADVANCED COLOR THEORY: Perfect contrast ratios (7:1 minimum) with vibrant, accurate colors
+    REQUIREMENTS:
+    - High-quality, professional design
+    - Clear, readable text with excellent contrast
+    - ${input.visualStyle} aesthetic
+    - Perfect for ${input.businessType} business
+    - Brand colors prominently featured
+    - Clean, modern layout
+    - Professional social media appearance
+    - Text must be perfectly readable and not cut off
+    - ${variant.aspectRatio} aspect ratio for ${variant.platform}
 
-    ${ADVANCED_DESIGN_PRINCIPLES}
-
-    ${platformGuidelines}
-
-    ${businessDNA}
-
-    ${trendInstructions}
-
-    ${performanceInstructions}
-
-    **BRAND INTEGRATION:**
-    - **Brand Colors:** ${followBrandColors && input.primaryColor ? colorInstructions : 'Use a visually appealing and appropriate palette that fits the business type.'}
-    - **Logo Placement:** The provided logo must be integrated naturally into the design. It should be clearly visible but not overpower the main subject. For example, it could be on a product, a sign, or as a subtle watermark.
-
-    **CONTENT REQUIREMENTS:**
-    - **Primary Subject:** The core subject of the image should be directly inspired by: "${textOutput.catchyWords}"
-    - **Text Overlay:** The following text must be overlaid on the image in a stylish, readable font: "${combineTextComponents(textOutput.catchyWords, textOutput.subheadline, textOutput.callToAction)}". It is critical that the text is clearly readable, well-composed, and not cut off or truncated. The entire text must be visible.
-    - **Cultural Representation:** If the image includes people, they should be representative of the location: ${input.location}. For example, for a post in Africa, depict Black people; for Europe, White people; for the USA, a diverse mix of ethnicities. Be thoughtful and authentic in your representation.
-
-    ${QUALITY_ENHANCEMENT_INSTRUCTIONS}`;
+    Create a beautiful, professional design that represents the business perfectly.`;
 
   // Intelligent design examples processing
   let designDNA = '';
