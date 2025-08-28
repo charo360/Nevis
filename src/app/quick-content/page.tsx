@@ -206,6 +206,19 @@ function QuickContentPage() {
 
       console.log('🔄 Processing post images for permanent storage...');
 
+      // TEMPORARY: Skip Firebase Storage upload until rules are deployed
+      console.log('⚠️ Skipping Firebase Storage upload - rules not deployed yet');
+
+      // Save to database with data URLs (temporary solution)
+      toast({
+        title: "Content Saved to Database",
+        description: "Content saved successfully. Deploy Firebase Storage rules for permanent image URLs.",
+        variant: "default",
+      });
+
+      return post; // Return original post with data URLs
+
+      /* UNCOMMENT THIS AFTER DEPLOYING FIREBASE STORAGE RULES:
       try {
         // Try Firebase Storage first
         const processedPost = await processGeneratedPost(post, user.uid);
@@ -232,6 +245,7 @@ function QuickContentPage() {
 
         return post; // Return original post with data URLs
       }
+      */
     } catch (error) {
       console.warn('⚠️ Failed to process post, using original post:', error);
       toast({
