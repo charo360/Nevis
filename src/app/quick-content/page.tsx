@@ -208,7 +208,7 @@ function QuickContentPage() {
 
       try {
         // Try Firebase Storage first
-        const processedPost = await processGeneratedPost(post);
+        const processedPost = await processGeneratedPost(post, user.uid);
 
         console.log('✅ Post images processed successfully');
 
