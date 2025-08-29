@@ -15,7 +15,9 @@ export async function POST(request: NextRequest) {
       visualStyle,
       imageText,
       brandProfile,
-      aspectRatio = '1:1'
+      aspectRatio = '1:1',
+      includePeopleInDesigns = true,
+      useLocalLanguage = false
     } = body;
 
     console.log('🚀 API: Generating content with Revo 2.0...');
@@ -35,7 +37,9 @@ export async function POST(request: NextRequest) {
       visualStyle: visualStyle || 'modern',
       imageText: imageText || `${brandProfile.businessName || businessType} - Premium Content`,
       brandProfile,
-      aspectRatio
+      aspectRatio,
+      includePeopleInDesigns,
+      useLocalLanguage
     });
 
     console.log('✅ API: Revo 2.0 generation completed successfully');

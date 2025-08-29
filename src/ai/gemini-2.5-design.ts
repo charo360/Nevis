@@ -6,6 +6,17 @@
 import { generateText, generateMultimodal, GEMINI_2_5_MODELS } from './google-ai-direct';
 import { BrandProfile } from '@/lib/types';
 
+/**
+ * Clean website URL by removing https://, http://, and www.
+ */
+function cleanWebsiteUrl(url: string): string {
+  if (!url) return '';
+  return url
+    .replace(/^https?:\/\//, '')
+    .replace(/^www\./, '')
+    .replace(/\/$/, ''); // Remove trailing slash
+}
+
 export interface Gemini25DesignInput {
   businessType: string;
   platform: string;
@@ -18,6 +29,8 @@ export interface Gemini25DesignInput {
   };
   artifactInstructions?: string;
   designReferences?: string[]; // Base64 encoded reference images
+  includePeopleInDesigns?: boolean; // Control whether designs should include people (default: true)
+  useLocalLanguage?: boolean; // Control whether to use local language in text (default: false)
 }
 
 export interface Gemini25DesignResult {
@@ -723,7 +736,25 @@ async function createSVGFromSpecs(specs: any, input: Gemini25DesignInput): Promi
  * for high-quality, professional designs with perfect text readability
  */
 function buildComprehensiveImagePrompt(input: Gemini25DesignInput): string {
-  const { businessType, platform, visualStyle, imageText, brandProfile } = input;
+  const { businessType, platform, visualStyle, imageText, brandProfile, includePeopleInDesigns = true, useLocalLanguage = false } = input;
+
+  // People inclusion logic with creative variety
+  const peopleInstructions = includePeopleInDesigns
+    ? `- CREATIVE VARIETY: Include diverse, authentic people in VARIED settings:
+  * Professional environments (offices, studios, workshops)
+  * Lifestyle settings (homes, cafes, outdoor spaces, community areas)
+  * Industry-specific contexts (retail spaces, service areas, creative studios)
+  * Cultural celebrations and modern community gatherings
+  * Contemporary urban settings (co-working spaces, tech hubs)
+  * Traditional meets modern (cultural heritage with contemporary life)
+- Show real people in natural, engaging situations that vary by design
+- Ensure representation reflects the target demographic and cultural values
+- Use photography styles ranging from candid to professional to artistic
+- Vary the mood: energetic, calm, celebratory, focused, collaborative`
+    : `- Focus on products, services, and brand elements without people
+- Use lifestyle imagery, product showcases, and brand-focused visuals
+- Create compelling designs through typography, graphics, and product photography
+- Maintain professional aesthetic through clean, modern design elements`;
 
   // Simplified, focused prompt that works better for AI image generation
   const prompt = `Create a stunning, professional ${platform} social media design for ${brandProfile.businessName || businessType}.
@@ -737,6 +768,34 @@ BRAND COLORS (use these prominently):
 - Accent: ${brandProfile.accentColor || '#7c3aed'}
 - Background: ${brandProfile.backgroundColor || '#ffffff'}
 
+VISUAL APPROACH:
+${peopleInstructions}
+
+LANGUAGE INSTRUCTIONS:
+${useLocalLanguage ? `- You may use local language text when 100% certain of accuracy
+- Mix local language with English naturally (1-2 local words maximum)
+- Only use commonly known local words that add cultural connection` : `- USE ONLY ENGLISH for all text in the design
+- Do not use any local language words or phrases
+- Keep all text elements in clear, professional English`}
+
+CREATIVE DESIGN VARIETY:
+- DESIGN STYLES (rotate for variety):
+  * Ultra-modern minimalist with bold typography
+  * Dynamic geometric patterns with vibrant colors
+  * Sophisticated gradient overlays with premium feel
+  * Clean photography-focused with subtle overlays
+  * Artistic illustration style with contemporary elements
+  * Bold graphic design with strong visual hierarchy
+  * Elegant luxury aesthetic with refined typography
+
+- LAYOUT VARIATIONS:
+  * Split-screen compositions (text/visual balance)
+  * Centered hero with surrounding elements
+  * Asymmetrical modern layouts with visual balance
+  * Grid-based structured designs
+  * Organic flowing compositions
+  * Layered depth with foreground/background elements
+
 REQUIREMENTS:
 - Square 1:1 aspect ratio for ${platform}
 - High-quality, professional design
@@ -746,15 +805,16 @@ REQUIREMENTS:
 - Brand colors prominently featured
 - ${visualStyle} aesthetic
 - Perfect for ${businessType} business
+${brandProfile.websiteUrl ? `- Website available for CTAs when contextually appropriate: ${cleanWebsiteUrl(brandProfile.websiteUrl)}` : ''}
 
 STYLE DETAILS:
-- Clean, modern layout
-- Professional appearance
+- Clean, modern layout with creative variety
+- Professional appearance with artistic flair
 - Eye-catching but not cluttered
 - Perfect text readability
-- Brand-appropriate imagery
+- Brand-appropriate imagery with creative contexts
 - High contrast for mobile viewing
-- Sophisticated color harmony
+- Sophisticated color harmony with dynamic elements
 
 Create a beautiful, professional design that represents ${brandProfile.businessName || businessType} perfectly.`;
 

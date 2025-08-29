@@ -239,16 +239,35 @@ TRAFFIC & CONVERSION OPTIMIZATION:
 - Optimize for algorithm preferences
 - Encourage community building and return visits
 
+WEBSITE REFERENCE GUIDELINES:
+{{#if websiteUrl}}
+- Website available for CTAs: {{{websiteUrl}}} (use clean format without https:// or www.)
+- Only include website when CTA specifically calls for it (e.g., "check us out online", "visit our site")
+- Don't force website into every post - use contextually when it makes sense
+- Examples: "Visit us online", "Check our website", "Learn more at [clean-url]"
+{{else}}
+- No website URL provided - focus on other CTAs (DM, call, visit location)
+{{/if}}
+
 LANGUAGE REQUIREMENTS:
 🌍 TEXT CLARITY: Generate clear, readable text
-- Use proper, well-formed text in appropriate languages for the location
-- Local languages are acceptable when relevant to {{{location}}}
+{{#if useLocalLanguage}}
+- You may use local language text when 100% certain of spelling, meaning, and cultural appropriateness
+- Mix local language with English naturally (1-2 local words maximum per text element)
+- Only use commonly known local words that add cultural connection to {{{location}}}
+- When uncertain about local language accuracy, use English instead
+- Better to use clear English than incorrect or garbled local language
+{{else}}
+- USE ONLY ENGLISH for all text content (captions, hashtags, call-to-actions)
+- Do not use any local language words or phrases
+- Keep all text elements in clear, professional English
+- Focus on universal messaging that works across all markets
+{{/if}}
 - Do NOT use corrupted, gibberish, or unreadable character sequences
 - Do NOT use random symbols or malformed text
 - Ensure all text is properly formatted and legible
 - Avoid character encoding issues or text corruption
-- If using local language, ensure it's grammatically correct
-- All text must be clear and professional, regardless of language
+- All text must be clear and professional
 - Prevent any garbled or nonsensical character combinations
 
 Your response MUST be a valid JSON object that conforms to the output schema.

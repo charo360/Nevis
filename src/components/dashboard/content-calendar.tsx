@@ -52,6 +52,12 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
   // Artifact selection for content generation
   const [selectedArtifacts, setSelectedArtifacts] = React.useState<string[]>([]);
 
+  // Include people in designs toggle
+  const [includePeopleInDesigns, setIncludePeopleInDesigns] = React.useState<boolean>(true);
+
+  // Use local language toggle
+  const [useLocalLanguage, setUseLocalLanguage] = React.useState<boolean>(false);
+
   // Save preferences to localStorage
   React.useEffect(() => {
     const savedPreferences = localStorage.getItem('brandConsistencyPreferences');
@@ -63,6 +69,16 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
     if (savedRevoModel) {
       setSelectedRevoModel(savedRevoModel as RevoModel);
     }
+
+    const savedIncludePeople = localStorage.getItem('includePeopleInDesigns');
+    if (savedIncludePeople !== null) {
+      setIncludePeopleInDesigns(JSON.parse(savedIncludePeople));
+    }
+
+    const savedUseLocalLanguage = localStorage.getItem('useLocalLanguage');
+    if (savedUseLocalLanguage !== null) {
+      setUseLocalLanguage(JSON.parse(savedUseLocalLanguage));
+    }
   }, []);
 
   React.useEffect(() => {
@@ -72,6 +88,14 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
   React.useEffect(() => {
     localStorage.setItem('selectedRevoModel', selectedRevoModel);
   }, [selectedRevoModel]);
+
+  React.useEffect(() => {
+    localStorage.setItem('includePeopleInDesigns', JSON.stringify(includePeopleInDesigns));
+  }, [includePeopleInDesigns]);
+
+  React.useEffect(() => {
+    localStorage.setItem('useLocalLanguage', JSON.stringify(useLocalLanguage));
+  }, [useLocalLanguage]);
 
   const handleGenerateClick = async (platform: Platform) => {
     setIsGenerating(platform);
@@ -102,7 +126,9 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
             visualStyle: brandProfile.visualStyle || 'modern',
             imageText: `${brandProfile.businessName || brandProfile.businessType} - Premium Content`,
             brandProfile,
-            aspectRatio: '1:1'
+            aspectRatio: '1:1',
+            includePeopleInDesigns,
+            useLocalLanguage
           })
         });
 
@@ -143,7 +169,9 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
           platform,
           brandConsistency,
           [], // Empty array - let the action use active artifacts from artifacts service
-          selectedRevoModel === 'revo-1.5' // Enhanced design for Revo 1.5
+          selectedRevoModel === 'revo-1.5', // Enhanced design for Revo 1.5
+          includePeopleInDesigns,
+          useLocalLanguage
         );
       } else {
         console.log(`📝 Using standard content generation with ${selectedRevoModel} model`);
@@ -228,6 +256,20 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
                     }
                   />
                 </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-600">👥 People</span>
+                  <Switch
+                    checked={includePeopleInDesigns}
+                    onCheckedChange={setIncludePeopleInDesigns}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-600">🌍 Local</span>
+                  <Switch
+                    checked={useLocalLanguage}
+                    onCheckedChange={setUseLocalLanguage}
+                  />
+                </div>
                 <Separator orientation="vertical" className="h-4" />
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-gray-600">AI Model:</span>
@@ -299,6 +341,8 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
               </CardContent>
             </Card>
           </div>
+
+
 
           <div className="flex flex-col items-start gap-4 md:flex-row md:items-center md:justify-between">
             <div>

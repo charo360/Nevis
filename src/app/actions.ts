@@ -119,7 +119,8 @@ const getAspectRatioForPlatform = (platform: Platform): string => {
 export async function generateContentAction(
   profile: BrandProfile,
   platform: Platform,
-  brandConsistency?: { strictConsistency: boolean; followBrandColors: boolean }
+  brandConsistency?: { strictConsistency: boolean; followBrandColors: boolean },
+  useLocalLanguage: boolean = false
 ): Promise<GeneratedPost> {
   try {
     const today = new Date();
@@ -199,6 +200,8 @@ export async function generateContentAction(
       description: enhancedProfile.description,
       contactInfo: enhancedProfile.contactInfo,
       socialMedia: enhancedProfile.socialMedia,
+      // Language preferences
+      useLocalLanguage: useLocalLanguage,
     });
 
     const newPost: GeneratedPost = {
@@ -284,7 +287,9 @@ export async function generateEnhancedDesignAction(
   brandProfile?: BrandProfile,
   enableEnhancements: boolean = true,
   brandConsistency?: { strictConsistency: boolean; followBrandColors: boolean },
-  artifactInstructions?: string
+  artifactInstructions?: string,
+  includePeopleInDesigns: boolean = true,
+  useLocalLanguage: boolean = false
 ): Promise<{
   imageUrl: string;
   qualityScore: number;
@@ -337,6 +342,8 @@ export async function generateEnhancedDesignAction(
         brandProfile,
         brandConsistency,
         artifactInstructions,
+        includePeopleInDesigns,
+        useLocalLanguage,
       });
 
       console.log('✅ Gemini 2.5 enhanced design generated successfully');
@@ -465,7 +472,9 @@ export async function generateContentWithArtifactsAction(
   platform: Platform,
   brandConsistency?: { strictConsistency: boolean; followBrandColors: boolean },
   artifactIds: string[] = [],
-  useEnhancedDesign: boolean = true
+  useEnhancedDesign: boolean = true,
+  includePeopleInDesigns: boolean = true,
+  useLocalLanguage: boolean = false
 ): Promise<GeneratedPost> {
   try {
     console.log('🎨 Generating content with artifacts...');
@@ -610,7 +619,9 @@ export async function generateContentWithArtifactsAction(
       profile,
       true,
       brandConsistency,
-      allInstructions || undefined
+      allInstructions || undefined,
+      includePeopleInDesigns,
+      useLocalLanguage
     );
 
     // Create enhanced post with artifact metadata
