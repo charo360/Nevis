@@ -3,19 +3,20 @@
  * Revolutionary AI model with native image generation, character consistency, and intelligent editing
  */
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import { BrandProfile } from '@/lib/types';
 
-// Initialize Google AI with API key
+// Get API key (following official Google AI Node.js example)
 const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
 
 if (!apiKey) {
   console.error("❌ No Google AI API key found for Revo 2.0");
 }
 
-const genAI = new GoogleGenerativeAI(apiKey!);
+// Initialize Google GenAI client (following official Node.js example)
+const ai = new GoogleGenAI({ apiKey });
 
-// Revo 2.0 uses Gemini 2.5 Flash Image model
+// Revo 2.0 uses Gemini 2.5 Flash Image model (following official docs)
 const REVO_2_0_MODEL = 'gemini-2.5-flash-image-preview';
 
 export interface Revo20GenerationInput {
@@ -56,35 +57,35 @@ export async function generateWithRevo20(
   console.log('🍌 Using Gemini 2.5 Flash Image (nano-banana) engine');
 
   try {
-    // Get the Gemini 2.5 Flash Image model
-    const model = genAI.getGenerativeModel({ 
-      model: REVO_2_0_MODEL 
-    });
-
     // Build the revolutionary prompt for Revo 2.0
-    const prompt = buildRevo20Prompt(input);
-    console.log('📝 Revo 2.0 prompt:', prompt.substring(0, 200) + '...');
+    const promptText = buildRevo20Prompt(input);
+    console.log('📝 Revo 2.0 prompt:', promptText.substring(0, 200) + '...');
 
-    // Prepare content array for multimodal generation
-    const contents: any[] = [prompt];
+    // Prepare content array following official Node.js example
+    const prompt: any[] = [
+      { text: promptText }
+    ];
 
-    // Add reference image for character consistency if provided
+    // Add reference image for character consistency if provided (following official docs)
     if (input.referenceImage && input.characterConsistency) {
       console.log('👤 Adding reference image for character consistency...');
-      contents.push({
+      const base64Data = input.referenceImage.split(',')[1]; // Remove data:image/... prefix
+      prompt.push({
         inlineData: {
-          data: input.referenceImage.split(',')[1], // Remove data:image/... prefix
-          mimeType: 'image/png'
+          mimeType: 'image/png',
+          data: base64Data
         }
       });
     }
 
-    // Generate content with Revo 2.0 capabilities
+    // Generate content with Revo 2.0 using official API (following Node.js example)
     console.log('🤖 Generating with Revo 2.0 revolutionary AI...');
-    const result = await model.generateContent(contents);
-    const response = await result.response;
+    const response = await ai.models.generateContent({
+      model: REVO_2_0_MODEL,
+      contents: prompt
+    });
 
-    // Extract image from response
+    // Extract image from response (following official Node.js example)
     let imageUrl = '';
     const enhancementsApplied = [
       'Revo 2.0 Next-Gen Engine',
@@ -101,14 +102,21 @@ export async function generateWithRevo20(
       enhancementsApplied.push('Intelligent Editing');
     }
 
-    for (const part of response.candidates?.[0]?.content?.parts || []) {
+    // Process response parts (following official Node.js example structure)
+    const parts = response.candidates?.[0]?.content?.parts || [];
+    console.log(`📊 Response contains ${parts.length} parts`);
+
+    for (const part of parts) {
       if (part.text) {
         console.log('📄 Revo 2.0 text response:', part.text.substring(0, 100) + '...');
-      }
-      
-      // Extract generated image
-      if (part.inlineData && part.inlineData.data) {
+      } else if (part.inlineData) {
         console.log('🖼️ Revo 2.0 image generated successfully!');
+        console.log('📋 Image details:', {
+          mimeType: part.inlineData.mimeType,
+          dataLength: part.inlineData.data?.length || 0
+        });
+
+        // Create data URL (following official example)
         imageUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
         enhancementsApplied.push(
           'Ultra-High Quality Output',
@@ -208,33 +216,60 @@ REVO 2.0 DESIGN SPECIFICATIONS:
 }
 
 /**
- * Test Revo 2.0 availability
+ * Test Revo 2.0 availability following official Google AI docs
  */
 export async function testRevo20Availability(): Promise<boolean> {
   try {
     console.log('🧪 Testing Revo 2.0 (Gemini 2.5 Flash Image) availability...');
-    
-    const model = genAI.getGenerativeModel({ 
-      model: REVO_2_0_MODEL 
+    console.log('📋 Using official @google/genai package...');
+
+    // Test using official API structure (following Node.js example)
+    const response = await ai.models.generateContent({
+      model: REVO_2_0_MODEL,
+      contents: [
+        { text: 'Create a simple test image with the text "Revo 2.0 Test" on a modern gradient background' }
+      ]
     });
 
-    const testResult = await model.generateContent([
-      'Create a simple test image with the text "Revo 2.0 Test" on a modern gradient background'
-    ]);
+    // Check response structure following the docs
+    console.log('📄 Response structure:', {
+      candidates: response.candidates?.length || 0,
+      parts: response.candidates?.[0]?.content?.parts?.length || 0
+    });
 
-    const response = await testResult.response;
-    const hasImage = response.candidates?.[0]?.content?.parts?.some(part => part.inlineData);
+    // Look for image data in parts (following Python docs pattern)
+    const parts = response.candidates?.[0]?.content?.parts || [];
+    let hasImage = false;
+    let hasText = false;
+
+    for (const part of parts) {
+      if (part.text) {
+        console.log('📝 Text response found:', part.text.substring(0, 100) + '...');
+        hasText = true;
+      }
+      if (part.inlineData) {
+        console.log('🖼️ Image data found:', part.inlineData.mimeType);
+        hasImage = true;
+      }
+    }
 
     if (hasImage) {
       console.log('✅ Revo 2.0 is available and working perfectly!');
       return true;
+    } else if (hasText) {
+      console.log('⚠️ Revo 2.0 responded with text but no image - model may not support image generation yet');
+      return false;
     } else {
-      console.log('⚠️ Revo 2.0 responded but no image generated');
+      console.log('⚠️ Revo 2.0 responded but no content found');
       return false;
     }
 
   } catch (error) {
     console.error('❌ Revo 2.0 test failed:', error);
+    console.error('Error details:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
     return false;
   }
 }
@@ -247,7 +282,7 @@ export async function generateWithCharacterConsistency(
   referenceImages: string[]
 ): Promise<Revo20GenerationResult> {
   console.log('👤 Revo 2.0: Generating with character consistency...');
-  
+
   const enhancedInput = {
     ...input,
     referenceImage: referenceImages[0],
@@ -267,7 +302,7 @@ export async function performIntelligentEditing(
   brandProfile: BrandProfile
 ): Promise<Revo20GenerationResult> {
   console.log('✏️ Revo 2.0: Performing intelligent editing...');
-  
+
   const input: Revo20GenerationInput = {
     businessType: brandProfile.businessType || 'Business',
     platform: 'instagram',
