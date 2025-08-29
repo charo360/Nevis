@@ -3,7 +3,7 @@
  * Revolutionary AI model with native image generation, character consistency, and intelligent editing
  */
 
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { BrandProfile } from '@/lib/types';
 import {
   ADVANCED_DESIGN_PRINCIPLES,
@@ -25,11 +25,13 @@ import {
 // Performance optimization will be handled inline
 import { recordDesignGeneration } from '@/ai/utils/design-analytics';
 import { generatePostFromProfile } from '@/ai/flows/generate-post-from-profile';
+import { generateRevo2CaptionPrompt } from '@/ai/prompts/revo-2-caption-prompt';
 import { generateRealTimeTrendingTopics } from '@/ai/utils/trending-topics';
-import { fetchLocalContext } from '@/ai/utils/real-time-trends-integration';
-import { selectRelevantContext, filterContextData } from '@/ai/utils/intelligent-context-selector';
+// import { fetchLocalContext } from '@/ai/utils/real-time-trends-integration';
+// import { selectRelevantContext, filterContextData } from '@/ai/utils/intelligent-context-selector';
+import OpenAI from 'openai';
 
-// Get API key (supporting both server-side and client-side)
+// Get API keys (supporting both server-side and client-side)
 const apiKey =
   process.env.GEMINI_API_KEY ||
   process.env.GOOGLE_API_KEY ||
@@ -37,6 +39,10 @@ const apiKey =
   process.env.NEXT_PUBLIC_GEMINI_API_KEY ||
   process.env.NEXT_PUBLIC_GOOGLE_API_KEY ||
   process.env.NEXT_PUBLIC_GOOGLE_GENAI_API_KEY;
+
+const openaiApiKey =
+  process.env.OPENAI_API_KEY ||
+  process.env.NEXT_PUBLIC_OPENAI_API_KEY;
 
 if (!apiKey) {
   console.error("❌ No Google AI API key found for Revo 2.0");
@@ -55,7 +61,138 @@ if (!apiKey) {
 }
 
 // Initialize Google GenAI client (following official Node.js example)
-const ai = new GoogleGenAI({ apiKey });
+const ai = new GoogleGenerativeAI(apiKey);
+
+// Initialize OpenAI client for creative ideation
+const openai = openaiApiKey ? new OpenAI({ apiKey: openaiApiKey }) : null;
+
+if (!openaiApiKey) {
+  console.warn('⚠️ OpenAI API key not found. GPT creative ideation layer will be disabled.');
+}
+
+// Types for GPT Creative Ideation
+interface CreativeIdeas {
+  concept: string;
+  catchwords: string[];
+  visualDirection: string;
+  designElements: string[];
+  colorSuggestions: string[];
+  moodKeywords: string[];
+  targetEmotions: string[];
+}
+
+interface CreativeIdeationInput {
+  businessType: string;
+  businessName: string;
+  location: string;
+  platform: string;
+  targetAudience: string;
+  brandVoice: string;
+  services: string[];
+  brandColors: string[];
+}
+
+// GPT Creative Ideation Function
+async function generateCreativeIdeasWithGPT(input: CreativeIdeationInput): Promise<CreativeIdeas> {
+  if (!openai) {
+    // Fallback to basic creative ideas if OpenAI is not available
+    console.log('🔄 OpenAI not available, using fallback creative ideas...');
+    return {
+      concept: `Professional ${input.businessType.toLowerCase()} content showcasing ${input.businessName}'s expertise`,
+      catchwords: ['Professional', 'Quality', 'Excellence', 'Innovation', 'Trust'],
+      visualDirection: `Clean, modern design with professional aesthetics suitable for ${input.platform}`,
+      designElements: ['Clean typography', 'Professional imagery', 'Brand colors', 'Minimalist layout'],
+      colorSuggestions: input.brandColors.length > 0 ? input.brandColors : ['#2563eb', '#1f2937', '#f8fafc'],
+      moodKeywords: ['Professional', 'Trustworthy', 'Modern', 'Clean'],
+      targetEmotions: ['Trust', 'Confidence', 'Professionalism']
+    };
+  }
+
+  try {
+    console.log('🧠 Generating creative ideas with GPT-4...');
+
+    const prompt = `You are a local creative who understands what makes people in ${input.location} genuinely connect with businesses. Think like someone who lives in this community and wants to help local businesses succeed.
+
+BUSINESS CONTEXT:
+- Business: ${input.businessName}
+- Type: ${input.businessType}
+- Location: ${input.location}
+- Platform: ${input.platform}
+- Target Audience: ${input.targetAudience}
+- Brand Voice: ${input.brandVoice}
+- Services: ${Array.isArray(input.services) ? input.services.join(', ') : 'General services'}
+- Brand Colors: ${Array.isArray(input.brandColors) ? input.brandColors.join(', ') : 'Not specified'}
+
+CREATIVE BRIEF:
+Generate authentic, relatable creative ideas that feel human and genuine - not corporate or overly polished. Think about what would make locals stop scrolling and think "I want to support this business."
+
+REQUIREMENTS:
+1. Create a warm, relatable concept that tells a human story
+2. Generate 5 simple, authentic catchwords that feel conversational
+3. Suggest visual direction that feels real and community-focused
+4. Recommend design elements that are approachable, not intimidating
+5. Suggest colors that feel warm and welcoming
+6. Define mood keywords that are friendly and genuine
+7. Target emotions that build trust and community connection
+
+HUMAN-FIRST APPROACH:
+- Concepts should feel like a neighbor recommending a local business
+- Catchwords should be warm and relatable, not corporate buzzwords
+- Visual direction should feel authentic, not overly produced
+- Focus on building genuine connections, not just sales
+
+LANGUAGE SAFETY:
+- Only use local language words when 100% certain of accuracy
+- When in doubt about local language, use English instead
+- Better clear English than incorrect local language
+
+Return your response in this exact JSON format:
+{
+  "concept": "Relatable, human concept that locals would connect with (2-3 sentences, conversational tone)",
+  "catchwords": ["word1", "word2", "word3", "word4", "word5"],
+  "visualDirection": "Authentic visual direction that feels real and community-focused (2-3 sentences)",
+  "designElements": ["element1", "element2", "element3", "element4"],
+  "colorSuggestions": ["#color1", "#color2", "#color3"],
+  "moodKeywords": ["mood1", "mood2", "mood3", "mood4"],
+  "targetEmotions": ["emotion1", "emotion2", "emotion3"]
+}`;
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.8,
+      max_tokens: 1000
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error('No response from GPT');
+    }
+
+    // Parse JSON response (handle markdown formatting)
+    let jsonContent = content.trim();
+    if (jsonContent.startsWith('```json')) {
+      jsonContent = jsonContent.replace(/```json\s*/, '').replace(/```\s*$/, '');
+    }
+    const creativeIdeas = JSON.parse(jsonContent) as CreativeIdeas;
+
+    console.log('✅ GPT Creative Ideas Generated Successfully');
+    return creativeIdeas;
+
+  } catch (error) {
+    console.error('❌ GPT Creative Ideation failed:', error);
+    // Fallback to basic creative ideas
+    return {
+      concept: `Engaging ${input.businessType.toLowerCase()} content that showcases ${input.businessName}'s unique value`,
+      catchwords: ['Innovative', 'Excellence', 'Quality', 'Professional', 'Trusted'],
+      visualDirection: `Modern, eye-catching design with strong visual hierarchy for ${input.platform}`,
+      designElements: ['Bold typography', 'High-quality imagery', 'Brand integration', 'Clean composition'],
+      colorSuggestions: input.brandColors.length > 0 ? input.brandColors.slice(0, 3) : ['#3b82f6', '#1e293b', '#f1f5f9'],
+      moodKeywords: ['Professional', 'Innovative', 'Trustworthy', 'Modern'],
+      targetEmotions: ['Confidence', 'Trust', 'Excitement']
+    };
+  }
+}
 
 // Revo 2.0 uses Gemini 2.5 Flash Image model (following official docs)
 const REVO_2_0_MODEL = 'gemini-2.5-flash-image-preview';
@@ -90,10 +227,40 @@ export interface Revo20GenerationResult {
 }
 
 /**
- * Generate advanced captions and hashtags using the same system as Revo 1.5/1.0
+ * Generate advanced captions and hashtags using enhanced Revo 2.0 system
+ * Enhanced with better RSS integration, trending topics, and cultural awareness
  */
-async function generateAdvancedCaptionAndHashtags(input: Revo20GenerationInput): Promise<{ caption: string; hashtags: string[] }> {
+async function generateAdvancedCaptionAndHashtags(input: Revo20GenerationInput, creativeIdeas?: CreativeIdeas): Promise<{ caption: string; hashtags: string[] }> {
   try {
+    console.log('🎯 Revo 2.0: Starting enhanced caption generation with RSS integration...');
+    console.log(`📍 Location: ${input.brandProfile.location || 'Not specified'}`);
+    console.log(`🏢 Business: ${input.businessType}`);
+    console.log(`📱 Platform: ${input.platform}`);
+
+    // Step 1: Fetch trending topics for context
+    console.log('🔍 Fetching trending topics for caption context...');
+    const trendingTopics = await generateRealTimeTrendingTopics(
+      input.businessType,
+      input.brandProfile.location || '',
+      input.platform
+    );
+    console.log(`✅ Found ${trendingTopics.length} trending topics for caption generation`);
+
+    // Step 2: Try enhanced Revo 2.0 caption generation first
+    try {
+      console.log('🚀 Using Revo 2.0 enhanced caption generation...');
+      const captionResult = await generateRevo2EnhancedCaption(input, trendingTopics, creativeIdeas);
+      if (captionResult.caption && captionResult.hashtags.length > 0) {
+        console.log('✅ Revo 2.0 enhanced caption generation successful!');
+        return captionResult;
+      }
+    } catch (error) {
+      console.warn('⚠️ Revo 2.0 enhanced caption failed, falling back to advanced system:', error);
+    }
+
+    // Step 3: Fallback to existing advanced system
+    console.log('🔄 Using existing advanced caption system as fallback...');
+
     // Create generation parameters for the advanced system
     const generationParams = {
       // Required fields from schema
@@ -145,8 +312,13 @@ async function generateAdvancedCaptionAndHashtags(input: Revo20GenerationInput):
       designExamples: input.brandProfile.designExamples || []
     };
 
-    // Use the same advanced system as Revo 1.5/1.0
+    // Use the same advanced system as Revo 1.5/1.0 with enhanced logging
+    console.log('🚀 Calling generatePostFromProfile with RSS integration...');
     const result = await generatePostFromProfile(generationParams);
+
+    console.log('✅ Advanced caption generation completed');
+    console.log(`📝 Generated caption length: ${result.content?.length || 0} characters`);
+    console.log(`🏷️ Generated hashtags: ${result.hashtags?.split(/[,\s]+/).filter(tag => tag.startsWith('#')).length || 0}`);
 
     // Extract caption and hashtags from the result (ensure exactly 10 hashtags)
     const caption = result.content || `✨ Experience excellence with ${input.brandProfile.businessName || 'our brand'}! Quality you can trust.`;
@@ -156,6 +328,7 @@ async function generateAdvancedCaptionAndHashtags(input: Revo20GenerationInput):
     if (hashtags.length < 10) {
       const fallbackHashtags = ['#Quality', '#Professional', '#Excellence', '#Premium', '#Service', '#Business', '#Innovation', '#Success', '#Trusted', '#Experience'];
       hashtags = [...hashtags, ...fallbackHashtags].slice(0, 10);
+      console.log(`⚠️ Used ${10 - (result.hashtags?.split(/[,\s]+/).filter(tag => tag.startsWith('#')).length || 0)} fallback hashtags`);
     } else {
       hashtags = hashtags.slice(0, 10);
     }
@@ -163,21 +336,114 @@ async function generateAdvancedCaptionAndHashtags(input: Revo20GenerationInput):
     return { caption, hashtags };
 
   } catch (error) {
-    // Fixed services array handling
-    console.warn('Failed to generate advanced captions/hashtags, using fallback:', error);
+    console.error('❌ Advanced caption generation failed:', error);
+    console.log('🔄 Using enhanced fallback caption generation...');
 
-    // Fallback to simple generation
+    // Enhanced fallback with better localization and context
     const brandName = input.brandProfile.businessName || 'Our Brand';
     const location = input.brandProfile.location || '';
+    const businessType = input.businessType;
+
+    // Create more contextual fallback captions based on location and business type
+    let fallbackCaption = '';
+    let fallbackHashtags = ['#Quality', '#Professional', '#Excellence', '#Business', '#Service', '#Trusted', '#Premium', '#Innovation', '#Success', '#Experience'];
+
+    // Enhanced fallback for Kenyan/East African context
+    if (location.toLowerCase().includes('kenya') || location.toLowerCase().includes('nairobi') || location.toLowerCase().includes('mombasa')) {
+      fallbackCaption = `🌟 ${brandName} - Bringing you quality ${businessType.toLowerCase()} services! Tunatoa huduma bora kwa wote. ${location ? `Proudly serving ${location}` : ''} 🇰🇪✨`;
+      fallbackHashtags = ['#Kenya', '#Quality', '#BestService', '#Nairobi', '#Professional', '#Trusted', '#Excellence', '#Business', '#Innovation', '#KenyaBusiness'];
+    } else {
+      fallbackCaption = `✨ Experience excellence with ${brandName}! Quality you can trust, service you'll love. ${location ? `Proudly serving ${location}` : ''} 🌟`;
+    }
 
     return {
-      caption: `✨ Experience excellence with ${brandName}! Quality you can trust, service you'll love. ${location ? `Proudly serving ${location}` : ''} 🌟`,
-      hashtags: ['#Quality', '#Professional', '#Excellence', '#Business', '#Service', '#Trusted', '#Premium', '#Innovation', '#Success', '#Experience'] // Exactly 10 hashtags
+      caption: fallbackCaption,
+      hashtags: fallbackHashtags
     };
   }
 }
 
+/**
+ * Generate enhanced caption using Revo 2.0 system with trending topics
+ */
+async function generateRevo2EnhancedCaption(
+  input: Revo20GenerationInput,
+  trendingTopics: Array<{ topic: string; relevanceScore: number }>,
+  creativeIdeas?: CreativeIdeas
+): Promise<{ caption: string; hashtags: string[] }> {
+  try {
+    console.log('🎨 Generating Revo 2.0 enhanced caption...');
 
+    // Get API key
+    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
+    if (!apiKey) {
+      throw new Error('No Google AI API key found');
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+    // Generate enhanced caption prompt with GPT creative ideas and RSS data
+    const captionPrompt = generateHybridCaptionPrompt({
+      businessType: input.businessType,
+      location: input.brandProfile.location || '',
+      businessName: input.brandProfile.businessName || 'Our Brand',
+      platform: input.platform,
+      targetAudience: input.brandProfile.targetAudience,
+      trendingTopics: trendingTopics.slice(0, 5), // Top 5 trends
+      creativeIdeas: creativeIdeas
+    });
+
+    console.log('📝 Sending enhanced caption generation request...');
+    const result = await model.generateContent(captionPrompt);
+    const response = await result.response;
+    const caption = response.text().trim();
+
+    // Generate hashtags based on the caption and context
+    const hashtagPrompt = `Based on this caption for a ${input.businessType} business in ${input.brandProfile.location}, generate exactly 10 relevant hashtags for ${input.platform}:
+
+Caption: "${caption}"
+
+Business: ${input.brandProfile.businessName || 'Business'}
+Location: ${input.brandProfile.location}
+Platform: ${input.platform}
+
+Generate exactly 10 hashtags that are:
+- Mix of popular and niche hashtags
+- Platform-appropriate for ${input.platform}
+- Location-relevant for ${input.brandProfile.location}
+- Industry-specific for ${input.businessType}
+- Trending-aware
+
+Format: #hashtag1 #hashtag2 #hashtag3 (etc.)`;
+
+    console.log('🏷️ Generating contextual hashtags...');
+    const hashtagResult = await model.generateContent(hashtagPrompt);
+    const hashtagResponse = await hashtagResult.response;
+    const hashtagText = hashtagResponse.text().trim();
+
+    // Extract hashtags
+    const hashtags = hashtagText.match(/#\w+/g) || [];
+
+    // Ensure exactly 10 hashtags
+    const finalHashtags = hashtags.slice(0, 10);
+    if (finalHashtags.length < 10) {
+      const fallbackHashtags = ['#Quality', '#Professional', '#Excellence', '#Business', '#Service', '#Trusted', '#Premium', '#Innovation', '#Success', '#Experience'];
+      finalHashtags.push(...fallbackHashtags.slice(0, 10 - finalHashtags.length));
+    }
+
+    console.log(`✅ Generated enhanced caption (${caption.length} chars) and ${finalHashtags.length} hashtags`);
+
+    return {
+      caption,
+      hashtags: finalHashtags
+    };
+
+  } catch (error) {
+    console.error('❌ Revo 2.0 enhanced caption generation failed:', error);
+    throw error;
+  }
+}
 
 /**
  * Generate content using Revo 2.0 (Gemini 2.5 Flash Image)
@@ -190,8 +456,28 @@ export async function generateWithRevo20(
   console.log('🚀 Using Next-Gen AI Engine');
 
   try {
-    // Build the revolutionary prompt for Revo 2.0 with real-time context
-    const { promptText, businessDNA, trendInstructions, contextData } = await buildRevo20Prompt(input);
+    // 🧠 STEP 1: GPT Creative Ideation Layer
+    console.log('🧠 Revo 2.0: Starting GPT creative ideation layer...');
+
+    const creativeIdeas = await generateCreativeIdeasWithGPT({
+      businessType: input.brandProfile.businessType || 'Business',
+      businessName: input.brandProfile.businessName || 'Your Business',
+      location: input.brandProfile.location || 'Global',
+      platform: input.platform || 'instagram',
+      targetAudience: input.brandProfile.targetAudience || 'General audience',
+      brandVoice: input.brandProfile.brandVoice || 'Professional and engaging',
+      services: input.brandProfile.services || [],
+      brandColors: input.brandProfile.brandColors || []
+    });
+
+    console.log('✅ GPT Creative Ideas Generated:', {
+      concept: creativeIdeas.concept.substring(0, 100) + '...',
+      catchwords: creativeIdeas.catchwords,
+      visualDirection: creativeIdeas.visualDirection.substring(0, 100) + '...'
+    });
+
+    // 🎨 STEP 2: Build the revolutionary prompt for Revo 2.0 with GPT creative ideas
+    const { promptText, businessDNA, trendInstructions, contextData } = await buildRevo20Prompt(input, creativeIdeas);
     console.log('📝 Revo 2.0 prompt:', promptText.substring(0, 200) + '...');
 
     // Log context integration
@@ -256,10 +542,8 @@ export async function generateWithRevo20(
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         console.log(`🔄 Attempt ${attempt}/${maxRetries} for Revo 2.0 generation...`);
-        response = await ai.models.generateContent({
-          model: REVO_2_0_MODEL,
-          contents: prompt
-        });
+        const model = ai.getGenerativeModel({ model: REVO_2_0_MODEL });
+        response = await model.generateContent(prompt);
         console.log('✅ Revo 2.0 generation successful!');
         break; // Success, exit retry loop
       } catch (error: any) {
@@ -297,8 +581,12 @@ export async function generateWithRevo20(
     }
 
     // Process response parts (following official Node.js example structure)
-    const parts = response.candidates?.[0]?.content?.parts || [];
+    // The response might be nested under response.response
+    const actualResponse = response.response || response;
+    const parts = actualResponse.candidates?.[0]?.content?.parts || [];
     console.log(`📊 Response contains ${parts.length} parts`);
+    console.log('🔍 Response candidates:', actualResponse.candidates?.length || 0);
+    console.log('🔍 First candidate:', actualResponse.candidates?.[0] ? 'exists' : 'missing');
 
     for (const part of parts) {
       if (part.text) {
@@ -327,8 +615,8 @@ export async function generateWithRevo20(
       throw new Error('No image generated by Revo 2.0');
     }
 
-    // Generate sophisticated captions and hashtags using the same system as Revo 1.5/1.0
-    const { caption, hashtags } = await generateAdvancedCaptionAndHashtags(input);
+    // Generate sophisticated captions and hashtags using GPT creative ideas and RSS data
+    const { caption, hashtags } = await generateAdvancedCaptionAndHashtags(input, creativeIdeas);
 
     const processingTime = Date.now() - startTime;
     console.log(`✅ Revo 2.0 generation completed in ${processingTime}ms`);
@@ -383,9 +671,9 @@ export async function generateWithRevo20(
 }
 
 /**
- * Build revolutionary prompt for Revo 2.0 with sophisticated design workflow and real-time context
+ * Build revolutionary prompt for Revo 2.0 with GPT creative ideas and real-time context
  */
-async function buildRevo20Prompt(input: Revo20GenerationInput): Promise<{
+async function buildRevo20Prompt(input: Revo20GenerationInput, creativeIdeas?: CreativeIdeas): Promise<{
   promptText: string;
   businessDNA: string;
   trendInstructions: string;
@@ -399,52 +687,29 @@ async function buildRevo20Prompt(input: Revo20GenerationInput): Promise<{
   // Get business-specific design DNA
   const businessDNA = BUSINESS_TYPE_DESIGN_DNA[businessType as keyof typeof BUSINESS_TYPE_DESIGN_DNA] || BUSINESS_TYPE_DESIGN_DNA.default;
 
-  // Step 1: Intelligent Context Analysis - Determine what information is relevant for Revo 2.0
-  const contextRelevance = selectRelevantContext(
-    businessType,
-    brandProfile.location || '',
-    platform,
-    brandProfile.contentThemes || '',
-    new Date().getDay() // Current day of week
-  );
+  // Step 1: Intelligent Context Analysis - Temporarily disabled for testing
+  // const contextRelevance = selectRelevantContext(
+  //   businessType,
+  //   brandProfile.location || '',
+  //   platform,
+  //   brandProfile.contentThemes || '',
+  //   new Date().getDay() // Current day of week
+  // );
 
   console.log('🧠 Revo 2.0 Context Analysis for', businessType, 'in', brandProfile.location || 'Global');
-  console.log('   Weather:', contextRelevance.weather, '- weather conditions', contextRelevance.weather === 'high' ? 'are highly influential' : contextRelevance.weather === 'medium' ? 'have moderate influence' : 'have minimal business relevance');
-  console.log('   Events:', contextRelevance.events, '- Events', contextRelevance.events === 'high' ? 'significantly impact business' : contextRelevance.events === 'medium' ? 'have moderate relevance' : 'have minimal business relevance');
-  console.log('   Trends:', contextRelevance.trends, '- Trending topics', contextRelevance.trends === 'high' ? 'are crucial for engagement' : contextRelevance.trends === 'medium' ? 'increase content relevance and engagement' : 'have limited impact');
-  console.log('   Culture:', contextRelevance.culture, '- Cultural awareness', contextRelevance.culture === 'high' ? 'is essential for authentic connections' : contextRelevance.culture === 'medium' ? 'enhances local relevance' : 'has standard importance');
+  console.log('   Note: Context analysis temporarily disabled for testing');
 
-  // Step 2: Fetch Real-Time Trending Topics (if relevant)
+  // Step 2-4: Context fetching temporarily disabled for testing
   let trendingTopics: any[] = [];
-  if (contextRelevance.trends !== 'ignore') {
-    try {
-      console.log('🔍 Fetching real-time trends for Revo 2.0 headline generation...');
-      trendingTopics = await generateRealTimeTrendingTopics(
-        businessType,
-        brandProfile.location || ''
-      );
-      console.log(`✅ Found ${trendingTopics.length} real-time trends for Revo 2.0`);
-    } catch (error) {
-      console.warn('Failed to fetch trending topics for Revo 2.0:', error);
-    }
-  }
-
-  // Step 3: Fetch Local Context (weather, events) if relevant
   let localContext: any = {};
-  try {
-    localContext = await fetchLocalContext(brandProfile.location || '');
-    console.log('🌍 Revo 2.0 Local context fetched:', Object.keys(localContext));
-  } catch (error) {
-    console.warn('Failed to fetch local context for Revo 2.0:', error);
-  }
+  const filteredContext: any = {
+    selectedTrends: [],
+    selectedWeather: null,
+    selectedEvents: [],
+    selectedCultural: null
+  };
 
-  // Step 4: Filter and select most relevant context data
-  const filteredContext = filterContextData(contextRelevance, {
-    weather: localContext.weather,
-    events: localContext.events,
-    trends: trendingTopics,
-    cultural: localContext.cultural
-  });
+  console.log('🔍 Revo 2.0: Context integration temporarily disabled for testing');
 
   // Get current design trends
   let trendInstructions = '';
@@ -571,6 +836,17 @@ Create a ${aspectRatio} design for ${platform} that people will absolutely LOVE 
 - Location: ${brandProfile.location || 'Global'}
 - Target Audience: ${brandProfile.targetAudience || 'General audience'}
 
+${creativeIdeas ? `**🧠 GPT CREATIVE DIRECTION (FOLLOW EXACTLY):**
+- **Creative Concept:** ${creativeIdeas.concept}
+- **Key Catchwords:** ${creativeIdeas.catchwords.join(', ')}
+- **Visual Direction:** ${creativeIdeas.visualDirection}
+- **Design Elements:** ${creativeIdeas.designElements.join(', ')}
+- **Mood Keywords:** ${creativeIdeas.moodKeywords.join(', ')}
+- **Target Emotions:** ${creativeIdeas.targetEmotions.join(', ')}
+- **Color Suggestions:** ${creativeIdeas.colorSuggestions.join(', ')}
+
+🚨 CRITICAL: Use these GPT-generated creative ideas as your PRIMARY creative direction. This is the core concept that should drive your entire design.` : ''}
+
 **🌍 CULTURAL INTEGRATION & HUMAN ELEMENTS:**
 - Location Context: ${brandProfile.location || 'Global'}
 - MANDATORY: Include diverse, authentic people when relevant to the message
@@ -580,6 +856,12 @@ Create a ${aspectRatio} design for ${platform} that people will absolutely LOVE 
 - Ensure representation reflects the local demographic and cultural values
 - Incorporate subtle cultural motifs or design elements that resonate locally
 - Use photography styles and compositions that feel authentic to the region
+
+**🚨 LANGUAGE SAFETY FOR TEXT IN DESIGNS:**
+- ONLY use local language text when 100% certain of spelling, meaning, and cultural appropriateness
+- When uncertain about local language accuracy, use English instead
+- Avoid complex local phrases, slang, or words you're not completely confident about
+- Better to use clear English than incorrect or garbled local language
 
 **🎯 BRAND IDENTITY SYSTEM:**
 ${colorInstructions}
@@ -600,14 +882,14 @@ ${brandProfile.logoDataUrl ? `
 You are an experienced marketing expert with deep knowledge of ${businessType} industry in ${brandProfile.location || 'the target region'}.
 Create compelling, culturally-aware content that resonates with local customers:
 
-**HEADLINE CREATION (PRIMARY) - ENHANCED WITH REAL-TIME CONTEXT:**
+**HEADLINE CREATION (PRIMARY) - STRATEGIC BUSINESS SELLING:**
 - NEVER use generic phrases like "Premium Content", "Quality Content", or "[Business Name] - [Generic Text]"
-- Create a completely unique, catchy headline that's different from "${imageText}"
-- Use specific benefit-driven language: "Fresh Daily", "Handcrafted Since 1995", "Farm to Table"
-- Make it industry-specific and customer-focused, not business-focused
-- Keep it short (3-7 words) but highly specific and memorable
-- Consider local market trends and customer pain points
-- Examples: "Baked Fresh This Morning", "Your Neighborhood Favorite", "Taste the Tradition"
+- Create headlines that SELL the business value and relate directly to the caption content
+- Use specific benefit-driven language that answers "Why should I choose this business?"
+- Make it industry-specific and customer-focused, highlighting unique selling points
+- Keep it short (3-7 words) but pack in real business value
+- Must connect to the caption story and reinforce the main business message
+- Examples: "Same Day Delivery", "24/7 Expert Support", "No Hidden Fees", "Local Since 1995"
 
 ${filteredContext.selectedTrends && filteredContext.selectedTrends.length > 0 ? `
 **🔥 TRENDING TOPICS INTEGRATION:**
@@ -625,15 +907,16 @@ ${filteredContext.selectedEvents && filteredContext.selectedEvents.length > 0 ? 
 - Incorporate regional preferences and cultural nuances
 ` : ''}
 
-**SUB-HEADLINE CREATION (SECONDARY) - CONTEXT-AWARE:**
-- Develop a supporting message that clarifies the value proposition
-- Use cultural insights and local market understanding
-- Address specific customer needs in ${brandProfile.location || 'the region'}
-- Make it relevant to ${businessType} industry challenges
-- Keep it concise (8-15 words) but compelling
-${filteredContext.selectedTrends && filteredContext.selectedTrends.length > 0 ? `- Consider incorporating trending themes that align with your business message` : ''}
-${filteredContext.selectedWeather ? `- Reference current conditions (${filteredContext.selectedWeather.condition || ''}) if relevant to your business` : ''}
-- Create subheadlines that feel current and locally relevant
+**SUB-HEADLINE CREATION (SECONDARY) - BUSINESS VALUE REINFORCEMENT:**
+- Develop a supporting message that reinforces the main headline's business benefit
+- Must directly relate to and support the caption content and main headline
+- Address the specific problem your business solves or benefit you provide
+- Make it relevant to ${businessType} industry and what customers actually want
+- Keep it concise (8-15 words) but pack in concrete business value
+- Use local language only when it genuinely enhances the business message
+${filteredContext.selectedTrends && filteredContext.selectedTrends.length > 0 ? `- Consider incorporating trending themes only if they strengthen your business message` : ''}
+${filteredContext.selectedWeather ? `- Reference current conditions (${filteredContext.selectedWeather.condition || ''}) only if relevant to your business value` : ''}
+- Create subheadlines that make customers think "I need this business"
 
 **CALL-TO-ACTION CREATION (TERTIARY):**
 - Generate contextually relevant CTAs based on the message
@@ -666,7 +949,7 @@ You understand:
 - Industry-specific customer pain points and desires
 - Seasonal trends and buying patterns
 - Competitive landscape and differentiation strategies
-- Local language patterns and colloquialisms (when appropriate)
+- Local language patterns ONLY when 100% certain of accuracy (prefer English over incorrect local language)
 
 **💡 CONTENT VARIATION STRATEGY:**
 Generate UNIQUE content every time by:
@@ -774,12 +1057,14 @@ This should be a design that stops scrolling, drives engagement, and showcases t
 **📝 CONTENT CREATION EXAMPLES FOR ${businessType}:**
 ${getContentExamples(businessType, brandProfile.location)}
 
-**🎨 HEADLINE VARIATION TECHNIQUES:**
+**🎨 STRATEGIC HEADLINE TECHNIQUES:**
 ❌ NEVER USE: "Premium Content", "Quality Content", "[Business] - Premium", "[Business] - Quality"
-✅ ALWAYS USE SPECIFIC BENEFITS:
-- Problem-Solution: "Struggling with X? We solve Y"
-- Benefit-Focused: "Experience the difference of Z"
-- Curiosity-Driven: "The secret behind our success"
+✅ ALWAYS USE BUSINESS-SELLING HEADLINES THAT RELATE TO CAPTION:
+- Problem-Solution: "No More Late Deliveries" (if caption mentions delivery)
+- Benefit-Focused: "Save 50% on Repairs" (if caption talks about cost savings)
+- Unique Value: "Only Local Organic Farm" (if caption mentions local sourcing)
+- Convenience: "Open 24/7" (if caption mentions availability)
+- Quality Proof: "5-Star Rated Service" (if caption mentions customer satisfaction)
 - Urgency-Based: "Limited time offer" or "While supplies last"
 - Trust-Building: "Trusted by thousands" or "Family-owned since X"
 - Local Pride: "Proudly serving ${brandProfile.location || 'our community'}"
@@ -821,10 +1106,12 @@ Create a strategic mix of:
 - Use trending hashtags when contextually appropriate
 
 🚨 **FINAL CONTENT REQUIREMENTS:**
-- HEADLINE must be unique, specific, and benefit-driven (NOT "Premium Content" or generic phrases)
-- SUB-HEADLINE must add specific value or context (NOT generic descriptions)
-- Use industry expertise to create compelling, varied content every single time
-- Think like a seasoned marketer with 15+ years of experience in ${businessType}
+- HEADLINE must directly relate to caption content and sell real business value
+- SUB-HEADLINE must reinforce the headline and caption message (NOT generic descriptions)
+- Headlines should make customers think "I want this" or "I need this business"
+- Use local language only when it genuinely strengthens the business message
+- Think like a strategic marketer who connects every element to drive business results
+- Every word should serve the purpose of attracting and converting customers
 
 **📱 FINAL DELIVERABLE:**
 Create a complete social media package including:
@@ -942,6 +1229,102 @@ export async function performIntelligentEditing(
   };
 
   return generateWithRevo20(input);
+}
+
+/**
+ * Generate hybrid caption prompt that combines GPT creative ideas with RSS trending topics
+ */
+function generateHybridCaptionPrompt(context: {
+  businessType: string;
+  location: string;
+  businessName: string;
+  platform: string;
+  targetAudience?: string;
+  trendingTopics?: Array<{ topic: string; relevanceScore: number }>;
+  creativeIdeas?: CreativeIdeas;
+}): string {
+  const randomSeed = Math.random().toString(36).substring(7);
+
+  let prompt = `You are a LOCAL HUMAN social media manager who lives and works in ${context.location}. Write like a real person from this community - warm, authentic, and relatable.
+
+🎯 BUSINESS CONTEXT:
+- Business: ${context.businessName}
+- Type: ${context.businessType}
+- Location: ${context.location}
+- Platform: ${context.platform}
+- Target Audience: ${context.targetAudience || 'General audience'}
+
+${context.creativeIdeas ? `🧠 CREATIVE INSPIRATION:
+- **Core Concept**: ${context.creativeIdeas.concept}
+- **Key Catchwords**: ${context.creativeIdeas.catchwords.join(', ')}
+- **Target Emotions**: ${context.creativeIdeas.targetEmotions.join(', ')}
+- **Mood**: ${context.creativeIdeas.moodKeywords.join(', ')}` : ''}
+
+${context.trendingTopics && context.trendingTopics.length > 0 ? `📈 WHAT'S TRENDING LOCALLY:
+${context.trendingTopics.map(trend => `- ${trend.topic}`).join('\n')}
+
+💡 Casually mention 1-2 relevant trends if they fit naturally.` : ''}
+
+🎨 WRITE LIKE A HUMAN:
+- Length: 60-100 words MAX (perfect for social scroll culture)
+- Format: Use line breaks for easy reading
+- Start: Hook with relatable question, story, or local observation
+- Voice: Warm, friendly, like texting a friend
+- Style: Contractions (we're, don't, can't), casual language
+- Local flavor: Only use local slang when it adds genuine value, not forced
+- Emojis: 4-6 emojis that feel natural
+- CTA: Fun, engaging invitation (not corporate)
+- Variation: Make this UNIQUE - use random seed: ${randomSeed}
+
+🌍 LOCATION-AWARE LOCAL LANGUAGE:
+Based on business location "${context.location}", use appropriate local expressions:
+
+**AFRICA:**
+- Kenya: "sasa" (what's up), "maze" (bro), "jameni" (come on), "poa" (cool), "mambo" (how are things)
+- Nigeria: "wetin dey happen" (what's up), "no wahala" (no problem), "oga" (boss), "chop" (eat)
+- South Africa: "howzit" (hello), "lekker" (nice/good), "eish" (oh no), "braai" (BBQ), "sharp" (cool)
+- Ghana: "chale" (friend), "waa" (wow), "ei" (hey), "small small" (gradually)
+
+**NORTH AMERICA:**
+- San Francisco: "hella" (very), "the city" (SF), "Mission", "SOMA", "fog"
+- New York: "mad" (very), "bodega", "the village", "uptown", "downtown"
+- Toronto: "eh" (right?), "the 6ix", "Tdot", "bare" (a lot)
+
+**EUROPE:**
+- London: "innit" (isn't it), "mate", "brilliant", "proper", "cheers"
+- Dublin: "craic" (fun), "grand" (fine), "fair play", "sound" (good)
+
+**ASIA:**
+- Singapore: "lah" (emphasis), "shiok" (great), "can" (okay), "kiasu" (competitive)
+- Mumbai: "yaar" (friend), "bindaas" (carefree), "jugaad" (creative solution)
+
+**AUSTRALIA:**
+- Sydney/Melbourne: "mate", "fair dinkum", "no worries", "arvo" (afternoon)
+
+**RULES:**
+- Only use if you're 100% confident about the meaning and context
+- Use 1-2 words maximum per caption
+- Must enhance the business message, not distract from it
+- When unsure about location or local language, use clear English
+
+🚨 HUMAN WRITING STYLE:
+- No corporate jargon or marketing speak
+- No "Imagine this..." or "Picture this..." openings
+- Write like you're texting a friend about your business
+- Be conversational, not salesy
+
+💬 FUN CTA EXAMPLES:
+- "DM us before your squad eats them all 🍪🔥"
+- "Halla at us, we got you 😉"
+- "Hit us up if you're interested 📱"
+- "Slide through our DMs 💬"
+- "Let's chat about it! 👇"
+
+Create a caption that sounds like it was written by a real person who cares about their community and business.
+
+Return ONLY the caption text, no additional formatting or explanations.`;
+
+  return prompt;
 }
 
 // Export for global testing
