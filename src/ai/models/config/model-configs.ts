@@ -180,6 +180,33 @@ export const modelConfigs: Record<RevoModelId, RevoModel> = {
     ],
     releaseDate: '2025-01-27',
     lastUpdated: '2025-01-27'
+  },
+
+  'revo-2.0': {
+    id: 'revo-2.0',
+    name: 'Revo 2.0',
+    version: '2.0.0',
+    description: 'Next-Gen Model - Gemini 2.5 Flash Image (nano-banana) with native image generation',
+    longDescription: 'Revolutionary AI model powered by Gemini 2.5 Flash Image (nano-banana) featuring native image generation, character consistency, intelligent editing, and multimodal reasoning for premium content creation.',
+    icon: 'Rocket',
+    badge: 'Next-Gen',
+    badgeVariant: 'default',
+    status: 'enhanced',
+    capabilities: modelCapabilities['revo-2.0'],
+    config: baseConfigs['gemini-2.5-flash-image'],
+    pricing: modelPricing['revo-2.0'],
+    features: [
+      'Gemini 2.5 Flash Image Engine',
+      'Native Image Generation',
+      'Character Consistency',
+      'Intelligent Editing',
+      'Inpainting & Outpainting',
+      'Multimodal Reasoning',
+      'All Aspect Ratios',
+      'Perfect Brand Consistency'
+    ],
+    releaseDate: '2025-01-27',
+    lastUpdated: '2025-01-27'
   }
 };
 
