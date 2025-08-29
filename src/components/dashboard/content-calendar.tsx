@@ -85,9 +85,45 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
       // Check if artifacts are enabled (simple toggle approach)
       const artifactsEnabled = selectedArtifacts.length > 0;
 
-      const useEnhancedGeneration = artifactsEnabled || selectedRevoModel === 'revo-1.5';
+      const useEnhancedGeneration = artifactsEnabled || selectedRevoModel === 'revo-1.5' || selectedRevoModel === 'revo-2.0';
 
-      if (useEnhancedGeneration) {
+      if (selectedRevoModel === 'revo-2.0') {
+        console.log(`🚀 Using Revo 2.0 (Gemini 2.5 Flash Image) generation`);
+        // Use Revo 2.0 native image generation
+        const { generateWithRevo20 } = await import('@/ai/revo-2.0-service');
+
+        const revo20Result = await generateWithRevo20({
+          businessType: brandProfile.businessType || 'Business',
+          platform: platform.toLowerCase(),
+          visualStyle: brandProfile.visualStyle || 'modern',
+          imageText: `${brandProfile.businessName || brandProfile.businessType} - Premium Content`,
+          brandProfile,
+          aspectRatio: '1:1'
+        });
+
+        newPost = {
+          id: `revo-2.0-${Date.now()}`,
+          content: `🚀 Generated with Revo 2.0 (Gemini 2.5 Flash Image)\n\n${brandProfile.businessName || brandProfile.businessType} - Premium Content\n\n#NextGen #AI #Innovation`,
+          imageUrl: revo20Result.imageUrl,
+          platform: platform,
+          date: new Date().toISOString(),
+          analytics: {
+            views: 0,
+            likes: 0,
+            shares: 0,
+            comments: 0,
+            engagementPrediction: 85,
+            brandAlignmentScore: 95,
+            qualityScore: revo20Result.qualityScore
+          },
+          metadata: {
+            aiModel: revo20Result.model,
+            generationPrompt: 'Revo 2.0 Native Generation',
+            processingTime: revo20Result.processingTime,
+            enhancementsApplied: revo20Result.enhancementsApplied
+          }
+        };
+      } else if (useEnhancedGeneration) {
         console.log(`✨ Using enhanced generation with ${selectedRevoModel} model`);
         // Use artifact-enhanced generation - will automatically use active artifacts from artifacts page
         newPost = await generateContentWithArtifactsAction(
@@ -190,16 +226,19 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
                   >
                     <option value="revo-1.0">Revo 1.0</option>
                     <option value="revo-1.5">Revo 1.5</option>
+                    <option value="revo-2.0">Revo 2.0</option>
                   </select>
                 </div>
               </div>
             </div>
             <p className="text-xs text-gray-500 mt-2">
-              {selectedRevoModel === 'revo-1.5'
-                ? `✨ ${selectedRevoModel}: Enhanced AI with professional design principles + ${brandConsistency.strictConsistency ? "strict consistency" : "brand colors"}`
-                : selectedRevoModel === 'revo-1.0'
-                  ? `🚀 ${selectedRevoModel}: Standard reliable AI + ${brandConsistency.strictConsistency ? "strict consistency" : "brand colors"}`
-                  : `🌟 ${selectedRevoModel}: Next-generation AI (coming soon)`
+              {selectedRevoModel === 'revo-2.0'
+                ? `🚀 ${selectedRevoModel}: Next-Gen Gemini 2.5 Flash Image (nano-banana) with native image generation, character consistency & intelligent editing`
+                : selectedRevoModel === 'revo-1.5'
+                  ? `✨ ${selectedRevoModel}: Enhanced AI with professional design principles + ${brandConsistency.strictConsistency ? "strict consistency" : "brand colors"}`
+                  : selectedRevoModel === 'revo-1.0'
+                    ? `🚀 ${selectedRevoModel}: Standard reliable AI + ${brandConsistency.strictConsistency ? "strict consistency" : "brand colors"}`
+                    : `🌟 ${selectedRevoModel}: Next-generation AI (coming soon)`
               }
             </p>
           </div>
