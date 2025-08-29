@@ -25,6 +25,9 @@ import {
 // Performance optimization will be handled inline
 import { recordDesignGeneration } from '@/ai/utils/design-analytics';
 import { generatePostFromProfile } from '@/ai/flows/generate-post-from-profile';
+import { generateRealTimeTrendingTopics } from '@/ai/utils/trending-topics';
+import { fetchLocalContext } from '@/ai/utils/real-time-trends-integration';
+import { selectRelevantContext, filterContextData } from '@/ai/utils/intelligent-context-selector';
 
 // Get API key (supporting both server-side and client-side)
 const apiKey =
@@ -187,9 +190,20 @@ export async function generateWithRevo20(
   console.log('🚀 Using Next-Gen AI Engine');
 
   try {
-    // Build the revolutionary prompt for Revo 2.0
-    const { promptText, businessDNA, trendInstructions } = await buildRevo20Prompt(input);
+    // Build the revolutionary prompt for Revo 2.0 with real-time context
+    const { promptText, businessDNA, trendInstructions, contextData } = await buildRevo20Prompt(input);
     console.log('📝 Revo 2.0 prompt:', promptText.substring(0, 200) + '...');
+
+    // Log context integration
+    if (contextData) {
+      console.log('🌍 Revo 2.0 Context Integration:');
+      if (contextData.trending && contextData.trending.length > 0) {
+        console.log(`   📈 Trending Topics: ${contextData.trending.length} topics integrated`);
+      }
+      if (contextData.local && Object.keys(contextData.local).length > 0) {
+        console.log(`   🏠 Local Context: ${Object.keys(contextData.local).join(', ')} data integrated`);
+      }
+    }
 
     // Initialize enhancements array
     const enhancementsApplied = [
@@ -232,12 +246,43 @@ export async function generateWithRevo20(
       });
     }
 
-    // Generate content with Revo 2.0 using official API (following Node.js example)
+    // Generate content with Revo 2.0 using official API with retry logic
     console.log('🤖 Generating with Revo 2.0 revolutionary AI...');
-    const response = await ai.models.generateContent({
-      model: REVO_2_0_MODEL,
-      contents: prompt
-    });
+
+    let response;
+    let lastError;
+    const maxRetries = 3;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`🔄 Attempt ${attempt}/${maxRetries} for Revo 2.0 generation...`);
+        response = await ai.models.generateContent({
+          model: REVO_2_0_MODEL,
+          contents: prompt
+        });
+        console.log('✅ Revo 2.0 generation successful!');
+        break; // Success, exit retry loop
+      } catch (error: any) {
+        lastError = error;
+        console.log(`❌ Attempt ${attempt} failed:`, error?.message || error);
+
+        // If this is the last attempt, don't wait
+        if (attempt === maxRetries) {
+          break;
+        }
+
+        // Wait before retrying (exponential backoff)
+        const waitTime = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s
+        console.log(`⏳ Waiting ${waitTime / 1000}s before retry...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      }
+    }
+
+    // If all retries failed, throw the last error
+    if (!response) {
+      console.error('❌ All retry attempts failed for Revo 2.0 generation');
+      throw lastError;
+    }
 
     // Extract image and text content from response (following official Node.js example)
     let imageUrl = '';
@@ -338,12 +383,13 @@ export async function generateWithRevo20(
 }
 
 /**
- * Build revolutionary prompt for Revo 2.0 with sophisticated design workflow
+ * Build revolutionary prompt for Revo 2.0 with sophisticated design workflow and real-time context
  */
 async function buildRevo20Prompt(input: Revo20GenerationInput): Promise<{
   promptText: string;
   businessDNA: string;
   trendInstructions: string;
+  contextData?: any;
 }> {
   const { businessType, platform, visualStyle, imageText, brandProfile, aspectRatio = '1:1' } = input;
 
@@ -352,6 +398,53 @@ async function buildRevo20Prompt(input: Revo20GenerationInput): Promise<{
 
   // Get business-specific design DNA
   const businessDNA = BUSINESS_TYPE_DESIGN_DNA[businessType as keyof typeof BUSINESS_TYPE_DESIGN_DNA] || BUSINESS_TYPE_DESIGN_DNA.default;
+
+  // Step 1: Intelligent Context Analysis - Determine what information is relevant for Revo 2.0
+  const contextRelevance = selectRelevantContext(
+    businessType,
+    brandProfile.location || '',
+    platform,
+    brandProfile.contentThemes || '',
+    new Date().getDay() // Current day of week
+  );
+
+  console.log('🧠 Revo 2.0 Context Analysis for', businessType, 'in', brandProfile.location || 'Global');
+  console.log('   Weather:', contextRelevance.weather, '- weather conditions', contextRelevance.weather === 'high' ? 'are highly influential' : contextRelevance.weather === 'medium' ? 'have moderate influence' : 'have minimal business relevance');
+  console.log('   Events:', contextRelevance.events, '- Events', contextRelevance.events === 'high' ? 'significantly impact business' : contextRelevance.events === 'medium' ? 'have moderate relevance' : 'have minimal business relevance');
+  console.log('   Trends:', contextRelevance.trends, '- Trending topics', contextRelevance.trends === 'high' ? 'are crucial for engagement' : contextRelevance.trends === 'medium' ? 'increase content relevance and engagement' : 'have limited impact');
+  console.log('   Culture:', contextRelevance.culture, '- Cultural awareness', contextRelevance.culture === 'high' ? 'is essential for authentic connections' : contextRelevance.culture === 'medium' ? 'enhances local relevance' : 'has standard importance');
+
+  // Step 2: Fetch Real-Time Trending Topics (if relevant)
+  let trendingTopics: any[] = [];
+  if (contextRelevance.trends !== 'ignore') {
+    try {
+      console.log('🔍 Fetching real-time trends for Revo 2.0 headline generation...');
+      trendingTopics = await generateRealTimeTrendingTopics(
+        businessType,
+        brandProfile.location || ''
+      );
+      console.log(`✅ Found ${trendingTopics.length} real-time trends for Revo 2.0`);
+    } catch (error) {
+      console.warn('Failed to fetch trending topics for Revo 2.0:', error);
+    }
+  }
+
+  // Step 3: Fetch Local Context (weather, events) if relevant
+  let localContext: any = {};
+  try {
+    localContext = await fetchLocalContext(brandProfile.location || '');
+    console.log('🌍 Revo 2.0 Local context fetched:', Object.keys(localContext));
+  } catch (error) {
+    console.warn('Failed to fetch local context for Revo 2.0:', error);
+  }
+
+  // Step 4: Filter and select most relevant context data
+  const filteredContext = filterContextData(contextRelevance, {
+    weather: localContext.weather,
+    events: localContext.events,
+    trends: trendingTopics,
+    cultural: localContext.cultural
+  });
 
   // Get current design trends
   let trendInstructions = '';
@@ -507,7 +600,7 @@ ${brandProfile.logoDataUrl ? `
 You are an experienced marketing expert with deep knowledge of ${businessType} industry in ${brandProfile.location || 'the target region'}.
 Create compelling, culturally-aware content that resonates with local customers:
 
-**HEADLINE CREATION (PRIMARY):**
+**HEADLINE CREATION (PRIMARY) - ENHANCED WITH REAL-TIME CONTEXT:**
 - NEVER use generic phrases like "Premium Content", "Quality Content", or "[Business Name] - [Generic Text]"
 - Create a completely unique, catchy headline that's different from "${imageText}"
 - Use specific benefit-driven language: "Fresh Daily", "Handcrafted Since 1995", "Farm to Table"
@@ -516,12 +609,31 @@ Create compelling, culturally-aware content that resonates with local customers:
 - Consider local market trends and customer pain points
 - Examples: "Baked Fresh This Morning", "Your Neighborhood Favorite", "Taste the Tradition"
 
-**SUB-HEADLINE CREATION (SECONDARY):**
+${filteredContext.selectedTrends && filteredContext.selectedTrends.length > 0 ? `
+**🔥 TRENDING TOPICS INTEGRATION:**
+Use these current trending topics to make headlines more relevant and engaging:
+${filteredContext.selectedTrends.slice(0, 5).map((trend: any) => `- ${trend.title || trend.topic}: ${trend.description || trend.summary || ''}`).join('\n')}
+- Subtly incorporate trending themes into headlines when contextually appropriate
+- Don't force trends - only use if they naturally fit the business message
+` : ''}
+
+${filteredContext.selectedWeather || (filteredContext.selectedEvents && filteredContext.selectedEvents.length > 0) ? `
+**🌍 LOCAL CONTEXT INTEGRATION:**
+${filteredContext.selectedWeather ? `- Current Weather: ${filteredContext.selectedWeather.condition || ''} ${filteredContext.selectedWeather.temperature || ''}° - Consider weather-relevant messaging when appropriate` : ''}
+${filteredContext.selectedEvents && filteredContext.selectedEvents.length > 0 ? `- Local Events: ${filteredContext.selectedEvents.slice(0, 2).map((event: any) => event.title || event.name).join(', ')} - Reference local happenings if relevant` : ''}
+- Use local insights to create more personally relevant headlines
+- Incorporate regional preferences and cultural nuances
+` : ''}
+
+**SUB-HEADLINE CREATION (SECONDARY) - CONTEXT-AWARE:**
 - Develop a supporting message that clarifies the value proposition
 - Use cultural insights and local market understanding
 - Address specific customer needs in ${brandProfile.location || 'the region'}
 - Make it relevant to ${businessType} industry challenges
 - Keep it concise (8-15 words) but compelling
+${filteredContext.selectedTrends && filteredContext.selectedTrends.length > 0 ? `- Consider incorporating trending themes that align with your business message` : ''}
+${filteredContext.selectedWeather ? `- Reference current conditions (${filteredContext.selectedWeather.condition || ''}) if relevant to your business` : ''}
+- Create subheadlines that feel current and locally relevant
 
 **CALL-TO-ACTION CREATION (TERTIARY):**
 - Generate contextually relevant CTAs based on the message
@@ -725,7 +837,8 @@ Generate a revolutionary, next-generation design with Revo 2.0 excellence standa
   return {
     promptText: prompt,
     businessDNA,
-    trendInstructions
+    trendInstructions,
+    contextData: filteredContext
   };
 }
 
