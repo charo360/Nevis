@@ -28,6 +28,7 @@ import { processGeneratedPost } from "@/lib/services/generated-post-storage";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { useGeneratedPosts } from "@/hooks/use-generated-posts";
 import "@/lib/utils/enable-firebase-storage"; // Load Firebase Storage utilities
+import "@/ai/test-revo-2.0"; // Load Revo 2.0 testing functions
 
 // No limit on posts - store all generated content
 
