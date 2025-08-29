@@ -94,6 +94,9 @@ const GeneratePostFromProfileInputSchema = z.object({
     twitter: z.string().optional(),
     linkedin: z.string().optional(),
   }).optional().describe('Social media handles for cross-platform consistency.'),
+
+  // Language preferences
+  useLocalLanguage: z.boolean().optional().describe('Whether to use local language in content generation (default: false).'),
 });
 
 export type GeneratePostFromProfileInput = z.infer<typeof GeneratePostFromProfileInputSchema>;
@@ -201,6 +204,7 @@ const enhancedTextGenPrompt = ai.definePrompt({
       selectedEvents: z.any().optional(),
       selectedTrends: z.any().optional(),
       selectedCultural: z.any().optional(),
+      useLocalLanguage: z.boolean().optional(),
     })
   },
   output: {
@@ -725,6 +729,8 @@ const generatePostFromProfileFlow = ai.defineFlow(
       selectedCultural: filteredContext.selectedCultural,
       // Add content variation for diversity
       contentVariation: selectedVariation,
+      // Language preferences
+      useLocalLanguage: input.useLocalLanguage || false,
     });
 
     if (!textOutput) {

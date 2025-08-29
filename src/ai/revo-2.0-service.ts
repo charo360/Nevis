@@ -70,6 +70,17 @@ if (!openaiApiKey) {
   console.warn('⚠️ OpenAI API key not found. GPT creative ideation layer will be disabled.');
 }
 
+/**
+ * Clean website URL by removing https://, http://, and www.
+ */
+function cleanWebsiteUrl(url: string): string {
+  if (!url) return '';
+  return url
+    .replace(/^https?:\/\//, '')
+    .replace(/^www\./, '')
+    .replace(/\/$/, ''); // Remove trailing slash
+}
+
 // Types for GPT Creative Ideation
 interface CreativeIdeas {
   concept: string;
@@ -208,6 +219,8 @@ export interface Revo20GenerationInput {
   editingInstructions?: string; // For intelligent editing (inpainting/outpainting)
   characterConsistency?: boolean; // Maintain character consistency
   intelligentEditing?: boolean; // Enable intelligent editing features
+  includePeopleInDesigns?: boolean; // Control whether designs should include people (default: true)
+  useLocalLanguage?: boolean; // Control whether to use local language in text (default: false)
 }
 
 export interface Revo20GenerationResult {
@@ -383,7 +396,8 @@ async function generateRevo2EnhancedCaption(
       platform: input.platform,
       targetAudience: input.brandProfile.targetAudience,
       trendingTopics: trendingTopics.slice(0, 5), // Top 5 trends
-      creativeIdeas: creativeIdeas
+      creativeIdeas: creativeIdeas,
+      useLocalLanguage: input.useLocalLanguage
     });
 
     console.log('📝 Sending enhanced caption generation request...');
@@ -752,10 +766,20 @@ async function buildRevo20Prompt(input: Revo20GenerationInput, creativeIdeas?: C
   const visualVariations = [
     'minimalist_clean', 'bold_dynamic', 'elegant_sophisticated', 'playful_creative',
     'modern_geometric', 'organic_natural', 'industrial_urban', 'artistic_abstract',
-    'photographic_realistic', 'illustrated_stylized', 'gradient_colorful', 'monochrome_accent'
+    'photographic_realistic', 'illustrated_stylized', 'gradient_colorful', 'monochrome_accent',
+    'luxury_premium', 'tech_futuristic', 'warm_inviting', 'energetic_vibrant'
   ];
   const selectedVisualVariation = visualVariations[Math.floor(Math.random() * visualVariations.length)];
   console.log(`🎨 Revo 2.0 Selected visual variation: ${selectedVisualVariation}`);
+
+  // Generate people/setting variety based on location and business type
+  const peopleSettingVariations = [
+    'professional_office', 'modern_lifestyle', 'community_gathering', 'creative_studio',
+    'retail_environment', 'outdoor_urban', 'cultural_celebration', 'tech_workspace',
+    'traditional_modern_blend', 'service_interaction', 'collaborative_space', 'premium_setting'
+  ];
+  const selectedPeopleSetting = peopleSettingVariations[Math.floor(Math.random() * peopleSettingVariations.length)];
+  console.log(`👥 Revo 2.0 Selected people setting: ${selectedPeopleSetting}`);
 
   // Helper function to get content examples
   const getContentExamples = (businessType: string, location?: string): string => {
@@ -810,6 +834,7 @@ async function buildRevo20Prompt(input: Revo20GenerationInput, creativeIdeas?: C
 
 🚨 CRITICAL: NEVER USE GENERIC TEXT LIKE "PREMIUM CONTENT", "QUALITY CONTENT", OR "[BUSINESS NAME] - [GENERIC PHRASE]"
 🚨 EVERY DESIGN MUST BE COMPLETELY UNIQUE WITH SPECIFIC, BENEFIT-DRIVEN HEADLINES
+🚨 ABSOLUTELY NO WATERMARKS: Do not include any watermarks, "Premium Content", "Paya", or any overlay text that looks like watermarks
 
 You are a world-class graphic designer creating scroll-stopping, modern social media content for ${businessType}.
 Create a ${aspectRatio} design for ${platform} that people will absolutely LOVE and share.
@@ -827,6 +852,11 @@ Create a ${aspectRatio} design for ${platform} that people will absolutely LOVE 
 - Platform: ${platform} (${aspectRatio} aspect ratio)
 - Location: ${brandProfile.location || 'Global'}
 - Target Audience: ${brandProfile.targetAudience || 'General audience'}
+${brandProfile.websiteUrl ? `- Website: ${brandProfile.websiteUrl}` : ''}
+
+**🎨 CREATIVE DIRECTION FOR THIS DESIGN:**
+- Visual Style: ${selectedVisualVariation.replace('_', ' ')} approach
+${input.includePeopleInDesigns === true ? `- People Setting: ${selectedPeopleSetting.replace('_', ' ')} context` : '- Focus: Product/service showcase without people'}
 
 ${creativeIdeas ? `**🧠 GPT CREATIVE DIRECTION (FOLLOW EXACTLY):**
 - **Creative Concept:** ${creativeIdeas.concept}
@@ -841,19 +871,35 @@ ${creativeIdeas ? `**🧠 GPT CREATIVE DIRECTION (FOLLOW EXACTLY):**
 
 **🌍 CULTURAL INTEGRATION & HUMAN ELEMENTS:**
 - Location Context: ${brandProfile.location || 'Global'}
-- MANDATORY: Include diverse, authentic people when relevant to the message
+${input.includePeopleInDesigns === true ? `- CREATIVE VARIETY: Include diverse, authentic people in VARIED settings and contexts:
+  * Professional office environments (modern, clean, business-focused)
+  * Lifestyle settings (homes, cafes, outdoor spaces, community centers)
+  * Industry-specific environments (workshops, studios, retail spaces, service areas)
+  * Cultural celebrations and community gatherings
+  * Modern urban settings (co-working spaces, tech hubs, creative studios)
+  * Traditional meets modern (blend of cultural heritage with contemporary life)
+- Show real people in natural, engaging situations that vary by design
+- Ensure representation reflects the local demographic and cultural values
+- Use photography styles that range from candid to professional to artistic
+- Vary the mood: energetic, calm, celebratory, focused, collaborative` : `- FOCUS ON PRODUCTS/SERVICES: Emphasize products, services, and brand elements WITHOUT people
+- Use lifestyle imagery, product showcases, and brand-focused visuals
+- Create compelling designs through typography, graphics, and product photography
+- Maintain professional aesthetic through clean, modern design elements
+- NO PEOPLE in the design - focus purely on products, services, and brand elements`}
 - Respect and celebrate the local culture and aesthetic preferences of ${brandProfile.location || 'the target region'}
 - Use culturally appropriate imagery, colors, and design elements
-- Show real people in natural, engaging situations when applicable
-- Ensure representation reflects the local demographic and cultural values
 - Incorporate subtle cultural motifs or design elements that resonate locally
-- Use photography styles and compositions that feel authentic to the region
 
-**🚨 LANGUAGE SAFETY FOR TEXT IN DESIGNS:**
-- ONLY use local language text when 100% certain of spelling, meaning, and cultural appropriateness
+**🚨 LANGUAGE INSTRUCTIONS FOR TEXT IN DESIGNS:**
+${input.useLocalLanguage === true ? `- You may use local language text when 100% certain of spelling, meaning, and cultural appropriateness
+- Mix local language with English naturally (1-2 local words maximum per text element)
+- Only use commonly known local words that add cultural connection
 - When uncertain about local language accuracy, use English instead
-- Avoid complex local phrases, slang, or words you're not completely confident about
-- Better to use clear English than incorrect or garbled local language
+- Better to use clear English than incorrect or garbled local language` : `- USE ONLY ENGLISH for all text in the design
+- Do not use any local language words or phrases
+- Keep all headlines, subheadlines, and call-to-actions in clear English
+- Focus on universal messaging that works across all markets
+- Maintain professional English-only communication`}
 
 **🎯 BRAND IDENTITY SYSTEM:**
 ${colorInstructions}
@@ -881,7 +927,9 @@ Create compelling, culturally-aware content that resonates with local customers:
 - Make it industry-specific and customer-focused, highlighting unique selling points
 - Keep it short (3-7 words) but pack in real business value
 - Must connect to the caption story and reinforce the main business message
-- Examples: "Same Day Delivery", "24/7 Expert Support", "No Hidden Fees", "Local Since 1995"
+${input.useLocalLanguage === true ? `- PRIMARILY USE ENGLISH (60%+ of the time) - only use local language when extremely confident and impactful
+- Examples: "Same Day Delivery", "24/7 Expert Support", "Karibu Nyumbani", "Local Since 1995"` : `- USE ONLY ENGLISH for all headlines and text elements
+- Examples: "Same Day Delivery", "24/7 Expert Support", "No Hidden Fees", "Local Since 1995"`}
 
 ${filteredContext.selectedTrends && filteredContext.selectedTrends.length > 0 ? `
 **🔥 TRENDING TOPICS INTEGRATION:**
@@ -905,26 +953,45 @@ ${filteredContext.selectedEvents && filteredContext.selectedEvents.length > 0 ? 
 - Address the specific problem your business solves or benefit you provide
 - Make it relevant to ${businessType} industry and what customers actually want
 - Keep it concise (8-15 words) but pack in concrete business value
-- Use local language only when it genuinely enhances the business message
+- PREFER ENGLISH (60%+ of the time) - only use 1-2 local words when absolutely confident and punchy
 ${filteredContext.selectedTrends && filteredContext.selectedTrends.length > 0 ? `- Consider incorporating trending themes only if they strengthen your business message` : ''}
 ${filteredContext.selectedWeather ? `- Reference current conditions (${filteredContext.selectedWeather.condition || ''}) only if relevant to your business value` : ''}
 - Create subheadlines that make customers think "I need this business"
 
 **CALL-TO-ACTION CREATION (TERTIARY):**
 - Generate contextually relevant CTAs based on the message
-- Include contact information ONLY when it makes sense (e.g., "Visit www.example.com", "Call +123456789")
-- Use ${brandProfile.website ? `website: ${brandProfile.website}` : 'appropriate web reference'} when relevant
-- Use ${brandProfile.phone ? `phone: ${brandProfile.phone}` : 'contact information'} sparingly and contextually
+- Include contact information ONLY when it makes contextual sense (e.g., "Book online", "Visit us", "Get quote")
+- Use ${brandProfile.websiteUrl ? `website: ${cleanWebsiteUrl(brandProfile.websiteUrl)}` : 'appropriate web reference'} SPARINGLY - only when CTA specifically mentions visiting website
+- Use ${brandProfile.contactInfo?.phone ? `phone: ${brandProfile.contactInfo.phone}` : 'contact information'} sparingly and contextually
 - Vary between action words: "Discover", "Try Now", "Get Started", "Learn More", "Order Today", etc.
-- Make it culturally appropriate and locally relevant
+- STICK TO ENGLISH for CTAs (90%+ of the time) - only use local language when it's a perfect, punchy fit
 
-**🎨 VISUAL COMPOSITION REQUIREMENTS:**
-- Hero Element: Choose from product showcase, lifestyle photography, or thematic illustration
-- Background: Select from modern gradients, textured patterns, or photographic backgrounds
-- Accent Graphics: Include contemporary icons, geometric shapes, or cultural elements
-- Typography: Use modern, readable fonts with strong hierarchy
-- Safe Zones: Ensure text avoids bottom 15% for platform UI compatibility
-- Accessibility: Maintain high contrast ratios and mobile readability
+**🎨 CREATIVE DESIGN VARIETY & COMPOSITION:**
+- **DESIGN STYLES** (rotate for variety):
+  * Ultra-modern minimalist with bold typography and negative space
+  * Dynamic geometric patterns with vibrant brand colors
+  * Sophisticated gradient overlays with premium feel
+  * Clean photography-focused with subtle text overlays
+  * Artistic illustration style with contemporary elements
+  * Bold graphic design with strong visual hierarchy
+  * Elegant luxury aesthetic with refined typography
+  * Energetic and vibrant with dynamic compositions
+
+- **LAYOUT VARIATIONS** (mix these approaches):
+  * Split-screen compositions (text left, visual right)
+  * Centered hero with surrounding elements
+  * Asymmetrical modern layouts with visual balance
+  * Grid-based structured designs
+  * Organic flowing compositions
+  * Layered depth with foreground/background elements
+
+- **VISUAL ELEMENTS** (choose contextually):
+  * Hero Element: Product showcase, lifestyle photography, or thematic illustration
+  * Background: Modern gradients, textured patterns, or photographic backgrounds
+  * Accent Graphics: Contemporary icons, geometric shapes, or cultural elements
+  * Typography: Modern, readable fonts with strong hierarchy
+  * Safe Zones: Ensure text avoids bottom 15% for platform UI compatibility
+  * Accessibility: Maintain high contrast ratios and mobile readability
 
 **🎯 BRAND & MARKET INTELLIGENCE:**
 - Business: ${brandProfile.businessName || businessType}
@@ -997,6 +1064,14 @@ This design MUST be completely unique. Vary these elements:
 - DO NOT display any technical information, debugging text, or metadata
 - Keep the design clean and professional without any technical elements
 - Only show the intended business content and branding
+
+🚨 **ABSOLUTELY NO WATERMARKS OR OVERLAY TEXT:**
+- DO NOT add any watermarks like "Paya - Premium Content" or similar
+- DO NOT include any semi-transparent overlay text across the image
+- DO NOT add any branding watermarks, service names, or platform identifiers
+- DO NOT include any repeated text patterns or watermark-style overlays
+- Keep the image completely clean without any watermark elements
+- The only text should be the intended business content specified above
 
 **🎯 REVO 2.0 EXCELLENCE STANDARDS:**
 - Ultra-high quality, next-generation aesthetics
@@ -1101,9 +1176,19 @@ Create a strategic mix of:
 - HEADLINE must directly relate to caption content and sell real business value
 - SUB-HEADLINE must reinforce the headline and caption message (NOT generic descriptions)
 - Headlines should make customers think "I want this" or "I need this business"
-- Use local language only when it genuinely strengthens the business message
 - Think like a strategic marketer who connects every element to drive business results
 - Every word should serve the purpose of attracting and converting customers
+
+🚨 **LANGUAGE USAGE RULES:**
+**FOR OVERLAY TEXT (Headlines, Subheadlines, CTAs):**
+- Use ENGLISH 60-90% of the time to avoid language mistakes
+- Only use local language when you're 100% confident it's accurate and punchy
+- Better clear English than incorrect local language
+
+**FOR CAPTIONS:**
+- Can freely use local languages and cultural references
+- Mix local terms naturally with English as appropriate
+- Focus on authentic, conversational tone
 
 **📱 FINAL DELIVERABLE:**
 Create a complete social media package including:
@@ -1234,6 +1319,7 @@ function generateHybridCaptionPrompt(context: {
   targetAudience?: string;
   trendingTopics?: Array<{ topic: string; relevanceScore: number }>;
   creativeIdeas?: CreativeIdeas;
+  useLocalLanguage?: boolean;
 }): string {
   const randomSeed = Math.random().toString(36).substring(7);
 
@@ -1268,12 +1354,19 @@ ${context.trendingTopics.map(trend => `- ${trend.topic}`).join('\n')}
 - CTA: Fun, engaging invitation (not corporate)
 - Variation: Make this UNIQUE - use random seed: ${randomSeed}
 
-🌍 DYNAMIC LOCATION-AWARE LANGUAGE:
-You are an expert in global cultures and local languages. Based on the business location "${context.location}", intelligently determine and use appropriate local expressions, slang, or cultural references that would resonate with the local audience.
+🌍 LANGUAGE INSTRUCTIONS:
+${context.useLocalLanguage === true ? `You are an expert in global cultures and local languages. Based on the business location "${context.location}", intelligently determine and use appropriate local expressions, slang, or cultural references that would resonate with the local audience.
 
 **DYNAMIC LANGUAGE INTELLIGENCE:**
 - Analyze the location and determine what local language, slang, or cultural references are commonly used there
 - Only use local expressions if you are 100% confident about their accuracy, meaning, and cultural appropriateness
+- Mix local language with English naturally (1-2 local words maximum per caption)
+- When uncertain about local language accuracy, use English instead` : `**ENGLISH-ONLY CONTENT:**
+- USE ONLY ENGLISH for all caption text
+- Do not use any local language words, slang, or phrases
+- Keep all content in clear, professional English
+- Focus on universal messaging that works across all markets
+- Maintain warm, friendly tone using English expressions only`}
 - Use 1-2 local words maximum per caption - keep it natural and authentic
 - Local language should enhance the business message, not distract from it
 - When uncertain about local language accuracy, always default to clear, engaging English
@@ -1298,6 +1391,11 @@ You are an expert in global cultures and local languages. Based on the business 
 - "Hit us up if you're interested 📱"
 - "Slide through our DMs 💬"
 - "Let's chat about it! 👇"
+
+🌐 WEBSITE USAGE:
+- Only mention website when CTA specifically calls for it (e.g., "check us out online", "visit our site")
+- Use clean format without https:// or www.
+- Don't force website into every post - use contextually when it makes sense
 
 Create a caption that sounds like it was written by a real person who cares about their community and business.
 
