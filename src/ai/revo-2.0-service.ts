@@ -6,11 +6,29 @@
 import { GoogleGenAI } from '@google/genai';
 import { BrandProfile } from '@/lib/types';
 
-// Get API key (following official Google AI Node.js example)
-const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
+// Get API key (supporting both server-side and client-side)
+const apiKey =
+  process.env.GEMINI_API_KEY ||
+  process.env.GOOGLE_API_KEY ||
+  process.env.GOOGLE_GENAI_API_KEY ||
+  process.env.NEXT_PUBLIC_GEMINI_API_KEY ||
+  process.env.NEXT_PUBLIC_GOOGLE_API_KEY ||
+  process.env.NEXT_PUBLIC_GOOGLE_GENAI_API_KEY;
 
 if (!apiKey) {
   console.error("❌ No Google AI API key found for Revo 2.0");
+  console.error("Available env vars:", {
+    server: {
+      GEMINI_API_KEY: !!process.env.GEMINI_API_KEY,
+      GOOGLE_API_KEY: !!process.env.GOOGLE_API_KEY,
+      GOOGLE_GENAI_API_KEY: !!process.env.GOOGLE_GENAI_API_KEY
+    },
+    client: {
+      NEXT_PUBLIC_GEMINI_API_KEY: !!process.env.NEXT_PUBLIC_GEMINI_API_KEY,
+      NEXT_PUBLIC_GOOGLE_API_KEY: !!process.env.NEXT_PUBLIC_GOOGLE_API_KEY,
+      NEXT_PUBLIC_GOOGLE_GENAI_API_KEY: !!process.env.NEXT_PUBLIC_GOOGLE_GENAI_API_KEY
+    }
+  });
 }
 
 // Initialize Google GenAI client (following official Node.js example)
