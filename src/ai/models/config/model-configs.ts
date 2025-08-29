@@ -59,20 +59,36 @@ const baseConfigs = {
       topP: 0.9
     }
   },
-  'imagen-4': {
-    aiService: 'imagen-4' as const,
-    fallbackServices: ['gemini-2.5', 'openai'],
-    maxRetries: 2,
-    timeout: 60000,
+  'gemini-2.5-flash-image': {
+    aiService: 'gemini-2.5-flash-image' as const,
+    fallbackServices: ['gemini-2.5', 'gemini-2.0'],
+    maxRetries: 3,
+    timeout: 45000,
     qualitySettings: {
-      imageResolution: '4096x4096',
-      compressionLevel: 95,
-      enhancementLevel: 10
+      imageResolution: '2048x2048',
+      compressionLevel: 92,
+      enhancementLevel: 9
     },
     promptSettings: {
-      temperature: 0.6,
+      temperature: 0.7,
       maxTokens: 2048,
-      topP: 0.85
+      topP: 0.9
+    }
+  },
+  'gemini-2.5-flash-image': {
+    aiService: 'gemini-2.5-flash-image' as const,
+    fallbackServices: ['imagen-4', 'gemini-2.5'],
+    maxRetries: 3,
+    timeout: 45000,
+    qualitySettings: {
+      imageResolution: '2048x2048',
+      compressionLevel: 92,
+      enhancementLevel: 9
+    },
+    promptSettings: {
+      temperature: 0.7,
+      maxTokens: 2048,
+      topP: 0.9
     }
   }
 };
@@ -139,31 +155,31 @@ export const modelConfigs: Record<RevoModelId, RevoModel> = {
 
 
 
-  'imagen-4': {
-    id: 'imagen-4',
-    name: 'Imagen 4',
-    version: '4.0.0',
-    description: 'Google\'s most advanced image generation - 4K resolution, perfect text rendering',
-    longDescription: 'Google\'s most advanced image generation model with 4K resolution support, perfect text rendering, superior photorealism, and advanced style controls for premium quality content.',
-    icon: 'Diamond',
-    badge: 'Premium',
+  'revo-2.0': {
+    id: 'revo-2.0',
+    name: 'Revo 2.0',
+    version: '2.0.0',
+    description: 'Next-Gen Model - Gemini 2.5 Flash Image (nano-banana) with native image generation',
+    longDescription: 'Revolutionary AI model powered by Gemini 2.5 Flash Image (nano-banana) featuring native image generation, character consistency, intelligent editing, and multimodal reasoning for premium content creation.',
+    icon: 'Sparkles',
+    badge: 'Next-Gen',
     badgeVariant: 'default',
     status: 'enhanced',
-    capabilities: modelCapabilities['imagen-4'],
-    config: baseConfigs['imagen-4'],
-    pricing: modelPricing['imagen-4'],
+    capabilities: modelCapabilities['revo-2.0'],
+    config: baseConfigs['gemini-2.5-flash-image'],
+    pricing: modelPricing['revo-2.0'],
     features: [
-      '4K Resolution',
-      'Perfect Text Rendering',
-      'Superior Photorealism',
-      'Advanced Style Controls',
-      'Premium Quality',
-      'Brand Consistency',
-      'Precise Prompt Following',
-      'Professional Results'
+      'Gemini 2.5 Flash Image Engine',
+      'Native Image Generation',
+      'Character Consistency',
+      'Intelligent Editing',
+      'Inpainting & Outpainting',
+      'Multimodal Reasoning',
+      'All Aspect Ratios',
+      'Perfect Brand Consistency'
     ],
-    releaseDate: '2024-10-15',
-    lastUpdated: '2024-12-10'
+    releaseDate: '2025-01-27',
+    lastUpdated: '2025-01-27'
   }
 };
 

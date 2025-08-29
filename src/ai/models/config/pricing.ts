@@ -23,11 +23,11 @@ export const modelPricing: Record<RevoModelId, ModelPricing> = {
 
 
 
-  'imagen-4': {
-    creditsPerGeneration: 10,
-    creditsPerDesign: 10,
+  'revo-2.0': {
+    creditsPerGeneration: 5,
+    creditsPerDesign: 5,
     creditsPerVideo: 0, // Focus on premium image generation
-    tier: 'enterprise'
+    tier: 'premium'
   }
 };
 

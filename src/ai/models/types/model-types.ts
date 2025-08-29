@@ -6,7 +6,7 @@
 import type { BrandProfile, Platform } from '@/lib/types';
 
 // Core model identifier type
-export type RevoModelId = 'revo-1.0' | 'revo-1.5' | 'imagen-4';
+export type RevoModelId = 'revo-1.0' | 'revo-1.5' | 'revo-2.0';
 
 // Model status types
 export type ModelStatus = 'stable' | 'enhanced' | 'development' | 'beta' | 'deprecated';
@@ -36,7 +36,7 @@ export interface ModelPricing {
 
 // Model configuration interface
 export interface ModelConfig {
-  aiService: 'gemini-2.0' | 'gemini-2.5' | 'openai' | 'imagen-4';
+  aiService: 'gemini-2.0' | 'gemini-2.5' | 'openai' | 'gemini-2.5-flash-image';
   fallbackServices: string[];
   maxRetries: number;
   timeout: number;
