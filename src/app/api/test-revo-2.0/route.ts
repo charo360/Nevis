@@ -7,23 +7,23 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET() {
   try {
     console.log('🧪 Testing Revo 2.0 availability via API...');
-    
+
     const { testRevo20Availability } = await import('@/ai/revo-2.0-service');
-    
+
     const isAvailable = await testRevo20Availability();
-    
+
     return NextResponse.json({
       success: true,
       available: isAvailable,
-      model: 'Revo 2.0 (Gemini 2.5 Flash Image)',
-      message: isAvailable 
-        ? 'Revo 2.0 is available and ready!' 
+      model: 'Revo 2.0 (Next-Gen AI)',
+      message: isAvailable
+        ? 'Revo 2.0 is available and ready!'
         : 'Revo 2.0 is not available. Check API key and model access.'
     });
 
   } catch (error) {
     console.error('❌ Revo 2.0 test API error:', error);
-    
+
     return NextResponse.json({
       success: false,
       available: false,
@@ -36,7 +36,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { 
+    const {
       testType = 'basic',
       businessType = 'Fintech',
       platform = 'instagram',
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     if (testType === 'basic') {
       const { testRevo20Availability } = await import('@/ai/revo-2.0-service');
       const isAvailable = await testRevo20Availability();
-      
+
       return NextResponse.json({
         success: true,
         testType: 'basic',
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
 
     if (testType === 'generation') {
       const { generateWithRevo20 } = await import('@/ai/revo-2.0-service');
-      
+
       const testBrandProfile = {
         businessName: 'Test Business',
         businessType,
@@ -97,16 +97,16 @@ export async function POST(request: NextRequest) {
     }
 
     if (testType === 'comprehensive') {
-      const { runRevo20TestSuite } = await import('@/ai/test-revo-2.0');
+      const { runRevo20TestSuite } = await import('@/lib/server/test-revo-2.0');
       const results = await runRevo20TestSuite();
-      
+
       return NextResponse.json({
         success: true,
         testType: 'comprehensive',
         available: results.overallSuccess,
         results,
-        message: results.overallSuccess 
-          ? 'All tests passed! Revo 2.0 is fully operational.' 
+        message: results.overallSuccess
+          ? 'All tests passed! Revo 2.0 is fully operational.'
           : 'Some tests failed. Check the details.'
       });
     }
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('❌ Revo 2.0 test error:', error);
-    
+
     return NextResponse.json({
       success: false,
       available: false,

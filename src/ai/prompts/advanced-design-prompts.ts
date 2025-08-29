@@ -49,8 +49,10 @@ export const PLATFORM_SPECIFIC_GUIDELINES = {
 - Use Instagram's native color palette trends
 - Design for both feed and story formats
 - Optimize for thumb-stopping power in fast scroll feeds
+- Logo placement: Bottom right corner or integrated naturally into design
+- Ensure logo is visible but doesn't overwhelm the main content
 `,
-  
+
   facebook: `
 **FACEBOOK OPTIMIZATION:**
 - Design for both desktop and mobile viewing
@@ -60,8 +62,10 @@ export const PLATFORM_SPECIFIC_GUIDELINES = {
 - Design for engagement and shareability
 - Use authentic, relatable imagery
 - Optimize for both organic and paid placement
+- Logo placement: Top left or bottom right corner for brand recognition
+- Ensure logo works well in both desktop and mobile formats
 `,
-  
+
   twitter: `
 **TWITTER/X OPTIMIZATION:**
 - Design for rapid consumption and high engagement
@@ -71,8 +75,10 @@ export const PLATFORM_SPECIFIC_GUIDELINES = {
 - Use trending visual styles and memes appropriately
 - Optimize for both light and dark mode viewing
 - Create thumb-stopping visuals for fast-scrolling feeds
+- Logo placement: Small, subtle placement that doesn't interfere with content
+- Ensure logo is readable in both light and dark modes
 `,
-  
+
   linkedin: `
 **LINKEDIN OPTIMIZATION:**
 - Use professional, business-appropriate color schemes
@@ -82,6 +88,8 @@ export const PLATFORM_SPECIFIC_GUIDELINES = {
 - Design for thought leadership and expertise positioning
 - Apply subtle, sophisticated design elements
 - Optimize for professional networking context
+- Logo placement: Prominent placement for brand authority and recognition
+- Ensure logo conveys professionalism and trustworthiness
 `
 };
 
@@ -95,8 +103,12 @@ export const BUSINESS_TYPE_DESIGN_DNA = {
 - Include appetite-triggering visual elements
 - Apply golden hour lighting effects for food imagery
 - Use complementary colors that enhance food appeal
+- Show diverse people enjoying meals in authentic, social settings
+- Include cultural food elements that reflect local cuisine traditions
+- Display chefs, staff, and customers from the local community
+- Use table settings and dining environments that feel culturally authentic
 `,
-  
+
   fitness: `
 **FITNESS DESIGN DNA:**
 - Use energetic, motivational color schemes (bright blues, oranges, greens)
@@ -106,8 +118,12 @@ export const BUSINESS_TYPE_DESIGN_DNA = {
 - Include progress and achievement visual metaphors
 - Apply athletic and performance-focused imagery
 - Use inspiring and empowering visual language
+- Show diverse athletes and fitness enthusiasts in action
+- Include people of different body types, ages, and fitness levels
+- Display authentic workout environments and community settings
+- Use culturally relevant sports and fitness activities for the region
 `,
-  
+
   beauty: `
 **BEAUTY DESIGN DNA:**
 - Use sophisticated, elegant color palettes (pastels, metallics)
@@ -117,8 +133,12 @@ export const BUSINESS_TYPE_DESIGN_DNA = {
 - Include aspirational and transformational imagery
 - Apply soft, flattering lighting effects
 - Use premium and luxurious visual elements
+- Show diverse models representing different skin tones, ages, and beauty standards
+- Include authentic beauty routines and self-care moments
+- Display culturally relevant beauty practices and aesthetics
+- Use inclusive representation that celebrates natural beauty diversity
 `,
-  
+
   tech: `
 **TECH DESIGN DNA:**
 - Use modern, digital color schemes (blues, purples, teals)
@@ -128,8 +148,54 @@ export const BUSINESS_TYPE_DESIGN_DNA = {
 - Include data visualization and tech-focused imagery
 - Apply gradient overlays and digital effects
 - Use professional and cutting-edge visual language
+- Show diverse tech professionals in collaborative work environments
+- Include people using technology in natural, authentic ways
+- Display modern office spaces, remote work setups, and innovation hubs
+- Use culturally relevant technology adoption and usage patterns
 `,
-  
+
+  ecommerce: `
+**E-COMMERCE DESIGN DNA:**
+- Use conversion-focused color schemes (trust blues, urgency reds, success greens)
+- Include high-quality product photography with lifestyle context
+- Apply clean, scannable layouts with clear hierarchy
+- Use action-oriented typography and compelling CTAs
+- Include social proof and trust signals
+- Apply mobile-first responsive design principles
+- Use persuasive and benefit-focused visual language
+- Show diverse customers using products in real-life situations
+- Include authentic unboxing and product experience moments
+- Display culturally relevant usage scenarios and lifestyle contexts
+`,
+
+  healthcare: `
+**HEALTHCARE DESIGN DNA:**
+- Use calming, trustworthy color palettes (soft blues, greens, whites)
+- Include professional medical imagery with human warmth
+- Apply clean, accessible design with clear information hierarchy
+- Use readable, professional typography
+- Include caring and compassionate visual elements
+- Apply medical accuracy with approachable aesthetics
+- Use reassuring and professional visual language
+- Show diverse healthcare professionals and patients
+- Include authentic care moments and medical environments
+- Display culturally sensitive healthcare interactions and settings
+`,
+
+  education: `
+**EDUCATION DESIGN DNA:**
+- Use inspiring, growth-focused color schemes (blues, greens, warm oranges)
+- Include diverse learning environments and educational moments
+- Apply organized, structured layouts with clear learning paths
+- Use friendly, accessible typography
+- Include knowledge and achievement visual metaphors
+- Apply bright, optimistic design elements
+- Use encouraging and empowering visual language
+- Show students and educators from diverse backgrounds
+- Include authentic classroom and learning environments
+- Display culturally relevant educational practices and settings
+`,
+
   default: `
 **UNIVERSAL DESIGN DNA:**
 - Use brand-appropriate color psychology
@@ -139,6 +205,9 @@ export const BUSINESS_TYPE_DESIGN_DNA = {
 - Include relevant industry visual metaphors
 - Apply consistent brand visual language
 - Use trustworthy and professional design elements
+- Show diverse people in authentic, relevant contexts
+- Include culturally appropriate imagery and design elements
+- Display real human connections and authentic moments
 `
 };
 

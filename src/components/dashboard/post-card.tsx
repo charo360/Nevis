@@ -107,11 +107,17 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   const [showVideoDialog, setShowVideoDialog] = React.useState(false);
   const [showImagePreview, setShowImagePreview] = React.useState(false);
   const [previewImageUrl, setPreviewImageUrl] = React.useState<string>('');
-  const [activeTab, setActiveTab] = React.useState<Platform>(post.variants[0]?.platform || 'Instagram');
+  // Ensure variants array exists and has at least one item
+  const safeVariants = post.variants && post.variants.length > 0 ? post.variants : [{
+    platform: (post.platform || 'instagram') as Platform,
+    imageUrl: post.imageUrl || ''
+  }];
+
+  const [activeTab, setActiveTab] = React.useState<Platform>(safeVariants[0]?.platform || 'instagram');
   const downloadRefs = React.useRef<Record<Platform, HTMLDivElement | null>>({} as Record<Platform, HTMLDivElement | null>);
 
   // Check if this is a Revo 2.0 post (single platform)
-  const isRevo2Post = post.id?.startsWith('revo2-') || post.variants.length === 1;
+  const isRevo2Post = post.id?.startsWith('revo2-') || safeVariants.length === 1;
 
   const formattedDate = React.useMemo(() => {
     try {
@@ -187,7 +193,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   }, []);
 
   const handleDownload = React.useCallback(async () => {
-    const activeVariant = post.variants.find(v => v.platform === activeTab);
+    const activeVariant = safeVariants.find(v => v.platform === activeTab);
 
     // First try to download the original HD image directly if URL is valid
     if (activeVariant?.imageUrl && isValidUrl(activeVariant.imageUrl)) {
@@ -268,7 +274,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
 
     try {
       // Check if we're converting an SVG enhanced design
-      const activeVariant = post.variants.find(v => v.platform === activeTab);
+      const activeVariant = safeVariants.find(v => v.platform === activeTab);
       const isSvgDataUrl = activeVariant?.imageUrl?.startsWith('data:image/svg+xml');
       const platformDimensions = getPlatformDimensions(activeTab);
 
@@ -340,7 +346,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   const handleRegenerate = async () => {
     setIsRegenerating(true);
     try {
-      const platform = post.variants[0].platform;
+      const platform = safeVariants[0].platform;
       const newPost = await generateContentAction(brandProfile, platform);
       onPostUpdated({ ...newPost, id: post.id }); // Keep old id for replacement
       toast({
@@ -389,11 +395,11 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
     }
   };
 
-  const activeVariant = post.variants.find(v => v.platform === activeTab) || post.variants[0];
+  const activeVariant = safeVariants.find(v => v.platform === activeTab) || safeVariants[0];
 
   return (
     <>
-  <Card className="flex flex-col w-full">
+      <Card className="flex flex-col w-full">
         <CardHeader className="flex-row items-center justify-between gap-4 p-4">
           <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <CalendarIcon className="h-4 w-4" />
@@ -440,14 +446,14 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
               {/* Platform Icon Header - Left aligned */}
               <div className="flex items-center justify-start p-3 bg-muted/30 rounded-lg">
                 <div className="flex items-center gap-2">
-                  {platformIcons[post.variants[0]?.platform || 'Instagram']}
+                  {platformIcons[safeVariants[0]?.platform || 'instagram']}
                 </div>
               </div>
 
               {/* Single Image Display - Platform-specific dimensions */}
               {(() => {
-                const variant = post.variants[0];
-                const dimensions = getPlatformDimensions(variant?.platform || 'Instagram');
+                const variant = safeVariants[0];
+                const dimensions = getPlatformDimensions(variant?.platform || 'instagram');
 
                 return (
                   <div className={`relative ${dimensions.aspectClass} w-full overflow-hidden`}>
@@ -457,7 +463,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
                         <span className="sr-only">{isRegenerating ? 'Regenerating image...' : 'Generating video...'}</span>
                       </div>
                     )}
-                    <div ref={el => (downloadRefs.current[variant?.platform || 'Instagram'] = el)} className={`relative ${dimensions.aspectClass} w-full overflow-hidden rounded-md border group`}>
+                    <div ref={el => (downloadRefs.current[variant?.platform || 'instagram'] = el)} className={`relative ${dimensions.aspectClass} w-full overflow-hidden rounded-md border group`}>
                       {variant?.imageUrl && isValidUrl(variant.imageUrl) ? (
                         <div
                           className="relative h-full w-full cursor-pointer"
@@ -513,13 +519,13 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
             // Multi-platform tab layout for Revo 1.0/1.5
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Platform)} className="w-full">
               <TabsList className="grid w-full grid-cols-4">
-                {post.variants.map(variant => (
+                {safeVariants.map(variant => (
                   <TabsTrigger key={variant.platform} value={variant.platform}>
                     {platformIcons[variant.platform]}
                   </TabsTrigger>
                 ))}
               </TabsList>
-              {post.variants.map(variant => {
+              {safeVariants.map(variant => {
                 const dimensions = getPlatformDimensions(variant.platform);
                 return (
                   <TabsContent key={variant.platform} value={variant.platform}>

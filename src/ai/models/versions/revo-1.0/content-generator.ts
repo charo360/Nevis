@@ -3,10 +3,10 @@
  * Handles content generation for the stable foundation model
  */
 
-import type { 
-  IContentGenerator, 
-  ContentGenerationRequest, 
-  GenerationResponse 
+import type {
+  IContentGenerator,
+  ContentGenerationRequest,
+  GenerationResponse
 } from '../../types/model-types';
 import type { GeneratedPost } from '@/lib/types';
 import { generatePostFromProfile } from '@/ai/flows/generate-post-from-profile';
@@ -19,7 +19,7 @@ export class Revo10ContentGenerator implements IContentGenerator {
    */
   async generateContent(request: ContentGenerationRequest): Promise<GenerationResponse<GeneratedPost>> {
     const startTime = Date.now();
-    
+
     try {
       console.log('📝 Revo 1.0: Starting content generation...');
       console.log('- Platform:', request.platform);
@@ -137,10 +137,10 @@ export class Revo10ContentGenerator implements IContentGenerator {
 
     const servicesString = Array.isArray(profile.services)
       ? profile.services.map(service =>
-          typeof service === 'object' && service.name
-            ? `${service.name}: ${service.description || ''}`
-            : service
-        ).join('\n')
+        typeof service === 'object' && service.name
+          ? `${service.name}: ${service.description || ''}`
+          : service
+      ).join('\n')
       : profile.services || '';
 
     return {
@@ -165,13 +165,13 @@ export class Revo10ContentGenerator implements IContentGenerator {
       keyFeatures: keyFeaturesString,
       competitiveAdvantages: competitiveAdvantagesString,
       brandConsistency: brandConsistency || { strictConsistency: false, followBrandColors: true },
-      // Revo 1.0 specific constraints
+      // Revo 1.0 specific constraints (updated to match config)
       modelConstraints: {
-        maxComplexity: 'basic',
-        enhancedFeatures: false,
-        realTimeContext: false,
-        trendingTopics: false,
-        artifactSupport: false
+        maxComplexity: 'enhanced', // Upgraded from basic
+        enhancedFeatures: true,    // Now enabled
+        realTimeContext: true,     // Now enabled
+        trendingTopics: true,      // Now enabled
+        artifactSupport: false     // Keep disabled for Revo 1.0
       }
     };
   }
@@ -185,14 +185,14 @@ export class Revo10ContentGenerator implements IContentGenerator {
     // Content quality checks
     if (post.content && post.content.length > 50) score += 1;
     if (post.content && post.content.length > 100) score += 0.5;
-    
+
     // Hashtag quality
     if (post.hashtags && post.hashtags.length >= 5) score += 1;
     if (post.hashtags && post.hashtags.length >= 10) score += 0.5;
-    
+
     // Catchy words presence
     if (post.catchyWords && post.catchyWords.trim().length > 0) score += 1;
-    
+
     // Image generation success
     if (post.variants && post.variants.length > 0 && post.variants[0].imageUrl) {
       score += 1;
@@ -209,11 +209,11 @@ export class Revo10ContentGenerator implements IContentGenerator {
     try {
       // Check if we can access the AI service
       const hasApiKey = !!(
-        process.env.GEMINI_API_KEY || 
-        process.env.GOOGLE_API_KEY || 
+        process.env.GEMINI_API_KEY ||
+        process.env.GOOGLE_API_KEY ||
         process.env.GOOGLE_GENAI_API_KEY
       );
-      
+
       return hasApiKey;
     } catch (error) {
       console.error('❌ Revo 1.0 Content Generator health check failed:', error);

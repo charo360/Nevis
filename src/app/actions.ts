@@ -131,6 +131,24 @@ export async function generateContentAction(
       ? (profile.designExamples || [])
       : []; // Don't use design examples if not strict consistency
 
+    // Enhanced brand profile data extraction
+    const enhancedProfile = {
+      ...profile,
+      // Ensure brand colors are available
+      primaryColor: profile.primaryColor || '#3B82F6',
+      accentColor: profile.accentColor || '#10B981',
+      backgroundColor: profile.backgroundColor || '#F8FAFC',
+      // Extract services information
+      servicesArray: typeof profile.services === 'string'
+        ? profile.services.split('\n').filter(s => s.trim())
+        : Array.isArray(profile.services)
+          ? profile.services.map(s => typeof s === 'string' ? s : s.name || s.description || '')
+          : [],
+      // Extract contact information for brand context
+      contactInfo: profile.contactInfo || {},
+      socialMedia: profile.socialMedia || {},
+    };
+
     // Convert arrays to newline-separated strings for AI processing
     const keyFeaturesString = Array.isArray(profile.keyFeatures)
       ? profile.keyFeatures.join('\n')
@@ -152,16 +170,17 @@ export async function generateContentAction(
 
 
     const postDetails = await generatePostFromProfileFlow({
-      businessType: profile.businessType,
-      location: profile.location,
-      writingTone: profile.writingTone,
-      contentThemes: profile.contentThemes,
-      visualStyle: profile.visualStyle,
-      logoDataUrl: profile.logoDataUrl,
+      businessName: enhancedProfile.businessName,
+      businessType: enhancedProfile.businessType,
+      location: enhancedProfile.location,
+      writingTone: enhancedProfile.writingTone,
+      contentThemes: enhancedProfile.contentThemes,
+      visualStyle: enhancedProfile.visualStyle,
+      logoDataUrl: enhancedProfile.logoDataUrl,
       designExamples: effectiveDesignExamples, // Use design examples based on consistency preference
-      primaryColor: profile.primaryColor,
-      accentColor: profile.accentColor,
-      backgroundColor: profile.backgroundColor,
+      primaryColor: enhancedProfile.primaryColor,
+      accentColor: enhancedProfile.accentColor,
+      backgroundColor: enhancedProfile.backgroundColor,
       dayOfWeek,
       currentDate,
       variants: [{
@@ -170,11 +189,16 @@ export async function generateContentAction(
       }],
       // Pass new detailed fields
       services: servicesString,
-      targetAudience: profile.targetAudience,
+      targetAudience: enhancedProfile.targetAudience,
       keyFeatures: keyFeaturesString,
       competitiveAdvantages: competitiveAdvantagesString,
       // Pass brand consistency preferences
       brandConsistency: brandConsistency || { strictConsistency: false, followBrandColors: true },
+      // Enhanced brand context
+      websiteUrl: enhancedProfile.websiteUrl,
+      description: enhancedProfile.description,
+      contactInfo: enhancedProfile.contactInfo,
+      socialMedia: enhancedProfile.socialMedia,
     });
 
     const newPost: GeneratedPost = {
