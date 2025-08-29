@@ -339,22 +339,14 @@ async function generateAdvancedCaptionAndHashtags(input: Revo20GenerationInput, 
     console.error('❌ Advanced caption generation failed:', error);
     console.log('🔄 Using enhanced fallback caption generation...');
 
-    // Enhanced fallback with better localization and context
+    // Enhanced fallback with AI-driven localization
     const brandName = input.brandProfile.businessName || 'Our Brand';
     const location = input.brandProfile.location || '';
     const businessType = input.businessType;
 
-    // Create more contextual fallback captions based on location and business type
-    let fallbackCaption = '';
-    let fallbackHashtags = ['#Quality', '#Professional', '#Excellence', '#Business', '#Service', '#Trusted', '#Premium', '#Innovation', '#Success', '#Experience'];
-
-    // Enhanced fallback for Kenyan/East African context
-    if (location.toLowerCase().includes('kenya') || location.toLowerCase().includes('nairobi') || location.toLowerCase().includes('mombasa')) {
-      fallbackCaption = `🌟 ${brandName} - Bringing you quality ${businessType.toLowerCase()} services! Tunatoa huduma bora kwa wote. ${location ? `Proudly serving ${location}` : ''} 🇰🇪✨`;
-      fallbackHashtags = ['#Kenya', '#Quality', '#BestService', '#Nairobi', '#Professional', '#Trusted', '#Excellence', '#Business', '#Innovation', '#KenyaBusiness'];
-    } else {
-      fallbackCaption = `✨ Experience excellence with ${brandName}! Quality you can trust, service you'll love. ${location ? `Proudly serving ${location}` : ''} 🌟`;
-    }
+    // Create AI-driven contextual fallback caption
+    const fallbackCaption = `✨ Experience excellence with ${brandName}! Quality ${businessType.toLowerCase()} services you can trust. ${location ? `Proudly serving ${location}` : ''} 🌟`;
+    const fallbackHashtags = ['#Quality', '#Professional', '#Excellence', '#Business', '#Service', '#Trusted', '#Premium', '#Innovation', '#Success', '#Experience'];
 
     return {
       caption: fallbackCaption,
@@ -1276,36 +1268,23 @@ ${context.trendingTopics.map(trend => `- ${trend.topic}`).join('\n')}
 - CTA: Fun, engaging invitation (not corporate)
 - Variation: Make this UNIQUE - use random seed: ${randomSeed}
 
-🌍 LOCATION-AWARE LOCAL LANGUAGE:
-Based on business location "${context.location}", use appropriate local expressions:
+🌍 DYNAMIC LOCATION-AWARE LANGUAGE:
+You are an expert in global cultures and local languages. Based on the business location "${context.location}", intelligently determine and use appropriate local expressions, slang, or cultural references that would resonate with the local audience.
 
-**AFRICA:**
-- Kenya: "sasa" (what's up), "maze" (bro), "jameni" (come on), "poa" (cool), "mambo" (how are things)
-- Nigeria: "wetin dey happen" (what's up), "no wahala" (no problem), "oga" (boss), "chop" (eat)
-- South Africa: "howzit" (hello), "lekker" (nice/good), "eish" (oh no), "braai" (BBQ), "sharp" (cool)
-- Ghana: "chale" (friend), "waa" (wow), "ei" (hey), "small small" (gradually)
+**DYNAMIC LANGUAGE INTELLIGENCE:**
+- Analyze the location and determine what local language, slang, or cultural references are commonly used there
+- Only use local expressions if you are 100% confident about their accuracy, meaning, and cultural appropriateness
+- Use 1-2 local words maximum per caption - keep it natural and authentic
+- Local language should enhance the business message, not distract from it
+- When uncertain about local language accuracy, always default to clear, engaging English
+- Consider local landmarks, cultural references, weather patterns, or lifestyle elements that locals would relate to
+- Make it feel like the content is created by someone who actually lives and works in that location
 
-**NORTH AMERICA:**
-- San Francisco: "hella" (very), "the city" (SF), "Mission", "SOMA", "fog"
-- New York: "mad" (very), "bodega", "the village", "uptown", "downtown"
-- Toronto: "eh" (right?), "the 6ix", "Tdot", "bare" (a lot)
-
-**EUROPE:**
-- London: "innit" (isn't it), "mate", "brilliant", "proper", "cheers"
-- Dublin: "craic" (fun), "grand" (fine), "fair play", "sound" (good)
-
-**ASIA:**
-- Singapore: "lah" (emphasis), "shiok" (great), "can" (okay), "kiasu" (competitive)
-- Mumbai: "yaar" (friend), "bindaas" (carefree), "jugaad" (creative solution)
-
-**AUSTRALIA:**
-- Sydney/Melbourne: "mate", "fair dinkum", "no worries", "arvo" (afternoon)
-
-**RULES:**
-- Only use if you're 100% confident about the meaning and context
-- Use 1-2 words maximum per caption
-- Must enhance the business message, not distract from it
-- When unsure about location or local language, use clear English
+**SAFETY RULES:**
+- NEVER use local language unless you are absolutely certain of its correctness
+- Avoid complex phrases, slang, or expressions you're uncertain about
+- Better to use engaging English than incorrect local language
+- Focus on authentic, location-relevant content rather than forced local language usage
 
 🚨 HUMAN WRITING STYLE:
 - No corporate jargon or marketing speak
