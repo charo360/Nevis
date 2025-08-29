@@ -29,6 +29,7 @@ BUSINESS INTELLIGENCE:
 {{#if targetAudience}}- Target Audience: {{{targetAudience}}}{{/if}}
 {{#if keyFeatures}}- Key Features: {{{keyFeatures}}}{{/if}}
 {{#if competitiveAdvantages}}- Competitive Edge: {{{competitiveAdvantages}}}{{/if}}
+{{#if contentVariation}}- Content Approach: {{{contentVariation}}} (MANDATORY: Use this specific approach for content generation){{/if}}
 
 TRENDING TOPICS INTEGRATION:
 Research and incorporate current trending topics relevant to:
@@ -46,6 +47,36 @@ Analyze and differentiate from typical competitor content by:
 - Focusing on underserved audience needs
 - Creating content gaps competitors miss
 - Using authentic local cultural connections
+
+CONTENT DIVERSITY ENFORCEMENT:
+CRITICAL: Each post must be completely different from previous generations:
+- Use different opening hooks (question, statement, story, statistic, quote)
+- Vary content structure (problem-solution, story-lesson, tip-benefit, behind-scenes)
+- Alternate between different emotional tones (inspiring, educational, entertaining, personal)
+- Change content length and paragraph structure significantly
+- Use different call-to-action styles (direct, subtle, question-based, action-oriented)
+- Vary hashtag themes and combinations
+- Never repeat the same content pattern or messaging approach
+
+{{#if contentVariation}}
+MANDATORY CONTENT VARIATION APPROACH - {{{contentVariation}}}:
+
+Use the following approach based on the content variation specified:
+- For "trending_hook": Start with a trending topic or viral conversation, connect the trend to your business naturally, use current social media language and references, include trending hashtags and phrases
+- For "story_driven": Begin with a compelling personal or customer story, use narrative structure with beginning, middle, end, include emotional elements and relatable characters, end with a meaningful lesson or takeaway
+- For "educational_tip": Lead with valuable, actionable advice, use numbered lists or step-by-step format, position your business as the expert solution, include "did you know" or "pro tip" elements
+- For "behind_scenes": Show the human side of your business, include process, preparation, or team moments, use authentic, unpolished language, create connection through transparency
+- For "question_engagement": Start with a thought-provoking question, encourage audience participation and responses, use polls, "this or that," or opinion requests, build community through conversation
+- For "statistic_driven": Lead with surprising or compelling statistics, use data to support your business value, include industry insights and research, position your business as data-informed
+- For "personal_insight": Share personal experiences or observations, use first-person perspective and authentic voice, include lessons learned or mistakes made, connect personal growth to business value
+- For "industry_contrarian": Challenge common industry assumptions, present alternative viewpoints respectfully, use "unpopular opinion" or "hot take" framing, support contrarian views with evidence
+- For "local_cultural": Reference local events, landmarks, or culture, use location-specific language and references, connect to community values and traditions, show deep local understanding
+- For "seasonal_relevance": Connect to current season, weather, or holidays, use timely references and seasonal language, align business offerings with seasonal needs
+- For "problem_solution": Identify a specific customer pain point, agitate the problem to create urgency, present your business as the clear solution, use before/after or transformation language
+- For "inspiration_motivation": Use uplifting, motivational language, include inspirational quotes or mantras, focus on transformation and possibility, connect inspiration to business outcomes
+
+Apply the specific approach for the {{{contentVariation}}} variation throughout your content generation.
+{{/if}}
 
 CULTURAL & LOCATION OPTIMIZATION:
 For {{{location}}}, incorporate:

@@ -39,6 +39,25 @@ export class GeneratedPostService extends DatabaseService<GeneratedPostDocument>
       return JSON.stringify(value);
     };
 
+    // Helper function to ensure valid platform enum value
+    const validatePlatform = (platform: string): GeneratedPostDocument['platform'] => {
+      const validPlatforms = ['instagram', 'facebook', 'twitter', 'linkedin', 'tiktok'] as const;
+      const normalizedPlatform = platform?.toLowerCase();
+      return validPlatforms.includes(normalizedPlatform as any) ? normalizedPlatform as GeneratedPostDocument['platform'] : 'instagram';
+    };
+
+    // Helper function to ensure valid postType enum value
+    const validatePostType = (postType: string): GeneratedPostDocument['postType'] => {
+      const validPostTypes = ['post', 'story', 'reel', 'advertisement'] as const;
+      return validPostTypes.includes(postType as any) ? postType as GeneratedPostDocument['postType'] : 'post';
+    };
+
+    // Helper function to clamp analytics values between 0-100
+    const clampAnalyticsValue = (value: any, defaultValue: number): number => {
+      const numValue = typeof value === 'number' ? value : defaultValue;
+      return Math.min(100, Math.max(0, numValue));
+    };
+
     // Handle hashtags - convert string to array if needed
     const hashtags = Array.isArray(post.hashtags)
       ? post.hashtags.filter(tag => tag && typeof tag === 'string')
@@ -46,29 +65,43 @@ export class GeneratedPostService extends DatabaseService<GeneratedPostDocument>
         ? post.hashtags.split(' ').filter(tag => tag.startsWith('#'))
         : [];
 
+    // Helper function to remove undefined values from objects
+    const removeUndefined = (obj: any): any => {
+      const cleaned: any = {};
+      for (const [key, value] of Object.entries(obj)) {
+        if (value !== undefined) {
+          cleaned[key] = value;
+        }
+      }
+      return cleaned;
+    };
+
+    // Build metadata object and remove undefined values
+    const metadata = removeUndefined({
+      businessType: post.businessType ? sanitizeForFirestore(post.businessType) : undefined,
+      visualStyle: post.visualStyle ? sanitizeForFirestore(post.visualStyle) : undefined,
+      targetAudience: post.targetAudience ? sanitizeForFirestore(post.targetAudience) : undefined,
+      generationPrompt: post.generationPrompt ? sanitizeForFirestore(post.generationPrompt) : undefined,
+      aiModel: post.aiModel ? sanitizeForFirestore(post.aiModel) : undefined,
+    });
+
     return {
       userId,
       brandProfileId,
-      platform: cleanValue(post.platform, 'instagram') as GeneratedPostDocument['platform'],
-      postType: cleanValue(post.postType, 'post') as GeneratedPostDocument['postType'],
-      content: {
-        text: sanitizeForFirestore(post.content) || 'Generated content',
-        hashtags: hashtags.map(tag => String(tag)), // Ensure all hashtags are strings
-        mentions: [], // Not in current GeneratedPost type
-        imageUrl: sanitizeForFirestore(post.imageUrl || post.variants?.[0]?.imageUrl || ''),
-        videoUrl: sanitizeForFirestore(post.videoUrl || ''),
-      },
-      metadata: {
-        businessType: sanitizeForFirestore(post.businessType || ''),
-        visualStyle: sanitizeForFirestore(post.visualStyle || ''),
-        targetAudience: sanitizeForFirestore(post.targetAudience || ''),
-        generationPrompt: sanitizeForFirestore(post.generationPrompt || ''),
-        aiModel: sanitizeForFirestore(post.aiModel || ''),
-      },
+      platform: validatePlatform(cleanValue(post.platform, 'instagram')),
+      postType: validatePostType(cleanValue(post.postType, 'post')),
+      content: removeUndefined({
+        text: sanitizeForFirestore(post.content).trim() || 'Generated content',
+        hashtags: hashtags.length > 0 ? hashtags.map(tag => String(tag)) : undefined,
+        mentions: undefined, // Not in current GeneratedPost type, so omit it
+        imageUrl: sanitizeForFirestore(post.imageUrl || post.variants?.[0]?.imageUrl || '') || undefined,
+        videoUrl: sanitizeForFirestore(post.videoUrl || '') || undefined,
+      }),
+      metadata,
       analytics: {
-        qualityScore: Math.max(0, cleanValue(post.qualityScore, 75)),
-        engagementPrediction: Math.max(0, cleanValue(post.engagementPrediction, 70)),
-        brandAlignmentScore: Math.max(0, cleanValue(post.brandAlignmentScore, 80)),
+        qualityScore: clampAnalyticsValue(post.qualityScore, 75),
+        engagementPrediction: clampAnalyticsValue(post.engagementPrediction, 70),
+        brandAlignmentScore: clampAnalyticsValue(post.brandAlignmentScore, 80),
         views: 0,
         likes: 0,
         shares: 0,

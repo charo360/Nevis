@@ -79,6 +79,21 @@ const GeneratePostFromProfileInputSchema = z.object({
     strictConsistency: z.boolean().optional(),
     followBrandColors: z.boolean().optional(),
   }).optional().describe('Brand consistency preferences for content generation.'),
+
+  // Enhanced brand context
+  websiteUrl: z.string().optional().describe('The business website URL for additional context.'),
+  description: z.string().optional().describe('Detailed business description for better content context.'),
+  contactInfo: z.object({
+    phone: z.string().optional(),
+    email: z.string().optional(),
+    address: z.string().optional(),
+  }).optional().describe('Contact information for business context.'),
+  socialMedia: z.object({
+    facebook: z.string().optional(),
+    instagram: z.string().optional(),
+    twitter: z.string().optional(),
+    linkedin: z.string().optional(),
+  }).optional().describe('Social media handles for cross-platform consistency.'),
 });
 
 export type GeneratePostFromProfileInput = z.infer<typeof GeneratePostFromProfileInputSchema>;
@@ -180,6 +195,12 @@ const enhancedTextGenPrompt = ai.definePrompt({
       targetAudience: z.string().optional(),
       keyFeatures: z.string().optional(),
       competitiveAdvantages: z.string().optional(),
+      contentVariation: z.string().optional(),
+      contextInstructions: z.string().optional(),
+      selectedWeather: z.any().optional(),
+      selectedEvents: z.any().optional(),
+      selectedTrends: z.any().optional(),
+      selectedCultural: z.any().optional(),
     })
   },
   output: {
@@ -238,11 +259,30 @@ async function generateImageForVariant(
   input: GeneratePostFromProfileInput,
   textOutput: { imageText: string }
 ) {
-  const colorInstructions = `The brand's color palette is: Primary HSL(${input.primaryColor}), Accent HSL(${input.accentColor}), Background HSL(${input.backgroundColor}). Please use these colors in the design.`;
-
-  // Determine consistency level based on preferences
+  // Determine consistency level based on preferences first
   const isStrictConsistency = input.brandConsistency?.strictConsistency ?? false;
   const followBrandColors = input.brandConsistency?.followBrandColors ?? true;
+
+  // Enhanced color instructions with psychology and usage guidelines
+  const colorInstructions = followBrandColors ? `
+  **BRAND COLOR PALETTE (MANDATORY):**
+  - Primary Color: ${input.primaryColor} - Use for main elements, headers, and key focal points
+  - Accent Color: ${input.accentColor} - Use for highlights, buttons, and secondary elements
+  - Background Color: ${input.backgroundColor} - Use for backgrounds and neutral areas
+
+  **COLOR USAGE REQUIREMENTS:**
+  - Primary color should dominate the design (40-60% of color usage)
+  - Accent color for emphasis and call-to-action elements (20-30% of color usage)
+  - Background color for balance and readability (10-40% of color usage)
+  - Ensure high contrast ratios for text readability (minimum 4.5:1)
+  - Use color gradients and variations within the brand palette
+  - Avoid colors outside the brand palette unless absolutely necessary for contrast
+  ` : `
+  **COLOR GUIDANCE:**
+  - Brand colors available: Primary ${input.primaryColor}, Accent ${input.accentColor}, Background ${input.backgroundColor}
+  - Feel free to use complementary colors that work well with the brand palette
+  - Maintain visual harmony and professional appearance
+  `;
 
   // Get platform-specific guidelines
   const platformGuidelines = PLATFORM_SPECIFIC_GUIDELINES[variant.platform as keyof typeof PLATFORM_SPECIFIC_GUIDELINES] || PLATFORM_SPECIFIC_GUIDELINES.instagram;
@@ -271,32 +311,59 @@ async function generateImageForVariant(
     input.visualStyle
   );
 
-  let imagePrompt = `Create a stunning, professional social media design for ${input.businessType} business.
+  // Enhanced brand context for better design generation
+  const businessContext = `
+  **BUSINESS PROFILE:**
+  - Name: ${input.businessName || 'Business'}
+  - Type: ${input.businessType}
+  - Location: ${input.location}
+  - Description: ${input.description || 'Professional business'}
+  ${input.services ? `- Services: ${input.services.split('\n').slice(0, 3).join(', ')}` : ''}
+  ${input.targetAudience ? `- Target Audience: ${input.targetAudience}` : ''}
+  ${input.websiteUrl ? `- Website: ${input.websiteUrl}` : ''}
+  `;
 
-    BUSINESS: ${input.businessType}
-    PLATFORM: ${variant.platform} (${variant.aspectRatio} aspect ratio)
-    LOCATION: ${input.location}
-    STYLE: ${input.visualStyle}, modern, clean, professional
+  // Generate visual variation approach for diversity
+  const visualVariations = [
+    'minimalist_clean', 'bold_dynamic', 'elegant_sophisticated', 'playful_creative',
+    'modern_geometric', 'organic_natural', 'industrial_urban', 'artistic_abstract',
+    'photographic_realistic', 'illustrated_stylized', 'gradient_colorful', 'monochrome_accent'
+  ];
+  const selectedVisualVariation = visualVariations[Math.floor(Math.random() * visualVariations.length)];
+  console.log(`🎨 Selected visual variation: ${selectedVisualVariation}`);
 
-    TEXT TO INCLUDE: "${combineTextComponents(textOutput.catchyWords, textOutput.subheadline, textOutput.callToAction)}"
+  let imagePrompt = `Create a stunning, professional social media design for ${input.businessName || input.businessType} business.
 
-    BRAND COLORS (use prominently):
-    ${input.primaryColor ? `- Primary: ${input.primaryColor}` : ''}
-    ${input.accentColor ? `- Accent: ${input.accentColor}` : ''}
-    ${input.backgroundColor ? `- Background: ${input.backgroundColor}` : ''}
+  **VISUAL APPROACH:** ${selectedVisualVariation} (MANDATORY: Use this specific visual style approach)
 
-    REQUIREMENTS:
-    - High-quality, professional design
-    - Clear, readable text with excellent contrast
-    - ${input.visualStyle} aesthetic
-    - Perfect for ${input.businessType} business
-    - Brand colors prominently featured
-    - Clean, modern layout
-    - Professional social media appearance
-    - Text must be perfectly readable and not cut off
-    - ${variant.aspectRatio} aspect ratio for ${variant.platform}
+    ${businessContext}
 
-    Create a beautiful, professional design that represents the business perfectly.`;
+    **DESIGN SPECIFICATIONS:**
+    - Platform: ${variant.platform} (${variant.aspectRatio} aspect ratio)
+    - Visual Style: ${input.visualStyle}, modern, clean, professional
+    - Text Content: "${combineTextComponents(textOutput.catchyWords, textOutput.subheadline, textOutput.callToAction)}"
+
+    ${colorInstructions}
+
+    **DESIGN REQUIREMENTS:**
+    - High-quality, professional design that reflects the business personality
+    - Clear, readable text with excellent contrast (minimum 4.5:1 ratio)
+    - ${input.visualStyle} aesthetic that appeals to ${input.targetAudience || 'target audience'}
+    - Perfect representation of ${input.businessType} business values
+    - Brand colors prominently and strategically featured
+    - Clean, modern layout optimized for ${variant.platform}
+    - Professional social media appearance that drives engagement
+    - Text must be perfectly readable, properly sized, and not cut off
+    - ${variant.aspectRatio} aspect ratio optimized for ${variant.platform}
+    - Design should reflect the business's location (${input.location}) and cultural context
+
+    **BUSINESS DNA INTEGRATION:**
+    ${businessDNA}
+
+    **PLATFORM OPTIMIZATION:**
+    ${platformGuidelines.designGuidelines || `Optimize for ${variant.platform} best practices`}
+
+    Create a beautiful, professional design that authentically represents the business and drives engagement.`;
 
   // Intelligent design examples processing
   let designDNA = '';
@@ -359,12 +426,21 @@ async function generateImageForVariant(
 
       **CREATIVE VARIATION:** Feel free to experiment with different layouts, compositions, and design elements to create fresh, engaging content that avoids repetitive appearance while maintaining brand recognition.
 
-      **UNIQUENESS REQUIREMENT:** This design must be visually distinct from previous generations. Use different:
-      - Layout compositions (grid vs. asymmetrical vs. centered)
-      - Color emphasis and gradients
-      - Typography placement and hierarchy
-      - Visual elements and imagery styles
-      - Background treatments and textures
+      **STRICT UNIQUENESS REQUIREMENT:** This design MUST be completely different from any previous generation. MANDATORY variations:
+      - Layout compositions: Choose from grid, asymmetrical, centered, diagonal, circular, or organic layouts
+      - Color emphasis: Vary primary/accent color dominance (primary-heavy, accent-heavy, or balanced)
+      - Typography placement: Top, bottom, center, side, overlay, or integrated into imagery
+      - Visual elements: Abstract shapes, geometric patterns, organic forms, or photographic elements
+      - Background treatments: Solid, gradient, textured, patterned, or photographic
+      - Design style: Minimalist, bold, elegant, playful, modern, or artistic
+      - Content arrangement: Single focus, multiple elements, layered, or split-screen
+
+      **DIVERSITY ENFORCEMENT:**
+      - Never repeat the same layout pattern twice in a row
+      - Alternate between different color emphasis approaches
+      - Vary typography size, weight, and positioning significantly
+      - Use different visual metaphors and imagery styles
+      - Change background complexity and treatment style
 
       **GENERATION ID:** ${Date.now()}_${Math.random().toString(36).substr(2, 9)} - Use this unique identifier to ensure no two designs are identical.`;
     }
@@ -373,8 +449,51 @@ async function generateImageForVariant(
   // Build prompt parts array
   const promptParts: any[] = [{ text: imagePrompt }];
 
-  // Add logo
-  promptParts.push({ media: { url: input.logoDataUrl, contentType: getMimeTypeFromDataURI(input.logoDataUrl) } });
+  // Enhanced logo integration with analysis
+  if (input.logoDataUrl) {
+    // Add logo analysis instructions to the prompt
+    const logoInstructions = `
+
+    **CRITICAL LOGO USAGE REQUIREMENTS:**
+    🚨 MANDATORY: You MUST use the uploaded brand logo image provided below. DO NOT create, generate, or design a new logo.
+
+    **LOGO INTEGRATION REQUIREMENTS:**
+    - Use ONLY the provided logo image - never create or generate a new logo
+    - The uploaded logo is the official brand logo and must be used exactly as provided
+    - Incorporate the provided logo naturally and prominently into the design
+    - Ensure logo is clearly visible and properly sized for the platform (minimum 10% of design area)
+    - Maintain logo's original proportions and readability - do not distort or modify the logo
+    - Position logo strategically: ${platformGuidelines.logoPlacement || 'Place logo prominently in corner or integrated into layout'}
+    - Ensure sufficient contrast between logo and background (minimum 4.5:1 ratio)
+    - For ${variant.platform}: Logo should be clearly visible and recognizable
+
+    **BRAND CONSISTENCY WITH UPLOADED LOGO:**
+    - Extract and use colors from the provided logo for the overall color scheme
+    - Match the design style to complement the logo's aesthetic and personality
+    - Ensure visual harmony between the uploaded logo and all design elements
+    - The logo is the primary brand identifier - treat it as the most important visual element
+
+    **LOGO PLACEMENT PRIORITY:**
+    - Logo visibility is more important than other design elements
+    - If space is limited, reduce other elements to ensure logo prominence
+    - Logo should be one of the first things viewers notice in the design
+    `;
+
+    // Update the main prompt with logo instructions
+    promptParts[0].text += logoInstructions;
+
+    // Add logo as media with high priority
+    promptParts.push({
+      media: {
+        url: input.logoDataUrl,
+        contentType: getMimeTypeFromDataURI(input.logoDataUrl)
+      }
+    });
+
+    console.log(`🎨 Logo integrated: ${input.logoDataUrl.substring(0, 50)}...`);
+  } else {
+    console.log('⚠️ No logo provided - design will be generated without brand logo');
+  }
 
   // Add selected design examples
   selectedExamples.forEach(example => {
@@ -512,6 +631,15 @@ const generatePostFromProfileFlow = ai.defineFlow(
     // Determine the primary platform for optimization
     const primaryPlatform = input.variants[0]?.platform || 'instagram';
 
+    // Generate unique content variation approach to ensure diversity
+    const contentVariations = [
+      'trending_hook', 'story_driven', 'educational_tip', 'behind_scenes',
+      'question_engagement', 'statistic_driven', 'personal_insight', 'industry_contrarian',
+      'local_cultural', 'seasonal_relevance', 'problem_solution', 'inspiration_motivation'
+    ];
+    const selectedVariation = contentVariations[Math.floor(Math.random() * contentVariations.length)];
+    console.log(`🎯 Selected content variation approach: ${selectedVariation}`);
+
     // Step 1: Intelligent Context Analysis - Determine what information is relevant
     const contextRelevance = selectRelevantContext(
       input.businessType,
@@ -595,19 +723,23 @@ const generatePostFromProfileFlow = ai.defineFlow(
       selectedEvents: filteredContext.selectedEvents,
       selectedTrends: filteredContext.selectedTrends,
       selectedCultural: filteredContext.selectedCultural,
+      // Add content variation for diversity
+      contentVariation: selectedVariation,
     });
 
     if (!textOutput) {
       throw new Error('Failed to generate advanced AI post content.');
     }
 
-    // Step 9: Generate Strategic Hashtag Analysis
+    // Step 9: Generate Strategic Hashtag Analysis (exactly 10 hashtags)
     const hashtagStrategy = generateHashtagStrategy(
       input.businessType,
       input.location,
       primaryPlatform,
       input.services,
-      input.targetAudience
+      input.targetAudience,
+      textOutput.catchyWords || textOutput.content, // Post topic from generated content
+      input.visualStyle || 'modern' // Design style
     );
 
     // Step 10: Generate Image for each variant in parallel
@@ -624,13 +756,22 @@ const generatePostFromProfileFlow = ai.defineFlow(
       textOutput.callToAction
     );
 
-    // Step 12: Combine results with intelligently selected context
+    // Step 12: Convert hashtag strategy to exactly 10 hashtags
+    const finalHashtags = [
+      ...hashtagStrategy.trending,
+      ...hashtagStrategy.niche,
+      ...hashtagStrategy.branded,
+      ...hashtagStrategy.location,
+      ...hashtagStrategy.community
+    ].slice(0, 10); // Ensure exactly 10 hashtags
+
+    // Step 13: Combine results with intelligently selected context
     return {
       content: textOutput.content,
       catchyWords: textOutput.catchyWords,
       subheadline: textOutput.subheadline,
       callToAction: textOutput.callToAction,
-      hashtags: textOutput.hashtags,
+      hashtags: finalHashtags.join(' '), // Convert to string format
       contentVariants: textOutput.contentVariants,
       hashtagAnalysis: {
         trending: hashtagStrategy.trending,

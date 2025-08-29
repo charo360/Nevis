@@ -67,14 +67,14 @@ export const GeneratedPostDocumentSchema = BaseDocumentSchema.extend({
   platform: z.enum(['instagram', 'facebook', 'twitter', 'linkedin', 'tiktok']),
   postType: z.enum(['post', 'story', 'reel', 'advertisement']),
   content: z.object({
-    text: z.string(),
+    text: z.string().min(1, "Content text cannot be empty"),
     hashtags: z.array(z.string()).optional(),
     mentions: z.array(z.string()).optional(),
     imageUrl: z.string().optional(),
     videoUrl: z.string().optional(),
   }),
   metadata: z.object({
-    businessType: z.string(),
+    businessType: z.string().optional(),
     visualStyle: z.string().optional(),
     targetAudience: z.string().optional(),
     generationPrompt: z.string().optional(),

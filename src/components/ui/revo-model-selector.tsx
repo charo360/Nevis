@@ -51,7 +51,7 @@ const REVO_MODELS: RevoModelOption[] = [
   {
     id: 'revo-2.0',
     name: 'Revo 2.0',
-    description: 'Next-Gen Model - Gemini 2.5 Flash Image (nano-banana)',
+    description: 'Next-Gen Model - Advanced AI Engine',
     icon: Rocket,
     badge: 'Next-Gen',
     badgeVariant: 'default',

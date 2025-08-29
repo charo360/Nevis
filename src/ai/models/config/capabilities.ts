@@ -41,7 +41,7 @@ export const modelCapabilities: Record<RevoModelId, ModelCapabilities> = {
 
 
   'revo-2.0': {
-    // Premium Gemini 2.5 Flash Image (nano-banana) model
+    // Premium Next-Gen AI model
     contentGeneration: true,
     designGeneration: true,
     videoGeneration: false, // Focus on premium image generation

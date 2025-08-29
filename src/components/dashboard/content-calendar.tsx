@@ -88,22 +88,34 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
       const useEnhancedGeneration = artifactsEnabled || selectedRevoModel === 'revo-1.5' || selectedRevoModel === 'revo-2.0';
 
       if (selectedRevoModel === 'revo-2.0') {
-        console.log(`🚀 Using Revo 2.0 (Gemini 2.5 Flash Image) generation`);
-        // Use Revo 2.0 native image generation
-        const { generateWithRevo20 } = await import('@/ai/revo-2.0-service');
+        console.log(`🚀 Using Revo 2.0 (Gemini 2.5 Flash Image) generation via server action`);
 
-        const revo20Result = await generateWithRevo20({
-          businessType: brandProfile.businessType || 'Business',
-          platform: platform.toLowerCase(),
-          visualStyle: brandProfile.visualStyle || 'modern',
-          imageText: `${brandProfile.businessName || brandProfile.businessType} - Premium Content`,
-          brandProfile,
-          aspectRatio: '1:1'
+        // Use server action to avoid client-side imports
+        const response = await fetch('/api/generate-revo-2.0', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            businessType: brandProfile.businessType || 'Business',
+            platform: platform.toLowerCase(),
+            visualStyle: brandProfile.visualStyle || 'modern',
+            imageText: `${brandProfile.businessName || brandProfile.businessType} - Premium Content`,
+            brandProfile,
+            aspectRatio: '1:1'
+          })
         });
+
+        if (!response.ok) {
+          throw new Error(`Revo 2.0 generation failed: ${response.statusText}`);
+        }
+
+        const revo20Result = await response.json();
 
         newPost = {
           id: `revo-2.0-${Date.now()}`,
-          content: `🚀 Generated with Revo 2.0 (Gemini 2.5 Flash Image)\n\n${brandProfile.businessName || brandProfile.businessType} - Premium Content\n\n#NextGen #AI #Innovation`,
+          content: revo20Result.caption || `🚀 Generated with Revo 2.0 (Gemini 2.5 Flash Image)\n\n${brandProfile.businessName || brandProfile.businessType} - Premium Content`,
+          hashtags: revo20Result.hashtags || ['#NextGen', '#AI', '#Innovation'],
           imageUrl: revo20Result.imageUrl,
           platform: platform,
           date: new Date().toISOString(),
@@ -114,13 +126,13 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
             comments: 0,
             engagementPrediction: 85,
             brandAlignmentScore: 95,
-            qualityScore: revo20Result.qualityScore
+            qualityScore: revo20Result.qualityScore || 10
           },
           metadata: {
-            aiModel: revo20Result.model,
+            aiModel: revo20Result.model || 'Revo 2.0',
             generationPrompt: 'Revo 2.0 Native Generation',
-            processingTime: revo20Result.processingTime,
-            enhancementsApplied: revo20Result.enhancementsApplied
+            processingTime: revo20Result.processingTime || 0,
+            enhancementsApplied: revo20Result.enhancementsApplied || []
           }
         };
       } else if (useEnhancedGeneration) {
@@ -233,7 +245,7 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
             </div>
             <p className="text-xs text-gray-500 mt-2">
               {selectedRevoModel === 'revo-2.0'
-                ? `🚀 ${selectedRevoModel}: Next-Gen Gemini 2.5 Flash Image (nano-banana) with native image generation, character consistency & intelligent editing`
+                ? `🚀 ${selectedRevoModel}: Next-Gen AI with native image generation, character consistency & intelligent editing`
                 : selectedRevoModel === 'revo-1.5'
                   ? `✨ ${selectedRevoModel}: Enhanced AI with professional design principles + ${brandConsistency.strictConsistency ? "strict consistency" : "brand colors"}`
                   : selectedRevoModel === 'revo-1.0'
