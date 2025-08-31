@@ -6,6 +6,16 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { BrandProfile } from '@/lib/types';
 import { revo10Config, revo10Prompts } from './models/versions/revo-1.0/config';
+import {
+  generateCreativeHeadline,
+  generateCreativeSubheadline,
+  enhanceDesignCreativity,
+  generateCreativeCTA,
+  analyzeBusinessContext,
+  AntiRepetitionSystem,
+  CREATIVE_PROMPT_SYSTEM,
+  CONTENT_VARIATION_ENGINE
+} from './creative-enhancement';
 
 // Advanced features integration (simplified for now)
 // TODO: Import advanced features from Revo 1.5 when available
@@ -570,64 +580,99 @@ Generate exactly 15 hashtags:`;
     console.log(`- Brand hashtags: ${brandHashtags.length}`);
     console.log(`- Location hashtags: ${locationHashtags.length}`);
 
-    // Generate structured content components
-    const structuredPrompt = `Generate structured content components for ${input.businessName} (${input.businessType}) in ${input.location} for ${input.platform}:
+    // 🎨 CREATIVE ENHANCEMENT: Generate creative, unique content components
+    console.log('🎨 Revo 1.0: Applying creative enhancement system...');
 
-REQUIREMENTS:
-- Headline: 3-5 catchy words maximum (for image overlay)
-- Subheadline: 8-14 words maximum (optional, use only if it adds value)
-- Call-to-Action: 3-6 words maximum (optional, use only when contextually appropriate)
+    // Analyze business context for creative insights
+    const businessContext = analyzeBusinessContext(
+      input.businessType,
+      input.businessName,
+      input.location,
+      input.services
+    );
 
-GUIDELINES:
-- Headline should be punchy and attention-grabbing
-- Subheadline should provide context or value proposition
-- CTA should be action-oriented and relevant
-- Consider the business type: ${input.businessType}
-- Make it location-relevant for ${input.location}
-- Optimize for ${input.platform} audience
+    // Generate unique variation to prevent repetition
+    const uniqueVariation = AntiRepetitionSystem.generateUniqueVariation(
+      input.businessType,
+      input.platform,
+      { businessName: input.businessName, location: input.location }
+    );
 
-FORMAT YOUR RESPONSE EXACTLY AS:
-HEADLINE: [your headline here]
-SUBHEADLINE: [your subheadline here or leave blank if not needed]
-CTA: [your call-to-action here or leave blank if not needed]`;
+    console.log('🎯 Creative variation applied:', uniqueVariation.signature);
+    console.log('🧠 Business insights:', businessContext.creativePotential.slice(0, 2));
 
-    const structuredResult = await model.generateContent(structuredPrompt);
-    const structuredResponse = await structuredResult.response;
-    const structuredText = structuredResponse.text().trim();
+    // Generate creative headline using enhancement system
+    const creativeHeadlineResult = generateCreativeHeadline(
+      input.businessType,
+      input.businessName,
+      input.location,
+      { platform: input.platform, variation: uniqueVariation, context: businessContext }
+    );
 
-    // Parse the structured response
-    const headlineMatch = structuredText.match(/HEADLINE:\s*(.+)/i);
-    const subheadlineMatch = structuredText.match(/SUBHEADLINE:\s*(.+)/i);
-    const ctaMatch = structuredText.match(/CTA:\s*(.+)/i);
+    // Generate creative subheadline using enhancement system
+    const creativeSubheadlineResult = generateCreativeSubheadline(
+      input.businessType,
+      input.services,
+      input.location,
+      creativeHeadlineResult.tone
+    );
 
-    const headline = headlineMatch ? headlineMatch[1].trim() : 'Your Business';
-    const subheadline = subheadlineMatch && subheadlineMatch[1].trim() && !subheadlineMatch[1].toLowerCase().includes('blank') ? subheadlineMatch[1].trim() : '';
-    const callToAction = ctaMatch && ctaMatch[1].trim() && !ctaMatch[1].toLowerCase().includes('blank') ? ctaMatch[1].trim() : '';
+    // Generate creative CTA using enhancement system
+    const creativeCTAResult = generateCreativeCTA(
+      input.businessType,
+      creativeHeadlineResult.tone,
+      { platform: input.platform, businessContext }
+    );
 
-    console.log('📝 Generated content structure:');
-    console.log('- Headline:', headline);
-    console.log('- Subheadline:', subheadline || '(none)');
-    console.log('- CTA:', callToAction || '(none)');
+    // Extract creative components
+    const headline = creativeHeadlineResult.headline;
+    const subheadline = creativeSubheadlineResult.subheadline;
+    const callToAction = creativeCTAResult.cta;
 
-    console.log('✅ Revo 1.0: Content generated successfully with Gemini 2.5 Flash Image Preview');
+    console.log('✨ Creative components generated:');
+    console.log(`- Headline Style: ${creativeHeadlineResult.style}`);
+    console.log(`- Emotional Tone: ${creativeHeadlineResult.tone}`);
+    console.log(`- Subheadline Framework: ${creativeSubheadlineResult.framework}`);
+    console.log(`- CTA Urgency: ${creativeCTAResult.urgency}`);
+    console.log(`- Creative Elements: ${businessContext.creativePotential.slice(0, 2).join(', ')}`);
+
+    // Fallback to generic only if creative generation fails
+    const finalHeadline = headline || 'Your Business';
+    const finalSubheadline = subheadline || '';
+    const finalCallToAction = callToAction || '';
+
+    console.log('📝 Creative content structure generated:');
+    console.log('- Headline:', finalHeadline);
+    console.log('- Subheadline:', finalSubheadline || '(none)');
+    console.log('- CTA:', finalCallToAction || '(none)');
+
+    console.log('✅ Revo 1.0: Enhanced creative content generated successfully with Gemini 2.5 Flash Image Preview');
 
     // Final content package summary
-    console.log('📦 Complete content package:');
+    console.log('📦 Complete creative content package:');
     console.log(`- Caption: ${content.length} chars`);
-    console.log(`- Headline: "${headline}"`);
-    console.log(`- Subheadline: "${subheadline || 'None'}"`);
-    console.log(`- CTA: "${callToAction || 'None'}"`);
+    console.log(`- Creative Headline: "${finalHeadline}"`);
+    console.log(`- Creative Subheadline: "${finalSubheadline || 'None'}"`);
+    console.log(`- Creative CTA: "${finalCallToAction || 'None'}"`);
     console.log(`- Hashtags: ${hashtags.length} strategic tags`);
     console.log(`- Platform: ${input.platform} optimized`);
+    console.log(`- Creative Style: ${creativeHeadlineResult.style} with ${creativeHeadlineResult.tone} tone`);
 
     return {
       content: content.trim(),
       hashtags: hashtags,
-      catchyWords: headline, // Use headline as catchy words for image
-      subheadline: subheadline,
-      callToAction: callToAction,
-      headline: headline, // Add headline as separate field
+      catchyWords: finalHeadline, // Use creative headline as catchy words for image
+      subheadline: finalSubheadline,
+      callToAction: finalCallToAction,
+      headline: finalHeadline, // Add creative headline as separate field
       realTimeContext: realTimeContext, // Pass context to image generator
+      creativeContext: { // Add creative context for image generation
+        style: creativeHeadlineResult.style,
+        tone: creativeHeadlineResult.tone,
+        framework: creativeSubheadlineResult.framework,
+        businessInsights: businessContext,
+        variation: uniqueVariation
+      },
       variants: [{
         platform: input.platform,
         aspectRatio: '1:1',
@@ -722,9 +767,47 @@ export async function generateRevo10Image(input: {
   subheadline?: string;
   callToAction?: string;
   realTimeContext?: any;
+  creativeContext?: any; // Add creative context from content generation
 }) {
   try {
-    console.log('🖼️ Revo 1.0: Starting image generation with Gemini 2.5 Flash Image Preview...');
+    console.log('🖼️ Revo 1.0: Starting enhanced creative image generation with Gemini 2.5 Flash Image Preview...');
+
+    // 🎨 CREATIVE ENHANCEMENT: Apply creative design system
+    let creativeDesignEnhancement = '';
+    if (input.creativeContext) {
+      console.log('🎨 Applying creative design enhancement system...');
+      const designEnhancement = enhanceDesignCreativity(
+        input.designDescription,
+        input.businessType,
+        input.location || 'Global',
+        input.creativeContext
+      );
+
+      creativeDesignEnhancement = `
+🎨 CREATIVE DESIGN ENHANCEMENT SYSTEM ACTIVATED:
+${designEnhancement.enhancedPrompt}
+
+CREATIVE VISUAL STYLE: ${designEnhancement.visualStyle}
+CREATIVE ELEMENTS TO INCORPORATE: ${designEnhancement.creativeElements.join(', ')}
+BUSINESS CREATIVE INSIGHTS: ${input.creativeContext.businessInsights?.creativePotential?.slice(0, 3).join(', ') || 'Professional excellence'}
+EMOTIONAL DESIGN TONE: ${input.creativeContext.tone} with ${input.creativeContext.style} approach
+CREATIVE FRAMEWORK: ${input.creativeContext.framework} storytelling structure
+
+ANTI-GENERIC REQUIREMENTS:
+- NO template-like designs or stock photo aesthetics
+- NO boring business layouts or predictable compositions
+- NO generic color schemes or uninspiring visual elements
+- CREATE something memorable, unique, and emotionally engaging
+- USE unexpected visual metaphors and creative storytelling
+- INCORPORATE cultural elements naturally and authentically
+- DESIGN with emotional intelligence and creative sophistication
+`;
+
+      console.log('✨ Creative design enhancement applied:');
+      console.log(`- Visual Style: ${designEnhancement.visualStyle}`);
+      console.log(`- Creative Elements: ${designEnhancement.creativeElements.slice(0, 3).join(', ')}`);
+      console.log(`- Emotional Tone: ${input.creativeContext.tone}`);
+    }
 
     const model = ai.getGenerativeModel({
       model: REVO_1_0_MODEL,
@@ -765,6 +848,8 @@ export async function generateRevo10Image(input: {
     console.log('🎲 Design Variation Selected:', designVariations.style);
 
     const imagePrompt = `Create a professional-grade 2048x2048 social media design that surpasses Canva quality for ${input.businessName} (${input.businessType})${brandInfo}.
+
+${creativeDesignEnhancement}
 
 BUSINESS CONTEXT:
 - Business: ${input.businessName}
@@ -895,13 +980,18 @@ DESIGN REQUIREMENTS:
 
     console.log('🎨 Brand-aware prompt created with colors:', colorScheme);
 
-    console.log('🖼️ Revo 1.0: Generating image with enhanced AI capabilities...');
-    console.log('🎨 Advanced Features:');
+    console.log('🖼️ Revo 1.0: Generating image with enhanced creative AI capabilities...');
+    console.log('🎨 Advanced Creative Features:');
     console.log(`  👥 People Integration: ${shouldIncludePeople ? 'Enabled' : 'Disabled'}`);
     console.log(`  🌍 Cultural Context: ${input.location || 'Global'}`);
     console.log(`  🎭 Visual Style: ${input.visualStyle}`);
     console.log(`  🏢 Business DNA: ${input.businessType} optimized`);
     console.log(`  🎲 Design Variation: ${designVariations.style} (Seed: ${designSeed})`);
+    console.log(`  ✨ Creative Enhancement: ${input.creativeContext ? 'ACTIVE' : 'Standard'}`);
+    if (input.creativeContext) {
+      console.log(`  🎨 Creative Style: ${input.creativeContext.style} with ${input.creativeContext.tone} tone`);
+      console.log(`  🧠 Creative Framework: ${input.creativeContext.framework}`);
+    }
 
     // Prepare the generation request with logo if available
     const generationParts = [
