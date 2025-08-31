@@ -62,15 +62,6 @@ function ConditionalLayout({ children, useAppRoute }: { children: React.ReactNod
       </BrandColorProvider>
     </SidebarProvider>
   );
-
-  return (
-    <SidebarProvider>
-      <AppSidebar />
-      <BrandColorProvider>
-        {children}
-      </BrandColorProvider>
-    </SidebarProvider>
-  );
 }
 
 
@@ -86,7 +77,7 @@ export default function RootLayout({
         <title>Crevo - AI-Powered Content Creation</title>
         <meta name="description" content="Transform your ideas into professional social media content with AI. Generate posts, designs, and campaigns that engage your audience and grow your brand." />
       </head>
-  <body className="font-body antialiased overflow-x-hidden" suppressHydrationWarning>
+      <body className="font-body antialiased overflow-x-hidden" suppressHydrationWarning>
         <AuthWrapper requireAuth={false}>
           <UnifiedBrandProvider>
             <ConditionalLayout useAppRoute={true}>

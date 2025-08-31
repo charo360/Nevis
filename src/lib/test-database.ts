@@ -14,11 +14,11 @@ export async function testDatabaseConnection(): Promise<boolean> {
       hashtags: ['#test', '#database', '#firebase'],
       status: 'generated',
       variants: [{
-        platform: 'instagram',
+        platform: 'Instagram',
         imageUrl: 'https://via.placeholder.com/400x400/blue/white?text=Test+Post',
       }],
       catchyWords: 'Test Post',
-      platform: 'instagram',
+      platform: 'Instagram',
       postType: 'post',
       businessType: 'test',
       visualStyle: 'modern',

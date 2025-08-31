@@ -61,22 +61,6 @@ const baseConfigs = {
   },
   'gemini-2.5-flash-image': {
     aiService: 'gemini-2.5-flash-image' as const,
-    fallbackServices: ['gemini-2.5', 'gemini-2.0'],
-    maxRetries: 3,
-    timeout: 45000,
-    qualitySettings: {
-      imageResolution: '2048x2048',
-      compressionLevel: 92,
-      enhancementLevel: 9
-    },
-    promptSettings: {
-      temperature: 0.7,
-      maxTokens: 2048,
-      topP: 0.9
-    }
-  },
-  'gemini-2.5-flash-image': {
-    aiService: 'gemini-2.5-flash-image' as const,
     fallbackServices: ['imagen-4', 'gemini-2.5'],
     maxRetries: 3,
     timeout: 45000,
@@ -88,7 +72,8 @@ const baseConfigs = {
     promptSettings: {
       temperature: 0.7,
       maxTokens: 2048,
-      topP: 0.9
+      topP: 0.9,
+      topK: 40
     }
   }
 };
@@ -99,25 +84,27 @@ export const modelConfigs: Record<RevoModelId, RevoModel> = {
     id: 'revo-1.0',
     name: 'Revo 1.0',
     version: '1.0.0',
-    description: 'Standard Model - Stable Foundation',
-    longDescription: 'Reliable AI engine with proven performance. Perfect for consistent, high-quality content generation with 1:1 aspect ratio images and core features.',
+    description: 'Standard Model - Stable Foundation (Enhanced with Gemini 2.5 Flash Image Preview)',
+    longDescription: 'Reliable AI engine with proven performance, now powered by Gemini 2.5 Flash Image Preview for enhanced quality and perfect text rendering. Perfect for consistent, high-quality content generation with 1:1 aspect ratio images and core features.',
     icon: 'Zap',
-    badge: 'Stable',
-    badgeVariant: 'secondary',
-    status: 'stable',
+    badge: 'Enhanced',
+    badgeVariant: 'default',
+    status: 'enhanced',
     capabilities: modelCapabilities['revo-1.0'],
-    config: baseConfigs['gemini-2.0'],
+    config: baseConfigs['gemini-2.5-flash-image'],
     pricing: modelPricing['revo-1.0'],
     features: [
-      'Reliable AI Engine',
-      '1:1 Images',
+      'Enhanced AI Engine with Gemini 2.5 Flash Image Preview',
+      '1:1 Images with High Resolution',
       'Core Features',
       'Proven Performance',
       'Multi-platform Support',
-      'Basic Brand Consistency'
+      'Enhanced Brand Consistency',
+      'Perfect Text Rendering',
+      'High-Resolution Output (2048x2048)'
     ],
     releaseDate: '2024-01-15',
-    lastUpdated: '2024-12-01'
+    lastUpdated: '2025-01-27'
   },
 
   'revo-1.5': {
@@ -154,33 +141,6 @@ export const modelConfigs: Record<RevoModelId, RevoModel> = {
   },
 
 
-
-  'revo-2.0': {
-    id: 'revo-2.0',
-    name: 'Revo 2.0',
-    version: '2.0.0',
-    description: 'Next-Gen Model - Advanced AI with native image generation',
-    longDescription: 'Revolutionary AI model featuring native image generation, character consistency, intelligent editing, and multimodal reasoning for premium content creation.',
-    icon: 'Sparkles',
-    badge: 'Next-Gen',
-    badgeVariant: 'default',
-    status: 'enhanced',
-    capabilities: modelCapabilities['revo-2.0'],
-    config: baseConfigs['gemini-2.5-flash-image'],
-    pricing: modelPricing['revo-2.0'],
-    features: [
-      'Next-Gen AI Engine',
-      'Native Image Generation',
-      'Character Consistency',
-      'Intelligent Editing',
-      'Inpainting & Outpainting',
-      'Multimodal Reasoning',
-      'All Aspect Ratios',
-      'Perfect Brand Consistency'
-    ],
-    releaseDate: '2025-01-27',
-    lastUpdated: '2025-01-27'
-  },
 
   'revo-2.0': {
     id: 'revo-2.0',

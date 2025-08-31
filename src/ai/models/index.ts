@@ -108,8 +108,6 @@ export type { IModelSelectionService } from './services/model-selection-service'
 export type { Revo10Implementation } from './versions/revo-1.0';
 export type { Revo15Implementation } from './versions/revo-1.5';
 
-export type { Imagen4Implementation } from './versions/imagen-4';
-
 // Utility functions
 export async function initializeModelSystem(): Promise<void> {
   console.log('🚀 Initializing AI Model System...');

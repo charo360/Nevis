@@ -2,7 +2,7 @@
 "use server";
 
 import { analyzeBrand as analyzeBrandFlow, BrandAnalysisResult } from "@/ai/flows/analyze-brand";
-import { generatePostFromProfile as generatePostFromProfileFlow } from "@/ai/flows/generate-post-from-profile";
+import { modelRegistry } from "@/ai/models/registry/model-registry";
 import { generateVideoPost as generateVideoPostFlow } from "@/ai/flows/generate-video-post";
 import { generateCreativeAsset as generateCreativeAssetFlow } from "@/ai/flows/generate-creative-asset";
 import type { BrandProfile, GeneratedPost, Platform, CreativeAsset } from "@/lib/types";
@@ -170,39 +170,60 @@ export async function generateContentAction(
 
 
 
-    const postDetails = await generatePostFromProfileFlow({
-      businessName: enhancedProfile.businessName,
-      businessType: enhancedProfile.businessType,
-      location: enhancedProfile.location,
-      writingTone: enhancedProfile.writingTone,
-      contentThemes: enhancedProfile.contentThemes,
-      visualStyle: enhancedProfile.visualStyle,
+    // Ensure model registry is initialized
+    if (!modelRegistry.isInitialized()) {
+      console.log('🔄 Model registry not initialized, initializing now...');
+      await modelRegistry.initialize();
+    }
+
+    console.log('🔍 Model registry initialized, getting Revo 1.0 model...');
+
+    // Use Revo 1.0 model through the registry for enhanced Gemini 2.5 Flash Image Preview
+    const revo10Model = modelRegistry.getModel('revo-1.0');
+    if (!revo10Model) {
+      console.error('❌ Revo 1.0 model not found in registry');
+      console.log('📊 Available models:', modelRegistry.getAllModels().map(m => m.model.id));
+      throw new Error('Revo 1.0 model not available');
+    }
+
+    console.log('✅ Revo 1.0 model found:', revo10Model.model.name);
+
+    const generationRequest = {
+      modelId: 'revo-1.0',
+      profile: enhancedProfile,
+      platform: platform,
+      brandConsistency: brandConsistency || { strictConsistency: false, followBrandColors: true },
+      artifactIds: [], // Revo 1.0 doesn't support artifacts
+      contentThemes: enhancedProfile.contentThemes || [],
+      writingTone: enhancedProfile.writingTone || 'professional',
+      targetAudience: enhancedProfile.targetAudience || 'General',
+      keyFeatures: enhancedProfile.keyFeatures || [],
+      competitiveAdvantages: enhancedProfile.competitiveAdvantages || [],
+      services: enhancedProfile.services || [],
+      visualStyle: enhancedProfile.visualStyle || 'modern',
+      primaryColor: enhancedProfile.primaryColor || '#3B82F6',
+      accentColor: enhancedProfile.accentColor || '#10B981',
+      backgroundColor: enhancedProfile.backgroundColor || '#F8FAFC',
       logoDataUrl: enhancedProfile.logoDataUrl,
-      designExamples: effectiveDesignExamples, // Use design examples based on consistency preference
-      primaryColor: enhancedProfile.primaryColor,
-      accentColor: enhancedProfile.accentColor,
-      backgroundColor: enhancedProfile.backgroundColor,
-      dayOfWeek,
-      currentDate,
+      designExamples: effectiveDesignExamples,
+      dayOfWeek: dayOfWeek,
+      currentDate: currentDate,
       variants: [{
         platform: platform,
         aspectRatio: getAspectRatioForPlatform(platform),
-      }],
-      // Pass new detailed fields
-      services: servicesString,
-      targetAudience: enhancedProfile.targetAudience,
-      keyFeatures: keyFeaturesString,
-      competitiveAdvantages: competitiveAdvantagesString,
-      // Pass brand consistency preferences
-      brandConsistency: brandConsistency || { strictConsistency: false, followBrandColors: true },
-      // Enhanced brand context
-      websiteUrl: enhancedProfile.websiteUrl,
-      description: enhancedProfile.description,
-      contactInfo: enhancedProfile.contactInfo,
-      socialMedia: enhancedProfile.socialMedia,
-      // Language preferences
-      useLocalLanguage: useLocalLanguage,
-    });
+      }]
+    };
+
+    console.log('📝 Calling Revo 1.0 content generator...');
+    const result = await revo10Model.contentGenerator.generateContent(generationRequest);
+
+    if (!result.success) {
+      console.error('❌ Revo 1.0 content generation failed:', result.error);
+      throw new Error(result.error || 'Content generation failed');
+    }
+
+    console.log('✅ Revo 1.0 content generation successful');
+    const postDetails = result.data;
 
     const newPost: GeneratedPost = {
       id: new Date().toISOString(),
@@ -212,15 +233,13 @@ export async function generateContentAction(
       status: 'generated',
       variants: postDetails.variants,
       catchyWords: postDetails.catchyWords,
-      subheadline: postDetails.subheadline,
-      callToAction: postDetails.callToAction,
-      // Include enhanced AI features
-      contentVariants: postDetails.contentVariants,
-      hashtagAnalysis: postDetails.hashtagAnalysis,
-      // Include advanced AI features
-      marketIntelligence: postDetails.marketIntelligence,
-      // Include local context features
-      localContext: postDetails.localContext,
+      subheadline: postDetails.subheadline || '',
+      callToAction: postDetails.callToAction || '',
+      // Revo 1.0 doesn't include these advanced features
+      contentVariants: undefined,
+      hashtagAnalysis: undefined,
+      marketIntelligence: undefined,
+      localContext: undefined,
     };
 
     return newPost;

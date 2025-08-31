@@ -163,9 +163,9 @@ export function BrandColorProvider({ children }: BrandColorProviderProps) {
     if (primaryColor) {
       const hslPrimary = hexToHsl(primaryColor);
       if (hslPrimary) {
-        newStyle['--primary-hsl'] = hslPrimary;
-        newStyle['--primary'] = hslPrimary;
-        newStyle['--ring'] = hslPrimary;
+        (newStyle as any)['--primary-hsl'] = hslPrimary;
+        (newStyle as any)['--primary'] = hslPrimary;
+        (newStyle as any)['--ring'] = hslPrimary;
         console.log('🎨 Primary color applied:', primaryColor, '→', hslPrimary);
       }
     } else {
@@ -176,8 +176,8 @@ export function BrandColorProvider({ children }: BrandColorProviderProps) {
     if (accentColor) {
       const hslAccent = hexToHsl(accentColor);
       if (hslAccent) {
-        newStyle['--accent-hsl'] = hslAccent;
-        newStyle['--accent'] = hslAccent;
+        (newStyle as any)['--accent-hsl'] = hslAccent;
+        (newStyle as any)['--accent'] = hslAccent;
         console.log('🎨 Accent color applied:', accentColor, '→', hslAccent);
       }
     } else {
@@ -188,8 +188,8 @@ export function BrandColorProvider({ children }: BrandColorProviderProps) {
     if (backgroundColor) {
       const hslBackground = hexToHsl(backgroundColor);
       if (hslBackground) {
-        newStyle['--background-hsl'] = hslBackground;
-        newStyle['--background'] = hslBackground;
+        (newStyle as any)['--background-hsl'] = hslBackground;
+        (newStyle as any)['--background'] = hslBackground;
         console.log('🎨 Background color applied:', backgroundColor, '→', hslBackground);
       }
     } else {

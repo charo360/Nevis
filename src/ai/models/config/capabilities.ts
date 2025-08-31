@@ -9,18 +9,20 @@ import type { Platform } from '@/lib/types';
 // Define capabilities for each model version
 export const modelCapabilities: Record<RevoModelId, ModelCapabilities> = {
   'revo-1.0': {
-    // Basic stable model capabilities
+    // Enhanced stable model capabilities with Gemini 2.5 Flash Image Preview
     contentGeneration: true,
     designGeneration: true,
     videoGeneration: false, // Not supported in 1.0
-    enhancedFeatures: false,
+    enhancedFeatures: true, // Upgraded from false
     artifactSupport: false, // Basic model doesn't support artifacts
     aspectRatios: ['1:1'], // Only square images
-    maxQuality: 7, // Good quality but not premium
+    maxQuality: 9, // Upgraded from 7 for Gemini 2.5 Flash Image Preview
     supportedPlatforms: ['Instagram', 'Facebook', 'Twitter', 'LinkedIn'] as Platform[],
-    advancedPrompting: false,
-    brandConsistency: true, // Basic brand consistency
-    realTimeContext: false // No real-time features
+    advancedPrompting: true,
+    brandConsistency: true, // Enhanced brand consistency
+    realTimeContext: true, // Now enabled for better context
+    perfectTextRendering: true, // NEW: Gemini 2.5 Flash Image Preview feature
+    highResolution: true // NEW: 2048x2048 support
   },
 
   'revo-1.5': {
@@ -62,12 +64,12 @@ export const modelCapabilities: Record<RevoModelId, ModelCapabilities> = {
 // Capability comparison matrix
 export const capabilityMatrix = {
   contentGeneration: {
-    'revo-1.0': 'standard',
+    'revo-1.0': 'enhanced', // Upgraded from standard
     'revo-1.5': 'enhanced',
     'revo-2.0': 'premium'
   },
   designGeneration: {
-    'revo-1.0': 'basic',
+    'revo-1.0': 'enhanced', // Upgraded from basic
     'revo-1.5': 'enhanced',
     'revo-2.0': 'premium'
   },
@@ -82,7 +84,7 @@ export const capabilityMatrix = {
     'revo-2.0': 'premium'
   },
   brandConsistency: {
-    'revo-1.0': 'basic',
+    'revo-1.0': 'enhanced', // Upgraded from basic
     'revo-1.5': 'advanced',
     'revo-2.0': 'perfect'
   },
@@ -127,16 +129,14 @@ export const featureAvailability = {
   outpainting: ['revo-2.0'],
   multimodalReasoning: ['revo-2.0'],
 
-  // Artifact features
-  artifactReference: ['revo-1.5', 'imagen-4'],
-  exactUseArtifacts: ['revo-1.5', 'imagen-4'],
-  textOverlayArtifacts: ['revo-1.5', 'imagen-4'],
+  // Revo 1.0 enhanced features (NEW with Gemini 2.5 Flash Image Preview)
+  perfectTextRendering: ['revo-1.0', 'revo-2.0'],
+  highResolution: ['revo-1.0', 'revo-2.0'],
 
-  // Premium features
-  fourKResolution: ['imagen-4'],
-  perfectTextRendering: ['imagen-4'],
-  advancedStyleControls: ['imagen-4'],
-  premiumQuality: ['imagen-4']
+  // Artifact features
+  artifactReference: ['revo-1.5'],
+  exactUseArtifacts: ['revo-1.5'],
+  textOverlayArtifacts: ['revo-1.5']
 } as const;
 
 // Platform-specific capabilities
@@ -151,12 +151,6 @@ export const platformCapabilities = {
       aspectRatios: ['1:1', '9:16'],
       maxQuality: 8,
       features: ['enhanced-design', 'hashtags', 'stories', 'reels-ready']
-    },
-
-    'imagen-4': {
-      aspectRatios: ['1:1', '9:16', '16:9'],
-      maxQuality: 10,
-      features: ['premium-design', 'hashtags', 'stories', 'reels-ready', '4k-quality']
     }
   },
   Facebook: {
@@ -169,12 +163,6 @@ export const platformCapabilities = {
       aspectRatios: ['16:9', '1:1'],
       maxQuality: 8,
       features: ['enhanced-design', 'page-posts', 'stories']
-    },
-
-    'imagen-4': {
-      aspectRatios: ['16:9', '1:1', '9:16'],
-      maxQuality: 10,
-      features: ['premium-design', 'page-posts', 'stories', '4k-quality']
     }
   },
   Twitter: {
@@ -187,12 +175,6 @@ export const platformCapabilities = {
       aspectRatios: ['16:9', '1:1'],
       maxQuality: 8,
       features: ['enhanced-design', 'tweets', 'threads']
-    },
-
-    'imagen-4': {
-      aspectRatios: ['16:9', '1:1', '9:16'],
-      maxQuality: 10,
-      features: ['premium-design', 'tweets', 'threads', '4k-quality']
     }
   },
   LinkedIn: {
@@ -205,12 +187,6 @@ export const platformCapabilities = {
       aspectRatios: ['16:9', '1:1'],
       maxQuality: 8,
       features: ['enhanced-design', 'professional-posts', 'articles']
-    },
-
-    'imagen-4': {
-      aspectRatios: ['16:9', '1:1', '9:16'],
-      maxQuality: 10,
-      features: ['premium-design', 'professional-posts', 'articles', '4k-quality']
     }
   }
 } as const;

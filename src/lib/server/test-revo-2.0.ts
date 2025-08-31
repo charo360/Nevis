@@ -29,44 +29,56 @@ export async function testRevo20Basic(): Promise<boolean> {
 }
 
 /**
- * Test Revo 2.0 content generation (SERVER-SIDE ONLY)
+ * Test Revo 2.0 generation functionality (SERVER-SIDE ONLY)
  */
 export async function testRevo20Generation(): Promise<boolean> {
-  console.log('🎨 Testing Revo 2.0 content generation...');
-
+  console.log('🧪 Testing Revo 2.0 generation functionality...');
+  
   try {
-    // Create test brand profile
     const testBrandProfile: BrandProfile = {
-      businessName: 'Test Fintech',
-      businessType: 'Fintech',
-      primaryColor: '#2563eb',
-      accentColor: '#f59e0b',
-      backgroundColor: '#ffffff',
-      visualStyle: 'modern'
+      businessName: 'Test Restaurant',
+      businessType: 'Restaurant',
+      location: 'Test City',
+      description: 'A test restaurant for Revo 2.0 testing'
     };
 
-    // Test generation
-    const result = await generateWithRevo20({
-      businessType: 'Fintech',
-      platform: 'instagram',
-      visualStyle: 'modern',
-      imageText: 'Revo 2.0 Test - Digital Banking Revolution',
+    const testOptions = {
+      businessType: 'Restaurant',
+      platform: 'Instagram' as const,
+      visualStyle: 'modern' as const,
+      imageText: 'Revo 2.0 Test Generation',
       brandProfile: testBrandProfile,
-      aspectRatio: '1:1'
+      aspectRatio: '1:1' as const,
+      includePeopleInDesigns: false,
+      useLocalLanguage: false
+    };
+
+    console.log('🔄 Generating test content with Revo 2.0...');
+    const result = await generateWithRevo20(testOptions);
+    
+    // Validate result
+    const hasImage = !!result.imageUrl;
+    const hasCaption = !!result.caption;
+    const hasHashtags = result.hashtags && result.hashtags.length > 0;
+    const hasQualityScore = result.qualityScore > 0;
+    
+    console.log('📊 Generation test results:', {
+      hasImage,
+      hasCaption,
+      hasHashtags,
+      hasQualityScore,
+      model: result.model,
+      processingTime: result.processingTime
     });
 
-    if (result.imageUrl && result.imageUrl.startsWith('data:image')) {
+    if (hasImage && hasCaption && hasHashtags && hasQualityScore) {
       console.log('✅ Revo 2.0 generation test PASSED');
-      console.log('🖼️ Image generated successfully');
-      console.log('⭐ Quality Score:', result.qualityScore);
-      console.log('⚡ Processing Time:', result.processingTime + 'ms');
-      console.log('🔧 Enhancements:', result.enhancementsApplied.join(', '));
       return true;
     } else {
-      console.log('❌ Revo 2.0 generation test FAILED - No image URL');
+      console.log('❌ Revo 2.0 generation test FAILED - Missing required components');
       return false;
     }
-
+    
   } catch (error) {
     console.error('❌ Revo 2.0 generation test error:', error);
     return false;
@@ -77,47 +89,55 @@ export async function testRevo20Generation(): Promise<boolean> {
  * Test Revo 2.0 with different aspect ratios (SERVER-SIDE ONLY)
  */
 export async function testRevo20AspectRatios(): Promise<boolean> {
-  console.log('📐 Testing Revo 2.0 aspect ratios...');
-
-  const aspectRatios: Array<'1:1' | '16:9' | '9:16'> = ['1:1', '16:9', '9:16'];
+  console.log('🧪 Testing Revo 2.0 aspect ratio support...');
+  
+  const aspectRatios: Array<'1:1' | '16:9' | '9:16' | '21:9' | '4:5'> = ['1:1', '16:9', '9:16'];
   let successCount = 0;
-
+  
   const testBrandProfile: BrandProfile = {
     businessName: 'Test Business',
-    businessType: 'Technology',
-    primaryColor: '#10b981',
-    visualStyle: 'modern'
+    businessType: 'Business',
+    location: 'Test Location',
+    description: 'Test business for aspect ratio testing'
   };
 
   for (const aspectRatio of aspectRatios) {
     try {
-      console.log(`📱 Testing ${aspectRatio} aspect ratio...`);
-
+      console.log(`🔄 Testing aspect ratio: ${aspectRatio}`);
+      
       const result = await generateWithRevo20({
-        businessType: 'Technology',
-        platform: 'instagram',
+        businessType: 'Business',
+        platform: 'Instagram',
         visualStyle: 'modern',
-        imageText: `${aspectRatio} Test`,
+        imageText: `Test ${aspectRatio} aspect ratio`,
         brandProfile: testBrandProfile,
-        aspectRatio
+        aspectRatio,
+        includePeopleInDesigns: false,
+        useLocalLanguage: false
       });
 
       if (result.imageUrl) {
-        console.log(`✅ ${aspectRatio} test PASSED`);
+        console.log(`✅ Aspect ratio ${aspectRatio} test PASSED`);
         successCount++;
       } else {
-        console.log(`❌ ${aspectRatio} test FAILED`);
+        console.log(`❌ Aspect ratio ${aspectRatio} test FAILED - No image generated`);
       }
-
+      
     } catch (error) {
-      console.error(`❌ ${aspectRatio} test error:`, error);
+      console.error(`❌ Aspect ratio ${aspectRatio} test error:`, error);
     }
   }
 
-  const allPassed = successCount === aspectRatios.length;
+  const success = successCount === aspectRatios.length;
   console.log(`📊 Aspect ratio tests: ${successCount}/${aspectRatios.length} passed`);
-
-  return allPassed;
+  
+  if (success) {
+    console.log('✅ Revo 2.0 aspect ratio test PASSED');
+  } else {
+    console.log('❌ Revo 2.0 aspect ratio test FAILED');
+  }
+  
+  return success;
 }
 
 /**
@@ -140,30 +160,27 @@ export async function runRevo20TestSuite(): Promise<{
 
   try {
     // Test 1: Basic availability
-    console.log('\n1️⃣ Testing basic availability...');
     results.basicTest = await testRevo20Basic();
-
-    // Test 2: Content generation
-    console.log('\n2️⃣ Testing content generation...');
-    results.generationTest = await testRevo20Generation();
-
-    // Test 3: Aspect ratios
-    console.log('\n3️⃣ Testing aspect ratios...');
-    results.aspectRatioTest = await testRevo20AspectRatios();
+    
+    // Test 2: Generation functionality (only if basic test passes)
+    if (results.basicTest) {
+      results.generationTest = await testRevo20Generation();
+    }
+    
+    // Test 3: Aspect ratio support (only if generation test passes)
+    if (results.generationTest) {
+      results.aspectRatioTest = await testRevo20AspectRatios();
+    }
 
     // Overall success
     results.overallSuccess = results.basicTest && results.generationTest && results.aspectRatioTest;
 
-    console.log('\n📊 Test Results Summary:');
-    console.log(`   Basic Test: ${results.basicTest ? '✅ PASSED' : '❌ FAILED'}`);
-    console.log(`   Generation Test: ${results.generationTest ? '✅ PASSED' : '❌ FAILED'}`);
-    console.log(`   Aspect Ratio Test: ${results.aspectRatioTest ? '✅ PASSED' : '❌ FAILED'}`);
-    console.log(`   Overall: ${results.overallSuccess ? '🚀 ALL TESTS PASSED' : '⚠️ SOME TESTS FAILED'}`);
-
+    console.log('📊 Comprehensive test results:', results);
+    
     if (results.overallSuccess) {
-      console.log('\n🚀 Revo 2.0 is fully operational and ready for production!');
+      console.log('🎉 All Revo 2.0 tests PASSED! System is fully operational.');
     } else {
-      console.log('\n⚠️ Some Revo 2.0 tests failed. Check the logs above for details.');
+      console.log('❌ Some Revo 2.0 tests FAILED. Check individual test results.');
     }
 
   } catch (error) {
