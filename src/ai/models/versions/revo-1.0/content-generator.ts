@@ -94,7 +94,8 @@ export class Revo10ContentGenerator implements IContentGenerator {
         headline: postDetails.catchyWords,
         subheadline: postDetails.subheadline,
         callToAction: postDetails.callToAction,
-        realTimeContext: realTimeContext
+        realTimeContext: realTimeContext,
+        creativeContext: (postDetails as any).creativeContext // 🎨 Pass creative context to image generation
       });
 
       // Update variants with the generated image
