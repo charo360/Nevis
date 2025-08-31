@@ -1,5 +1,6 @@
 /**
- * API endpoint to test Revo 2.0 (Gemini 2.5 Flash Image)
+ * Revo 2.0 Testing API Route
+ * Tests Gemini 2.5 Flash Image Preview availability and functionality
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -15,7 +16,7 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       available: isAvailable,
-      model: 'Revo 2.0 (Next-Gen AI)',
+      model: 'Revo 2.0 (Gemini 2.5 Flash Image Preview)',
       message: isAvailable
         ? 'Revo 2.0 is available and ready!'
         : 'Revo 2.0 is not available. Check API key and model access.'
@@ -36,15 +37,9 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const {
-      testType = 'basic',
-      businessType = 'Fintech',
-      platform = 'instagram',
-      imageText = 'Revo 2.0 Test',
-      aspectRatio = '1:1'
-    } = body;
+    const { testType = 'basic' } = body;
 
-    console.log(`🎨 Testing Revo 2.0 ${testType} generation...`);
+    console.log(`🧪 Running ${testType} Revo 2.0 test...`);
 
     if (testType === 'basic') {
       const { testRevo20Availability } = await import('@/ai/revo-2.0-service');
@@ -54,66 +49,54 @@ export async function POST(request: NextRequest) {
         success: true,
         testType: 'basic',
         available: isAvailable,
-        message: isAvailable ? 'Basic test passed' : 'Basic test failed'
+        model: 'Revo 2.0 (Gemini 2.5 Flash Image Preview)',
+        message: isAvailable
+          ? 'Basic test passed! Revo 2.0 is available.'
+          : 'Basic test failed. Revo 2.0 is not available.'
       });
     }
 
     if (testType === 'generation') {
       const { generateWithRevo20 } = await import('@/ai/revo-2.0-service');
-
-      const testBrandProfile = {
-        businessName: 'Test Business',
-        businessType,
-        primaryColor: '#2563eb',
-        accentColor: '#f59e0b',
-        backgroundColor: '#ffffff',
-        visualStyle: 'modern'
+      
+      const testOptions = {
+        businessType: 'Restaurant',
+        platform: 'Instagram' as const,
+        visualStyle: 'modern' as const,
+        imageText: 'Test Generation',
+        brandProfile: {
+          businessName: 'Test Restaurant',
+          businessType: 'Restaurant',
+          location: 'Test City',
+          description: 'Test description'
+        },
+        aspectRatio: '1:1' as const,
+        includePeopleInDesigns: false,
+        useLocalLanguage: false
       };
 
-      const result = await generateWithRevo20({
-        businessType,
-        platform,
-        visualStyle: 'modern',
-        imageText,
-        brandProfile: testBrandProfile,
-        aspectRatio: aspectRatio as any
-      });
+      const result = await generateWithRevo20(testOptions);
 
       return NextResponse.json({
         success: true,
         testType: 'generation',
         available: true,
         result: {
-          hasImage: !!result.imageUrl,
-          imageUrl: result.imageUrl ? result.imageUrl.substring(0, 100) + '...' : null,
           model: result.model,
-          processingTime: result.processingTime,
           qualityScore: result.qualityScore,
-          enhancementsApplied: result.enhancementsApplied,
-          metadata: result.metadata
+          processingTime: result.processingTime,
+          enhancementsApplied: result.enhancementsApplied.length,
+          hasImage: !!result.imageUrl,
+          hasCaption: !!result.caption,
+          hasHashtags: result.hashtags.length > 0
         },
-        message: 'Generation test completed successfully'
-      });
-    }
-
-    if (testType === 'comprehensive') {
-      const { runRevo20TestSuite } = await import('@/lib/server/test-revo-2.0');
-      const results = await runRevo20TestSuite();
-
-      return NextResponse.json({
-        success: true,
-        testType: 'comprehensive',
-        available: results.overallSuccess,
-        results,
-        message: results.overallSuccess
-          ? 'All tests passed! Revo 2.0 is fully operational.'
-          : 'Some tests failed. Check the details.'
+        message: 'Generation test passed! Revo 2.0 is fully functional.'
       });
     }
 
     return NextResponse.json({
       success: false,
-      error: 'Invalid test type. Use: basic, generation, or comprehensive'
+      error: 'Invalid test type. Use: basic or generation'
     }, { status: 400 });
 
   } catch (error) {

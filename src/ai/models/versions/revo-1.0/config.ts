@@ -7,20 +7,20 @@ import type { ModelConfig } from '../../types/model-types';
 
 // Revo 1.0 specific configuration
 export const revo10Config: ModelConfig = {
-  aiService: 'gemini-2.0',
-  fallbackServices: ['gemini-2.5', 'openai'],
+  aiService: 'gemini-2.5-flash-image-preview',
+  fallbackServices: ['gemini-2.5', 'gemini-2.0', 'openai'],
   maxRetries: 3,
-  timeout: 30000, // 30 seconds
+  timeout: 45000, // 45 seconds (increased for better quality)
   qualitySettings: {
-    imageResolution: '1024x1024',
-    compressionLevel: 85,
-    enhancementLevel: 7 // Good enhancement (was too basic)
+    imageResolution: '2048x2048', // Upgraded from 1024x1024
+    compressionLevel: 92, // Upgraded from 85
+    enhancementLevel: 9 // Upgraded from 7 (maximum enhancement)
   },
   promptSettings: {
-    temperature: 0.5, // Reduced for more consistent, readable text
+    temperature: 0.7, // Increased from 0.5 for more creative output
     maxTokens: 2048,
-    topP: 0.8,        // Reduced for better text quality
-    topK: 30          // Reduced for more focused output
+    topP: 0.9, // Increased from 0.8 for better quality
+    topK: 40 // Increased from 30 for more variety
   }
 };
 
@@ -34,17 +34,17 @@ export const revo10Constants = {
   // Capabilities
   SUPPORTED_ASPECT_RATIOS: ['1:1'],
   SUPPORTED_PLATFORMS: ['Instagram', 'Facebook', 'Twitter', 'LinkedIn'],
-  MAX_QUALITY_SCORE: 7.5,
+  MAX_QUALITY_SCORE: 9.0, // Upgraded from 7.5
 
   // Performance targets
-  TARGET_PROCESSING_TIME: 20000, // 20 seconds
-  TARGET_SUCCESS_RATE: 0.95, // 95%
-  TARGET_QUALITY_SCORE: 7.0,
+  TARGET_PROCESSING_TIME: 30000, // 30 seconds (increased for better quality)
+  TARGET_SUCCESS_RATE: 0.97, // 97% (increased from 95%)
+  TARGET_QUALITY_SCORE: 8.5, // Upgraded from 7.0
 
   // Resource limits
   MAX_CONTENT_LENGTH: 2000,
   MAX_HASHTAGS: 15,
-  MAX_IMAGE_SIZE: 1024,
+  MAX_IMAGE_SIZE: 2048, // Upgraded from 1024
 
   // Feature flags
   FEATURES: {
@@ -54,27 +54,34 @@ export const revo10Constants = {
     MULTIPLE_ASPECT_RATIOS: false,
     VIDEO_GENERATION: false,
     ADVANCED_PROMPTING: true, // Enable for better prompts
-    ENHANCED_DESIGN: true     // Enable for better designs!
+    ENHANCED_DESIGN: true,    // Enable for better designs!
+    PERFECT_TEXT_RENDERING: true, // NEW: Gemini 2.5 Flash Image Preview feature
+    HIGH_RESOLUTION: true,    // NEW: 2048x2048 resolution support
+    NATIVE_IMAGE_GENERATION: true // NEW: Direct image generation capability
   },
 
   // Pricing
-  CREDITS_PER_GENERATION: 1,
-  CREDITS_PER_DESIGN: 1,
-  TIER: 'basic'
+  CREDITS_PER_GENERATION: 1.5, // Upgraded from 1 for enhanced capabilities
+  CREDITS_PER_DESIGN: 1.5, // Upgraded from 1 for enhanced capabilities
+  TIER: 'enhanced' // Upgraded from basic
 } as const;
 
 // Revo 1.0 specific prompts and templates
 export const revo10Prompts = {
   // Content generation prompts
-  CONTENT_SYSTEM_PROMPT: `You are a reliable content generator for Revo 1.0, focused on creating stable, consistent social media content. 
-Your goal is to produce professional, engaging content that follows brand guidelines and platform best practices.
+  CONTENT_SYSTEM_PROMPT: `You are an elite social media content strategist for Revo 1.0, powered by Gemini 2.5 Flash Image Preview for enhanced quality and perfect text rendering.
+Your expertise spans viral content creation, brand storytelling, and audience engagement optimization.
 
-Key principles:
-- Maintain consistent quality and tone
-- Focus on clarity and engagement
-- Follow platform-specific formatting
-- Ensure brand consistency
-- Keep content concise and impactful`,
+Core competencies:
+- Craft scroll-stopping, engagement-driving captions
+- Create strategic hashtag combinations for maximum reach
+- Develop brand-consistent content that converts
+- Optimize content for platform-specific algorithms
+- Generate compelling headlines and calls-to-action
+- Integrate local relevance and cultural context
+- Drive meaningful audience interaction and community building
+- Leverage trending topics and industry insights
+- Create content that balances professionalism with personality`,
 
   CONTENT_USER_PROMPT_TEMPLATE: `Generate social media content for:
 Business: {businessName}
@@ -87,49 +94,151 @@ Brand Information:
 - Primary Color: {primaryColor}
 - Visual Style: {visualStyle}
 - Target Audience: {targetAudience}
+- Services: {services}
+- Key Features: {keyFeatures}
+- Competitive Advantages: {competitiveAdvantages}
+- Content Themes: {contentThemes}
 
 Requirements:
-- Create engaging, professional content
-- Include relevant hashtags (5-15)
-- Generate catchy words for the image
-- Ensure platform-appropriate formatting
-- Maintain brand consistency
+- Create engaging, professional content that reflects the business's unique value proposition
+- Incorporate services and key features naturally into the content
+- Highlight competitive advantages when relevant
+- Include relevant hashtags (5-15) that align with content themes
+- Generate catchy words for the image that capture the brand essence
+- Ensure platform-appropriate formatting and tone
+- Maintain brand consistency with colors and visual style
 - Use only clean, readable text (no special characters, symbols, or garbled text)
 - Generate content in proper English with correct spelling and grammar
-- Avoid any corrupted or unreadable character sequences`,
+- Avoid any corrupted or unreadable character sequences
+- Make the content location-specific and culturally relevant when appropriate`,
 
   // Design generation prompts
-  DESIGN_SYSTEM_PROMPT: `You are a design generator for Revo 1.0, creating clean, professional 1:1 square images for social media.
-Focus on simplicity, brand consistency, and clear visual communication.
+  DESIGN_SYSTEM_PROMPT: `You are an elite visual designer and creative director for Revo 1.0, powered by Gemini 2.5 Flash Image Preview for professional-grade design generation.
+Your expertise spans advanced composition, typography, color theory, and modern design trends. You create designs that surpass Canva quality.
 
-Design principles:
-- Clean, uncluttered layouts
-- Strong brand color usage
-- Clear, readable text (no garbled or corrupted characters)
-- Professional appearance
-- Platform optimization
-- Text must be perfectly readable and properly spelled
-- No special symbols or unreadable character sequences`,
+CORE DESIGN PHILOSOPHY:
+- Create visually stunning, professional designs that command attention
+- Apply advanced design principles and composition rules
+- Use sophisticated typography and color harmony
+- Implement modern design trends and visual techniques
+- Ensure every element serves a purpose and enhances the message
+- Generate designs that convert viewers into customers
 
-  DESIGN_USER_PROMPT_TEMPLATE: `Create a 1:1 square social media design for:
-Business: {businessName}
-Type: {businessType}
-Platform: {platform}
-Visual Style: {visualStyle}
+ADVANCED DESIGN PRINCIPLES:
+**COMPOSITION & VISUAL HIERARCHY:**
+- Apply Rule of Thirds: Position key elements along grid lines/intersections
+- Create clear visual hierarchy using size, contrast, and positioning
+- Establish strong focal points that draw the eye immediately
+- Use negative space strategically for breathing room and emphasis
+- Balance elements with sophisticated asymmetrical composition
+- Guide viewer's eye through design with leading lines and flow
 
-Brand Colors:
-- Primary: {primaryColor}
-- Accent: {accentColor}
-- Background: {backgroundColor}
+**TYPOGRAPHY EXCELLENCE:**
+- Establish clear typographic hierarchy (Primary headline, secondary, body)
+- Use maximum 2-3 font families with strong contrast
+- Ensure text contrast ratio meets accessibility standards (4.5:1 minimum)
+- Apply proper letter spacing, line height, and alignment
+- Scale typography for platform and viewing distance
+- Use typography as a design element, not just information delivery
 
-Text to include: {imageText}
+**COLOR THEORY & HARMONY:**
+- Apply color psychology appropriate to business type and message
+- Use complementary colors for high contrast and attention
+- Apply analogous colors for harmony and cohesion
+- Implement triadic color schemes for vibrant, balanced designs
+- Use 60-30-10 rule: 60% dominant, 30% secondary, 10% accent
+- Ensure sufficient contrast between text and background
 
-Requirements:
-- 1:1 aspect ratio (square)
-- Clean, professional design
-- Use brand colors effectively
-- Ensure text is readable
-- Optimize for {platform}`,
+**MODERN DESIGN TRENDS:**
+- Embrace minimalism with purposeful white space
+- Use bold, geometric shapes and clean lines
+- Apply subtle gradients and depth effects
+- Incorporate authentic, diverse imagery when appropriate
+- Use consistent border radius and spacing
+- Apply subtle shadows and depth for modern dimensionality`,
+
+  DESIGN_USER_PROMPT_TEMPLATE: `Create a professional-grade 2048x2048 social media design that surpasses Canva quality for:
+
+BUSINESS CONTEXT:
+- Business: {businessName}
+- Industry: {businessType}
+- Platform: {platform}
+- Visual Style: {visualStyle}
+- Target Message: {imageText}
+
+BRAND IDENTITY SYSTEM:
+- Primary Color: {primaryColor} (60% usage - dominant color)
+- Accent Color: {accentColor} (30% usage - secondary elements)
+- Background: {backgroundColor} (10% usage - highlights and details)
+- Logo Integration: {logoInstruction}
+
+PLATFORM-SPECIFIC OPTIMIZATION FOR {platform}:
+${'{platform}' === 'Instagram' ? `
+- Mobile-first design with bold, clear elements
+- High contrast colors that pop on small screens
+- Text minimum 24px equivalent for readability
+- Center important elements for square crop
+- Thumb-stopping power for fast scroll feeds
+- Logo: Bottom right or naturally integrated` : ''}
+${'{platform}' === 'LinkedIn' ? `
+- Professional, business-appropriate aesthetics
+- Corporate design standards and clean look
+- Clear value proposition for business audience
+- Professional photography and imagery
+- Thought leadership positioning
+- Logo: Prominent for brand authority` : ''}
+${'{platform}' === 'Facebook' ? `
+- Desktop and mobile viewing optimization
+- Engagement and shareability focus
+- Clear value proposition in hierarchy
+- Authentic, relatable imagery
+- Logo: Top left or bottom right` : ''}
+${'{platform}' === 'Twitter' ? `
+- Rapid consumption and high engagement
+- Bold, contrasting timeline colors
+- Minimal, impactful text
+- Trending visual styles
+- Logo: Small, subtle placement` : ''}
+
+BUSINESS TYPE DESIGN DNA FOR {businessType}:
+Apply industry-specific design principles and visual language appropriate for this business type.
+
+ADVANCED COMPOSITION REQUIREMENTS:
+- Apply Rule of Thirds for element placement
+- Create strong focal point with {imageText} as primary message
+- Use sophisticated asymmetrical balance
+- Implement clear visual hierarchy: Headline → Supporting elements → CTA
+- Strategic negative space for premium feel
+- Leading lines to guide eye flow
+
+TYPOGRAPHY SPECIFICATIONS:
+- Primary headline: Bold, attention-grabbing, high contrast
+- Secondary text: Supporting, readable, complementary
+- Ensure 4.5:1 contrast ratio minimum
+- Professional font pairing (max 2-3 families)
+- Proper spacing and alignment
+
+COLOR IMPLEMENTATION:
+- Use {primaryColor} as dominant (60%)
+- {accentColor} for secondary elements (30%)
+- {backgroundColor} for highlights (10%)
+- Apply color psychology for {businessType}
+- Ensure accessibility and contrast
+
+MODERN DESIGN ELEMENTS:
+- Subtle gradients and depth effects
+- Clean geometric shapes
+- Consistent border radius
+- Professional shadows and lighting
+- Premium visual texture and finish
+
+QUALITY STANDARDS:
+- Professional agency-level quality
+- Better than Canva templates
+- Print-ready resolution and clarity
+- Perfect text rendering
+- Sophisticated visual appeal
+- Commercial-grade finish`,
 
   // Error messages
   ERROR_MESSAGES: {
@@ -175,28 +284,28 @@ export const revo10Metrics = {
   // Expected performance benchmarks
   BENCHMARKS: {
     processingTime: {
-      target: 20000, // 20 seconds
-      acceptable: 30000, // 30 seconds
-      maximum: 45000 // 45 seconds
+      target: 30000, // 30 seconds (upgraded from 20s)
+      acceptable: 40000, // 40 seconds (upgraded from 30s)
+      maximum: 60000 // 60 seconds (upgraded from 45s)
     },
     qualityScore: {
-      minimum: 5.0,
-      target: 7.0,
-      maximum: 7.5
+      minimum: 7.0, // Upgraded from 5.0
+      target: 8.5, // Upgraded from 7.0
+      maximum: 9.0 // Upgraded from 7.5
     },
     successRate: {
-      minimum: 0.90, // 90%
-      target: 0.95, // 95%
-      maximum: 0.98 // 98%
+      minimum: 0.95, // Upgraded from 90%
+      target: 0.97, // Upgraded from 95%
+      maximum: 0.99 // Upgraded from 98%
     }
   },
 
   // Monitoring thresholds
   ALERTS: {
-    processingTimeHigh: 35000, // Alert if processing takes > 35s
-    qualityScoreLow: 6.0, // Alert if quality drops below 6.0
-    successRateLow: 0.92, // Alert if success rate drops below 92%
-    errorRateHigh: 0.08 // Alert if error rate exceeds 8%
+    processingTimeHigh: 45000, // Alert if processing takes > 45s (upgraded from 35s)
+    qualityScoreLow: 7.5, // Alert if quality drops below 7.5 (upgraded from 6.0)
+    successRateLow: 0.95, // Alert if success rate drops below 95% (upgraded from 92%)
+    errorRateHigh: 0.05 // Alert if error rate exceeds 5% (upgraded from 8%)
   }
 } as const;
 

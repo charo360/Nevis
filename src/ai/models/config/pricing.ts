@@ -8,10 +8,10 @@ import type { ModelPricing, RevoModelId } from '../types/model-types';
 // Pricing configuration for each model
 export const modelPricing: Record<RevoModelId, ModelPricing> = {
   'revo-1.0': {
-    creditsPerGeneration: 1,
-    creditsPerDesign: 1,
+    creditsPerGeneration: 1.5, // Slightly increased from 1 for enhanced capabilities
+    creditsPerDesign: 1.5, // Slightly increased from 1 for enhanced capabilities
     creditsPerVideo: 0, // Video not supported
-    tier: 'basic'
+    tier: 'enhanced' // Upgraded from basic
   },
 
   'revo-1.5': {

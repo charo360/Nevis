@@ -127,10 +127,10 @@ export const addOns: AddOn[] = [
 ];
 
 export const revoCreditCosts = {
-  'revo-1.0': 1,
-  'revo-1.5': 1.5,
-  'revo-2.0': 2
-};
+  'revo-1.0': 1.5, // Upgraded from 1 for enhanced capabilities
+  'revo-1.5': 2,
+  'revo-2.0': 5
+} as const;
 
 export const pricingFeatures = {
   keyBenefits: [
@@ -141,7 +141,7 @@ export const pricingFeatures = {
   faq: [
     {
       question: 'How do credits work?',
-      answer: 'Credits vary by AI model: Revo 1.0 = 1 credit, Revo 1.5 = 1.5 credits, Revo 2.0 = 2 credits per generation. Regenerating costs the same amount per attempt.'
+      answer: 'Credits vary by AI model: Revo 1.0 = 1.5 credits, Revo 1.5 = 2 credits, Revo 2.0 = 5 credits per generation. Regenerating costs the same amount per attempt.'
     },
     {
       question: 'Do credits expire?',
@@ -157,7 +157,7 @@ export const pricingFeatures = {
     },
     {
       question: 'What are the different Revo versions?',
-      answer: 'Revo 1.0 (1 credit) - Basic AI, Revo 1.5 (1.5 credits) - Enhanced AI with better quality, Revo 2.0 (2 credits) - Latest AI with premium features and highest quality.'
+      answer: 'Revo 1.0 (1.5 credits) - Basic AI, Revo 1.5 (2 credits) - Enhanced AI with better quality, Revo 2.0 (5 credits) - Latest AI with premium features and highest quality.'
     },
     {
       question: 'Can I get a refund?',

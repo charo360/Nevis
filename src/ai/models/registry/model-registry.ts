@@ -233,19 +233,24 @@ class ModelRegistry implements IModelRegistry {
 
     try {
       // Import and register all model implementations
+      console.log('📦 Importing Revo 1.0...');
       const { Revo10Implementation } = await import('../versions/revo-1.0');
-      const { Revo15Implementation } = await import('../versions/revo-1.5');
-      const { Imagen4Implementation } = await import('../versions/imagen-4');
+      console.log('✅ Revo 1.0 imported successfully');
 
+      console.log('📦 Importing Revo 1.5...');
+      const { Revo15Implementation } = await import('../versions/revo-1.5');
+      console.log('✅ Revo 1.5 imported successfully');
+
+      console.log('🔧 Registering models...');
       this.registerModel(new Revo10Implementation());
       this.registerModel(new Revo15Implementation());
-      this.registerModel(new Imagen4Implementation());
 
       this.initialized = true;
       console.log('✅ Model Registry initialized successfully');
       console.log('📊 Registry Stats:', this.getRegistryStats());
     } catch (error) {
       console.error('❌ Failed to initialize Model Registry:', error);
+      console.error('Error details:', error instanceof Error ? error.stack : 'Unknown error');
       throw error;
     }
   }
