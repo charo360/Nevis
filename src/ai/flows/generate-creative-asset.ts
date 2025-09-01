@@ -40,6 +40,7 @@ const CreativeAssetInputSchema = z.object({
     brandProfile: z.custom<BrandProfile>().nullable().describe('The brand profile object.'),
     maskDataUrl: z.string().nullable().optional().describe('An optional mask image for inpainting as a data URI.'),
     aspectRatio: z.enum(['16:9', '9:16']).optional().describe('The aspect ratio for video generation.'),
+    preferredModel: z.string().optional().describe('Preferred model for generation (e.g., gemini-2.5-flash-image-preview).'),
 });
 export type CreativeAssetInput = z.infer<typeof CreativeAssetInputSchema>;
 
@@ -408,8 +409,23 @@ Ensure the text is readable and well-composed.`
                 while (attempts < maxAttempts && !finalImageUrl) {
                     attempts++;
 
+                    // Determine which model to use based on preferred model parameter
+                    let modelToUse = 'googleai/gemini-2.0-flash-preview-image-generation'; // Default
+
+                    if (input.preferredModel) {
+                        // Map Gemini model names to Genkit model identifiers
+                        const modelMapping: Record<string, string> = {
+                            'gemini-2.5-flash-image-preview': 'googleai/gemini-2.5-flash-image-preview',
+                            'gemini-2.0-flash-preview-image-generation': 'googleai/gemini-2.0-flash-preview-image-generation',
+                            'gemini-2.5-flash': 'googleai/gemini-2.5-flash'
+                        };
+
+                        modelToUse = modelMapping[input.preferredModel] || modelToUse;
+                        console.log(`🎨 Using preferred model: ${input.preferredModel} -> ${modelToUse}`);
+                    }
+
                     const { media } = await generateWithRetry({
-                        model: 'googleai/gemini-2.0-flash-preview-image-generation',
+                        model: modelToUse,
                         prompt: promptParts,
                         config: {
                             responseModalities: ['TEXT', 'IMAGE'],

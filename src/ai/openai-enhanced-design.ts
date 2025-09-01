@@ -150,10 +150,10 @@ function buildDALLE3Prompt(input: OpenAIEnhancedDesignInput): string {
   ];
   const selectedModifier = styleModifiers[Math.floor(Math.random() * styleModifiers.length)];
 
-  // Enhanced color instructions optimized for DALL-E 3's color accuracy
+  // STRICT 3-color maximum with NO LINES enforcement
   const colorInstructions = brandProfile.primaryColor && brandProfile.accentColor
-    ? `Primary brand color: ${brandProfile.primaryColor}, Secondary brand color: ${brandProfile.accentColor}. Use these colors prominently and consistently throughout the design.`
-    : 'Use a cohesive, professional color palette with high contrast and modern appeal.';
+    ? `MAXIMUM 3 COLORS ONLY: Primary ${brandProfile.primaryColor} (dominant 60-70%), Secondary ${brandProfile.accentColor} (highlights 20-30%), Background ${brandProfile.backgroundColor || '#ffffff'} (base 10-20%). ABSOLUTE LIMITS: These 3 colors only - NO 4th color allowed, NO LINES of any kind. FORBIDDEN: Any design with more than 3 colors total, any lines, borders, dividers.`
+    : 'MAXIMUM 3 COLORS TOTAL, NO LINES - Use only the specified brand colors with no linear elements.';
 
   // Advanced people inclusion logic for better engagement with HD face rendering
   const shouldIncludePeople = shouldIncludePeopleInDesign(businessType, imageText, visualStyle);
@@ -506,11 +506,13 @@ function buildGeminiFallbackPrompt(input: OpenAIEnhancedDesignInput): string {
   const { businessType, platform, visualStyle, imageText, brandProfile, brandConsistency, artifactInstructions } = input;
 
   const colorInstructions = brandProfile.primaryColor && brandProfile.accentColor && brandProfile.backgroundColor
-    ? `**MANDATORY BRAND COLORS - MUST USE EXACTLY:**
-       - Primary Color: ${brandProfile.primaryColor} (use as main brand color)
-       - Accent Color: ${brandProfile.accentColor} (use for highlights and CTAs)
-       - Background Color: ${brandProfile.backgroundColor} (use as base background)
-       - These colors are REQUIRED and must be prominently featured in the design`
+    ? `**MAXIMUM 3 COLORS ONLY, NO LINES - BRAND COLORS:**
+       - Primary Color: ${brandProfile.primaryColor} (DOMINANT 60-70% of design)
+       - Accent Color: ${brandProfile.accentColor} (HIGHLIGHTS 20-30% of design)
+       - Background Color: ${brandProfile.backgroundColor} (BASE 10-20% of design)
+       - ABSOLUTE LIMITS: These 3 colors only - NO 4th color allowed, NO LINES
+       - FORBIDDEN: Any design using more than 3 colors total, any lines/borders/dividers
+       - STRICT RULES: Maximum 3 colors, no linear elements in entire design`
     : '';
 
   const designExampleInstructions = brandConsistency?.strictConsistency && brandProfile.designExamples && brandProfile.designExamples.length > 0

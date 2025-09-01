@@ -180,23 +180,26 @@ MOOD & EMOTIONS:
 - Mood keywords: ${concept.moodKeywords.join(', ')}
 
 BRAND INTEGRATION:
-- Colors: ${concept.colorSuggestions.join(', ')}
+- Colors: ${brandProfile.primaryColor ? `Primary: ${brandProfile.primaryColor}, Accent: ${brandProfile.accentColor}, Background: ${brandProfile.backgroundColor}` : concept.colorSuggestions.join(', ')}
 - Business name: ${brandProfile.businessName || businessType}
+- Logo: ${brandProfile.logoDataUrl ? 'Include provided brand logo prominently' : 'No logo provided'}
 - Professional, trustworthy appearance
 
 QUALITY STANDARDS:
 - Ultra-high resolution and clarity
 - Professional composition
 - Perfect typography and text rendering
-- Balanced color scheme
+- MAXIMUM 3 COLORS ONLY (use brand colors if provided)
+- NO LINES: no decorative lines, borders, dividers, or linear elements
 - Platform-optimized dimensions
 - Brand consistency throughout
+- Clean, minimalist design with 50%+ white space
 
 Create a stunning, professional design that captures the essence of this ${businessType} business.`;
 }
 
 /**
- * Generate image using Gemini 2.5 Flash Image Preview (same as Revo 1.0 approach)
+ * Generate image using Gemini 2.5 Flash Image Preview with logo support
  */
 async function generateImageWithGemini(prompt: string, options: Revo20GenerationOptions): Promise<{ imageUrl: string }> {
   const maxRetries = 3;
@@ -216,13 +219,37 @@ async function generateImageWithGemini(prompt: string, options: Revo20Generation
         },
       });
 
-      // Use the same prompt structure as Revo 1.0 but enhanced for Revo 2.0
-      const enhancedPrompt = [
+      // Prepare the generation request with logo if available
+      const generationParts = [
         'You are an expert graphic designer using Gemini 2.5 Flash Image Preview. Create professional, high-quality social media images with perfect text rendering and 2048x2048 resolution.',
         prompt
       ];
 
-      const result = await model.generateContent(enhancedPrompt);
+      // If logo is provided, include it in the generation
+      if (options.brandProfile.logoDataUrl) {
+        console.log('🏢 Revo 2.0: Including brand logo in image generation...');
+
+        // Extract the base64 data and mime type from the data URL
+        const logoMatch = options.brandProfile.logoDataUrl.match(/^data:([^;]+);base64,(.+)$/);
+        if (logoMatch) {
+          const [, mimeType, base64Data] = logoMatch;
+
+          generationParts.push({
+            inlineData: {
+              data: base64Data,
+              mimeType: mimeType
+            }
+          });
+
+          // Update the prompt to reference the provided logo
+          const logoPrompt = `\n\nIMPORTANT: Use the provided logo image above in your design. Integrate it naturally into the layout - do not create a new logo. The logo should be prominently displayed but not overwhelming the design.`;
+          generationParts[1] = prompt + logoPrompt;
+        } else {
+          console.log('⚠️ Revo 2.0: Invalid logo data URL format, proceeding without logo');
+        }
+      }
+
+      const result = await model.generateContent(generationParts);
       const response = await result.response;
 
       console.log('✅ Revo 2.0 generation successful!');

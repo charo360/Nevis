@@ -96,12 +96,13 @@ Please create a detailed design specification that includes:
    - Logo/brand element positioning
    - White space and balance
 
-2. **COLOR PALETTE:**
-   - Primary colors (use brand colors as base)
-   - Secondary/accent colors
-   - Background colors and gradients
-   - Text colors for optimal readability
-   - Color psychology and mood
+2. **COLOR PALETTE - MAXIMUM 3 COLORS ONLY, NO LINES:**
+   - Primary: ${input.brandProfile.primaryColor} (DOMINANT 60-70% usage)
+   - Accent: ${input.brandProfile.accentColor} (HIGHLIGHTS 20-30% usage)
+   - Background: ${input.brandProfile.backgroundColor} (BASE 10-20% usage)
+   - Text: High contrast white or black only for readability
+   - ABSOLUTE LIMITS: These 3 colors only - NO 4th color allowed, NO LINES
+   - FORBIDDEN: Any design using more than 3 colors total, any lines/borders/dividers
 
 3. **TYPOGRAPHY:**
    - Font families and weights
@@ -170,10 +171,10 @@ export async function generateEnhancedDesign(
   input: Gemini25DesignInput
 ): Promise<Gemini25DesignResult> {
   const startTime = Date.now();
-  const enhancementsApplied: string[] = ['Gemini 2.0 Flash AI Generation', 'Professional Design Principles', 'Brand Integration'];
+  const enhancementsApplied: string[] = ['Gemini 2.5 Flash Image Preview Generation', 'Professional Design Principles', 'Brand Integration'];
 
   try {
-    console.log('🚀 Starting REAL AI enhanced design generation with Gemini 2.0 Flash...');
+    console.log('🚀 Starting REAL AI enhanced design generation with Gemini 2.5 Flash Image Preview...');
     console.log('📋 Input:', {
       businessType: input.businessType,
       platform: input.platform,
@@ -181,33 +182,34 @@ export async function generateEnhancedDesign(
       brandName: input.brandProfile.businessName
     });
 
-    // Use the working Gemini 2.0 Flash image generation directly
+    // Use the superior Gemini 2.5 Flash Image Preview generation
     const { generateCreativeAsset } = await import('@/ai/flows/generate-creative-asset');
 
     // Build comprehensive AI prompt for image generation
     const imagePrompt = buildComprehensiveImagePrompt(input);
     enhancementsApplied.push('Comprehensive AI Prompting');
 
-    console.log('🎨 Generating image with Gemini 2.0 Flash...');
+    console.log('🎨 Generating image with Gemini 2.5 Flash Image Preview...');
     console.log('📝 Prompt preview:', imagePrompt.substring(0, 200) + '...');
 
-    // Generate image with Gemini 2.0 Flash (the working AI image generation)
+    // Generate image with Gemini 2.5 Flash Image Preview (superior text rendering)
     const creativeResult = await generateCreativeAsset({
       prompt: imagePrompt,
       outputType: 'image',
       referenceAssetUrl: null,
       useBrandProfile: true,
       brandProfile: input.brandProfile,
-      maskDataUrl: null
+      maskDataUrl: null,
+      preferredModel: 'gemini-2.5-flash-image-preview'
     });
 
     const imageUrl = creativeResult.imageUrl;
     if (!imageUrl) {
-      throw new Error('No image URL returned from Gemini 2.0 Flash');
+      throw new Error('No image URL returned from Gemini 2.5 Flash Image Preview');
     }
 
     enhancementsApplied.push(
-      'Gemini 2.0 Flash HD Generation',
+      'Gemini 2.5 Flash Image Preview HD Generation',
       'Ultra-High Quality Settings',
       'Perfect Text Rendering',
       'Professional Design Generation',
@@ -232,7 +234,7 @@ export async function generateEnhancedDesign(
     return result;
 
   } catch (error) {
-    console.error('❌ Gemini 2.0 Flash generation failed:', error);
+    console.error('❌ Gemini 2.5 Flash Image Preview generation failed:', error);
     throw new Error(`Real AI enhanced design generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -763,10 +765,12 @@ BUSINESS: ${brandProfile.businessName || businessType} (${businessType})
 TEXT TO INCLUDE: "${imageText}"
 STYLE: ${visualStyle}, modern, clean, professional
 
-BRAND COLORS (use these prominently):
-- Primary: ${brandProfile.primaryColor || '#2563eb'}
-- Accent: ${brandProfile.accentColor || '#7c3aed'}
-- Background: ${brandProfile.backgroundColor || '#ffffff'}
+MAXIMUM 3 COLORS ONLY, NO LINES - BRAND COLORS:
+- Primary: ${brandProfile.primaryColor || '#2563eb'} (DOMINANT 60-70%)
+- Accent: ${brandProfile.accentColor || '#7c3aed'} (HIGHLIGHTS 20-30%)
+- Background: ${brandProfile.backgroundColor || '#ffffff'} (BASE 10-20%)
+- ABSOLUTE LIMITS: These 3 colors only - NO 4th color allowed, NO LINES
+- FORBIDDEN: Any design using more than 3 colors total, any lines/borders/dividers
 
 VISUAL APPROACH:
 ${peopleInstructions}
@@ -829,13 +833,14 @@ function buildBrandColorSystem(brandProfile: BrandProfile): string {
   const accentColor = brandProfile.accentColor || '#7c3aed';
   const backgroundColor = brandProfile.backgroundColor || '#ffffff';
 
-  return `- Primary Brand Color: ${primaryColor} (use for main brand elements, headlines, key accents)
-- Secondary/Accent Color: ${accentColor} (use for call-to-action elements, highlights, buttons)
-- Background Color: ${backgroundColor} (use as primary background or in gradients)
-- These colors MUST be prominently featured and used consistently
-- Create harmonious color combinations using these brand colors as the foundation
-- Ensure sufficient contrast between text and background colors
-- Use gradients and color variations that complement the brand palette`;
+  return `- Primary Brand Color: ${primaryColor} (DOMINANT 60-70% of design - main brand elements, headlines, key accents)
+- Secondary/Accent Color: ${accentColor} (HIGHLIGHTS 20-30% of design - call-to-action elements, highlights, buttons)
+- Background Color: ${backgroundColor} (BASE 10-20% of design - primary background)
+- MAXIMUM 3 COLORS TOTAL: These are the ONLY colors allowed in the entire design
+- ABSOLUTE LIMITS: No 4th, 5th, or additional colors beyond these 3, NO LINES of any kind
+- FORBIDDEN: Any design using more than 3 colors total, any lines/borders/dividers/linear elements
+- STRICT RULES: Maximum 3 colors, no lines in entire design - NO exceptions
+- Text colors: Use high contrast white or black text only when needed for readability`;
 }
 
 /**

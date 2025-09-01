@@ -140,18 +140,20 @@ export const BUSINESS_TYPE_DESIGN_DNA = {
 `,
 
   tech: `
-**TECH DESIGN DNA:**
-- Use modern, digital color schemes (blues, purples, teals)
-- Include clean, minimalist design with geometric elements
-- Apply futuristic and innovative visual metaphors
-- Use modern, sans-serif typography
-- Include data visualization and tech-focused imagery
-- Apply gradient overlays and digital effects
-- Use professional and cutting-edge visual language
-- Show diverse tech professionals in collaborative work environments
-- Include people using technology in natural, authentic ways
-- Display modern office spaces, remote work setups, and innovation hubs
-- Use culturally relevant technology adoption and usage patterns
+**TECH DESIGN DNA (CANVA-QUALITY):**
+- Use sophisticated, professional color schemes (modern blues, elegant grays, clean whites)
+- Include polished, well-designed layouts with strategic geometric elements and refined shapes
+- Apply professional business visual metaphors with premium stock photography quality
+- Use modern, bold typography with clear hierarchy (multiple font weights and sizes)
+- Include high-quality business imagery: professional office spaces, authentic workplace scenarios
+- Apply elegant design effects: subtle gradients, refined shadows, tasteful borders
+- Use trustworthy and sophisticated visual language that matches premium Canva templates
+- Show diverse tech professionals in polished, well-lit business environments
+- Include people using technology in professional, aspirational business contexts
+- Display modern office spaces, premium remote work setups, and sophisticated business environments
+- Use strategic design elements: elegant shapes, professional patterns, refined layouts
+- Create designs that look intentionally crafted and professionally designed
+- FOCUS: Premium stock photography quality, sophisticated layouts, Canva-level polish
 `,
 
   ecommerce: `
