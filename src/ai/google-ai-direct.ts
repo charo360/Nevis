@@ -17,8 +17,9 @@ const genAI = new GoogleGenerativeAI(apiKey!);
 // Available Gemini 2.5 models
 export const GEMINI_2_5_MODELS = {
   FLASH: 'gemini-2.5-flash',
-  PRO: 'gemini-2.5-pro', 
-  FLASH_LITE: 'gemini-2.5-flash-lite'
+  PRO: 'gemini-2.5-pro',
+  FLASH_LITE: 'gemini-2.5-flash-lite',
+  FLASH_IMAGE_PREVIEW: 'gemini-2.5-flash-image-preview'
 } as const;
 
 export type Gemini25Model = typeof GEMINI_2_5_MODELS[keyof typeof GEMINI_2_5_MODELS];
@@ -211,15 +212,15 @@ export async function generateMultimodal(
 export async function testConnection(): Promise<boolean> {
   try {
     console.log('🔌 Testing Gemini 2.5 API connection...');
-    
+
     const response = await generateText('Hello, this is a test message. Please respond with "Connection successful!"', {
       model: GEMINI_2_5_MODELS.FLASH,
       maxOutputTokens: 50
     });
 
-    const isSuccessful = response.text.toLowerCase().includes('connection successful') || 
-                        response.text.toLowerCase().includes('hello') ||
-                        response.text.length > 0;
+    const isSuccessful = response.text.toLowerCase().includes('connection successful') ||
+      response.text.toLowerCase().includes('hello') ||
+      response.text.length > 0;
 
     if (isSuccessful) {
       console.log('✅ Gemini 2.5 API connection successful!');

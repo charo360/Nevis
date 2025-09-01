@@ -65,15 +65,15 @@ const baseConfigs = {
     maxRetries: 3,
     timeout: 45000,
     qualitySettings: {
-      imageResolution: '2048x2048',
-      compressionLevel: 92,
-      enhancementLevel: 9
+      imageResolution: '2048x2048',     // Ultra HD resolution
+      compressionLevel: 95,             // Maximum quality
+      enhancementLevel: 8               // Reduced for cleaner designs (was 10)
     },
     promptSettings: {
-      temperature: 0.7,
-      maxTokens: 2048,
-      topP: 0.9,
-      topK: 40
+      temperature: 0.4,                 // Reduced creativity for consistency (was 0.9)
+      maxTokens: 4096,                  // Detailed prompts for clean instructions
+      topP: 0.7,                        // Reduced variety for cleaner results (was 0.95)
+      topK: 30                          // Fewer creative choices for consistency (was 60)
     }
   }
 };

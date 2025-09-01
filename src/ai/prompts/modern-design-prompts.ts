@@ -171,13 +171,15 @@ export const PLATFORM_MODERN_OPTIMIZATIONS = {
 export const BUSINESS_TYPE_MODERN_DNA = {
   tech: `
 **TECH MODERN AESTHETICS:**
-- Futuristic gradient applications
-- Digital-first design language
-- AI-inspired visual elements
-- Cyberpunk color influences
-- Modern data visualization
-- Contemporary tech iconography
-- Innovation-focused compositions
+- Professional gradient applications (subtle, business-appropriate)
+- Clean, business-focused design language
+- Real-world technology visual elements
+- Professional color schemes (blues, grays, whites)
+- Simple, clear data visualization
+- Authentic business tech iconography
+- Trust-building, professional compositions
+- AVOID: Futuristic, cyberpunk, AI-inspired, or sci-fi elements
+- FOCUS: Real business technology, authentic professional environments
 `,
 
   healthcare: `

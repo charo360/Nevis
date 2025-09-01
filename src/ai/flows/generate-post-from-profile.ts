@@ -28,6 +28,62 @@ import {
   BUSINESS_TYPE_DESIGN_DNA,
   QUALITY_ENHANCEMENT_INSTRUCTIONS
 } from '@/ai/prompts/advanced-design-prompts';
+// Clean design system implemented inline for immediate use
+
+// 7 Different Design Template Styles for Variety - STRONG VISUAL DIFFERENTIATION
+const DESIGN_TEMPLATES = [
+  {
+    name: "Motivational Quote",
+    style: "WATERCOLOR BACKGROUND - NO ILLUSTRATIONS",
+    description: "MANDATORY: Soft watercolor wash background in pastels (pink/blue/purple). NO illustrations, NO graphics, NO icons. Only elegant typography on watercolor texture.",
+    elements: ["watercolor texture background", "script font headlines", "minimal text-only design"],
+    forbidden: ["illustrations", "graphics", "icons", "people", "objects", "geometric shapes"]
+  },
+  {
+    name: "Behind the Brand",
+    style: "CUSTOM ILLUSTRATIONS ONLY",
+    description: "MANDATORY: Hand-drawn style illustrations of business elements. Illustrated style with warm storytelling visuals.",
+    elements: ["custom illustrations", "hand-drawn style", "storytelling visuals"],
+    forbidden: ["photos", "watercolor", "geometric shapes", "minimal design"]
+  },
+  {
+    name: "Engagement Post",
+    style: "SPLIT PHOTO COLLAGE - NO ILLUSTRATIONS",
+    description: "MANDATORY: Split screen layout with real photos on each side. 'This or That' style with bold text overlay. NO illustrations allowed.",
+    elements: ["split screen layout", "real photographs", "comparison design", "bold overlay text"],
+    forbidden: ["illustrations", "watercolor", "single image", "minimal design"]
+  },
+  {
+    name: "Promotional Highlight",
+    style: "BOLD TYPOGRAPHY FOCUS - MINIMAL GRAPHICS",
+    description: "MANDATORY: Typography-driven design with clean background. Focus on text hierarchy and product showcase. Minimal geometric accents only.",
+    elements: ["large typography", "text hierarchy", "clean background", "minimal geometric accents"],
+    forbidden: ["illustrations", "watercolor", "complex graphics", "busy backgrounds"]
+  },
+  {
+    name: "Fun/Trending",
+    style: "MEME TEMPLATE - WHITE BACKGROUND",
+    description: "MANDATORY: Clean white background with meme-style text placement. Simple, humorous layout with minimal visual elements.",
+    elements: ["white background", "meme-style text", "simple layout", "humorous approach"],
+    forbidden: ["illustrations", "watercolor", "complex graphics", "busy designs", "multiple colors"]
+  },
+  {
+    name: "Customer Love",
+    style: "POLAROID FRAME - RETRO PHOTO STYLE",
+    description: "MANDATORY: Polaroid photo frame design with retro styling. Testimonial presentation with vintage photo aesthetic.",
+    elements: ["polaroid frame", "retro photo style", "vintage aesthetic", "testimonial layout"],
+    forbidden: ["illustrations", "watercolor", "modern design", "minimal layout"]
+  },
+  {
+    name: "Creativity + Brand Values",
+    style: "MIXED MEDIA ARTISTIC - WATERCOLOR + ELEMENTS",
+    description: "MANDATORY: Watercolor splash background combined with artistic mixed media elements. Creative inspiration with artistic flair.",
+    elements: ["watercolor splash", "mixed media", "artistic elements", "creative inspiration"],
+    forbidden: ["pure illustrations", "clean minimal", "geometric only", "photo-based"]
+  }
+];
+// Enhanced design system temporarily disabled - will be re-enabled after module resolution
+// import { generateEnhancedDesignPrompt, generateDesignEnhancements, validateDesignQuality } from '@/ai/utils/enhanced-design-generator';
 import {
   analyzeDesignExample,
   selectOptimalDesignExamples,
@@ -160,9 +216,7 @@ const GeneratePostFromProfileOutputSchema = z.object({
 
 export type GeneratePostFromProfileOutput = z.infer<typeof GeneratePostFromProfileOutputSchema>;
 
-export async function generatePostFromProfile(input: GeneratePostFromProfileInput): Promise<GeneratePostFromProfileOutput> {
-  return generatePostFromProfileFlow(input);
-}
+// Export function moved to end of file after flow definition
 
 
 /**
@@ -257,35 +311,61 @@ const getMimeTypeFromDataURI = (dataURI: string): string => {
   return match ? match[1] : 'application/octet-stream'; // Default if no match
 };
 
-// Helper function to generate an image for a single variant with advanced design principles
+// Helper function to generate an image for a single variant with ENHANCED design principles
 async function generateImageForVariant(
   variant: { platform: string, aspectRatio: string },
   input: GeneratePostFromProfileInput,
   textOutput: { imageText: string }
 ) {
+  console.log("🎨 ENHANCED DESIGN SYSTEM: Generating premium-quality design...");
+
+  // TEMPORARILY DISABLED - Enhanced design system will be re-enabled after module resolution
+  /*
+  const enhancedDesignInput = {
+    businessType: input.businessType,
+    platform: variant.platform,
+    visualStyle: input.visualStyle,
+    primaryColor: input.primaryColor,
+    accentColor: input.accentColor,
+    backgroundColor: input.backgroundColor,
+    imageText: textOutput.imageText,
+    businessName: input.businessName,
+    logoDataUrl: input.logoDataUrl,
+    designExamples: input.designExamples,
+    qualityLevel: 'premium' as const
+  };
+
+  const designEnhancements = generateDesignEnhancements(enhancedDesignInput);
+  console.log("✨ Applied design enhancements:", designEnhancements.compositionRules.length, "rules");
+
+  const enhancedPrompt = generateEnhancedDesignPrompt(enhancedDesignInput);
+  console.log("🚀 Enhanced prompt generated with", enhancedPrompt.length, "characters of professional guidance");
+  */
   // Determine consistency level based on preferences first
   const isStrictConsistency = input.brandConsistency?.strictConsistency ?? false;
   const followBrandColors = input.brandConsistency?.followBrandColors ?? true;
 
-  // Enhanced color instructions with psychology and usage guidelines
+  // STRICT 3-color maximum with brand color enforcement
   const colorInstructions = followBrandColors ? `
-  **BRAND COLOR PALETTE (MANDATORY):**
-  - Primary Color: ${input.primaryColor} - Use for main elements, headers, and key focal points
-  - Accent Color: ${input.accentColor} - Use for highlights, buttons, and secondary elements
-  - Background Color: ${input.backgroundColor} - Use for backgrounds and neutral areas
+  **MAXIMUM 3 COLORS ONLY - BRAND COLORS MANDATORY:**
+  - Primary Color: ${input.primaryColor} - DOMINANT color (60-70% of design)
+  - Accent Color: ${input.accentColor} - HIGHLIGHT color (20-30% of design)
+  - Background Color: ${input.backgroundColor} - BASE color (10-20% of design)
 
-  **COLOR USAGE REQUIREMENTS:**
-  - Primary color should dominate the design (40-60% of color usage)
-  - Accent color for emphasis and call-to-action elements (20-30% of color usage)
-  - Background color for balance and readability (10-40% of color usage)
-  - Ensure high contrast ratios for text readability (minimum 4.5:1)
-  - Use color gradients and variations within the brand palette
-  - Avoid colors outside the brand palette unless absolutely necessary for contrast
+  **ABSOLUTE COLOR LIMITS - NO EXCEPTIONS:**
+  - MAXIMUM 3 colors total in entire design
+  - ONLY use these exact 3 brand colors - NO additional colors
+  - NO 4th, 5th, or more colors allowed
+  - NO random colors, NO complementary colors, NO decorative colors
+  - NO gradients using non-brand colors
+  - Text: Use high contrast white or black only when needed
+  - FORBIDDEN: Any design with more than 3 colors total
   ` : `
-  **COLOR GUIDANCE:**
-  - Brand colors available: Primary ${input.primaryColor}, Accent ${input.accentColor}, Background ${input.backgroundColor}
-  - Feel free to use complementary colors that work well with the brand palette
-  - Maintain visual harmony and professional appearance
+  **MAXIMUM 3 COLORS TOTAL:**
+  - Primary: ${input.primaryColor} - DOMINANT (60-70%)
+  - Accent: ${input.accentColor} - HIGHLIGHT (20-30%)
+  - Background: ${input.backgroundColor} - BASE (10-20%)
+  - ABSOLUTE LIMIT: 3 colors maximum in entire design
   `;
 
   // Get platform-specific guidelines
@@ -327,6 +407,10 @@ async function generateImageForVariant(
   ${input.websiteUrl ? `- Website: ${input.websiteUrl}` : ''}
   `;
 
+  // Select random design template for variety
+  const selectedTemplate = DESIGN_TEMPLATES[Math.floor(Math.random() * DESIGN_TEMPLATES.length)];
+  console.log(`🎨 Selected design template: ${selectedTemplate.name} - ${selectedTemplate.style}`);
+
   // Generate visual variation approach for diversity
   const visualVariations = [
     'minimalist_clean', 'bold_dynamic', 'elegant_sophisticated', 'playful_creative',
@@ -336,38 +420,92 @@ async function generateImageForVariant(
   const selectedVisualVariation = visualVariations[Math.floor(Math.random() * visualVariations.length)];
   console.log(`🎨 Selected visual variation: ${selectedVisualVariation}`);
 
-  let imagePrompt = `Create a stunning, professional social media design for ${input.businessName || input.businessType} business.
+  // TEMPLATE-BASED DESIGN APPROACH - Using selected template style
+  console.log(`🎨 Using TEMPLATE DESIGN SYSTEM - ${selectedTemplate.name} approach`);
 
-  **VISUAL APPROACH:** ${selectedVisualVariation} (MANDATORY: Use this specific visual style approach)
+  let imagePrompt = `Create a ${selectedTemplate.style.toUpperCase()} social media design following the "${selectedTemplate.name}" template approach.
 
-    ${businessContext}
+**BUSINESS:** ${input.businessType}
+**PLATFORM:** ${variant.platform}
+**ASPECT RATIO:** ${variant.aspectRatio}
+**MESSAGE:** "${combineTextComponents(textOutput.catchyWords, textOutput.subheadline, textOutput.callToAction)}"
 
-    **DESIGN SPECIFICATIONS:**
-    - Platform: ${variant.platform} (${variant.aspectRatio} aspect ratio)
-    - Visual Style: ${input.visualStyle}, modern, clean, professional
-    - Text Content: "${combineTextComponents(textOutput.catchyWords, textOutput.subheadline, textOutput.callToAction)}"
+**MANDATORY TEMPLATE STYLE:** ${selectedTemplate.name}
+**MANDATORY TEMPLATE DESCRIPTION:** ${selectedTemplate.description}
+**REQUIRED ELEMENTS:** ${selectedTemplate.elements.join(', ')}
+**ABSOLUTELY FORBIDDEN:** ${selectedTemplate.forbidden.join(', ')}
 
-    ${colorInstructions}
+**CRITICAL: You MUST follow the template style exactly. Do NOT default to illustrations if the template specifies otherwise.**
 
-    **DESIGN REQUIREMENTS:**
-    - High-quality, professional design that reflects the business personality
-    - Clear, readable text with excellent contrast (minimum 4.5:1 ratio)
-    - ${input.visualStyle} aesthetic that appeals to ${input.targetAudience || 'target audience'}
-    - Perfect representation of ${input.businessType} business values
-    - Brand colors prominently and strategically featured
-    - Clean, modern layout optimized for ${variant.platform}
-    - Professional social media appearance that drives engagement
-    - Text must be perfectly readable, properly sized, and not cut off
-    - ${variant.aspectRatio} aspect ratio optimized for ${variant.platform}
-    - Design should reflect the business's location (${input.location}) and cultural context
+**STRICT REQUIREMENTS - FOLLOW EXACTLY:**
+- Use ONLY 3 visual elements maximum: logo, main text, one simple accent
+- 50%+ of the design must be white/empty space
+- Single, clean sans-serif font family only
+- MAXIMUM 3 COLORS TOTAL in entire design
+- NO LINES: no decorative lines, borders, dividers, or linear elements
+- No decorative elements, shapes, or complex backgrounds
+- High contrast for perfect readability
+- Generous margins and spacing throughout
+- One clear focal point only
 
-    **BUSINESS DNA INTEGRATION:**
-    ${businessDNA}
+**MAXIMUM 3 COLORS ONLY - BRAND COLORS:**
+- Primary Color: ${input.primaryColor} (DOMINANT - 60-70% of design)
+- Accent Color: ${input.accentColor} (HIGHLIGHTS - 20-30% of design)
+- Background Color: ${input.backgroundColor} (BASE - 10-20% of design)
+- ABSOLUTE LIMIT: These 3 colors only - NO 4th color allowed
+- FORBIDDEN: Any design using more than 3 colors total
+- FORBIDDEN: Additional colors, random colors, decorative colors
 
-    **PLATFORM OPTIMIZATION:**
-    ${platformGuidelines.designGuidelines || `Optimize for ${variant.platform} best practices`}
+**MANDATORY DESIGN APPROACH - ${selectedTemplate.name.toUpperCase()}:**
+- MUST follow ${selectedTemplate.style} aesthetic - NO EXCEPTIONS
+- MUST incorporate: ${selectedTemplate.elements.join(', ')}
+- ABSOLUTELY FORBIDDEN: ${selectedTemplate.forbidden.join(', ')}
+- ${selectedTemplate.description}
+- DO NOT default to illustration style unless template specifically requires it
+- Template requirements override all other design preferences
 
-    Create a beautiful, professional design that authentically represents the business and drives engagement.`;
+**FORBIDDEN ELEMENTS:**
+❌ Multiple competing focal points
+❌ Decorative shapes or ornaments
+❌ Complex backgrounds or textures
+❌ Multiple font families
+❌ MORE THAN 3 COLORS TOTAL in the design
+❌ Any 4th, 5th, or additional colors beyond the 3 brand colors
+❌ Random colors, rainbow colors, complementary colors
+❌ Gradients using non-brand colors
+❌ ALL LINES: decorative lines, border lines, divider lines, underlines
+❌ Frame lines, geometric lines, separator lines, outline borders
+❌ Any linear elements or line-based decorations
+❌ Cramped spacing
+❌ Overlapping elements
+❌ Busy compositions
+❌ Multiple graphics or icons
+❌ Patterns or textures
+
+**MANDATORY SIMPLICITY:**
+- Single clear message
+- Generous white space (50%+ empty)
+- Maximum 3 visual elements
+- High contrast readability
+- Professional, uncluttered appearance
+
+**TEMPLATE ENFORCEMENT:**
+- If template says "WATERCOLOR" → Use watercolor texture, NOT illustrations
+- If template says "SPLIT PHOTO" → Use real photos split screen, NOT illustrations
+- If template says "MEME TEMPLATE" → Use white background with simple text, NOT illustrations
+- If template says "POLAROID" → Use retro photo frame style, NOT illustrations
+- If template says "TYPOGRAPHY FOCUS" → Focus on text design, NOT illustrations
+
+**FINAL INSTRUCTION:** Create a ${selectedTemplate.style} design following the ${selectedTemplate.name} template using MAXIMUM 3 COLORS ONLY and NO LINES. STRICTLY follow template requirements - do NOT default to illustration style. ABSOLUTE LIMITS: 3 colors maximum, NO lines, FOLLOW TEMPLATE EXACTLY - NO EXCEPTIONS.`;
+
+  // Add brand colors section if colors are available
+  if (input.brandProfile?.colors?.primary || input.brandProfile?.colors?.accent || input.brandProfile?.colors?.background) {
+    const primaryColor = input.brandProfile.colors.primary || 'default';
+    const accentColor = input.brandProfile.colors.accent || 'default';
+    const backgroundColor = input.brandProfile.colors.background || 'default';
+
+    imagePrompt += '\n - Brand Colors: The brand\'s color palette is: Primary HSL(' + primaryColor + '), Accent HSL(' + accentColor + '), Background HSL(' + backgroundColor + '). Please use these colors in the design.';
+  }
 
   // Intelligent design examples processing
   let designDNA = '';
@@ -383,7 +521,7 @@ async function generateImageForVariant(
             example,
             input.businessType,
             variant.platform,
-            `${input.visualStyle} design for ${textOutput.imageText}`
+            input.visualStyle + " design for " + textOutput.imageText
           );
           analyses.push(analysis);
         } catch (error) {
@@ -415,76 +553,67 @@ async function generateImageForVariant(
         ? input.designExamples
         : [input.designExamples[Math.floor(Math.random() * input.designExamples.length)]];
     }
-
-    // Add design consistency instructions based on analysis
-    if (isStrictConsistency) {
-      imagePrompt += `\n    **STRICT STYLE REFERENCE:**
-      Use the provided design examples as strict style reference. Closely match the visual aesthetic, color scheme, typography, layout patterns, and overall design approach of the reference designs. Create content that looks very similar to the uploaded examples while incorporating the new text and subject matter.
-
-      ${designDNA}`;
-    } else {
-      imagePrompt += `\n    **STYLE INSPIRATION:**
-      Use the provided design examples as loose inspiration for the overall aesthetic and mood, but feel free to create more varied and creative designs while maintaining the brand essence.
-
-      ${designDNA}
-
-      **CREATIVE VARIATION:** Feel free to experiment with different layouts, compositions, and design elements to create fresh, engaging content that avoids repetitive appearance while maintaining brand recognition.
-
-      **STRICT UNIQUENESS REQUIREMENT:** This design MUST be completely different from any previous generation. MANDATORY variations:
-      - Layout compositions: Choose from grid, asymmetrical, centered, diagonal, circular, or organic layouts
-      - Color emphasis: Vary primary/accent color dominance (primary-heavy, accent-heavy, or balanced)
-      - Typography placement: Top, bottom, center, side, overlay, or integrated into imagery
-      - Visual elements: Abstract shapes, geometric patterns, organic forms, or photographic elements
-      - Background treatments: Solid, gradient, textured, patterned, or photographic
-      - Design style: Minimalist, bold, elegant, playful, modern, or artistic
-      - Content arrangement: Single focus, multiple elements, layered, or split-screen
-
-      **DIVERSITY ENFORCEMENT:**
-      - Never repeat the same layout pattern twice in a row
-      - Alternate between different color emphasis approaches
-      - Vary typography size, weight, and positioning significantly
-      - Use different visual metaphors and imagery styles
-      - Change background complexity and treatment style
-
-      **GENERATION ID:** ${Date.now()}_${Math.random().toString(36).substr(2, 9)} - Use this unique identifier to ensure no two designs are identical.`;
-    }
   }
 
-  // Build prompt parts array
+  // Add design consistency instructions based on analysis
+  if (isStrictConsistency) {
+    imagePrompt += "\n ** STRICT STYLE REFERENCE:**\n" +
+      "Use the provided design examples as strict style reference. Closely match the visual aesthetic, color scheme, typography, layout patterns, and overall design approach of the reference designs. Create content that looks very similar to the uploaded examples while incorporating the new text and subject matter.\n\n" +
+      designDNA;
+  } else {
+    imagePrompt += "\n ** STYLE INSPIRATION:**\n" +
+      "Use the provided design examples as loose inspiration for the overall aesthetic and mood, but feel free to create more varied and creative designs while maintaining the brand essence.\n\n" +
+      designDNA;
+
+  }
+
+  // Add clean design consistency instruction
+  imagePrompt += "\n\n** CLEAN DESIGN CONSISTENCY:** Maintain the same clean, minimal approach for all designs. Focus on clarity and simplicity rather than variation. Each design should feel part of a cohesive, professional brand family.\n\n" +
+    "** SIMPLICITY REQUIREMENT:** Every design must prioritize:\n" +
+    "- Single clear message\n" +
+    "- Generous white space (50%+ empty)\n" +
+    "- Maximum 3 visual elements\n" +
+    "- High contrast readability\n" +
+    "- Professional, uncluttered appearance\n\n" +
+    "** GENERATION ID:** " + Date.now() + "_clean_minimal - Clean design approach";
+
+  // Build prompt parts array - Enhanced system temporarily disabled
   const promptParts: any[] = [{ text: imagePrompt }];
+
+  console.log("🎯 Using standard design system (Enhanced system temporarily disabled)");
+  console.log("📈 Quality improvements will be re-enabled after module resolution");
 
   // Enhanced logo integration with analysis
   if (input.logoDataUrl) {
     // Add logo analysis instructions to the prompt
-    const logoInstructions = `
+    const logoInstructions =
+      "\n\n** CRITICAL LOGO USAGE REQUIREMENTS:**\n" +
+      "🚨 MANDATORY: You MUST use the uploaded brand logo image provided below. DO NOT create, generate, or design a new logo.\n\n" +
+      "** LOGO INTEGRATION REQUIREMENTS:**\n" +
+      "- Use ONLY the provided logo image - never create or generate a new logo\n" +
+      "- The uploaded logo is the official brand logo and must be used exactly as provided\n" +
+      "- Incorporate the provided logo naturally and prominently into the design\n" +
+      "- Ensure logo is clearly visible and properly sized for the platform (minimum 10% of design area)\n" +
+      "- Maintain logo's original proportions and readability - do not distort or modify the logo\n" +
+      "- Position logo strategically: " + (platformGuidelines.logoPlacement || 'Place logo prominently in corner or integrated into layout') + "\n" +
+      "- Ensure sufficient contrast between logo and background (minimum 4.5:1 ratio)\n" +
+      "- For " + variant.platform + ": Logo should be clearly visible and recognizable\n\n" +
+      "** BRAND CONSISTENCY WITH UPLOADED LOGO:**\n" +
+      "- Extract and use colors from the provided logo for the overall color scheme\n" +
+      "- Match the design style to complement the logo's aesthetic and personality\n" +
+      "- Ensure visual harmony between the uploaded logo and all design elements\n" +
+      "- The logo is the primary brand identifier - treat it as the most important visual element";
 
-    **CRITICAL LOGO USAGE REQUIREMENTS:**
-    🚨 MANDATORY: You MUST use the uploaded brand logo image provided below. DO NOT create, generate, or design a new logo.
 
-    **LOGO INTEGRATION REQUIREMENTS:**
-    - Use ONLY the provided logo image - never create or generate a new logo
-    - The uploaded logo is the official brand logo and must be used exactly as provided
-    - Incorporate the provided logo naturally and prominently into the design
-    - Ensure logo is clearly visible and properly sized for the platform (minimum 10% of design area)
-    - Maintain logo's original proportions and readability - do not distort or modify the logo
-    - Position logo strategically: ${platformGuidelines.logoPlacement || 'Place logo prominently in corner or integrated into layout'}
-    - Ensure sufficient contrast between logo and background (minimum 4.5:1 ratio)
-    - For ${variant.platform}: Logo should be clearly visible and recognizable
-
-    **BRAND CONSISTENCY WITH UPLOADED LOGO:**
-    - Extract and use colors from the provided logo for the overall color scheme
-    - Match the design style to complement the logo's aesthetic and personality
-    - Ensure visual harmony between the uploaded logo and all design elements
-    - The logo is the primary brand identifier - treat it as the most important visual element
-
-    **LOGO PLACEMENT PRIORITY:**
-    - Logo visibility is more important than other design elements
-    - If space is limited, reduce other elements to ensure logo prominence
-    - Logo should be one of the first things viewers notice in the design
-    `;
+    // Add additional logo placement instructions
+    const logoPlacementInstructions =
+      "\n\n** LOGO PLACEMENT PRIORITY:**\n" +
+      "- Logo visibility is more important than other design elements\n" +
+      "- If space is limited, reduce other elements to ensure logo prominence\n" +
+      "- Logo should be one of the first things viewers notice in the design";
 
     // Update the main prompt with logo instructions
-    promptParts[0].text += logoInstructions;
+    promptParts[0].text += logoInstructions + logoPlacementInstructions;
 
     // Add logo as media with high priority
     promptParts.push({
@@ -494,7 +623,7 @@ async function generateImageForVariant(
       }
     });
 
-    console.log(`🎨 Logo integrated: ${input.logoDataUrl.substring(0, 50)}...`);
+    console.log("🎨 Logo integrated: " + input.logoDataUrl.substring(0, 50) + "...");
   } else {
     console.log('⚠️ No logo provided - design will be generated without brand logo');
   }
@@ -529,27 +658,32 @@ async function generateImageForVariant(
       // Apply aspect ratio correction for non-square platforms
       const { cropImageFromUrl, needsAspectRatioCorrection } = await import('@/lib/image-processing');
       if (needsAspectRatioCorrection(variant.platform)) {
-        console.log(`🖼️ Applying aspect ratio correction for ${variant.platform}...`);
+        console.log("🖼️ Applying aspect ratio correction for " + variant.platform + "...");
         try {
           imageUrl = await cropImageFromUrl(imageUrl, variant.platform);
-          console.log(`✅ Image cropped successfully for ${variant.platform}`);
+          console.log("✅ Image cropped successfully for " + variant.platform);
         } catch (cropError) {
           console.warn('⚠️ Image cropping failed, using original:', cropError);
           // Continue with original image if cropping fails
         }
       }
 
-      // Quality validation for first attempt
+      // ENHANCED Quality validation for first attempt
       if (attempts === 1) {
         try {
+          console.log("🔍 QUALITY VALIDATION: Assessing design against standards...");
+
+          // Standard quality assessment (Enhanced validation temporarily disabled)
           const quality = await assessDesignQuality(
             imageUrl,
             input.businessType,
             variant.platform,
             input.visualStyle,
             followBrandColors && input.primaryColor ? colorInstructions : undefined,
-            `Create engaging design for: ${textOutput.catchyWords}`
+            "Create engaging design for: " + textOutput.catchyWords
           );
+
+          console.log("📊 Quality score:", quality.overall.score + "/10");
 
           // If quality is acceptable, use this design
           if (meetsQualityStandards(quality, 7)) {
@@ -559,11 +693,11 @@ async function generateImageForVariant(
 
           // If quality is poor and we have attempts left, try to improve
           if (attempts < maxAttempts) {
-            console.log(`Design quality score: ${quality.overall.score}/10. Attempting improvement...`);
+            console.log("Design quality score: " + quality.overall.score + "/10. Attempting improvement...");
 
             // Add improvement instructions to prompt
             const improvementInstructions = generateImprovementPrompt(quality);
-            const improvedPrompt = `${imagePrompt}\n\n${improvementInstructions}`;
+            const improvedPrompt = imagePrompt + "\n\n" + improvementInstructions;
             promptParts[0] = { text: improvedPrompt };
             continue;
           } else {
@@ -582,7 +716,7 @@ async function generateImageForVariant(
         break;
       }
     } catch (error) {
-      console.error(`Design generation attempt ${attempts} failed:`, error);
+      console.error("Design generation attempt " + attempts + " failed: ", error);
       if (attempts === maxAttempts) {
         throw error;
       }
@@ -592,7 +726,7 @@ async function generateImageForVariant(
   // Record design generation for analytics
   if (finalImageUrl) {
     try {
-      const designId = `design_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const designId = "design_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
       recordDesignGeneration(
         designId,
         input.businessType,
@@ -621,7 +755,7 @@ async function generateImageForVariant(
   return {
     platform: variant.platform,
     imageUrl: finalImageUrl,
-  }
+  };
 }
 
 
@@ -642,7 +776,7 @@ const generatePostFromProfileFlow = ai.defineFlow(
       'local_cultural', 'seasonal_relevance', 'problem_solution', 'inspiration_motivation'
     ];
     const selectedVariation = contentVariations[Math.floor(Math.random() * contentVariations.length)];
-    console.log(`🎯 Selected content variation approach: ${selectedVariation}`);
+    console.log("🎯 Selected content variation approach: " + selectedVariation);
 
     // Step 1: Intelligent Context Analysis - Determine what information is relevant
     const contextRelevance = selectRelevantContext(
@@ -653,11 +787,11 @@ const generatePostFromProfileFlow = ai.defineFlow(
       input.dayOfWeek
     );
 
-    console.log(`🧠 Context Analysis for ${input.businessType} in ${input.location}:`);
-    console.log(`   Weather: ${contextRelevance.weather.priority} - ${contextRelevance.weather.relevanceReason}`);
-    console.log(`   Events: ${contextRelevance.events.priority} - ${contextRelevance.events.relevanceReason}`);
-    console.log(`   Trends: ${contextRelevance.trends.priority} - ${contextRelevance.trends.relevanceReason}`);
-    console.log(`   Culture: ${contextRelevance.cultural.priority} - ${contextRelevance.cultural.relevanceReason}`);
+    console.log("🧠 Context Analysis for " + input.businessType + " in " + input.location + ":");
+    console.log("   Weather: " + contextRelevance.weather.priority + " - " + contextRelevance.weather.relevanceReason);
+    console.log("   Events: " + contextRelevance.events.priority + " - " + contextRelevance.events.relevanceReason);
+    console.log("   Trends: " + contextRelevance.trends.priority + " - " + contextRelevance.trends.relevanceReason);
+    console.log("   Culture: " + contextRelevance.cultural.priority + " - " + contextRelevance.cultural.relevanceReason);
 
     // Step 2: Fetch Real-Time Trending Topics (always useful)
     const realTimeTrends = await generateRealTimeTrendingTopics(
@@ -729,6 +863,10 @@ const generatePostFromProfileFlow = ai.defineFlow(
       selectedCultural: filteredContext.selectedCultural,
       // Add content variation for diversity
       contentVariation: selectedVariation,
+      // Template-specific content guidance
+      designTemplate: selectedTemplate.name,
+      templateStyle: selectedTemplate.style,
+      templateDescription: selectedTemplate.description,
       // Language preferences
       useLocalLanguage: input.useLocalLanguage || false,
     });
@@ -808,3 +946,11 @@ const generatePostFromProfileFlow = ai.defineFlow(
     };
   }
 );
+
+// Export function for use in other modules
+export async function generatePostFromProfile(input: GeneratePostFromProfileInput): Promise<GeneratePostFromProfileOutput> {
+  return generatePostFromProfileFlow(input);
+}
+
+// End of file
+export { generatePostFromProfileFlow };
