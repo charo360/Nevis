@@ -170,11 +170,6 @@ export async function generateEnhancedDesign(
   const enhancementsApplied: string[] = ['Gemini 2.5 Flash Image Preview Generation', 'Professional Design Principles', 'Brand Integration'];
 
   try {
-      businessType: input.businessType,
-      platform: input.platform,
-      visualStyle: input.visualStyle,
-      brandName: input.brandProfile.businessName
-    });
 
     // Use the superior Gemini 2.5 Flash Image Preview generation
     const { generateCreativeAsset } = await import('@/ai/flows/generate-creative-asset');
