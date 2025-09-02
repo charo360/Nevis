@@ -1052,7 +1052,7 @@ IMPORTANT:
     // Generate dynamic engagement hooks
     const engagementHooks = generateDynamicEngagementHooks(businessType, location, industry);
 
-    // 🔥 GENERATE VIRAL HASHTAGS using trending data
+    // 🚀 ENHANCED: Generate hashtags using advanced RSS-integrated viral hashtag engine
     const viralHashtags = await viralHashtagEngine.generateViralHashtags(
       businessType,
       businessName,
@@ -1061,6 +1061,15 @@ IMPORTANT:
       businessDetails.services || businessDetails.expertise,
       businessDetails.targetAudience
     );
+
+    // 📊 Log hashtag analytics for debugging (RSS integration quality)
+    if (viralHashtags.analytics) {
+      const analytics = viralHashtags.analytics;
+      // Enhanced hashtag generation with RSS confidence: ${analytics.confidenceScore}/10
+      // RSS-sourced hashtags: ${analytics.rssSourced.length}
+      // Top performers: ${analytics.topPerformers.join(', ')}
+      // Emerging trends: ${analytics.emergingTrends.join(', ')}
+    }
 
 
     return {
