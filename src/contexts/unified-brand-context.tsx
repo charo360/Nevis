@@ -136,153 +136,142 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
 
   const selectBrand = useCallback((brand: CompleteBrandProfile | null) => {
     const brandName = brand?.businessName || brand?.name || 'null';
-    currentBrand: currentBrand?.businessName || currentBrand?.name,
-      currentProfile: currentProfile?.businessName || currentProfile?.name
-  });
 
-  // Log color information for debugging
-  if (brand) {
-    primaryColor: brand.primaryColor,
-      accentColor: brand.accentColor,
-        backgroundColor: brand.backgroundColor
-  });
-}
+    // Update both states immediately
+    setCurrentBrand(brand);
+    setCurrentProfile(brand);
 
-// Update both states immediately
-setCurrentBrand(brand);
-setCurrentProfile(brand);
+    // Update all brand-scoped services
+    updateAllBrandScopedServices(brand);
 
-// Update all brand-scoped services
-updateAllBrandScopedServices(brand);
+    // Force update color persistence immediately
+    if (brand) {
+      const colorData = {
+        primaryColor: brand.primaryColor,
+        accentColor: brand.accentColor,
+        backgroundColor: brand.backgroundColor,
+        brandId: brand.id,
+        brandName: brand.businessName || brand.name,
+        updatedAt: new Date().toISOString()
+      };
+      localStorage.setItem('brandColors', JSON.stringify(colorData));
+    }
 
-// Force update color persistence immediately
-if (brand) {
-  const colorData = {
-    primaryColor: brand.primaryColor,
-    accentColor: brand.accentColor,
-    backgroundColor: brand.backgroundColor,
-    brandId: brand.id,
-    brandName: brand.businessName || brand.name,
-    updatedAt: new Date().toISOString()
-  };
-  localStorage.setItem('brandColors', JSON.stringify(colorData));
-}
-
-// Trigger a custom event for other components to listen to
-const event = new CustomEvent('brandChanged', {
-  detail: {
-    brand,
-    brandId: brand?.id || null,
-    brandName: brandName
-  }
-});
-window.dispatchEvent(event);
+    // Trigger a custom event for other components to listen to
+    const event = new CustomEvent('brandChanged', {
+      detail: {
+        brand,
+        brandId: brand?.id || null,
+        brandName: brandName
+      }
+    });
+    window.dispatchEvent(event);
 
   }, [currentBrand, currentProfile, setCurrentProfile, updateAllBrandScopedServices]);
 
-// localStorage restoration is now handled in the main sync effect above
+  // localStorage restoration is now handled in the main sync effect above
 
-// Enhanced brand persistence - save both ID and full data
-useEffect(() => {
-  if (currentBrand?.id) {
-    localStorage.setItem('selectedBrandId', currentBrand.id);
-    // Also save the full brand data for immediate restoration
-    localStorage.setItem('currentBrandData', JSON.stringify({
-      id: currentBrand.id,
-      businessName: currentBrand.businessName,
-      name: currentBrand.name,
-      primaryColor: currentBrand.primaryColor,
-      accentColor: currentBrand.accentColor,
-      backgroundColor: currentBrand.backgroundColor,
-      logoDataUrl: currentBrand.logoDataUrl,
-      // Store essential data for immediate UI restoration
-      businessType: currentBrand.businessType,
-      location: currentBrand.location,
-      description: currentBrand.description
-    }));
-  } else {
-    localStorage.removeItem('selectedBrandId');
-    localStorage.removeItem('currentBrandData');
-  }
-}, [currentBrand]);
+  // Enhanced brand persistence - save both ID and full data
+  useEffect(() => {
+    if (currentBrand?.id) {
+      localStorage.setItem('selectedBrandId', currentBrand.id);
+      // Also save the full brand data for immediate restoration
+      localStorage.setItem('currentBrandData', JSON.stringify({
+        id: currentBrand.id,
+        businessName: currentBrand.businessName,
+        name: currentBrand.name,
+        primaryColor: currentBrand.primaryColor,
+        accentColor: currentBrand.accentColor,
+        backgroundColor: currentBrand.backgroundColor,
+        logoDataUrl: currentBrand.logoDataUrl,
+        // Store essential data for immediate UI restoration
+        businessType: currentBrand.businessType,
+        location: currentBrand.location,
+        description: currentBrand.description
+      }));
+    } else {
+      localStorage.removeItem('selectedBrandId');
+      localStorage.removeItem('currentBrandData');
+    }
+  }, [currentBrand]);
 
-// Helper function to get brand-scoped storage for any feature
-const getBrandStorage = useCallback((feature: string): BrandScopedStorage | null => {
-  if (!currentBrand?.id) {
-    return null;
-  }
+  // Helper function to get brand-scoped storage for any feature
+  const getBrandStorage = useCallback((feature: string): BrandScopedStorage | null => {
+    if (!currentBrand?.id) {
+      return null;
+    }
 
-  return new BrandScopedStorage({ brandId: currentBrand.id, feature });
-}, [currentBrand]);
+    return new BrandScopedStorage({ brandId: currentBrand.id, feature });
+  }, [currentBrand]);
 
-// Helper function to clear all data for a specific brand
-const clearBrandData = useCallback((brandId: string) => {
-  BrandScopedStorage.clearBrandData(brandId);
-}, []);
+  // Helper function to clear all data for a specific brand
+  const clearBrandData = useCallback((brandId: string) => {
+    BrandScopedStorage.clearBrandData(brandId);
+  }, []);
 
-// Helper function to migrate global data to brand-scoped storage
-const migrateBrandData = useCallback((brandId: string) => {
-  const features = Object.values(STORAGE_FEATURES);
-  migrateAllGlobalStorage(brandId, features);
-}, []);
+  // Helper function to migrate global data to brand-scoped storage
+  const migrateBrandData = useCallback((brandId: string) => {
+    const features = Object.values(STORAGE_FEATURES);
+    migrateAllGlobalStorage(brandId, features);
+  }, []);
 
-// Listen for brand changes from other contexts (backward compatibility)
-useEffect(() => {
-  const handleBrandChange = (event: any) => {
-    if (event.detail && event.detail.brand) {
-      const brand = event.detail.brand;
-      const brandName = brand.businessName || brand.name;
+  // Listen for brand changes from other contexts (backward compatibility)
+  useEffect(() => {
+    const handleBrandChange = (event: any) => {
+      if (event.detail && event.detail.brand) {
+        const brand = event.detail.brand;
+        const brandName = brand.businessName || brand.name;
 
-      // Only update if it's different from current brand
-      const currentBrandValue = currentBrandRef.current;
-      if (!currentBrandValue || currentBrandValue.id !== brand.id) {
-        setCurrentBrand(brand);
-        setCurrentProfileRef.current(brand);
-        if (updateAllBrandScopedServicesRef.current) {
-          updateAllBrandScopedServicesRef.current(brand);
+        // Only update if it's different from current brand
+        const currentBrandValue = currentBrandRef.current;
+        if (!currentBrandValue || currentBrandValue.id !== brand.id) {
+          setCurrentBrand(brand);
+          setCurrentProfileRef.current(brand);
+          if (updateAllBrandScopedServicesRef.current) {
+            updateAllBrandScopedServicesRef.current(brand);
+          }
+        } else {
         }
-      } else {
       }
-    }
+    };
+
+    // Listen for the original brand context changes
+    const handleOriginalBrandChange = (event: any) => {
+      if (event.detail && event.detail.brand) {
+        handleBrandChange(event);
+      }
+    };
+
+    window.addEventListener('brandChanged', handleBrandChange);
+    window.addEventListener('originalBrandChanged', handleOriginalBrandChange);
+
+    return () => {
+      window.removeEventListener('brandChanged', handleBrandChange);
+      window.removeEventListener('originalBrandChanged', handleOriginalBrandChange);
+    };
+  }, []); // Empty dependencies to prevent re-registering listeners
+
+  const contextValue: UnifiedBrandContextType = {
+    currentBrand,
+    brands,
+    loading,
+    saving,
+    error,
+    selectBrand,
+    saveProfile,
+    updateProfile,
+    deleteProfile,
+    refreshBrands,
+    getBrandStorage,
+    clearBrandData,
+    migrateBrandData,
   };
 
-  // Listen for the original brand context changes
-  const handleOriginalBrandChange = (event: any) => {
-    if (event.detail && event.detail.brand) {
-      handleBrandChange(event);
-    }
-  };
-
-  window.addEventListener('brandChanged', handleBrandChange);
-  window.addEventListener('originalBrandChanged', handleOriginalBrandChange);
-
-  return () => {
-    window.removeEventListener('brandChanged', handleBrandChange);
-    window.removeEventListener('originalBrandChanged', handleOriginalBrandChange);
-  };
-}, []); // Empty dependencies to prevent re-registering listeners
-
-const contextValue: UnifiedBrandContextType = {
-  currentBrand,
-  brands,
-  loading,
-  saving,
-  error,
-  selectBrand,
-  saveProfile,
-  updateProfile,
-  deleteProfile,
-  refreshBrands,
-  getBrandStorage,
-  clearBrandData,
-  migrateBrandData,
-};
-
-return (
-  <UnifiedBrandContext.Provider value={contextValue}>
-    {children}
-  </UnifiedBrandContext.Provider>
-);
+  return (
+    <UnifiedBrandContext.Provider value={contextValue}>
+      {children}
+    </UnifiedBrandContext.Provider>
+  );
 }
 
 export function useUnifiedBrand() {
