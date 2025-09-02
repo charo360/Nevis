@@ -8,7 +8,6 @@ import { generateWithRevo20 } from '@/ai/revo-2.0-service';
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🚀 API: Starting Revo 2.0 generation...');
     
     const body = await request.json();
     const { 
@@ -30,7 +29,6 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    console.log('📋 API: Generation parameters:', {
       businessType,
       platform,
       visualStyle: visualStyle || 'modern',
@@ -49,7 +47,6 @@ export async function POST(request: NextRequest) {
       useLocalLanguage
     });
 
-    console.log('✅ API: Revo 2.0 generation completed successfully');
 
     return NextResponse.json({
       success: true,
@@ -64,7 +61,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ API: Revo 2.0 generation error:', error);
 
     return NextResponse.json({
       success: false,

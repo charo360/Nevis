@@ -29,17 +29,14 @@ function CreativeStudioPageContent() {
   // Load Creative Studio data when brand changes
   useBrandChangeListener((brand) => {
     if (brand) {
-      console.log(`🎨 Creative Studio: brand changed to: ${brand.businessName || brand.name}`);
       // Load any Creative Studio specific data for this brand
       if (creativeStudioStorage) {
         const studioData = creativeStudioStorage.getItem();
         if (studioData) {
-          console.log(`📂 Loaded Creative Studio data for brand ${brand.businessName || brand.name}`);
           // Apply any saved studio settings here
         }
       }
     } else {
-      console.log('🎨 Creative Studio: no brand selected');
     }
   });
 

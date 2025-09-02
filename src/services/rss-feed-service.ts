@@ -86,7 +86,6 @@ export class RSSFeedService {
         return cached.data;
       }
 
-      console.log(`🔄 Fetching RSS feed: ${sourceName}`);
       
       const response = await fetch(url, {
         headers: {
@@ -126,11 +125,9 @@ export class RSSFeedService {
       // Cache the results
       this.cache.set(url, { data: articles, timestamp: Date.now() });
 
-      console.log(`✅ Fetched ${articles.length} articles from ${sourceName}`);
       return articles;
 
     } catch (error) {
-      console.error(`❌ Error fetching RSS feed ${sourceName}:`, error);
       return [];
     }
   }
@@ -181,7 +178,6 @@ export class RSSFeedService {
    * Fetch all RSS feeds and return trending data
    */
   public async getTrendingData(): Promise<TrendingData> {
-    console.log('🔄 Fetching trending data from all RSS feeds...');
     
     const allArticles: RSSArticle[] = [];
     const fetchPromises: Promise<RSSArticle[]>[] = [];
@@ -221,8 +217,6 @@ export class RSSFeedService {
     const topicCounts = this.getTopItems(allTopics, 30);
     const themeCounts = this.getTopItems(allThemes, 20);
 
-    console.log(`✅ Processed ${allArticles.length} articles from ${results.length} feeds`);
-    console.log(`📊 Found ${keywordCounts.length} trending keywords`);
 
     return {
       keywords: keywordCounts,

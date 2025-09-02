@@ -22,7 +22,6 @@ function removeWordRepetitions(text: string): string {
     if (currentWord && previousWord &&
       currentWord.toLowerCase() === previousWord.toLowerCase() &&
       currentWord.trim().length > 0) {
-      console.log(`🔧 Removed duplicate word: "${currentWord}"`);
       continue; // Skip this duplicate word
     }
 
@@ -467,11 +466,9 @@ Make it so specific to ${businessName} in ${location} that it could never be use
       emotionalImpact: emotions[Math.floor(Math.random() * emotions.length)]
     };
   } catch (error) {
-    console.error('❌ AI headline generation failed, attempting retry:', error);
 
     // RETRY WITH SIMPLIFIED AI PROMPT - No Static Fallback
     try {
-      console.log('🔄 Retrying headline with simplified AI prompt...');
 
       const simplifiedHeadlinePrompt = `Create a unique 5-word headline for ${businessName}, a ${businessType} in ${location}.
 
@@ -496,7 +493,6 @@ Just return the headline, nothing else.`;
       const retryResult = await model.generateContent(simplifiedHeadlinePrompt + headlineRetryContext);
       const retryHeadline = retryResult.response.text().trim();
 
-      console.log('✅ Headline retry successful:', retryHeadline);
 
       return {
         headline: retryHeadline,
@@ -505,7 +501,6 @@ Just return the headline, nothing else.`;
       };
 
     } catch (retryError) {
-      console.error('❌ Headline retry failed, using emergency AI generation:', retryError);
 
       // EMERGENCY AI GENERATION - Ultra Simple Prompt
       try {
@@ -524,7 +519,6 @@ CRITICAL ANTI-REPETITION RULES:
         const emergencyResult = await model.generateContent(emergencyPrompt + headlineEmergencyContext);
         const emergencyHeadline = emergencyResult.response.text().trim();
 
-        console.log('🚨 Emergency headline generation successful');
 
         return {
           headline: emergencyHeadline,
@@ -533,7 +527,6 @@ CRITICAL ANTI-REPETITION RULES:
         };
 
       } catch (emergencyError) {
-        console.error('❌ All AI headline attempts failed:', emergencyError);
 
         // LAST RESORT: Generate with current timestamp for uniqueness
         const timestamp = Date.now();
@@ -656,7 +649,6 @@ Make it so specific to ${businessName} in ${location} that it could never be use
       benefit: benefits[Math.floor(Math.random() * benefits.length)]
     };
   } catch (error) {
-    console.error('AI subheadline generation failed, using fallback:', error);
 
     // Marketing-focused fallback with enhanced randomization
     const timestamp = Date.now();
@@ -746,13 +738,8 @@ export async function generateUnifiedContent(
 
   // INTELLIGENT APPROACH SELECTION - Let AI decide based on context
   const uniqueGenerationId = Date.now() + Math.floor(Math.random() * 1000);
-  console.log(`🎭 Generation ID: ${uniqueGenerationId} - AI will choose best marketing approach`);
 
   // DEBUG: Log what data we actually received
-  console.log('📊 DEBUG - Data received for AI generation:');
-  console.log('- Business Details:', JSON.stringify(businessDetails, null, 2));
-  console.log('- Trending Data:', JSON.stringify(trendingData, null, 2));
-  console.log('- Business Intelligence:', JSON.stringify(businessIntelligence, null, 2));
 
   // DYNAMIC ANTI-REPETITION SYSTEM - No hardcoded phrases
   const dynamicVariationSeed = uniqueGenerationId % 1000;
@@ -1010,8 +997,6 @@ IMPORTANT:
 - Generate as ONE unified campaign, not separate pieces`;
 
   try {
-    console.log('🤖 Attempting UNIFIED content generation with Gemini...');
-    console.log('📝 Prompt preview:', unifiedPrompt.substring(0, 200) + '...');
 
     // Add unique generation context to prevent repetitive responses
     const uniqueContext = `\n\nUNIQUE GENERATION CONTEXT: ${Date.now()}-${Math.random().toString(36).substr(2, 9)}
@@ -1031,7 +1016,6 @@ IMPORTANT:
     // Post-process to remove word repetitions from the entire response
     response = removeWordRepetitions(response);
 
-    console.log('✅ AI Response received (FULL):', response);
 
     // Parse all unified components
     const unifiedThemeMatch = response.match(/UNIFIED_THEME:\s*(.*?)(?=KEY_MESSAGE:|$)/s);
@@ -1042,14 +1026,6 @@ IMPORTANT:
     const ctaMatch = response.match(/CTA:\s*(.*?)(?=DESIGN_DIRECTION:|$)/s);
     const designMatch = response.match(/DESIGN_DIRECTION:\s*(.*?)$/s);
 
-    console.log('🔍 Parsing Results:');
-    console.log('- Theme:', unifiedThemeMatch?.[1]?.trim());
-    console.log('- Key Message:', keyMessageMatch?.[1]?.trim());
-    console.log('- Headline:', headlineMatch?.[1]?.trim());
-    console.log('- Subheadline:', subheadlineMatch?.[1]?.trim());
-    console.log('- Caption:', captionMatch?.[1]?.trim()?.substring(0, 100) + '...');
-    console.log('- CTA:', ctaMatch?.[1]?.trim());
-    console.log('- Design:', designMatch?.[1]?.trim());
 
     // Extract all components and apply word repetition removal to each
     const unifiedTheme = removeWordRepetitions(unifiedThemeMatch?.[1]?.trim() || 'Quality local business');
@@ -1059,7 +1035,6 @@ IMPORTANT:
     const caption = removeWordRepetitions(captionMatch?.[1]?.trim() || response);
 
     // 🎯 GENERATE DYNAMIC CTA using AI and business intelligence
-    console.log('🎯 Generating dynamic CTA with business intelligence...');
     const ctaStrategy = await dynamicCTAGenerator.generateDynamicCTA(
       businessName,
       businessType,
@@ -1071,7 +1046,6 @@ IMPORTANT:
     );
 
     const callToAction = removeWordRepetitions(ctaMatch?.[1]?.trim() || ctaStrategy.primary);
-    console.log(`✅ Generated CTA: "${callToAction}" (Style: ${ctaStrategy.style})`);
 
     const designDirection = removeWordRepetitions(designMatch?.[1]?.trim() || 'Clean, professional design with local elements');
 
@@ -1079,7 +1053,6 @@ IMPORTANT:
     const engagementHooks = generateDynamicEngagementHooks(businessType, location, industry);
 
     // 🔥 GENERATE VIRAL HASHTAGS using trending data
-    console.log('🔥 Generating viral hashtags with trending data...');
     const viralHashtags = await viralHashtagEngine.generateViralHashtags(
       businessType,
       businessName,
@@ -1089,7 +1062,6 @@ IMPORTANT:
       businessDetails.targetAudience
     );
 
-    console.log(`✅ Generated ${viralHashtags.total.length} viral hashtags: ${viralHashtags.total.slice(0, 5).join(' ')}`);
 
     return {
       headline,
@@ -1106,8 +1078,6 @@ IMPORTANT:
       imageText: callToAction // Pass CTA as imageText for design integration
     };
   } catch (error) {
-    console.error('❌ AI caption generation failed, attempting retry with simplified prompt:', error);
-    console.error('🔍 Error details:', {
       name: error.name,
       message: error.message,
       stack: error.stack?.substring(0, 200)
@@ -1115,7 +1085,6 @@ IMPORTANT:
 
     // RETRY WITH SIMPLIFIED AI PROMPT - No Static Fallback
     try {
-      console.log('🔄 Retrying with simplified AI prompt...');
 
       const simplifiedPrompt = `Create ONE unique ${platform} caption for ${businessName}, a ${businessType} in ${location}.
 
@@ -1164,7 +1133,6 @@ Do NOT write "Here are captions" or provide lists.`;
       // Post-process to remove word repetitions from retry response
       retryResponse = removeWordRepetitions(retryResponse);
 
-      console.log('✅ Retry successful:', retryResponse.substring(0, 100) + '...');
 
       // Parse the retry response
       const retryCaptionMatch = retryResponse.match(/CAPTION:\s*(.*?)(?=CTA:|$)/s);
@@ -1189,7 +1157,6 @@ Do NOT write "Here are captions" or provide lists.`;
       };
 
     } catch (retryError) {
-      console.error('❌ AI retry also failed, using emergency AI generation:', retryError);
 
       // EMERGENCY AI GENERATION - Ultra Simple Prompt
       try {
@@ -1220,7 +1187,6 @@ Do NOT write "Here are posts" or provide multiple options. Write ONE post only.`
         // Post-process to remove word repetitions from emergency response
         emergencyResponse = removeWordRepetitions(emergencyResponse);
 
-        console.log('🚨 Emergency AI generation successful');
 
         // Generate viral hashtags for emergency
         const emergencyHashtags = await viralHashtagEngine.generateViralHashtags(
@@ -1238,7 +1204,6 @@ Do NOT write "Here are posts" or provide multiple options. Write ONE post only.`
         };
 
       } catch (emergencyError) {
-        console.error('❌ All AI generation attempts failed:', emergencyError);
 
         // LAST RESORT: Generate with current timestamp for uniqueness
         const timestamp = Date.now();

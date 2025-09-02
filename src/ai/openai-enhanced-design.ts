@@ -63,12 +63,6 @@ export async function generateOpenAIEnhancedDesign(
     const enhancedPrompt = buildDALLE3Prompt(inputWithCleanText);
     enhancementsApplied.push('DALL-E 3 Optimized Prompting', 'Text Validation & Cleaning');
 
-    console.log('🎨 Generating enhanced design with OpenAI DALL-E 3...');
-    console.log('📝 Original text:', `"${input.imageText}"`);
-    console.log('🧹 Cleaned text:', `"${cleanedText}"`);
-    console.log('🔄 Text changed:', input.imageText !== cleanedText ? 'YES' : 'NO');
-    console.log('📏 Prompt length:', enhancedPrompt.length);
-    console.log('🎯 Full prompt preview:', enhancedPrompt.substring(0, 200) + '...');
 
     // Generate image with GPT-Image 1 (Latest OpenAI Image Model - 2025)
     // GPT-Image 1 replaced DALL-E 3 as the most advanced OpenAI image model
@@ -104,8 +98,6 @@ export async function generateOpenAIEnhancedDesign(
       enhancementsApplied.push('Brand Color Enforcement');
     }
 
-    console.log('✅ Enhanced design generated successfully');
-    console.log('🔗 Image URL:', imageUrl);
 
     return {
       imageUrl,
@@ -114,7 +106,6 @@ export async function generateOpenAIEnhancedDesign(
       processingTime: Date.now() - startTime,
     };
   } catch (error) {
-    console.error('❌ Error generating OpenAI enhanced design:', error);
     throw new Error(`OpenAI enhanced design generation failed: ${(error as Error).message}`);
   }
 }
@@ -473,7 +464,6 @@ export async function generateEnhancedDesignWithFallback(
     // Try OpenAI first
     return await generateOpenAIEnhancedDesign(input);
   } catch (error) {
-    console.warn('⚠️ OpenAI failed, falling back to Gemini:', error);
 
     // Import and use the existing Gemini-based creative asset flow
     const { generateCreativeAsset } = await import('@/ai/flows/generate-creative-asset');

@@ -21,38 +21,29 @@ async function getCurrentBrandProfileId(userId: string): Promise<string | null> 
     const profile = await brandProfileFirebaseService.getLatestCompleteBrandProfile(userId);
     return profile?.id || null;
   } catch (error) {
-    console.error('Failed to get brand profile ID:', error);
     return null;
   }
 }
 
 // Save generated post to Firestore
 export async function saveGeneratedPost(post: GeneratedPost): Promise<string> {
-  console.log('🔄 Starting post save process...');
 
   const userId = await getCurrentUserId();
-  console.log('👤 User ID:', userId);
 
   if (!userId) {
-    console.log('⚠️ No user authenticated, falling back to localStorage');
     return saveGeneratedPostToLocalStorage(post);
   }
 
   const brandProfileId = await getCurrentBrandProfileId(userId);
-  console.log('🏢 Brand Profile ID:', brandProfileId);
 
   if (!brandProfileId) {
-    console.error('❌ No brand profile found. Please create a brand profile first.');
     throw new Error('No brand profile found. Please create a brand profile first.');
   }
 
   try {
-    console.log('💾 Attempting to save to Firestore...');
     const postId = await generatedPostFirebaseService.saveGeneratedPost(post, userId, brandProfileId);
-    console.log('✅ Successfully saved to Firestore with ID:', postId);
     return postId;
   } catch (error) {
-    console.error('❌ Failed to save to Firestore, falling back to localStorage:', error);
     return saveGeneratedPostToLocalStorage(post);
   }
 }
@@ -70,7 +61,6 @@ export async function loadGeneratedPosts(limit: number = 10): Promise<GeneratedP
     const posts = await generatedPostFirebaseService.getUserGeneratedPosts(userId, { limit });
     return posts;
   } catch (error) {
-    console.error('Failed to load from Firestore, falling back to localStorage:', error);
     return loadGeneratedPostsFromLocalStorage();
   }
 }
@@ -87,7 +77,6 @@ export async function loadGeneratedPostsForBrand(brandProfileId: string, limit: 
     const posts = await generatedPostFirebaseService.getRecentPostsForBrand(userId, brandProfileId, limit);
     return posts;
   } catch (error) {
-    console.error('Failed to load posts for brand:', error);
     return [];
   }
 }
@@ -104,7 +93,6 @@ export async function deleteGeneratedPost(postId: string): Promise<void> {
   try {
     await generatedPostFirebaseService.delete(postId);
   } catch (error) {
-    console.error('Failed to delete from Firestore, falling back to localStorage:', error);
     deleteGeneratedPostFromLocalStorage(postId);
   }
 }
@@ -126,7 +114,6 @@ export async function updatePostStatus(
 
     await generatedPostFirebaseService.updatePostStatus(postId, firestoreStatus, undefined, publishedAt);
   } catch (error) {
-    console.error('Failed to update post status:', error);
     throw error;
   }
 }
@@ -177,7 +164,6 @@ function saveGeneratedPostToLocalStorage(post: GeneratedPost): string {
     localStorage.setItem(GENERATED_POSTS_KEY, JSON.stringify(newPosts));
     return post.id;
   } catch (error) {
-    console.error('Failed to save post to localStorage:', error);
     throw error;
   }
 }
@@ -200,7 +186,6 @@ function loadGeneratedPostsFromLocalStorage(): GeneratedPost[] {
       return post;
     });
   } catch (error) {
-    console.error('Failed to load posts from localStorage:', error);
     return [];
   }
 }
@@ -210,7 +195,6 @@ function deleteGeneratedPostFromLocalStorage(postId: string): void {
     const posts = loadGeneratedPostsFromLocalStorage().filter(p => p.id !== postId);
     localStorage.setItem(GENERATED_POSTS_KEY, JSON.stringify(posts));
   } catch (error) {
-    console.error('Failed to delete post from localStorage:', error);
   }
 }
 
@@ -234,7 +218,6 @@ export function cleanupStorage(): void {
 
     localStorage.setItem(GENERATED_POSTS_KEY, JSON.stringify(fixedPosts));
   } catch (error) {
-    console.error('Failed to cleanup storage:', error);
     // If cleanup fails, clear all posts
     localStorage.removeItem(GENERATED_POSTS_KEY);
   }
@@ -284,8 +267,6 @@ export function needsPostsMigration(): boolean {
 export function clearMigratedPosts(): void {
   try {
     localStorage.removeItem(GENERATED_POSTS_KEY);
-    console.log('Cleared migrated posts from localStorage');
   } catch (error) {
-    console.warn('Failed to clear migrated posts:', error);
   }
 }

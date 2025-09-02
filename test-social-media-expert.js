@@ -62,30 +62,13 @@ const sampleBusinessProfile = {
 
 // Test the system directly
 async function testSocialMediaExpertSystem() {
-  console.log('🚀 Testing Social Media Expert System...\n');
   
   try {
     // Import the classes (you'll need to run this with tsx or compile first)
-    console.log('📋 Sample Business Profile:');
-    console.log(JSON.stringify(sampleBusinessProfile, null, 2));
     
-    console.log('\n✅ System is ready for testing!');
-    console.log('\nTo test the system:');
-    console.log('1. Start your Next.js dev server: npm run dev');
-    console.log('2. Use the API endpoint: POST /api/social-media-expert');
-    console.log('3. Test with actions: analyze, generate-posts, generate-strategy, generate-calendar, complete-package');
     
-    console.log('\n📝 Example API call:');
-    console.log('POST http://localhost:3001/api/social-media-expert');
-    console.log('Body: {');
-    console.log('  "action": "complete-package",');
-    console.log('  "businessProfile": sampleBusinessProfile,');
-    console.log('  "platform": "Instagram",');
-    console.log('  "count": 5');
-    console.log('}');
     
   } catch (error) {
-    console.error('❌ Error testing system:', error);
   }
 }
 

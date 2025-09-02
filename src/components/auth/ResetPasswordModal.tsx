@@ -50,7 +50,6 @@ export default function ResetPasswordModal({ email, onClose }: Props) {
         setCode(['', '', '', '', '']);
       }
     } catch (err) {
-      console.error(err);
       alert('Failed to verify code');
     } finally {
       setLoading(false);
@@ -75,7 +74,6 @@ export default function ResetPasswordModal({ email, onClose }: Props) {
         try { (await import('sweetalert2')).default.fire({ icon: 'error', title: 'Error', text: msg }) } catch (_) {}
       }
     } catch (err) {
-      console.error(err);
       alert('Failed to resend');
     } finally {
       setResendLoading(false);

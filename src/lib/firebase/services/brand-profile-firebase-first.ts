@@ -39,10 +39,8 @@ function getCachedProfile(userId: string): CompleteBrandProfile | null {
       return null;
     }
 
-    console.log('📦 Using cached profile for user:', userId);
     return data;
   } catch (error) {
-    console.warn('Failed to get cached profile:', error);
     return null;
   }
 }
@@ -54,18 +52,14 @@ function setCachedProfile(userId: string, profile: CompleteBrandProfile): void {
       timestamp: Date.now()
     };
     localStorage.setItem(`${CACHE_KEY_PREFIX}_${userId}`, JSON.stringify(cacheData));
-    console.log('📦 Cached profile for user:', userId);
   } catch (error) {
-    console.warn('Failed to cache profile:', error);
   }
 }
 
 function clearCachedProfile(userId: string): void {
   try {
     localStorage.removeItem(`${CACHE_KEY_PREFIX}_${userId}`);
-    console.log('🗑️ Cleared cached profile for user:', userId);
   } catch (error) {
-    console.warn('Failed to clear cached profile:', error);
   }
 }
 
@@ -100,7 +94,6 @@ function cleanUrl(url: string | undefined): string {
 // Save brand profile to Firebase (primary storage)
 export async function saveBrandProfileFirebaseFirst(profile: CompleteBrandProfile, userId: string): Promise<string> {
   try {
-    console.log('🔄 Saving brand profile to Firebase (Firebase-first):', profile.businessName);
 
     // Create the document data
     const data = {
@@ -163,7 +156,6 @@ export async function saveBrandProfileFirebaseFirst(profile: CompleteBrandProfil
 
     // Save to Firebase first (primary storage)
     await setDoc(docRef, data, { merge: true });
-    console.log('✅ Brand profile saved to Firebase successfully');
 
     // Update the profile with the ID and timestamps
     const savedProfile: CompleteBrandProfile = {
@@ -178,7 +170,6 @@ export async function saveBrandProfileFirebaseFirst(profile: CompleteBrandProfil
 
     return docId;
   } catch (error) {
-    console.error('❌ Failed to save brand profile to Firebase:', error);
     throw new Error(`Failed to save brand profile: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -186,7 +177,6 @@ export async function saveBrandProfileFirebaseFirst(profile: CompleteBrandProfil
 // Load brand profile from Firebase (primary storage) with cache fallback
 export async function loadBrandProfileFirebaseFirst(userId: string): Promise<CompleteBrandProfile | null> {
   try {
-    console.log('🔄 Loading brand profile from Firebase (Firebase-first) for user:', userId);
 
     // Try to get from cache first for performance
     const cached = getCachedProfile(userId);
@@ -199,16 +189,13 @@ export async function loadBrandProfileFirebaseFirst(userId: string): Promise<Com
     // Load from Firebase (primary storage)
     return await loadFromFirebase(userId);
   } catch (error) {
-    console.error('❌ Failed to load from Firebase, trying cache:', error);
 
     // Fallback to cache if Firebase fails
     const cached = getCachedProfile(userId);
     if (cached) {
-      console.log('📦 Using cached profile as fallback');
       return cached;
     }
 
-    console.error('❌ No cached profile available');
     return null;
   }
 }
@@ -224,7 +211,6 @@ async function loadFromFirebase(userId: string): Promise<CompleteBrandProfile | 
 
   const querySnapshot = await getDocs(q);
   if (querySnapshot.empty) {
-    console.log('📭 No brand profile found in Firebase for user:', userId);
     return null;
   }
 
@@ -236,7 +222,6 @@ async function loadFromFirebase(userId: string): Promise<CompleteBrandProfile | 
   // Cache the loaded profile
   setCachedProfile(userId, profile);
 
-  console.log('✅ Brand profile loaded from Firebase:', profile.businessName);
   return profile;
 }
 
@@ -245,7 +230,6 @@ async function loadFromFirebaseInBackground(userId: string): Promise<void> {
   try {
     await loadFromFirebase(userId);
   } catch (error) {
-    console.warn('Background Firebase load failed:', error);
   }
 }
 
@@ -302,7 +286,6 @@ function convertFirebaseToProfile(id: string, data: any): CompleteBrandProfile {
 // Get all brand profiles for a user
 export async function getUserBrandProfilesFirebaseFirst(userId: string): Promise<CompleteBrandProfile[]> {
   try {
-    console.log('🔄 Loading all brand profiles from Firebase for user:', userId);
 
     const q = query(
       collection(db, COLLECTION_NAME),
@@ -315,10 +298,8 @@ export async function getUserBrandProfilesFirebaseFirst(userId: string): Promise
       convertFirebaseToProfile(doc.id, doc.data())
     );
 
-    console.log(`✅ Loaded ${profiles.length} brand profiles from Firebase`);
     return profiles;
   } catch (error) {
-    console.error('❌ Failed to load brand profiles from Firebase:', error);
     return [];
   }
 }
@@ -326,7 +307,6 @@ export async function getUserBrandProfilesFirebaseFirst(userId: string): Promise
 // Delete brand profile from Firebase and clear cache
 export async function deleteBrandProfileFirebaseFirst(profileId: string, userId: string): Promise<void> {
   try {
-    console.log('🗑️ Deleting brand profile from Firebase:', profileId);
 
     // Delete from Firebase
     await deleteDoc(doc(db, COLLECTION_NAME, profileId));
@@ -334,9 +314,7 @@ export async function deleteBrandProfileFirebaseFirst(profileId: string, userId:
     // Clear cache
     clearCachedProfile(userId);
 
-    console.log('✅ Brand profile deleted successfully');
   } catch (error) {
-    console.error('❌ Failed to delete brand profile:', error);
     throw error;
   }
 }
@@ -350,8 +328,6 @@ export function clearAllCachedProfiles(): void {
         localStorage.removeItem(key);
       }
     });
-    console.log('🗑️ Cleared all cached brand profiles');
   } catch (error) {
-    console.warn('Failed to clear cached profiles:', error);
   }
 }

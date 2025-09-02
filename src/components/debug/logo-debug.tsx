@@ -38,7 +38,6 @@ export function LogoDebug() {
                 src={currentBrand.logoDataUrl} 
                 alt="Logo Preview" 
                 className="max-w-[100px] max-h-[100px] object-contain"
-                onError={() => console.error('Logo failed to load in debug component')}
               />
             </div>
           </div>

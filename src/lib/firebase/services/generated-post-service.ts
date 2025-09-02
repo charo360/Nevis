@@ -149,13 +149,8 @@ export class GeneratedPostService extends DatabaseService<GeneratedPostDocument>
     brandProfileId: string
   ): Promise<string> {
     try {
-      console.log('🔄 Starting post save process...');
-      console.log('👤 User ID:', userId);
-      console.log('🏢 Brand Profile ID:', brandProfileId);
-      console.log('📝 Original post data:', JSON.stringify(post, null, 2));
 
       const firestoreData = this.toFirestoreDocument(post, userId, brandProfileId);
-      console.log('🔧 Converted Firestore data:', JSON.stringify(firestoreData, null, 2));
 
       // Additional validation to catch nested entities
       const validateNoNestedEntities = (obj: any, path: string = ''): void => {
@@ -173,7 +168,6 @@ export class GeneratedPostService extends DatabaseService<GeneratedPostDocument>
               );
 
               if (hasComplexNesting) {
-                console.error(`❌ Complex nested entity found at ${currentPath}:`, value);
                 throw new Error(`Property ${currentPath} contains an invalid nested entity`);
               }
             }
@@ -187,26 +181,19 @@ export class GeneratedPostService extends DatabaseService<GeneratedPostDocument>
         }
       };
 
-      console.log('🔍 Validating for nested entities...');
       validateNoNestedEntities(firestoreData);
-      console.log('✅ No nested entities found');
 
       // Validate data with schema
-      console.log('📋 Validating with schema...');
       const validatedData = GeneratedPostDocumentSchema.omit({
         id: true,
         createdAt: true,
         updatedAt: true,
       }).parse(firestoreData);
 
-      console.log('💾 Attempting to save to Firestore...');
       const result = await this.create(validatedData);
-      console.log('✅ Successfully saved to Firestore with ID:', result);
 
       return result;
     } catch (error) {
-      console.error('❌ Failed to save post:', error);
-      console.error('📊 Post data that failed:', JSON.stringify(post, null, 2));
       throw error;
     }
   }

@@ -55,18 +55,13 @@ export async function generateRealTimeTrendingTopics(
   platform: string = 'general'
 ): Promise<TrendingTopic[]> {
   try {
-    console.log(`🔍 Fetching real-time trends for ${businessType} in ${location}...`);
-    console.log(`📱 Platform: ${platform}`);
 
     // Fetch from working real-time sources (temporarily disable failing APIs)
-    console.log('🌐 Starting RSS feeds fetch...');
     const [googleTrends, redditTrends] = await Promise.allSettled([
       fetchGoogleTrends(location, businessType),
       fetchRedditTrends(businessType, platform)
     ]);
 
-    console.log(`📊 Google Trends status: ${googleTrends.status}`);
-    console.log(`📊 Reddit Trends status: ${redditTrends.status}`);
 
     // Temporarily disable failing APIs until we fix them
     const twitterTrends = { status: 'rejected' as const, reason: 'Temporarily disabled' };
@@ -76,7 +71,6 @@ export async function generateRealTimeTrendingTopics(
 
     // Process Google Trends
     if (googleTrends.status === 'fulfilled') {
-      console.log(`✅ Google Trends: ${googleTrends.value.length} trends received`);
       allTrends.push(...googleTrends.value.map(trend => ({
         topic: trend.topic,
         relevanceScore: trend.relevanceScore,
@@ -110,12 +104,10 @@ export async function generateRealTimeTrendingTopics(
         engagement_potential: news.engagement_potential as any
       })));
     } else {
-      console.warn(`⚠️ Google Trends failed:`, googleTrends.reason);
     }
 
     // Process Reddit Trends
     if (redditTrends.status === 'fulfilled') {
-      console.log(`✅ Reddit Trends: ${redditTrends.value.length} trends received`);
       allTrends.push(...redditTrends.value.map(trend => ({
         topic: trend.topic,
         relevanceScore: trend.relevanceScore,
@@ -125,23 +117,19 @@ export async function generateRealTimeTrendingTopics(
         engagement_potential: trend.engagement_potential as any
       })));
     } else {
-      console.warn(`⚠️ Reddit Trends failed:`, redditTrends.reason);
     }
 
     // If we have real-time trends, use them
     if (allTrends.length > 0) {
-      console.log(`✅ Found ${allTrends.length} real-time trends`);
       return allTrends
         .sort((a, b) => b.relevanceScore - a.relevanceScore)
         .slice(0, 10);
     }
 
     // Fallback to static trends
-    console.log('⚠️ No real-time trends available, using static fallback');
     return generateStaticTrendingTopics(businessType, location, platform);
 
   } catch (error) {
-    console.error('Error fetching real-time trends:', error);
     return generateStaticTrendingTopics(businessType, location, platform);
   }
 }

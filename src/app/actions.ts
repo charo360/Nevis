@@ -28,8 +28,6 @@ export async function analyzeBrandAction(
   designImageUris: string[],
 ): Promise<AnalysisResult> {
   try {
-    console.log("🔍 Starting brand analysis for URL:", websiteUrl);
-    console.log("🖼️ Design images count:", designImageUris.length);
 
     // Validate URL format
     if (!websiteUrl || !websiteUrl.trim()) {
@@ -51,9 +49,6 @@ export async function analyzeBrandAction(
       designImageUris: designImageUris || []
     });
 
-    console.log("✅ Brand analysis result:", JSON.stringify(result, null, 2));
-    console.log("🔍 Result type:", typeof result);
-    console.log("🔍 Result keys:", result ? Object.keys(result) : "No result");
 
     if (!result) {
       return {
@@ -68,7 +63,6 @@ export async function analyzeBrandAction(
       data: result
     };
   } catch (error) {
-    console.error("❌ Error analyzing brand:", error);
 
     // Return structured error response instead of throwing
     const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
@@ -172,21 +166,16 @@ export async function generateContentAction(
 
     // Ensure model registry is initialized
     if (!modelRegistry.isInitialized()) {
-      console.log('🔄 Model registry not initialized, initializing now...');
       await modelRegistry.initialize();
     }
 
-    console.log('🔍 Model registry initialized, getting Revo 1.0 model...');
 
     // Use Revo 1.0 model through the registry for enhanced Gemini 2.5 Flash Image Preview
     const revo10Model = modelRegistry.getModel('revo-1.0');
     if (!revo10Model) {
-      console.error('❌ Revo 1.0 model not found in registry');
-      console.log('📊 Available models:', modelRegistry.getAllModels().map(m => m.model.id));
       throw new Error('Revo 1.0 model not available');
     }
 
-    console.log('✅ Revo 1.0 model found:', revo10Model.model.name);
 
     const generationRequest = {
       modelId: 'revo-1.0',
@@ -214,15 +203,12 @@ export async function generateContentAction(
       }]
     };
 
-    console.log('📝 Calling Revo 1.0 content generator...');
     const result = await revo10Model.contentGenerator.generateContent(generationRequest);
 
     if (!result.success) {
-      console.error('❌ Revo 1.0 content generation failed:', result.error);
       throw new Error(result.error || 'Content generation failed');
     }
 
-    console.log('✅ Revo 1.0 content generation successful');
     const postDetails = result.data;
 
     const newPost: GeneratedPost = {
@@ -244,7 +230,6 @@ export async function generateContentAction(
 
     return newPost;
   } catch (error) {
-    console.error("Error generating content:", error);
     throw new Error("Failed to generate content. Please try again later.");
   }
 }
@@ -264,7 +249,6 @@ export async function generateVideoContentAction(
     });
     return { videoUrl: result.videoUrl };
   } catch (error) {
-    console.error("Error generating video content:", error);
     // Pass the specific error message from the flow to the client
     throw new Error((error as Error).message);
   }
@@ -292,7 +276,6 @@ export async function generateCreativeAssetAction(
     });
     return result;
   } catch (error) {
-    console.error("Error generating creative asset:", error);
     // Always pass the specific error message from the flow to the client.
     throw new Error((error as Error).message);
   }
@@ -339,19 +322,11 @@ export async function generateEnhancedDesignAction(
       finalImageText = components.join('\n');
     }
 
-    console.log('🎨 Enhanced Design Generation Started');
-    console.log('- Business Type:', businessType);
-    console.log('- Platform:', platform);
-    console.log('- Visual Style:', visualStyle);
-    console.log('- Image Text:', finalImageText);
-    console.log('- Brand Profile:', brandProfile.businessName);
-    console.log('- Enhancements Enabled:', enableEnhancements);
 
     // Try Gemini 2.5 first (best quality), then fallback to OpenAI, then Gemini 2.0 HD
     let result;
 
     try {
-      console.log('🚀 Using Gemini 2.5 Pro for superior design generation...');
 
       result = await generateEnhancedDesign({
         businessType,
@@ -365,15 +340,10 @@ export async function generateEnhancedDesignAction(
         useLocalLanguage,
       });
 
-      console.log('✅ Gemini 2.5 enhanced design generated successfully');
-      console.log(`🎯 Quality Score: ${result.qualityScore}/10`);
-      console.log(`⚡ Processing Time: ${result.processingTime}ms`);
 
     } catch (gemini25Error) {
-      console.warn('⚠️ Gemini 2.5 generation failed, falling back to OpenAI:', gemini25Error);
 
       try {
-        console.log('🚀 Using OpenAI GPT-Image 1 for enhanced design generation...');
         const { generateEnhancedDesignWithFallback } = await import('@/ai/openai-enhanced-design');
 
         result = await generateEnhancedDesignWithFallback({
@@ -386,11 +356,8 @@ export async function generateEnhancedDesignAction(
           artifactInstructions,
         });
 
-        console.log('✅ OpenAI GPT-Image 1 enhanced design generated successfully');
       } catch (openaiError) {
-        console.warn('⚠️ OpenAI generation also failed, falling back to Gemini 2.0 HD:', openaiError);
 
-        console.log('🚀 Using Gemini 2.0 Flash HD for enhanced design generation...');
         const { generateGeminiHDEnhancedDesignWithFallback } = await import('@/ai/gemini-hd-enhanced-design');
 
         result = await generateGeminiHDEnhancedDesignWithFallback({
@@ -403,13 +370,9 @@ export async function generateEnhancedDesignAction(
           artifactInstructions,
         });
 
-        console.log('✅ Gemini 2.0 HD enhanced design generated successfully');
       }
     }
 
-    console.log('🔗 Image URL:', result.imageUrl);
-    console.log('⭐ Quality Score:', result.qualityScore);
-    console.log('🎯 Enhancements Applied:', result.enhancementsApplied);
 
     return {
       imageUrl: result.imageUrl,
@@ -420,7 +383,6 @@ export async function generateEnhancedDesignAction(
 
 
   } catch (error) {
-    console.error("Error generating enhanced design:", error);
     throw new Error((error as Error).message);
   }
 }
@@ -446,14 +408,7 @@ export async function generateGeminiHDDesignAction(
       throw new Error('Brand profile is required for Gemini HD design generation');
     }
 
-    console.log('🎨 Gemini HD Design Generation Started');
-    console.log('- Business Type:', businessType);
-    console.log('- Platform:', platform);
-    console.log('- Visual Style:', visualStyle);
-    console.log('- Image Text:', imageText);
-    console.log('- Brand Profile:', brandProfile.businessName);
 
-    console.log('🚀 Using Gemini 2.0 Flash HD for enhanced design generation...');
     const { generateGeminiHDEnhancedDesignWithFallback } = await import('@/ai/gemini-hd-enhanced-design');
 
     const result = await generateGeminiHDEnhancedDesignWithFallback({
@@ -466,10 +421,6 @@ export async function generateGeminiHDDesignAction(
       artifactInstructions,
     });
 
-    console.log('✅ Gemini HD enhanced design generated successfully');
-    console.log('🔗 Image URL:', result.imageUrl);
-    console.log('⭐ Quality Score:', result.qualityScore);
-    console.log('🎯 Enhancements Applied:', result.enhancementsApplied);
 
     return {
       platform,
@@ -478,7 +429,6 @@ export async function generateGeminiHDDesignAction(
       hashtags: [],
     };
   } catch (error) {
-    console.error('❌ Error in Gemini HD design generation:', error);
     throw new Error(`Gemini HD design generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -496,10 +446,6 @@ export async function generateContentWithArtifactsAction(
   useLocalLanguage: boolean = false
 ): Promise<GeneratedPost> {
   try {
-    console.log('🎨 Generating content with artifacts...');
-    console.log('- Platform:', platform);
-    console.log('- Artifacts:', artifactIds.length);
-    console.log('- Enhanced Design:', useEnhancedDesign);
 
     // Get active artifacts if no specific artifacts provided
     let targetArtifacts: Artifact[] = [];
@@ -516,8 +462,6 @@ export async function generateContentWithArtifactsAction(
     } else {
       // Use active artifacts, prioritizing exact-use
       const activeArtifacts = artifactsService.getActiveArtifacts();
-      console.log('🔍 Active artifacts found:', activeArtifacts.length);
-      console.log('📋 Active artifacts details:', activeArtifacts.map(a => ({
         id: a.id,
         name: a.name,
         type: a.type,
@@ -538,25 +482,19 @@ export async function generateContentWithArtifactsAction(
       }
     }
 
-    console.log('📎 Using artifacts:', targetArtifacts.map(a => `${a.name} (${a.usageType})`));
 
     // Generate base content first
     const basePost = await generateContentAction(profile, platform, brandConsistency);
 
     // If enhanced design is disabled, return base content
     if (!useEnhancedDesign) {
-      console.log('🔄 Enhanced design disabled, using base content generation');
       return basePost;
     }
 
     // Enhanced design is enabled - always use enhanced generation regardless of artifacts
-    console.log('🎨 Enhanced design enabled - proceeding with enhanced generation');
-    console.log(`📊 Artifacts available: ${targetArtifacts.length}`);
 
     if (targetArtifacts.length === 0) {
-      console.log('✨ No artifacts provided - using enhanced design without artifact context');
     } else {
-      console.log('🎯 Using enhanced design with artifact context');
     }
 
     // Separate exact-use and reference artifacts
@@ -591,18 +529,15 @@ export async function generateContentWithArtifactsAction(
       if (primaryExactUse.textOverlay) {
         if (primaryExactUse.textOverlay.headline) {
           enhancedImageText.catchyWords = primaryExactUse.textOverlay.headline;
-          console.log('📝 Using headline from exact-use artifact:', enhancedImageText.catchyWords);
         }
 
         if (primaryExactUse.textOverlay.message) {
           enhancedContent = primaryExactUse.textOverlay.message;
-          console.log('📝 Using message from exact-use artifact');
         }
 
         // Use CTA from artifact if available
         if (primaryExactUse.textOverlay.cta) {
           enhancedImageText.callToAction = primaryExactUse.textOverlay.cta;
-          console.log('📝 Using CTA from exact-use artifact:', enhancedImageText.callToAction);
         }
       }
     }
@@ -616,11 +551,9 @@ export async function generateContentWithArtifactsAction(
     const styleDirectives = activeDirectives.filter(d => d.type === 'style-reference');
     let visualStyleOverride = profile.visualStyle || 'modern';
     if (styleDirectives.length > 0) {
-      console.log('🎨 Applying style references from artifacts');
       const primaryStyleDirective = styleDirectives.find(d => d.priority >= 7);
       if (primaryStyleDirective) {
         visualStyleOverride = 'artifact-inspired';
-        console.log('🎨 Using artifact-inspired visual style');
       }
     }
 
@@ -673,11 +606,9 @@ export async function generateContentWithArtifactsAction(
       }
     };
 
-    console.log('✅ Enhanced content with artifacts generated successfully');
     return enhancedPost;
 
   } catch (error) {
-    console.error("Error generating content with artifacts:", error);
     throw new Error((error as Error).message);
   }
 }

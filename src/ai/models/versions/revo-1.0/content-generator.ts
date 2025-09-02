@@ -21,10 +21,6 @@ export class Revo10ContentGenerator implements IContentGenerator {
     const startTime = Date.now();
 
     try {
-      console.log('📝 Revo 1.0: Starting content generation...');
-      console.log('- Platform:', request.platform);
-      console.log('- Business:', request.profile.businessName);
-      console.log('- AI Engine: Gemini 2.5 Flash Image Preview (Enhanced)');
 
       // Validate request
       if (!this.validateRequest(request)) {
@@ -53,18 +49,6 @@ export class Revo10ContentGenerator implements IContentGenerator {
       });
 
       // Generate image using the catchy words and brand profile data
-      console.log('🎨 Revo 1.0: Generating branded image for content...');
-      console.log('🏢 Brand:', generationParams.businessName);
-      console.log('🏭 Business Type:', generationParams.businessType);
-      console.log('🎨 Colors:', generationParams.primaryColor, generationParams.accentColor, generationParams.backgroundColor);
-      console.log('📍 Location:', generationParams.location);
-      console.log('🎭 Visual Style:', generationParams.visualStyle);
-      console.log('✍️ Writing Tone:', generationParams.writingTone);
-      console.log('🎯 Target Audience:', generationParams.targetAudience);
-      console.log('🔧 Services:', generationParams.services ? 'Available' : 'None');
-      console.log('⭐ Key Features:', generationParams.keyFeatures ? 'Available' : 'None');
-      console.log('🚀 Competitive Advantages:', generationParams.competitiveAdvantages ? 'Available' : 'None');
-      console.log('🖼️ Logo:', generationParams.logoDataUrl ? 'Available' : 'None');
 
       const { generateRevo10Image } = await import('@/ai/revo-1.0-service');
       // Prepare structured text for image
@@ -74,7 +58,6 @@ export class Revo10ContentGenerator implements IContentGenerator {
       if (postDetails.callToAction) imageTextComponents.push(postDetails.callToAction);
 
       const structuredImageText = imageTextComponents.join(' | ');
-      console.log('🎨 Image text structure:', structuredImageText);
 
       // Get real-time context for enhanced design
       const realTimeContext = (postDetails as any).realTimeContext || null;
@@ -132,8 +115,6 @@ export class Revo10ContentGenerator implements IContentGenerator {
       const processingTime = Date.now() - startTime;
       const qualityScore = this.calculateQualityScore(generatedPost);
 
-      console.log(`✅ Revo 1.0: Content generated successfully in ${processingTime}ms`);
-      console.log(`⭐ Quality Score: ${qualityScore}/10`);
 
       return {
         success: true,
@@ -149,7 +130,6 @@ export class Revo10ContentGenerator implements IContentGenerator {
 
     } catch (error) {
       const processingTime = Date.now() - startTime;
-      console.error('❌ Revo 1.0: Content generation failed:', error);
 
       return {
         success: false,
@@ -181,7 +161,6 @@ export class Revo10ContentGenerator implements IContentGenerator {
 
     // Revo 1.0 doesn't support artifacts
     if (request.artifactIds && request.artifactIds.length > 0) {
-      console.warn('⚠️ Revo 1.0: Artifacts not supported, ignoring artifact IDs');
     }
 
     return true;
@@ -285,7 +264,6 @@ export class Revo10ContentGenerator implements IContentGenerator {
 
       return hasApiKey;
     } catch (error) {
-      console.error('❌ Revo 1.0 Content Generator health check failed:', error);
       return false;
     }
   }

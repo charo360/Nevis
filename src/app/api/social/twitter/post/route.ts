@@ -46,7 +46,6 @@ export async function POST(req: Request) {
       if (!ref.exists) return NextResponse.json({ error: 'Twitter not connected' }, { status: 400 });
       doc = ref.data();
     } catch (e) {
-      console.error('Failed to read twitter creds', e);
       return NextResponse.json({ error: 'Failed to read twitter credentials' }, { status: 500 });
     }
 
@@ -97,7 +96,6 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, tweet: result });
   } catch (err) {
-    console.error('Twitter post error:', err);
     return NextResponse.json({ error: 'Failed to post to Twitter' }, { status: 500 });
   }
 }

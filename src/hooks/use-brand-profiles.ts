@@ -37,7 +37,6 @@ export function useBrandProfiles() {
       try {
         profiles = await brandProfileFirebaseService.getUserBrandProfiles(userId);
       } catch (firebaseError) {
-        console.log('🔄 Firebase unavailable, using localStorage fallback');
         // Fallback to localStorage
         const stored = localStorage.getItem('completeBrandProfile');
         if (stored) {
@@ -152,9 +151,7 @@ export function useBrandProfiles() {
 
   // Set current profile
   const setCurrentProfile = useCallback((profile: CompleteBrandProfile | null) => {
-    console.log('🎯 setCurrentProfile called with:', profile?.businessName || 'null');
     setState(prev => {
-      console.log('📊 Previous current profile:', prev.currentProfile?.businessName || 'none');
       return { ...prev, currentProfile: profile };
     });
   }, []);
@@ -164,7 +161,6 @@ export function useBrandProfiles() {
     try {
       return await brandProfileFirebaseService.getBrandProfileById(profileId);
     } catch (error) {
-      console.error('Failed to get profile by ID:', error);
       return null;
     }
   }, []);
@@ -181,7 +177,6 @@ export function useBrandProfiles() {
     const unsubscribe = brandProfileFirebaseService.onUserDocumentsChange(
       userId,
       (profiles) => {
-        console.log('🔄 Real-time profiles update received:', profiles.length, 'profiles');
         setState(prev => {
           // Preserve the current profile if it still exists in the updated profiles
           let preservedCurrentProfile = prev.currentProfile;
@@ -190,13 +185,11 @@ export function useBrandProfiles() {
             // Check if current profile still exists in the updated list
             const stillExists = profiles.find(p => p.id === (prev.currentProfile as any)?.id);
             if (!stillExists) {
-              console.log('⚠️ Current profile no longer exists, clearing selection');
               preservedCurrentProfile = null;
             } else {
               // Update with the latest version of the current profile
               const updatedProfile = profiles.find(p => p.id === (prev.currentProfile as any)?.id);
               if (updatedProfile) {
-                console.log('✅ Current profile updated with latest data:', updatedProfile.businessName);
                 preservedCurrentProfile = updatedProfile;
               }
             }
@@ -207,7 +200,6 @@ export function useBrandProfiles() {
             (!prev.currentProfile && profiles.length > 0 ? profiles[0] : null);
 
           if (finalCurrentProfile && !prev.currentProfile) {
-            console.log('🎯 Auto-selecting first profile on initial load:', finalCurrentProfile.businessName);
           }
 
           return {

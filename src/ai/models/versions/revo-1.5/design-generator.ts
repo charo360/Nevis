@@ -20,11 +20,6 @@ export class Revo15DesignGenerator implements IDesignGenerator {
     const startTime = Date.now();
 
     try {
-      console.log('🎨 Revo 1.5: Starting enhanced design generation...');
-      console.log('- Business Type:', request.businessType);
-      console.log('- Platform:', request.platform);
-      console.log('- Visual Style:', request.visualStyle);
-      console.log('- Artifacts:', request.artifactInstructions ? 'Yes' : 'No');
 
       // Validate request
       if (!this.validateRequest(request)) {
@@ -37,8 +32,6 @@ export class Revo15DesignGenerator implements IDesignGenerator {
       const processingTime = Date.now() - startTime;
       const qualityScore = this.calculateEnhancedQualityScore(designResult);
 
-      console.log(`✅ Revo 1.5: Enhanced design generated successfully in ${processingTime}ms`);
-      console.log(`⭐ Quality Score: ${qualityScore}/10`);
 
       return {
         success: true,
@@ -61,7 +54,6 @@ export class Revo15DesignGenerator implements IDesignGenerator {
 
     } catch (error) {
       const processingTime = Date.now() - startTime;
-      console.error('❌ Revo 1.5: Enhanced design generation failed:', error);
 
       return {
         success: false,
@@ -101,9 +93,6 @@ export class Revo15DesignGenerator implements IDesignGenerator {
         imageText = components.join('\n');
       }
 
-      console.log('🚀 Revo 1.5: Using enhanced two-step design process...');
-      console.log('📋 Step 1: Gemini 2.5 Flash for design planning');
-      console.log('📋 Step 2: Gemini 2.5 Flash Image Preview for final generation');
 
       // Generate enhanced design using two-step process
       const result = await generateRevo15EnhancedDesign({
@@ -118,9 +107,6 @@ export class Revo15DesignGenerator implements IDesignGenerator {
         useLocalLanguage: false
       });
 
-      console.log('✅ Revo 1.5: Two-step enhanced design completed successfully');
-      console.log('🧠 Planning Model:', result.planningModel);
-      console.log('🎨 Generation Model:', result.generationModel);
 
       return {
         platform: request.platform,
@@ -130,7 +116,6 @@ export class Revo15DesignGenerator implements IDesignGenerator {
       };
 
     } catch (error) {
-      console.warn('⚠️ Revo 1.5: Enhanced two-step design failed, trying fallback:', error);
 
       // Fallback to original enhanced design
       return this.generateOriginalEnhancedDesign(request);
@@ -161,7 +146,6 @@ export class Revo15DesignGenerator implements IDesignGenerator {
         imageText = components.join('\n');
       }
 
-      console.log('🔄 Revo 1.5: Using original enhanced design as fallback...');
 
       // Generate enhanced design
       const result = await generateEnhancedDesign({
@@ -182,7 +166,6 @@ export class Revo15DesignGenerator implements IDesignGenerator {
       };
 
     } catch (error) {
-      console.warn('⚠️ Revo 1.5: Original enhanced design failed, using basic fallback:', error);
 
       // Fallback to basic generation
       return this.generateFallbackDesign(request);
@@ -257,7 +240,6 @@ export class Revo15DesignGenerator implements IDesignGenerator {
       };
 
     } catch (error) {
-      console.error('❌ Revo 1.5: Fallback design generation failed:', error);
 
       return {
         platform: request.platform,
@@ -357,7 +339,6 @@ export class Revo15DesignGenerator implements IDesignGenerator {
 
       return hasGeminiKey || hasOpenAIKey;
     } catch (error) {
-      console.error('❌ Revo 1.5 Design Generator health check failed:', error);
       return false;
     }
   }

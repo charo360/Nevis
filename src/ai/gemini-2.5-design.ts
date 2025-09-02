@@ -51,7 +51,6 @@ export async function generateDesignSpecs(
   const startTime = Date.now();
 
   try {
-    console.log('🧠 Generating advanced design specs with Gemini 2.5...');
 
     const designPrompt = `You are an expert graphic designer and brand strategist with deep expertise in 2024-2025 design trends, visual design, color theory, typography, and brand identity. Create a comprehensive ultra-modern design specification for a ${input.platform} post.
 
@@ -137,7 +136,6 @@ Format your response as a detailed JSON object with all specifications clearly o
       maxOutputTokens: 4096 // More tokens for detailed specs
     });
 
-    console.log(`✅ Design specs generated in ${Date.now() - startTime}ms`);
 
     // Parse the JSON response
     let designSpecs;
@@ -151,14 +149,12 @@ Format your response as a detailed JSON object with all specifications clearly o
         designSpecs = parseDesignSpecsFromText(response.text, input);
       }
     } catch (parseError) {
-      console.warn('⚠️ Failed to parse JSON, creating structured specs from text');
       designSpecs = parseDesignSpecsFromText(response.text, input);
     }
 
     return designSpecs;
 
   } catch (error) {
-    console.error('❌ Error generating design specs with Gemini 2.5:', error);
     throw new Error(`Gemini 2.5 design specs generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -174,8 +170,6 @@ export async function generateEnhancedDesign(
   const enhancementsApplied: string[] = ['Gemini 2.5 Flash Image Preview Generation', 'Professional Design Principles', 'Brand Integration'];
 
   try {
-    console.log('🚀 Starting REAL AI enhanced design generation with Gemini 2.5 Flash Image Preview...');
-    console.log('📋 Input:', {
       businessType: input.businessType,
       platform: input.platform,
       visualStyle: input.visualStyle,
@@ -189,8 +183,6 @@ export async function generateEnhancedDesign(
     const imagePrompt = buildComprehensiveImagePrompt(input);
     enhancementsApplied.push('Comprehensive AI Prompting');
 
-    console.log('🎨 Generating image with Gemini 2.5 Flash Image Preview...');
-    console.log('📝 Prompt preview:', imagePrompt.substring(0, 200) + '...');
 
     // Generate image with Gemini 2.5 Flash Image Preview (superior text rendering)
     const creativeResult = await generateCreativeAsset({
@@ -226,15 +218,10 @@ export async function generateEnhancedDesign(
       model: 'gemini-2.0-flash-image'
     };
 
-    console.log('✅ REAL AI enhanced design generated successfully!');
-    console.log('🔗 Image URL:', imageUrl);
-    console.log('⭐ Quality Score:', result.qualityScore);
-    console.log('⚡ Processing Time:', result.processingTime + 'ms');
 
     return result;
 
   } catch (error) {
-    console.error('❌ Gemini 2.5 Flash Image Preview generation failed:', error);
     throw new Error(`Real AI enhanced design generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

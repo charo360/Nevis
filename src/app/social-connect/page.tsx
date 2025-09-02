@@ -54,7 +54,6 @@ function SocialConnectPage() {
   // Load connections when brand changes using unified brand system
   useBrandChangeListener(React.useCallback((brand) => {
     const brandName = brand?.businessName ?? (brand as unknown as { name?: string })?.name ?? 'none';
-    console.log('🔄 Social Connect: brand changed to:', brandName);
 
     if (!brand) {
       setConnections(defaultConnections);
@@ -68,12 +67,10 @@ function SocialConnectPage() {
       if (socialStorage) {
         const storedConnections = socialStorage.getItem<SocialConnection[]>() || defaultConnections;
         setConnections(storedConnections);
-        console.log(`✅ Loaded ${storedConnections.length} social connections for brand ${brandName}`);
       } else {
         setConnections(defaultConnections);
       }
     } catch (error) {
-      console.error('Failed to load social connections for brand:', brandName, error);
       setConnections(defaultConnections);
     } finally {
       setIsLoading(false);
@@ -82,16 +79,13 @@ function SocialConnectPage() {
 
   const saveConnections = (newConnections: SocialConnection[]) => {
     if (!socialStorage) {
-      console.warn('No social storage available for current brand');
       return;
     }
 
     try {
       socialStorage.setItem(newConnections);
       setConnections(newConnections);
-      console.log(`💾 Saved social connections for brand ${brandLabel}`);
     } catch (error) {
-      console.error('Failed to save social connections:', error);
     }
   };
 

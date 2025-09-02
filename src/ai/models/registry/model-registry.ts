@@ -23,11 +23,9 @@ class ModelRegistry implements IModelRegistry {
     const modelId = implementation.model.id;
 
     if (this.models.has(modelId)) {
-      console.warn(`⚠️ Model ${modelId} is already registered. Overwriting...`);
     }
 
     this.models.set(modelId, implementation);
-    console.log(`✅ Registered model: ${implementation.model.name} (${modelId})`);
   }
 
   /**
@@ -84,7 +82,6 @@ class ModelRegistry implements IModelRegistry {
     const availableModels = await this.getAvailableModels();
 
     if (availableModels.length === 0) {
-      console.warn('⚠️ No available models found');
       return null;
     }
 
@@ -229,28 +226,18 @@ class ModelRegistry implements IModelRegistry {
       return;
     }
 
-    console.log('🚀 Initializing Model Registry...');
 
     try {
       // Import and register all model implementations
-      console.log('📦 Importing Revo 1.0...');
       const { Revo10Implementation } = await import('../versions/revo-1.0');
-      console.log('✅ Revo 1.0 imported successfully');
 
-      console.log('📦 Importing Revo 1.5...');
       const { Revo15Implementation } = await import('../versions/revo-1.5');
-      console.log('✅ Revo 1.5 imported successfully');
 
-      console.log('🔧 Registering models...');
       this.registerModel(new Revo10Implementation());
       this.registerModel(new Revo15Implementation());
 
       this.initialized = true;
-      console.log('✅ Model Registry initialized successfully');
-      console.log('📊 Registry Stats:', this.getRegistryStats());
     } catch (error) {
-      console.error('❌ Failed to initialize Model Registry:', error);
-      console.error('Error details:', error instanceof Error ? error.stack : 'Unknown error');
       throw error;
     }
   }
@@ -268,7 +255,6 @@ class ModelRegistry implements IModelRegistry {
   reset(): void {
     this.models.clear();
     this.initialized = false;
-    console.log('🔄 Model Registry reset');
   }
 }
 

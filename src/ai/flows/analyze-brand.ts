@@ -215,7 +215,6 @@ const analyzeBrandPrompt = ai.definePrompt({
 // Website scraping function with enhanced content extraction
 async function scrapeWebsiteContent(url: string): Promise<string> {
   try {
-    console.log('🌐 Scraping website content from:', url);
 
     // Import cheerio for HTML parsing
     const cheerio = await import('cheerio');
@@ -325,13 +324,10 @@ async function scrapeWebsiteContent(url: string): Promise<string> {
       structuredContent = structuredContent.substring(0, 15000) + '...';
     }
 
-    console.log('✅ Website content extracted, length:', structuredContent.length);
-    console.log('📄 Content preview:', structuredContent.substring(0, 200) + '...');
 
     return structuredContent;
 
   } catch (error) {
-    console.error('❌ Error scraping website:', error);
     throw new Error(`Failed to scrape website content: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

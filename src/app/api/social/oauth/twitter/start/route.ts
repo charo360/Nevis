@@ -59,7 +59,6 @@ export async function GET(req: Request) {
   const consumerSecret = process.env.TWITTER_SECRET_KEY || process.env.TWITTER_CLIENT_SECRET;
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
   if (!consumerKey || !consumerSecret) {
-    console.error('Twitter credentials not configured (start)');
     // Nothing configured — persist minimal state and redirect with error
     states[state] = { createdAt: Date.now(), error: 'twitter-not-configured' };
     await writeStates(states);
@@ -68,7 +67,6 @@ export async function GET(req: Request) {
   // Ensure callback URL is encoded and deterministic
   const callbackUrl = `${baseUrl}/api/social/oauth/twitter/callback`;
   const callbackWithState = `${callbackUrl}?state=${encodeURIComponent(state)}`;
-  console.log('Twitter start:', { state, demoUser, callbackWithState });
 
   // OAuth params for request_token
   const oauthParams: Record<string, string> = {
@@ -102,7 +100,6 @@ export async function GET(req: Request) {
     if (!parsed.oauth_token) {
       states[state] = { createdAt: Date.now(), error: 'request-token-failed', resp: text };
       await writeStates(states);
-      console.error('Twitter request_token failed:', text);
       return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect`);
     }
 
@@ -117,7 +114,6 @@ export async function GET(req: Request) {
     const authorizeUrl = `https://api.twitter.com/oauth/authorize?oauth_token=${parsed.oauth_token}`;
     return NextResponse.redirect(authorizeUrl);
   } catch (err) {
-    console.error('Twitter start error', err);
     states[state] = { createdAt: Date.now(), error: 'request-failed', err: String(err) };
     await writeStates(states);
     return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect`);

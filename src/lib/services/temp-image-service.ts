@@ -11,13 +11,11 @@ export class TempImageService {
    */
   static async convertDataUrlToAccessibleUrl(dataUrl: string): Promise<string> {
     try {
-      console.log('🔄 Converting data URL to accessible URL...');
       
       // Extract the base64 data and mime type
       const [header, base64Data] = dataUrl.split(',');
       const mimeType = header.match(/data:([^;]+)/)?.[1] || 'image/png';
       
-      console.log('📋 Image info:', {
         mimeType,
         dataLength: base64Data?.length || 0
       });
@@ -25,7 +23,6 @@ export class TempImageService {
       // For FLUX Kontext Max, we need to try different approaches:
       
       // Approach 1: Try the data URL directly (some APIs accept this)
-      console.log('🧪 Trying data URL directly...');
       return dataUrl;
       
       // TODO: In production, implement one of these approaches:
@@ -39,7 +36,6 @@ export class TempImageService {
       // return URL.createObjectURL(blob);
       
     } catch (error) {
-      console.error('❌ Failed to convert data URL:', error);
       throw new Error(`Failed to convert image: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }

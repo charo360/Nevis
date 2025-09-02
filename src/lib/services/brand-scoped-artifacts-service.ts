@@ -57,7 +57,6 @@ export class BrandScopedArtifactsService {
       return; // No change needed
     }
 
-    console.log(`🔄 Switching artifacts service to brand: ${brandId || 'none'}`);
 
     // Clear current data
     this.artifacts.clear();
@@ -77,7 +76,6 @@ export class BrandScopedArtifactsService {
     } else {
       this.artifactsStorage = null;
       this.foldersStorage = null;
-      console.log(`🚫 No brand selected, artifacts service disabled`);
     }
   }
 
@@ -100,7 +98,6 @@ export class BrandScopedArtifactsService {
    */
   private loadArtifactsFromStorage(): void {
     if (!this.artifactsStorage) {
-      console.warn('Cannot load artifacts: no brand selected');
       return;
     }
 
@@ -108,25 +105,21 @@ export class BrandScopedArtifactsService {
       const artifacts = this.artifactsStorage.getItem<Artifact[]>();
 
       if (artifacts && Array.isArray(artifacts)) {
-        console.log(`✅ Found ${artifacts.length} artifacts for brand ${this.brandId}`);
 
         let validArtifacts = 0;
         artifacts.forEach((artifact: any) => {
           // Validate artifact structure before processing
           if (!artifact || typeof artifact !== 'object') {
-            console.warn('Skipping invalid artifact data:', artifact);
             return;
           }
 
           // Ensure required properties exist
           if (!artifact.id || !artifact.name) {
-            console.warn('Skipping artifact with missing required properties:', artifact);
             return;
           }
 
           // Validate and fix timestamps
           if (!artifact.timestamps || typeof artifact.timestamps !== 'object') {
-            console.warn('Artifact missing timestamps, creating default:', artifact.id);
             artifact.timestamps = {
               created: new Date(),
               modified: new Date(),
@@ -138,7 +131,6 @@ export class BrandScopedArtifactsService {
               artifact.timestamps.modified = artifact.timestamps.modified ? new Date(artifact.timestamps.modified) : new Date();
               artifact.timestamps.uploaded = artifact.timestamps.uploaded ? new Date(artifact.timestamps.uploaded) : new Date();
             } catch (dateError) {
-              console.warn('Invalid timestamps in artifact, using current date:', artifact.id);
               artifact.timestamps = {
                 created: new Date(),
                 modified: new Date(),
@@ -172,19 +164,14 @@ export class BrandScopedArtifactsService {
           }
 
           this.artifacts.set(artifact.id, artifact as Artifact);
-          console.log(`📋 Loaded artifact: ${artifact.name}, isActive: ${artifact.isActive}, usageType: ${artifact.usageType || 'unknown'}`);
           validArtifacts++;
         });
 
-        console.log(`🎯 Successfully loaded ${validArtifacts} valid artifacts for brand ${this.brandId}`);
       } else {
-        console.log(`📂 No artifacts found for brand ${this.brandId}`);
       }
     } catch (error) {
-      console.error(`Failed to load artifacts for brand ${this.brandId}:`, error);
       // Clear corrupted artifact data
       if (this.artifactsStorage) {
-        console.log('🧹 Clearing corrupted artifact data');
         this.artifactsStorage.removeItem();
       }
     }
@@ -195,18 +182,14 @@ export class BrandScopedArtifactsService {
    */
   private async saveArtifactsToStorage(): Promise<void> {
     if (!this.artifactsStorage) {
-      console.warn('Cannot save artifacts: no brand selected');
       return;
     }
 
     try {
       const artifacts = Array.from(this.artifacts.values());
-      console.log(`💾 Saving ${artifacts.length} artifacts for brand ${this.brandId}`);
 
       this.artifactsStorage.setItem(artifacts);
-      console.log(`✅ Artifacts saved successfully for brand ${this.brandId}`);
     } catch (error) {
-      console.error(`Failed to save artifacts for brand ${this.brandId}:`, error);
     }
   }
 
@@ -215,7 +198,6 @@ export class BrandScopedArtifactsService {
    */
   private loadFoldersFromStorage(): void {
     if (!this.foldersStorage) {
-      console.warn('Cannot load folders: no brand selected');
       return;
     }
 
@@ -227,19 +209,16 @@ export class BrandScopedArtifactsService {
         folders.forEach((folder: any) => {
           // Validate folder structure before processing
           if (!folder || typeof folder !== 'object') {
-            console.warn('Skipping invalid folder data:', folder);
             return;
           }
 
           // Ensure required properties exist
           if (!folder.id || !folder.name) {
-            console.warn('Skipping folder with missing required properties:', folder);
             return;
           }
 
           // Ensure metadata exists and has required properties
           if (!folder.metadata || typeof folder.metadata !== 'object') {
-            console.warn('Folder missing metadata, creating default:', folder.id);
             folder.metadata = {
               created: new Date(),
               modified: new Date()
@@ -250,7 +229,6 @@ export class BrandScopedArtifactsService {
               folder.metadata.created = folder.metadata.created ? new Date(folder.metadata.created) : new Date();
               folder.metadata.modified = folder.metadata.modified ? new Date(folder.metadata.modified) : new Date();
             } catch (dateError) {
-              console.warn('Invalid date in folder metadata, using current date:', folder.id);
               folder.metadata.created = new Date();
               folder.metadata.modified = new Date();
             }
@@ -272,13 +250,10 @@ export class BrandScopedArtifactsService {
           this.folders.set(folder.id, folder as ArtifactFolder);
           validFolders++;
         });
-        console.log(`✅ Loaded ${validFolders} valid folders for brand ${this.brandId}`);
       }
     } catch (error) {
-      console.error(`Failed to load folders for brand ${this.brandId}:`, error);
       // Clear corrupted folder data
       if (this.foldersStorage) {
-        console.log('🧹 Clearing corrupted folder data');
         this.foldersStorage.removeItem();
       }
     }
@@ -289,16 +264,13 @@ export class BrandScopedArtifactsService {
    */
   private async saveFoldersToStorage(): Promise<void> {
     if (!this.foldersStorage) {
-      console.warn('Cannot save folders: no brand selected');
       return;
     }
 
     try {
       const folders = Array.from(this.folders.values());
       this.foldersStorage.setItem(folders);
-      console.log(`✅ Folders saved successfully for brand ${this.brandId}`);
     } catch (error) {
-      console.error(`Failed to save folders for brand ${this.brandId}:`, error);
     }
   }
 
@@ -344,7 +316,6 @@ export class BrandScopedArtifactsService {
    */
   getAllArtifacts(): Artifact[] {
     if (!this.isReady()) {
-      console.warn('Artifacts service not ready: no brand selected');
       return [];
     }
     return Array.from(this.artifacts.values());
@@ -355,16 +326,12 @@ export class BrandScopedArtifactsService {
    */
   getActiveArtifacts(): Artifact[] {
     if (!this.isReady()) {
-      console.warn('Artifacts service not ready: no brand selected');
       return [];
     }
 
-    console.log(`🔍 getActiveArtifacts called for brand ${this.brandId}:`);
     const allArtifacts = this.getAllArtifacts();
     const activeArtifacts = allArtifacts.filter(artifact => artifact.isActive);
 
-    console.log(`📊 Total artifacts for brand ${this.brandId}: ${allArtifacts.length}`);
-    console.log(`✅ Active artifacts for brand ${this.brandId}: ${activeArtifacts.length}`);
 
     return activeArtifacts;
   }
@@ -374,24 +341,19 @@ export class BrandScopedArtifactsService {
    */
   setArtifactActive(artifactId: string, isActive: boolean): void {
     if (!this.isReady()) {
-      console.warn('Artifacts service not ready: no brand selected');
       return;
     }
 
-    console.log(`🔧 setArtifactActive called for brand ${this.brandId}: ${artifactId} -> ${isActive}`);
 
     const artifact = this.artifacts.get(artifactId);
     if (artifact) {
-      console.log(`✅ Artifact found: ${artifact.name}, current isActive: ${artifact.isActive}`);
       artifact.isActive = isActive;
       artifact.timestamps.modified = new Date();
       this.artifacts.set(artifactId, artifact);
 
       // Save to storage
       this.saveArtifactsToStorage();
-      console.log(`💾 Artifact updated and saved for brand ${this.brandId}: ${artifact.name} isActive: ${isActive}`);
     } else {
-      console.warn(`❌ Artifact not found for brand ${this.brandId}: ${artifactId}`);
     }
   }
 
@@ -400,7 +362,6 @@ export class BrandScopedArtifactsService {
    */
   getArtifact(artifactId: string): Artifact | undefined {
     if (!this.isReady()) {
-      console.warn('Artifacts service not ready: no brand selected');
       return undefined;
     }
     return this.artifacts.get(artifactId);
@@ -411,7 +372,6 @@ export class BrandScopedArtifactsService {
    */
   getAllFolders(): ArtifactFolder[] {
     if (!this.isReady()) {
-      console.warn('Artifacts service not ready: no brand selected');
       return [];
     }
     return Array.from(this.folders.values());
@@ -502,9 +462,7 @@ export class BrandScopedArtifactsService {
         this.artifacts.set(id, artifact);
         uploadedArtifacts.push(artifact);
 
-        console.log(`✅ Uploaded artifact for brand ${this.brandId}: ${artifact.name}`);
       } catch (error) {
-        console.error(`Failed to upload file ${file.name}:`, error);
         throw error;
       }
     }
@@ -512,7 +470,6 @@ export class BrandScopedArtifactsService {
     // Save to storage
     await this.saveArtifactsToStorage();
 
-    console.log(`🎯 Successfully uploaded ${uploadedArtifacts.length} artifacts for brand ${this.brandId}`);
     return uploadedArtifacts;
   }
 
@@ -546,7 +503,6 @@ export class BrandScopedArtifactsService {
         const dimensions = await this.getImageDimensions(file);
         metadata.dimensions = dimensions;
       } catch (error) {
-        console.warn('Failed to get image dimensions:', error);
       }
     }
 
@@ -590,11 +546,9 @@ export class BrandScopedArtifactsService {
    */
   clearBrandData(): void {
     if (!this.brandId) {
-      console.warn('Cannot clear brand data: no brand selected');
       return;
     }
 
-    console.log(`🗑️ Clearing all artifacts data for brand ${this.brandId}`);
 
     // Clear in-memory data
     this.artifacts.clear();
@@ -609,7 +563,6 @@ export class BrandScopedArtifactsService {
       this.foldersStorage.removeItem();
     }
 
-    console.log(`✅ Cleared all artifacts data for brand ${this.brandId}`);
   }
 
   /**

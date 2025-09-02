@@ -72,7 +72,6 @@ export function ArtifactSelector({
       const allArtifacts = artifactsService.getAllArtifacts();
       setArtifacts(allArtifacts);
     } catch (error) {
-      console.error('Failed to load artifacts:', error);
     } finally {
       setIsLoading(false);
     }

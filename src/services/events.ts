@@ -13,7 +13,6 @@ const BASE_URL = 'https://www.eventbriteapi.com/v3/events/search/';
  */
 export async function getEvents(location: string, date: Date): Promise<string | null> {
   if (!API_KEY || API_KEY === 'YOUR_EVENTBRITE_PRIVATE_TOKEN' || API_KEY.length < 10) {
-    console.log('Eventbrite API key is not configured or appears invalid.');
     return null;
   }
 
@@ -36,7 +35,6 @@ export async function getEvents(location: string, date: Date): Promise<string | 
     
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error('Eventbrite API Error:', `Status: ${response.status}`, errorBody);
       // Return null to allow the flow to continue without event data
       return `Could not retrieve local event information due to an API error (Status: ${response.status}).`;
     }
@@ -50,7 +48,6 @@ export async function getEvents(location: string, date: Date): Promise<string | 
       return 'no major local events found on Eventbrite for the upcoming week';
     }
   } catch (error) {
-    console.error('Error fetching event data:', error);
     return null;
   }
 }

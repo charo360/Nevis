@@ -10,7 +10,6 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const testType = searchParams.get('type') || 'quick';
 
-    console.log(`🧪 Running Gemini 2.5 ${testType} test...`);
 
     if (testType === 'full') {
       // Run comprehensive tests
@@ -31,7 +30,6 @@ export async function GET(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('❌ Gemini 2.5 test failed:', error);
     
     return NextResponse.json({
       success: false,
@@ -68,7 +66,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Gemini 2.5 generation failed:', error);
     
     return NextResponse.json({
       success: false,

@@ -56,7 +56,6 @@ export async function GET(req: Request) {
   let resolvedState: string | null = state;
 
   if (!oauth_token || !oauth_verifier) {
-    console.error('Missing required oauth params', { oauth_token, oauth_verifier, state });
     return NextResponse.redirect(`${baseUrl}/social-connect?error=invalid_request`);
   }
 
@@ -68,9 +67,7 @@ export async function GET(req: Request) {
     entry = states[oauth_token];
     // if that entry pointed to our generated state, use it
     resolvedState = entry.state || null;
-    console.log('Recovered state from oauth_token mapping:', { oauth_token, resolvedState });
   } else {
-    console.error('Invalid or missing state and no mapping for oauth_token', { oauth_token, state });
     return NextResponse.redirect(`${baseUrl}/social-connect?error=invalid_state`);
   }
 
@@ -95,7 +92,6 @@ export async function GET(req: Request) {
     };
 
     const tokenSecret = entry.requestTokenSecret || '';
-    console.log('Twitter callback received:', {
       oauth_token,
       oauth_verifier,
       state,
@@ -104,7 +100,6 @@ export async function GET(req: Request) {
       callbackUrl: `${baseUrl}/api/social/oauth/twitter/callback`,
     });
 
-    console.log('Exchanging token with params (before signing):', { oauthParams, tokenSecret });
 
     const signature = buildSignature('POST', accessUrl, oauthParams, consumerSecret, tokenSecret);
     oauthParams['oauth_signature'] = signature;
@@ -118,7 +113,6 @@ export async function GET(req: Request) {
     const parsed = Object.fromEntries(new URLSearchParams(text));
 
     if (!parsed.oauth_token) {
-      console.error('Twitter access_token failed:', text);
       return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect`);
     }
 
@@ -173,7 +167,6 @@ export async function GET(req: Request) {
 
     return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect`);
   } catch (err) {
-    console.error('Twitter callback error details:', {
       error: err,
       oauth_token,
       oauth_verifier,

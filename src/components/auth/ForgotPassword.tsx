@@ -34,7 +34,6 @@ export default function ForgotPassword() {
         } catch (_) {}
       }
     } catch (err) {
-      console.error(err);
       alert('Failed to send code');
     } finally {
       setLoading(false);

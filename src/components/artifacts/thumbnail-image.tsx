@@ -23,7 +23,6 @@ export function ThumbnailImage({ artifactId, alt, className = "w-20 h-20 object-
         const url = await artifactsService.getArtifactThumbnail(artifactId);
         setThumbnailUrl(url);
       } catch (err) {
-        console.error('Failed to load thumbnail:', err);
         setError(true);
       } finally {
         setLoading(false);

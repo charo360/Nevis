@@ -255,13 +255,11 @@ export class ContentPerformanceAnalyzer {
     profile: BusinessProfile,
     actualMetrics?: PerformanceMetrics
   ): ContentOptimization {
-    console.log(`📊 Analyzing performance for ${profile.businessName} on ${post.platform}...`);
 
     const benchmarks = this.industryBenchmarks.get(profile.businessType) || [];
     const platformBenchmark = benchmarks.find(b => b.platform === post.platform);
 
     if (!platformBenchmark) {
-      console.log(`⚠️ No benchmark found for ${profile.businessType} on ${post.platform}`);
       return this.generateGenericOptimization();
     }
 
@@ -290,7 +288,6 @@ export class ContentPerformanceAnalyzer {
       competitiveAdvantages: this.identifyCompetitiveAdvantages(platformBenchmark, profile)
     };
 
-    console.log(`✅ Performance analysis complete for ${profile.businessName}`);
     return optimization;
   }
 
@@ -490,7 +487,6 @@ export class ContentPerformanceAnalyzer {
     history.push(metrics);
     this.performanceHistory.set(businessName, history.slice(-20)); // Keep last 20 records
 
-    console.log(`📈 Performance tracked for ${businessName}: ${metrics.overallScore.toFixed(2)}`);
   }
 
   /**

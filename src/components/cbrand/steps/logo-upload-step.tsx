@@ -94,7 +94,6 @@ export function LogoUploadStep({
 
       setIsUploading(false);
     } catch (error) {
-      console.error('Upload error:', error);
       toast({
         variant: "destructive",
         title: "Upload Failed",
@@ -201,7 +200,6 @@ export function LogoUploadStep({
     setIsSaving(true);
 
     try {
-      console.log('Starting save process...');
 
       // Check localStorage space before saving
       const testData = JSON.stringify(brandProfile);
@@ -226,9 +224,7 @@ export function LogoUploadStep({
       // Save to localStorage directly with error handling
       try {
         localStorage.setItem('completeBrandProfile', JSON.stringify(savedProfile));
-        console.log('✅ Complete profile saved with logo to localStorage');
       } catch (storageError) {
-        console.error('❌ Failed to save complete profile:', storageError);
         // Try to compress the logo data URL before removing it entirely
         if (savedProfile.logoDataUrl && savedProfile.logoDataUrl.length > 100000) {
           // If logo is very large, try to compress it
@@ -238,18 +234,15 @@ export function LogoUploadStep({
           };
           try {
             localStorage.setItem('completeBrandProfile', JSON.stringify(compressedProfile));
-            console.warn('⚠️ Saved profile with compressed logo due to storage constraints');
           } catch (compressError) {
             // Only as last resort, save without logo
             const profileWithoutLogo = { ...savedProfile, logoDataUrl: '' };
             localStorage.setItem('completeBrandProfile', JSON.stringify(profileWithoutLogo));
-            console.warn('⚠️ Saved profile without logo due to storage constraints');
           }
         } else {
           // If logo isn't the issue, still try to save without it
           const profileWithoutLogo = { ...savedProfile, logoDataUrl: '' };
           localStorage.setItem('completeBrandProfile', JSON.stringify(profileWithoutLogo));
-          console.warn('⚠️ Saved profile without logo due to storage constraints');
         }
       }
 
@@ -284,9 +277,7 @@ export function LogoUploadStep({
 
       try {
         localStorage.setItem('brandProfile', JSON.stringify(legacyProfile));
-        console.log('✅ Legacy profile saved with logo to localStorage');
       } catch (storageError) {
-        console.error('❌ Failed to save legacy profile:', storageError);
         // Try to compress the logo data URL before removing it entirely
         if (legacyProfile.logoDataUrl && legacyProfile.logoDataUrl.length > 100000) {
           // If logo is very large, try to compress it
@@ -296,22 +287,18 @@ export function LogoUploadStep({
           };
           try {
             localStorage.setItem('brandProfile', JSON.stringify(compressedLegacy));
-            console.warn('⚠️ Saved legacy profile with compressed logo due to storage constraints');
           } catch (compressError) {
             // Only as last resort, save without logo
             const legacyWithoutLogo = { ...legacyProfile, logoDataUrl: '' };
             localStorage.setItem('brandProfile', JSON.stringify(legacyWithoutLogo));
-            console.warn('⚠️ Saved legacy profile without logo due to storage constraints');
           }
         } else {
           // If logo isn't the issue, still try to save without it
           const legacyWithoutLogo = { ...legacyProfile, logoDataUrl: '' };
           localStorage.setItem('brandProfile', JSON.stringify(legacyWithoutLogo));
-          console.warn('⚠️ Saved legacy profile without logo due to storage constraints');
         }
       }
 
-      console.log('Save successful!');
 
       toast({
         title: "Brand Profile Saved!",
@@ -322,7 +309,6 @@ export function LogoUploadStep({
       // They can navigate manually when ready
 
     } catch (error) {
-      console.error('Save error:', error);
       toast({
         variant: "destructive",
         title: "Save Failed",

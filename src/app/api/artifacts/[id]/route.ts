@@ -85,7 +85,6 @@ export async function GET(
     }
 
   } catch (error) {
-    console.error('❌ Artifact file serving error:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -110,7 +109,6 @@ export async function PUT(
     return NextResponse.json({ success: true, artifact: updatedArtifact });
 
   } catch (error) {
-    console.error('❌ Artifact update error:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -129,7 +127,6 @@ export async function DELETE(
     return NextResponse.json({ success: true });
 
   } catch (error) {
-    console.error('❌ Artifact delete error:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'

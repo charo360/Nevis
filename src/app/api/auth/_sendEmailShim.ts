@@ -4,7 +4,6 @@ const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'support@nevis.app'
 
 export default async function sendEmail(to: string, subject: string, html: string, text?: string) {
   if (!SENDGRID_API_KEY) {
-    console.warn('SendGrid API key not configured; skipping send')
     return
   }
 
@@ -27,6 +26,5 @@ export default async function sendEmail(to: string, subject: string, html: strin
   })
   if (!res.ok) {
     const body = await res.text()
-    console.warn('SendGrid non-ok response:', res.status, body)
   }
 }

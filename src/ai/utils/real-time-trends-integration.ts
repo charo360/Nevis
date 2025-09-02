@@ -110,7 +110,6 @@ export async function fetchGoogleTrends(
   category?: string
 ): Promise<any[]> {
   if (!TRENDING_CONFIG.sources.googleTrends.enabled) {
-    console.log('Google Trends RSS not enabled, using fallback');
     return getGoogleTrendsFallback(location, category);
   }
 
@@ -133,7 +132,6 @@ export async function fetchGoogleTrends(
     }));
 
   } catch (error) {
-    console.error('Error fetching Google Trends RSS:', error);
     return getGoogleTrendsFallback(location, category);
   }
 }
@@ -146,7 +144,6 @@ export async function fetchTwitterTrends(
   businessType?: string
 ): Promise<any[]> {
   if (!TRENDING_CONFIG.sources.twitterApi.enabled) {
-    console.log('Twitter API not configured, using fallback');
     return getTwitterTrendsFallback(location, businessType);
   }
 
@@ -166,18 +163,15 @@ export async function fetchTwitterTrends(
     );
 
     if (!response.ok) {
-      console.log(`Twitter API response: ${response.status} ${response.statusText}`);
       throw new Error(`Twitter API error: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log(`✅ Twitter API returned ${data.length || 0} trend locations`);
 
     // Process Twitter trends data
     return processTwitterTrendsData(data, businessType);
 
   } catch (error) {
-    console.error('Error fetching Twitter trends:', error);
     return getTwitterTrendsFallback(location, businessType);
   }
 }
@@ -191,7 +185,6 @@ export async function fetchCurrentNews(
   category?: string
 ): Promise<any[]> {
   if (!TRENDING_CONFIG.sources.newsApi.enabled) {
-    console.log('News API not configured, using fallback');
     return getNewsFallback(location, businessType, category);
   }
 
@@ -203,24 +196,19 @@ export async function fetchCurrentNews(
       apiKey: TRENDING_CONFIG.sources.newsApi.apiKey!
     });
 
-    console.log(`🔍 Fetching news from News API for ${location}...`);
     const response = await fetch(`${TRENDING_CONFIG.sources.newsApi.baseUrl}/top-headlines?${params}`);
 
     if (!response.ok) {
-      console.log(`News API response: ${response.status} ${response.statusText}`);
       const errorText = await response.text();
-      console.log('News API error details:', errorText);
       throw new Error(`News API error: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log(`✅ News API returned ${data.articles?.length || 0} articles`);
 
     // Process news data
     return processNewsData(data, businessType);
 
   } catch (error) {
-    console.error('Error fetching news:', error);
     return getNewsFallback(location, businessType, category);
   }
 }
@@ -233,7 +221,6 @@ export async function fetchRedditTrends(
   platform: string
 ): Promise<any[]> {
   if (!TRENDING_CONFIG.sources.redditApi.enabled) {
-    console.log('Reddit RSS not enabled, using fallback');
     return getRedditTrendsFallback(businessType, platform);
   }
 
@@ -255,7 +242,6 @@ export async function fetchRedditTrends(
     }));
 
   } catch (error) {
-    console.error('Error fetching Reddit RSS:', error);
     return getRedditTrendsFallback(businessType, platform);
   }
 }
@@ -437,7 +423,6 @@ export async function fetchLocalContext(
   try {
     // Fetch weather context
     if (TRENDING_CONFIG.sources.openWeatherApi.enabled) {
-      console.log(`🌤️ Fetching weather context for ${location}...`);
 
       const params = new URLSearchParams({
         q: location,
@@ -457,13 +442,11 @@ export async function fetchLocalContext(
           business_impact: generateBusinessWeatherImpact(weatherData.weather[0].main, weatherData.main.temp, businessType),
           content_opportunities: generateWeatherContentOpportunities(weatherData.weather[0].main, weatherData.main.temp, businessType)
         };
-        console.log(`✅ Weather: ${context.weather.temperature}°C, ${context.weather.condition}`);
       }
     }
 
     // Fetch events context
     if (TRENDING_CONFIG.sources.eventbriteApi.enabled) {
-      console.log(`🎪 Fetching events context for ${location}...`);
 
       const params = new URLSearchParams({
         'location.address': location,
@@ -492,12 +475,10 @@ export async function fetchLocalContext(
           relevance_score: calculateEventRelevance(event, businessType),
           start_date: event.start?.local || event.start?.utc
         }));
-        console.log(`✅ Found ${context.events.length} relevant events`);
       }
     }
 
   } catch (error) {
-    console.error('Error fetching local context:', error);
   }
 
   return context;

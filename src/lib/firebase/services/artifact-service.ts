@@ -110,7 +110,6 @@ export class ArtifactFirebaseService extends DatabaseService<ArtifactDocument> {
         thumbnailUrl = thumbnailResult.url;
         thumbnailPath = thumbnailResult.path;
       } catch (error) {
-        console.warn('Failed to generate thumbnail:', error);
       }
     }
 
@@ -262,7 +261,6 @@ export class ArtifactFirebaseService extends DatabaseService<ArtifactDocument> {
     if (artifact.filePath) {
       deletePromises.push(
         deleteFile(artifact.filePath).catch(error =>
-          console.warn('Failed to delete file from storage:', error)
         )
       );
     }
@@ -270,7 +268,6 @@ export class ArtifactFirebaseService extends DatabaseService<ArtifactDocument> {
     if (artifact.thumbnailPath) {
       deletePromises.push(
         deleteFile(artifact.thumbnailPath).catch(error =>
-          console.warn('Failed to delete thumbnail from storage:', error)
         )
       );
     }

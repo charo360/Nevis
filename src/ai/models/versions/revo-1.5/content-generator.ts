@@ -21,10 +21,6 @@ export class Revo15ContentGenerator implements IContentGenerator {
     const startTime = Date.now();
     
     try {
-      console.log('✨ Revo 1.5: Starting enhanced content generation...');
-      console.log('- Platform:', request.platform);
-      console.log('- Business:', request.profile.businessName);
-      console.log('- Artifacts:', request.artifactIds?.length || 0);
 
       // Validate request
       if (!this.validateRequest(request)) {
@@ -67,8 +63,6 @@ export class Revo15ContentGenerator implements IContentGenerator {
       const processingTime = Date.now() - startTime;
       const qualityScore = this.calculateEnhancedQualityScore(generatedPost);
 
-      console.log(`✅ Revo 1.5: Enhanced content generated successfully in ${processingTime}ms`);
-      console.log(`⭐ Quality Score: ${qualityScore}/10`);
 
       return {
         success: true,
@@ -91,7 +85,6 @@ export class Revo15ContentGenerator implements IContentGenerator {
 
     } catch (error) {
       const processingTime = Date.now() - startTime;
-      console.error('❌ Revo 1.5: Enhanced content generation failed:', error);
 
       return {
         success: false,
@@ -123,7 +116,6 @@ export class Revo15ContentGenerator implements IContentGenerator {
 
     // Revo 1.5 supports artifacts - validate if provided
     if (request.artifactIds && request.artifactIds.length > 5) {
-      console.warn('⚠️ Revo 1.5: Too many artifacts (max 5), using first 5');
     }
 
     return true;
@@ -276,7 +268,6 @@ export class Revo15ContentGenerator implements IContentGenerator {
       
       return hasGeminiKey || hasOpenAIKey;
     } catch (error) {
-      console.error('❌ Revo 1.5 Content Generator health check failed:', error);
       return false;
     }
   }

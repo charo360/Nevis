@@ -15,7 +15,6 @@ function UnifiedBrandLayoutContent({ children }: UnifiedBrandLayoutProps) {
 
   // Listen for brand changes and log them
   useBrandChangeListener((brand) => {
-    console.log('🔄 Brand changed in layout:', brand?.businessName || brand?.name || 'none');
     
     // Mark as initialized once we have a brand or finished loading
     if (!isInitialized && (!loading || brand)) {
@@ -201,7 +200,6 @@ export function useBrandScopedData<T>(
             setData(loadedData);
             setLoading(false);
           }).catch(error => {
-            console.error(`Failed to load ${feature} data:`, error);
             setData(defaultValue);
             setLoading(false);
           });
@@ -216,7 +214,6 @@ export function useBrandScopedData<T>(
         setLoading(false);
       }
     } catch (error) {
-      console.error(`Failed to load ${feature} data:`, error);
       setData(defaultValue);
       setLoading(false);
     }

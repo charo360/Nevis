@@ -30,9 +30,6 @@ export class ViralHashtagEngine {
     targetAudience?: string
   ): Promise<ViralHashtagStrategy> {
     
-    console.log('🔥 Generating viral hashtag strategy...');
-    console.log(`📍 Business: ${businessName} (${businessType}) in ${location}`);
-    console.log(`📱 Platform: ${platform}`);
 
     try {
       // Get trending data from RSS feeds and trending enhancer
@@ -43,8 +40,6 @@ export class ViralHashtagEngine {
         targetAudience
       });
 
-      console.log(`✅ Retrieved ${trendingData.hashtags.length} trending hashtags`);
-      console.log(`🔥 Trending hashtags: ${trendingData.hashtags.slice(0, 5).join(', ')}`);
 
       // Generate different hashtag categories
       const trending = await this.getTrendingHashtags(trendingData, businessType, platform);
@@ -66,8 +61,6 @@ export class ViralHashtagEngine {
         ...platform_tags.slice(0, 1)
       ]);
 
-      console.log(`🚀 Generated viral hashtag strategy with ${total.length} hashtags`);
-      console.log(`🎯 Final hashtags: ${total.join(' ')}`);
 
       return {
         trending,
@@ -81,7 +74,6 @@ export class ViralHashtagEngine {
       };
 
     } catch (error) {
-      console.error('❌ Error generating viral hashtags:', error);
       return this.getFallbackHashtags(businessType, location, platform);
     }
   }

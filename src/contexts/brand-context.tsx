@@ -50,7 +50,6 @@ export function BrandProvider({ children }: BrandProviderProps) {
 
   // Sync current brand with the hook's current profile
   useEffect(() => {
-    console.log('🔄 Brand sync effect triggered:', {
       currentProfile: currentProfile?.businessName || (currentProfile as any)?.name,
       currentBrand: currentBrand?.businessName,
       brandsCount: brands.length
@@ -60,11 +59,9 @@ export function BrandProvider({ children }: BrandProviderProps) {
     // Don't override manual selections
     if (currentProfile && currentProfile !== currentBrand) {
       const normalizedProfile = normalizeBrand(currentProfile);
-      console.log('✅ Syncing currentBrand with currentProfile:', normalizedProfile?.businessName);
       setCurrentBrand(normalizedProfile);
     } else if (!currentProfile && brands.length > 0 && !currentBrand) {
       const firstBrand = normalizeBrand(brands[0]);
-      console.log('🎯 Auto-selecting first brand:', firstBrand?.businessName);
       // Auto-select first brand if none selected
       setCurrentBrand(firstBrand);
       setCurrentProfile(firstBrand);
@@ -87,19 +84,12 @@ export function BrandProvider({ children }: BrandProviderProps) {
   };
 
   const selectBrand = (brand: CompleteBrandProfile | null) => {
-    console.log('🎯 selectBrand called with:', brand);
-    console.log('🎯 selectBrand brand type:', typeof brand);
-    console.log('🎯 selectBrand brand keys:', brand ? Object.keys(brand) : 'null');
-    console.log('🎯 selectBrand businessName:', brand?.businessName);
-    console.log('🎯 selectBrand name:', (brand as any)?.name);
-    console.log('📊 Current state before selection:', {
       currentBrand: currentBrand?.businessName,
       currentProfile: currentProfile?.businessName
     });
 
     // Normalize the brand data structure
     const normalizedBrand = normalizeBrand(brand);
-    console.log('🔄 Normalized brand:', normalizedBrand?.businessName);
 
     // Force immediate update of both states
     setCurrentBrand(normalizedBrand);
@@ -110,7 +100,6 @@ export function BrandProvider({ children }: BrandProviderProps) {
       setCurrentBrand(normalizedBrand);
     }, 0);
 
-    console.log('✅ Brand selection completed, new brand:', normalizedBrand?.businessName || 'null');
 
     // Store selected brand ID in localStorage for persistence
     if (normalizedBrand && 'id' in normalizedBrand) {
@@ -128,7 +117,6 @@ export function BrandProvider({ children }: BrandProviderProps) {
       }
     });
     window.dispatchEvent(event);
-    console.log('🔄 Emitted originalBrandChanged event for:', normalizedBrand?.businessName || (normalizedBrand as any)?.name || 'null');
   };
 
   const createBrand = async (brand: CompleteBrandProfile): Promise<string> => {

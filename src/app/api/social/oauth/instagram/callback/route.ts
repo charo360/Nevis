@@ -47,7 +47,6 @@ export async function GET(req: Request) {
     const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/api/social/oauth/instagram/callback`;
 
     if (!clientId || !clientSecret) {
-      console.error('Instagram client missing');
       return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect?error=instagram_not_configured`);
     }
 
@@ -70,7 +69,6 @@ export async function GET(req: Request) {
     const tokenData: any = await tokenRes.json();
 
     if (tokenData.error) {
-      console.error('Instagram token error:', tokenData.error);
       return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect?error=instagram_token`);
     }
 
@@ -83,7 +81,6 @@ export async function GET(req: Request) {
     const longLivedData: any = await longLivedRes.json();
 
     if (longLivedData.error) {
-      console.error('Instagram long-lived token error:', longLivedData.error);
       return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect?error=instagram_token`);
     }
 
@@ -95,7 +92,6 @@ export async function GET(req: Request) {
     const profileData: any = await profileRes.json();
 
     if (profileData.error) {
-      console.error('Instagram profile error:', profileData.error);
       return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect?error=instagram_profile`);
     }
 
@@ -115,7 +111,6 @@ export async function GET(req: Request) {
 
     return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect`);
   } catch (error) {
-    console.error('Instagram callback failed', error);
     return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect?error=instagram_failed`);
   }
 }

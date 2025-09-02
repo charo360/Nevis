@@ -86,7 +86,6 @@ export async function getCurrentDesignTrends(
     // This provides current, relevant trends while the system is being tested
     return getFallbackTrends(businessType, platform);
   } catch (error) {
-    console.error('Design trends analysis failed:', error);
     // Return fallback trends
     return getFallbackTrends(businessType, platform);
   }

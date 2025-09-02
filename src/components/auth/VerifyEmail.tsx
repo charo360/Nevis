@@ -87,7 +87,6 @@ export default function VerifyEmail({ email, onSuccess, onClose, type = 'signup'
         setCode(['', '', '', '', '']);
       }
     } catch (err) {
-      console.error('Verification error', err);
       alert('Verification failed');
     } finally {
       setIsLoading(false);
@@ -111,7 +110,6 @@ export default function VerifyEmail({ email, onSuccess, onClose, type = 'signup'
         alert(body?.error || 'Failed to resend code');
       }
     } catch (err) {
-      console.error('Resend error', err);
       alert('Failed to resend code');
     } finally {
       setResendLoading(false);

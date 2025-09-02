@@ -67,7 +67,6 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('❌ Social Media Expert API Error:', error);
     return NextResponse.json(
       { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
@@ -123,7 +122,6 @@ async function handlePostGeneration(
       );
       posts.push(post);
     } catch (error) {
-      console.error(`❌ Error generating post ${i + 1}:`, error);
       // Fallback to old system if advanced fails
       const fallbackPost = contentEngine.generatePost(platform, postType, category);
       posts.push(fallbackPost);
@@ -199,7 +197,6 @@ async function handleCalendarGeneration(
         );
         platformPosts.push(post);
       } catch (error) {
-        console.error(`❌ Error generating calendar post for ${platform}:`, error);
         // Fallback to old system
         const categories = Object.keys(contentStrategy.contentMix);
         const randomCategory = categories[Math.floor(Math.random() * categories.length)];
@@ -254,7 +251,6 @@ async function handleCompletePackage(
       );
       samplePosts.push(post);
     } catch (error) {
-      console.error(`❌ Error generating sample post for ${category}:`, error);
       // Fallback to old system
       const fallbackPost = contentEngine.generatePost(platform, 'caption', category);
       samplePosts.push(fallbackPost);

@@ -47,7 +47,6 @@ export async function GET(req: Request) {
     const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/api/social/oauth/linkedin/callback`;
 
     if (!clientId || !clientSecret) {
-      console.error('LinkedIn client missing');
       return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect?error=linkedin_not_configured`);
     }
 
@@ -70,7 +69,6 @@ export async function GET(req: Request) {
     const tokenData: any = await tokenRes.json();
 
     if (tokenData.error) {
-      console.error('LinkedIn token error:', tokenData.error);
       return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect?error=linkedin_token`);
     }
 
@@ -116,7 +114,6 @@ export async function GET(req: Request) {
 
     return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect`);
   } catch (error) {
-    console.error('LinkedIn callback failed', error);
     return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect?error=linkedin_failed`);
   }
 }

@@ -50,7 +50,6 @@ function cleanWebsiteUrl(url: string): string {
 export async function generateDesignPlan(
   input: Revo15DesignInput
 ): Promise<any> {
-  console.log('🎯 Revo 1.5: Step 1 - Generating design plan with Gemini 2.5 Flash...');
 
   const brandColors = [
     input.brandProfile.primaryColor,
@@ -111,7 +110,6 @@ Provide a structured plan that will guide the image generation process.`;
       }
     );
 
-    console.log('✅ Revo 1.5: Design plan generated successfully');
     return {
       plan: planResponse.text,
       brandColors,
@@ -119,7 +117,6 @@ Provide a structured plan that will guide the image generation process.`;
     };
 
   } catch (error) {
-    console.error('❌ Revo 1.5: Design planning failed:', error);
     throw new Error(`Design planning failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -131,7 +128,6 @@ export async function generateFinalImage(
   input: Revo15DesignInput,
   designPlan: any
 ): Promise<string> {
-  console.log('🎨 Revo 1.5: Step 2 - Generating final image with Gemini 2.5 Flash Image Preview...');
 
   // Build comprehensive image generation prompt based on the design plan
   const imagePrompt = buildEnhancedImagePrompt(input, designPlan);
@@ -156,11 +152,9 @@ export async function generateFinalImage(
       throw new Error('No image URL returned from Gemini 2.5 Flash Image Preview');
     }
 
-    console.log('✅ Revo 1.5: Final image generated successfully with Gemini 2.5 Flash Image Preview');
     return imageUrl;
 
   } catch (error) {
-    console.error('❌ Revo 1.5: Final image generation failed:', error);
     throw new Error(`Final image generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -226,8 +220,6 @@ export async function generateRevo15EnhancedDesign(
   ];
 
   try {
-    console.log('🚀 Revo 1.5: Starting enhanced two-step design generation...');
-    console.log('📋 Input:', {
       businessType: input.businessType,
       platform: input.platform,
       visualStyle: input.visualStyle,
@@ -253,17 +245,10 @@ export async function generateRevo15EnhancedDesign(
       generationModel: GEMINI_2_5_MODELS.FLASH_IMAGE_PREVIEW
     };
 
-    console.log('✅ Revo 1.5: Enhanced two-step design generated successfully!');
-    console.log('🔗 Image URL:', imageUrl);
-    console.log('⭐ Quality Score:', result.qualityScore);
-    console.log('⚡ Processing Time:', result.processingTime + 'ms');
-    console.log('🧠 Planning Model:', result.planningModel);
-    console.log('🎨 Generation Model:', result.generationModel);
 
     return result;
 
   } catch (error) {
-    console.error('❌ Revo 1.5: Enhanced design generation failed:', error);
     throw new Error(`Revo 1.5 enhanced design generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

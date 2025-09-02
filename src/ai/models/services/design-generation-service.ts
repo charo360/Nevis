@@ -45,10 +45,6 @@ export class DesignGenerationService implements IDesignGenerationService {
     const startTime = Date.now();
     
     try {
-      console.log('🎨 Design Generation Service: Starting generation...');
-      console.log('- Model:', request.modelId);
-      console.log('- Platform:', request.platform);
-      console.log('- Business Type:', request.businessType);
 
       // Validate request
       if (!this.validateRequest(request)) {
@@ -76,13 +72,11 @@ export class DesignGenerationService implements IDesignGenerationService {
       const result = await model.designGenerator.generateDesign(request);
 
       const totalTime = Date.now() - startTime;
-      console.log(`✅ Design generated successfully in ${totalTime}ms`);
 
       return result;
 
     } catch (error) {
       const totalTime = Date.now() - startTime;
-      console.error('❌ Design generation failed:', error);
 
       return {
         success: false,
@@ -106,7 +100,6 @@ export class DesignGenerationService implements IDesignGenerationService {
     criteria?: ModelSelectionCriteria
   ): Promise<GenerationResponse<PostVariant>> {
     try {
-      console.log('🤖 Auto-selecting best model for design generation...');
 
       // Determine best model
       const selectedModel = await this.getRecommendedModel(request, criteria);
@@ -114,7 +107,6 @@ export class DesignGenerationService implements IDesignGenerationService {
         throw new Error('No suitable model found for design generation');
       }
 
-      console.log(`✅ Selected model: ${selectedModel}`);
 
       // Generate design with selected model
       return await this.generateDesign({
@@ -123,7 +115,6 @@ export class DesignGenerationService implements IDesignGenerationService {
       });
 
     } catch (error) {
-      console.error('❌ Auto-selection design generation failed:', error);
       
       return {
         success: false,
@@ -143,7 +134,6 @@ export class DesignGenerationService implements IDesignGenerationService {
    * Generate multiple designs in batch
    */
   async batchGenerateDesigns(requests: DesignGenerationRequest[]): Promise<GenerationResponse<PostVariant>[]> {
-    console.log(`📦 Batch generating ${requests.length} designs...`);
 
     const results = await Promise.allSettled(
       requests.map(request => this.generateDesign(request))
@@ -153,7 +143,6 @@ export class DesignGenerationService implements IDesignGenerationService {
       if (result.status === 'fulfilled') {
         return result.value;
       } else {
-        console.error(`❌ Batch item ${index} failed:`, result.reason);
         return {
           success: false,
           error: result.reason instanceof Error ? result.reason.message : 'Batch generation failed',
@@ -198,7 +187,6 @@ export class DesignGenerationService implements IDesignGenerationService {
       return selectedModel?.model.id || null;
 
     } catch (error) {
-      console.error('❌ Model recommendation failed:', error);
       return null;
     }
   }

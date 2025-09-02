@@ -47,11 +47,9 @@ export default function PaymentSuccessPage() {
         if (res.ok && json.ok) {
           setRecording('done');
         } else {
-          console.warn('Failed to record payment', json);
           setRecording('failed');
         }
       } catch (e) {
-        console.error('Record payment failed', e);
         setRecording('failed');
       }
     };

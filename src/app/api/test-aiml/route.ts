@@ -6,7 +6,6 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('🧪 Testing AIML API connection...');
     
     const apiKey = process.env.AIML_API_KEY;
     if (!apiKey) {
@@ -16,13 +15,11 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
 
-    console.log('✅ AIML API Key found:', apiKey.substring(0, 10) + '...');
 
     // Test basic connection to AIML API
     const baseUrl = 'https://api.aimlapi.com/v1';
     
     try {
-      console.log('🔍 Testing connection to:', baseUrl);
       
       const response = await fetch(`${baseUrl}/models`, {
         method: 'GET',
@@ -34,7 +31,6 @@ export async function GET(request: NextRequest) {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ AIML API responded with error:', response.status, errorText);
         
         return NextResponse.json({
           success: false,
@@ -44,7 +40,6 @@ export async function GET(request: NextRequest) {
       }
 
       const models = await response.json();
-      console.log('✅ AIML API connection successful, models:', models);
 
       return NextResponse.json({
         success: true,
@@ -54,7 +49,6 @@ export async function GET(request: NextRequest) {
       });
 
     } catch (fetchError) {
-      console.error('❌ Fetch error:', fetchError);
       
       return NextResponse.json({
         success: false,
@@ -64,7 +58,6 @@ export async function GET(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('❌ Test endpoint error:', error);
     
     return NextResponse.json({
       success: false,
@@ -94,9 +87,6 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    console.log('🎨 Testing FLUX Kontext Max generation...');
-    console.log('📝 Prompt:', prompt);
-    console.log('📱 Platform:', platform);
 
     // Test the actual image generation
     const response = await fetch('https://api.aimlapi.com/v1/images/generations', {
@@ -116,7 +106,6 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ FLUX generation failed:', response.status, errorText);
       
       return NextResponse.json({
         success: false,
@@ -126,7 +115,6 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await response.json();
-    console.log('✅ FLUX generation successful:', result);
 
     return NextResponse.json({
       success: true,
@@ -135,7 +123,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ FLUX test failed:', error);
     
     return NextResponse.json({
       success: false,

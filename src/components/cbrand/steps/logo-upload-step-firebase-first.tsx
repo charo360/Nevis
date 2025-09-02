@@ -95,7 +95,6 @@ export function LogoUploadStepFirebaseFirst({
         description: "Your logo has been uploaded and optimized successfully!",
       });
     } catch (error) {
-      console.error('Logo upload failed:', error);
       toast({
         variant: "destructive",
         title: "Upload Failed",
@@ -202,7 +201,6 @@ export function LogoUploadStepFirebaseFirst({
     setIsSaving(true);
 
     try {
-      console.log('🔄 Starting Firebase-first save process for:', brandProfile.businessName);
 
       // Prepare profile for saving
       const profileToSave = {
@@ -211,7 +209,6 @@ export function LogoUploadStepFirebaseFirst({
         version: '1.0',
       };
 
-      console.log('💾 Saving profile to Firebase with logo data:', {
         businessName: profileToSave.businessName,
         hasLogo: !!profileToSave.logoDataUrl,
         logoLength: profileToSave.logoDataUrl?.length || 0
@@ -220,7 +217,6 @@ export function LogoUploadStepFirebaseFirst({
       // Save to Firebase first (primary storage)
       const profileId = await saveBrandProfileFirebaseFirst(profileToSave, userId);
       
-      console.log('✅ Profile saved to Firebase successfully:', profileId);
 
       toast({
         title: "Profile Saved Successfully!",
@@ -233,7 +229,6 @@ export function LogoUploadStepFirebaseFirst({
       }
 
     } catch (error) {
-      console.error('❌ Failed to save profile:', error);
       toast({
         variant: "destructive",
         title: "Save Failed",

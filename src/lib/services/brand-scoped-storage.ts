@@ -59,13 +59,11 @@ export class BrandScopedStorage {
       const dataSize = new Blob([serialized]).size;
       const maxSize = 500 * 1024; // 500KB limit per item (much more aggressive)
 
-      console.log(`📊 Storage stats before save: Total: ${stats.totalUsage}, Available: ${stats.available}, New data: ${this.formatBytes(dataSize)}`);
 
       // Always perform cleanup before saving to ensure maximum space
       this.aggressiveCleanup();
 
       if (dataSize > maxSize) {
-        console.warn(`⚠️ Data too large for ${this.feature} (${this.formatBytes(dataSize)}), trying fallback approaches...`);
 
         // Try fallback 1: Use aggressive stripping (old method)
         const strippedData = this.stripImageData(data);
@@ -74,7 +72,6 @@ export class BrandScopedStorage {
 
         if (strippedSize <= maxSize) {
           localStorage.setItem(key, strippedSerialized);
-          console.log(`💾 Saved stripped ${this.feature} data for brand ${this.brandId} (${this.formatBytes(strippedSize)})`);
           return;
         }
 
@@ -84,7 +81,6 @@ export class BrandScopedStorage {
         const minimalSize = new Blob([minimalSerialized]).size;
 
         if (minimalSize > maxSize) {
-          console.error(`💥 Cannot store even minimal data. Clearing storage.`);
           this.removeItem(); // Clear existing data
           // Store emergency placeholder
           const emergency = {
@@ -97,18 +93,14 @@ export class BrandScopedStorage {
         } else {
           localStorage.setItem(key, minimalSerialized);
         }
-        console.log(`💾 Saved minimal ${this.feature} data for brand ${this.brandId} (${this.formatBytes(minimalSize || 0)})`);
         return;
       }
 
       localStorage.setItem(key, serialized);
-      console.log(`💾 Saved ${this.feature} data for brand ${this.brandId} (${this.formatBytes(dataSize)})`);
     } catch (error) {
       if (error.name === 'QuotaExceededError') {
-        console.error(`🚨 Storage quota exceeded for ${this.feature} data for brand ${this.brandId}`);
         this.handleQuotaExceeded(data);
       } else {
-        console.error(`Failed to save ${this.feature} data for brand ${this.brandId}:`, error);
       }
     }
   }
@@ -122,21 +114,17 @@ export class BrandScopedStorage {
       const stored = localStorage.getItem(key);
 
       if (stored) {
-        console.log(`📂 Loaded ${this.feature} data for brand ${this.brandId}`);
         return JSON.parse(stored);
       }
 
       // Try to migrate from global storage if brand-scoped data doesn't exist
       const globalData = this.migrateFromGlobalStorage<T>();
       if (globalData) {
-        console.log(`🔄 Migrated ${this.feature} data from global to brand-scoped storage`);
         return globalData;
       }
 
-      console.log(`📂 No ${this.feature} data found for brand ${this.brandId}`);
       return null;
     } catch (error) {
-      console.error(`Failed to load ${this.feature} data for brand ${this.brandId}:`, error);
       return null;
     }
   }
@@ -148,9 +136,7 @@ export class BrandScopedStorage {
     try {
       const key = this.getStorageKey();
       localStorage.removeItem(key);
-      console.log(`🗑️ Removed ${this.feature} data for brand ${this.brandId}`);
     } catch (error) {
-      console.error(`Failed to remove ${this.feature} data for brand ${this.brandId}:`, error);
     }
   }
 
@@ -177,7 +163,6 @@ export class BrandScopedStorage {
         const migrationCompleted = localStorage.getItem(migrationKey);
 
         if (migrationCompleted) {
-          console.log(`🚫 Migration already completed for ${this.feature}, skipping for brand ${this.brandId}`);
           return null;
         }
 
@@ -192,13 +177,11 @@ export class BrandScopedStorage {
         // Remove global data after migration to prevent future conflicts
         localStorage.removeItem(globalKey);
 
-        console.log(`✅ Successfully migrated ${this.feature} data from global to brand ${this.brandId} and cleared global data`);
         return parsed;
       }
 
       return null;
     } catch (error) {
-      console.error(`Failed to migrate ${this.feature} data from global storage:`, error);
       return null;
     }
   }
@@ -221,7 +204,6 @@ export class BrandScopedStorage {
         }
       }
     } catch (error) {
-      console.error(`Failed to get brand IDs for ${feature}:`, error);
     }
 
     return brandIds;
@@ -243,12 +225,9 @@ export class BrandScopedStorage {
 
       keysToRemove.forEach(key => {
         localStorage.removeItem(key);
-        console.log(`🗑️ Removed ${key}`);
       });
 
-      console.log(`🗑️ Cleared all data for brand ${brandId}`);
     } catch (error) {
-      console.error(`Failed to clear data for brand ${brandId}:`, error);
     }
   }
 
@@ -291,18 +270,15 @@ export class BrandScopedStorage {
   static resetMigrationFlag(feature: string): void {
     const migrationKey = `${feature}_migration_completed`;
     localStorage.removeItem(migrationKey);
-    console.log(`🔄 Reset migration flag for ${feature}`);
   }
 
   /**
    * Handle quota exceeded error by cleaning up old data
    */
   private handleQuotaExceeded(data: any): void {
-    console.log(`🧹 EMERGENCY: Handling quota exceeded for ${this.feature} brand ${this.brandId}`);
 
     try {
       // Step 1: Nuclear cleanup - clear ALL localStorage data
-      console.log(`💥 Performing nuclear cleanup of ALL localStorage data...`);
       const allKeys = Object.keys(localStorage);
       let totalCleared = 0;
 
@@ -314,7 +290,6 @@ export class BrandScopedStorage {
         }
       });
 
-      console.log(`🧹 Cleared ALL localStorage data: ${this.formatBytes(totalCleared)}`);
 
       // Step 2: Try to save only the most essential data
       const emergency = {
@@ -329,10 +304,8 @@ export class BrandScopedStorage {
 
       const key = this.getStorageKey();
       localStorage.setItem(key, JSON.stringify([emergency]));
-      console.log(`🆘 Saved emergency data only for ${this.feature}`);
 
     } catch (criticalError) {
-      console.error(`💀 CRITICAL: Cannot save any data even after nuclear cleanup:`, criticalError);
       // At this point, we just give up on localStorage entirely
     }
   }
@@ -341,7 +314,6 @@ export class BrandScopedStorage {
    * Aggressive cleanup of localStorage to free up space
    */
   private aggressiveCleanup(): void {
-    console.log('🔥 Performing aggressive localStorage cleanup...');
 
     // Get all localStorage keys
     const allKeys = Object.keys(localStorage);
@@ -365,7 +337,6 @@ export class BrandScopedStorage {
       if (item) {
         // Check if the data contains old compression placeholders
         if (item.includes('[COMPRESSED_IMAGE]') || item.includes('[TRUNCATED]')) {
-          console.log(`🧹 Removing old compressed data with placeholders: ${key}`);
           totalFreed += new Blob([item]).size;
           localStorage.removeItem(key);
         } else {
@@ -375,7 +346,6 @@ export class BrandScopedStorage {
       }
     });
 
-    console.log(`🧹 Freed up ${this.formatBytes(totalFreed)} of storage space`);
   }
 
   /**
@@ -409,27 +379,22 @@ export class BrandScopedStorage {
         if (value.startsWith('http://') || value.startsWith('https://')) {
           // Keep HTTP/HTTPS URLs as-is, especially Firebase Storage URLs
           if (value.includes('firebasestorage.googleapis.com')) {
-            console.log(`🔥 Preserving Firebase Storage URL for ${key}: ${value.substring(0, 50)}...`);
           } else {
-            console.log(`📸 Preserving HTTP/HTTPS URL for ${key}: ${value.substring(0, 50)}...`);
           }
           return;
         }
 
         if (value.startsWith('blob:')) {
           // Keep blob URLs but warn they might be temporary
-          console.log(`⚠️ Preserving blob URL for ${key} (may be temporary): ${value.substring(0, 50)}...`);
           return;
         }
 
         if (value.startsWith('data:image/')) {
           // For data URLs, keep smaller ones and convert large ones to placeholder
           if (value.length <= 50000) { // Increased limit to 50KB for small images
-            console.log(`📸 Preserving small data URL for ${key} (${this.formatBytes(value.length)})`);
             return;
           } else {
             // For large data URLs, create a more informative placeholder
-            console.log(`🗜️ Converting large data URL to placeholder for ${key} (${this.formatBytes(value.length)})`);
             const mimeType = value.split(';')[0].split(':')[1] || 'image/png';
             optimized[key] = `[Image data preserved but too large for storage - ${mimeType} - ${this.formatBytes(value.length)}]`;
           }
@@ -622,10 +587,8 @@ export class BrandScopedStorage {
       if (recentData.length < currentData.length) {
         const key = this.getStorageKey();
         localStorage.setItem(key, JSON.stringify(recentData));
-        console.log(`🧹 Cleaned up old data, kept ${recentData.length} of ${currentData.length} items`);
       }
     } catch (error) {
-      console.warn('Failed to cleanup old data:', error);
     }
   }
 
@@ -655,7 +618,6 @@ export function createBrandScopedStorage(brandId: string, feature: string): Bran
  */
 export function useBrandScopedStorage(brandId: string | null, feature: string): BrandScopedStorage | null {
   if (!brandId) {
-    console.warn(`Cannot create brand-scoped storage for ${feature}: brandId is null`);
     return null;
   }
 
@@ -666,7 +628,6 @@ export function useBrandScopedStorage(brandId: string | null, feature: string): 
  * Utility to migrate all global storage to brand-scoped storage
  */
 export function migrateAllGlobalStorage(brandId: string, features: string[]): void {
-  console.log(`🔄 Starting migration of global storage to brand-scoped for brand ${brandId}`);
 
   features.forEach(feature => {
     const storage = createBrandScopedStorage(brandId, feature);
@@ -675,7 +636,6 @@ export function migrateAllGlobalStorage(brandId: string, features: string[]): vo
     storage.getItem();
   });
 
-  console.log(`✅ Migration completed for brand ${brandId}`);
 }
 
 /**
@@ -698,7 +658,6 @@ export function getStorageUsage(): {
       }
     }
   } catch (error) {
-    console.warn('Failed to calculate storage usage:', error);
   }
 
   // Estimate total available space (varies by browser, ~5-10MB)
@@ -718,7 +677,6 @@ export function getStorageUsage(): {
  * Clean up all old data across all brands and features
  */
 export function cleanupAllStorage(): void {
-  console.log('🧹 Starting comprehensive storage cleanup...');
 
   const keysToCheck: string[] = [];
 
@@ -737,15 +695,12 @@ export function cleanupAllStorage(): void {
           // Keep only recent items
           const recentData = data.slice(-10);
           localStorage.setItem(key, JSON.stringify(recentData));
-          console.log(`🧹 Cleaned up ${key}: ${data.length} → ${recentData.length} items`);
         }
       } catch (error) {
-        console.warn(`Failed to cleanup ${key}:`, error);
       }
     }
   });
 
-  console.log('✅ Storage cleanup completed');
 }
 
 /**

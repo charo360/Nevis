@@ -39,8 +39,6 @@ export function BrandDetailsStep({
   const { currentBrand, updateProfile, selectBrand } = useUnifiedBrand();
 
   const handleInputChange = async (field: keyof CompleteBrandProfile, value: string) => {
-    console.log('🔧 handleInputChange called:', { field, value });
-    console.log('🔧 updateBrandProfile function:', typeof updateBrandProfile, updateBrandProfile);
 
     // Update local state immediately
     updateBrandProfile({ [field]: value });
@@ -49,7 +47,6 @@ export function BrandDetailsStep({
     const isColorUpdate = field === 'primaryColor' || field === 'accentColor' || field === 'backgroundColor';
     if (isColorUpdate && currentBrand?.id) {
       try {
-        console.log('🎨 Color update detected in BrandDetailsStep, saving to Firebase:', {
           brandId: currentBrand.id,
           field,
           value
@@ -62,9 +59,7 @@ export function BrandDetailsStep({
         const updatedBrand = { ...currentBrand, [field]: value };
         selectBrand(updatedBrand);
 
-        console.log('✅ Color changes saved to Firebase and context updated from BrandDetailsStep');
       } catch (error) {
-        console.error('❌ Failed to save color changes to Firebase from BrandDetailsStep:', error);
         // Don't throw error to avoid disrupting user experience
       }
     }

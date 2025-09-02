@@ -42,7 +42,6 @@ export class Revo15Implementation implements IModelImplementation {
       // Revo 1.5 needs at least one advanced AI service
       return hasGeminiKey || hasOpenAIKey;
     } catch (error) {
-      console.error('❌ Revo 1.5 availability check failed:', error);
       return false;
     }
   }
@@ -85,7 +84,6 @@ export class Revo15Implementation implements IModelImplementation {
 
       return false;
     } catch (error) {
-      console.error('❌ Revo 1.5 request validation failed:', error);
       return false;
     }
   }

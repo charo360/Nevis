@@ -31,7 +31,6 @@ export async function GET(req: Request) {
   const clientId = process.env.INSTAGRAM_APP_ID;
   if (!clientId) {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
-    console.error('Instagram client id missing');
     return NextResponse.redirect(`${baseUrl}/social-connect?error=instagram_not_configured`);
   }
 
@@ -45,7 +44,6 @@ export async function GET(req: Request) {
   igUrl.searchParams.append('response_type', 'code');
   igUrl.searchParams.append('state', state);
 
-  console.log('Instagram start:', { state, demoUser, redirect: igUrl.toString() });
 
   return NextResponse.redirect(igUrl.toString());
 }

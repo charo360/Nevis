@@ -40,7 +40,6 @@ export default function CheckoutPage() {
       window.location.href = '/success';
       
     } catch (error) {
-      console.error('Payment error:', error);
       alert('Payment failed. Please try again.');
     } finally {
       setLoading(false);

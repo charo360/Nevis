@@ -308,7 +308,6 @@ export async function evaluateDesignVariants(
       }
     };
   } catch (error) {
-    console.error('A/B test evaluation failed:', error);
     throw new Error('Failed to evaluate design variants');
   }
 }

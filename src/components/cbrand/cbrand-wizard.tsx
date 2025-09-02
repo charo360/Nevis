@@ -127,15 +127,12 @@ export function CbrandWizard({ mode, brandId }: CbrandWizardProps = {}) {
   useEffect(() => {
     const loadExistingProfile = () => {
       try {
-        console.log('🔄 Loading brand profile. Mode:', mode, 'BrandId:', brandId, 'CurrentBrand:', currentBrand?.businessName);
 
         // If we're in edit mode with a specific brandId, load that brand
         if (mode === 'edit' && brandId) {
-          console.log('🔄 Loading brand for edit mode:', brandId);
           // Load specific brand by ID
           // For now, we'll use the current brand from context if it matches
           if (currentBrand && (currentBrand as any).id === brandId) {
-            console.log('✅ Using current brand from context for edit');
             // Merge with defaults to ensure all color properties exist
             setBrandProfile({ ...defaultBrandProfile, ...currentBrand });
             return;
@@ -144,14 +141,12 @@ export function CbrandWizard({ mode, brandId }: CbrandWizardProps = {}) {
 
         // If we have a current brand selected and we're not in create mode, use it
         if (currentBrand && mode !== 'create') {
-          console.log('✅ Using current brand from context:', currentBrand.businessName);
           // Merge with defaults to ensure all color properties exist
           setBrandProfile({ ...defaultBrandProfile, ...currentBrand });
           return;
         }
 
         // For create mode or when no brand is selected, try to load from storage
-        console.log('🔄 Loading from storage for create mode or no current brand');
 
         // Try to load the complete brand profile first
         const savedProfile = localStorage.getItem('completeBrandProfile');
@@ -160,7 +155,6 @@ export function CbrandWizard({ mode, brandId }: CbrandWizardProps = {}) {
           // Merge with defaults to ensure all color properties exist
           const mergedProfile = { ...defaultBrandProfile, ...parsedProfile };
           setBrandProfile(mergedProfile);
-          console.log('Loaded existing complete profile:', mergedProfile);
           return;
         }
 
@@ -210,10 +204,8 @@ export function CbrandWizard({ mode, brandId }: CbrandWizardProps = {}) {
           // Merge with defaults to ensure all color properties exist
           const mergedProfile = { ...defaultBrandProfile, ...convertedProfile };
           setBrandProfile(mergedProfile);
-          console.log('Loaded and converted legacy profile:', mergedProfile);
         }
       } catch (error) {
-        console.error('Error loading existing profile:', error);
       } finally {
         setIsLoading(false);
       }
@@ -253,7 +245,6 @@ export function CbrandWizard({ mode, brandId }: CbrandWizardProps = {}) {
       const maxSize = 10 * 1024 * 1024; // 10MB limit for localStorage (increased for larger profiles)
 
       if (profileSize > maxSize) {
-        console.warn('Profile too large for auto-save, skipping:', profileSize);
         // Try saving without design examples
         const profileWithoutDesigns = { ...updatedProfile, designExamples: [] };
         localStorage.setItem('completeBrandProfile', JSON.stringify(profileWithoutDesigns));
@@ -262,13 +253,11 @@ export function CbrandWizard({ mode, brandId }: CbrandWizardProps = {}) {
 
       localStorage.setItem('completeBrandProfile', JSON.stringify(updatedProfile));
     } catch (error) {
-      console.warn('Failed to auto-save profile:', error);
       // Try saving without design examples as fallback
       try {
         const profileWithoutDesigns = { ...updatedProfile, designExamples: [] };
         localStorage.setItem('completeBrandProfile', JSON.stringify(profileWithoutDesigns));
       } catch (fallbackError) {
-        console.error('Failed to save even without design examples:', fallbackError);
       }
     }
   };

@@ -7,7 +7,6 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
 
 if (!apiKey) {
-  console.error("❌ No Google AI API key found");
 }
 
 const genAI = new GoogleGenerativeAI(apiKey!);
@@ -33,12 +32,10 @@ const POSSIBLE_MODEL_NAMES = [
  * Test which Gemini models are available
  */
 export async function testAvailableGeminiModels(): Promise<string[]> {
-  console.log('🧪 Testing available Gemini models...');
   const availableModels: string[] = [];
 
   for (const modelName of POSSIBLE_MODEL_NAMES) {
     try {
-      console.log(`Testing model: ${modelName}`);
       
       const model = genAI.getGenerativeModel({ model: modelName });
       
@@ -47,7 +44,6 @@ export async function testAvailableGeminiModels(): Promise<string[]> {
       const response = await result.response;
       
       if (response && response.text) {
-        console.log(`✅ ${modelName} - Available (text generation)`);
         availableModels.push(modelName);
         
         // Test if it supports image generation
@@ -57,20 +53,15 @@ export async function testAvailableGeminiModels(): Promise<string[]> {
           
           const hasImage = imageResponse.candidates?.[0]?.content?.parts?.some(part => part.inlineData);
           if (hasImage) {
-            console.log(`🖼️ ${modelName} - Supports image generation!`);
           }
         } catch (imageError) {
-          console.log(`📝 ${modelName} - Text only`);
         }
       }
       
     } catch (error) {
-      console.log(`❌ ${modelName} - Not available`);
     }
   }
 
-  console.log(`\n📊 Found ${availableModels.length} available models:`);
-  availableModels.forEach(model => console.log(`  - ${model}`));
   
   return availableModels;
 }
@@ -80,7 +71,6 @@ export async function testAvailableGeminiModels(): Promise<string[]> {
  */
 export async function testModelImageGeneration(modelName: string): Promise<boolean> {
   try {
-    console.log(`🎨 Testing image generation for: ${modelName}`);
     
     const model = genAI.getGenerativeModel({ model: modelName });
     
@@ -92,15 +82,12 @@ export async function testModelImageGeneration(modelName: string): Promise<boole
     const hasImage = response.candidates?.[0]?.content?.parts?.some(part => part.inlineData);
     
     if (hasImage) {
-      console.log(`✅ ${modelName} supports image generation!`);
       return true;
     } else {
-      console.log(`❌ ${modelName} does not support image generation`);
       return false;
     }
     
   } catch (error) {
-    console.error(`❌ Error testing ${modelName}:`, error);
     return false;
   }
 }
@@ -109,7 +96,6 @@ export async function testModelImageGeneration(modelName: string): Promise<boole
  * Find the best model for Revo 2.0
  */
 export async function findBestRevo20Model(): Promise<string | null> {
-  console.log('🔍 Finding the best model for Revo 2.0...');
   
   const availableModels = await testAvailableGeminiModels();
   
@@ -131,7 +117,6 @@ export async function findBestRevo20Model(): Promise<string | null> {
       // Test if it supports image generation
       const supportsImages = await testModelImageGeneration(modelName);
       if (supportsImages) {
-        console.log(`🎉 Best model for Revo 2.0: ${modelName}`);
         return modelName;
       }
     }
@@ -141,12 +126,10 @@ export async function findBestRevo20Model(): Promise<string | null> {
   for (const modelName of availableModels) {
     const supportsImages = await testModelImageGeneration(modelName);
     if (supportsImages) {
-      console.log(`🎯 Fallback model for Revo 2.0: ${modelName}`);
       return modelName;
     }
   }
   
-  console.log('❌ No suitable model found for Revo 2.0');
   return null;
 }
 
@@ -156,9 +139,4 @@ if (typeof window !== 'undefined') {
   (window as any).testModelImageGeneration = testModelImageGeneration;
   (window as any).findBestRevo20Model = findBestRevo20Model;
   
-  console.log('🔍 Gemini model testing functions loaded!');
-  console.log('📋 Available functions:');
-  console.log('  - testAvailableGeminiModels() - Test all possible models');
-  console.log('  - findBestRevo20Model() - Find the best model for Revo 2.0');
-  console.log('  - testModelImageGeneration(modelName) - Test specific model');
 }

@@ -9,7 +9,6 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
 
 if (!apiKey) {
-  console.error("❌ No Google AI API key found. Please set GEMINI_API_KEY, GOOGLE_API_KEY, or GOOGLE_GENAI_API_KEY environment variable.");
 }
 
 const genAI = new GoogleGenerativeAI(apiKey!);
@@ -61,7 +60,6 @@ export async function generateText(
       topP = 0.95
     } = options;
 
-    console.log(`🤖 Generating text with ${model}...`);
 
     const geminiModel = genAI.getGenerativeModel({
       model,
@@ -77,7 +75,6 @@ export async function generateText(
     const response = await result.response;
     const text = response.text();
 
-    console.log(`✅ Text generated successfully with ${model}`);
 
     return {
       text,
@@ -86,7 +83,6 @@ export async function generateText(
     };
 
   } catch (error) {
-    console.error(`❌ Error generating text with Gemini 2.5:`, error);
     throw new Error(`Gemini 2.5 text generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -105,7 +101,6 @@ export async function generateImage(
       maxOutputTokens = 1024,
     } = options;
 
-    console.log(`🎨 Generating image with ${model}...`);
 
     const geminiModel = genAI.getGenerativeModel({
       model,
@@ -134,7 +129,6 @@ Format as JSON for easy parsing.`;
     const response = await result.response;
     const designSpecs = response.text();
 
-    console.log(`✅ Design specifications generated with ${model}`);
 
     // Return design specifications as "image data" for now
     // This will be used to generate actual images via other services
@@ -146,7 +140,6 @@ Format as JSON for easy parsing.`;
     };
 
   } catch (error) {
-    console.error(`❌ Error generating image with Gemini 2.5:`, error);
     throw new Error(`Gemini 2.5 image generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -166,7 +159,6 @@ export async function generateMultimodal(
       maxOutputTokens = 2048,
     } = options;
 
-    console.log(`🔍 Generating multimodal content with ${model}...`);
 
     const geminiModel = genAI.getGenerativeModel({
       model,
@@ -192,7 +184,6 @@ export async function generateMultimodal(
     const response = await result.response;
     const text = response.text();
 
-    console.log(`✅ Multimodal content generated with ${model}`);
 
     return {
       text,
@@ -201,7 +192,6 @@ export async function generateMultimodal(
     };
 
   } catch (error) {
-    console.error(`❌ Error generating multimodal content with Gemini 2.5:`, error);
     throw new Error(`Gemini 2.5 multimodal generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -211,7 +201,6 @@ export async function generateMultimodal(
  */
 export async function testConnection(): Promise<boolean> {
   try {
-    console.log('🔌 Testing Gemini 2.5 API connection...');
 
     const response = await generateText('Hello, this is a test message. Please respond with "Connection successful!"', {
       model: GEMINI_2_5_MODELS.FLASH,
@@ -223,15 +212,12 @@ export async function testConnection(): Promise<boolean> {
       response.text.length > 0;
 
     if (isSuccessful) {
-      console.log('✅ Gemini 2.5 API connection successful!');
       return true;
     } else {
-      console.warn('⚠️ Gemini 2.5 API responded but with unexpected content:', response.text);
       return false;
     }
 
   } catch (error) {
-    console.error('❌ Gemini 2.5 API connection failed:', error);
     return false;
   }
 }
