@@ -158,7 +158,7 @@ export class ContentGenerationEngine {
     };
 
     const preferredStyles = categoryVariations[category] || ['Storytelling', 'Authentic'];
-    const availableVariations = this.postVariations.filter(v => 
+    const availableVariations = this.postVariations.filter(v =>
       preferredStyles.includes(v.style)
     );
 
@@ -175,7 +175,7 @@ export class ContentGenerationEngine {
   ): string {
     const contentTemplates = this.getContentTemplates(variation, category);
     const template = contentTemplates[Math.floor(Math.random() * contentTemplates.length)];
-    
+
     return this.fillContentTemplate(template, variation, platform, category);
   }
 
@@ -360,7 +360,7 @@ export class ContentGenerationEngine {
     const baseHashtags = this.contentStrategy.hashtagStrategy;
     const categoryHashtags = this.getCategoryHashtags(category);
     const platformHashtags = this.getPlatformHashtags(platform);
-    
+
     return [...baseHashtags, ...categoryHashtags, ...platformHashtags]
       .slice(0, 15);
   }
@@ -500,7 +500,7 @@ export class ContentGenerationEngine {
   private getLocalRelevanceElements(): string[] { return ['Local culture', 'Community involvement']; }
   private getSeasonalContext(): string { return 'Seasonal business opportunities'; }
   private generatePostId(): string { return `post_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`; }
-  private determinePostType(postType: string): 'caption' | 'story' | 'reel' | 'carousel' { 
-    return postType as 'caption' | 'story' | 'reel' | 'carousel' || 'caption'; 
+  private determinePostType(postType: string): 'caption' | 'story' | 'reel' | 'carousel' {
+    return postType as 'caption' | 'story' | 'reel' | 'carousel' || 'caption';
   }
 }
