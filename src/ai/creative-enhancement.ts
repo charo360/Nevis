@@ -4,6 +4,8 @@
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { viralHashtagEngine } from './viral-hashtag-engine';
+import { dynamicCTAGenerator } from './dynamic-cta-generator';
 
 // Word Repetition Removal Function - Fixes issues like "buy now now pay later"
 function removeWordRepetitions(text: string): string {
@@ -1051,11 +1053,39 @@ IMPORTANT:
     const headline = removeWordRepetitions(headlineMatch?.[1]?.trim() || `${businessName} ${location}`);
     const subheadline = removeWordRepetitions(subheadlineMatch?.[1]?.trim() || `Quality ${businessType} in ${location}`);
     const caption = removeWordRepetitions(captionMatch?.[1]?.trim() || response);
-    const callToAction = removeWordRepetitions(ctaMatch?.[1]?.trim() || generateFallbackCTA(platform));
+
+    // 🎯 GENERATE DYNAMIC CTA using AI and business intelligence
+    console.log('🎯 Generating dynamic CTA with business intelligence...');
+    const ctaStrategy = await dynamicCTAGenerator.generateDynamicCTA(
+      businessName,
+      businessType,
+      location,
+      platform,
+      contentGoal,
+      businessDetails.services || businessDetails.expertise,
+      businessDetails.targetAudience
+    );
+
+    const callToAction = removeWordRepetitions(ctaMatch?.[1]?.trim() || ctaStrategy.primary);
+    console.log(`✅ Generated CTA: "${callToAction}" (Style: ${ctaStrategy.style})`);
+
     const designDirection = removeWordRepetitions(designMatch?.[1]?.trim() || 'Clean, professional design with local elements');
 
     // Generate dynamic engagement hooks
     const engagementHooks = generateDynamicEngagementHooks(businessType, location, industry);
+
+    // 🔥 GENERATE VIRAL HASHTAGS using trending data
+    console.log('🔥 Generating viral hashtags with trending data...');
+    const viralHashtags = await viralHashtagEngine.generateViralHashtags(
+      businessType,
+      businessName,
+      location,
+      platform,
+      businessDetails.services || businessDetails.expertise,
+      businessDetails.targetAudience
+    );
+
+    console.log(`✅ Generated ${viralHashtags.total.length} viral hashtags: ${viralHashtags.total.slice(0, 5).join(' ')}`);
 
     return {
       headline,
@@ -1065,7 +1095,10 @@ IMPORTANT:
       engagementHooks,
       designDirection,
       unifiedTheme,
-      keyMessage
+      keyMessage,
+      hashtags: viralHashtags.total, // Add viral hashtags to response
+      hashtagStrategy: viralHashtags, // Include full strategy for analysis
+      ctaStrategy: ctaStrategy // Include CTA strategy for analysis
     };
   } catch (error) {
     console.error('❌ AI caption generation failed, attempting retry with simplified prompt:', error);
@@ -1135,10 +1168,19 @@ Do NOT write "Here are captions" or provide lists.`;
       const retryCaption = removeWordRepetitions(retryCaptionMatch ? retryCaptionMatch[1].trim() : retryResponse);
       const retryCallToAction = removeWordRepetitions(retryCtaMatch ? retryCtaMatch[1].trim() : generateFallbackCTA(platform));
 
+      // Generate viral hashtags for retry
+      const retryHashtags = await viralHashtagEngine.generateViralHashtags(
+        businessType, businessName, location, platform,
+        businessDetails.services || businessDetails.expertise,
+        businessDetails.targetAudience
+      );
+
       return {
         caption: retryCaption,
         engagementHooks: generateDynamicEngagementHooks(businessType, location, industry),
-        callToAction: retryCallToAction
+        callToAction: retryCallToAction,
+        hashtags: retryHashtags.total,
+        hashtagStrategy: retryHashtags
       };
 
     } catch (retryError) {
@@ -1175,10 +1217,19 @@ Do NOT write "Here are posts" or provide multiple options. Write ONE post only.`
 
         console.log('🚨 Emergency AI generation successful');
 
+        // Generate viral hashtags for emergency
+        const emergencyHashtags = await viralHashtagEngine.generateViralHashtags(
+          businessType, businessName, location, platform,
+          businessDetails.services || businessDetails.expertise,
+          businessDetails.targetAudience
+        );
+
         return {
           caption: emergencyResponse,
           engagementHooks: generateDynamicEngagementHooks(businessType, location, industry),
-          callToAction: removeWordRepetitions(generateFallbackCTA(platform))
+          callToAction: removeWordRepetitions(generateFallbackCTA(platform)),
+          hashtags: emergencyHashtags.total,
+          hashtagStrategy: emergencyHashtags
         };
 
       } catch (emergencyError) {
@@ -1188,10 +1239,19 @@ Do NOT write "Here are posts" or provide multiple options. Write ONE post only.`
         const timestamp = Date.now();
         const uniqueId = Math.floor(Math.random() * 10000);
 
+        // Generate viral hashtags for final fallback
+        const fallbackHashtags = await viralHashtagEngine.generateViralHashtags(
+          businessType, businessName, location, platform,
+          businessDetails.services || businessDetails.expertise,
+          businessDetails.targetAudience
+        );
+
         return {
           caption: removeWordRepetitions(`${businessName} in ${location} - where quality meets innovation. Every visit is a new experience that locals can't stop talking about. Join the community that knows great ${businessType}! #${timestamp}`),
           engagementHooks: generateDynamicEngagementHooks(businessType, location, industry),
-          callToAction: removeWordRepetitions(generateFallbackCTA(platform))
+          callToAction: removeWordRepetitions(generateFallbackCTA(platform)),
+          hashtags: fallbackHashtags.total,
+          hashtagStrategy: fallbackHashtags
         };
       }
     }

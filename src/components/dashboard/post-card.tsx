@@ -592,6 +592,33 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
+
+            {/* Display Call-to-Action if available */}
+            {post.callToAction && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-blue-700 bg-blue-100 px-2 py-1 rounded">CTA</span>
+                    <p className="text-sm font-medium text-blue-800">{post.callToAction}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      navigator.clipboard.writeText(post.callToAction || '');
+                      toast({
+                        title: "CTA Copied!",
+                        description: "Call-to-action copied to clipboard",
+                      });
+                    }}
+                    className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800"
+                    title="Copy CTA"
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
         <CardFooter className="p-4 pt-0">
