@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SocialMediaExpertSystem } from '@/ai/social-media-expert-system';
 import { ContentGenerationEngine } from '@/ai/content-generation-engine';
+import { AdvancedContentGenerator } from '@/ai/advanced-content-generator';
 import { BusinessProfile } from '@/lib/types/business-profile';
 
 /**
@@ -95,7 +96,7 @@ async function handleBusinessAnalysis(expertSystem: SocialMediaExpertSystem) {
 }
 
 /**
- * Handle post generation request
+ * Handle post generation request using Advanced Content Generator
  */
 async function handlePostGeneration(
   contentEngine: ContentGenerationEngine,
@@ -105,10 +106,28 @@ async function handlePostGeneration(
   count: number
 ) {
   const posts = [];
-  
+
+  // Get business profile from content engine
+  const businessProfile = (contentEngine as any).businessProfile;
+
+  // Initialize advanced content generator
+  const advancedGenerator = new AdvancedContentGenerator();
+
   for (let i = 0; i < count; i++) {
-    const post = contentEngine.generatePost(platform, postType, category);
-    posts.push(post);
+    try {
+      // Use the advanced content generator instead of the old one
+      const post = await advancedGenerator.generateEngagingContent(
+        businessProfile,
+        platform,
+        postType || 'social_post'
+      );
+      posts.push(post);
+    } catch (error) {
+      console.error(`❌ Error generating post ${i + 1}:`, error);
+      // Fallback to old system if advanced fails
+      const fallbackPost = contentEngine.generatePost(platform, postType, category);
+      posts.push(fallbackPost);
+    }
   }
 
   return NextResponse.json({
@@ -151,7 +170,7 @@ async function handleStrategyGeneration(
 }
 
 /**
- * Handle calendar generation request
+ * Handle calendar generation request using Advanced Content Generator
  */
 async function handleCalendarGeneration(
   contentEngine: ContentGenerationEngine,
@@ -161,14 +180,32 @@ async function handleCalendarGeneration(
   const platforms = contentStrategy.platformMix;
   const calendar = [];
 
+  // Get business profile from content engine
+  const businessProfile = (contentEngine as any).businessProfile;
+
+  // Initialize advanced content generator
+  const advancedGenerator = new AdvancedContentGenerator();
+
   for (const platform of platforms) {
     const platformPosts = [];
-    
+
     for (let i = 0; i < count; i++) {
-      const categories = Object.keys(contentStrategy.contentMix);
-      const randomCategory = categories[Math.floor(Math.random() * categories.length)];
-      const post = contentEngine.generatePost(platform, 'caption', randomCategory);
-      platformPosts.push(post);
+      try {
+        // Use the advanced content generator
+        const post = await advancedGenerator.generateEngagingContent(
+          businessProfile,
+          platform,
+          'social_post'
+        );
+        platformPosts.push(post);
+      } catch (error) {
+        console.error(`❌ Error generating calendar post for ${platform}:`, error);
+        // Fallback to old system
+        const categories = Object.keys(contentStrategy.contentMix);
+        const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+        const fallbackPost = contentEngine.generatePost(platform, 'caption', randomCategory);
+        platformPosts.push(fallbackPost);
+      }
     }
 
     calendar.push({
@@ -202,13 +239,26 @@ async function handleCompletePackage(
   const contentStrategy = expertSystem.getContentStrategy();
   const summaryReport = expertSystem.generateSummaryReport();
 
-  // Generate sample posts for different categories
+  // Generate sample posts using advanced content generator
+  const businessProfile = expertSystem.getBusinessProfile();
+  const advancedGenerator = new AdvancedContentGenerator();
   const categories = ['behind-the-scenes', 'educational', 'community', 'customer-spotlight'];
   const samplePosts = [];
 
   for (const category of categories) {
-    const post = contentEngine.generatePost(platform, 'caption', category);
-    samplePosts.push(post);
+    try {
+      const post = await advancedGenerator.generateEngagingContent(
+        businessProfile,
+        platform,
+        'social_post'
+      );
+      samplePosts.push(post);
+    } catch (error) {
+      console.error(`❌ Error generating sample post for ${category}:`, error);
+      // Fallback to old system
+      const fallbackPost = contentEngine.generatePost(platform, 'caption', category);
+      samplePosts.push(fallbackPost);
+    }
   }
 
   // Generate content calendar
@@ -249,7 +299,7 @@ function generateContentCalendar(contentStrategy: any, businessProfile: Business
 
   // Generate weekly schedule
   const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-  
+
   if (postingFrequency === 'Daily') {
     daysOfWeek.forEach(day => {
       calendar.weeklySchedule.push({
@@ -304,17 +354,17 @@ function generateContentCalendar(contentStrategy: any, businessProfile: Business
 function getRandomCategoryByWeight(contentMix: any): string {
   const categories = Object.keys(contentMix);
   const weights = Object.values(contentMix) as number[];
-  
+
   const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
   let random = Math.random() * totalWeight;
-  
+
   for (let i = 0; i < categories.length; i++) {
     random -= weights[i];
     if (random <= 0) {
       return categories[i];
     }
   }
-  
+
   return categories[0];
 }
 

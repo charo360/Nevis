@@ -6,6 +6,9 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { BrandProfile } from '@/lib/types';
 import { revo10Config, revo10Prompts } from './models/versions/revo-1.0/config';
+import { advancedContentGenerator, BusinessProfile } from './advanced-content-generator';
+import { performanceAnalyzer } from './content-performance-analyzer';
+import { trendingEnhancer } from './trending-content-enhancer';
 import {
   generateCreativeHeadline,
   generateCreativeSubheadline,
@@ -14,7 +17,12 @@ import {
   analyzeBusinessContext,
   AntiRepetitionSystem,
   CREATIVE_PROMPT_SYSTEM,
-  CONTENT_VARIATION_ENGINE
+  CONTENT_VARIATION_ENGINE,
+  // NEW: Import business-specific content generation
+  StrategicContentPlanner,
+  generateBusinessSpecificHeadline,
+  generateBusinessSpecificSubheadline,
+  generateBusinessSpecificCaption
 } from './creative-enhancement';
 
 // Advanced features integration (simplified for now)
@@ -1202,7 +1210,7 @@ function getDynamicContentStrategy(businessType: string, location: string, seed:
       approach: `Position as the ${businessIntel.name} expert in ${location} with ${businessIntel.localExpertise.experience}`,
       focus: 'Local expertise, community knowledge, market insights',
       hooks: businessIntel.localExpertise.engagementHooks.slice(0, 4),
-      phrases: businessIntel.localPhrases.slice(0, 4),
+      phrases: (businessIntel.localPhrases || ['local expertise', 'community focused', 'trusted service', 'proven results']).slice(0, 4),
       description: `Write like a ${businessIntel.localExpertise.experience} professional who knows ${location} inside and out`
     },
     {
@@ -1210,7 +1218,7 @@ function getDynamicContentStrategy(businessType: string, location: string, seed:
       approach: `Share authentic stories about local ${businessIntel.name} success and community impact`,
       focus: 'Real stories, community connection, authentic experiences',
       hooks: businessIntel.localExpertise.engagementHooks.slice(4, 8),
-      phrases: businessIntel.localPhrases.slice(4, 8),
+      phrases: (businessIntel.localPhrases || ['community stories', 'local success', 'authentic experiences', 'real results']).slice(4, 8),
       description: 'Share real, relatable stories that connect with the local community'
     },
     {
@@ -1218,7 +1226,7 @@ function getDynamicContentStrategy(businessType: string, location: string, seed:
       approach: `Showcase cutting-edge ${businessIntel.name} solutions and industry leadership`,
       focus: 'Innovation, industry trends, competitive advantage',
       hooks: businessIntel.localExpertise.contentStrategies.slice(0, 4),
-      phrases: businessIntel.localPhrases.slice(0, 4),
+      phrases: (businessIntel.localPhrases || ['innovative solutions', 'industry leader', 'cutting-edge', 'advanced technology']).slice(0, 4),
       description: 'Position as an industry leader with innovative solutions and insights'
     },
     {
@@ -1226,7 +1234,7 @@ function getDynamicContentStrategy(businessType: string, location: string, seed:
       approach: `Address specific ${businessIntel.name} challenges that local businesses and people face`,
       focus: 'Problem identification, solution offering, value demonstration',
       hooks: businessIntel.localExpertise.marketDynamics.slice(0, 4),
-      phrases: businessIntel.localPhrases.slice(0, 4),
+      phrases: (businessIntel.localPhrases || ['problem solver', 'effective solutions', 'proven results', 'reliable service']).slice(0, 4),
       description: 'Identify and solve real problems that matter to the local community'
     },
     {
@@ -1234,7 +1242,7 @@ function getDynamicContentStrategy(businessType: string, location: string, seed:
       approach: `Inspire and guide local ${businessIntel.name} success through proven strategies`,
       focus: 'Success stories, proven methods, inspirational guidance',
       hooks: businessIntel.localExpertise.contentStrategies.slice(4, 8),
-      phrases: businessIntel.localPhrases.slice(4, 8),
+      phrases: (businessIntel.localPhrases || ['success catalyst', 'proven strategies', 'inspiring results', 'growth partner']).slice(4, 8),
       description: 'Inspire success through proven strategies and real results'
     }
   ];
@@ -1399,7 +1407,7 @@ function generateUniqueContentVariation(businessType: string, location: string, 
     writingStyle: writingStyle,
     contentAngle: selectedAngle,
     uniqueSignature: `${selectedAngle.type}-${contentStrategy.name}-${writingStyle.name}-${seed}`,
-    localPhrases: businessIntel.localPhrases.slice(0, 3),
+    localPhrases: (businessIntel.localPhrases || ['professional service', 'quality results', 'trusted expertise']).slice(0, 3),
     engagementHooks: businessIntel.localExpertise.engagementHooks.slice(0, 3),
     marketInsights: businessIntel.localExpertise.marketDynamics.slice(0, 2)
   };
@@ -1511,9 +1519,55 @@ export async function generateRevo10Content(input: {
   visualStyle?: string;
 }) {
   try {
-    console.log('🚀 Revo 1.0: Starting enhanced content generation with real-time context...');
+    console.log('🚀 Revo 1.0: Starting ADVANCED content generation with deep business intelligence...');
 
-    // Gather real-time context data
+    // 🧠 ADVANCED BUSINESS INTELLIGENCE SYSTEM
+    console.log('🧠 Initializing Advanced Business Intelligence System...');
+
+    // Convert input to BusinessProfile for advanced analysis
+    const businessProfile: BusinessProfile = {
+      businessName: input.businessName,
+      businessType: input.businessType,
+      location: input.location,
+      targetAudience: input.targetAudience,
+      brandVoice: input.writingTone,
+      uniqueSellingPoints: [input.competitiveAdvantages || 'Quality service'],
+      competitors: [], // Could be enhanced with competitor data
+    };
+
+    // 📊 GENERATE ADVANCED CONTENT WITH DEEP ANALYSIS
+    console.log('📊 Generating content with advanced business analysis...');
+    const advancedContent = await advancedContentGenerator.generateEngagingContent(
+      businessProfile,
+      input.platform,
+      'promotional'
+    );
+
+    // 🎯 GET TRENDING INSIGHTS FOR ENHANCED RELEVANCE
+    console.log('🎯 Integrating trending insights...');
+    const trendingEnhancement = await trendingEnhancer.getTrendingEnhancement({
+      businessType: input.businessType,
+      platform: input.platform,
+      location: input.location,
+      targetAudience: input.targetAudience,
+    });
+
+    // 📈 ANALYZE PERFORMANCE FOR CONTINUOUS IMPROVEMENT
+    console.log('📈 Analyzing performance benchmarks...');
+    const performanceAnalysis = performanceAnalyzer.analyzePerformance(
+      advancedContent,
+      businessProfile
+    );
+
+    console.log('✅ Advanced content analysis complete!');
+    console.log(`🎯 Generated ${advancedContent.hashtags.length} strategic hashtags`);
+    console.log(`📊 Found ${trendingEnhancement.keywords.length} trending keywords`);
+    console.log(`🚀 Performance recommendations: ${performanceAnalysis.recommendations.length}`);
+
+    // Extract hashtags from advanced content for use in business-specific generation
+    const hashtags = advancedContent.hashtags;
+
+    // Gather real-time context data (keeping existing functionality)
     const realTimeContext = await gatherRealTimeContext(input.businessType, input.location, input.platform);
 
     const model = ai.getGenerativeModel({
@@ -1548,408 +1602,161 @@ export async function generateRevo10Content(input: {
 
     // NEW: Get business intelligence and local marketing expertise
     const businessIntel = getBusinessIntelligenceEngine(input.businessType, input.location);
-    const uniqueContentVariation = generateUniqueContentVariation(input.businessType, input.location, Date.now() % 1000);
+    const randomSeed = Math.floor(Math.random() * 10000) + Date.now();
+    const uniqueContentVariation = generateUniqueContentVariation(input.businessType, input.location, randomSeed % 1000);
 
     console.log('🏢 Business Intelligence:', businessIntel.name);
     console.log('🎯 Content Strategy:', uniqueContentVariation.contentStrategy.name);
     console.log('✍️ Writing Style:', uniqueContentVariation.writingStyle.name);
     console.log('📐 Content Angle:', uniqueContentVariation.contentAngle.type);
 
-    // Get creative context for caption generation
-    const captionBusinessContext = analyzeBusinessContext(
+    // 🎯 NEW: Generate business-specific content strategy
+    console.log('🎯 Revo 1.0: Generating business-specific content strategy...');
+
+    const businessDetails = {
+      experience: '5+ years', // Could be extracted from business profile
+      expertise: input.keyFeatures,
+      services: input.services,
+      location: input.location,
+      targetAudience: input.targetAudience
+    };
+
+    // Generate strategic content plan based on business type and goals
+    const contentPlan = StrategicContentPlanner.generateBusinessSpecificContent(
       input.businessType,
       input.businessName,
       input.location,
-      input.services
-    );
-
-    // Generate unique creative variation for caption
-    const captionVariation = AntiRepetitionSystem.generateUniqueVariation(
-      input.businessType,
+      businessDetails,
       input.platform,
-      { businessName: input.businessName, location: input.location, context: 'caption' }
+      'awareness' // Can be dynamic based on business goals
     );
 
-    console.log('✨ Caption creative variation:', captionVariation.signature);
+    console.log('✅ Business-specific content strategy generated:');
+    console.log(`- Content Goal: ${contentPlan.strategy.goal}`);
+    console.log(`- Business Strengths: ${contentPlan.businessStrengths.join(', ')}`);
+    console.log(`- Market Opportunities: ${contentPlan.marketOpportunities.join(', ')}`);
+    console.log(`- Value Proposition: ${contentPlan.valueProposition}`);
 
-    // Generate enhanced caption using creative frameworks
-    const enhancedCaptionPrompt = `You are a ${businessIntel.localExpertise.experience} professional who is the leading ${businessIntel.name} expert in ${input.location}. You're not just a marketer - you're a local industry veteran who knows the market inside and out, understands local dynamics, and speaks the language of the community.
+    // 🎨 NEW: Generate business-specific headlines and subheadlines with AI
+    console.log('🎨 Revo 1.0: Generating AI-powered business-specific headlines and subheadlines...');
 
-Your mission is to create scroll-stopping, UNIQUE content that sounds like it's written by a real ${businessIntel.name} professional with deep local expertise - not generic marketing copy.
-
-🎨 BUSINESS INTELLIGENCE SYSTEM ACTIVATED:
-**Industry Expertise:** ${businessIntel.localExpertise.experience} in ${businessIntel.name}
-**Local Market Knowledge:** Deep understanding of ${input.location} market dynamics
-**Content Strategy:** ${uniqueContentVariation.contentStrategy.name} - ${uniqueContentVariation.contentStrategy.approach}
-**Writing Style:** ${uniqueContentVariation.writingStyle.name} - ${uniqueContentVariation.writingStyle.voice}
-**Content Angle:** ${uniqueContentVariation.contentAngle.type} - ${uniqueContentVariation.contentAngle.focus}
-
-🏢 LOCAL MARKET INSIGHTS:
-${uniqueContentVariation.marketInsights.map((insight, i) => `${i + 1}. ${insight}`).join('\n')}
-
-🎯 ENGAGEMENT HOOKS:
-${uniqueContentVariation.engagementHooks.map((hook, i) => `${i + 1}. ${hook}`).join('\n')}
-
-💬 LOCAL PHRASES TO USE NATURALLY:
-${uniqueContentVariation.localPhrases.map((phrase, i) => `${i + 1}. ${phrase.replace('[location]', input.location)}`).join('\n')}
-
-🎨 CREATIVE ENHANCEMENT SYSTEM ACTIVATED:
-CREATIVE STYLE: ${captionVariation.style} approach with ${captionVariation.mood} emotional tone
-HEADLINE FRAMEWORK: ${captionVariation.headlineStyle} structure
-STORYTELLING FRAMEWORK: ${captionVariation.framework} narrative approach
-BUSINESS CREATIVE INSIGHTS: ${captionBusinessContext.creativePotential.slice(0, 2).join(', ')}
-EMOTIONAL TRIGGERS: ${captionBusinessContext.emotionalTriggers.join(', ')}
-
-ANTI-REPETITION REQUIREMENTS:
-- NEVER start with "Ever wondered what makes..." or similar generic openings
-- AVOID repetitive patterns like "What makes [business] special/different/unique"
-- NO generic business jargon or template language
-- CREATE completely unique, memorable opening hooks
-- USE unexpected angles and creative storytelling approaches
-- VARY emotional tones and creative frameworks for each generation
-- **MOST IMPORTANT: Write like a real ${businessIntel.localExpertise.experience} professional, not AI**
-
-COMPREHENSIVE BUSINESS INTELLIGENCE:
-- Business Name: ${input.businessName}
-- Industry: ${input.businessType} (${businessIntel.name})
-- Location: ${input.location}
-- Brand Voice: ${input.writingTone}
-- Visual Style: ${input.visualStyle || 'modern'}
-- Primary Color: ${input.primaryColor || '#3B82F6'}
-- Target Audience: ${input.targetAudience}
-- Services Offered: ${input.services || 'Professional services'}
-- Key Features: ${input.keyFeatures || 'Quality and reliability'}
-- Competitive Advantages: ${input.competitiveAdvantages || 'Unique value proposition'}
-- Content Themes: ${input.contentThemes.join(', ') || 'Business excellence'}
-- Platform: ${input.platform}
-- Day: ${input.dayOfWeek}
-- Date: ${input.currentDate}
-
-BRAND IDENTITY INTEGRATION:
-- Use business name "${input.businessName}" naturally in content
-- Reflect ${businessIntel.name} industry expertise with ${businessIntel.localExpertise.experience} authority
-- Incorporate ${input.location} local relevance and market knowledge
-- Match ${input.writingTone} brand voice consistently
-- Highlight unique services and competitive advantages
-- Appeal to ${input.targetAudience} specifically
-- **Use local phrases and market insights naturally**
-
-ADVANCED COPYWRITING FRAMEWORKS TO USE:
-1. **AIDA Framework**: Attention → Interest → Desire → Action
-2. **PAS Framework**: Problem → Agitation → Solution
-3. **Storytelling Elements**: Character, conflict, resolution
-4. **Social Proof Integration**: Success stories, testimonials
-5. **Local Expert Authority**: Market insights, industry knowledge, community expertise
-
-PSYCHOLOGICAL TRIGGERS TO IMPLEMENT:
-✅ **Curiosity Gaps**: Intriguing questions that demand answers
-✅ **Emotional Resonance**: Joy, surprise, inspiration, empathy
-✅ **Authority**: Expert insights, industry knowledge, local market expertise
-✅ **Reciprocity**: Valuable tips, free insights, local market knowledge
-✅ **Social Proof**: Customer success, popularity indicators, local community impact
-
-PLATFORM-SPECIFIC OPTIMIZATION FOR ${input.platform.toUpperCase()}:
-${input.platform === 'Instagram' ? `
-- Visual storytelling, lifestyle integration, authentic moments
-- Length: 150-300 words, emoji-rich, story-driven
-- Include 2-3 engagement questions
-- End with compelling call-to-action` : ''}
-${input.platform === 'LinkedIn' ? `
-- Professional insights, industry expertise, thought leadership
-- Length: 100-200 words, professional tone, value-driven
-- Focus on business solutions and career growth
-- Minimal but strategic emoji usage` : ''}
-${input.platform === 'Facebook' ? `
-- Community building, detailed storytelling, discussion starters
-- Length: 100-250 words, community-focused
-- Local community engagement, family-friendly content
-- Encourage sharing and group discussions` : ''}
-${input.platform === 'Twitter' ? `
-- Trending topics, quick insights, conversation starters
-- Length: 50-150 words, concise, witty commentary
-- Real-time engagement, thread potential
-- Sharp, clever, conversation-starting tone` : ''}
-
-ENGAGEMENT OPTIMIZATION:
-🎯 **Hook Techniques**: Surprising statistics, personal anecdotes, thought-provoking questions, bold predictions, local market insights
-🎯 **Interaction Drivers**: "Comment below with...", "Tag someone who...", "Share if you agree...", "What's your experience with..."
-🎯 **Call-to-Action Mastery**: Create urgency without being pushy, offer clear value, use action-oriented language
-
-🎨 CREATIVE CONTENT REQUIREMENTS:
-- Start with a UNIQUE, creative hook using the ${uniqueContentVariation.contentAngle.type} approach
-- Apply the ${uniqueContentVariation.contentStrategy.name} strategy throughout
-- Use ${uniqueContentVariation.writingStyle.name} writing style with ${uniqueContentVariation.writingStyle.tone} tone
-- Include 2-3 engagement questions that feel natural and conversational
-- Incorporate relevant emojis strategically (${input.platform === 'Instagram' ? '8-12' : input.platform === 'LinkedIn' ? '2-4' : '4-8'} emojis)
-- End with a compelling, specific call-to-action
-- Make it location-relevant for ${input.location} when appropriate
-- NO HASHTAGS in caption (provided separately)
-- Create completely unique content that stands out from typical business posts
-- **MOST IMPORTANT: Write like a real ${businessIntel.localExpertise.experience} professional who knows ${input.location} inside and out**
-
-✨ CREATIVE OPENING EXAMPLES (USE AS INSPIRATION, DON'T COPY):
-${uniqueContentVariation.contentAngle.examples.map((example, i) => `${i + 1}. ${example}`).join('\n')}
-
-MANDATORY CREATIVE CONSTRAINTS:
-- NEVER use "Ever wondered what makes..." or similar repetitive openings
-- AVOID starting with questions about what makes the business special/different/unique
-- NO generic business language or template phrases
-- CREATE emotional connection through storytelling, not business features
-- USE unexpected angles and creative perspectives
-- INCORPORATE local culture and community elements naturally
-- **WRITE LIKE A REAL ${businessIntel.localExpertise.experience} PROFESSIONAL, NOT AI**
-- **USE LOCAL MARKET INSIGHTS AND PHRASES NATURALLY**
-
-VARIETY REQUIREMENTS:
-- Use different hook styles each time (statistics, questions, stories, bold statements, local insights)
-- Vary the copywriting framework (rotate between AIDA, PAS, storytelling)
-- Change the emotional tone (inspirational, educational, entertaining, motivational)
-- Alternate engagement techniques (questions, polls, challenges, tips)
-- Mix content angles (behind-the-scenes, customer focus, industry insights, local relevance)
-- **NEVER REPEAT THE SAME CONTENT PATTERNS**
-
-🌐 AUTHENTIC REAL-TIME MARKETING CONTEXT (INTEGRATE NATURALLY):
-
-${realTimeContext.localLanguage ? `
-🗣️ LOCAL LANGUAGE & CULTURE (${realTimeContext.localLanguage.primaryLanguage}):
-- Cultural Nuances: ${realTimeContext.localLanguage.culturalNuances}
-- Marketing Style: ${realTimeContext.localLanguage.marketingStyle}
-- Local Expressions: ${realTimeContext.localLanguage.localExpressions.join(', ')}
-- Business Terms: ${realTimeContext.localLanguage.businessTerms.join(', ')}
-- **Use these naturally in your content to sound like a local expert**` : ''}
-
-${realTimeContext.climateInsights ? `
-🌍 SEASONAL BUSINESS OPPORTUNITIES (${realTimeContext.climateInsights.season}):
-- Business Impact: ${realTimeContext.climateInsights.businessImpact}
-- Content Angle: ${realTimeContext.climateInsights.marketingAngle}
-- Business Strategy: ${realTimeContext.climateInsights.businessSuggestions}
-- Local Adaptation: ${realTimeContext.climateInsights.localAdaptations}
-- **Position as the ${businessIntel.name} expert who understands seasonal opportunities**` : ''}
-
-${realTimeContext.weather ? `
-🌤️ WEATHER-RELEVANT BUSINESS INSIGHTS:
-- Current: ${realTimeContext.weather.condition} (${realTimeContext.weather.temperature}°C)
-- Business Opportunity: ${realTimeContext.weather.business_impact}
-- Content Hook: ${realTimeContext.weather.content_opportunities}
-- **Connect weather to business solutions, not just mention it**` : ''}
-
-${realTimeContext.trendingTopics.length > 0 ? `
-🔥 PLATFORM & INDUSTRY TRENDS (${input.platform}):
-${realTimeContext.trendingTopics.map((trend: any, i: number) => `${i + 1}. ${trend.topic} - ${trend.category} (${trend.relevance} relevance)`).join('\n')}
-- **Use trends to show industry expertise and current market knowledge**` : ''}
-
-${realTimeContext.events.length > 0 ? `
-🎪 LOCAL BUSINESS OPPORTUNITIES:
-${realTimeContext.events.map((event: any, i: number) => `${i + 1}. ${event.name} - ${event.venue} (${event.relevance})`).join('\n')}
-- **Position as the local business expert who knows what's happening**` : ''}
-
-${realTimeContext.news.length > 0 ? `
-📰 LOCAL MARKET INTELLIGENCE:
-${realTimeContext.news.map((news: any, i: number) => `${i + 1}. ${news.headline} - ${news.businessRelevance}`).join('\n')}
-- **Demonstrate deep local market knowledge and industry expertise**` : ''}
-
-🎯 AUTHENTIC MARKETING INTEGRATION REQUIREMENTS:
-- **DON'T just list data** - weave insights naturally into your content
-- **DO show expertise** - use context to demonstrate local market knowledge
-- **DON'T force connections** - only include what genuinely adds value
-- **DO sound local** - use local language and cultural elements authentically
-- **DON'T be generic** - make everything specific to ${input.location} and ${businessIntel.name}
-- **DO be strategic** - use context to position as the local industry expert
-- **MOST IMPORTANT: Sound like a ${businessIntel.localExpertise.experience} professional who lives and breathes ${input.location} business, not someone reading from a data sheet**
-
-RANDOMIZATION SEED: ${Date.now() % 1000} (Use this to ensure variety in approach)
-
-🎨 FINAL CREATIVE GENERATION INSTRUCTIONS:
-- Generate ONLY the actual social media caption content
-- NO meta-text, explanations, or descriptions
-- Start directly with your UNIQUE creative hook using the ${uniqueContentVariation.contentAngle.type} approach
-- Write as if you are a ${businessIntel.localExpertise.experience} professional posting authentically
-- Apply the ${uniqueContentVariation.contentStrategy.name} strategy throughout
-- Maintain ${uniqueContentVariation.writingStyle.name} writing style with ${uniqueContentVariation.writingStyle.tone} tone
-- AVOID all repetitive patterns and generic business language
-- Create something that would make people stop scrolling and engage
-- **MOST IMPORTANT: Sound like a real ${businessIntel.localExpertise.experience} professional who knows ${input.location} and the ${businessIntel.name} industry inside and out**
-
-CREATIVE EXAMPLE FORMAT (DON'T COPY - CREATE YOUR OWN):
-${uniqueContentVariation.writingStyle.examples[0]}
-
-[Continue with unique storytelling using local market insights...]
-
-What's been your biggest surprise this week? Share below! 👇
-
-NOW GENERATE THE ACTUAL CAPTION WITH BUSINESS INTELLIGENCE AND LOCAL MARKET EXPERTISE:`;
-
-    const result = await model.generateContent([
-      revo10Prompts.CONTENT_SYSTEM_PROMPT,
-      enhancedCaptionPrompt
-    ]);
-
-    const response = await result.response;
-    const content = response.text();
-
-    console.log('📝 Enhanced caption generated:');
-    console.log(`- Length: ${content.length} characters`);
-    console.log(`- Platform: ${input.platform}`);
-    console.log(`- Tone: ${input.writingTone}`);
-    console.log(`- Preview: ${content.substring(0, 100)}...`);
-
-    // Generate strategic hashtags with different categories
-    const hashtagPrompt = `Generate strategic hashtags for ${input.businessName} (${input.businessType}) in ${input.location} for ${input.platform}.
-
-COMPREHENSIVE BUSINESS CONTEXT:
-- Business Name: ${input.businessName}
-- Industry: ${input.businessType}
-- Location: ${input.location}
-- Target Audience: ${input.targetAudience}
-- Services Offered: ${input.services}
-- Key Features: ${input.keyFeatures}
-- Competitive Advantages: ${input.competitiveAdvantages}
-- Content Themes: ${input.contentThemes.join(', ')}
-- Brand Voice: ${input.writingTone}
-- Visual Style: ${input.visualStyle}
-
-HASHTAG STRATEGY:
-Create 15 hashtags in these categories:
-1. Brand/Business (2-3 hashtags): Company name, business type
-2. Industry/Niche (3-4 hashtags): Specific to ${input.businessType}
-3. Location (2-3 hashtags): ${input.location} and surrounding areas
-4. Trending/Popular (2-3 hashtags): Current trending topics in the industry
-5. Community/Engagement (2-3 hashtags): Encourage interaction
-6. Long-tail (2-3 hashtags): Specific, less competitive phrases
-
-REQUIREMENTS:
-- Mix of high, medium, and low competition hashtags
-- Include local hashtags for ${input.location}
-- Relevant to ${input.platform} audience
-- No spaces in hashtags
-- Each hashtag on a new line starting with #
-- Focus on discoverability and engagement
-
-Generate exactly 15 hashtags:`;
-
-    const hashtagResult = await model.generateContent(hashtagPrompt);
-    const hashtagResponse = await hashtagResult.response;
-    const hashtags = hashtagResponse.text()
-      .split('\n')
-      .filter(tag => tag.trim().startsWith('#'))
-      .map(tag => tag.trim())
-      .slice(0, 15);
-
-    console.log('📱 Generated hashtag strategy:');
-    console.log(`- Total hashtags: ${hashtags.length}`);
-    console.log(`- Hashtags: ${hashtags.join(' ')}`);
-
-    // Analyze hashtag categories for logging
-    const brandHashtags = hashtags.filter(tag =>
-      tag.toLowerCase().includes(input.businessName.toLowerCase().replace(/\s+/g, '')) ||
-      tag.toLowerCase().includes(input.businessType.toLowerCase().replace(/\s+/g, ''))
-    );
-    const locationHashtags = hashtags.filter(tag =>
-      tag.toLowerCase().includes(input.location.toLowerCase().replace(/\s+/g, ''))
-    );
-
-    console.log(`- Brand hashtags: ${brandHashtags.length}`);
-    console.log(`- Location hashtags: ${locationHashtags.length}`);
-
-    // 🎨 CREATIVE ENHANCEMENT: Generate creative, unique content components
-    console.log('🎨 Revo 1.0: Applying creative enhancement system...');
-
-    // Analyze business context for creative insights
-    const businessContext = analyzeBusinessContext(
+    const businessHeadline = await generateBusinessSpecificHeadline(
       input.businessType,
       input.businessName,
       input.location,
-      input.services
-    );
-
-    // Generate unique variation to prevent repetition
-    const uniqueVariation = AntiRepetitionSystem.generateUniqueVariation(
-      input.businessType,
+      businessDetails,
       input.platform,
-      { businessName: input.businessName, location: input.location }
+      'awareness',
+      trendingEnhancement,
+      advancedContent
     );
 
-    console.log('🎯 Creative variation applied:', uniqueVariation.signature);
-    console.log('🧠 Business insights:', businessContext.creativePotential.slice(0, 2));
-
-    // Generate creative headline using enhancement system
-    const creativeHeadlineResult = generateCreativeHeadline(
+    const businessSubheadline = await generateBusinessSpecificSubheadline(
       input.businessType,
       input.businessName,
       input.location,
-      { platform: input.platform, variation: uniqueVariation, context: businessContext }
+      businessDetails,
+      businessHeadline.headline,
+      'awareness',
+      trendingEnhancement,
+      advancedContent
     );
 
-    // Generate creative subheadline using enhancement system
-    const creativeSubheadlineResult = generateCreativeSubheadline(
+    console.log('✅ Business-specific content components generated:');
+    console.log(`- Headline: "${businessHeadline.headline}"`);
+    console.log(`- Approach: ${businessHeadline.approach}`);
+    console.log(`- Subheadline: "${businessSubheadline.subheadline}"`);
+    console.log(`- Framework: ${businessSubheadline.framework}`);
+
+    // 📝 NEW: Generate AI-powered business-specific caption
+    console.log('📝 Revo 1.0: Generating AI-powered business-specific caption...');
+
+    const businessCaption = await generateBusinessSpecificCaption(
       input.businessType,
-      input.services,
+      input.businessName,
       input.location,
-      creativeHeadlineResult.tone
+      businessDetails,
+      input.platform,
+      'awareness',
+      trendingEnhancement,
+      advancedContent
     );
 
-    // Generate creative CTA using enhancement system
-    const creativeCTAResult = generateCreativeCTA(
-      input.businessType,
-      creativeHeadlineResult.tone,
-      { platform: input.platform, businessContext }
-    );
+    console.log('✅ Business-specific caption generated:');
+    console.log(`- Caption Length: ${businessCaption.caption.length} characters`);
+    console.log(`- Engagement Hooks: ${businessCaption.engagementHooks.join(', ')}`);
+    console.log(`- Call to Action: "${businessCaption.callToAction}"`);
 
-    // Extract creative components
-    const headline = creativeHeadlineResult.headline;
-    const subheadline = creativeSubheadlineResult.subheadline;
-    const callToAction = creativeCTAResult.cta;
+    // 🎯 BUSINESS-SPECIFIC CAPTION GENERATION COMPLETE
+    console.log('✅ Business-specific caption generation complete!');
+    console.log(`📱 Caption: ${businessCaption.caption.length} characters`);
+    console.log(`🚀 CTA: "${businessCaption.callToAction}"`);
+    console.log(`🎯 Engagement Hooks: ${businessCaption.engagementHooks.join(', ')}`);
 
-    console.log('✨ Creative components generated:');
-    console.log(`- Headline Style: ${creativeHeadlineResult.style}`);
-    console.log(`- Emotional Tone: ${creativeHeadlineResult.tone}`);
-    console.log(`- Subheadline Framework: ${creativeSubheadlineResult.framework}`);
-    console.log(`- CTA Urgency: ${creativeCTAResult.urgency}`);
-    console.log(`- Creative Elements: ${businessContext.creativePotential.slice(0, 2).join(', ')}`);
+    // 🎯 BUSINESS-SPECIFIC CONTENT GENERATION COMPLETE
+    console.log('✅ Business-specific content generation complete!');
+    console.log(`🎯 Business Headline: "${businessHeadline.headline}"`);
+    console.log(`📝 Business Subheadline: "${businessSubheadline.subheadline}"`);
+    console.log(`📱 Business Caption: ${businessCaption.caption.length} characters`);
+    console.log(`🚀 Business CTA: "${businessCaption.callToAction}"`);
+    console.log(`📊 Strategic Hashtags: ${hashtags.length} business-focused tags`);
+    console.log(`💼 Content Strategy: ${contentPlan.strategy.goal}`);
+    console.log(`⭐ Business Strengths: ${contentPlan.businessStrengths[0]}`);
+    console.log(`🌍 Market Opportunities: ${contentPlan.marketOpportunities[0]}`);
 
-    // Fallback to generic only if creative generation fails
-    const finalHeadline = headline || 'Your Business';
-    const finalSubheadline = subheadline || '';
-    const finalCallToAction = callToAction || '';
+    // 🎯 FINAL: Return business-specific content package
+    console.log('🎯 Revo 1.0: Finalizing business-specific content package...');
 
-    console.log('📝 Creative content structure generated:');
-    console.log('- Headline:', finalHeadline);
-    console.log('- Subheadline:', finalSubheadline || '(none)');
-    console.log('- CTA:', finalCallToAction || '(none)');
-
-    console.log('✅ Revo 1.0: Enhanced creative content generated successfully with Gemini 2.5 Flash Image Preview');
-
-    // Final content package summary
-    console.log('📦 Complete creative content package:');
-    console.log(`- Caption: ${content.length} chars`);
-    console.log(`- Creative Headline: "${finalHeadline}"`);
-    console.log(`- Creative Subheadline: "${finalSubheadline || 'None'}"`);
-    console.log(`- Creative CTA: "${finalCallToAction || 'None'}"`);
-    console.log(`- Hashtags: ${hashtags.length} strategic tags`);
-    console.log(`- Platform: ${input.platform} optimized`);
-    console.log(`- Creative Style: ${creativeHeadlineResult.style} with ${creativeHeadlineResult.tone} tone`);
-
-    return {
-      content: content.trim(),
+    const finalContent = {
+      content: businessCaption.caption,
+      headline: businessHeadline.headline,
+      subheadline: businessSubheadline.subheadline,
+      callToAction: businessCaption.callToAction,
       hashtags: hashtags,
-      catchyWords: finalHeadline, // Use creative headline as catchy words for image
-      subheadline: finalSubheadline,
-      callToAction: finalCallToAction,
-      headline: finalHeadline, // Add creative headline as separate field
+      catchyWords: businessHeadline.headline, // Use business-specific headline
+      contentStrategy: contentPlan.strategy,
+      businessStrengths: contentPlan.businessStrengths,
+      marketOpportunities: contentPlan.marketOpportunities,
+      valueProposition: contentPlan.valueProposition,
+      platform: input.platform,
+      businessType: input.businessType,
+      location: input.location,
       realTimeContext: realTimeContext, // Pass context to image generator
-      creativeContext: { // Add creative context for image generation
-        style: creativeHeadlineResult.style,
-        tone: creativeHeadlineResult.tone,
-        framework: creativeSubheadlineResult.framework,
-        businessInsights: businessContext,
-        variation: uniqueVariation
+      creativeContext: { // Enhanced creative context for image generation
+        style: businessHeadline.approach,
+        tone: businessHeadline.emotionalImpact,
+        framework: businessSubheadline.framework,
+        businessInsights: contentPlan,
+        variation: uniqueContentVariation
+      },
+      // 🧠 BUSINESS INTELLIGENCE DATA
+      businessIntelligence: {
+        contentGoal: contentPlan.strategy.goal,
+        businessStrengths: contentPlan.businessStrengths,
+        marketOpportunities: contentPlan.marketOpportunities,
+        customerPainPoints: contentPlan.customerPainPoints,
+        valueProposition: contentPlan.valueProposition,
+        localRelevance: contentPlan.localRelevance
       },
       variants: [{
         platform: input.platform,
         aspectRatio: '1:1',
         imageUrl: '' // Will be generated separately
-      }]
+      }],
+      generatedAt: new Date().toISOString()
     };
+
+    console.log('✅ BUSINESS-SPECIFIC CONTENT GENERATION COMPLETE!');
+    console.log(`🎯 Final Headline: "${finalContent.headline}"`);
+    console.log(`📝 Final Subheadline: "${finalContent.subheadline}"`);
+    console.log(`📱 Final Caption: ${finalContent.content.length} characters`);
+    console.log(`🚀 Final CTA: "${finalContent.callToAction}"`);
+    console.log(`📊 Strategic Hashtags: ${finalContent.hashtags.length} business-focused tags`);
+    console.log(`💼 Content Strategy: ${finalContent.contentStrategy.goal}`);
+    console.log(`⭐ Business Strengths: ${finalContent.businessStrengths[0]}`);
+    console.log(`🌍 Market Opportunities: ${finalContent.marketOpportunities[0]}`);
+
+    return finalContent;
 
   } catch (error) {
     console.error('❌ Revo 1.0: Content generation failed:', error);
@@ -2130,7 +1937,8 @@ ANTI-GENERIC REQUIREMENTS:
     console.log('🌍 Cultural Context:', culturalContext.substring(0, 100) + '...');
 
     // Generate human-like design variation for authentic, creative designs
-    const designSeed = Date.now() % 10000;
+    const designRandomSeed = Math.floor(Math.random() * 10000) + Date.now();
+    const designSeed = designRandomSeed % 10000;
     const designVariations = getHumanDesignVariations(designSeed);
     console.log('🎨 Human Design Style Selected:', designVariations.style);
 
