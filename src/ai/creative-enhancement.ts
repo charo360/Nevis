@@ -722,6 +722,10 @@ export async function generateUnifiedContent(
   designDirection: string;
   unifiedTheme: string;
   keyMessage: string;
+  hashtags?: string[];
+  hashtagStrategy?: any;
+  ctaStrategy?: any;
+  imageText?: string;
 }> {
 
   const contentPlan = StrategicContentPlanner.generateBusinessSpecificContent(
@@ -1093,12 +1097,13 @@ IMPORTANT:
       caption,
       callToAction,
       engagementHooks,
-      designDirection,
+      designDirection: removeWordRepetitions(designMatch?.[1]?.trim() || `Clean, professional design with local elements. IMPORTANT: Include the CTA "${callToAction}" as prominent text overlay on the design - make it bold, readable, and visually striking like "PAYA: YOUR FUTURE, NOW!" style.`),
       unifiedTheme,
       keyMessage,
       hashtags: viralHashtags.total, // Add viral hashtags to response
       hashtagStrategy: viralHashtags, // Include full strategy for analysis
-      ctaStrategy: ctaStrategy // Include CTA strategy for analysis
+      ctaStrategy: ctaStrategy, // Include CTA strategy for analysis
+      imageText: callToAction // Pass CTA as imageText for design integration
     };
   } catch (error) {
     console.error('❌ AI caption generation failed, attempting retry with simplified prompt:', error);
