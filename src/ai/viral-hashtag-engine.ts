@@ -7,6 +7,7 @@
 import { trendingEnhancer } from './trending-content-enhancer';
 import { advancedHashtagAnalyzer, AnalysisContext } from './advanced-trending-hashtag-analyzer';
 import { intelligentHashtagMixer, MixingContext } from './intelligent-hashtag-mixer';
+import { hashtagPerformanceTracker } from './hashtag-performance-tracker';
 
 export interface ViralHashtagStrategy {
   trending: string[];      // Currently trending hashtags from RSS feeds
@@ -34,6 +35,13 @@ export interface ViralHashtagStrategy {
       diversityScore: number;
       confidenceLevel: number;
       algorithm: string;
+    };
+
+    // Performance learning insights
+    learningInsights?: {
+      learnedRecommendations: Array<{ hashtag: string; confidence: number; reason: string }>;
+      historicalPerformance: number;
+      improvementSuggestions: string[];
     };
   };
 }
@@ -115,8 +123,30 @@ export class ViralHashtagEngine {
         mixingContext
       );
 
-      // Use the intelligently mixed hashtags as the final total
-      const total = intelligentMix.final;
+      // 🧠 ENHANCED: Get learned recommendations from performance tracking
+      const learnedRecommendations = hashtagPerformanceTracker.getLearnedRecommendations(
+        businessType,
+        platform,
+        location,
+        5
+      );
+
+      // 📊 Get performance insights for improvement suggestions
+      const performanceInsights = hashtagPerformanceTracker.getPerformanceInsights(
+        businessType,
+        platform,
+        location
+      );
+
+      // 🎯 Integrate learned recommendations with intelligent mix
+      const enhancedTotal = this.integrateLearnedRecommendations(
+        intelligentMix.final,
+        learnedRecommendations,
+        performanceInsights
+      );
+
+      // Use the enhanced hashtags as the final total
+      const total = enhancedTotal;
 
       // Calculate confidence score based on RSS data quality
       const confidenceScore = this.calculateConfidenceScore(advancedAnalysis);
@@ -145,6 +175,13 @@ export class ViralHashtagEngine {
             diversityScore: intelligentMix.analytics.diversityScore,
             confidenceLevel: intelligentMix.analytics.confidenceLevel,
             algorithm: intelligentMix.analytics.mixingStrategy
+          },
+
+          // Include performance learning insights
+          learningInsights: {
+            learnedRecommendations,
+            historicalPerformance: this.calculateHistoricalPerformance(performanceInsights),
+            improvementSuggestions: performanceInsights.learningRecommendations
           }
         }
       };
@@ -588,6 +625,126 @@ export class ViralHashtagEngine {
         confidenceScore: 3 // Low confidence for fallback
       }
     };
+  }
+
+  /**
+   * 🧠 ENHANCED: Integrate learned recommendations with intelligent mix
+   */
+  private integrateLearnedRecommendations(
+    intelligentMix: string[],
+    learnedRecommendations: Array<{ hashtag: string; confidence: number; reason: string }>,
+    performanceInsights: any
+  ): string[] {
+    const enhancedHashtags = [...intelligentMix];
+
+    // Replace low-confidence hashtags with high-confidence learned recommendations
+    const highConfidenceRecommendations = learnedRecommendations.filter(rec => rec.confidence >= 0.7);
+
+    if (highConfidenceRecommendations.length > 0) {
+      // Find hashtags in the mix that might be replaced
+      const replaceableIndices: number[] = [];
+
+      // Look for hashtags that aren't in the top performers
+      const topPerformers = performanceInsights.topPerformingHashtags.map((h: any) => h.hashtag);
+
+      enhancedHashtags.forEach((hashtag, index) => {
+        if (!topPerformers.includes(hashtag) && index >= 10) { // Only replace from tertiary hashtags
+          replaceableIndices.push(index);
+        }
+      });
+
+      // Replace up to 3 hashtags with learned recommendations
+      const replacementCount = Math.min(
+        highConfidenceRecommendations.length,
+        replaceableIndices.length,
+        3
+      );
+
+      for (let i = 0; i < replacementCount; i++) {
+        const indexToReplace = replaceableIndices[i];
+        const recommendation = highConfidenceRecommendations[i];
+
+        // Only replace if the recommendation isn't already in the mix
+        if (!enhancedHashtags.includes(recommendation.hashtag)) {
+          enhancedHashtags[indexToReplace] = recommendation.hashtag;
+        }
+      }
+    }
+
+    return enhancedHashtags;
+  }
+
+  /**
+   * Calculate historical performance score
+   */
+  private calculateHistoricalPerformance(performanceInsights: any): number {
+    if (!performanceInsights.topPerformingHashtags.length) return 0;
+
+    const avgEngagement = performanceInsights.topPerformingHashtags
+      .reduce((sum: number, hashtag: any) => sum + hashtag.avgEngagement, 0) /
+      performanceInsights.topPerformingHashtags.length;
+
+    const avgSuccessRate = performanceInsights.topPerformingHashtags
+      .reduce((sum: number, hashtag: any) => sum + hashtag.successRate, 0) /
+      performanceInsights.topPerformingHashtags.length;
+
+    // Weighted score: 70% engagement, 30% success rate
+    return Math.round((avgEngagement * 0.7 + avgSuccessRate * 0.3) * 10) / 10;
+  }
+
+  /**
+   * 📊 ENHANCED: Method to track hashtag performance after post creation
+   */
+  public trackHashtagPerformance(
+    hashtags: string[],
+    platform: string,
+    businessType: string,
+    location: string,
+    engagement: {
+      likes: number;
+      comments: number;
+      shares: number;
+      views?: number;
+      clicks?: number;
+      total: number;
+    },
+    success: boolean = false
+  ): void {
+    const postData = {
+      postId: `post_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      hashtags,
+      platform,
+      businessType,
+      location,
+      timestamp: new Date(),
+      engagement,
+      success
+    };
+
+    hashtagPerformanceTracker.trackPostPerformance(postData);
+  }
+
+  /**
+   * 📈 Get performance insights for hashtag optimization
+   */
+  public getHashtagPerformanceInsights(
+    businessType?: string,
+    platform?: string,
+    location?: string
+  ) {
+    return hashtagPerformanceTracker.getPerformanceInsights(businessType, platform, location);
+  }
+
+  /**
+   * 🎯 Get learned hashtag recommendations
+   */
+  public getLearnedHashtagRecommendations(
+    businessType: string,
+    platform: string,
+    location: string,
+    count: number = 10
+  ) {
+    return hashtagPerformanceTracker.getLearnedRecommendations(businessType, platform, location, count);
   }
 }
 
