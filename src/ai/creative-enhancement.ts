@@ -1,132 +1,1218 @@
 /**
- * Creative Enhancement System for Revo 1.0
- * Transforms generic business content into creative, engaging designs
+ * Enhanced Business Intelligence & Strategic Content Generation System
+ * Replaces generic templates with business-specific insights and strategic planning
  */
 
-// Enhanced Creative Prompt Framework
-export const CREATIVE_PROMPT_SYSTEM = {
-  creativeVariation: {
-    style: ['minimalist', 'bold', 'elegant', 'playful', 'sophisticated', 'modern', 'artistic', 'dynamic'],
-    mood: ['energetic', 'calm', 'confident', 'friendly', 'luxurious', 'inspiring', 'trustworthy', 'innovative'],
-    approach: ['storytelling', 'visual metaphor', 'abstract', 'photographic', 'illustrative', 'conceptual', 'emotional', 'cultural']
-  },
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-  creativeConstraints: {
-    avoidGeneric: [
-      'business jargon', 'stock phrases', 'overused layouts', 'template language',
-      'generic headlines', 'boring subheadlines', 'predictable designs'
-    ],
-    requireUnique: [
-      'visual storytelling', 'emotional connection', 'brand personality',
-      'cultural relevance', 'creative metaphors', 'unexpected elements'
-    ],
-    creativeElements: [
-      'unexpected angles', 'visual metaphors', 'cultural references',
-      'emotional triggers', 'storytelling elements', 'innovative compositions'
-    ]
+// Shared AI initialization to avoid duplicate variable names
+function initializeAI() {
+  const geminiApiKey = process.env.GOOGLE_AI_API_KEY || process.env.GOOGLE_GENAI_API_KEY || process.env.GEMINI_API_KEY;
+  const genAI = new GoogleGenerativeAI(geminiApiKey!);
+  return genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+}
+
+// Dynamic approach instructions to force variety
+function getApproachInstructions(approach: string, businessName: string, location: string, creativityBoost: number): string {
+  switch (approach) {
+    case 'DIRECT_BENEFIT':
+      return `Lead with the specific benefit customers get. Example: "8g protein per cookie - finally snacks that fuel kids properly" NOT generic benefits.`;
+
+    case 'SOCIAL_PROOF':
+      return `Reference real community adoption. Example: "200+ ${location} families switched to these protein cookies" NOT generic testimonials.`;
+
+    case 'PROBLEM_SOLUTION':
+      return `Start with the exact problem ${location} parents face. Example: "Tired of sugar crashes after snack time?" NOT generic problems.`;
+
+    case 'LOCAL_INSIDER':
+      return `Sound like a ${location} local sharing insider knowledge. Use actual local references, not generic "local" language.`;
+
+    case 'URGENCY_SCARCITY':
+      return `Create real urgency with specific details. Example: "Only 50 packs left this week" NOT generic "limited time" language.`;
+
+    case 'QUESTION_HOOK':
+      return `Ask a specific question ${location} residents would relate to. NOT generic "Are you tired of..." questions.`;
+
+    case 'STATISTIC_LEAD':
+      return `Start with a specific, relevant statistic about the business or industry. Use real numbers, not made-up stats.`;
+
+    case 'STORY_ANGLE':
+      return `Tell a brief, specific story about ${businessName} or a customer. Make it feel real and local, not generic storytelling.`;
+
+    case 'COMPARISON':
+      return `Compare to what ${location} residents currently use. Be specific about the difference, not generic comparisons.`;
+
+    case 'NEWS_TREND':
+      return `Connect to current trends or news relevant to ${location}. Use actual trending topics, not generic trend language.`;
+
+    default:
+      return `Create unique content that could only apply to ${businessName} in ${location}. Be specific and authentic.`;
   }
-};
+}
 
-// Content Variation System
-export const CONTENT_VARIATION_ENGINE = {
-  headlineStyles: [
-    'Question-based', 'Statistic-driven', 'Story-opening', 'Bold statement',
-    'Emotional trigger', 'Curiosity gap', 'Local relevance', 'Trend integration',
-    'Problem-solution', 'Benefit-focused', 'Aspirational', 'Contrarian'
-  ],
+// Dynamic CTA style instructions to force variety
+function getCtaStyleInstructions(style: string, businessName: string, location: string): string {
+  switch (style) {
+    case 'DIRECT_ACTION':
+      return `Use action verbs specific to the business. Example: "Grab your protein cookies today" NOT generic "Shop now".`;
 
-  emotionalTones: [
-    'Inspiring', 'Humorous', 'Empathetic', 'Confident', 'Curious',
-    'Nostalgic', 'Aspirational', 'Relatable', 'Surprising', 'Authentic',
-    'Warm', 'Professional', 'Innovative', 'Trustworthy'
-  ],
+    case 'INVITATION':
+      return `Sound like a personal invitation from ${businessName}. Example: "Come taste what ${location} is talking about" NOT generic invites.`;
 
-  creativeFrameworks: [
-    'Before/After', 'Problem/Solution', 'Story Arc', 'Contrast',
-    'Metaphor', 'Analogy', 'Question/Answer', 'Challenge/Overcome',
-    'Journey', 'Transformation', 'Discovery', 'Achievement'
-  ]
-};
+    case 'CHALLENGE':
+      return `Challenge the customer to try something. Example: "Find better cookies - we dare you" NOT generic challenges.`;
 
-// Business Intelligence System
+    case 'BENEFIT_FOCUSED':
+      return `Lead with the specific benefit. Example: "Get 8g protein per bite" NOT generic benefits.`;
+
+    case 'COMMUNITY':
+      return `Reference the ${location} community. Example: "Join 200+ ${location} families" NOT generic community language.`;
+
+    case 'URGENCY':
+      return `Create real urgency with specifics. Example: "Only 50 left this week" NOT generic "limited time".`;
+
+    case 'CURIOSITY':
+      return `Make them curious about something specific. Example: "See why kids ask for seconds" NOT generic curiosity.`;
+
+    case 'LOCAL_REFERENCE':
+      return `Use actual ${location} references. Example: "Better than Main Street bakery" NOT generic local references.`;
+
+    case 'PERSONAL':
+      return `Sound personal and direct. Example: "Your kids will thank you" NOT generic personal language.`;
+
+    case 'EXCLUSIVE':
+      return `Make it feel exclusive to ${businessName}. Example: "Only at ${businessName}" NOT generic exclusivity.`;
+
+    default:
+      return `Create a unique CTA that could only apply to ${businessName} in ${location}.`;
+  }
+}
+
+// Business Intelligence System - Deep Market Understanding
 export const BUSINESS_INTELLIGENCE_SYSTEM = {
   industryInsights: {
     'restaurant': {
-      trends: ['farm-to-table', 'fusion cuisine', 'sustainable dining', 'local ingredients'],
-      challenges: ['food costs', 'staff retention', 'customer loyalty', 'online reviews'],
-      language: ['culinary', 'artisanal', 'fresh', 'authentic', 'experience'],
-      culture: 'hospitality-focused, community-centered, quality-driven'
-    },
-    'retail': {
-      trends: ['omnichannel', 'personalization', 'sustainability', 'local sourcing'],
-      challenges: ['online competition', 'inventory management', 'customer experience'],
-      language: ['curated', 'exclusive', 'quality', 'style', 'value'],
-      culture: 'customer-centric, trend-aware, service-oriented'
+      trends: ['farm-to-table', 'fusion cuisine', 'sustainable dining', 'local ingredients', 'chef-driven menus', 'wine pairing', 'seasonal specialties'],
+      challenges: ['food costs', 'staff retention', 'customer loyalty', 'online reviews', 'seasonal fluctuations', 'competition from chains'],
+      opportunities: ['private dining', 'catering services', 'cooking classes', 'wine tastings', 'local partnerships'],
+      uniqueValue: ['chef expertise', 'local sourcing', 'authentic recipes', 'atmosphere', 'service quality'],
+      customerPainPoints: ['long wait times', 'expensive prices', 'limited options', 'poor service', 'generic food'],
+      successMetrics: ['repeat customers', 'online reviews', 'word-of-mouth', 'reservations', 'social media engagement'],
+      localCompetition: ['chain restaurants', 'fast food', 'other local restaurants', 'food trucks', 'delivery services'],
+      seasonalOpportunities: ['summer outdoor dining', 'winter comfort food', 'holiday specials', 'local events', 'weather-based menus']
     },
     'technology': {
-      trends: ['AI integration', 'automation', 'cloud solutions', 'cybersecurity'],
-      challenges: ['rapid change', 'skill gaps', 'security', 'scalability'],
-      language: ['innovative', 'cutting-edge', 'efficient', 'scalable', 'secure'],
-      culture: 'innovation-driven, problem-solving, future-focused'
+      trends: ['AI integration', 'automation', 'cloud solutions', 'cybersecurity', 'digital transformation', 'remote work tools'],
+      challenges: ['rapid change', 'skill gaps', 'security', 'scalability', 'competition', 'client retention'],
+      opportunities: ['consulting services', 'custom development', 'training programs', 'maintenance contracts', 'upgrades'],
+      uniqueValue: ['technical expertise', 'local support', 'custom solutions', 'ongoing partnership', 'industry knowledge'],
+      customerPainPoints: ['complex technology', 'high costs', 'poor support', 'outdated systems', 'security concerns'],
+      successMetrics: ['client satisfaction', 'project completion', 'referrals', 'long-term contracts', 'technical outcomes'],
+      localCompetition: ['large tech companies', 'freelancers', 'other local tech firms', 'national chains', 'online services'],
+      seasonalOpportunities: ['year-end planning', 'tax season', 'new fiscal year', 'back-to-school', 'holiday e-commerce']
     },
     'healthcare': {
-      trends: ['telemedicine', 'preventive care', 'patient experience', 'digital health'],
-      challenges: ['regulations', 'patient trust', 'technology adoption'],
-      language: ['caring', 'professional', 'trusted', 'comprehensive', 'personalized'],
-      culture: 'patient-centered, ethical, evidence-based'
+      trends: ['telemedicine', 'preventive care', 'patient experience', 'digital health', 'personalized medicine', 'wellness focus'],
+      challenges: ['regulations', 'patient trust', 'technology adoption', 'insurance complexity', 'staff shortages'],
+      opportunities: ['preventive programs', 'specialized services', 'wellness coaching', 'community outreach', 'partnerships'],
+      uniqueValue: ['medical expertise', 'personalized care', 'local accessibility', 'trusted relationships', 'comprehensive services'],
+      customerPainPoints: ['long wait times', 'high costs', 'complex insurance', 'poor communication', 'impersonal care'],
+      successMetrics: ['patient outcomes', 'satisfaction scores', 'referrals', 'community trust', 'health improvements'],
+      localCompetition: ['hospitals', 'other clinics', 'urgent care centers', 'specialists', 'online health services'],
+      seasonalOpportunities: ['flu season', 'summer wellness', 'back-to-school checkups', 'holiday stress', 'new year resolutions']
     },
-    'financial': {
-      trends: ['digital banking', 'fintech', 'financial literacy', 'personalized advice'],
-      challenges: ['trust', 'regulations', 'competition', 'security'],
-      language: ['secure', 'trusted', 'growth', 'stability', 'prosperity'],
-      culture: 'trust-based, security-focused, growth-oriented'
+    'fitness': {
+      trends: ['home workouts', 'personal training', 'group classes', 'mind-body connection', 'nutrition integration', 'wearable tech'],
+      challenges: ['member retention', 'seasonal fluctuations', 'competition', 'staff turnover', 'facility costs'],
+      opportunities: ['online programs', 'corporate wellness', 'specialized training', 'nutrition coaching', 'community events'],
+      uniqueValue: ['expert trainers', 'community atmosphere', 'personalized programs', 'convenient location', 'proven results'],
+      customerPainPoints: ['lack of motivation', 'time constraints', 'intimidation', 'poor results', 'expensive memberships'],
+      successMetrics: ['member retention', 'goal achievement', 'referrals', 'class attendance', 'community engagement'],
+      localCompetition: ['other gyms', 'home equipment', 'online programs', 'personal trainers', 'sports clubs'],
+      seasonalOpportunities: ['new year resolutions', 'summer body prep', 'holiday fitness', 'back-to-school', 'weather-based activities']
+    },
+    'retail': {
+      trends: ['omnichannel', 'personalization', 'sustainability', 'local sourcing', 'experiential shopping', 'community focus'],
+      challenges: ['online competition', 'inventory management', 'customer experience', 'seasonal sales', 'staff training'],
+      opportunities: ['online presence', 'local partnerships', 'loyalty programs', 'events', 'personal shopping'],
+      uniqueValue: ['curated selection', 'personal service', 'local knowledge', 'quality products', 'community connection'],
+      customerPainPoints: ['limited selection', 'high prices', 'poor service', 'inconvenient hours', 'lack of expertise'],
+      successMetrics: ['sales growth', 'customer loyalty', 'repeat purchases', 'word-of-mouth', 'community engagement'],
+      localCompetition: ['online retailers', 'big box stores', 'other local shops', 'malls', 'direct sales'],
+      seasonalOpportunities: ['holiday shopping', 'back-to-school', 'summer sales', 'seasonal products', 'local events']
+    },
+    'real-estate': {
+      trends: ['virtual tours', 'digital marketing', 'local expertise', 'investment focus', 'sustainability', 'smart homes'],
+      challenges: ['market fluctuations', 'competition', 'client acquisition', 'market knowledge', 'technology adoption'],
+      opportunities: ['investment properties', 'property management', 'consulting services', 'local partnerships', 'specialized markets'],
+      uniqueValue: ['local expertise', 'market knowledge', 'personal service', 'proven track record', 'community connections'],
+      customerPainPoints: ['high fees', 'poor communication', 'lack of expertise', 'market uncertainty', 'slow process'],
+      successMetrics: ['sales volume', 'client satisfaction', 'referrals', 'market share', 'repeat clients'],
+      localCompetition: ['other agents', 'online platforms', 'national companies', 'for-sale-by-owner', 'investors'],
+      seasonalOpportunities: ['spring market', 'summer families', 'fall investors', 'winter deals', 'holiday moves']
+    },
+    'automotive': {
+      trends: ['electric vehicles', 'digital services', 'sustainability', 'convenience', 'technology integration', 'online sales'],
+      challenges: ['parts shortages', 'technician shortage', 'technology changes', 'competition', 'customer expectations'],
+      opportunities: ['EV services', 'mobile repair', 'fleet services', 'specialized repairs', 'maintenance programs'],
+      uniqueValue: ['expert technicians', 'honest service', 'convenient location', 'quality parts', 'warranty support'],
+      customerPainPoints: ['expensive repairs', 'poor service', 'unreliable work', 'long wait times', 'hidden costs'],
+      successMetrics: ['customer satisfaction', 'repeat business', 'referrals', 'online reviews', 'service quality'],
+      localCompetition: ['dealerships', 'other repair shops', 'chain stores', 'mobile services', 'online parts'],
+      seasonalOpportunities: ['winter preparation', 'summer road trips', 'back-to-school', 'holiday travel', 'seasonal maintenance']
+    },
+    'beauty': {
+      trends: ['clean beauty', 'personalization', 'sustainability', 'wellness integration', 'technology', 'inclusivity'],
+      challenges: ['product costs', 'staff retention', 'trend changes', 'competition', 'client retention'],
+      opportunities: ['online services', 'product sales', 'membership programs', 'events', 'corporate services'],
+      uniqueValue: ['expert stylists', 'quality products', 'personalized service', 'convenient location', 'trend knowledge'],
+      customerPainPoints: ['high costs', 'poor results', 'long appointments', 'limited availability', 'product damage'],
+      successMetrics: ['client retention', 'referrals', 'online reviews', 'service quality', 'product sales'],
+      localCompetition: ['salons', 'chain stores', 'mobile services', 'online products', 'other beauty professionals'],
+      seasonalOpportunities: ['wedding season', 'holiday parties', 'summer styles', 'back-to-school', 'special events']
     }
   },
 
   audiencePsychology: {
-    motivations: ['success', 'security', 'convenience', 'status', 'belonging', 'growth'],
-    painPoints: ['time constraints', 'budget concerns', 'trust issues', 'complexity'],
-    aspirations: ['better life', 'success', 'recognition', 'peace of mind', 'efficiency'],
-    communication: ['clear benefits', 'social proof', 'emotional connection', 'practical value']
-  }
-};
-
-// Creative Design System
-export const CREATIVE_DESIGN_SYSTEM = {
-  visualInnovation: {
-    composition: [
-      'Asymmetric balance', 'Dynamic tension', 'Visual flow', 'Focal hierarchy',
-      'Rule of thirds', 'Golden ratio', 'Negative space', 'Layered depth'
-    ],
-    colorPsychology: [
-      'Emotional color mapping', 'Cultural color significance', 'Brand color storytelling',
-      'Contrast for impact', 'Harmony for trust', 'Accent for attention'
-    ],
-    typography: [
-      'Expressive fonts', 'Creative layouts', 'Visual hierarchy', 'Emotional impact',
-      'Readability balance', 'Brand personality', 'Cultural appropriateness'
-    ]
+    motivations: ['success', 'security', 'convenience', 'status', 'belonging', 'growth', 'health', 'savings', 'recognition'],
+    painPoints: ['time constraints', 'budget concerns', 'trust issues', 'complexity', 'uncertainty', 'frustration', 'stress'],
+    aspirations: ['better life', 'success', 'recognition', 'peace of mind', 'efficiency', 'independence', 'security'],
+    communication: ['clear benefits', 'social proof', 'emotional connection', 'practical value', 'expertise', 'trust']
   },
 
-  creativeElements: {
-    visualMetaphors: [
-      'Growth as plants/trees', 'Connection as bridges/networks', 'Security as shields/locks',
-      'Innovation as light/sparks', 'Success as mountains/peaks', 'Journey as paths/roads'
-    ],
-    culturalReferences: [
-      'Local landmarks', 'Cultural symbols', 'Traditional patterns', 'Regional colors',
-      'Local customs', 'Community values', 'Historical references'
-    ],
-    unexpectedAngles: [
-      'Bird\'s eye view', 'Close-up details', 'Reflection shots', 'Shadow play',
-      'Silhouettes', 'Through objects', 'Unusual perspectives', 'Abstract representations'
-    ],
-    emotionalImagery: [
-      'Human connections', 'Achievement moments', 'Peaceful scenes', 'Dynamic action',
-      'Warm interactions', 'Inspiring landscapes', 'Celebratory moments', 'Thoughtful expressions'
-    ]
+  // New: Strategic Content Planning
+  contentStrategy: {
+    'awareness': {
+      goal: 'Introduce business and build recognition',
+      approach: 'Educational, informative, community-focused',
+      contentTypes: ['industry insights', 'local news', 'educational tips', 'community stories'],
+      emotionalTone: 'helpful, informative, community-minded'
+    },
+    'consideration': {
+      goal: 'Build trust and demonstrate expertise',
+      approach: 'Problem-solving, expertise demonstration, social proof',
+      contentTypes: ['case studies', 'expert tips', 'customer stories', 'industry knowledge'],
+      emotionalTone: 'expert, trustworthy, helpful'
+    },
+    'conversion': {
+      goal: 'Drive action and sales',
+      approach: 'Urgency, offers, clear benefits, strong CTAs',
+      contentTypes: ['special offers', 'limited time deals', 'clear benefits', 'action-oriented content'],
+      emotionalTone: 'urgent, compelling, confident'
+    },
+    'retention': {
+      goal: 'Keep existing customers engaged',
+      approach: 'Value-added content, community building, ongoing support',
+      contentTypes: ['loyalty programs', 'exclusive content', 'community events', 'ongoing value'],
+      emotionalTone: 'appreciative, supportive, community-focused'
+    }
   }
 };
+
+// Strategic Content Planning System
+export class StrategicContentPlanner {
+  static generateBusinessSpecificContent(
+    businessType: string,
+    businessName: string,
+    location: string,
+    businessDetails: any,
+    platform: string,
+    contentGoal: 'awareness' | 'consideration' | 'conversion' | 'retention' = 'awareness'
+  ) {
+    const industry = BUSINESS_INTELLIGENCE_SYSTEM.industryInsights[businessType.toLowerCase()] ||
+      BUSINESS_INTELLIGENCE_SYSTEM.industryInsights['retail'];
+
+    const strategy = BUSINESS_INTELLIGENCE_SYSTEM.contentStrategy[contentGoal];
+
+    // Analyze business strengths and opportunities
+    const businessStrengths = this.analyzeBusinessStrengths(businessDetails, industry);
+    const marketOpportunities = this.identifyMarketOpportunities(industry, location);
+    const customerPainPoints = this.mapCustomerPainPoints(industry, businessStrengths);
+
+    return {
+      strategy: strategy,
+      businessType: businessType,
+      businessStrengths,
+      marketOpportunities,
+      customerPainPoints,
+      contentAngle: this.determineContentAngle(contentGoal, businessStrengths, marketOpportunities),
+      emotionalHook: this.selectEmotionalHook(contentGoal, customerPainPoints),
+      valueProposition: this.craftValueProposition(businessStrengths, customerPainPoints),
+      localRelevance: this.createLocalRelevance(location, industry, businessDetails)
+    };
+  }
+
+  private static analyzeBusinessStrengths(businessDetails: any, industry: any) {
+    const strengths = [];
+
+    if (businessDetails.experience) strengths.push(`${businessDetails.experience} years of experience`);
+    if (businessDetails.expertise) strengths.push(`specialized in ${businessDetails.expertise}`);
+    if (businessDetails.awards) strengths.push(`award-winning ${businessDetails.awards}`);
+    if (businessDetails.certifications) strengths.push(`certified in ${businessDetails.certifications}`);
+    if (businessDetails.uniqueServices) strengths.push(`unique ${businessDetails.uniqueServices} services`);
+
+    // Add industry-specific strengths
+    strengths.push(...industry.uniqueValue.slice(0, 3));
+
+    return strengths;
+  }
+
+  private static identifyMarketOpportunities(industry: any, location: string) {
+    return industry.seasonalOpportunities.map(opportunity =>
+      `${opportunity} in ${location}`
+    ).slice(0, 3);
+  }
+
+  private static mapCustomerPainPoints(industry: any, businessStrengths: string[]) {
+    return industry.customerPainPoints.filter(painPoint =>
+      businessStrengths.some(strength =>
+        strength.toLowerCase().includes(painPoint.toLowerCase().replace(/\s+/g, ''))
+      )
+    ).slice(0, 3);
+  }
+
+  private static determineContentAngle(
+    contentGoal: string,
+    businessStrengths: string[],
+    marketOpportunities: string[]
+  ) {
+    const angles = {
+      'awareness': ['educational', 'community', 'industry insights'],
+      'consideration': ['problem-solving', 'expertise', 'social proof'],
+      'conversion': ['benefits', 'offers', 'urgency'],
+      'retention': ['value-added', 'community', 'exclusive']
+    };
+
+    return angles[contentGoal] || angles['awareness'];
+  }
+
+  private static selectEmotionalHook(
+    contentGoal: string,
+    customerPainPoints: string[]
+  ) {
+    const hooks = {
+      'awareness': ['curiosity', 'community pride', 'local knowledge'],
+      'consideration': ['frustration relief', 'trust building', 'expertise recognition'],
+      'conversion': ['urgency', 'excitement', 'confidence'],
+      'retention': ['appreciation', 'belonging', 'exclusive access']
+    };
+
+    return hooks[contentGoal] || hooks['awareness'];
+  }
+
+  private static craftValueProposition(businessStrengths: string[], customerPainPoints: string[]) {
+    if (businessStrengths.length === 0 || customerPainPoints.length === 0) {
+      return 'Quality service and expertise';
+    }
+
+    const strength = businessStrengths[0];
+    const painPoint = customerPainPoints[0];
+
+    return `We solve ${painPoint} with ${strength}`;
+  }
+
+  private static createLocalRelevance(location: string, industry: any, businessDetails: any) {
+    return {
+      localMarket: `${location} market insights`,
+      communityConnection: `${location} community focus`,
+      localCompetition: `Understanding ${location} competition`,
+      localOpportunities: industry.seasonalOpportunities.map(opp => `${opp} in ${location}`)
+    };
+  }
+}
+
+// Business-Specific Headline Generator - AI-Powered Dynamic Generation
+export async function generateBusinessSpecificHeadline(
+  businessType: string,
+  businessName: string,
+  location: string,
+  businessDetails: any,
+  platform: string,
+  contentGoal: 'awareness' | 'consideration' | 'conversion' | 'retention' = 'awareness',
+  trendingData?: any,
+  businessIntelligence?: any
+): Promise<{ headline: string; approach: string; emotionalImpact: string }> {
+
+  const contentPlan = StrategicContentPlanner.generateBusinessSpecificContent(
+    businessType, businessName, location, businessDetails, platform, contentGoal
+  );
+
+  const industry = BUSINESS_INTELLIGENCE_SYSTEM.industryInsights[businessType.toLowerCase()] ||
+    BUSINESS_INTELLIGENCE_SYSTEM.industryInsights['retail'];
+
+  // Initialize AI generation capability
+  const model = initializeAI();
+
+  // Create dynamic AI prompt for headline generation with RSS trends and regional marketing intelligence
+  const trendingKeywords = trendingData?.keywords?.slice(0, 5) || [];
+  const trendingHashtags = trendingData?.hashtags?.slice(0, 3) || [];
+  const regionalLanguage = getRegionalLanguageStyle(location);
+  const marketingStyle = getRegionalMarketingStyle(location);
+
+  const prompt = `You are a brilliant local marketing expert who deeply understands ${location} culture, language, and market dynamics. You stay updated with current trends and know exactly how businesses in ${location} market themselves successfully.
+
+BUSINESS INTELLIGENCE:
+- Business: ${businessName} (${businessType})
+- Location: ${location}
+- Experience: ${businessDetails.experience || 'established business'}
+- Specialties: ${businessDetails.expertise || businessDetails.services || 'professional services'}
+- Target Market: ${businessDetails.targetAudience || 'local community'}
+- Marketing Goal: ${contentGoal}
+
+CURRENT TRENDING CONTEXT (Use these insights to make content relevant):
+- Trending Keywords: ${trendingKeywords.join(', ') || 'quality, authentic, local, fresh, community'}
+- Popular Hashtags: ${trendingHashtags.join(', ') || '#local #authentic #quality'}
+- Regional Marketing Style: ${marketingStyle}
+- Local Language Tone: ${regionalLanguage}
+
+LOCAL MARKET INTELLIGENCE:
+- Industry Trends: ${industry.trends.slice(0, 3).join(', ')}
+- Competitive Advantages: ${industry.uniqueValue.slice(0, 2).join(', ')}
+- Market Opportunities: ${industry.opportunities.slice(0, 2).join(', ')}
+- How locals in ${location} talk about ${businessType}: ${getLocalBusinessLanguage(location, businessType)}
+
+REGIONAL MARKETING STRATEGY:
+You understand that in ${location}, people respond to ${marketingStyle} marketing. Use the trending keywords naturally and speak like locals do. Create content that feels authentic to ${location} culture and current market trends.
+
+CONVERSION PSYCHOLOGY REQUIREMENTS:
+- Maximum 5 words that trigger immediate desire to try/buy
+- Use psychological triggers: scarcity, exclusivity, curiosity, FOMO
+- Create urgency and desire - make people think "I NEED this NOW"
+- Sound like a successful local marketer who knows conversion psychology
+- Incorporate trending elements naturally (don't force them)
+- Use language patterns that drive action in ${location}
+- Focus on what makes people instantly want to experience ${businessName}
+- Create curiosity gaps that make people want to know more
+
+CONVERSION-FOCUSED EXAMPLES:
+- "Secret Recipe Finally Revealed" (curiosity + exclusivity)
+- "Last Batch This Week" (scarcity + urgency)
+- "Addictive Flavors Warning Inside" (intrigue + benefit)
+- "Hidden Gem Locals Obsess" (social proof + exclusivity)
+- "Revolutionary Taste Experience Awaits" (innovation + anticipation)
+
+IMPORTANT: Generate ONLY ONE headline, not multiple options or lists.
+Do NOT write "Here are headlines" or provide multiple choices.
+Generate ONE unique headline that makes people instantly want to try ${businessName}. Focus on conversion, not just awareness.`;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const headline = result.response.text().trim();
+
+    // Add randomization to approach and emotional impact to ensure variety
+    const approaches = ['strategic', 'creative', 'authentic', 'bold', 'community-focused', 'innovative'];
+    const emotions = ['engaging', 'inspiring', 'trustworthy', 'exciting', 'confident', 'welcoming'];
+
+    return {
+      headline: headline,
+      approach: approaches[Math.floor(Math.random() * approaches.length)],
+      emotionalImpact: emotions[Math.floor(Math.random() * emotions.length)]
+    };
+  } catch (error) {
+    console.error('❌ AI headline generation failed, attempting retry:', error);
+
+    // RETRY WITH SIMPLIFIED AI PROMPT - No Static Fallback
+    try {
+      console.log('🔄 Retrying headline with simplified AI prompt...');
+
+      const simplifiedHeadlinePrompt = `Create a unique 5-word headline for ${businessName}, a ${businessType} in ${location}.
+
+Make it:
+- Conversion-focused (makes people want to try it NOW)
+- Different from typical marketing words
+- Uses psychological triggers like scarcity, urgency, or exclusivity
+- Locally relevant to ${location}
+
+Just return the headline, nothing else.`;
+
+      const retryResult = await model.generateContent(simplifiedHeadlinePrompt);
+      const retryHeadline = retryResult.response.text().trim();
+
+      console.log('✅ Headline retry successful:', retryHeadline);
+
+      return {
+        headline: retryHeadline,
+        approach: 'ai-retry-generated',
+        emotionalImpact: 'conversion-focused'
+      };
+
+    } catch (retryError) {
+      console.error('❌ Headline retry failed, using emergency AI generation:', retryError);
+
+      // EMERGENCY AI GENERATION - Ultra Simple Prompt
+      try {
+        const emergencyPrompt = `Write a catchy 5-word headline for ${businessName} in ${location}. Make it unique and compelling.`;
+
+        const emergencyResult = await model.generateContent(emergencyPrompt);
+        const emergencyHeadline = emergencyResult.response.text().trim();
+
+        console.log('🚨 Emergency headline generation successful');
+
+        return {
+          headline: emergencyHeadline,
+          approach: 'emergency-ai-generated',
+          emotionalImpact: 'unique-ai-created'
+        };
+
+      } catch (emergencyError) {
+        console.error('❌ All AI headline attempts failed:', emergencyError);
+
+        // LAST RESORT: Generate with current timestamp for uniqueness
+        const timestamp = Date.now();
+        const uniqueId = timestamp % 1000;
+
+        const emergencyHeadlines = [
+          `${businessName} ${location} Experience`,
+          `Exclusive ${businessType} ${location}`,
+          `${location}'s Premium ${businessType}`,
+          `Limited ${businessName} Access`,
+          `Secret ${businessType} Discovery`
+        ];
+
+        return {
+          headline: emergencyHeadlines[uniqueId % emergencyHeadlines.length] + ` #${uniqueId}`,
+          approach: 'timestamp-unique',
+          emotionalImpact: 'emergency-fallback'
+        };
+      }
+    }
+  }
+}
+
+// Business-Specific Subheadline Generator - AI-Powered Dynamic Generation
+export async function generateBusinessSpecificSubheadline(
+  businessType: string,
+  businessName: string,
+  location: string,
+  businessDetails: any,
+  headline: string,
+  contentGoal: 'awareness' | 'consideration' | 'conversion' | 'retention' = 'awareness',
+  trendingData?: any,
+  businessIntelligence?: any
+): Promise<{ subheadline: string; framework: string; benefit: string }> {
+
+  const industry = BUSINESS_INTELLIGENCE_SYSTEM.industryInsights[businessType.toLowerCase()] ||
+    BUSINESS_INTELLIGENCE_SYSTEM.industryInsights['retail'];
+
+  // Initialize AI generation capability
+  const model = initializeAI();
+
+  // Create marketing-focused AI prompt for subheadline generation with trending intelligence
+  const trendingKeywords = trendingData?.keywords?.slice(0, 5) || [];
+  const regionalLanguage = getRegionalLanguageStyle(location);
+  const marketingStyle = getRegionalMarketingStyle(location);
+
+  const prompt = `You are a skilled local marketer creating a subheadline for ${businessName} that will make people in ${location} want to visit immediately. You understand current trends and local marketing patterns.
+
+MARKETING CONTEXT:
+- Main Headline: "${headline}"
+- Business: ${businessName} (${businessType})
+- Location: ${location}
+- Services/Products: ${businessDetails.services || businessDetails.expertise || 'quality offerings'}
+- Target Market: Local ${location} residents and visitors
+- Marketing Goal: ${contentGoal}
+
+CURRENT TRENDING INTELLIGENCE:
+- Trending Keywords: ${trendingKeywords.join(', ') || 'authentic, quality, local, fresh, community'}
+- Regional Marketing Style: ${marketingStyle}
+- Local Language Patterns: ${regionalLanguage}
+- How locals talk about ${businessType}: ${getLocalBusinessLanguage(location, businessType)}
+
+LOCAL MARKET INTELLIGENCE:
+- What locals value: ${industry.uniqueValue.slice(0, 2).join(', ')}
+- Market opportunities: ${industry.opportunities.slice(0, 2).join(', ')}
+- Industry trends: ${industry.trends.slice(0, 2).join(', ')}
+
+REGIONAL MARKETING STRATEGY:
+Create a subheadline that makes locals think "I need to try this place!" Use trending keywords naturally and speak like successful marketers in ${location} do. Focus on what makes ${businessName} irresistible to people in ${location}.
+
+CONVERSION-FOCUSED SUBHEADLINE REQUIREMENTS:
+- Maximum 14 words that trigger immediate action and desire
+- Use psychological triggers: social proof, scarcity, exclusivity, urgency
+- Create FOMO (Fear of Missing Out) - make people think they'll regret not trying
+- Include specific benefits that answer "What's in it for me?"
+- Use action-oriented language that drives immediate response
+- Build on the headline's promise with compelling reasons to act NOW
+- Sound like a successful conversion-focused marketer in ${location}
+- Should make the offer irresistible and create urgency to visit/buy
+
+Examples of effective ${location} subheadlines:
+${getLocalMarketingExamples(location, businessType).split('\n').map(line => line.replace('- "', '- "').replace('"', '" (subheadline style)')).slice(0, 3).join('\n')}
+
+Generate ONLY the subheadline text, nothing else.`;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const subheadline = result.response.text().trim();
+
+    // Add randomization to framework and benefit
+    const frameworks = ['benefit-focused', 'problem-solving', 'community-centered', 'expertise-driven', 'results-oriented'];
+    const benefits = industry.uniqueValue.concat(['exceptional service', 'local expertise', 'proven results']);
+
+    return {
+      subheadline: subheadline,
+      framework: frameworks[Math.floor(Math.random() * frameworks.length)],
+      benefit: benefits[Math.floor(Math.random() * benefits.length)]
+    };
+  } catch (error) {
+    console.error('AI subheadline generation failed, using fallback:', error);
+
+    // Marketing-focused fallback with enhanced randomization
+    const timestamp = Date.now();
+    const randomSeed = Math.floor(Math.random() * 1000) + timestamp;
+    const variation = randomSeed % 16;
+
+    const experienceWords = ['authentic', 'fresh', 'handcrafted', 'traditional', 'artisan', 'premium', 'local', 'quality'];
+    const actionWords = ['discover', 'experience', 'taste', 'enjoy', 'savor', 'explore', 'try', 'visit'];
+    const benefitPhrases = [
+      'where quality meets tradition',
+      'crafted with care daily',
+      'your local favorite since day one',
+      'bringing authentic flavors to life',
+      'where every detail matters',
+      'made fresh, served with pride',
+      'your neighborhood gem awaits',
+      'experience the difference'
+    ];
+
+    const marketingSubheadlines = [
+      `${experienceWords[variation % experienceWords.length]} ${businessType} ${actionWords[(variation + 1) % actionWords.length]} in ${location}`,
+      `${benefitPhrases[variation % benefitPhrases.length]}`,
+      `${actionWords[variation % actionWords.length]} ${experienceWords[(variation + 2) % experienceWords.length]} ${businessType} in ${location}`,
+      `where ${location} locals ${actionWords[(variation + 3) % actionWords.length]} ${experienceWords[variation % experienceWords.length]} ${businessType}`,
+      `${experienceWords[variation % experienceWords.length]} ingredients, ${experienceWords[(variation + 1) % experienceWords.length]} results`,
+      `serving ${location} with ${experienceWords[(variation + 2) % experienceWords.length]} ${businessType}`,
+      `your go-to spot for ${experienceWords[variation % experienceWords.length]} ${businessType}`,
+      `${benefitPhrases[(variation + 4) % benefitPhrases.length]}`,
+      `bringing ${experienceWords[(variation + 3) % experienceWords.length]} ${businessType} to ${location}`,
+      `${location}'s most ${experienceWords[(variation + 4) % experienceWords.length]} ${businessType} experience`,
+      `${experienceWords[(variation + 5) % experienceWords.length]} ${businessType} crafted for ${location}`,
+      `where ${experienceWords[variation % experienceWords.length]} meets ${experienceWords[(variation + 2) % experienceWords.length]}`,
+      `${location} deserves ${experienceWords[(variation + 1) % experienceWords.length]} ${businessType}`,
+      `creating ${experienceWords[(variation + 3) % experienceWords.length]} moments in ${location}`,
+      `${experienceWords[(variation + 4) % experienceWords.length]} ${businessType}, ${experienceWords[(variation + 5) % experienceWords.length]} service`,
+      `your ${location} destination for ${experienceWords[variation % experienceWords.length]} ${businessType}`
+    ];
+
+    return {
+      subheadline: marketingSubheadlines[variation],
+      framework: 'benefit-focused',
+      benefit: experienceWords[variation % experienceWords.length]
+    };
+  }
+}
+
+// UNIFIED CONTENT GENERATION SYSTEM - All components work together
+export async function generateUnifiedContent(
+  businessType: string,
+  businessName: string,
+  location: string,
+  businessDetails: any,
+  platform: string,
+  contentGoal: 'awareness' | 'consideration' | 'conversion' | 'retention' = 'awareness',
+  trendingData?: any,
+  businessIntelligence?: any
+): Promise<{
+  headline: string;
+  subheadline: string;
+  caption: string;
+  callToAction: string;
+  engagementHooks: string[];
+  designDirection: string;
+  unifiedTheme: string;
+  keyMessage: string;
+}> {
+
+  const contentPlan = StrategicContentPlanner.generateBusinessSpecificContent(
+    businessType, businessName, location, businessDetails, platform, contentGoal
+  );
+
+  const industry = BUSINESS_INTELLIGENCE_SYSTEM.industryInsights[businessType.toLowerCase()] ||
+    BUSINESS_INTELLIGENCE_SYSTEM.industryInsights['retail'];
+
+  // Initialize AI generation capability
+  const model = initializeAI();
+
+  // Create marketing-focused AI prompt for unified content generation
+  const trendingKeywords = trendingData?.keywords?.slice(0, 8) || [];
+  const trendingHashtags = trendingData?.hashtags?.slice(0, 5) || [];
+  const regionalLanguage = getRegionalLanguageStyle(location);
+  const marketingStyle = getRegionalMarketingStyle(location);
+
+  // INTELLIGENT APPROACH SELECTION - Let AI decide based on context
+  const uniqueGenerationId = Date.now() + Math.floor(Math.random() * 1000);
+  console.log(`🎭 Generation ID: ${uniqueGenerationId} - AI will choose best marketing approach`);
+
+  // DEBUG: Log what data we actually received
+  console.log('📊 DEBUG - Data received for AI generation:');
+  console.log('- Business Details:', JSON.stringify(businessDetails, null, 2));
+  console.log('- Trending Data:', JSON.stringify(trendingData, null, 2));
+  console.log('- Business Intelligence:', JSON.stringify(businessIntelligence, null, 2));
+
+  // DYNAMIC ANTI-REPETITION SYSTEM - No hardcoded phrases
+  const dynamicVariationSeed = uniqueGenerationId % 1000;
+  const creativityBoost = Math.floor(Math.random() * 100) + dynamicVariationSeed;
+
+  // FORCE DIFFERENT APPROACHES BASED ON GENERATION ID
+  const approachStyles = [
+    'DIRECT_BENEFIT', 'SOCIAL_PROOF', 'PROBLEM_SOLUTION', 'LOCAL_INSIDER', 'URGENCY_SCARCITY',
+    'QUESTION_HOOK', 'STATISTIC_LEAD', 'STORY_ANGLE', 'COMPARISON', 'NEWS_TREND'
+  ];
+
+  const selectedApproach = approachStyles[creativityBoost % approachStyles.length];
+
+  const uniquenessPrompt = `
+MANDATORY APPROACH: ${selectedApproach}
+You MUST use this specific approach - no other approach is allowed for this generation.
+
+STRICT ANTI-REPETITION RULES:
+❌ NEVER use "2025" or any year references
+❌ NEVER use "best-kept secret" or "secret" language
+❌ NEVER use "chakula kizuri" repeatedly - vary your Swahili
+❌ NEVER use "Shop now via the link in our bio! Karibu!" - create unique CTAs
+❌ NEVER use "Discover", "Experience", "Taste the", "Try our"
+❌ NEVER use formulaic patterns that sound like templates
+
+APPROACH-SPECIFIC REQUIREMENTS:
+${getApproachInstructions(selectedApproach, businessName, location, creativityBoost)}
+
+CREATIVITY BOOST ${creativityBoost} CHALLENGE:
+Create content that is so unique and specific to ${businessName} in ${location} that it could NEVER be used for any other business. Use the actual business data, trending information, and local context to create something genuinely original.
+
+GENERATION UNIQUENESS ID: ${uniqueGenerationId}
+Use this ID to ensure this content is completely different from any previous generation.
+`;
+
+  // FORCE DIFFERENT CTA STYLES
+  const ctaStyles = [
+    'DIRECT_ACTION', 'INVITATION', 'CHALLENGE', 'BENEFIT_FOCUSED', 'COMMUNITY',
+    'URGENCY', 'CURIOSITY', 'LOCAL_REFERENCE', 'PERSONAL', 'EXCLUSIVE'
+  ];
+
+  const selectedCtaStyle = ctaStyles[creativityBoost % ctaStyles.length];
+
+  const unifiedPrompt = `You are a conversion-focused social media marketer creating a COMPLETE UNIFIED CAMPAIGN for ${businessName} that will make people in ${location} take immediate action. You must create ALL components (headline, subheadline, caption, CTA, design direction) that work together as ONE cohesive message.
+
+${uniquenessPrompt}
+
+UNIFIED CAMPAIGN REQUIREMENTS:
+- ALL components must tell the SAME STORY with consistent information
+- Headline, subheadline, caption, and design must reinforce the SAME key message
+- No contradictory information between components
+- One unified theme that runs through everything
+- Design direction must match the content tone and message
+- All components should feel like they came from the same marketing campaign
+
+MARKETING BRIEF:
+- Business: ${businessName} (${businessType})
+- Location: ${location}
+- Services/Products: ${businessDetails.services || businessDetails.expertise || 'quality offerings'}
+- Target Market: Local ${location} residents and visitors
+- Platform: ${platform}
+- Marketing Goal: ${contentGoal}
+
+CURRENT TRENDING INTELLIGENCE (From RSS feeds and market data):
+- Trending Keywords: ${trendingKeywords.join(', ') || 'authentic, quality, local, fresh, community, experience, tradition, innovation'}
+- Popular Hashtags: ${trendingHashtags.join(', ') || '#local #authentic #quality #community #fresh'}
+- Regional Marketing Style: ${marketingStyle}
+- Local Language Patterns: ${regionalLanguage}
+- How locals talk about ${businessType}: ${getLocalBusinessLanguage(location, businessType)}
+
+REAL BUSINESS INTELLIGENCE DATA:
+${businessIntelligence ? `
+- Business Strengths: ${businessIntelligence.businessStrengths?.join(', ') || 'quality service, customer satisfaction'}
+- Value Propositions: ${businessIntelligence.valuePropositions?.join(', ') || 'exceptional quality, local expertise'}
+- Target Emotions: ${businessIntelligence.targetEmotions?.join(', ') || 'trust, satisfaction, excitement'}
+- Industry Keywords: ${businessIntelligence.industryKeywords?.join(', ') || 'professional, reliable, innovative'}
+- Local Relevance: ${businessIntelligence.localRelevance?.join(', ') || 'community-focused, locally-owned'}
+- Seasonal Opportunities: ${businessIntelligence.seasonalOpportunities?.join(', ') || 'year-round service'}
+` : 'Use general business intelligence for this business type'}
+
+LIVE RSS TRENDING DATA:
+${trendingData ? `
+- Current News Topics: ${trendingData.news?.slice(0, 3).map(n => n.title).join(', ') || 'No current news data'}
+- Social Media Trends: ${trendingData.socialTrends?.slice(0, 3).join(', ') || 'No social trends data'}
+- Local Events: ${trendingData.events?.slice(0, 2).map(e => e.name).join(', ') || 'No local events data'}
+- Market Insights: ${trendingData.insights?.slice(0, 2).join(', ') || 'No market insights'}
+` : 'No live RSS data available - use general market knowledge'}
+
+SPECIFIC BUSINESS DETAILS:
+- Business Name: ${businessName}
+- Services/Products: ${businessDetails.services || businessDetails.expertise || businessDetails.specialties || 'quality offerings'}
+- Unique Features: ${businessDetails.uniqueFeatures || businessDetails.keyFeatures || 'exceptional service'}
+- Target Audience: ${businessDetails.targetAudience || `local ${location} residents and visitors`}
+- Business Hours: ${businessDetails.hours || 'regular business hours'}
+- Special Offers: ${businessDetails.offers || businessDetails.promotions || 'quality service at competitive prices'}
+
+LOCAL MARKET INTELLIGENCE:
+- What locals love: ${industry.uniqueValue.slice(0, 2).join(', ')}
+- Market opportunities: ${industry.opportunities.slice(0, 2).join(', ')}
+- Industry trends: ${industry.trends.slice(0, 2).join(', ')}
+- Local challenges: ${industry.challenges.slice(0, 2).join(', ')}
+
+PLATFORM STRATEGY FOR ${platform.toUpperCase()}:
+${getPlatformRequirements(platform)}
+
+MARKETING COPY REQUIREMENTS:
+You are a CONVERSION-FOCUSED MARKETER, not a creative writer or storyteller. Write MARKETING COPY that sells, not poetic descriptions.
+
+WRITE LIKE A MARKETER:
+• DIRECT & PUNCHY: Get to the point quickly - no flowery language
+• BENEFIT-FOCUSED: Lead with what the customer gets, not poetic descriptions
+• ACTION-ORIENTED: Every sentence should drive toward a purchase decision
+• CONVERSATIONAL: Sound like a smart local business owner talking to neighbors
+• URGENT: Create immediate desire to buy/visit NOW
+• SPECIFIC: Use concrete benefits, not abstract concepts
+• LOCAL: Sound like someone who actually lives in ${location}
+
+INTELLIGENT PATTERN AVOIDANCE:
+Use your AI intelligence to recognize and avoid:
+- Repetitive opening patterns that sound robotic or formulaic
+- Generic marketing speak that every business uses
+- Overly creative writing that sounds like AI-generated poetry
+- Cliché phrases that don't add value or authenticity
+- Opening lines that could apply to any business in any location
+- Patterns that sound like they came from a template or script
+
+AUTHENTICITY TEST:
+Ask yourself: "Would a real ${businessName} owner in ${location} actually say this to their neighbors?"
+If it sounds too polished, too generic, or too AI-like, try a different approach.
+Use the business intelligence data and local context to create something genuinely relevant.
+
+WRITE LIKE THIS INSTEAD:
+✅ "Your kids need healthy snacks. Samaki Cookies deliver."
+✅ "15% off this week only - grab yours before they're gone"
+✅ "Finally, cookies that are actually good for your family"
+✅ "Nairobi parents are switching to Samaki Cookies. Here's why..."
+✅ Direct, benefit-focused, action-driving copy
+
+CRITICAL INSTRUCTION:
+- USE THE REAL DATA PROVIDED: Incorporate actual business details, trending topics, and local information
+- REFERENCE SPECIFIC SERVICES: Mention actual services/products offered by ${businessName}
+- CONNECT TO CURRENT TRENDS: Use the RSS trending data and current events when relevant
+- LEVERAGE BUSINESS INTELLIGENCE: Use the actual business strengths and value propositions provided
+- SPEAK LOCAL LANGUAGE: Use the regional language patterns and local cultural elements
+- AVOID GENERIC CONTENT: Don't use placeholder text like "2025" or generic business descriptions
+- CREATE PERSONALIZED CONTENT: Make it specific to this exact business and location
+- Choose the approach that makes MOST SENSE for ${businessName} and current market conditions
+- Use your intelligence to create fresh, varied content each time
+- Let RSS data and business intelligence guide your approach selection
+
+MARKETING COPY REQUIREMENTS:
+- WRITE MARKETING COPY, NOT CREATIVE WRITING: Sound like a business owner, not a poet
+- LEAD WITH BENEFITS: Start with what the customer gets, not scenic descriptions
+- BE DIRECT & PUNCHY: Short, clear sentences that drive action
+- AVOID FLOWERY LANGUAGE: No "crisp afternoons", "sun dipping", "painting the sky"
+- NO STORYTELLING OPENINGS: Don't start with "Imagine this..." or scene-setting
+- SOUND LOCAL: Write like someone who actually lives and works in ${location}
+- CREATE URGENCY: Make people want to buy/visit RIGHT NOW
+- USE SOCIAL PROOF: Reference other locals, community, real benefits
+- BE CONVERSATIONAL: Sound like talking to a neighbor, not writing poetry
+- FOCUS ON PROBLEMS/SOLUTIONS: What problem does this solve for ${location} residents?
+- INCLUDE SPECIFIC OFFERS: Mention actual deals, prices, limited time offers
+- END WITH CLEAR ACTION: Tell people exactly what to do next
+- AVOID ABSTRACT CONCEPTS: No "heritage", "traditions", "journeys" - focus on concrete benefits
+- USE REAL LOCAL LANGUAGE: Include actual ${location} slang/phrases naturally
+- MAKE IT SCANNABLE: Use short paragraphs, bullet points, clear structure
+- GENERATION ID ${uniqueGenerationId}: Use this number to ensure this content is completely unique
+- CRITICAL: Sound like a smart local marketer, not an AI creative writer
+
+EXAMPLES OF GOOD MARKETING COPY:
+✅ "Your kids need protein. Samaki Cookies deliver 8g per serving. 15% off this week."
+✅ "Tired of unhealthy snacks? 200+ Nairobi families switched to Samaki Cookies."
+✅ "Finally - cookies that don't spike blood sugar. Made with real fish protein."
+✅ "Limited batch this week: Fish protein cookies that kids actually love."
+
+EXAMPLES OF BAD AI WRITING (NEVER DO THIS):
+❌ "Imagine this: a crisp, sunny afternoon in Nairobi..."
+❌ "These aren't your grandma's cookies; they're bursting with..."
+❌ "the sun dips below the horizon, painting the Kenyan sky..."
+❌ "This isn't just a snack; it's a piece of Kenyan heritage..."
+
+UNIFIED CONTENT GENERATION FORMAT:
+Generate ALL components as ONE cohesive campaign:
+
+UNIFIED_THEME: [the main theme/angle that connects everything - one sentence]
+KEY_MESSAGE: [the core message all components will reinforce - one sentence]
+
+HEADLINE: [5-word catchy headline that captures the key message]
+SUBHEADLINE: [supporting headline that expands on the main headline - max 14 words]
+CAPTION: [full social media caption that tells the complete story - marketing copy, not creative writing]
+CTA: [MANDATORY CTA STYLE: ${selectedCtaStyle} - ${getCtaStyleInstructions(selectedCtaStyle, businessName, location)} - Max 8 words, completely unique]
+DESIGN_DIRECTION: [specific visual direction that matches the content tone and message]
+
+IMPORTANT:
+- ALL components must reinforce the SAME key message
+- NO contradictory information between headline, subheadline, and caption
+- Design direction must visually support the content message
+- Generate as ONE unified campaign, not separate pieces`;
+
+  try {
+    console.log('🤖 Attempting UNIFIED content generation with Gemini...');
+    console.log('📝 Prompt preview:', unifiedPrompt.substring(0, 200) + '...');
+
+    const result = await model.generateContent(unifiedPrompt);
+    const response = result.response.text().trim();
+
+    console.log('✅ AI Response received (FULL):', response);
+
+    // Parse all unified components
+    const unifiedThemeMatch = response.match(/UNIFIED_THEME:\s*(.*?)(?=KEY_MESSAGE:|$)/s);
+    const keyMessageMatch = response.match(/KEY_MESSAGE:\s*(.*?)(?=HEADLINE:|$)/s);
+    const headlineMatch = response.match(/HEADLINE:\s*(.*?)(?=SUBHEADLINE:|$)/s);
+    const subheadlineMatch = response.match(/SUBHEADLINE:\s*(.*?)(?=CAPTION:|$)/s);
+    const captionMatch = response.match(/CAPTION:\s*(.*?)(?=CTA:|$)/s);
+    const ctaMatch = response.match(/CTA:\s*(.*?)(?=DESIGN_DIRECTION:|$)/s);
+    const designMatch = response.match(/DESIGN_DIRECTION:\s*(.*?)$/s);
+
+    console.log('🔍 Parsing Results:');
+    console.log('- Theme:', unifiedThemeMatch?.[1]?.trim());
+    console.log('- Key Message:', keyMessageMatch?.[1]?.trim());
+    console.log('- Headline:', headlineMatch?.[1]?.trim());
+    console.log('- Subheadline:', subheadlineMatch?.[1]?.trim());
+    console.log('- Caption:', captionMatch?.[1]?.trim()?.substring(0, 100) + '...');
+    console.log('- CTA:', ctaMatch?.[1]?.trim());
+    console.log('- Design:', designMatch?.[1]?.trim());
+
+    // Extract all components
+    const unifiedTheme = unifiedThemeMatch?.[1]?.trim() || 'Quality local business';
+    const keyMessage = keyMessageMatch?.[1]?.trim() || 'Exceptional service for local community';
+    const headline = headlineMatch?.[1]?.trim() || `${businessName} ${location}`;
+    const subheadline = subheadlineMatch?.[1]?.trim() || `Quality ${businessType} in ${location}`;
+    const caption = captionMatch?.[1]?.trim() || response;
+    const callToAction = ctaMatch?.[1]?.trim() || generateFallbackCTA(platform);
+    const designDirection = designMatch?.[1]?.trim() || 'Clean, professional design with local elements';
+
+    // Generate dynamic engagement hooks
+    const engagementHooks = generateDynamicEngagementHooks(businessType, location, industry);
+
+    return {
+      headline,
+      subheadline,
+      caption,
+      callToAction,
+      engagementHooks,
+      designDirection,
+      unifiedTheme,
+      keyMessage
+    };
+  } catch (error) {
+    console.error('❌ AI caption generation failed, attempting retry with simplified prompt:', error);
+    console.error('🔍 Error details:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack?.substring(0, 200)
+    });
+
+    // RETRY WITH SIMPLIFIED AI PROMPT - No Static Fallback
+    try {
+      console.log('🔄 Retrying with simplified AI prompt...');
+
+      const simplifiedPrompt = `Create ONE unique ${platform} caption for ${businessName}, a ${businessType} in ${location}.
+
+INTELLIGENT APPROACH SELECTION:
+Use your marketing intelligence to choose the BEST approach based on:
+- What would work best for ${businessType} in ${location}
+- Current market trends and local culture
+- What would make ${location} residents most interested
+
+REQUIREMENTS:
+- Write ONE compelling caption using your chosen marketing approach
+- AVOID overused words: "taste", "flavor", "delicious", "amazing"
+- Use different opening words than typical marketing (avoid "Discover", "Experience", "Try")
+- Include local ${location} cultural elements that create connection
+- End with an effective call-to-action
+- Make it conversion-focused and unique to this business
+
+IMPORTANT: Generate ONLY ONE caption, not multiple options.
+
+Format:
+CAPTION: [write one single caption here]
+CTA: [write one call to action here]
+
+Do NOT write "Here are captions" or provide lists.`;
+
+      const retryResult = await model.generateContent(simplifiedPrompt);
+      const retryResponse = retryResult.response.text().trim();
+
+      console.log('✅ Retry successful:', retryResponse.substring(0, 100) + '...');
+
+      // Parse the retry response
+      const retryCaptionMatch = retryResponse.match(/CAPTION:\s*(.*?)(?=CTA:|$)/s);
+      const retryCtaMatch = retryResponse.match(/CTA:\s*(.*?)$/s);
+
+      const retryCaption = retryCaptionMatch ? retryCaptionMatch[1].trim() : retryResponse;
+      const retryCallToAction = retryCtaMatch ? retryCtaMatch[1].trim() : generateFallbackCTA(platform);
+
+      return {
+        caption: retryCaption,
+        engagementHooks: generateDynamicEngagementHooks(businessType, location, industry),
+        callToAction: retryCallToAction
+      };
+
+    } catch (retryError) {
+      console.error('❌ AI retry also failed, using emergency AI generation:', retryError);
+
+      // EMERGENCY AI GENERATION - Ultra Simple Prompt
+      try {
+        const emergencyPrompt = `Write ONE unique social media post for ${businessName} in ${location}. Make it compelling and different from typical posts. Include a call-to-action. Do NOT write "Here are posts" or provide multiple options. Write ONE post only.`;
+
+        const emergencyResult = await model.generateContent(emergencyPrompt);
+        const emergencyResponse = emergencyResult.response.text().trim();
+
+        console.log('🚨 Emergency AI generation successful');
+
+        return {
+          caption: emergencyResponse,
+          engagementHooks: generateDynamicEngagementHooks(businessType, location, industry),
+          callToAction: generateFallbackCTA(platform)
+        };
+
+      } catch (emergencyError) {
+        console.error('❌ All AI generation attempts failed:', emergencyError);
+
+        // LAST RESORT: Generate with current timestamp for uniqueness
+        const timestamp = Date.now();
+        const uniqueId = Math.floor(Math.random() * 10000);
+
+        return {
+          caption: `${businessName} in ${location} - where quality meets innovation. Every visit is a new experience that locals can't stop talking about. Join the community that knows great ${businessType}! #${timestamp}`,
+          engagementHooks: generateDynamicEngagementHooks(businessType, location, industry),
+          callToAction: generateFallbackCTA(platform)
+        };
+      }
+    }
+  }
+}
+
+// Helper functions for AI-powered caption generation
+function getPlatformRequirements(platform: string): string {
+  const requirements = {
+    'Instagram': '- Use 1-3 relevant emojis\n- Keep it visually engaging\n- Include hashtag-friendly language\n- Encourage visual interaction',
+    'Facebook': '- More conversational tone\n- Can be longer and more detailed\n- Focus on community engagement\n- Include questions to spark discussion',
+    'LinkedIn': '- Professional but approachable tone\n- Focus on business value and expertise\n- Include industry insights\n- Encourage professional networking',
+    'Twitter': '- Concise and punchy\n- Use relevant hashtags\n- Encourage retweets and replies\n- Keep under 280 characters'
+  };
+
+  return requirements[platform] || requirements['Instagram'];
+}
+
+function generateFallbackCTA(platform: string): string {
+  const timestamp = Date.now();
+  const creativityBoost = Math.floor(Math.random() * 1000) + timestamp;
+
+  // Use the same dynamic CTA styles as the main system
+  const ctaStyles = [
+    'DIRECT_ACTION', 'INVITATION', 'CHALLENGE', 'BENEFIT_FOCUSED', 'COMMUNITY',
+    'URGENCY', 'CURIOSITY', 'LOCAL_REFERENCE', 'PERSONAL', 'EXCLUSIVE'
+  ];
+
+  const selectedStyle = ctaStyles[creativityBoost % ctaStyles.length];
+
+  // Dynamic CTAs based on style - avoid repetitive patterns
+  const dynamicCTAs = {
+    'DIRECT_ACTION': [
+      'Grab yours today! 🔥',
+      'Book your spot now! ⚡',
+      'Try it this week! 💪',
+      'Get started today! 🚀'
+    ],
+    'INVITATION': [
+      'Come see for yourself! 👀',
+      'Join us this weekend! 🎉',
+      'Experience it firsthand! ✨',
+      'Visit us soon! 🏃‍♂️'
+    ],
+    'CHALLENGE': [
+      'Find better - we dare you! 💪',
+      'Beat this quality anywhere! 🏆',
+      'Try to resist this! 😏',
+      'Prove us wrong! 🤔'
+    ],
+    'BENEFIT_FOCUSED': [
+      'Get more for less! 💰',
+      'Save time and money! ⏰',
+      'Double your results! 📈',
+      'Feel the difference! ✨'
+    ],
+    'COMMUNITY': [
+      'Join 500+ happy customers! 👥',
+      'Be part of something special! 🌟',
+      'Connect with like-minded people! 🤝',
+      'Become a local favorite! ❤️'
+    ],
+    'URGENCY': [
+      'Only 3 spots left! ⚡',
+      'Ends this Friday! ⏰',
+      'While supplies last! 🏃‍♂️',
+      'Don\'t wait too long! ⚠️'
+    ],
+    'CURIOSITY': [
+      'See what everyone\'s talking about! 👀',
+      'Discover the secret! 🔍',
+      'Find out why! 🤔',
+      'Uncover the truth! 💡'
+    ],
+    'LOCAL_REFERENCE': [
+      'Better than downtown! 🏙️',
+      'Your neighborhood choice! 🏠',
+      'Local favorite since day one! ⭐',
+      'Right in your backyard! 📍'
+    ],
+    'PERSONAL': [
+      'You deserve this! 💎',
+      'Made just for you! 🎯',
+      'Your perfect match! 💕',
+      'Exactly what you need! ✅'
+    ],
+    'EXCLUSIVE': [
+      'Members only access! 🔐',
+      'VIP treatment awaits! 👑',
+      'Exclusive to our community! 🌟',
+      'Limited to select few! 💎'
+    ]
+  };
+
+  const styleCTAs = dynamicCTAs[selectedStyle] || dynamicCTAs['DIRECT_ACTION'];
+  const variation = creativityBoost % styleCTAs.length;
+
+  return styleCTAs[variation];
+}
+
+function generateDynamicEngagementHooks(businessType: string, location: string, industry: any): string[] {
+  const timestamp = Date.now();
+  const randomSeed = Math.floor(Math.random() * 1000) + timestamp;
+  const variation = randomSeed % 8;
+
+  const localQuestions = [
+    `What's your favorite ${businessType} spot in ${location}?`,
+    `Where do ${location} locals go for the best ${businessType}?`,
+    `What makes ${location}'s ${businessType} scene special?`,
+    `Have you discovered ${location}'s hidden ${businessType} gems?`,
+    `What do you love most about ${businessType} in ${location}?`,
+    `Which ${location} ${businessType} place holds your best memories?`,
+    `What's missing from ${location}'s ${businessType} options?`,
+    `How has ${businessType} in ${location} changed over the years?`
+  ];
+
+  const experienceQuestions = [
+    `What's your go-to order when trying new ${businessType}?`,
+    `What makes you choose one ${businessType} place over another?`,
+    `What's the most important thing in great ${businessType}?`,
+    `How do you know when you've found quality ${businessType}?`,
+    `What's your best ${businessType} experience been like?`,
+    `What would make your perfect ${businessType} experience?`,
+    `What draws you to authentic ${businessType}?`,
+    `How do you discover new ${businessType} places?`
+  ];
+
+  const trendQuestions = [
+    `Have you tried ${industry.trends[variation % industry.trends.length]} yet?`,
+    `What do you think about the latest ${businessType} trends?`,
+    `Are you excited about ${industry.opportunities[variation % industry.opportunities.length]}?`,
+    `How important is ${industry.uniqueValue[variation % industry.uniqueValue.length]} to you?`,
+    `What's your take on modern ${businessType} approaches?`,
+    `Do you prefer traditional or innovative ${businessType}?`,
+    `What ${businessType} trend should everyone try?`,
+    `How do you stay updated on ${businessType} innovations?`
+  ];
+
+  // Mix different types of hooks for variety
+  const allHooks = [...localQuestions, ...experienceQuestions, ...trendQuestions];
+  const selectedHooks = [];
+
+  // Ensure we get one from each category for variety
+  selectedHooks.push(localQuestions[variation % localQuestions.length]);
+  selectedHooks.push(experienceQuestions[(variation + 1) % experienceQuestions.length]);
+  selectedHooks.push(trendQuestions[(variation + 2) % trendQuestions.length]);
+
+  return selectedHooks;
+}
+
+// Legacy platform-specific caption generators (keeping for backward compatibility)
+function generateInstagramCaption(contentPlan: any, businessName: string, location: string, industry: any, contentGoal: string) {
+  const businessType = contentPlan.businessType || 'business';
+  const hooks = [
+    `What's your biggest ${industry.challenges[0]} challenge?`,
+    `How do you choose your ${businessType} provider?`,
+    `What makes a great ${businessType} experience for you?`
+  ];
+
+  const ctas = [
+    `Comment below with your thoughts! 👇`,
+    `Share this if you agree! 🔄`,
+    `Tag someone who needs this! 👥`
+  ];
+
+  return {
+    caption: `${contentPlan.valueProposition} ✨\n\n${businessName} brings ${industry.uniqueValue[0]} to ${location} with ${contentPlan.businessStrengths[0]}. ${contentPlan.marketOpportunities[0]} is just the beginning!\n\n${hooks[0]}\n\n${ctas[0]}`,
+    engagementHooks: hooks,
+    callToAction: ctas[0]
+  };
+}
+
+function generateFacebookCaption(contentPlan: any, businessName: string, location: string, industry: any, contentGoal: string) {
+  const businessType = contentPlan.businessType || 'business';
+  const hooks = [
+    `What's your experience with ${businessType} in ${location}?`,
+    `How do you solve ${industry.challenges[0]}?`,
+    `What makes you choose local businesses?`
+  ];
+
+  const ctas = [
+    `Share your thoughts in the comments! 💬`,
+    `Like and share if this resonates with you! 👍`,
+    `Tag your friends who might be interested! 👥`
+  ];
+
+  return {
+    caption: `${contentPlan.valueProposition}\n\n${businessName} understands the ${location} community and delivers ${industry.uniqueValue[0]} that makes a difference. ${contentPlan.marketOpportunities[0]} shows our commitment to serving you better.\n\n${hooks[0]}\n\n${ctas[0]}`,
+    engagementHooks: hooks,
+    callToAction: ctas[0]
+  };
+}
+
+function generateLinkedInCaption(contentPlan: any, businessName: string, location: string, industry: any, contentGoal: string) {
+  const businessType = contentPlan.businessType || 'business';
+  const hooks = [
+    `What challenges do you face in ${businessType}?`,
+    `How do you stay competitive in your industry?`,
+    `What makes a business stand out in your community?`
+  ];
+
+  const ctas = [
+    `Share your insights in the comments below. 💼`,
+    `Connect with us to learn more about our approach. 🤝`,
+    `Follow for more industry insights and local business strategies. 📈`
+  ];
+
+  return {
+    caption: `${contentPlan.valueProposition}\n\n${businessName} combines ${contentPlan.businessStrengths[0]} with deep understanding of the ${location} market to deliver exceptional ${businessType} services. ${contentPlan.marketOpportunities[0]} demonstrates our commitment to innovation and community service.\n\n${hooks[0]}\n\n${ctas[0]}`,
+    engagementHooks: hooks,
+    callToAction: ctas[0]
+  };
+}
+
+function generateTwitterCaption(contentPlan: any, businessName: string, location: string, industry: any, contentGoal: string) {
+  const businessType = contentPlan.businessType || 'business';
+  const hooks = [
+    `What's your take on ${businessType} trends?`,
+    `How do you solve ${industry.challenges[0]}?`,
+    `What makes local businesses special?`
+  ];
+
+  const ctas = [
+    `Reply with your thoughts! 💭`,
+    `RT if you agree! 🔄`,
+    `Follow for more insights! 👀`
+  ];
+
+  return {
+    caption: `${contentPlan.valueProposition}\n\n${businessName} brings ${industry.uniqueValue[0]} to ${location}. ${contentPlan.marketOpportunities[0]} shows our commitment to excellence.\n\n${hooks[0]}\n\n${ctas[0]}`,
+    engagementHooks: hooks,
+    callToAction: ctas[0]
+  };
+}
 
 // Utility Functions
 export function getRandomElement<T>(array: T[]): T {
@@ -142,115 +1228,86 @@ export function generateCreativeSeed(): number {
   return Math.floor(Math.random() * 10000);
 }
 
-// Creative Headline Generator
+// Legacy functions for backward compatibility (simplified)
 export function generateCreativeHeadline(
   businessType: string,
   businessName: string,
   location: string,
   context: any
 ): { headline: string; style: string; tone: string } {
-  const style = getRandomElement(CONTENT_VARIATION_ENGINE.headlineStyles);
-  const tone = getRandomElement(CONTENT_VARIATION_ENGINE.emotionalTones);
-  const industry = BUSINESS_INTELLIGENCE_SYSTEM.industryInsights[businessType.toLowerCase()] ||
-    BUSINESS_INTELLIGENCE_SYSTEM.industryInsights['retail'];
-
-  const creativeApproaches = {
-    'Question-based': `What makes ${businessName} different in ${location}?`,
-    'Statistic-driven': `Join thousands who trust ${businessName} in ${location}`,
-    'Story-opening': `Discover the ${businessName} story in ${location}`,
-    'Bold statement': `${businessName}: Redefining ${businessType} in ${location}`,
-    'Emotional trigger': `Feel the difference at ${businessName}`,
-    'Curiosity gap': `The ${location} secret everyone's talking about`,
-    'Local relevance': `${location}'s favorite ${businessType} destination`,
-    'Trend integration': `Where ${industry.trends[0]} meets excellence`,
-    'Problem-solution': `Finally, a ${businessType} that gets it right`,
-    'Benefit-focused': `Experience ${businessType} like never before`,
-    'Aspirational': `Your journey to better ${businessType} starts here`,
-    'Contrarian': `Why ${businessName} does ${businessType} differently`
-  };
-
-  return {
-    headline: creativeApproaches[style] || `${businessName}: Your trusted ${businessType} partner`,
-    style,
-    tone
-  };
+  return generateBusinessSpecificHeadline(businessType, businessName, location, context, 'Instagram', 'awareness');
 }
 
-// Creative Subheadline Generator
 export function generateCreativeSubheadline(
   businessType: string,
   services: string,
   location: string,
   tone: string
 ): { subheadline: string; framework: string } {
-  const framework = getRandomElement(CONTENT_VARIATION_ENGINE.creativeFrameworks);
-  const industry = BUSINESS_INTELLIGENCE_SYSTEM.industryInsights[businessType.toLowerCase()] ||
-    BUSINESS_INTELLIGENCE_SYSTEM.industryInsights['retail'];
-
-  const creativeFrameworks = {
-    'Before/After': `Transform your ${businessType} experience with us`,
-    'Problem/Solution': `Solving ${location}'s ${businessType} challenges, one customer at a time`,
-    'Story Arc': `Your ${businessType} journey begins with quality and trust`,
-    'Contrast': `Where traditional ${businessType} meets modern innovation`,
-    'Metaphor': `Building bridges between you and exceptional ${businessType}`,
-    'Analogy': `Like a trusted friend in the ${businessType} world`,
-    'Question/Answer': `Looking for quality ${businessType}? You found it.`,
-    'Challenge/Overcome': `Overcoming ${businessType} challenges with expertise and care`,
-    'Journey': `Every step of your ${businessType} journey, we're here`,
-    'Transformation': `Transforming how ${location} experiences ${businessType}`,
-    'Discovery': `Discover what makes great ${businessType} truly great`,
-    'Achievement': `Achieving excellence in ${businessType}, every single day`
-  };
-
-  return {
-    subheadline: creativeFrameworks[framework] || `Quality ${businessType} services in ${location}`,
-    framework
-  };
+  return generateBusinessSpecificSubheadline(businessType, 'Business', location, {}, 'Headline', 'awareness');
 }
 
-// Enhanced Design Creativity Generator
-export function enhanceDesignCreativity(
-  designPrompt: string,
+export function generateCreativeCTA(
   businessType: string,
-  location: string,
+  tone: string,
   context: any
-): { enhancedPrompt: string; creativeElements: string[]; visualStyle: string } {
-  const visualStyle = getRandomElement(CREATIVE_PROMPT_SYSTEM.creativeVariation.style);
-  const mood = getRandomElement(CREATIVE_PROMPT_SYSTEM.creativeVariation.mood);
-  const approach = getRandomElement(CREATIVE_PROMPT_SYSTEM.creativeVariation.approach);
-
-  const industry = BUSINESS_INTELLIGENCE_SYSTEM.industryInsights[businessType.toLowerCase()] ||
-    BUSINESS_INTELLIGENCE_SYSTEM.industryInsights['retail'];
-
-  const creativeElements = getRandomElements(CREATIVE_DESIGN_SYSTEM.creativeElements.visualMetaphors, 2);
-  const culturalElements = getRandomElements(CREATIVE_DESIGN_SYSTEM.creativeElements.culturalReferences, 2);
-  const emotionalElements = getRandomElements(CREATIVE_DESIGN_SYSTEM.creativeElements.emotionalImagery, 2);
-
-  const creativeEnhancements = [
-    `CREATIVE STYLE: ${visualStyle} design with ${mood} mood using ${approach} approach`,
-    `VISUAL STORYTELLING: Create a visual narrative that tells the story of ${businessType} excellence`,
-    `CULTURAL INTEGRATION: Naturally incorporate ${culturalElements.join(' and ')} from ${location}`,
-    `EMOTIONAL DESIGN: Design should evoke ${mood} feelings and ${emotionalElements.join(' with ')}`,
-    `INNOVATIVE COMPOSITION: Use ${getRandomElement(CREATIVE_DESIGN_SYSTEM.visualInnovation.composition)} with creative layouts`,
-    `AVOID GENERIC: No ${CREATIVE_PROMPT_SYSTEM.creativeConstraints.avoidGeneric.join(', ')}`,
-    `CREATIVE METAPHORS: Incorporate ${creativeElements.join(' and ')} as visual storytelling elements`,
-    `INDUSTRY RELEVANCE: Reflect ${industry.trends.slice(0, 2).join(' and ')} trends naturally`,
-    `UNIQUE PERSPECTIVE: Show ${businessType} from ${getRandomElement(CREATIVE_DESIGN_SYSTEM.creativeElements.unexpectedAngles)}`,
-    `EMOTIONAL CONNECTION: Create designs that make viewers feel ${mood} and ${getRandomElement(CONTENT_VARIATION_ENGINE.emotionalTones)}`
-  ];
-
-  const enhancedPrompt = designPrompt + '\n\nCREATIVE ENHANCEMENT INSTRUCTIONS:\n' +
-    creativeEnhancements.join('\n') +
-    '\n\nIMPORTANT: Create something unique, memorable, and emotionally engaging that stands out from typical business designs.';
-
+): { cta: string; urgency: string; emotion: string } {
   return {
-    enhancedPrompt,
-    creativeElements: [...creativeElements, ...culturalElements, ...emotionalElements],
-    visualStyle: `${visualStyle} ${mood} ${approach}`
+    cta: 'Learn more about our services',
+    urgency: 'gentle',
+    emotion: 'curiosity'
   };
 }
 
-// Anti-Repetition System
+// Legacy functions for backward compatibility
+export function analyzeBusinessContext(
+  businessType: string,
+  businessName: string,
+  location: string,
+  services: string
+): any {
+  const industry = BUSINESS_INTELLIGENCE_SYSTEM.industryInsights[businessType.toLowerCase()] ||
+    BUSINESS_INTELLIGENCE_SYSTEM.industryInsights['retail'];
+
+  return {
+    creativePotential: industry.uniqueValue,
+    emotionalTriggers: industry.customerPainPoints,
+    industryInsights: industry.trends,
+    localOpportunities: industry.seasonalOpportunities,
+    competitiveAdvantages: industry.opportunities
+  };
+}
+
+export const CREATIVE_PROMPT_SYSTEM = {
+  creativeVariation: {
+    style: ['innovative', 'authentic', 'engaging', 'professional', 'creative'],
+    mood: ['inspiring', 'confident', 'warm', 'energetic', 'trustworthy'],
+    approach: ['strategic', 'emotional', 'analytical', 'storytelling', 'direct']
+  },
+  creativeConstraints: {
+    avoidGeneric: ['template language', 'cliché phrases', 'generic claims']
+  }
+};
+
+export const CONTENT_VARIATION_ENGINE = {
+  headlineStyles: [
+    'Question-based', 'Statistic-driven', 'Story-opening', 'Bold statement',
+    'Emotional trigger', 'Curiosity gap', 'Local relevance', 'Trend integration',
+    'Problem-solution', 'Benefit-focused', 'Aspirational', 'Contrarian'
+  ],
+  emotionalTones: [
+    'Inspiring', 'Humorous', 'Empathetic', 'Confident', 'Curious',
+    'Nostalgic', 'Aspirational', 'Relatable', 'Surprising', 'Authentic',
+    'Warm', 'Professional', 'Innovative', 'Trustworthy'
+  ],
+  creativeFrameworks: [
+    'Before/After', 'Problem/Solution', 'Story Arc', 'Contrast',
+    'Metaphor', 'Analogy', 'Question/Answer', 'Challenge/Overcome',
+    'Journey', 'Transformation', 'Discovery', 'Achievement'
+  ]
+};
+
+// Legacy Anti-Repetition System (simplified)
 export class AntiRepetitionSystem {
   private static usedCombinations: Set<string> = new Set();
   private static maxHistory = 100;
@@ -260,45 +1317,34 @@ export class AntiRepetitionSystem {
     platform: string,
     baseElements: any
   ): any {
-    let attempts = 0;
-    let variation;
-
-    do {
-      variation = this.createVariation(businessType, platform, baseElements);
-      attempts++;
-    } while (this.isRepetitive(variation) && attempts < 10);
-
+    const variation = this.createVariation(businessType, platform, baseElements);
     this.recordVariation(variation);
     return variation;
   }
 
   private static createVariation(businessType: string, platform: string, baseElements: any): any {
     const creativeSeed = generateCreativeSeed();
-    const style = getRandomElement(CREATIVE_PROMPT_SYSTEM.creativeVariation.style);
-    const mood = getRandomElement(CREATIVE_PROMPT_SYSTEM.creativeVariation.mood);
-    const approach = getRandomElement(CREATIVE_PROMPT_SYSTEM.creativeVariation.approach);
-    const headlineStyle = getRandomElement(CONTENT_VARIATION_ENGINE.headlineStyles);
-    const framework = getRandomElement(CONTENT_VARIATION_ENGINE.creativeFrameworks);
 
     return {
       creativeSeed,
-      style,
-      mood,
-      approach,
-      headlineStyle,
-      framework,
-      signature: `${style}-${mood}-${approach}-${headlineStyle}-${framework}`
+      style: 'business-specific',
+      mood: 'professional',
+      approach: 'strategic',
+      headlineStyle: 'business-focused',
+      framework: 'value-driven',
+      signature: `business-${creativeSeed}`,
+      contentStrategy: { name: 'Business Intelligence', approach: 'Strategic content based on business strengths' },
+      writingStyle: { name: 'Professional Expert', voice: 'Industry authority with local expertise' },
+      contentAngle: { type: 'Business Value', focus: 'Solving customer problems with business strengths' },
+      marketInsights: ['Local market expertise', 'Industry trends', 'Customer pain points'],
+      engagementHooks: ['Problem identification', 'Solution presentation', 'Value demonstration'],
+      localPhrases: ['Local expertise', 'Community focus', 'Market knowledge']
     };
-  }
-
-  private static isRepetitive(variation: any): boolean {
-    return this.usedCombinations.has(variation.signature);
   }
 
   private static recordVariation(variation: any): void {
     this.usedCombinations.add(variation.signature);
 
-    // Keep history manageable
     if (this.usedCombinations.size > this.maxHistory) {
       const oldestEntries = Array.from(this.usedCombinations).slice(0, 20);
       oldestEntries.forEach(entry => this.usedCombinations.delete(entry));
@@ -306,80 +1352,146 @@ export class AntiRepetitionSystem {
   }
 }
 
-// Creative Call-to-Action Generator
-export function generateCreativeCTA(
+// Legacy function for design enhancement
+export function enhanceDesignCreativity(
+  designPrompt: string,
   businessType: string,
-  tone: string,
-  context: any
-): { cta: string; urgency: string; emotion: string } {
-  const urgency = getRandomElement(['immediate', 'gentle', 'compelling', 'friendly']);
-  const emotion = getRandomElement(['excitement', 'trust', 'curiosity', 'confidence']);
-
-  const creativeCTAs = {
-    'immediate': [
-      'Start Your Journey Today',
-      'Experience the Difference Now',
-      'Join Us Today',
-      'Get Started Right Away'
-    ],
-    'gentle': [
-      'Discover More',
-      'Learn About Us',
-      'Explore Our Services',
-      'See What We Offer'
-    ],
-    'compelling': [
-      'Transform Your Experience',
-      'Unlock Your Potential',
-      'Make the Change',
-      'Take the Next Step'
-    ],
-    'friendly': [
-      'Come Visit Us',
-      'Let\'s Connect',
-      'Say Hello',
-      'We\'d Love to Meet You'
-    ]
-  };
-
-  const ctas = creativeCTAs[urgency] || creativeCTAs['friendly'];
-
-  return {
-    cta: getRandomElement(ctas),
-    urgency,
-    emotion
-  };
-}
-
-// Business Context Analyzer
-export function analyzeBusinessContext(
-  businessType: string,
-  businessName: string,
   location: string,
-  services: string
-): {
-  industryInsights: any;
-  creativePotential: string[];
-  emotionalTriggers: string[];
-  culturalElements: string[];
-} {
+  context: any
+): { enhancedPrompt: string; creativeElements: string[]; visualStyle: string } {
   const industry = BUSINESS_INTELLIGENCE_SYSTEM.industryInsights[businessType.toLowerCase()] ||
     BUSINESS_INTELLIGENCE_SYSTEM.industryInsights['retail'];
 
-  const creativePotential = [
-    `Leverage ${industry.trends[0]} trend for modern appeal`,
-    `Address ${industry.challenges[0]} pain point creatively`,
-    `Use ${industry.language.slice(0, 3).join(', ')} language naturally`,
-    `Reflect ${industry.culture} in visual storytelling`
-  ];
+  const creativeElements = industry.uniqueValue.slice(0, 3);
+  const visualStyle = 'professional business-focused design';
 
-  const emotionalTriggers = getRandomElements(BUSINESS_INTELLIGENCE_SYSTEM.audiencePsychology.motivations, 3);
-  const culturalElements = getRandomElements(CREATIVE_DESIGN_SYSTEM.creativeElements.culturalReferences, 3);
+  const enhancedPrompt = designPrompt + '\n\nCREATIVE ENHANCEMENT:\n' +
+    `- Business Type: ${businessType}\n` +
+    `- Location: ${location}\n` +
+    `- Industry Focus: ${industry.trends.slice(0, 2).join(', ')}\n` +
+    `- Visual Style: ${visualStyle}`;
 
   return {
-    industryInsights: industry,
-    creativePotential,
-    emotionalTriggers,
-    culturalElements
+    enhancedPrompt,
+    creativeElements,
+    visualStyle
+  };
+}
+
+// Regional Marketing Intelligence Functions
+function getRegionalLanguageStyle(location: string): string {
+  const locationLower = location.toLowerCase();
+
+  if (locationLower.includes('kenya') || locationLower.includes('nairobi') || locationLower.includes('mombasa')) {
+    return 'Warm, community-focused, with occasional Swahili phrases like "karibu" (welcome), "asante" (thank you). Direct but friendly tone.';
+  } else if (locationLower.includes('nigeria') || locationLower.includes('lagos') || locationLower.includes('abuja')) {
+    return 'Energetic, aspirational, with pidgin English influences. Uses "finest", "sharp sharp", "no wahala" naturally.';
+  } else if (locationLower.includes('south africa') || locationLower.includes('cape town') || locationLower.includes('johannesburg')) {
+    return 'Multicultural blend, uses "lekker", "braai", "just now". Mix of English and local expressions.';
+  } else if (locationLower.includes('ghana') || locationLower.includes('accra')) {
+    return 'Friendly, respectful, with Twi influences. Uses "chale", "ɛyɛ" naturally in marketing.';
+  } else if (locationLower.includes('india') || locationLower.includes('mumbai') || locationLower.includes('delhi')) {
+    return 'Enthusiastic, family-oriented, with Hindi/English mix. Uses "achha", "best", "number one" frequently.';
+  } else if (locationLower.includes('uk') || locationLower.includes('london') || locationLower.includes('manchester')) {
+    return 'Polite but confident, uses "brilliant", "proper", "lovely". Understated but effective.';
+  } else if (locationLower.includes('usa') || locationLower.includes('new york') || locationLower.includes('california')) {
+    return 'Direct, confident, superlative-heavy. Uses "awesome", "amazing", "best ever" frequently.';
+  }
+
+  return 'Friendly, professional, community-focused with local cultural sensitivity.';
+}
+
+function getRegionalMarketingStyle(location: string): string {
+  const locationLower = location.toLowerCase();
+
+  if (locationLower.includes('kenya') || locationLower.includes('nairobi')) {
+    return 'Community-centered, emphasizes tradition meets modernity, family values, and local pride';
+  } else if (locationLower.includes('nigeria') || locationLower.includes('lagos')) {
+    return 'Bold, aspirational, success-oriented, emphasizes quality and status';
+  } else if (locationLower.includes('south africa')) {
+    return 'Inclusive, diverse, emphasizes heritage and innovation together';
+  } else if (locationLower.includes('ghana')) {
+    return 'Respectful, community-focused, emphasizes craftsmanship and tradition';
+  } else if (locationLower.includes('india')) {
+    return 'Family-oriented, value-conscious, emphasizes trust and relationships';
+  } else if (locationLower.includes('uk')) {
+    return 'Quality-focused, heritage-conscious, understated confidence';
+  } else if (locationLower.includes('usa')) {
+    return 'Innovation-focused, convenience-oriented, bold claims and superlatives';
+  }
+
+  return 'Community-focused, quality-oriented, culturally respectful';
+}
+
+function getLocalBusinessLanguage(location: string, businessType: string): string {
+  const locationLower = location.toLowerCase();
+  const businessLower = businessType.toLowerCase();
+
+  if (locationLower.includes('kenya')) {
+    if (businessLower.includes('restaurant') || businessLower.includes('food')) {
+      return '"chakula kizuri" (good food), "asili" (authentic), "familia" (family), "mazingira" (environment)';
+    } else if (businessLower.includes('tech') || businessLower.includes('digital')) {
+      return '"teknolojia", "haraka" (fast), "rahisi" (easy), "bora" (best)';
+    }
+    return '"bora" (best), "karibu" (welcome), "mazuri" (good), "familia" (family)';
+  } else if (locationLower.includes('nigeria')) {
+    if (businessLower.includes('restaurant') || businessLower.includes('food')) {
+      return '"finest food", "correct taste", "no wahala", "sharp sharp service"';
+    }
+    return '"finest", "correct", "sharp sharp", "no wahala", "top notch"';
+  }
+
+  return 'quality, authentic, local, trusted, community';
+}
+
+function getLocalMarketingExamples(location: string, businessType: string): string {
+  const locationLower = location.toLowerCase();
+  const businessLower = businessType.toLowerCase();
+
+  if (locationLower.includes('kenya')) {
+    if (businessLower.includes('restaurant') || businessLower.includes('food')) {
+      return `- "Chakula Asili Kenya" (Authentic Kenya Food)
+- "Familia Flavors Nairobi"
+- "Taste Bora Kenya"
+- "Karibu Kitchen Experience"`;
+    }
+    return `- "Bora ${businessType} Kenya"
+- "Karibu Quality Service"
+- "Kenya's Finest Choice"
+- "Asili ${businessType} Experience"`;
+  } else if (locationLower.includes('nigeria')) {
+    return `- "Finest ${businessType} Lagos"
+- "Sharp Sharp Service"
+- "Correct ${businessType} Choice"
+- "Top Notch Experience"`;
+  }
+
+  return `- "${location}'s Best ${businessType}"
+- "Quality Meets Community"
+- "Local Excellence Delivered"
+- "Authentic ${businessType} Experience"`;
+}
+
+// BACKWARD COMPATIBILITY - Keep existing caption function
+export async function generateBusinessSpecificCaption(
+  businessType: string,
+  businessName: string,
+  location: string,
+  businessDetails: any,
+  platform: string,
+  contentGoal: 'awareness' | 'consideration' | 'conversion' | 'retention' = 'awareness',
+  trendingData?: any,
+  businessIntelligence?: any
+): Promise<{ caption: string; engagementHooks: string[]; callToAction: string }> {
+
+  // Use the unified system but return only caption components
+  const unifiedContent = await generateUnifiedContent(
+    businessType, businessName, location, businessDetails, platform, contentGoal, trendingData, businessIntelligence
+  );
+
+  return {
+    caption: unifiedContent.caption,
+    engagementHooks: unifiedContent.engagementHooks,
+    callToAction: unifiedContent.callToAction
   };
 }
