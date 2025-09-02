@@ -64,66 +64,62 @@ export function BrandProviderFirebaseFirst({ children }: BrandProviderProps) {
   }, [currentProfile, brands.length, currentBrand, setCurrentProfile]);
 
   const selectBrand = (brand: CompleteBrandProfile | null) => {
-    currentBrand: currentBrand?.businessName,
-      currentProfile: currentProfile?.businessName
-  });
+    // Update both states immediately
+    setCurrentBrand(brand);
+    setCurrentProfile(brand);
 
-  // Update both states immediately
-  setCurrentBrand(brand);
-  setCurrentProfile(brand);
+    // Update all brand-scoped services
+    const brandId = brand?.id || null;
 
-  // Update all brand-scoped services
-  const brandId = brand?.id || null;
+    // Update artifacts service
+    brandScopedArtifactsService.setBrand(brandId);
 
-  // Update artifacts service
-  brandScopedArtifactsService.setBrand(brandId);
+    // TODO: Update other brand-scoped services here
+    // - Social media service
+    // - Content calendar service
+    // - Creative studio service
+    // - etc.
 
-  // TODO: Update other brand-scoped services here
-  // - Social media service
-  // - Content calendar service
-  // - Creative studio service
-  // - etc.
+  };
 
-};
-
-// Restore selected brand from localStorage on mount (for UX continuity)
-useEffect(() => {
-  const savedBrandId = localStorage.getItem('selectedBrandId');
-  if (savedBrandId && brands.length > 0 && !currentBrand) {
-    const savedBrand = brands.find(b => b.id === savedBrandId);
-    if (savedBrand) {
-      selectBrand(savedBrand);
+  // Restore selected brand from localStorage on mount (for UX continuity)
+  useEffect(() => {
+    const savedBrandId = localStorage.getItem('selectedBrandId');
+    if (savedBrandId && brands.length > 0 && !currentBrand) {
+      const savedBrand = brands.find(b => b.id === savedBrandId);
+      if (savedBrand) {
+        selectBrand(savedBrand);
+      }
     }
-  }
-}, [brands, currentBrand]);
+  }, [brands, currentBrand]);
 
-// Save selected brand ID to localStorage for UX continuity
-useEffect(() => {
-  if (currentBrand?.id) {
-    localStorage.setItem('selectedBrandId', currentBrand.id);
-  } else {
-    localStorage.removeItem('selectedBrandId');
-  }
-}, [currentBrand]);
+  // Save selected brand ID to localStorage for UX continuity
+  useEffect(() => {
+    if (currentBrand?.id) {
+      localStorage.setItem('selectedBrandId', currentBrand.id);
+    } else {
+      localStorage.removeItem('selectedBrandId');
+    }
+  }, [currentBrand]);
 
-const contextValue: BrandContextType = {
-  currentBrand,
-  brands,
-  loading,
-  saving,
-  error,
-  selectBrand,
-  saveProfile,
-  updateProfile,
-  deleteProfile,
-  refreshBrands,
-};
+  const contextValue: BrandContextType = {
+    currentBrand,
+    brands,
+    loading,
+    saving,
+    error,
+    selectBrand,
+    saveProfile,
+    updateProfile,
+    deleteProfile,
+    refreshBrands,
+  };
 
-return (
-  <BrandContext.Provider value={contextValue}>
-    {children}
-  </BrandContext.Provider>
-);
+  return (
+    <BrandContext.Provider value={contextValue}>
+      {children}
+    </BrandContext.Provider>
+  );
 }
 
 export function useBrandFirebaseFirst() {
