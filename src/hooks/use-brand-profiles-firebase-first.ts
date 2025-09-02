@@ -37,7 +37,6 @@ export function useBrandProfilesFirebaseFirst() {
 
     try {
       setState(prev => ({ ...prev, loading: true, error: null }));
-      console.log('🔄 Loading profiles with Firebase-first approach');
 
       // Load all profiles
       const profiles = await getUserBrandProfilesFirebaseFirst(userId);
@@ -52,9 +51,7 @@ export function useBrandProfilesFirebaseFirst() {
         loading: false,
       }));
 
-      console.log(`✅ Loaded ${profiles.length} profiles, current:`, currentProfile?.businessName);
     } catch (error) {
-      console.error('❌ Failed to load profiles:', error);
       setState(prev => ({
         ...prev,
         loading: false,
@@ -72,7 +69,6 @@ export function useBrandProfilesFirebaseFirst() {
     setState(prev => ({ ...prev, saving: true, error: null }));
 
     try {
-      console.log('💾 Saving profile with Firebase-first approach:', profile.businessName);
       
       // Save to Firebase first
       const profileId = await saveBrandProfileFirebaseFirst(profile, userId);
@@ -87,10 +83,8 @@ export function useBrandProfilesFirebaseFirst() {
         saving: false,
       }));
 
-      console.log('✅ Profile saved successfully:', profileId);
       return profileId;
     } catch (error) {
-      console.error('❌ Failed to save profile:', error);
       setState(prev => ({
         ...prev,
         saving: false,
@@ -124,7 +118,6 @@ export function useBrandProfilesFirebaseFirst() {
     setState(prev => ({ ...prev, saving: true, error: null }));
 
     try {
-      console.log('🗑️ Deleting profile:', profileId);
       
       // Delete from Firebase
       await deleteBrandProfileFirebaseFirst(profileId, userId);
@@ -144,9 +137,7 @@ export function useBrandProfilesFirebaseFirst() {
         };
       });
 
-      console.log('✅ Profile deleted successfully');
     } catch (error) {
-      console.error('❌ Failed to delete profile:', error);
       setState(prev => ({
         ...prev,
         saving: false,
@@ -158,7 +149,6 @@ export function useBrandProfilesFirebaseFirst() {
 
   // Set current profile
   const setCurrentProfile = useCallback((profile: CompleteBrandProfile | null) => {
-    console.log('🎯 Setting current profile:', profile?.businessName || 'null');
     setState(prev => ({ ...prev, currentProfile: profile }));
   }, []);
 
@@ -169,7 +159,6 @@ export function useBrandProfilesFirebaseFirst() {
 
   // Clear all data (useful for logout)
   const clearAllData = useCallback(() => {
-    console.log('🗑️ Clearing all brand profile data');
     clearAllCachedProfiles();
     setState({
       profiles: [],

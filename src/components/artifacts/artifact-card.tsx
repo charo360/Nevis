@@ -94,7 +94,6 @@ export function ArtifactCard({
       await artifactsService.toggleArtifactActivation(artifact.id);
       onActivationToggle?.(artifact, newActiveState);
     } catch (error) {
-      console.error('Failed to toggle activation:', error);
     } finally {
       setIsToggling(false);
     }
@@ -114,7 +113,6 @@ export function ArtifactCard({
 
       onUse?.(artifact);
     } catch (error) {
-      console.error('Failed to use artifact:', error);
     }
   };
 

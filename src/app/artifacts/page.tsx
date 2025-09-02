@@ -83,7 +83,6 @@ export default function ArtifactsPage() {
         setSelectedArtifacts(activeIds);
       }
     } catch (error) {
-      console.warn('Failed to load selected artifacts:', error);
     }
   }, []);
 
@@ -92,7 +91,6 @@ export default function ArtifactsPage() {
     try {
       localStorage.setItem('selectedArtifacts', JSON.stringify(selectedArtifacts));
     } catch (error) {
-      console.warn('Failed to save selected artifacts:', error);
     }
   }, [selectedArtifacts]);
 
@@ -164,32 +162,21 @@ export default function ArtifactsPage() {
       await artifactsService.deleteArtifact(artifactId);
       loadArtifacts();
     } catch (error) {
-      console.error('Delete failed:', error);
     }
   };
 
   // Debug function to test artifact states
   const debugArtifactStates = () => {
-    console.log('🔍 === ARTIFACT DEBUG TEST ===');
     const allArtifacts = artifactsService.getAllArtifacts();
     const activeArtifacts = artifactsService.getActiveArtifacts();
 
-    console.log(`📊 Total artifacts: ${allArtifacts.length}`);
-    console.log(`✅ Active artifacts: ${activeArtifacts.length}`);
-    console.log(`🎯 Selected in UI: ${selectedArtifacts.length}`);
 
-    console.log('📋 All artifacts details:');
     allArtifacts.forEach(a => {
-      console.log(`  - ${a.name}: isActive=${a.isActive}, usageType=${a.usageType}, instructions="${a.instructions}"`);
     });
 
-    console.log('✅ Active artifacts details:');
     activeArtifacts.forEach(a => {
-      console.log(`  - ${a.name}: instructions="${a.instructions}"`);
     });
 
-    console.log('🎯 Selected artifacts in UI:', selectedArtifacts);
-    console.log('🔍 === END DEBUG TEST ===');
   };
 
   // Fix missing instructions in existing artifacts
@@ -201,23 +188,18 @@ export default function ArtifactsPage() {
   const toggleArtifactSelection = async (artifactId: string) => {
     const isCurrentlySelected = selectedArtifacts.includes(artifactId);
 
-    console.log(`🎯 toggleArtifactSelection called: ${artifactId}, currently selected: ${isCurrentlySelected}`);
 
     try {
       if (isCurrentlySelected) {
         // Deselect: remove from selection and set isActive to false
-        console.log(`❌ Deselecting artifact: ${artifactId}`);
         setSelectedArtifacts(prev => prev.filter(id => id !== artifactId));
         await artifactsService.setArtifactActive(artifactId, false);
       } else {
         // Select: add to selection and set isActive to true
-        console.log(`✅ Selecting artifact: ${artifactId}`);
         setSelectedArtifacts(prev => [...prev, artifactId]);
         await artifactsService.setArtifactActive(artifactId, true);
       }
-      console.log(`🎯 Selection toggle completed for: ${artifactId}`);
     } catch (error) {
-      console.error('Failed to toggle artifact selection:', error);
     }
   };
 
@@ -264,9 +246,7 @@ export default function ArtifactsPage() {
       setShowTextCreator(null);
       loadArtifacts();
 
-      console.log('Text artifact created:', artifact);
     } catch (error) {
-      console.error('Failed to create text artifact:', error);
       alert('Failed to create text content. Please try again.');
     }
   };
@@ -746,7 +726,6 @@ export default function ArtifactsPage() {
 
             <UploadZone
               onUploadComplete={(artifacts) => {
-                console.log('Uploaded artifacts:', artifacts);
                 // Reset image form data
                 setImageFormData({ name: '', files: [], instructions: '' });
                 loadArtifacts();

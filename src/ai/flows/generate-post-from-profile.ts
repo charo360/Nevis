@@ -289,7 +289,6 @@ async function generateWithRetry(request: GenerateRequest, retries = 3, delay = 
       return result;
     } catch (e: any) {
       if (e.message && e.message.includes('503') && i < retries - 1) {
-        console.log(`Attempt ${i + 1} failed with 503. Retrying in ${delay}ms...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       } else {
         if (e.message && e.message.includes('503')) {
@@ -317,7 +316,6 @@ async function generateImageForVariant(
   input: GeneratePostFromProfileInput,
   textOutput: { imageText: string }
 ) {
-  console.log("🎨 ENHANCED DESIGN SYSTEM: Generating premium-quality design...");
 
   // TEMPORARILY DISABLED - Enhanced design system will be re-enabled after module resolution
   /*
@@ -336,10 +334,8 @@ async function generateImageForVariant(
   };
 
   const designEnhancements = generateDesignEnhancements(enhancedDesignInput);
-  console.log("✨ Applied design enhancements:", designEnhancements.compositionRules.length, "rules");
 
   const enhancedPrompt = generateEnhancedDesignPrompt(enhancedDesignInput);
-  console.log("🚀 Enhanced prompt generated with", enhancedPrompt.length, "characters of professional guidance");
   */
   // Determine consistency level based on preferences first
   const isStrictConsistency = input.brandConsistency?.strictConsistency ?? false;
@@ -385,7 +381,6 @@ async function generateImageForVariant(
     );
     trendInstructions = generateTrendInstructions(trends, variant.platform);
   } catch (error) {
-    console.warn('Failed to get design trends, continuing without:', error);
   }
 
   // Get performance-optimized instructions
@@ -409,7 +404,6 @@ async function generateImageForVariant(
 
   // Select random design template for variety
   const selectedTemplate = DESIGN_TEMPLATES[Math.floor(Math.random() * DESIGN_TEMPLATES.length)];
-  console.log(`🎨 Selected design template: ${selectedTemplate.name} - ${selectedTemplate.style}`);
 
   // Generate visual variation approach for diversity
   const visualVariations = [
@@ -418,10 +412,8 @@ async function generateImageForVariant(
     'photographic_realistic', 'illustrated_stylized', 'gradient_colorful', 'monochrome_accent'
   ];
   const selectedVisualVariation = visualVariations[Math.floor(Math.random() * visualVariations.length)];
-  console.log(`🎨 Selected visual variation: ${selectedVisualVariation}`);
 
   // TEMPLATE-BASED DESIGN APPROACH - Using selected template style
-  console.log(`🎨 Using TEMPLATE DESIGN SYSTEM - ${selectedTemplate.name} approach`);
 
   let imagePrompt = `Create a ${selectedTemplate.style.toUpperCase()} social media design following the "${selectedTemplate.name}" template approach.
 
@@ -525,7 +517,6 @@ async function generateImageForVariant(
           );
           analyses.push(analysis);
         } catch (error) {
-          console.warn('Design analysis failed for example, skipping:', error);
         }
       }
 
@@ -548,7 +539,6 @@ async function generateImageForVariant(
           : [input.designExamples[Math.floor(Math.random() * input.designExamples.length)]];
       }
     } catch (error) {
-      console.warn('Design analysis system failed, using fallback:', error);
       selectedExamples = isStrictConsistency
         ? input.designExamples
         : [input.designExamples[Math.floor(Math.random() * input.designExamples.length)]];
@@ -580,8 +570,6 @@ async function generateImageForVariant(
   // Build prompt parts array - Enhanced system temporarily disabled
   const promptParts: any[] = [{ text: imagePrompt }];
 
-  console.log("🎯 Using standard design system (Enhanced system temporarily disabled)");
-  console.log("📈 Quality improvements will be re-enabled after module resolution");
 
   // Enhanced logo integration with analysis
   if (input.logoDataUrl) {
@@ -623,9 +611,7 @@ async function generateImageForVariant(
       }
     });
 
-    console.log("🎨 Logo integrated: " + input.logoDataUrl.substring(0, 50) + "...");
   } else {
-    console.log('⚠️ No logo provided - design will be generated without brand logo');
   }
 
   // Add selected design examples
@@ -658,12 +644,9 @@ async function generateImageForVariant(
       // Apply aspect ratio correction for non-square platforms
       const { cropImageFromUrl, needsAspectRatioCorrection } = await import('@/lib/image-processing');
       if (needsAspectRatioCorrection(variant.platform)) {
-        console.log("🖼️ Applying aspect ratio correction for " + variant.platform + "...");
         try {
           imageUrl = await cropImageFromUrl(imageUrl, variant.platform);
-          console.log("✅ Image cropped successfully for " + variant.platform);
         } catch (cropError) {
-          console.warn('⚠️ Image cropping failed, using original:', cropError);
           // Continue with original image if cropping fails
         }
       }
@@ -671,7 +654,6 @@ async function generateImageForVariant(
       // ENHANCED Quality validation for first attempt
       if (attempts === 1) {
         try {
-          console.log("🔍 QUALITY VALIDATION: Assessing design against standards...");
 
           // Standard quality assessment (Enhanced validation temporarily disabled)
           const quality = await assessDesignQuality(
@@ -683,7 +665,6 @@ async function generateImageForVariant(
             "Create engaging design for: " + textOutput.catchyWords
           );
 
-          console.log("📊 Quality score:", quality.overall.score + "/10");
 
           // If quality is acceptable, use this design
           if (meetsQualityStandards(quality, 7)) {
@@ -693,7 +674,6 @@ async function generateImageForVariant(
 
           // If quality is poor and we have attempts left, try to improve
           if (attempts < maxAttempts) {
-            console.log("Design quality score: " + quality.overall.score + "/10. Attempting improvement...");
 
             // Add improvement instructions to prompt
             const improvementInstructions = generateImprovementPrompt(quality);
@@ -706,7 +686,6 @@ async function generateImageForVariant(
             break;
           }
         } catch (qualityError) {
-          console.warn('Quality assessment failed, using generated design:', qualityError);
           finalImageUrl = imageUrl;
           break;
         }
@@ -716,7 +695,6 @@ async function generateImageForVariant(
         break;
       }
     } catch (error) {
-      console.error("Design generation attempt " + attempts + " failed: ", error);
       if (attempts === maxAttempts) {
         throw error;
       }
@@ -748,7 +726,6 @@ async function generateImageForVariant(
         }
       );
     } catch (analyticsError) {
-      console.warn('Failed to record design analytics:', analyticsError);
     }
   }
 
@@ -776,7 +753,6 @@ const generatePostFromProfileFlow = ai.defineFlow(
       'local_cultural', 'seasonal_relevance', 'problem_solution', 'inspiration_motivation'
     ];
     const selectedVariation = contentVariations[Math.floor(Math.random() * contentVariations.length)];
-    console.log("🎯 Selected content variation approach: " + selectedVariation);
 
     // Step 1: Intelligent Context Analysis - Determine what information is relevant
     const contextRelevance = selectRelevantContext(
@@ -787,11 +763,6 @@ const generatePostFromProfileFlow = ai.defineFlow(
       input.dayOfWeek
     );
 
-    console.log("🧠 Context Analysis for " + input.businessType + " in " + input.location + ":");
-    console.log("   Weather: " + contextRelevance.weather.priority + " - " + contextRelevance.weather.relevanceReason);
-    console.log("   Events: " + contextRelevance.events.priority + " - " + contextRelevance.events.relevanceReason);
-    console.log("   Trends: " + contextRelevance.trends.priority + " - " + contextRelevance.trends.relevanceReason);
-    console.log("   Culture: " + contextRelevance.cultural.priority + " - " + contextRelevance.cultural.relevanceReason);
 
     // Step 2: Fetch Real-Time Trending Topics (always useful)
     const realTimeTrends = await generateRealTimeTrendingTopics(

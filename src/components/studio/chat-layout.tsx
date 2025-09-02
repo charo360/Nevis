@@ -127,7 +127,6 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 };
             } else {
                 // Use standard creative asset generation
-                console.log(`🚀 Using ${selectedRevoModel} for standard generation`);
                 result = await generateCreativeAssetAction(
                     currentInput,
                     outputType,

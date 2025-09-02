@@ -51,7 +51,6 @@ export function BrandProviderFirebaseFirst({ children }: BrandProviderProps) {
 
   // Sync current brand with the hook's current profile
   useEffect(() => {
-    console.log('🔄 Firebase-first brand sync effect triggered:', {
       currentProfile: currentProfile?.businessName,
       currentBrand: currentBrand?.businessName,
       brandsCount: brands.length
@@ -59,20 +58,16 @@ export function BrandProviderFirebaseFirst({ children }: BrandProviderProps) {
 
     // Only sync if currentProfile exists and is different from currentBrand
     if (currentProfile && currentProfile !== currentBrand) {
-      console.log('✅ Syncing currentBrand with currentProfile:', currentProfile.businessName);
       setCurrentBrand(currentProfile);
     } else if (!currentProfile && brands.length > 0 && !currentBrand) {
       // Auto-select first brand if none selected
       const firstBrand = brands[0];
-      console.log('🎯 Auto-selecting first brand:', firstBrand.businessName);
       setCurrentBrand(firstBrand);
       setCurrentProfile(firstBrand);
     }
   }, [currentProfile, brands.length, currentBrand, setCurrentProfile]);
 
   const selectBrand = (brand: CompleteBrandProfile | null) => {
-    console.log('🎯 Firebase-first selectBrand called with:', brand?.businessName || 'null');
-    console.log('📊 Current state before selection:', {
       currentBrand: currentBrand?.businessName,
       currentProfile: currentProfile?.businessName
     });
@@ -83,7 +78,6 @@ export function BrandProviderFirebaseFirst({ children }: BrandProviderProps) {
 
     // Update all brand-scoped services
     const brandId = brand?.id || null;
-    console.log('🔄 Updating brand-scoped services for brand:', brandId);
 
     // Update artifacts service
     brandScopedArtifactsService.setBrand(brandId);
@@ -94,7 +88,6 @@ export function BrandProviderFirebaseFirst({ children }: BrandProviderProps) {
     // - Creative studio service
     // - etc.
 
-    console.log('✅ Firebase-first brand selection completed, new brand:', brand?.businessName || 'null');
   };
 
   // Restore selected brand from localStorage on mount (for UX continuity)
@@ -103,7 +96,6 @@ export function BrandProviderFirebaseFirst({ children }: BrandProviderProps) {
     if (savedBrandId && brands.length > 0 && !currentBrand) {
       const savedBrand = brands.find(b => b.id === savedBrandId);
       if (savedBrand) {
-        console.log('🔄 Restoring selected brand from localStorage:', savedBrand.businessName);
         selectBrand(savedBrand);
       }
     }

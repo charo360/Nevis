@@ -26,13 +26,9 @@ export class DynamicCTAGenerator {
     targetAudience?: string
   ): Promise<CTAStrategy> {
 
-    console.log('🎯 Generating dynamic CTA...');
-    console.log(`📍 Business: ${businessName} (${businessType}) in ${location}`);
-    console.log(`📱 Platform: ${platform} | Goal: ${contentGoal}`);
 
     // Select optimal CTA style based on business context
     const ctaStyle = this.selectOptimalCTAStyle(businessType, platform, contentGoal);
-    console.log(`🎨 Selected CTA style: ${ctaStyle}`);
 
     // Generate primary CTA
     const primary = this.generateCTAByStyle(ctaStyle, businessName, businessType, location, platform, services);
@@ -43,8 +39,6 @@ export class DynamicCTAGenerator {
     // Get reasoning for CTA choice
     const reasoning = this.getCTAReasoning(ctaStyle, businessType, platform);
 
-    console.log(`✅ Generated CTA: "${primary}"`);
-    console.log(`🔄 Alternatives: ${alternatives.length} options`);
 
     return {
       primary,

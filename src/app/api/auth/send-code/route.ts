@@ -37,7 +37,6 @@ async function sendEmail(to: string, subject: string, html: string, text?: strin
   const enableSandbox = process.env.SENDGRID_SANDBOX === 'true'
   if (enableSandbox) {
     payload.mail_settings = { sandbox_mode: { enable: true } }
-    console.info('SendGrid sandbox mode enabled (SENDGRID_SANDBOX=true)')
   }
 
   const res = await fetch('https://api.sendgrid.com/v3/mail/send', {
@@ -53,10 +52,7 @@ async function sendEmail(to: string, subject: string, html: string, text?: strin
     const message = `SendGrid error: ${res.status} ${body}`
     // During development or when sandboxing, log the full response and return so flows continue.
     if (process.env.NODE_ENV !== 'production' || enableSandbox) {
-      console.warn('SendGrid warning (non-production):', message)
-      console.warn('SendGrid response body:', body)
       if (res.status === 403) {
-        console.warn('SendGrid 403: common cause is an unverified sender identity. Verify SENDGRID_FROM in SendGrid dashboard or verify a sending domain.')
       }
       return
     }
@@ -86,7 +82,6 @@ export async function POST(req: NextRequest) {
         expiresAt: Timestamp.fromDate(expiresAt),
       })
     } catch (writeErr) {
-      console.warn(
         'Firestore write failed for authCodes, writing fallback file:',
         writeErr instanceof Error ? writeErr.message : writeErr
       )
@@ -99,7 +94,6 @@ export async function POST(req: NextRequest) {
         current.push({ email: normalizedEmail, code, type, used: false, createdAt: now.toISOString(), expiresAt: expiresAt.toISOString() })
         await fs.writeFile(file, JSON.stringify(current, null, 2), 'utf-8')
       } catch (fileErr) {
-        console.error('Fallback write also failed:', fileErr)
         throw writeErr
       }
     }
@@ -111,7 +105,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true })
   } catch (err: any) {
-    console.error('send-code error', err)
     return NextResponse.json({ error: err.message || 'server error' }, { status: 500 })
   }
 }

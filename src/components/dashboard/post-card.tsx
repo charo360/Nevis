@@ -62,7 +62,6 @@ const isValidUrl = (url: string): boolean => {
   } catch (error) {
     // Don't log compression placeholders as errors
     if (!url.includes('[') || !url.includes(']')) {
-      console.warn('URL validation failed for:', url.substring(0, 50) + '...', error.message);
     }
     return false;
   }
@@ -204,7 +203,6 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
 
           // For social media posts, we need raster images (PNG/JPEG), not SVG
           if (format === 'svg') {
-            console.log('🎨 Converting SVG to PNG for social media compatibility...');
             // Fall through to the canvas conversion method below
             // This will convert the SVG to a high-quality PNG
           } else {
@@ -252,12 +250,10 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
             });
             return;
           } catch (error) {
-            console.warn('Direct download failed, falling back to canvas conversion:', error);
             // Fall through to canvas conversion
           }
         }
       } catch (error) {
-        console.warn('Direct HD download failed, falling back to capture method:', error);
       }
     }
 
@@ -297,7 +293,6 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
         socialMediaSettings.canvasWidth = platformDimensions.width;
         socialMediaSettings.canvasHeight = platformDimensions.height;
         socialMediaSettings.pixelRatio = 4; // Extra high DPI for SVG conversion
-        console.log(`🎨 Converting enhanced SVG design to ${platformDimensions.width}x${platformDimensions.height} PNG for ${activeTab}...`);
       }
 
       const dataUrl = await toPng(nodeToCapture, socialMediaSettings);
@@ -318,7 +313,6 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
       });
 
     } catch (err) {
-      console.error(err);
       toast({
         variant: "destructive",
         title: "Download Failed",

@@ -110,7 +110,6 @@ export type { Revo15Implementation } from './versions/revo-1.5';
 
 // Utility functions
 export async function initializeModelSystem(): Promise<void> {
-  console.log('🚀 Initializing AI Model System...');
 
   try {
     // Import the registry and factory here to avoid circular dependencies
@@ -123,9 +122,7 @@ export async function initializeModelSystem(): Promise<void> {
     // Preload commonly used models
     await modelFactory.preloadModels(['revo-1.5', 'revo-2.0']);
 
-    console.log('✅ AI Model System initialized successfully');
   } catch (error) {
-    console.error('❌ Failed to initialize AI Model System:', error);
     throw error;
   }
 }
@@ -153,7 +150,6 @@ export async function getSystemHealth(): Promise<{
       totalModels: registryStats.totalModels
     };
   } catch (error) {
-    console.error('❌ Error checking system health:', error);
     return {
       registryStatus: 'unhealthy',
       factoryStatus: 'unhealthy',
@@ -178,7 +174,6 @@ export async function getSystemStats() {
       timestamp: new Date().toISOString()
     };
   } catch (error) {
-    console.error('❌ Error getting system stats:', error);
     return {
       registry: {},
       factory: {},
@@ -193,7 +188,6 @@ export async function selectBestModel(criteria: any) {
     const { modelRegistry } = await import('./registry/model-registry');
     return await modelRegistry.selectBestModel(criteria);
   } catch (error) {
-    console.error('❌ Error selecting best model:', error);
     return null;
   }
 }
@@ -203,7 +197,6 @@ export async function createModel(modelId: string) {
     const { modelFactory } = await import('./registry/model-factory');
     return await modelFactory.createModel(modelId as any);
   } catch (error) {
-    console.error('❌ Error creating model:', error);
     return null;
   }
 }
@@ -224,7 +217,6 @@ export async function getModelInfo(modelId: string) {
       pricing
     };
   } catch (error) {
-    console.error('❌ Error getting model info:', error);
     return null;
   }
 }
@@ -232,15 +224,12 @@ export async function getModelInfo(modelId: string) {
 // Development and testing utilities
 export async function resetSystem(): Promise<void> {
   try {
-    console.log('🔄 Resetting AI Model System...');
     const { modelRegistry } = await import('./registry/model-registry');
     const { modelFactory } = await import('./registry/model-factory');
 
     modelRegistry.reset();
     modelFactory.reset();
-    console.log('✅ AI Model System reset complete');
   } catch (error) {
-    console.error('❌ Error resetting system:', error);
   }
 }
 

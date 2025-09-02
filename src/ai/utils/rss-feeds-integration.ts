@@ -33,16 +33,13 @@ export async function fetchGoogleTrendsRSS(
   category?: string
 ): Promise<ProcessedTrend[]> {
   try {
-    console.log(`🔍 Fetching Google Trends RSS for ${location}...`);
 
     // Google Trends RSS URLs by location
     const trendUrls = getGoogleTrendsRSSUrls(location);
     const allTrends: ProcessedTrend[] = [];
-    console.log(`📡 Trying ${trendUrls.length} Google Trends RSS URLs...`);
 
     for (const url of trendUrls) {
       try {
-        console.log(`🌐 Fetching: ${url}`);
         const response = await fetch(url, {
           headers: {
             'User-Agent': 'Mozilla/5.0 (compatible; TrendBot/1.0)'
@@ -50,34 +47,25 @@ export async function fetchGoogleTrendsRSS(
           timeout: 10000 // 10 second timeout
         });
 
-        console.log(`📊 Response status: ${response.status} for ${url}`);
         if (response.ok) {
           const xmlText = await response.text();
-          console.log(`📄 Received ${xmlText.length} characters of XML data`);
           const trends = parseGoogleTrendsRSS(xmlText, location);
-          console.log(`🎯 Parsed ${trends.length} trends from this URL`);
           allTrends.push(...trends);
         } else {
-          console.warn(`⚠️ Failed to fetch ${url}: ${response.status} ${response.statusText}`);
         }
       } catch (error) {
-        console.error(`❌ Error fetching Google Trends RSS from ${url}:`, error);
       }
     }
 
-    console.log(`✅ Found ${allTrends.length} Google Trends from RSS`);
 
     // If no trends found, use smart fallback
     if (allTrends.length === 0) {
-      console.log('🔄 Google Trends RSS failed, using smart contextual fallback...');
       return getSmartTrendingFallback(location, category);
     }
 
     return allTrends.slice(0, 10);
 
   } catch (error) {
-    console.error('❌ Error fetching Google Trends RSS:', error);
-    console.log('🔄 Using smart contextual fallback for Google Trends...');
     return getSmartTrendingFallback(location, category);
   }
 }
@@ -90,7 +78,6 @@ export async function fetchRedditRSS(
   subreddits?: string[]
 ): Promise<ProcessedTrend[]> {
   try {
-    console.log(`🔍 Fetching Reddit RSS for ${businessType}...`);
 
     const targetSubreddits = subreddits || getRelevantSubreddits(businessType);
     const allTrends: ProcessedTrend[] = [];
@@ -112,15 +99,12 @@ export async function fetchRedditRSS(
           allTrends.push(...trends);
         }
       } catch (error) {
-        console.error(`Error fetching Reddit RSS for r/${subreddit}:`, error);
       }
     }
 
-    console.log(`✅ Found ${allTrends.length} Reddit trends from RSS`);
     return allTrends.slice(0, 15);
 
   } catch (error) {
-    console.error('Error fetching Reddit RSS:', error);
     return [];
   }
 }
@@ -133,7 +117,6 @@ export async function fetchNewsRSS(
   businessType: string
 ): Promise<ProcessedTrend[]> {
   try {
-    console.log(`🔍 Fetching News RSS for ${location} ${businessType}...`);
 
     const newsUrls = getNewsRSSUrls(location, businessType);
     const allTrends: ProcessedTrend[] = [];
@@ -152,15 +135,12 @@ export async function fetchNewsRSS(
           allTrends.push(...trends);
         }
       } catch (error) {
-        console.error(`Error fetching News RSS from ${source}:`, error);
       }
     }
 
-    console.log(`✅ Found ${allTrends.length} news trends from RSS`);
     return allTrends.slice(0, 8);
 
   } catch (error) {
-    console.error('Error fetching News RSS:', error);
     return [];
   }
 }
@@ -281,7 +261,6 @@ function parseGoogleTrendsRSS(xmlText: string, location: string): ProcessedTrend
       }
     }
   } catch (error) {
-    console.error('Error parsing Google Trends RSS:', error);
   }
 
   return trends;
@@ -322,7 +301,6 @@ function parseRedditRSS(xmlText: string, subreddit: string): ProcessedTrend[] {
       }
     }
   } catch (error) {
-    console.error('Error parsing Reddit RSS:', error);
   }
 
   return trends;
@@ -359,7 +337,6 @@ function parseNewsRSS(xmlText: string, source: string): ProcessedTrend[] {
       }
     }
   } catch (error) {
-    console.error('Error parsing News RSS:', error);
   }
 
   return trends;
@@ -369,39 +346,25 @@ function parseNewsRSS(xmlText: string, source: string): ProcessedTrend[] {
  * Test RSS feeds integration - for debugging
  */
 export async function testRSSFeeds(location: string = 'Kenya', businessType: string = 'restaurant'): Promise<void> {
-  console.log('🧪 Testing RSS Feeds Integration...');
-  console.log(`📍 Location: ${location}`);
-  console.log(`🏢 Business Type: ${businessType}`);
 
   try {
     // Test Google Trends RSS
-    console.log('\n🔍 Testing Google Trends RSS...');
     const googleTrends = await fetchGoogleTrendsRSS(location);
-    console.log(`✅ Google Trends: ${googleTrends.length} trends found`);
     googleTrends.slice(0, 3).forEach((trend, i) => {
-      console.log(`  ${i + 1}. ${trend.topic} (Score: ${trend.relevanceScore})`);
     });
 
     // Test Reddit RSS
-    console.log('\n🔍 Testing Reddit RSS...');
     const redditTrends = await fetchRedditRSS(businessType);
-    console.log(`✅ Reddit Trends: ${redditTrends.length} trends found`);
     redditTrends.slice(0, 3).forEach((trend, i) => {
-      console.log(`  ${i + 1}. ${trend.topic} (Score: ${trend.relevanceScore})`);
     });
 
     // Test News RSS
-    console.log('\n🔍 Testing News RSS...');
     const newsTrends = await fetchNewsRSS(location, businessType);
-    console.log(`✅ News Trends: ${newsTrends.length} trends found`);
     newsTrends.slice(0, 3).forEach((trend, i) => {
-      console.log(`  ${i + 1}. ${trend.topic} (Score: ${trend.relevanceScore})`);
     });
 
-    console.log('\n🎉 RSS Feeds test completed!');
 
   } catch (error) {
-    console.error('❌ RSS Feeds test failed:', error);
   }
 }
 
@@ -496,6 +459,5 @@ function getSmartTrendingFallback(location: string, category?: string): Processe
     });
   }
 
-  console.log(`🧠 Generated ${trends.length} smart fallback trends for ${location}`);
   return trends.slice(0, 10);
 }

@@ -25,7 +25,6 @@ function compressDesignExamples(designExamples: string[]): string[] {
       // and compress them by reducing quality
       return dataUri; // For now, keep original - we'll implement compression if needed
     } catch (error) {
-      console.warn('Failed to compress design example:', error);
       return dataUri;
     }
   }).slice(0, 3); // Limit to 3 design examples to prevent storage overflow
@@ -62,7 +61,6 @@ export function saveBrandProfile(profile: CompleteBrandProfile): SavedBrandProfi
     return savedProfile;
   } catch (error) {
     // If storage fails due to size, try saving without design examples
-    console.warn('Storage failed with design examples, saving without them:', error);
 
     const profileWithoutDesigns = {
       ...savedProfile,
@@ -85,7 +83,6 @@ export function loadBrandProfile(): SavedBrandProfile | null {
     const stored = localStorage.getItem(CBRAND_PROFILE_KEY);
     return stored ? JSON.parse(stored) : null;
   } catch (error) {
-    console.error('Failed to load brand profile:', error);
     return null;
   }
 }
@@ -96,7 +93,6 @@ export function getSavedProfiles(): SavedBrandProfile[] {
     const stored = localStorage.getItem(CBRAND_PROFILES_KEY);
     return stored ? JSON.parse(stored) : [];
   } catch (error) {
-    console.error('Failed to load saved profiles:', error);
     return [];
   }
 }
@@ -158,7 +154,6 @@ export function setupAutoSave(
         const saved = saveBrandProfile(profile);
         onSave?.(saved);
       } catch (error) {
-        console.error('Auto-save failed:', error);
       }
     }
   }, 30000); // Auto-save every 30 seconds

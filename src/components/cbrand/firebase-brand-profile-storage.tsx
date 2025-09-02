@@ -40,7 +40,6 @@ export async function saveBrandProfile(profile: CompleteBrandProfile): Promise<S
 
     return savedProfile;
   } catch (error) {
-    console.error('Failed to save to Firestore, falling back to localStorage:', error);
     return saveBrandProfileToLocalStorage(profile);
   }
 }
@@ -58,7 +57,6 @@ export async function loadBrandProfile(): Promise<SavedBrandProfile | null> {
     const profile = await brandProfileFirebaseService.getLatestCompleteBrandProfile(userId);
     return profile;
   } catch (error) {
-    console.error('Failed to load from Firestore, falling back to localStorage:', error);
     return loadBrandProfileFromLocalStorage();
   }
 }
@@ -76,7 +74,6 @@ export async function getSavedProfiles(): Promise<SavedBrandProfile[]> {
     const profiles = await brandProfileFirebaseService.getUserBrandProfiles(userId);
     return profiles;
   } catch (error) {
-    console.error('Failed to load profiles from Firestore, falling back to localStorage:', error);
     return getSavedProfilesFromLocalStorage();
   }
 }
@@ -93,7 +90,6 @@ export async function deleteBrandProfile(id: string): Promise<void> {
   try {
     await brandProfileFirebaseService.delete(id);
   } catch (error) {
-    console.error('Failed to delete from Firestore, falling back to localStorage:', error);
     deleteBrandProfileFromLocalStorage(id);
   }
 }
@@ -112,7 +108,6 @@ export async function updateBrandProfile(
   try {
     await brandProfileFirebaseService.updateBrandProfile(id, updates);
   } catch (error) {
-    console.error('Failed to update profile in Firestore:', error);
     throw error;
   }
 }
@@ -144,7 +139,6 @@ function saveBrandProfileToLocalStorage(profile: CompleteBrandProfile): SavedBra
 
     return savedProfile;
   } catch (error) {
-    console.warn('Storage failed, trying without design examples:', error);
 
     const profileWithoutDesigns = {
       ...savedProfile,
@@ -166,7 +160,6 @@ function loadBrandProfileFromLocalStorage(): SavedBrandProfile | null {
     const stored = localStorage.getItem(CBRAND_PROFILE_KEY);
     return stored ? JSON.parse(stored) : null;
   } catch (error) {
-    console.error('Failed to load brand profile from localStorage:', error);
     return null;
   }
 }
@@ -176,7 +169,6 @@ function getSavedProfilesFromLocalStorage(): SavedBrandProfile[] {
     const stored = localStorage.getItem(CBRAND_PROFILES_KEY);
     return stored ? JSON.parse(stored) : [];
   } catch (error) {
-    console.error('Failed to load saved profiles from localStorage:', error);
     return [];
   }
 }
@@ -242,7 +234,6 @@ export function setupAutoSave(
         const saved = await saveBrandProfile(profile);
         onSave?.(saved);
       } catch (error) {
-        console.error('Auto-save failed:', error);
       }
     }
   }, 30000); // Auto-save every 30 seconds

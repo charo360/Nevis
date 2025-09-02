@@ -56,11 +56,9 @@ export const getEnhancedEventsTool = ai.defineTool({
 }, async (input) => {
   try {
     if (!process.env.EVENTBRITE_API_KEY) {
-      console.log('Eventbrite API key not configured, using fallback events');
       return getEventsFallback(input.location, input.businessType);
     }
 
-    console.log(`🎪 Fetching events from Eventbrite for ${input.location}...`);
 
     // Convert location to coordinates if needed
     const locationQuery = await geocodeLocation(input.location);
@@ -87,12 +85,10 @@ export const getEnhancedEventsTool = ai.defineTool({
     );
 
     if (!response.ok) {
-      console.log(`Eventbrite API error: ${response.status} ${response.statusText}`);
       throw new Error(`Eventbrite API error: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log(`✅ Eventbrite returned ${data.events?.length || 0} events`);
 
     // Process and filter events by business relevance
     const relevantEvents = processEventbriteEvents(data.events || [], input.businessType);
@@ -100,7 +96,6 @@ export const getEnhancedEventsTool = ai.defineTool({
     return relevantEvents.slice(0, 10);
 
   } catch (error) {
-    console.error('Error fetching Eventbrite events:', error);
     return getEventsFallback(input.location, input.businessType);
   }
 });
@@ -135,11 +130,9 @@ export const getEnhancedWeatherTool = ai.defineTool({
 }, async (input) => {
   try {
     if (!process.env.OPENWEATHER_API_KEY) {
-      console.log('OpenWeather API key not configured, using fallback weather');
       return getWeatherFallback(input.location, input.businessType);
     }
 
-    console.log(`🌤️ Fetching weather from OpenWeather for ${input.location}...`);
 
     // Current weather
     const currentParams = new URLSearchParams({
@@ -153,12 +146,10 @@ export const getEnhancedWeatherTool = ai.defineTool({
     );
 
     if (!currentResponse.ok) {
-      console.log(`OpenWeather API error: ${currentResponse.status} ${currentResponse.statusText}`);
       throw new Error(`OpenWeather API error: ${currentResponse.status}`);
     }
 
     const currentData = await currentResponse.json();
-    console.log(`✅ OpenWeather returned current weather for ${currentData.name}`);
 
     // Process weather data with business context
     const weatherContext = processWeatherData(currentData, input.businessType);
@@ -184,7 +175,6 @@ export const getEnhancedWeatherTool = ai.defineTool({
     return weatherContext;
 
   } catch (error) {
-    console.error('Error fetching weather:', error);
     return getWeatherFallback(input.location, input.businessType);
   }
 });
@@ -213,7 +203,6 @@ async function geocodeLocation(location: string): Promise<{lat: number, lon: num
       }
     }
   } catch (error) {
-    console.error('Error geocoding location:', error);
   }
   return null;
 }

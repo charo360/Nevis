@@ -70,7 +70,6 @@ export const getGoogleTrendsTool = ai.defineTool({
       .slice(0, 10);
       
   } catch (error) {
-    console.error('Error fetching Google Trends:', error);
     // Fallback to static trends
     return getStaticTrendsFallback(input.location, input.category);
   }
@@ -107,7 +106,6 @@ export const getSocialMediaTrendsTool = ai.defineTool({
       .slice(0, 15);
       
   } catch (error) {
-    console.error('Error fetching social media trends:', error);
     return getSocialMediaFallback(input.platform);
   }
 });
@@ -143,7 +141,6 @@ export const getCurrentEventsTool = ai.defineTool({
       .slice(0, 8);
       
   } catch (error) {
-    console.error('Error fetching current events:', error);
     return getCurrentEventsFallback(input.location, input.businessType);
   }
 });

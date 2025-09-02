@@ -31,7 +31,6 @@ export async function GET(req: Request) {
   const clientId = process.env.LINKEDIN_CLIENT_ID;
   if (!clientId) {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
-    console.error('LinkedIn client id missing');
     return NextResponse.redirect(`${baseUrl}/social-connect?error=linkedin_not_configured`);
   }
 
@@ -46,7 +45,6 @@ export async function GET(req: Request) {
   linkedinUrl.searchParams.append('state', state);
   linkedinUrl.searchParams.append('scope', scope);
 
-  console.log('LinkedIn start:', { state, demoUser, redirect: linkedinUrl.toString() });
 
   return NextResponse.redirect(linkedinUrl.toString());
 }

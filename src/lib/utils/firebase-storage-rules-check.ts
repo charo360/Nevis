@@ -24,14 +24,12 @@ export interface StorageRulesCheckResult {
  */
 export async function checkFirebaseStorageRules(userId: string): Promise<StorageRulesCheckResult> {
   try {
-    console.log('🧪 Checking Firebase Storage rules for user:', userId);
     
     // Create test data
     const testData = new Blob(['Firebase Storage Rules Test'], { type: 'text/plain' });
     const testFile = new File([testData], 'rules-test.txt', { type: 'text/plain' });
     const testPath = `generated-content/${userId}/rules-test-${Date.now()}.txt`;
     
-    console.log('📍 Test path:', testPath);
     
     let canUpload = false;
     let canRead = false;
@@ -40,33 +38,24 @@ export async function checkFirebaseStorageRules(userId: string): Promise<Storage
     
     try {
       // Test upload
-      console.log('📤 Testing upload permission...');
       const storageRef = ref(storage, testPath);
       const snapshot = await uploadBytes(storageRef, testFile);
       canUpload = true;
-      console.log('✅ Upload successful');
       
       try {
         // Test read
-        console.log('📥 Testing read permission...');
         downloadUrl = await getDownloadURL(snapshot.ref);
         canRead = true;
-        console.log('✅ Read successful');
         
         try {
           // Test delete
-          console.log('🗑️ Testing delete permission...');
           await deleteObject(snapshot.ref);
           canDelete = true;
-          console.log('✅ Delete successful');
         } catch (deleteError) {
-          console.warn('⚠️ Delete failed:', deleteError);
         }
       } catch (readError) {
-        console.warn('⚠️ Read failed:', readError);
       }
     } catch (uploadError) {
-      console.error('❌ Upload failed:', uploadError);
       
       return {
         success: false,
@@ -95,7 +84,6 @@ export async function checkFirebaseStorageRules(userId: string): Promise<Storage
     };
     
   } catch (error) {
-    console.error('❌ Storage rules check failed:', error);
     
     return {
       success: false,
@@ -156,13 +144,6 @@ service firebase.storage {
  * Log detailed Firebase Storage configuration
  */
 export function logFirebaseStorageConfig() {
-  console.log('🔧 Firebase Storage Configuration:');
-  console.log('Storage instance:', !!storage);
-  console.log('Storage app:', storage?.app?.name);
-  console.log('Storage bucket:', storage?.bucket);
-  console.log('Environment:', process.env.NODE_ENV);
-  console.log('Project ID:', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
-  console.log('Storage Bucket:', process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET);
 }
 
 // Export for global access in development

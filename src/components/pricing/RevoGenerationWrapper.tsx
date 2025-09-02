@@ -38,7 +38,6 @@ export function RevoGenerationWrapper({
         const credits = await getUserCredits(userId);
         setUserCredits(credits.remainingCredits);
       } catch (err) {
-        console.error('Failed to load credits:', err);
       }
     }
 
@@ -57,7 +56,6 @@ export function RevoGenerationWrapper({
         setCreditValidation(validation);
         setError(null);
       } catch (err) {
-        console.error('Credit validation failed:', err);
         setError('Failed to validate credits');
       }
     }
@@ -91,7 +89,6 @@ export function RevoGenerationWrapper({
       await onGenerate(selectedVersion);
 
     } catch (err) {
-      console.error('Generation failed:', err);
       setError(err instanceof Error ? err.message : 'Generation failed');
       
       // TODO: Refund credits if generation failed
@@ -208,7 +205,6 @@ export function RevoGenerationWrapper({
 // Usage example component
 export function ExampleRevoGeneration({ userId }: { userId: string }) {
   const handleGenerate = async (revoVersion: string) => {
-    console.log(`Generating with ${revoVersion}...`);
     
     // Simulate generation delay
     await new Promise(resolve => setTimeout(resolve, 2000));
@@ -216,7 +212,6 @@ export function ExampleRevoGeneration({ userId }: { userId: string }) {
     // Here you would call your actual generation API
     // const result = await generateContent(revoVersion, prompt);
     
-    console.log(`Generation complete with ${revoVersion}`);
   };
 
   return (

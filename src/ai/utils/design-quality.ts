@@ -192,7 +192,6 @@ export async function assessDesignQuality(
       ].filter(action => baseScore < 8.5 || action.priority === 'medium')
     };
   } catch (error) {
-    console.error('Design quality assessment failed:', error);
     throw new Error('Failed to assess design quality');
   }
 }

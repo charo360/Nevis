@@ -11,7 +11,6 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category') as 'social' | 'business' | 'tech' | 'design' | null;
     const format = searchParams.get('format') || 'full';
 
-    console.log('📡 API: Fetching trending data...', { category, format });
 
     if (category) {
       // Get trending keywords for specific category
@@ -65,7 +64,6 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ API Error fetching trending data:', error);
     
     return NextResponse.json({
       success: false,
@@ -81,7 +79,6 @@ export async function POST(request: NextRequest) {
     const { action, category } = body;
 
     if (action === 'refresh') {
-      console.log('🔄 API: Refreshing trending data cache...');
       
       // Force refresh by getting new data
       const trendingData = await rssService.getTrendingData();
@@ -103,7 +100,6 @@ export async function POST(request: NextRequest) {
     }, { status: 400 });
 
   } catch (error) {
-    console.error('❌ API Error in POST trending:', error);
     
     return NextResponse.json({
       success: false,

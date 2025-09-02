@@ -54,7 +54,6 @@ async function generateWithRetry(request: GenerateRequest, retries = 3, delay = 
       return result;
     } catch (e: any) {
       if (e.message && e.message.includes('503') && i < retries - 1) {
-        console.log(`Attempt ${i + 1} failed with 503. Retrying in ${delay}ms...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       } else {
         if (e.message && e.message.includes('503')) {
@@ -88,18 +87,11 @@ export async function generateGeminiHDEnhancedDesign(
 
     // Get platform-specific aspect ratio for proper image generation
     const aspectRatio = getPlatformAspectRatio(input.platform);
-    console.log(`🎯 Generating ${aspectRatio} aspect ratio for ${input.platform}`);
 
     // Build enhanced prompt optimized for Gemini 2.0 Flash HD generation
     const enhancedPrompt = buildGeminiHDPrompt(inputWithCleanText, aspectRatio);
     enhancementsApplied.push('Gemini 2.0 Flash HD Optimized Prompting', 'Text Validation & Cleaning');
 
-    console.log('🎨 Generating Ultra-HD design with Gemini 2.0 Flash...');
-    console.log('📝 Original text:', `"${input.imageText}"`);
-    console.log('🧹 Cleaned text:', `"${cleanedText}"`);
-    console.log('🔄 Text changed:', input.imageText !== cleanedText ? 'YES' : 'NO');
-    console.log('📏 Prompt length:', enhancedPrompt.length);
-    console.log('🎯 Full prompt preview:', enhancedPrompt.substring(0, 200) + '...');
 
     // Build prompt parts array with media inputs like standard generation
     const promptParts: any[] = [{ text: enhancedPrompt }];
@@ -159,8 +151,6 @@ export async function generateGeminiHDEnhancedDesign(
       enhancementsApplied.push('Brand Color Enforcement');
     }
 
-    console.log('✅ Gemini HD design generated successfully');
-    console.log('🔗 Image URL:', imageUrl);
 
     return {
       imageUrl,
@@ -169,7 +159,6 @@ export async function generateGeminiHDEnhancedDesign(
       processingTime: Date.now() - startTime,
     };
   } catch (error) {
-    console.error('❌ Error generating Gemini HD enhanced design:', error);
     throw new Error(`Gemini HD generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -534,17 +523,14 @@ export async function generateGeminiHDEnhancedDesignWithFallback(
 ): Promise<GeminiHDEnhancedDesignResult> {
   try {
     // First attempt: Gemini 2.0 Flash HD generation
-    console.log('🚀 Attempting Gemini 2.0 Flash HD generation...');
     return await generateGeminiHDEnhancedDesign(input);
   } catch (error) {
-    console.warn('⚠️ Gemini HD generation failed, attempting standard fallback:', error);
 
     try {
       // Fallback: Standard Gemini generation with enhanced prompting
       const startTime = Date.now();
       // Get platform-specific aspect ratio for fallback generation
       const aspectRatio = getPlatformAspectRatio(input.platform);
-      console.log(`🎯 Fallback generating ${aspectRatio} aspect ratio for ${input.platform}`);
 
       const enhancedPrompt = buildGeminiHDPrompt(input, aspectRatio);
 
@@ -595,7 +581,6 @@ export async function generateGeminiHDEnhancedDesignWithFallback(
         processingTime: Date.now() - startTime,
       };
     } catch (fallbackError) {
-      console.error('❌ Both Gemini HD and fallback generation failed:', fallbackError);
       throw new Error(`Gemini generation completely failed: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}`);
     }
   }

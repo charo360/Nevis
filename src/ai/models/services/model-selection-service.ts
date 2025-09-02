@@ -100,21 +100,17 @@ export class ModelSelectionService implements IModelSelectionService {
    */
   async selectBestModel(criteria: ModelSelectionCriteria): Promise<RevoModelId | null> {
     try {
-      console.log('🤖 Selecting best model based on criteria...');
       
       // Use the registry's selection logic
       const selectedModel = await modelRegistry.selectBestModel(criteria);
       
       if (selectedModel) {
-        console.log(`✅ Selected model: ${selectedModel.model.id}`);
         return selectedModel.model.id;
       }
       
-      console.warn('⚠️ No suitable model found');
       return null;
       
     } catch (error) {
-      console.error('❌ Model selection failed:', error);
       return null;
     }
   }
@@ -124,7 +120,6 @@ export class ModelSelectionService implements IModelSelectionService {
    */
   async recommendModelForUser(userProfile: UserProfile): Promise<ModelRecommendation> {
     try {
-      console.log('👤 Analyzing user profile for model recommendation...');
       
       const availableModels = await modelRegistry.getAvailableModels();
       const scoredModels = availableModels.map(model => ({
@@ -155,7 +150,6 @@ export class ModelSelectionService implements IModelSelectionService {
       };
 
     } catch (error) {
-      console.error('❌ User recommendation failed:', error);
       
       // Fallback recommendation
       return {

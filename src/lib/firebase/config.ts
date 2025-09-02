@@ -9,11 +9,6 @@ const isFirebaseConfigured =
   process.env.NEXT_PUBLIC_FIREBASE_API_KEY &&
   process.env.NEXT_PUBLIC_FIREBASE_API_KEY !== 'your_firebase_api_key_here';
 
-console.log('🔧 Firebase Configuration Check:');
-console.log('- API Key exists:', !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
-console.log('- API Key value:', process.env.NEXT_PUBLIC_FIREBASE_API_KEY?.substring(0, 10) + '...');
-console.log('- Project ID:', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
-console.log('- Is configured:', isFirebaseConfigured);
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'demo-key',
@@ -36,9 +31,7 @@ try {
     db = getFirestore(app);
     auth = getAuth(app);
     storage = getStorage(app);
-    console.log('✅ Firebase initialized successfully');
   } else {
-    console.warn('⚠️ Firebase not configured - using demo mode');
     // Create mock objects to prevent errors
     app = { options: firebaseConfig };
     db = null;
@@ -46,7 +39,6 @@ try {
     storage = null;
   }
 } catch (error) {
-  console.error('❌ Firebase initialization failed:', error);
   app = null;
   db = null;
   auth = null;

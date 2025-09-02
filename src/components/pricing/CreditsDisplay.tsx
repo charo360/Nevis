@@ -30,7 +30,6 @@ export function CreditsDisplay({ userId, showBuyButton = true, compact = false }
         setError(null);
       } catch (err) {
         setError('Failed to load credits');
-        console.error('Credits fetch error:', err);
       } finally {
         setLoading(false);
       }
@@ -184,7 +183,6 @@ export function CreditsIndicator({ userId }: { userId: string }) {
         const userCredits = await getUserCredits(userId);
         setCredits(userCredits);
       } catch (err) {
-        console.error('Credits fetch error:', err);
       }
     }
 

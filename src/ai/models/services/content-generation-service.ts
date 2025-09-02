@@ -45,10 +45,6 @@ export class ContentGenerationService implements IContentGenerationService {
     const startTime = Date.now();
     
     try {
-      console.log('🚀 Content Generation Service: Starting generation...');
-      console.log('- Model:', request.modelId);
-      console.log('- Platform:', request.platform);
-      console.log('- Business:', request.profile.businessName);
 
       // Validate request
       if (!this.validateRequest(request)) {
@@ -76,13 +72,11 @@ export class ContentGenerationService implements IContentGenerationService {
       const result = await model.contentGenerator.generateContent(request);
 
       const totalTime = Date.now() - startTime;
-      console.log(`✅ Content generated successfully in ${totalTime}ms`);
 
       return result;
 
     } catch (error) {
       const totalTime = Date.now() - startTime;
-      console.error('❌ Content generation failed:', error);
 
       return {
         success: false,
@@ -106,7 +100,6 @@ export class ContentGenerationService implements IContentGenerationService {
     criteria?: ModelSelectionCriteria
   ): Promise<GenerationResponse<GeneratedPost>> {
     try {
-      console.log('🤖 Auto-selecting best model for content generation...');
 
       // Determine best model
       const selectedModel = await this.getRecommendedModel(request, criteria);
@@ -114,7 +107,6 @@ export class ContentGenerationService implements IContentGenerationService {
         throw new Error('No suitable model found for content generation');
       }
 
-      console.log(`✅ Selected model: ${selectedModel}`);
 
       // Generate content with selected model
       return await this.generateContent({
@@ -123,7 +115,6 @@ export class ContentGenerationService implements IContentGenerationService {
       });
 
     } catch (error) {
-      console.error('❌ Auto-selection content generation failed:', error);
       
       return {
         success: false,
@@ -143,7 +134,6 @@ export class ContentGenerationService implements IContentGenerationService {
    * Generate multiple content pieces in batch
    */
   async batchGenerateContent(requests: ContentGenerationRequest[]): Promise<GenerationResponse<GeneratedPost>[]> {
-    console.log(`📦 Batch generating ${requests.length} content pieces...`);
 
     const results = await Promise.allSettled(
       requests.map(request => this.generateContent(request))
@@ -153,7 +143,6 @@ export class ContentGenerationService implements IContentGenerationService {
       if (result.status === 'fulfilled') {
         return result.value;
       } else {
-        console.error(`❌ Batch item ${index} failed:`, result.reason);
         return {
           success: false,
           error: result.reason instanceof Error ? result.reason.message : 'Batch generation failed',
@@ -198,7 +187,6 @@ export class ContentGenerationService implements IContentGenerationService {
       return selectedModel?.model.id || null;
 
     } catch (error) {
-      console.error('❌ Model recommendation failed:', error);
       return null;
     }
   }

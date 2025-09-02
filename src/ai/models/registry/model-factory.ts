@@ -77,7 +77,6 @@ class ModelFactory implements IModelFactory {
     // Remove from cache to force recreation with new config
     this.instanceCache.delete(modelId);
     
-    console.log(`🔧 Configuration override set for model ${modelId}`);
   }
 
   /**
@@ -87,7 +86,6 @@ class ModelFactory implements IModelFactory {
     this.configOverrides.delete(modelId);
     this.instanceCache.delete(modelId);
     
-    console.log(`🔧 Configuration override cleared for model ${modelId}`);
   }
 
   /**
@@ -116,7 +114,6 @@ class ModelFactory implements IModelFactory {
     );
 
     if (errors.length > 0) {
-      console.warn('⚠️ Some models failed to create:', errors);
     }
 
     return results;
@@ -214,20 +211,16 @@ class ModelFactory implements IModelFactory {
   reset(): void {
     this.instanceCache.clear();
     this.configOverrides.clear();
-    console.log('🔄 Model Factory reset');
   }
 
   /**
    * Preload commonly used models
    */
   async preloadModels(modelIds: RevoModelId[] = ['revo-1.5', 'revo-2.0']): Promise<void> {
-    console.log('🚀 Preloading models:', modelIds);
     
     try {
       await this.createModels(modelIds);
-      console.log('✅ Models preloaded successfully');
     } catch (error) {
-      console.warn('⚠️ Some models failed to preload:', error);
     }
   }
 

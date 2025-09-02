@@ -71,7 +71,6 @@ function ContentCalendarPageContent() {
   // Load content when brand changes using unified brand system
   useBrandChangeListener(React.useCallback((brand) => {
     const brandName = brand?.businessName || brand?.name || 'none';
-    console.log('🔄 Content Calendar: brand changed to:', brandName);
 
     if (!brand) {
       setScheduledContent([]);
@@ -91,17 +90,14 @@ function ContentCalendarPageContent() {
           description: service.description || ''
         }));
         setServices(serviceObjects);
-        console.log(`✅ Loaded ${serviceObjects.length} services for brand ${brandName}`);
       }
 
       // Load scheduled content from brand-scoped storage
       if (scheduleStorage) {
         const storedSchedule = scheduleStorage.getItem<ScheduledContent[]>() || [];
         setScheduledContent(storedSchedule);
-        console.log(`✅ Loaded ${storedSchedule.length} scheduled items for brand ${brandName}`);
       }
     } catch (error) {
-      console.error('Failed to load content calendar data for brand:', brandName, error);
       toast({
         variant: "destructive",
         title: "Failed to load data",
@@ -118,31 +114,25 @@ function ContentCalendarPageContent() {
       // Only redirect if we're sure there are no brands AND no current brand is selected
       // This prevents premature redirects during the loading process
       if (!currentBrand && brands.length === 0) {
-        console.log('🔄 Content Calendar: No brands found after loading completed, redirecting to brand setup');
         router.push('/brand-profile');
       } else if (currentBrand) {
-        console.log(`✅ Content Calendar: Brand available: ${currentBrand.businessName || currentBrand.name}`);
       } else if (brands.length > 0) {
-        console.log(`✅ Content Calendar: ${brands.length} brands available, waiting for brand selection`);
       }
       // Removed auto-selection to prevent unwanted brand switching
       // Let the unified brand context handle brand restoration from localStorage
     } else {
-      console.log('🔄 Content Calendar: Still loading brands...');
     }
   }, [currentBrand, brands.length, brandLoading, router]);
 
   // Save scheduled content to brand-scoped storage
   const saveScheduledContent = (content: ScheduledContent[]) => {
     if (!scheduleStorage) {
-      console.warn('No schedule storage available for current brand');
       return;
     }
 
     try {
       scheduleStorage.setItem(content);
       setScheduledContent(content);
-      console.log(`💾 Saved ${content.length} scheduled items for brand ${currentBrand?.businessName || currentBrand?.name}`);
     } catch (error) {
       toast({
         variant: "destructive",

@@ -60,7 +60,6 @@ export function ChatMessages({ messages, isLoading, onSetReferenceAsset, onEditI
         description: `High-definition ${type} downloaded successfully.`,
       });
     } catch (error) {
-      console.error('Download failed:', error);
       toast({
         variant: 'destructive',
         title: 'Download Failed',

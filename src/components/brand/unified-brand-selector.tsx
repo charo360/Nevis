@@ -36,7 +36,6 @@ export function UnifiedBrandSelector() {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleBrandSelect = (brand: CompleteBrandProfile) => {
-    console.log('🎯 Brand selector: selecting brand:', brand.businessName || brand.name);
     selectBrand(brand);
     setIsOpen(false);
   };

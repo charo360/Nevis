@@ -35,7 +35,6 @@ export class TrendingContentEnhancer {
       return this.trendingCache;
     }
 
-    console.log('🔄 Refreshing trending data cache...');
     this.trendingCache = await rssService.getTrendingData();
     this.lastCacheUpdate = now;
     
@@ -62,7 +61,6 @@ export class TrendingContentEnhancer {
       // Extract industry-specific buzz
       const industryBuzz = this.extractIndustryBuzz(trendingData, context.businessType);
 
-      console.log(`✅ Generated trending enhancement with ${relevantKeywords.length} keywords, ${hashtags.length} hashtags`);
 
       return {
         keywords: relevantKeywords.slice(0, 15),
@@ -73,7 +71,6 @@ export class TrendingContentEnhancer {
       };
 
     } catch (error) {
-      console.error('❌ Error getting trending enhancement:', error);
       
       // Return fallback data
       return {

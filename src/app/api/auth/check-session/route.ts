@@ -41,7 +41,6 @@ export async function POST(req: Request) {
 
       return NextResponse.json({ ok: true, lastActive: session.lastActive, sessionExpiresAt: session.sessionExpiresAt });
     } catch (e: any) {
-      console.error('Check session: Firestore read error', e);
       // Detect Firestore permission errors and return a helpful hint
       const msg = String(e?.message || e);
       if (msg.includes('PERMISSION_DENIED') || msg.includes('Missing or insufficient permissions')) {
@@ -50,7 +49,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, reason: 'error' }, { status: 500 });
     }
   } catch (error: any) {
-    console.error('Check-session error:', error);
     return NextResponse.json({ error: error?.message || String(error) }, { status: 500 });
   }
 }

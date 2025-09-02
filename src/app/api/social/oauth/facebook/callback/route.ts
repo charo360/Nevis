@@ -42,12 +42,10 @@ export async function GET(req: Request) {
     const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/api/social/oauth/facebook/callback`;
 
     if (!code) {
-      console.error('Facebook callback missing code');
       return NextResponse.json({ error: 'Missing code' }, { status: 400 });
     }
 
     if (!clientId || !clientSecret) {
-      console.error('Facebook client ID/secret not configured');
       return NextResponse.json({ error: 'Facebook not configured' }, { status: 500 });
     }
 
@@ -62,7 +60,6 @@ export async function GET(req: Request) {
     const tokenJson: any = await tokenRes.json();
 
     if (tokenJson.error) {
-      console.error('Facebook token error:', tokenJson.error);
       return NextResponse.json({ error: tokenJson.error }, { status: 400 });
     }
 
@@ -77,7 +74,6 @@ export async function GET(req: Request) {
     const profileJson: any = await profileRes.json();
 
     if (profileJson.error) {
-      console.error('Facebook profile error:', profileJson.error);
       return NextResponse.json({ error: profileJson.error }, { status: 400 });
     }
 
@@ -97,7 +93,6 @@ export async function GET(req: Request) {
 
     return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect`);
   } catch (error) {
-    console.error('Facebook callback failed', error);
     return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect?error=facebook_failed`);
   }
 }

@@ -49,7 +49,6 @@ function ArtifactsBrandScopedPageContent() {
 
     try {
       if (!currentBrand?.id) {
-        console.log('📂 No brand selected, clearing artifacts');
         setArtifacts([]);
         setSelectedArtifacts([]);
         setIsLoading(false);
@@ -57,7 +56,6 @@ function ArtifactsBrandScopedPageContent() {
       }
 
       const brandName = currentBrand.businessName || currentBrand.name;
-      console.log(`📂 Loading artifacts for brand: ${brandName} (${currentBrand.id})`);
 
       // The unified brand context already ensures the service is set to the current brand
       // Load all artifacts for this brand
@@ -69,11 +67,8 @@ function ArtifactsBrandScopedPageContent() {
       const activeIds = activeArtifacts.map(a => a.id);
       setSelectedArtifacts(activeIds);
 
-      console.log(`✅ Loaded ${brandArtifacts.length} artifacts for brand ${brandName}`);
-      console.log(`✅ ${activeIds.length} artifacts are active`);
 
     } catch (error) {
-      console.error('Failed to load artifacts:', error);
     } finally {
       setIsLoading(false);
     }
@@ -82,8 +77,6 @@ function ArtifactsBrandScopedPageContent() {
   // Listen for brand changes using the unified system
   useBrandChangeListener(useCallback((brand) => {
     const brandName = brand?.businessName || brand?.name || 'none';
-    console.log('🔄 Unified artifacts page: brand changed to:', brandName);
-    console.log('🔄 Brand ID:', brand?.id || 'none');
 
     // The unified brand context already updates the artifacts service
     // We just need to reload the artifacts for the UI
@@ -101,46 +94,32 @@ function ArtifactsBrandScopedPageContent() {
     // Update the service
     brandScopedArtifactsService.setArtifactActive(artifactId, !isSelected);
 
-    console.log(`🔧 Toggled artifact ${artifactId}: ${!isSelected ? 'selected' : 'deselected'}`);
   };
 
   // Debug function to test artifact states
   const debugArtifactStates = () => {
     if (!currentBrand) {
-      console.warn('No brand selected for debug');
       return;
     }
 
-    console.log('🔍 === BRAND-SCOPED ARTIFACT DEBUG TEST ===');
     const allArtifacts = brandScopedArtifactsService.getAllArtifacts();
     const activeArtifacts = brandScopedArtifactsService.getActiveArtifacts();
 
-    console.log(`📊 Total artifacts for brand ${currentBrand.businessName || currentBrand.name}: ${allArtifacts.length}`);
-    console.log(`✅ Active artifacts: ${activeArtifacts.length}`);
-    console.log(`🎯 Selected in UI: ${selectedArtifacts.length}`);
 
-    console.log('📋 All artifacts details:');
     allArtifacts.forEach(a => {
-      console.log(`  - ${a.name}: isActive=${a.isActive}, usageType=${a.usageType}, instructions="${a.instructions}"`);
     });
 
-    console.log('✅ Active artifacts details:');
     activeArtifacts.forEach(a => {
-      console.log(`  - ${a.name}: instructions="${a.instructions}"`);
     });
 
-    console.log('🎯 Selected artifacts in UI:', selectedArtifacts);
-    console.log('🔍 === END BRAND-SCOPED DEBUG TEST ===');
   };
 
   // Fix missing instructions in existing artifacts
   const fixMissingInstructions = () => {
     if (!currentBrand) {
-      console.warn('No brand selected for fix instructions');
       return;
     }
 
-    console.log(`🔧 Fixing missing instructions for brand ${currentBrand.businessName || currentBrand.name}...`);
     // Note: We would need to implement this in the brand-scoped service
     // For now, just reload artifacts
     loadArtifacts();
@@ -149,13 +128,11 @@ function ArtifactsBrandScopedPageContent() {
   // Delete artifact
   const handleDeleteArtifact = (artifactId: string) => {
     if (!currentBrand) {
-      console.warn('No brand selected for delete');
       return;
     }
 
     if (confirm('Are you sure you want to delete this artifact?')) {
       // Note: We would need to implement deleteArtifact in the brand-scoped service
-      console.log(`🗑️ Deleting artifact ${artifactId} for brand ${currentBrand.businessName || currentBrand.name}`);
       loadArtifacts();
     }
   };
@@ -532,7 +509,6 @@ function ArtifactsBrandScopedPageContent() {
 
               <UploadZone
                 onUploadComplete={(artifactIds) => {
-                  console.log('Uploaded artifacts:', artifactIds);
                   loadArtifacts();
                   setShowUploadZone(null);
                 }}

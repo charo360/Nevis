@@ -44,7 +44,6 @@ export default function TrendingDemo() {
       }
     } catch (err) {
       setError('Network error occurred');
-      console.error('Error fetching trending data:', err);
     } finally {
       setLoading(false);
     }
@@ -63,7 +62,6 @@ export default function TrendingDemo() {
       };
       setEnhancement(mockEnhancement);
     } catch (err) {
-      console.error('Error fetching enhancement:', err);
     }
   };
 
@@ -80,7 +78,6 @@ export default function TrendingDemo() {
         await fetchTrendingData();
       }
     } catch (err) {
-      console.error('Error refreshing data:', err);
     }
   };
 

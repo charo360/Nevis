@@ -22,14 +22,11 @@ export async function POST(req: NextRequest) {
         emailVerified: user.emailVerified,
         providers: user.providerData?.map(p => p.providerId) || [],
       }
-      console.info('debug-user: found user for', normalizedEmail, 'uid:', user.uid)
       return NextResponse.json({ ok: true, user: masked })
     } catch (err: any) {
-      console.warn('debug-user: adminAuth.getUserByEmail error for', normalizedEmail, err && err.message ? err.message : err)
       return NextResponse.json({ ok: false, error: 'User not found in Firebase Auth' }, { status: 404 })
     }
   } catch (err: any) {
-    console.error('debug-user error', err)
     return NextResponse.json({ error: err?.message || 'server error' }, { status: 500 })
   }
 }

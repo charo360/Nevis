@@ -41,7 +41,6 @@ export async function POST(req: NextRequest) {
           }
         }
       } catch (fileErr) {
-        console.warn('No local fallback for verify-code or read failed', fileErr)
       }
     }
 
@@ -63,12 +62,10 @@ export async function POST(req: NextRequest) {
         await fs.writeFile(file, JSON.stringify(arr, null, 2), 'utf-8')
       }
     } catch (markErr) {
-      console.warn('Failed to mark code used in primary store', markErr)
     }
 
     return NextResponse.json({ ok: true })
   } catch (err: any) {
-    console.error('verify-code error', err)
     return NextResponse.json({ error: err.message || 'server error' }, { status: 500 })
   }
 }

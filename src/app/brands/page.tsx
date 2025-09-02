@@ -63,10 +63,6 @@ export default function BrandsPage() {
   };
 
   const handleViewBrand = (brand: any) => {
-    console.log('🎯 handleViewBrand called with brand:', brand);
-    console.log('🎯 Brand object keys:', Object.keys(brand || {}));
-    console.log('🎯 Brand businessName:', brand?.businessName);
-    console.log('🎯 Brand id:', brand?.id);
     selectBrand(brand);
     router.push('/dashboard');
   };

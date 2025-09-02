@@ -117,7 +117,6 @@ export async function generateEnhancedDesign(
           .map(t => t.name);
         enhancementsApplied.push('Trend Integration');
       } catch (error) {
-        console.warn('Trend integration failed:', error);
       }
     }
 
@@ -153,7 +152,6 @@ export async function generateEnhancedDesign(
           const variantResult = await generateVariantDesign(request, variant);
           generatedDesigns.push(variantResult);
         } catch (error) {
-          console.warn(`Failed to generate variant ${variant.name}:`, error);
         }
       }
     }
@@ -174,7 +172,6 @@ export async function generateEnhancedDesign(
         generatedDesigns[0].quality = qualityAssessment;
         enhancementsApplied.push('Quality Validation');
       } catch (error) {
-        console.warn('Quality assessment failed:', error);
       }
     }
 
@@ -202,7 +199,6 @@ export async function generateEnhancedDesign(
           reasoning: evaluation.recommendation.reasoning
         };
       } catch (error) {
-        console.warn('A/B test evaluation failed:', error);
       }
     }
 
@@ -230,7 +226,6 @@ export async function generateEnhancedDesign(
           }
         );
       } catch (error) {
-        console.warn('Analytics recording failed:', error);
       }
     });
 
@@ -267,7 +262,6 @@ export async function generateEnhancedDesign(
     return result;
 
   } catch (error) {
-    console.error('Enhanced design generation failed:', error);
     throw new Error(`Enhanced design generation failed: ${error.message}`);
   }
 }
@@ -313,12 +307,9 @@ async function generatePrimaryDesign(request: EnhancedDesignRequest) {
     if (imageUrl) {
       const { cropImageFromUrl, needsAspectRatioCorrection } = await import('@/lib/image-processing');
       if (needsAspectRatioCorrection(request.platform)) {
-        console.log(`🖼️ Applying aspect ratio correction for ${request.platform}...`);
         try {
           imageUrl = await cropImageFromUrl(imageUrl, request.platform);
-          console.log(`✅ Image cropped successfully for ${request.platform}`);
         } catch (cropError) {
-          console.warn('⚠️ Image cropping failed, using original:', cropError);
           // Continue with original image if cropping fails
         }
       }
@@ -382,9 +373,7 @@ async function generateVariantDesign(request: EnhancedDesignRequest, variant: De
       // Since we don't have platform info here, we'll crop to landscape by default
       // This is a fallback - ideally we'd pass platform info to this function
       imageUrl = await cropImageFromUrl(imageUrl, 'linkedin'); // Default to LinkedIn format
-      console.log(`✅ Variant image cropped successfully`);
     } catch (cropError) {
-      console.warn('⚠️ Variant image cropping failed, using original:', cropError);
       // Continue with original image if cropping fails
     }
   }

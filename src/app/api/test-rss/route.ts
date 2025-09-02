@@ -11,13 +11,11 @@ export async function GET(request: NextRequest) {
     const location = searchParams.get('location') || 'Kenya';
     const businessType = searchParams.get('businessType') || 'restaurant';
 
-    console.log('🧪 Starting RSS feeds test...');
     
     // Capture console output
     const originalLog = console.log;
     const logs: string[] = [];
     
-    console.log = (...args) => {
       logs.push(args.join(' '));
       originalLog(...args);
     };
@@ -26,7 +24,6 @@ export async function GET(request: NextRequest) {
     await testRSSFeeds(location, businessType);
     
     // Restore console.log
-    console.log = originalLog;
 
     return NextResponse.json({
       success: true,
@@ -38,7 +35,6 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ RSS test API failed:', error);
     return NextResponse.json({
       success: false,
       error: (error as Error).message,

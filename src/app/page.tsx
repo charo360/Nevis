@@ -140,7 +140,6 @@ export default function HomePage() {
 
         // If server can't verify due to permission issues, keep showing dashboard but warn in console
         if (json.reason === 'permission_denied') {
-          console.warn('check-session: server returned permission_denied - showing dashboard client-side until server is fixed', json.hint || json);
           setSessionActive(true);
           return;
         }
@@ -148,7 +147,6 @@ export default function HomePage() {
         // Default: keep dashboard visible
         setSessionActive(true);
       } catch (e) {
-        console.warn('check-session failed, defaulting to client-side session active', e);
         setSessionActive(true);
       }
     })();
@@ -157,11 +155,9 @@ export default function HomePage() {
   }, [user, signOut]);
 
   const handleGetStarted = () => {
-    console.log('Get Started clicked - navigating to /auth');
     try {
       router.push('/auth');
     } catch (error) {
-      console.error('Navigation error:', error);
     }
   };
 
@@ -190,19 +186,16 @@ export default function HomePage() {
         await stripe.redirectToCheckout({ sessionId: data.id });
       }
     } catch (err: any) {
-      console.error('Checkout error', err);
       toast({ variant: 'destructive', title: 'Checkout failed', description: String(err.message || err) });
     }
   };
 
   const handleSignIn = () => {
-    console.log('Sign In clicked - navigating to /auth');
     router.push('/auth');
   };
 
   const handleWatchDemo = () => {
     // Add demo video functionality later
-    console.log('Watch demo clicked');
   };
 
   return (

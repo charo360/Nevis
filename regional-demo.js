@@ -111,34 +111,13 @@ Sharp!`;
 }
 
 // Demonstrate the regional communication
-console.log('🌍 REGIONAL COMMUNICATION DEMONSTRATION');
-console.log('=' .repeat(80));
 
 sampleBusinesses.forEach(business => {
-  console.log(`\n🏢 ${business.name} (${business.location})`);
-  console.log('-'.repeat(60));
   
   const profile = regionalProfiles[business.region];
-  console.log(`📱 Communication Style: ${profile.businessStyle}`);
-  console.log(`🎯 Advertising Approach: ${profile.advertisingApproach}`);
-  console.log(`🗣️  Sample Greetings: ${profile.greetings.join(', ')}`);
   
   const content = generateRegionalContent(business);
   
-  console.log('\n📝 GENERATED CONTENT:');
-  console.log(`📰 Headline: "${content.headline}"`);
-  console.log(`💬 Caption: "${content.caption}"`);
-  console.log(`🎯 CTA: "${content.cta}"`);
-  console.log(`🏷️  Hashtags: ${content.hashtags.join(' ')}`);
   
-  console.log('\n' + '='.repeat(80));
 });
 
-console.log('\n✅ This shows how the AI now understands:');
-console.log('   • Local greetings and expressions');
-console.log('   • Regional communication styles');
-console.log('   • Cultural advertising approaches');
-console.log('   • Authentic local language mixing');
-console.log('   • Community-focused messaging');
-console.log('   • Region-specific hashtags');
-console.log('\n🎯 The content now feels genuinely LOCAL and engaging!');

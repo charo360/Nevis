@@ -135,9 +135,6 @@ export function WebsiteAnalysisStep({
       setAnalysisProgress('📊 Processing analysis results and organizing data...');
 
       // Debug: Log what business name was extracted
-      console.log('🏢 AI Extracted Business Name:', result.businessName);
-      console.log('🏭 AI Extracted Business Type:', result.businessType);
-      console.log('📝 AI Extracted Description:', result.description);
 
       // Ensure we have a proper business name - fallback to extracting from URL if needed
       let businessName = result.businessName?.trim();
@@ -155,12 +152,9 @@ export function WebsiteAnalysisStep({
 
       // If business name seems generic and business type seems specific, they might be swapped
       if (businessNameHasGenericWords && businessTypeHasSpecificWords && businessType && businessType.length > 2) {
-        console.log('🔄 Detected potential name/type swap. Swapping them.');
-        console.log('🔄 Original Name:', businessName, '→ Type:', businessType);
         const temp = businessName;
         businessName = businessType;
         businessType = temp;
-        console.log('🔄 After swap Name:', businessName, '→ Type:', businessType);
       }
 
       if (!businessName || businessName.length < 2) {
@@ -170,7 +164,6 @@ export function WebsiteAnalysisStep({
           const domain = urlObj.hostname.replace(/^www\./, '');
           const domainParts = domain.split('.');
           businessName = domainParts[0].charAt(0).toUpperCase() + domainParts[0].slice(1);
-          console.log('🔄 Using domain-based business name:', businessName);
         } catch {
           businessName = 'New Business';
         }
@@ -211,8 +204,6 @@ export function WebsiteAnalysisStep({
       const backgroundColor = '#F8FAFC'; // Default background
 
       // Debug: Log what we're actually saving
-      console.log('💾 Saving Business Name:', businessName);
-      console.log('💾 Saving Business Type:', businessType || '');
 
       // Update the brand profile with comprehensive analysis results
       updateBrandProfile({
@@ -286,7 +277,6 @@ export function WebsiteAnalysisStep({
 
     } catch (error) {
       // This catch is now for unexpected errors only
-      console.error('Unexpected analysis error:', error);
       setAnalysisProgress('');
       setDialogType('error');
       setDialogMessage('An unexpected error occurred during analysis.');

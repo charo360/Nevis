@@ -227,8 +227,6 @@ function getPlatformOptimization(platform: string): string {
 
 // Advanced real-time context gathering for Revo 1.0 (enhanced version)
 async function gatherRealTimeContext(businessType: string, location: string, platform: string) {
-  console.log('🌐 Revo 1.0: Gathering enhanced context data...');
-
   const context: any = {
     trends: [],
     weather: null,
@@ -247,45 +245,29 @@ async function gatherRealTimeContext(businessType: string, location: string, pla
 
   try {
     // Generate contextual trends based on business type and location
-    console.log('📈 Generating contextual trends...');
     context.trends = generateContextualTrends(businessType, location);
-    console.log(`✅ Generated ${context.trends.length} contextual trends`);
 
     // Generate weather-appropriate content suggestions
-    console.log('🌤️ Generating weather context...');
     context.weather = generateWeatherContext(location);
-    console.log(`✅ Weather context: ${context.weather.condition}`);
 
     // Generate local business opportunities
-    console.log('🎪 Generating local opportunities...');
     context.events = generateLocalOpportunities(businessType, location);
-    console.log(`✅ Found ${context.events.length} business opportunities`);
 
     // NEW: Enhanced local language and cultural context
-    console.log('🗣️ Generating local language context...');
     context.localLanguage = generateLocalLanguageContext(location);
-    console.log(`✅ Local language context: ${context.localLanguage.primaryLanguage}`);
 
     // NEW: Advanced climate insights for business relevance
-    console.log('🌍 Generating climate insights...');
     context.climateInsights = generateClimateInsights(location, businessType);
-    console.log(`✅ Climate insights: ${context.climateInsights.businessImpact}`);
 
     // NEW: Real-time trending topics (simulated for now, can be enhanced with actual APIs)
-    console.log('🔥 Generating trending topics...');
     context.trendingTopics = generateTrendingTopics(businessType, location, platform);
-    console.log(`✅ Generated ${context.trendingTopics.length} trending topics`);
 
     // NEW: Local news and market insights
-    console.log('📰 Generating local news context...');
     context.news = generateLocalNewsContext(businessType, location);
-    console.log(`✅ Generated ${context.news.length} news insights`);
 
-    console.log('✅ Enhanced context gathered successfully');
     return context;
 
   } catch (error) {
-    console.error('❌ Error gathering enhanced context:', error);
     return context; // Return partial context
   }
 }
@@ -692,7 +674,6 @@ ${industryIntel.industryTrends.slice(0, 3).map((trend, i) => `${i + 1}. ${trend}
 
 // NEW: Business Intelligence Engine - Local Marketing Expert System
 function getBusinessIntelligenceEngine(businessType: string, location: string): any {
-  console.log(`🔍 Business Intelligence Engine: Looking up "${businessType}" (${businessType.toLowerCase()})`);
   const businessIntelligence: Record<string, any> = {
     'restaurant': {
       name: 'Restaurant & Food Service',
@@ -1196,7 +1177,6 @@ function getBusinessIntelligenceEngine(businessType: string, location: string): 
   };
 
   const result = businessIntelligence[businessType.toLowerCase()] || businessIntelligence['default'];
-  console.log(`✅ Business Intelligence Engine: Found "${result.name}" with ${result.localPhrases?.length || 0} local phrases`);
   return result;
 }
 
@@ -1478,8 +1458,6 @@ const apiKey =
   process.env.NEXT_PUBLIC_GOOGLE_GENAI_API_KEY;
 
 if (!apiKey) {
-  console.error("❌ No Google AI API key found for Revo 1.0");
-  console.error("Available env vars:", {
     server: {
       GEMINI_API_KEY: !!process.env.GEMINI_API_KEY,
       GOOGLE_API_KEY: !!process.env.GOOGLE_API_KEY,
@@ -1519,11 +1497,6 @@ export async function generateRevo10Content(input: {
   visualStyle?: string;
 }) {
   try {
-    console.log('🚀 Revo 1.0: Starting ADVANCED content generation with deep business intelligence...');
-
-    // 🧠 ADVANCED BUSINESS INTELLIGENCE SYSTEM
-    console.log('🧠 Initializing Advanced Business Intelligence System...');
-
     // Convert input to BusinessProfile for advanced analysis
     const businessProfile: BusinessProfile = {
       businessName: input.businessName,
@@ -1536,7 +1509,6 @@ export async function generateRevo10Content(input: {
     };
 
     // 📊 GENERATE ADVANCED CONTENT WITH DEEP ANALYSIS
-    console.log('📊 Generating content with advanced business analysis...');
     const advancedContent = await advancedContentGenerator.generateEngagingContent(
       businessProfile,
       input.platform,
@@ -1544,7 +1516,6 @@ export async function generateRevo10Content(input: {
     );
 
     // 🎯 GET TRENDING INSIGHTS FOR ENHANCED RELEVANCE
-    console.log('🎯 Integrating trending insights...');
     const trendingEnhancement = await trendingEnhancer.getTrendingEnhancement({
       businessType: input.businessType,
       platform: input.platform,
@@ -1553,16 +1524,10 @@ export async function generateRevo10Content(input: {
     });
 
     // 📈 ANALYZE PERFORMANCE FOR CONTINUOUS IMPROVEMENT
-    console.log('📈 Analyzing performance benchmarks...');
     const performanceAnalysis = performanceAnalyzer.analyzePerformance(
       advancedContent,
       businessProfile
     );
-
-    console.log('✅ Advanced content analysis complete!');
-    console.log(`🎯 Generated ${advancedContent.hashtags.length} strategic hashtags`);
-    console.log(`📊 Found ${trendingEnhancement.keywords.length} trending keywords`);
-    console.log(`🚀 Performance recommendations: ${performanceAnalysis.recommendations.length}`);
 
     // Extract hashtags from advanced content for use in business-specific generation
     const hashtags = advancedContent.hashtags;
@@ -1595,23 +1560,16 @@ export async function generateRevo10Content(input: {
       .replace('{competitiveAdvantages}', input.competitiveAdvantages || '')
       .replace('{contentThemes}', input.contentThemes.join(', ') || 'general business content');
 
-    console.log('📝 Revo 1.0: Generating content with enhanced AI capabilities...');
 
     // 🎨 CREATIVE CAPTION GENERATION: Apply creative enhancement system
-    console.log('🎨 Applying creative enhancement to caption generation...');
 
     // NEW: Get business intelligence and local marketing expertise
     const businessIntel = getBusinessIntelligenceEngine(input.businessType, input.location);
     const randomSeed = Math.floor(Math.random() * 10000) + Date.now();
     const uniqueContentVariation = generateUniqueContentVariation(input.businessType, input.location, randomSeed % 1000);
 
-    console.log('🏢 Business Intelligence:', businessIntel.name);
-    console.log('🎯 Content Strategy:', uniqueContentVariation.contentStrategy.name);
-    console.log('✍️ Writing Style:', uniqueContentVariation.writingStyle.name);
-    console.log('📐 Content Angle:', uniqueContentVariation.contentAngle.type);
 
     // 🎯 NEW: Generate business-specific content strategy
-    console.log('🎯 Revo 1.0: Generating business-specific content strategy...');
 
     const businessDetails = {
       experience: '5+ years', // Could be extracted from business profile
@@ -1631,14 +1589,8 @@ export async function generateRevo10Content(input: {
       'awareness' // Can be dynamic based on business goals
     );
 
-    console.log('✅ Business-specific content strategy generated:');
-    console.log(`- Content Goal: ${contentPlan.strategy.goal}`);
-    console.log(`- Business Strengths: ${contentPlan.businessStrengths.join(', ')}`);
-    console.log(`- Market Opportunities: ${contentPlan.marketOpportunities.join(', ')}`);
-    console.log(`- Value Proposition: ${contentPlan.valueProposition}`);
 
     // 🎨 NEW: Generate business-specific headlines and subheadlines with AI
-    console.log('🎨 Revo 1.0: Generating AI-powered business-specific headlines and subheadlines...');
 
     const businessHeadline = await generateBusinessSpecificHeadline(
       input.businessType,
@@ -1662,14 +1614,8 @@ export async function generateRevo10Content(input: {
       advancedContent
     );
 
-    console.log('✅ Business-specific content components generated:');
-    console.log(`- Headline: "${businessHeadline.headline}"`);
-    console.log(`- Approach: ${businessHeadline.approach}`);
-    console.log(`- Subheadline: "${businessSubheadline.subheadline}"`);
-    console.log(`- Framework: ${businessSubheadline.framework}`);
 
     // 📝 NEW: Generate AI-powered business-specific caption
-    console.log('📝 Revo 1.0: Generating AI-powered business-specific caption...');
 
     const businessCaption = await generateBusinessSpecificCaption(
       input.businessType,
@@ -1682,30 +1628,12 @@ export async function generateRevo10Content(input: {
       advancedContent
     );
 
-    console.log('✅ Business-specific caption generated:');
-    console.log(`- Caption Length: ${businessCaption.caption.length} characters`);
-    console.log(`- Engagement Hooks: ${businessCaption.engagementHooks.join(', ')}`);
-    console.log(`- Call to Action: "${businessCaption.callToAction}"`);
 
     // 🎯 BUSINESS-SPECIFIC CAPTION GENERATION COMPLETE
-    console.log('✅ Business-specific caption generation complete!');
-    console.log(`📱 Caption: ${businessCaption.caption.length} characters`);
-    console.log(`🚀 CTA: "${businessCaption.callToAction}"`);
-    console.log(`🎯 Engagement Hooks: ${businessCaption.engagementHooks.join(', ')}`);
 
     // 🎯 BUSINESS-SPECIFIC CONTENT GENERATION COMPLETE
-    console.log('✅ Business-specific content generation complete!');
-    console.log(`🎯 Business Headline: "${businessHeadline.headline}"`);
-    console.log(`📝 Business Subheadline: "${businessSubheadline.subheadline}"`);
-    console.log(`📱 Business Caption: ${businessCaption.caption.length} characters`);
-    console.log(`🚀 Business CTA: "${businessCaption.callToAction}"`);
-    console.log(`📊 Strategic Hashtags: ${hashtags.length} business-focused tags`);
-    console.log(`💼 Content Strategy: ${contentPlan.strategy.goal}`);
-    console.log(`⭐ Business Strengths: ${contentPlan.businessStrengths[0]}`);
-    console.log(`🌍 Market Opportunities: ${contentPlan.marketOpportunities[0]}`);
 
     // 🎯 FINAL: Return business-specific content package
-    console.log('🎯 Revo 1.0: Finalizing business-specific content package...');
 
     const finalContent = {
       content: businessCaption.caption,
@@ -1746,20 +1674,10 @@ export async function generateRevo10Content(input: {
       generatedAt: new Date().toISOString()
     };
 
-    console.log('✅ BUSINESS-SPECIFIC CONTENT GENERATION COMPLETE!');
-    console.log(`🎯 Final Headline: "${finalContent.headline}"`);
-    console.log(`📝 Final Subheadline: "${finalContent.subheadline}"`);
-    console.log(`📱 Final Caption: ${finalContent.content.length} characters`);
-    console.log(`🚀 Final CTA: "${finalContent.callToAction}"`);
-    console.log(`📊 Strategic Hashtags: ${finalContent.hashtags.length} business-focused tags`);
-    console.log(`💼 Content Strategy: ${finalContent.contentStrategy.goal}`);
-    console.log(`⭐ Business Strengths: ${finalContent.businessStrengths[0]}`);
-    console.log(`🌍 Market Opportunities: ${finalContent.marketOpportunities[0]}`);
 
     return finalContent;
 
   } catch (error) {
-    console.error('❌ Revo 1.0: Content generation failed:', error);
     throw new Error(`Revo 1.0 content generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -1778,7 +1696,6 @@ export async function generateRevo10Design(input: {
   imageText: string;
 }) {
   try {
-    console.log('🎨 Revo 1.0: Starting design generation with Gemini 2.5 Flash Image Preview...');
 
     const model = ai.getGenerativeModel({
       model: REVO_1_0_MODEL,
@@ -1817,7 +1734,6 @@ Describe your creative concept in natural, designer language. Focus on the creat
 
 Remember: You're a creative human designer, not an AI. Think with imagination and artistic vision.`;
 
-    console.log('🎨 Revo 1.0: Generating design with enhanced AI capabilities...');
 
     const result = await model.generateContent([
       revo10Prompts.DESIGN_SYSTEM_PROMPT,
@@ -1827,7 +1743,6 @@ Remember: You're a creative human designer, not an AI. Think with imagination an
     const response = await result.response;
     const design = response.text();
 
-    console.log('✅ Revo 1.0: Design generated successfully with Gemini 2.5 Flash Image Preview');
 
     return {
       design: design.trim(),
@@ -1837,7 +1752,6 @@ Remember: You're a creative human designer, not an AI. Think with imagination an
     };
 
   } catch (error) {
-    console.error('❌ Revo 1.0: Design generation failed:', error);
     throw new Error(`Revo 1.0 design generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -1864,12 +1778,10 @@ export async function generateRevo10Image(input: {
   creativeContext?: any; // Add creative context from content generation
 }) {
   try {
-    console.log('🖼️ Revo 1.0: Starting enhanced creative image generation with Gemini 2.5 Flash Image Preview...');
 
     // 🎨 CREATIVE ENHANCEMENT: Apply creative design system
     let creativeDesignEnhancement = '';
     if (input.creativeContext) {
-      console.log('🎨 Applying creative design enhancement system...');
       const designEnhancement = enhanceDesignCreativity(
         input.designDescription,
         input.businessType,
@@ -1897,10 +1809,6 @@ ANTI-GENERIC REQUIREMENTS:
 - DESIGN with emotional intelligence and creative sophistication
 `;
 
-      console.log('✨ Creative design enhancement applied:');
-      console.log(`- Visual Style: ${designEnhancement.visualStyle}`);
-      console.log(`- Creative Elements: ${designEnhancement.creativeElements.slice(0, 3).join(', ')}`);
-      console.log(`- Emotional Tone: ${input.creativeContext.tone}`);
     }
 
     const model = ai.getGenerativeModel({
@@ -1943,7 +1851,6 @@ ANTI-GENERIC REQUIREMENTS:
 - EXAMPLE STYLE: Like "PAYA: YOUR FUTURE, NOW!" - bold, prominent, unmissable
     ` : '';
 
-    console.log('🎯 CTA Instructions:', input.callToAction ? 'PROMINENT CTA ENABLED' : 'No CTA');
 
     // Get advanced design features
     const businessDesignDNA = getBusinessDesignDNA(input.businessType);
@@ -1952,21 +1859,16 @@ ANTI-GENERIC REQUIREMENTS:
     const peopleInstructions = shouldIncludePeople ? getAdvancedPeopleInstructions(input.businessType, input.location || 'Global') : '';
     const culturalContext = getLocalCulturalContext(input.location || 'Global');
 
-    console.log('👥 People Integration:', shouldIncludePeople ? 'Enabled' : 'Disabled');
-    console.log('🌍 Cultural Context:', culturalContext.substring(0, 100) + '...');
 
     // Generate human-like design variation for authentic, creative designs
     const designRandomSeed = Math.floor(Math.random() * 10000) + Date.now();
     const designSeed = designRandomSeed % 10000;
     const designVariations = getHumanDesignVariations(designSeed);
-    console.log('🎨 Human Design Style Selected:', designVariations.style);
 
     // NEW: Get industry intelligence and creativity framework
     const industryIntel = getIndustryDesignIntelligence(input.businessType);
     const creativityFramework = getEnhancedCreativityFramework(input.businessType, designVariations.style, designSeed);
 
-    console.log('🏭 Industry Intelligence:', industryIntel.name);
-    console.log('🎨 Creativity Framework:', creativityFramework.name);
 
     let imagePrompt = `🎨 Create a ${designVariations.style.toLowerCase()} social media design for ${input.businessName} that looks completely different from typical business posts and feels genuinely human-made.
 
@@ -2050,19 +1952,8 @@ TECHNICAL REQUIREMENTS:
     imagePrompt = injectCreativeRebellion(imagePrompt, designSeed);
     imagePrompt = addArtisticConstraints(imagePrompt, designSeed);
 
-    console.log('🎨 Brand-aware prompt created with colors:', colorScheme);
 
-    console.log('🖼️ Revo 1.0: Generating image with enhanced creative AI capabilities...');
-    console.log('🎨 Advanced Creative Features:');
-    console.log(`  👥 People Integration: ${shouldIncludePeople ? 'Enabled' : 'Disabled'}`);
-    console.log(`  🌍 Cultural Context: ${input.location || 'Global'}`);
-    console.log(`  🎭 Visual Style: ${input.visualStyle}`);
-    console.log(`  🏢 Business DNA: ${input.businessType} optimized`);
-    console.log(`  🎲 Design Variation: ${designVariations.style} (Seed: ${designSeed})`);
-    console.log(`  ✨ Creative Enhancement: ${input.creativeContext ? 'ACTIVE' : 'Standard'}`);
     if (input.creativeContext) {
-      console.log(`  🎨 Creative Style: ${input.creativeContext.style} with ${input.creativeContext.tone} tone`);
-      console.log(`  🧠 Creative Framework: ${input.creativeContext.framework}`);
     }
 
     // Prepare the generation request with logo if available
@@ -2073,7 +1964,6 @@ TECHNICAL REQUIREMENTS:
 
     // If logo is provided, include it in the generation
     if (input.logoDataUrl) {
-      console.log('🏢 Including brand logo in image generation...');
 
       // Extract the base64 data and mime type from the data URL
       const logoMatch = input.logoDataUrl.match(/^data:([^;]+);base64,(.+)$/);
@@ -2091,7 +1981,6 @@ TECHNICAL REQUIREMENTS:
         const logoPrompt = `\n\nIMPORTANT: Use the provided logo image above in your design. Integrate it naturally into the layout - do not create a new logo. The logo should be prominently displayed but not overwhelming the design.`;
         generationParts[1] = imagePrompt + logoPrompt;
       } else {
-        console.log('⚠️ Invalid logo data URL format, proceeding without logo');
       }
     }
 
@@ -2108,7 +1997,6 @@ TECHNICAL REQUIREMENTS:
         const imageData = part.inlineData.data;
         const mimeType = part.inlineData.mimeType;
         imageUrl = `data:${mimeType};base64,${imageData}`;
-        console.log('🖼️ Revo 1.0: Image data extracted successfully');
         break;
       }
     }
@@ -2116,11 +2004,9 @@ TECHNICAL REQUIREMENTS:
     if (!imageUrl) {
       // Fallback: try to get text response if no image data
       const textResponse = response.text();
-      console.log('⚠️ Revo 1.0: No image data found, got text response instead');
       throw new Error('No image data generated by Gemini 2.5 Flash Image Preview');
     }
 
-    console.log('✅ Revo 1.0: Image generated successfully with Gemini 2.5 Flash Image Preview');
 
     return {
       imageUrl: imageUrl,
@@ -2130,7 +2016,6 @@ TECHNICAL REQUIREMENTS:
     };
 
   } catch (error) {
-    console.error('❌ Revo 1.0: Image generation failed:', error);
     throw new Error(`Revo 1.0 image generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

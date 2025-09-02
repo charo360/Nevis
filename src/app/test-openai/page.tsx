@@ -34,7 +34,6 @@ export default function TestOpenAIPage() {
     setResult(null);
 
     try {
-      console.log('🧪 Testing OpenAI DALL-E 3 Latest Model...');
       
       // Create a mock brand profile for testing
       const mockBrandProfile = {
@@ -66,11 +65,9 @@ export default function TestOpenAIPage() {
         }
       };
 
-      console.log('📝 Test Input:', testInput);
 
       const testResult = await generateOpenAIEnhancedDesign(testInput);
       
-      console.log('✅ OpenAI DALL-E 3 Test Result:', testResult);
 
       setResult({
         success: true,
@@ -81,7 +78,6 @@ export default function TestOpenAIPage() {
       });
 
     } catch (error) {
-      console.error('❌ OpenAI DALL-E 3 Test Failed:', error);
       setResult({
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred'

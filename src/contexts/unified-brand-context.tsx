@@ -72,7 +72,6 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
 
   // Sync current brand with the hook's current profile
   useEffect(() => {
-    console.log('🔄 Unified brand sync effect triggered:', {
       currentProfile: currentProfile?.businessName || currentProfile?.name,
       currentBrand: currentBrand?.businessName || currentBrand?.name,
       brandsCount: brands.length
@@ -80,7 +79,6 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
 
     // Only sync if currentProfile exists and is different from currentBrand
     if (currentProfile && currentProfile !== currentBrand) {
-      console.log('✅ Syncing currentBrand with currentProfile:', currentProfile.businessName || currentProfile.name);
       setCurrentBrand(currentProfile);
       updateAllBrandScopedServices(currentProfile);
     } else if (!currentProfile && !currentBrand && brands.length > 0) {
@@ -94,12 +92,10 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
         const savedBrand = brands.find(b => b.id === savedBrandId);
         if (savedBrand) {
           brandToSelect = savedBrand;
-          console.log('🔄 Restoring previously selected brand:', brandToSelect.businessName || brandToSelect.name);
         }
       }
 
       if (!currentBrand) { // Only select if no brand is currently selected
-        console.log('🎯 Auto-selecting brand for initial load:', brandToSelect.businessName || brandToSelect.name);
         setCurrentBrand(brandToSelect);
         setCurrentProfile(brandToSelect);
         updateAllBrandScopedServices(brandToSelect);
@@ -112,12 +108,10 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
     const brandId = brand?.id || null;
     const brandName = brand?.businessName || brand?.name || 'none';
 
-    console.log('🔄 Updating ALL brand-scoped services for brand:', brandName, 'ID:', brandId);
 
     try {
       // Update artifacts service
       brandScopedArtifactsService.setBrand(brandId);
-      console.log('✅ Updated artifacts service for brand:', brandName);
 
       // TODO: Update other brand-scoped services here
       // - Social media service
@@ -135,9 +129,7 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
         localStorage.removeItem('currentBrandName');
       }
 
-      console.log('✅ All brand-scoped services updated successfully');
     } catch (error) {
-      console.error('❌ Failed to update brand-scoped services:', error);
     }
   }, []);
 
@@ -148,15 +140,12 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
 
   const selectBrand = useCallback((brand: CompleteBrandProfile | null) => {
     const brandName = brand?.businessName || brand?.name || 'null';
-    console.log('🎯 Unified selectBrand called with:', brandName);
-    console.log('📊 Current state before selection:', {
       currentBrand: currentBrand?.businessName || currentBrand?.name,
       currentProfile: currentProfile?.businessName || currentProfile?.name
     });
 
     // Log color information for debugging
     if (brand) {
-      console.log('🎨 Selecting brand with colors:', {
         primaryColor: brand.primaryColor,
         accentColor: brand.accentColor,
         backgroundColor: brand.backgroundColor
@@ -181,7 +170,6 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
         updatedAt: new Date().toISOString()
       };
       localStorage.setItem('brandColors', JSON.stringify(colorData));
-      console.log('💾 Force updated color persistence:', colorData);
     }
 
     // Trigger a custom event for other components to listen to
@@ -194,7 +182,6 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
     });
     window.dispatchEvent(event);
 
-    console.log('✅ Unified brand selection completed, new brand:', brandName);
   }, [currentBrand, currentProfile, setCurrentProfile, updateAllBrandScopedServices]);
 
   // localStorage restoration is now handled in the main sync effect above
@@ -217,18 +204,15 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
         location: currentBrand.location,
         description: currentBrand.description
       }));
-      console.log('💾 Saved brand data to localStorage for persistence:', currentBrand.businessName || currentBrand.name);
     } else {
       localStorage.removeItem('selectedBrandId');
       localStorage.removeItem('currentBrandData');
-      console.log('🗑️ Cleared brand data from localStorage');
     }
   }, [currentBrand]);
 
   // Helper function to get brand-scoped storage for any feature
   const getBrandStorage = useCallback((feature: string): BrandScopedStorage | null => {
     if (!currentBrand?.id) {
-      console.warn(`Cannot create brand-scoped storage for ${feature}: no brand selected`);
       return null;
     }
 
@@ -237,13 +221,11 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
 
   // Helper function to clear all data for a specific brand
   const clearBrandData = useCallback((brandId: string) => {
-    console.log('🗑️ Clearing all data for brand:', brandId);
     BrandScopedStorage.clearBrandData(brandId);
   }, []);
 
   // Helper function to migrate global data to brand-scoped storage
   const migrateBrandData = useCallback((brandId: string) => {
-    console.log('🔄 Migrating global data to brand-scoped for brand:', brandId);
     const features = Object.values(STORAGE_FEATURES);
     migrateAllGlobalStorage(brandId, features);
   }, []);
@@ -254,26 +236,22 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
       if (event.detail && event.detail.brand) {
         const brand = event.detail.brand;
         const brandName = brand.businessName || brand.name;
-        console.log('🔄 Unified context received brand change event from other context:', brandName);
 
         // Only update if it's different from current brand
         const currentBrandValue = currentBrandRef.current;
         if (!currentBrandValue || currentBrandValue.id !== brand.id) {
-          console.log('🔄 Updating unified context with new brand:', brandName);
           setCurrentBrand(brand);
           setCurrentProfileRef.current(brand);
           if (updateAllBrandScopedServicesRef.current) {
             updateAllBrandScopedServicesRef.current(brand);
           }
         } else {
-          console.log('🔄 Brand already current in unified context:', brandName);
         }
       }
     };
 
     // Listen for the original brand context changes
     const handleOriginalBrandChange = (event: any) => {
-      console.log('🔄 Unified context received original brand change event:', event.detail);
       if (event.detail && event.detail.brand) {
         handleBrandChange(event);
       }

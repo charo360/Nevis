@@ -23,7 +23,6 @@ export async function POST(req: Request) {
 
     const idToken = authHeader.split(' ')[1];
     const decoded = await adminAuth.verifyIdToken(idToken).catch((e) => {
-      console.warn('Invalid ID token', e?.message || e);
       return null;
     });
 
@@ -50,7 +49,6 @@ export async function POST(req: Request) {
       try {
         await adminDb.collection('payments').add(doc);
       } catch (e) {
-        console.warn('Failed to persist free payment record, continuing (dev fallback?)', e);
       }
 
       return NextResponse.json({ ok: true, message: 'Free credits granted' });
@@ -94,7 +92,6 @@ export async function POST(req: Request) {
 
       await adminDb.collection('payments').doc(session.id).set(payload);
     } catch (e) {
-      console.error('Failed to persist pending payment:', e);
       // continue — do not leak internal error to end user unnecessarily
     }
 
@@ -105,7 +102,6 @@ export async function POST(req: Request) {
     // Only logged in users that present a valid ID token receive the Checkout URL
     return NextResponse.json({ url: session.url });
   } catch (error: any) {
-    console.error('create-checkout-session error:', error);
     return NextResponse.json({ error: String(error?.message || error) }, { status: 500 });
   }
 }

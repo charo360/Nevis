@@ -74,7 +74,6 @@ async function generateWithRetry(request: GenerateRequest, retries = 3, delay = 
             return result;
         } catch (e: any) {
             if (e.message && e.message.includes('503') && i < retries - 1) {
-                console.log(`Attempt ${i + 1} failed with 503. Retrying in ${delay}ms...`);
                 await new Promise(resolve => setTimeout(resolve, delay));
             } else {
                 if (e.message && e.message.includes('503')) {
@@ -126,7 +125,6 @@ Generate a video that is cinematically interesting, has relevant sound, and capt
       }
 
       if (operation.error) {
-          console.error("Video generation operation failed", operation.error);
           throw new Error(`Video generation failed. Please try again. Error: ${operation.error.message}`);
       }
 
@@ -143,7 +141,6 @@ Generate a video that is cinematically interesting, has relevant sound, and capt
         videoUrl: videoDataUrl, 
       };
     } catch (e: any) {
-        console.error("Error during video generation:", e);
         throw new Error(e.message || "Video generation failed. The model may be overloaded. Please try again in a few moments.");
     }
   }

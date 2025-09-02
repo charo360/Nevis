@@ -175,7 +175,6 @@ export class AdvancedContentGenerator {
    * Analyze business and context for content generation
    */
   public async analyzeBusinessContext(profile: BusinessProfile): Promise<ContentAnalysis> {
-    console.log(`🔍 Analyzing business context for ${profile.businessName}...`);
 
     // Get business intelligence
     const businessIntelligence = this.businessIntelligence.get(profile.businessType) || {
@@ -221,7 +220,6 @@ export class AdvancedContentGenerator {
       performanceTargets: this.setPerformanceTargets(profile.businessType),
     };
 
-    console.log(`✅ Business analysis complete for ${profile.businessName}`);
 
     return {
       businessIntelligence,
@@ -239,7 +237,6 @@ export class AdvancedContentGenerator {
     platform: string,
     contentType: 'promotional' | 'educational' | 'entertaining' | 'seasonal' = 'promotional'
   ): Promise<SocialMediaPost> {
-    console.log(`🎯 Generating ${contentType} content for ${profile.businessName} on ${platform}...`);
 
     const analysis = await this.analyzeBusinessContext(profile);
 
@@ -262,7 +259,6 @@ export class AdvancedContentGenerator {
     // Store for performance tracking
     this.storePostForAnalysis(profile.businessName, post);
 
-    console.log(`✅ Generated engaging content for ${profile.businessName}`);
     return post;
   }
 

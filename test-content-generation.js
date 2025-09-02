@@ -21,9 +21,6 @@ const testData = {
 };
 
 async function testContentGeneration() {
-  console.log('🧪 Testing Content Generation API...\n');
-  console.log('📊 Test Data:', JSON.stringify(testData, null, 2));
-  console.log('\n🚀 Making API request...\n');
 
   try {
     const response = await fetch('http://localhost:3000/api/advanced-content', {
@@ -40,37 +37,13 @@ async function testContentGeneration() {
 
     const result = await response.json();
     
-    console.log('✅ API Response Received!');
-    console.log('\n📝 Generated Content:');
-    console.log('='.repeat(50));
-    console.log(`🎯 Headline: "${result.headline}"`);
-    console.log(`📝 Subheadline: "${result.subheadline}"`);
-    console.log(`📱 Caption: "${result.content}"`);
-    console.log(`🚀 CTA: "${result.callToAction}"`);
-    console.log(`🏷️ Hashtags: ${result.hashtags.join(' ')}`);
-    console.log('='.repeat(50));
     
-    console.log('\n🧠 Business Intelligence:');
-    console.log(`- Content Strategy: ${result.contentStrategy?.goal || 'N/A'}`);
-    console.log(`- Business Strengths: ${result.businessStrengths?.join(', ') || 'N/A'}`);
-    console.log(`- Market Opportunities: ${result.marketOpportunities?.join(', ') || 'N/A'}`);
-    console.log(`- Value Proposition: ${result.valueProposition || 'N/A'}`);
     
-    console.log('\n📊 Content Analysis:');
-    console.log(`- Caption Length: ${result.content?.length || 0} characters`);
-    console.log(`- Hashtag Count: ${result.hashtags?.length || 0}`);
-    console.log(`- Platform: ${result.platform}`);
-    console.log(`- Business Type: ${result.businessType}`);
     
     // Check for repetitive content
     const contentAnalysis = analyzeContentVariety(result);
-    console.log('\n🔍 Content Variety Analysis:');
-    console.log(`- Unique Phrases: ${contentAnalysis.uniquePhrases}`);
-    console.log(`- Repetitive Elements: ${contentAnalysis.repetitiveElements.length > 0 ? contentAnalysis.repetitiveElements.join(', ') : 'None detected'}`);
-    console.log(`- Variety Score: ${contentAnalysis.varietyScore}/10`);
     
   } catch (error) {
-    console.error('❌ Test failed:', error.message);
   }
 }
 

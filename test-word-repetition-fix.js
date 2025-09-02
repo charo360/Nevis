@@ -18,7 +18,6 @@ function removeWordRepetitions(text) {
     if (currentWord && previousWord &&
       currentWord.toLowerCase() === previousWord.toLowerCase() &&
       currentWord.trim().length > 0) {
-      console.log(`🔧 Removed duplicate word: "${currentWord}"`);
       continue; // Skip this duplicate word
     }
 
@@ -29,7 +28,6 @@ function removeWordRepetitions(text) {
 }
 
 // Test cases
-console.log('🧪 Testing Word Repetition Fix...\n');
 
 const testCases = [
   "BUY NOW NOW PAY LATER",
@@ -45,12 +43,6 @@ const testCases = [
 ];
 
 testCases.forEach((testCase, index) => {
-  console.log(`Test ${index + 1}:`);
-  console.log(`Original: "${testCase}"`);
   const fixed = removeWordRepetitions(testCase);
-  console.log(`Fixed:    "${fixed}"`);
-  console.log(`Status:   ${testCase !== fixed ? '✅ FIXED' : '❌ NO CHANGE NEEDED'}`);
-  console.log('');
 });
 
-console.log('✅ Word repetition fix testing complete!');

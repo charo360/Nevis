@@ -54,14 +54,11 @@ export function CbrandWizardFirebaseFirst({ mode, brandId }: CbrandWizardFirebas
   useEffect(() => {
     const loadExistingProfile = async () => {
       try {
-        console.log('🔄 Loading brand profile (Firebase-first). Mode:', mode, 'BrandId:', brandId, 'CurrentBrand:', currentBrand?.businessName);
 
         // If we're in edit mode with a specific brandId, load that brand
         if (mode === 'edit' && brandId && userId) {
-          console.log('🔄 Loading brand for edit mode:', brandId);
           // For now, we'll use the current brand from context if it matches
           if (currentBrand && currentBrand.id === brandId) {
-            console.log('✅ Using current brand from context for edit');
             setBrandProfile(currentBrand);
             return;
           }
@@ -69,25 +66,20 @@ export function CbrandWizardFirebaseFirst({ mode, brandId }: CbrandWizardFirebas
 
         // If we have a current brand selected and we're not in create mode, use it
         if (currentBrand && mode !== 'create') {
-          console.log('✅ Using current brand from context:', currentBrand.businessName);
           setBrandProfile(currentBrand);
           return;
         }
 
         // For create mode or when no brand is selected, try to load from Firebase
         if (userId) {
-          console.log('🔄 Loading from Firebase for create mode or no current brand');
           const savedProfile = await loadBrandProfileFirebaseFirst(userId);
           if (savedProfile) {
             setBrandProfile(savedProfile);
-            console.log('✅ Loaded existing profile from Firebase:', savedProfile.businessName);
             return;
           }
         }
 
-        console.log('📝 No existing profile found, starting with empty profile');
       } catch (error) {
-        console.error('❌ Failed to load brand profile:', error);
       }
     };
 
@@ -97,7 +89,6 @@ export function CbrandWizardFirebaseFirst({ mode, brandId }: CbrandWizardFirebas
   const updateBrandProfile = (updates: Partial<CompleteBrandProfile>) => {
     setBrandProfile(prev => {
       const updated = { ...prev, ...updates };
-      console.log('🔄 Brand profile updated:', Object.keys(updates));
       return updated;
     });
   };
@@ -115,31 +106,25 @@ export function CbrandWizardFirebaseFirst({ mode, brandId }: CbrandWizardFirebas
   };
 
   const handleSaveComplete = async (profileId: string) => {
-    console.log('✅ Profile saved successfully:', profileId);
 
     try {
       // Refresh brands from Firebase to get the latest data (including updated colors)
-      console.log('🔄 Refreshing brands from Firebase to get updated colors...');
       await refreshBrands();
 
       // Find the saved profile from the refreshed brands list
       const updatedProfile = brands.find(brand => brand.id === profileId);
       if (updatedProfile) {
-        console.log('✅ Found updated profile with fresh colors:', updatedProfile.businessName);
-        console.log('🎨 Updated colors:', {
           primaryColor: updatedProfile.primaryColor,
           accentColor: updatedProfile.accentColor,
           backgroundColor: updatedProfile.backgroundColor
         });
         selectBrand(updatedProfile);
       } else {
-        console.warn('⚠️ Could not find updated profile, using local data');
         // Fallback to local data if refresh fails
         const savedProfile = { ...brandProfile, id: profileId };
         selectBrand(savedProfile);
       }
     } catch (error) {
-      console.error('❌ Failed to refresh brands after save:', error);
       // Fallback to local data if refresh fails
       const savedProfile = { ...brandProfile, id: profileId };
       selectBrand(savedProfile);

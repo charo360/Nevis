@@ -57,12 +57,10 @@ const testProfiles = {
  * Test function to verify enhanced AI generation
  */
 export async function testEnhancedGeneration(businessType: keyof typeof testProfiles = 'restaurant') {
-  console.log(`🧪 Testing Enhanced AI Generation for ${businessType}...`);
   
   try {
     const testInput: GeneratePostFromProfileInput = testProfiles[businessType];
     
-    console.log('📝 Input:', {
       businessType: testInput.businessType,
       platform: testInput.variants[0].platform,
       location: testInput.location,
@@ -71,47 +69,25 @@ export async function testEnhancedGeneration(businessType: keyof typeof testProf
     
     const result = await generatePostFromProfile(testInput);
     
-    console.log('✅ Enhanced AI Generation Results:');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     
-    console.log('\n📱 PRIMARY CAPTION:');
-    console.log(result.content);
     
-    console.log('\n🖼️ IMAGE TEXT:');
-    console.log(result.imageText);
     
-    console.log('\n#️⃣ HASHTAGS:');
-    console.log(result.hashtags);
     
     if (result.contentVariants && result.contentVariants.length > 0) {
-      console.log('\n🔄 CONTENT VARIANTS:');
       result.contentVariants.forEach((variant, index) => {
-        console.log(`\n   Variant ${index + 1} (${variant.approach}):`);
-        console.log(`   ${variant.content}`);
-        console.log(`   💡 Rationale: ${variant.rationale}`);
       });
     }
     
     if (result.hashtagAnalysis) {
-      console.log('\n📊 HASHTAG ANALYSIS:');
-      console.log(`   🔥 Trending: ${result.hashtagAnalysis.trending.join(', ')}`);
-      console.log(`   🎯 Niche: ${result.hashtagAnalysis.niche.join(', ')}`);
-      console.log(`   📍 Location: ${result.hashtagAnalysis.location.join(', ')}`);
-      console.log(`   👥 Community: ${result.hashtagAnalysis.community.join(', ')}`);
     }
     
-    console.log('\n🖼️ GENERATED VARIANTS:');
     result.variants.forEach((variant, index) => {
-      console.log(`   ${index + 1}. ${variant.platform}: ${variant.imageUrl ? '✅ Generated' : '❌ Failed'}`);
     });
     
-    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🎉 Test completed successfully!');
     
     return result;
     
   } catch (error) {
-    console.error('❌ Test failed:', error);
     throw error;
   }
 }
@@ -120,18 +96,14 @@ export async function testEnhancedGeneration(businessType: keyof typeof testProf
  * Test all business types
  */
 export async function testAllBusinessTypes() {
-  console.log('🚀 Testing Enhanced AI Generation for All Business Types...\n');
   
   for (const businessType of Object.keys(testProfiles) as Array<keyof typeof testProfiles>) {
     try {
       await testEnhancedGeneration(businessType);
-      console.log(`\n✅ ${businessType} test passed\n`);
     } catch (error) {
-      console.error(`❌ ${businessType} test failed:`, error);
     }
   }
   
-  console.log('🏁 All tests completed!');
 }
 
 // Export test profiles for use in other tests

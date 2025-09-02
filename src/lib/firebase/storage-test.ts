@@ -17,7 +17,6 @@ export interface StorageTestResult {
  */
 export async function testFirebaseStorageConnection(): Promise<StorageTestResult> {
   try {
-    console.log('🧪 Testing Firebase Storage connection...');
 
     // Check if Firebase Storage is initialized
     if (!storage) {
@@ -42,7 +41,6 @@ export async function testFirebaseStorageConnection(): Promise<StorageTestResult
     }
 
     const userId = auth.currentUser.uid;
-    console.log(`👤 Testing with user ID: ${userId}`);
 
     // Create a test file
     const testData = new Blob(['Hello Firebase Storage!'], { type: 'text/plain' });
@@ -52,19 +50,15 @@ export async function testFirebaseStorageConnection(): Promise<StorageTestResult
     const testPath = `generated-content/${userId}/test-${Date.now()}.txt`;
     const storageRef = ref(storage, testPath);
     
-    console.log(`📤 Uploading test file to: ${testPath}`);
 
     // Upload test file
     const snapshot = await uploadBytes(storageRef, testFile);
-    console.log(`✅ Upload successful: ${snapshot.ref.fullPath}`);
 
     // Get download URL
     const downloadURL = await getDownloadURL(snapshot.ref);
-    console.log(`🔗 Download URL: ${downloadURL.substring(0, 100)}...`);
 
     // Clean up - delete test file
     await deleteObject(snapshot.ref);
-    console.log(`🗑️ Test file deleted successfully`);
 
     return {
       success: true,
@@ -76,7 +70,6 @@ export async function testFirebaseStorageConnection(): Promise<StorageTestResult
     };
 
   } catch (error) {
-    console.error('❌ Firebase Storage test failed:', error);
     
     return {
       success: false,
@@ -132,7 +125,6 @@ export async function testStoragePathPermissions(basePath: string): Promise<Stor
     const userId = auth.currentUser.uid;
     const testPath = `${basePath}/${userId}/permission-test-${Date.now()}.txt`;
     
-    console.log(`🧪 Testing permissions for path: ${testPath}`);
 
     // Create test file
     const testData = new Blob(['Permission test'], { type: 'text/plain' });

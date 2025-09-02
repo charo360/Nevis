@@ -25,7 +25,6 @@ async function sendEmail(to: string, subject: string, html: string, text?: strin
   const enableSandbox = process.env.SENDGRID_SANDBOX === 'true'
   if (enableSandbox) {
     payload.mail_settings = { sandbox_mode: { enable: true } }
-    console.info('SendGrid sandbox mode enabled (SENDGRID_SANDBOX=true)')
   }
 
   const res = await fetch('https://api.sendgrid.com/v3/mail/send', {
@@ -40,10 +39,7 @@ async function sendEmail(to: string, subject: string, html: string, text?: strin
     const body = await res.text()
     const message = `SendGrid error: ${res.status} ${body}`
     if (process.env.NODE_ENV !== 'production' || enableSandbox) {
-      console.warn('SendGrid warning (non-production):', message)
-      console.warn('SendGrid response body:', body)
       if (res.status === 403) {
-        console.warn('SendGrid 403: common cause is an unverified sender identity. Verify SENDGRID_FROM in SendGrid dashboard or verify a sending domain.')
       }
       return
     }
@@ -113,7 +109,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true })
   } catch (err: any) {
-    console.error('resend-code error', err)
     return NextResponse.json({ error: err.message || 'server error' }, { status: 500 })
   }
 }

@@ -24,9 +24,6 @@ export async function generateRevo2ContentAction(
   }
 ): Promise<GeneratedPost> {
   try {
-    console.log('🚀 Revo 2.0: Starting content generation...');
-    console.log('📋 Brand:', brandProfile.businessName || brandProfile.businessType);
-    console.log('📱 Platform:', platform);
 
     // Prepare Revo 2.0 generation options
     const revo2Options: Revo20GenerationOptions = {
@@ -42,9 +39,6 @@ export async function generateRevo2ContentAction(
 
     // Generate with Revo 2.0
     const result = await generateWithRevo20(revo2Options);
-    console.log(`✅ Revo 2.0 generation completed!`);
-    console.log(`🎯 Quality Score: ${result.qualityScore}/10`);
-    console.log(`🚀 Enhancements: ${result.enhancementsApplied.length}`);
 
     // Convert to GeneratedPost format
     const generatedPost: GeneratedPost = {
@@ -70,11 +64,9 @@ export async function generateRevo2ContentAction(
       }
     };
 
-    console.log('✅ Revo 2.0: Content generation completed successfully');
     return generatedPost;
 
   } catch (error) {
-    console.error('❌ Revo 2.0 content generation failed:', error);
     throw new Error(`Revo 2.0 content generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -101,8 +93,6 @@ export async function generateRevo2CreativeAssetAction(
   error?: string;
 }> {
   try {
-    console.log('🎨 Revo 2.0: Starting creative asset generation...');
-    console.log('📝 Prompt:', prompt.substring(0, 100) + '...');
 
     const revo2Options: Revo20GenerationOptions = {
       businessType: brandProfile.businessType || 'Business',
@@ -116,7 +106,6 @@ export async function generateRevo2CreativeAssetAction(
     };
 
     const result = await generateWithRevo20(revo2Options);
-    console.log('✅ Revo 2.0: Creative asset generated successfully');
 
     return {
       success: true,
@@ -128,7 +117,6 @@ export async function generateRevo2CreativeAssetAction(
     };
 
   } catch (error) {
-    console.error('❌ Revo 2.0 creative asset generation failed:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'

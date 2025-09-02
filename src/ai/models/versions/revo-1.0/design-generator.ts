@@ -20,11 +20,6 @@ export class Revo10DesignGenerator implements IDesignGenerator {
     const startTime = Date.now();
 
     try {
-      console.log('🎨 Revo 1.0: Starting design generation...');
-      console.log('- Business Type:', request.businessType);
-      console.log('- Platform:', request.platform);
-      console.log('- Visual Style:', request.visualStyle);
-      console.log('- AI Engine: Gemini 2.5 Flash Image Preview (Enhanced)');
 
       // Validate request
       if (!this.validateRequest(request)) {
@@ -37,8 +32,6 @@ export class Revo10DesignGenerator implements IDesignGenerator {
       const processingTime = Date.now() - startTime;
       const qualityScore = this.calculateQualityScore(designResult);
 
-      console.log(`✅ Revo 1.0: Design generated successfully in ${processingTime}ms`);
-      console.log(`⭐ Quality Score: ${qualityScore}/10`);
 
       return {
         success: true,
@@ -54,7 +47,6 @@ export class Revo10DesignGenerator implements IDesignGenerator {
 
     } catch (error) {
       const processingTime = Date.now() - startTime;
-      console.error('❌ Revo 1.0: Design generation failed:', error);
 
       return {
         success: false,
@@ -158,7 +150,6 @@ export class Revo10DesignGenerator implements IDesignGenerator {
       };
 
     } catch (error) {
-      console.error('❌ Revo 1.0: Basic design generation failed:', error);
 
       // Return a fallback variant
       return {
@@ -190,7 +181,6 @@ export class Revo10DesignGenerator implements IDesignGenerator {
 
     // Warn about unsupported features
     if (request.artifactInstructions) {
-      console.warn('⚠️ Revo 1.0: Artifact instructions not supported, ignoring');
     }
 
     return true;
@@ -240,7 +230,6 @@ export class Revo10DesignGenerator implements IDesignGenerator {
 
       return hasApiKey;
     } catch (error) {
-      console.error('❌ Revo 1.0 Design Generator health check failed:', error);
       return false;
     }
   }

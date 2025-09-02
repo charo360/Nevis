@@ -26,7 +26,6 @@ export async function POST(req: Request) {
     try {
       decoded = await adminAuth.verifyIdToken(idToken)
     } catch (e: any) {
-      console.warn('Invalid idToken:', e?.message || e)
       return NextResponse.json({ error: 'Invalid authentication token' }, { status: 401 })
     }
 
@@ -38,7 +37,6 @@ export async function POST(req: Request) {
       existing = await adminDb.collection('payments').where('sessionId', '==', sessionId).limit(1).get()
     } catch (e: any) {
       const msg = String(e?.message || e)
-      console.error('payments.record: Firestore read failed', msg)
       if (msg.includes('PERMISSION_DENIED') || msg.includes('Missing or insufficient permissions')) {
         return NextResponse.json({ ok: false, reason: 'permission_denied', hint: 'Server cannot access Firestore. Check service account credentials and IAM roles (grant Firestore access).' }, { status: 503 })
       }
@@ -70,7 +68,6 @@ export async function POST(req: Request) {
       await adminDb.collection('payments').add(paymentDoc)
     } catch (e: any) {
       const msg = String(e?.message || e)
-      console.error('payments.record: Firestore write failed', msg)
       if (msg.includes('PERMISSION_DENIED') || msg.includes('Missing or insufficient permissions')) {
         return NextResponse.json({ ok: false, reason: 'permission_denied', hint: 'Server cannot write to Firestore. Check service account credentials and IAM roles (grant Firestore access).' }, { status: 503 })
       }
@@ -91,7 +88,6 @@ export async function POST(req: Request) {
       )
     } catch (e: any) {
       const msg = String(e?.message || e)
-      console.error('payments.record: Firestore user update failed', msg)
       if (msg.includes('PERMISSION_DENIED') || msg.includes('Missing or insufficient permissions')) {
         return NextResponse.json({ ok: false, reason: 'permission_denied', hint: 'Server cannot update users collection. Check service account credentials and IAM roles (grant Firestore access).' }, { status: 503 })
       }
@@ -111,12 +107,10 @@ export async function POST(req: Request) {
         await sendgridSend(email, `Payment receipt — ${plan?.name || planId}`, html, text)
       }
     } catch (e) {
-      console.warn('Failed to send payment receipt email:', e)
     }
 
     return NextResponse.json({ ok: true })
   } catch (err: any) {
-    console.error('payments.record error', err)
     return NextResponse.json({ error: err?.message || String(err) }, { status: 500 })
   }
 }

@@ -103,7 +103,6 @@ export function useGeneratedPosts(limit: number = 10) {
         ),
       }));
     } catch (error) {
-      console.error('Failed to update post analytics:', error);
       throw error;
     }
   }, []);
@@ -129,7 +128,6 @@ export function useGeneratedPosts(limit: number = 10) {
         ),
       }));
     } catch (error) {
-      console.error('Failed to update post status:', error);
       throw error;
     }
   }, []);
@@ -145,7 +143,6 @@ export function useGeneratedPosts(limit: number = 10) {
         posts: prev.posts.filter(post => post.id !== postId),
       }));
     } catch (error) {
-      console.error('Failed to delete post:', error);
       throw error;
     }
   }, []);
@@ -157,7 +154,6 @@ export function useGeneratedPosts(limit: number = 10) {
     try {
       return await generatedPostFirebaseService.getUserGeneratedPosts(userId, { platform, limit });
     } catch (error) {
-      console.error('Failed to get posts by platform:', error);
       return [];
     }
   }, [userId, limit]);
@@ -170,7 +166,6 @@ export function useGeneratedPosts(limit: number = 10) {
       const firestoreStatus = status === 'posted' ? 'published' : 'draft';
       return await generatedPostFirebaseService.getPostsByStatus(userId, firestoreStatus);
     } catch (error) {
-      console.error('Failed to get posts by status:', error);
       return [];
     }
   }, [userId]);

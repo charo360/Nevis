@@ -36,7 +36,6 @@ export default function SettingsPage() {
           setBillingPlan('power');
         }
       } catch (err) {
-        console.warn('Failed to load user plan:', err);
       }
     }
 

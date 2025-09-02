@@ -124,7 +124,6 @@ export async function analyzeDesignExample(
       }
     };
   } catch (error) {
-    console.error('Design analysis failed:', error);
     throw new Error('Failed to analyze design example');
   }
 }

@@ -84,7 +84,6 @@ export default function AdvancedContentDemo() {
       }
     } catch (err) {
       setError('Network error occurred');
-      console.error('Error:', err);
     } finally {
       setLoading(false);
     }

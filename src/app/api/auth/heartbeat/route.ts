@@ -43,12 +43,10 @@ export async function POST(req: Request) {
 
       await userRef.set({ session }, { merge: true });
     } catch (e) {
-      console.warn('Heartbeat: failed to update user session in Firestore', e);
     }
 
     return NextResponse.json({ ok: true, lastActive: now.toISOString(), sessionExpiresAt: expiresAt.toISOString() });
   } catch (error: any) {
-    console.error('Heartbeat error:', error);
     return NextResponse.json({ error: error?.message || String(error) }, { status: 500 });
   }
 }

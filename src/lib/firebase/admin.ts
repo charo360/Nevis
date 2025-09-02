@@ -33,9 +33,6 @@ const initializeFirebaseAdmin = () => {
         });
         return adminAppInstance;
       } catch (error) {
-        console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY, falling back to individual env vars:', error);
-        console.error('Raw value length:', process.env.FIREBASE_SERVICE_ACCOUNT_KEY?.length);
-        console.error('First 20 chars:', process.env.FIREBASE_SERVICE_ACCOUNT_KEY?.substring(0, 20));
         // Don't throw - fall through to try individual env vars instead
       }
     }

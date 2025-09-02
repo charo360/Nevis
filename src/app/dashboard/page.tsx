@@ -201,7 +201,6 @@ export default function DashboardPage() {
         await stripe.redirectToCheckout({ sessionId: data.id })
       }
     } catch (err: any) {
-      console.error('Checkout error', err)
       toast({ variant: 'destructive', title: 'Checkout failed', description: String(err.message || err) })
     }
   }
@@ -254,7 +253,6 @@ export default function DashboardPage() {
                     await signOut();
                     router.replace('/auth');
                   } catch (e) {
-                    console.error('Sign out error', e);
                   }
                 }}>Sign out</DropdownMenuItem>
               </DropdownMenuContent>

@@ -76,13 +76,11 @@ export async function cropImageToAspectRatio(
   options: CropOptions = {}
 ): Promise<string> {
   try {
-    console.log(`🖼️ Cropping image for ${platform}...`);
 
     const dimensions = getPlatformDimensions(platform);
 
     // If it's already square (Instagram), return as-is
     if (dimensions.aspectRatio === '1:1') {
-      console.log('✅ Square format - no cropping needed');
       return imageDataUrl;
     }
 
@@ -102,7 +100,6 @@ export async function cropImageToAspectRatio(
       throw new Error('Could not get image dimensions');
     }
 
-    console.log(`📐 Original dimensions: ${metadata.width}x${metadata.height}`);
 
     // Calculate crop dimensions from center
     const sourceWidth = metadata.width;
@@ -116,7 +113,6 @@ export async function cropImageToAspectRatio(
     // No cropping - return original image
     return imageDataUrl;
 
-    console.log(`✂️ Cropping to: ${cropWidth}x${cropHeight} at (${left}, ${top})`);
 
     // Crop and resize the image using Sharp
     const processedImageBuffer = await image
@@ -129,11 +125,9 @@ export async function cropImageToAspectRatio(
     const base64Image = processedImageBuffer.toString('base64');
     const croppedDataUrl = `data:image/jpeg;base64,${base64Image}`;
 
-    console.log(`✅ Image cropped to ${dimensions.width}x${dimensions.height} for ${platform}`);
     return croppedDataUrl;
 
   } catch (error) {
-    console.error('❌ Image cropping failed:', error);
     // Return original image if cropping fails
     return imageDataUrl;
   }
@@ -153,7 +147,6 @@ export async function cropImageFromUrl(
       return cropImageToAspectRatio(imageUrl, platform, options);
     }
 
-    console.log(`🖼️ Fetching image from URL for ${platform}...`);
 
     // Fetch the image
     const response = await fetch(imageUrl);
@@ -167,7 +160,6 @@ export async function cropImageFromUrl(
     // Get dimensions and check if cropping is needed
     const dimensions = getPlatformDimensions(platform);
     if (dimensions.aspectRatio === '1:1') {
-      console.log('✅ Square format - no cropping needed');
       // Convert to data URL and return
       const base64 = imageBuffer.toString('base64');
       const mimeType = response.headers.get('content-type') || 'image/jpeg';
@@ -182,7 +174,6 @@ export async function cropImageFromUrl(
       throw new Error('Could not get image dimensions');
     }
 
-    console.log(`📐 Original dimensions: ${metadata.width}x${metadata.height}`);
 
     // Calculate crop dimensions
     const sourceWidth = metadata.width;
@@ -198,7 +189,6 @@ export async function cropImageFromUrl(
     const mimeType = response.headers.get('content-type') || 'image/jpeg';
     return `data:${mimeType};base64,${base64}`;
 
-    console.log(`✂️ Cropping to: ${cropWidth}x${cropHeight} at (${left}, ${top})`);
 
     // Crop and resize
     const processedImageBuffer = await image
@@ -211,11 +201,9 @@ export async function cropImageFromUrl(
     const base64Image = processedImageBuffer.toString('base64');
     const croppedDataUrl = `data:image/jpeg;base64,${base64Image}`;
 
-    console.log(`✅ Image cropped to ${dimensions.width}x${dimensions.height} for ${platform}`);
     return croppedDataUrl;
 
   } catch (error) {
-    console.error('❌ Failed to fetch and crop image:', error);
     // Return original URL if processing fails
     return imageUrl;
   }

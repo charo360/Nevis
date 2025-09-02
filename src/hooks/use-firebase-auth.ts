@@ -36,7 +36,6 @@ export function useFirebaseAuth() {
   useEffect(() => {
     // If Firebase auth is not available, do not create demo users — require explicit authentication
     if (!auth) {
-      console.warn('Firebase auth not available; authentication is required. No demo user will be created.');
       setAuthState({ user: null, loading: false, error: null });
       return;
     }
@@ -70,7 +69,6 @@ export function useFirebaseAuth() {
             });
           }
         } catch (err) {
-          console.error('Failed to create/update user document:', err);
         }
 
         setAuthState({ user: userObj, loading: false, error: null });
@@ -143,7 +141,6 @@ export function useFirebaseAuth() {
     try {
       await firebaseSignOut(auth);
     } catch (error) {
-      console.error('Failed to sign out:', error);
       throw error;
     }
   };
@@ -166,7 +163,6 @@ export function useFirebaseAuth() {
         photoURL: updates.photoURL || auth.currentUser.photoURL || '',
       });
     } catch (error) {
-      console.error('Failed to update profile:', error);
       throw error;
     }
   };

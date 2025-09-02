@@ -60,7 +60,6 @@ export function FolderSelector({
       setNewFolderName('');
       setShowCreateFolder(false);
     } catch (error) {
-      console.error('Failed to create folder:', error);
     } finally {
       setIsCreating(false);
     }

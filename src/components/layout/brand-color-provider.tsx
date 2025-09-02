@@ -24,7 +24,6 @@ function getColorsFromLocalStorage() {
       };
     }
   } catch (error) {
-    console.warn('🎨 Failed to get colors from localStorage:', error);
   }
   return null;
 }
@@ -45,7 +44,6 @@ export function BrandColorProvider({ children }: BrandColorProviderProps) {
         };
       }
     } catch (error) {
-      console.error('Failed to get persisted colors:', error);
     }
 
     return {
@@ -58,7 +56,6 @@ export function BrandColorProvider({ children }: BrandColorProviderProps) {
   // Initialize with persisted colors to prevent flash of wrong colors
   const [style, setStyle] = useState<React.CSSProperties>(() => {
     const persistedColors = getPersistedColors();
-    console.log('🎨 Initializing BrandColorProvider with persisted colors:', persistedColors);
     return {
       '--primary-color': persistedColors.primaryColor,
       '--accent-color': persistedColors.accentColor,
@@ -67,9 +64,6 @@ export function BrandColorProvider({ children }: BrandColorProviderProps) {
   });
 
   // FORCE COMPLETE MODULE RELOAD - Enhanced BrandColorProvider v6.0 ULTIMATE CACHE PURGE
-  console.log('🚀🚀🚀 ENHANCED BRAND COLOR PROVIDER v6.0 ULTIMATE CACHE PURGE LOADED 🚀🚀🚀');
-  console.log('🔥🔥🔥 AGGRESSIVE CACHE BUSTER: Forcing complete component reload');
-  console.log('🔥 CACHE_BUSTER:', CACHE_BUSTER);
 
   // Add unique component identifier to force complete re-render
   const componentId = `brand-color-provider-${CACHE_BUSTER}`;
@@ -77,10 +71,8 @@ export function BrandColorProvider({ children }: BrandColorProviderProps) {
   // Listen for brand changes to update colors immediately
   useEffect(() => {
     const handleBrandChange = (event: any) => {
-      console.log('🎨 BrandColorProvider received brand change event:', event.detail);
       if (event.detail && event.detail.brand) {
         const brand = event.detail.brand;
-        console.log('🎨 Updating colors from brand change event:', {
           primaryColor: brand.primaryColor,
           accentColor: brand.accentColor,
           backgroundColor: brand.backgroundColor
@@ -94,7 +86,6 @@ export function BrandColorProvider({ children }: BrandColorProviderProps) {
         } as React.CSSProperties;
 
         setStyle(newStyle);
-        console.log('🎨 Applied immediate color update from brand change event');
       }
     };
 
@@ -103,7 +94,6 @@ export function BrandColorProvider({ children }: BrandColorProviderProps) {
   }, []);
 
   useEffect(() => {
-    console.log('🎨🎨🎨 ENHANCED v6.0 ULTIMATE CACHE PURGE BrandColorProvider useEffect triggered:', {
       currentBrand: currentBrand ? {
         name: currentBrand.businessName || currentBrand.name,
         id: currentBrand.id,
@@ -117,22 +107,18 @@ export function BrandColorProvider({ children }: BrandColorProviderProps) {
 
     // Log the full brand object to see what properties it actually has
     if (currentBrand) {
-      console.log('🎨 Full currentBrand object:', currentBrand);
     }
 
     if (!currentBrand || loading) {
-      console.log('🎨 ENHANCED BrandColorProvider: Skipping color application - no brand or loading');
       return;
     }
 
-    console.log('🎨 ENHANCED BRAND COLOR PROVIDER - Applying brand colors for:', currentBrand.businessName || currentBrand.name);
 
     // Get colors from brand object
     let primaryColor = currentBrand.primaryColor;
     let accentColor = currentBrand.accentColor;
     let backgroundColor = currentBrand.backgroundColor;
 
-    console.log('🎨 Brand object colors:', { primaryColor, accentColor, backgroundColor });
 
     // Always try localStorage fallback if any colors are missing or empty
     const hasValidPrimary = primaryColor && primaryColor.trim() !== '' && primaryColor !== '#000000';
@@ -140,21 +126,15 @@ export function BrandColorProvider({ children }: BrandColorProviderProps) {
     const hasValidBackground = backgroundColor && backgroundColor.trim() !== '' && backgroundColor !== '#000000';
 
     if (!hasValidPrimary || !hasValidAccent || !hasValidBackground) {
-      console.log('🎨 Colors missing or invalid in brand object, checking localStorage fallback...');
-      console.log('🎨 Validity check:', { hasValidPrimary, hasValidAccent, hasValidBackground });
 
       const localStorageColors = getColorsFromLocalStorage();
       if (localStorageColors) {
-        console.log('🎨 Found localStorage colors:', localStorageColors);
         primaryColor = hasValidPrimary ? primaryColor : localStorageColors.primaryColor;
         accentColor = hasValidAccent ? accentColor : localStorageColors.accentColor;
         backgroundColor = hasValidBackground ? backgroundColor : localStorageColors.backgroundColor;
-        console.log('🎨 Using localStorage colors as fallback:', { primaryColor, accentColor, backgroundColor });
       } else {
-        console.log('🎨 No localStorage colors found');
       }
     } else {
-      console.log('🎨 All brand colors are valid, using brand object colors');
     }
 
     const newStyle: React.CSSProperties = {};
@@ -166,10 +146,8 @@ export function BrandColorProvider({ children }: BrandColorProviderProps) {
         (newStyle as any)['--primary-hsl'] = hslPrimary;
         (newStyle as any)['--primary'] = hslPrimary;
         (newStyle as any)['--ring'] = hslPrimary;
-        console.log('🎨 Primary color applied:', primaryColor, '→', hslPrimary);
       }
     } else {
-      console.log('🎨 No primary color found in brand or localStorage');
     }
 
     // Apply accent color
@@ -178,10 +156,8 @@ export function BrandColorProvider({ children }: BrandColorProviderProps) {
       if (hslAccent) {
         (newStyle as any)['--accent-hsl'] = hslAccent;
         (newStyle as any)['--accent'] = hslAccent;
-        console.log('🎨 Accent color applied:', accentColor, '→', hslAccent);
       }
     } else {
-      console.log('🎨 No accent color found in brand or localStorage');
     }
 
     // Apply background color
@@ -190,13 +166,10 @@ export function BrandColorProvider({ children }: BrandColorProviderProps) {
       if (hslBackground) {
         (newStyle as any)['--background-hsl'] = hslBackground;
         (newStyle as any)['--background'] = hslBackground;
-        console.log('🎨 Background color applied:', backgroundColor, '→', hslBackground);
       }
     } else {
-      console.log('🎨 No background color found in brand or localStorage');
     }
 
-    console.log('🎨 Setting style:', newStyle);
     setStyle(newStyle);
   }, [currentBrand, loading]);
 

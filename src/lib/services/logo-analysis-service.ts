@@ -18,18 +18,15 @@ export class LogoAnalysisService {
    */
   static async analyzeLogo(logoDataUrl: string, brandName?: string): Promise<LogoCharacteristics> {
     try {
-      console.log('🔍 Analyzing logo characteristics for text description...');
       
       // For now, we'll use basic analysis based on common logo patterns
       // In the future, this could be enhanced with AI vision models
       
       const characteristics = await this.extractBasicCharacteristics(logoDataUrl, brandName);
       
-      console.log('✅ Logo analysis complete:', characteristics.description);
       return characteristics;
       
     } catch (error) {
-      console.error('❌ Logo analysis failed:', error);
       
       // Return generic characteristics as fallback
       return this.getGenericLogoCharacteristics(brandName);
@@ -96,7 +93,6 @@ export class LogoAnalysisService {
         };
         
       } catch (error) {
-        console.warn('Could not parse SVG content:', error);
       }
     }
     

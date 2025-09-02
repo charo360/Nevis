@@ -7,7 +7,6 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    console.log('🧪 Testing Revo 2.0 availability via API...');
 
     const { testRevo20Availability } = await import('@/ai/revo-2.0-service');
 
@@ -23,7 +22,6 @@ export async function GET() {
     });
 
   } catch (error) {
-    console.error('❌ Revo 2.0 test API error:', error);
 
     return NextResponse.json({
       success: false,
@@ -39,7 +37,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { testType = 'basic' } = body;
 
-    console.log(`🧪 Running ${testType} Revo 2.0 test...`);
 
     if (testType === 'basic') {
       const { testRevo20Availability } = await import('@/ai/revo-2.0-service');
@@ -100,7 +97,6 @@ export async function POST(request: NextRequest) {
     }, { status: 400 });
 
   } catch (error) {
-    console.error('❌ Revo 2.0 test error:', error);
 
     return NextResponse.json({
       success: false,

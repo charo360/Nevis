@@ -114,7 +114,6 @@ async function generateWithRetry(request: GenerateRequest, retries = 3, delay = 
             return result;
         } catch (e: any) {
             if (e.message && e.message.includes('503') && i < retries - 1) {
-                console.log(`Attempt ${i + 1} failed with 503. Retrying in ${delay}ms...`);
                 await new Promise(resolve => setTimeout(resolve, delay));
             } else {
                 if (e.message && e.message.includes('503')) {
@@ -255,7 +254,6 @@ REQUIREMENTS:
                             );
                             analyses.push(analysis);
                         } catch (error) {
-                            console.warn('Design analysis failed for example, skipping:', error);
                         }
                     }
 
@@ -275,7 +273,6 @@ REQUIREMENTS:
                         selectedExamples = bp.designExamples.slice(0, 2);
                     }
                 } catch (error) {
-                    console.warn('Design analysis system failed, using fallback:', error);
                     selectedExamples = bp.designExamples.slice(0, 2);
                 }
 
@@ -421,7 +418,6 @@ Ensure the text is readable and well-composed.`
                         };
 
                         modelToUse = modelMapping[input.preferredModel] || modelToUse;
-                        console.log(`🎨 Using preferred model: ${input.preferredModel} -> ${modelToUse}`);
                     }
 
                     const { media } = await generateWithRetry({
@@ -442,16 +438,13 @@ Ensure the text is readable and well-composed.`
 
                     // Apply aspect ratio correction if needed
                     if (input.aspectRatio && input.aspectRatio !== '1:1') {
-                        console.log(`🖼️ Applying aspect ratio correction for ${input.aspectRatio}...`);
                         try {
                             const { cropImageFromUrl } = await import('@/lib/image-processing');
                             // Map aspect ratio to platform for cropping
                             const platformForCropping = input.aspectRatio === '16:9' ? 'linkedin' :
                                 input.aspectRatio === '9:16' ? 'story' : 'instagram';
                             imageUrl = await cropImageFromUrl(imageUrl, platformForCropping);
-                            console.log(`✅ Image cropped successfully for ${input.aspectRatio}`);
                         } catch (cropError) {
-                            console.warn('⚠️ Image cropping failed, using original:', cropError);
                             // Continue with original image if cropping fails
                         }
                     }
@@ -476,7 +469,6 @@ Ensure the text is readable and well-composed.`
 
                             // If quality is poor and we have attempts left, try to improve
                             if (attempts < maxAttempts) {
-                                console.log(`Creative asset quality score: ${quality.overall.score}/10. Attempting improvement...`);
 
                                 // Add improvement instructions to prompt
                                 const improvementInstructions = generateImprovementPrompt(quality);
@@ -488,7 +480,6 @@ Ensure the text is readable and well-composed.`
                                 break;
                             }
                         } catch (qualityError) {
-                            console.warn('Quality assessment failed for creative asset, using generated design:', qualityError);
                             finalImageUrl = imageUrl;
                             break;
                         }
@@ -532,7 +523,6 @@ Ensure the text is readable and well-composed.`
                 }
 
                 if (operation.error) {
-                    console.error("Video generation operation failed", operation.error);
                     throw new Error(`Video generation failed: ${operation.error.message}. Please try again.`);
                 }
 
@@ -550,7 +540,6 @@ Ensure the text is readable and well-composed.`
                 };
             }
         } catch (e: any) {
-            console.error("Error during creative asset generation:", e);
             // Ensure a user-friendly error is thrown
             const message = e.message || "An unknown error occurred during asset generation.";
             throw new Error(message);

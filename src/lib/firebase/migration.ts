@@ -29,7 +29,6 @@ export async function migrateBrandProfiles(userId: string): Promise<{
     if (currentProfileData) {
       try {
         const currentProfile: CompleteBrandProfile = JSON.parse(currentProfileData);
-        console.log('Migrating brand profile:', currentProfile.businessName || 'Unnamed Profile');
 
         // Clean and validate profile data before migration
         const cleanedProfile = {
@@ -51,11 +50,9 @@ export async function migrateBrandProfiles(userId: string): Promise<{
 
         await brandProfileFirebaseService.saveBrandProfile(cleanedProfile, userId);
         migrated++;
-        console.log('✅ Migrated current brand profile successfully');
       } catch (error) {
         failed++;
         const errorMessage = error instanceof Error ? error.message : String(error);
-        console.error('❌ Failed to migrate brand profile:', errorMessage);
         errors.push(`Failed to migrate current brand profile: ${errorMessage}`);
       }
     }
@@ -133,7 +130,6 @@ export async function migrateBrandProfiles(userId: string): Promise<{
         if (!isDuplicate) {
           await brandProfileFirebaseService.saveBrandProfile(convertedProfile, userId);
           migrated++;
-          console.log('Migrated legacy brand profile');
         }
       } catch (error) {
         failed++;
@@ -166,8 +162,6 @@ export async function migrateGeneratedPosts(userId: string, brandProfileId: stri
 
         for (const post of posts) {
           try {
-            console.log('Migrating post:', post.id);
-            console.log('Original post data structure:', JSON.stringify(post, null, 2));
 
             // Deep clean function to handle all nested objects
             const deepClean = (obj: any): any => {
@@ -210,16 +204,12 @@ export async function migrateGeneratedPosts(userId: string, brandProfileId: stri
               createdAt: post.createdAt ? new Date(post.createdAt) : new Date(),
             };
 
-            console.log('Cleaned post data:', JSON.stringify(cleanedPost, null, 2));
 
             await generatedPostFirebaseService.saveGeneratedPost(cleanedPost, userId, brandProfileId);
             migrated++;
-            console.log('✅ Migrated post successfully:', post.id);
           } catch (error) {
             failed++;
             const errorMessage = error instanceof Error ? error.message : String(error);
-            console.error('❌ Failed to migrate post:', post.id, errorMessage);
-            console.error('Full error:', error);
             errors.push(`Failed to migrate post "${post.id}": ${errorMessage}`);
           }
         }
@@ -243,7 +233,6 @@ export async function migrateAllData(userId: string): Promise<MigrationStatus> {
     errors: [],
   };
 
-  console.log('Starting data migration to Firestore...');
 
   // 1. Migrate brand profiles first
   const brandProfileResult = await migrateBrandProfiles(userId);
@@ -277,7 +266,6 @@ export async function migrateAllData(userId: string): Promise<MigrationStatus> {
   // 4. Artifacts migration would go here (currently using in-memory storage)
   // For now, artifacts are handled by the artifacts service directly
 
-  console.log('Migration completed:', status);
   return status;
 }
 
@@ -303,11 +291,9 @@ export function clearMigratedData(): void {
     try {
       localStorage.removeItem(key);
     } catch (error) {
-      console.warn(`Failed to remove ${key} from localStorage:`, error);
     }
   });
 
-  console.log('Cleared migrated data from localStorage');
 }
 
 // Migration hook for React components
@@ -350,7 +336,6 @@ export function useMigration() {
         status,
       });
     } catch (error) {
-      console.error('Migration failed:', error);
       setMigrationStatus(prev => ({
         ...prev,
         isRunning: false,
@@ -375,27 +360,18 @@ import React from 'react';
 function debugPostData() {
   try {
     const posts = JSON.parse(localStorage.getItem('generatedPosts') || '[]');
-    console.log('=== DEBUG: Generated Posts Data Structure ===');
-    console.log('Total posts:', posts.length);
 
     posts.forEach((post: any, index: number) => {
-      console.log(`\n--- Post ${index + 1} (ID: ${post.id}) ---`);
-      console.log('Content type:', typeof post.content);
-      console.log('Content value:', post.content);
-      console.log('Full post structure:', JSON.stringify(post, null, 2));
 
       // Check for nested objects
       Object.keys(post).forEach(key => {
         const value = post[key];
         if (typeof value === 'object' && value !== null && !(value instanceof Date)) {
-          console.log(`⚠️  Nested object found in "${key}":`, value);
         }
       });
     });
 
-    console.log('=== END DEBUG ===');
   } catch (error) {
-    console.error('Debug failed:', error);
   }
 }
 
@@ -413,7 +389,6 @@ declare global {
 // Test function to save a completely clean post
 async function testCleanPost() {
   try {
-    console.log('🧪 Testing clean post save...');
 
     const userId = 'test-user-' + Date.now();
     const brandProfileId = 'test-brand-' + Date.now();
@@ -439,14 +414,11 @@ async function testCleanPost() {
       createdAt: new Date(),
     };
 
-    console.log('Clean post data:', cleanPost);
 
     const { generatedPostFirebaseService } = await import('./services/generated-post-service');
     await generatedPostFirebaseService.saveGeneratedPost(cleanPost, userId, brandProfileId);
 
-    console.log('✅ Clean post saved successfully!');
   } catch (error) {
-    console.error('❌ Clean post save failed:', error);
   }
 }
 

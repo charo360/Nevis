@@ -64,9 +64,6 @@ async function createUserStorageRef(basePath: string, fileName: string): Promise
   }
 
   const fullPath = `${basePath}/${userId}/${fileName}`;
-  console.log(`🔄 Creating storage reference: ${fullPath}`);
-  console.log(`👤 User ID: ${userId}`);
-  console.log(`🔐 Auth state:`, auth?.currentUser ? 'authenticated' : 'not authenticated');
 
   return ref(storage, fullPath);
 }
@@ -103,16 +100,11 @@ export async function uploadFile(
   };
 
   // Upload file
-  console.log(`📤 Uploading file to: ${storageRef.fullPath}`);
-  console.log(`📊 File size: ${file.size} bytes`);
-  console.log(`🏷️ File type: ${file.type}`);
 
   try {
     const snapshot = await uploadBytes(storageRef, file, metadata);
-    console.log(`✅ Upload successful: ${snapshot.ref.fullPath}`);
 
     const url = await getDownloadURL(snapshot.ref);
-    console.log(`🔗 Download URL generated: ${url.substring(0, 100)}...`);
 
     // Get metadata for response
     const fileMetadata = await getMetadata(snapshot.ref);
@@ -128,7 +120,6 @@ export async function uploadFile(
       },
     };
   } catch (error) {
-    console.error(`❌ Upload failed for ${storageRef.fullPath}:`, error);
     throw error;
   }
 }
@@ -230,7 +221,6 @@ export async function uploadDataUrlAsImage(
       },
     });
   } catch (error) {
-    console.error('Failed to upload data URL as image:', error);
     throw error;
   }
 }
@@ -241,7 +231,6 @@ export async function deleteFile(filePath: string): Promise<void> {
     const fileRef = ref(storage, filePath);
     await deleteObject(fileRef);
   } catch (error) {
-    console.error('Failed to delete file:', error);
     throw error;
   }
 }
@@ -252,7 +241,6 @@ export async function getFileUrl(filePath: string): Promise<string> {
     const fileRef = ref(storage, filePath);
     return await getDownloadURL(fileRef);
   } catch (error) {
-    console.error('Failed to get file URL:', error);
     throw error;
   }
 }
@@ -302,7 +290,6 @@ export async function getFileMetadata(filePath: string) {
     const fileRef = ref(storage, filePath);
     return await getMetadata(fileRef);
   } catch (error) {
-    console.error('Failed to get file metadata:', error);
     throw error;
   }
 }
@@ -316,7 +303,6 @@ export async function updateFileMetadata(
     const fileRef = ref(storage, filePath);
     await updateMetadata(fileRef, metadata);
   } catch (error) {
-    console.error('Failed to update file metadata:', error);
     throw error;
   }
 }
@@ -455,13 +441,11 @@ export async function cleanupTempFiles(olderThanHours: number = 24): Promise<num
           deletedCount++;
         }
       } catch (error) {
-        console.warn(`Failed to process temp file ${itemRef.name}:`, error);
       }
     }
 
     return deletedCount;
   } catch (error) {
-    console.error('Failed to cleanup temp files:', error);
     return 0;
   }
 }

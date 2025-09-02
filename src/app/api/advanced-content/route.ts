@@ -10,7 +10,6 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
-    console.log('🚀 Advanced Content API: Starting generation...');
     
     // Default test data if not provided
     const testData = {
@@ -31,14 +30,10 @@ export async function POST(request: NextRequest) {
       ...body
     };
 
-    console.log(`🎯 Generating content for ${testData.businessName} (${testData.businessType})`);
-    console.log(`📍 Location: ${testData.location}`);
-    console.log(`📱 Platform: ${testData.platform}`);
 
     // Generate advanced content
     const result = await generateRevo10Content(testData);
 
-    console.log('✅ Advanced content generation complete!');
 
     // Return enhanced response with analysis
     return NextResponse.json({
@@ -88,7 +83,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Advanced Content API Error:', error);
     
     return NextResponse.json({
       success: false,
@@ -139,7 +133,6 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Advanced Content API Test Error:', error);
     
     return NextResponse.json({
       success: false,

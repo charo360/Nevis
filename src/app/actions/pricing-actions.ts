@@ -55,7 +55,6 @@ export async function initiatePurchase(planId: string, userId: string): Promise<
     // const checkoutSession = await createStripeCheckout(plan, userId);
 
     // For now, simulate payment process
-    console.log(`Initiating purchase for plan: ${plan.name}, user: ${userId}`);
 
     return {
       success: true,
@@ -64,7 +63,6 @@ export async function initiatePurchase(planId: string, userId: string): Promise<
     };
 
   } catch (error) {
-    console.error('Purchase initiation error:', error);
     return {
       success: false,
       message: 'Failed to initiate purchase',
@@ -80,7 +78,6 @@ export async function initiatePurchase(planId: string, userId: string): Promise<
 export async function addCreditsToUser(userId: string, credits: number): Promise<{ success: boolean; newTotal?: number }> {
   try {
     // TODO: Update user credits in database
-    console.log(`Adding ${credits} credits to user: ${userId}`);
 
     // Simulate database update
     const currentCredits = await getUserCredits(userId);
@@ -98,7 +95,6 @@ export async function addCreditsToUser(userId: string, credits: number): Promise
     };
 
   } catch (error) {
-    console.error('Add credits error:', error);
     return {
       success: false
     };
@@ -112,7 +108,6 @@ export async function addCreditsToUser(userId: string, credits: number): Promise
 export async function getUserCredits(userId: string): Promise<UserCredits> {
   try {
     // TODO: Fetch from database
-    console.log(`Fetching credits for user: ${userId}`);
 
     // Simulate database fetch
     return {
@@ -123,7 +118,6 @@ export async function getUserCredits(userId: string): Promise<UserCredits> {
     };
 
   } catch (error) {
-    console.error('Get credits error:', error);
     return {
       totalCredits: 0,
       usedCredits: 0,
@@ -151,7 +145,6 @@ export async function deductCredits(userId: string, amount: number = 1): Promise
     const newUsed = currentCredits.usedCredits + amount;
 
     // TODO: Update in database
-    console.log(`Deducting ${amount} credits from user: ${userId}. Remaining: ${newRemaining}`);
 
     return {
       success: true,
@@ -159,7 +152,6 @@ export async function deductCredits(userId: string, amount: number = 1): Promise
     };
 
   } catch (error) {
-    console.error('Deduct credits error:', error);
     return {
       success: false
     };
@@ -189,7 +181,6 @@ export async function deductCreditsForRevo(userId: string, revoVersion: string, 
     };
 
   } catch (error) {
-    console.error('Deduct credits for Revo error:', error);
     return {
       success: false
     };
@@ -211,14 +202,12 @@ export async function handlePaymentSuccess(sessionId: string, planId: string, us
     if (result.success) {
       // TODO: Send confirmation email
       // TODO: Log purchase in database
-      console.log(`Payment successful for user: ${userId}, plan: ${plan.name}, credits: ${plan.credits}`);
       return true;
     }
 
     return false;
 
   } catch (error) {
-    console.error('Payment success handler error:', error);
     return false;
   }
 }
@@ -231,7 +220,6 @@ export async function validateCredits(userId: string, requiredCredits: number = 
     const credits = await getUserCredits(userId);
     return credits.remainingCredits >= requiredCredits;
   } catch (error) {
-    console.error('Credit validation error:', error);
     return false;
   }
 }
@@ -251,7 +239,6 @@ export async function validateCreditsForRevo(userId: string, revoVersion: string
       remainingCredits: credits.remainingCredits
     };
   } catch (error) {
-    console.error('Credit validation for Revo error:', error);
     return {
       canAfford: false,
       creditsCost: 0,

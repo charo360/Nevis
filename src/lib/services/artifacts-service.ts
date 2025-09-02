@@ -154,7 +154,6 @@ class ArtifactsService {
         }
 
       } catch (error) {
-        console.error(`Failed to upload ${file.name}:`, error);
         throw new Error(`Failed to upload ${file.name}: ${error.message}`);
       }
     }
@@ -503,7 +502,6 @@ class ArtifactsService {
         reader.readAsDataURL(file);
       });
     } catch (error) {
-      console.error('Failed to generate thumbnail data URL:', error);
       throw error;
     }
   }
@@ -520,7 +518,6 @@ class ArtifactsService {
     try {
       return await this.generateThumbnailDataUrl(file);
     } catch (error) {
-      console.error('Failed to generate thumbnail for artifact:', artifactId, error);
       return null;
     }
   }
@@ -560,7 +557,6 @@ class ArtifactsService {
    * Fix existing artifacts that don't have instructions
    */
   fixMissingInstructions(): void {
-    console.log('🔧 Fixing artifacts with missing instructions...');
     let fixedCount = 0;
 
     for (const [id, artifact] of this.artifacts.entries()) {
@@ -569,15 +565,12 @@ class ArtifactsService {
         artifact.instructions = generatedInstructions;
         this.artifacts.set(id, artifact);
         fixedCount++;
-        console.log(`✅ Fixed instructions for artifact: ${artifact.name} -> "${generatedInstructions}"`);
       }
     }
 
     if (fixedCount > 0) {
       this.saveArtifactsToStorage();
-      console.log(`🎯 Fixed ${fixedCount} artifacts with missing instructions`);
     } else {
-      console.log('📋 No artifacts needed instruction fixes');
     }
   }
 
@@ -585,22 +578,17 @@ class ArtifactsService {
    * Set an artifact as active or inactive
    */
   setArtifactActive(artifactId: string, isActive: boolean): void {
-    console.log(`🔧 setArtifactActive called: ${artifactId} -> ${isActive}`);
     const artifact = this.artifacts.get(artifactId);
     if (artifact) {
-      console.log(`✅ Artifact found: ${artifact.name}, current isActive: ${artifact.isActive}`);
       artifact.isActive = isActive;
       this.artifacts.set(artifactId, artifact);
       this.saveArtifactsToStorage();
-      console.log(`💾 Artifact updated and saved: ${artifact.name} isActive: ${artifact.isActive}`);
     } else {
-      console.error(`❌ Artifact not found: ${artifactId}`);
     }
   }
 
   private async deleteFile(filePath: string): Promise<void> {
     // In production, implement file deletion
-    console.log(`Would delete file: ${filePath}`);
   }
 
   private determineArtifactType(file: File): ArtifactType {
@@ -733,15 +721,12 @@ class ArtifactsService {
     try {
       // Check if we're in a browser environment
       if (typeof window === 'undefined' || !window.localStorage) {
-        console.log('🚫 Not in browser environment, skipping artifact loading');
         return;
       }
 
       const stored = localStorage.getItem('artifacts');
-      console.log(`📂 Loading artifacts from localStorage key 'artifacts'`);
       if (stored) {
         const artifacts = JSON.parse(stored);
-        console.log(`✅ Found ${artifacts.length} artifacts in storage`);
         artifacts.forEach((artifact: Artifact) => {
           // Convert date strings back to Date objects
           artifact.timestamps.created = new Date(artifact.timestamps.created);
@@ -751,14 +736,10 @@ class ArtifactsService {
             artifact.usage.lastUsed = new Date(artifact.usage.lastUsed);
           }
           this.artifacts.set(artifact.id, artifact);
-          console.log(`📋 Loaded artifact: ${artifact.name}, isActive: ${artifact.isActive}, usageType: ${artifact.usageType}`);
         });
-        console.log(`🎯 Total artifacts loaded into service: ${this.artifacts.size}`);
       } else {
-        console.log(`📂 No artifacts found in localStorage`);
       }
     } catch (error) {
-      console.error('Failed to load artifacts from storage:', error);
     }
   }
 
@@ -766,25 +747,20 @@ class ArtifactsService {
     try {
       // Check if we're in a browser environment
       if (typeof window === 'undefined' || !window.localStorage) {
-        console.log('🚫 Not in browser environment, skipping artifact saving');
         return;
       }
 
       const artifacts = Array.from(this.artifacts.values());
-      console.log(`💾 Saving ${artifacts.length} artifacts to localStorage`);
-      console.log(`📋 Artifacts being saved:`, artifacts.map(a => ({
         id: a.id,
         name: a.name,
         isActive: a.isActive,
         usageType: a.usageType
       })));
       localStorage.setItem('artifacts', JSON.stringify(artifacts));
-      console.log(`✅ Artifacts saved successfully`);
 
       const folders = Array.from(this.folders.values());
       localStorage.setItem('artifact-folders', JSON.stringify(folders));
     } catch (error) {
-      console.error('Failed to save artifacts to storage:', error);
     }
   }
 
@@ -840,7 +816,6 @@ class ArtifactsService {
         });
       }
     } catch (error) {
-      console.error('Failed to load folders from storage:', error);
     }
   }
 
@@ -1033,10 +1008,6 @@ class ArtifactsService {
     const allArtifacts = Array.from(this.artifacts.values());
     const activeArtifacts = allArtifacts.filter(artifact => artifact.isActive);
 
-    console.log(`🔍 getActiveArtifacts called:`);
-    console.log(`📊 Total artifacts: ${allArtifacts.length}`);
-    console.log(`✅ Active artifacts: ${activeArtifacts.length}`);
-    console.log(`📋 All artifacts status:`, allArtifacts.map(a => ({
       id: a.id,
       name: a.name,
       isActive: a.isActive,

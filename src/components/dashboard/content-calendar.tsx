@@ -100,9 +100,6 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
   const handleGenerateClick = async (platform: Platform) => {
     setIsGenerating(platform);
     try {
-      console.log('🚀 Starting content generation for platform:', platform);
-      console.log('👤 User authenticated:', !!user);
-      console.log('🏢 Brand profile:', brandProfile?.businessName);
 
       let newPost;
 
@@ -112,7 +109,6 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
       const useEnhancedGeneration = artifactsEnabled || selectedRevoModel === 'revo-1.5' || selectedRevoModel === 'revo-2.0';
 
       if (selectedRevoModel === 'revo-2.0') {
-        console.log(`🚀 Using Revo 2.0 (Gemini 2.5 Flash Image) generation via server action`);
 
         // Use server action to avoid client-side imports
         const response = await fetch('/api/generate-revo-2.0', {
@@ -162,7 +158,6 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
           }
         };
       } else if (useEnhancedGeneration) {
-        console.log(`✨ Using enhanced generation with ${selectedRevoModel} model`);
         // Use artifact-enhanced generation - will automatically use active artifacts from artifacts page
         newPost = await generateContentWithArtifactsAction(
           brandProfile,
@@ -174,24 +169,19 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
           useLocalLanguage
         );
       } else {
-        console.log(`📝 Using standard content generation with ${selectedRevoModel} model`);
         // Use standard content generation
         newPost = await generateContentAction(brandProfile, platform, brandConsistency);
       }
 
-      console.log('📄 Generated post:', newPost.content.substring(0, 100) + '...');
 
       // Save to Firestore database first
       try {
-        console.log('💾 Saving post to Firestore database...');
         const postId = await savePost(newPost);
-        console.log('✅ Post saved to Firestore with ID:', postId);
 
         // Update the post with the Firestore ID
         const savedPost = { ...newPost, id: postId };
         onPostGenerated(savedPost);
       } catch (saveError) {
-        console.error('❌ Failed to save to Firestore, falling back to localStorage:', saveError);
         // Fallback to localStorage if Firestore fails
         onPostGenerated(newPost);
       }

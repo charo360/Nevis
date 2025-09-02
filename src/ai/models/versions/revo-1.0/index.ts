@@ -22,21 +22,13 @@ export class Revo10Implementation implements IModelImplementation {
 
   constructor() {
     try {
-      console.log('🔧 Revo 1.0: Getting model config...');
       this.model = getModelConfig('revo-1.0');
-      console.log('✅ Revo 1.0: Model config loaded:', this.model.name);
       
-      console.log('🔧 Revo 1.0: Creating content generator...');
       this.contentGenerator = new Revo10ContentGenerator();
-      console.log('✅ Revo 1.0: Content generator created');
       
-      console.log('🔧 Revo 1.0: Creating design generator...');
       this.designGenerator = new Revo10DesignGenerator();
-      console.log('✅ Revo 1.0: Design generator created');
       
-      console.log('✅ Revo 1.0: Implementation fully initialized');
     } catch (error) {
-      console.error('❌ Revo 1.0: Failed to initialize implementation:', error);
       throw error;
     }
   }
@@ -56,7 +48,6 @@ export class Revo10Implementation implements IModelImplementation {
 
       return hasApiKey;
     } catch (error) {
-      console.error('❌ Revo 1.0 availability check failed:', error);
       return false;
     }
   }
@@ -99,7 +90,6 @@ export class Revo10Implementation implements IModelImplementation {
 
       return false;
     } catch (error) {
-      console.error('❌ Revo 1.0 request validation failed:', error);
       return false;
     }
   }
