@@ -32,10 +32,10 @@ export class DynamicCTAGenerator {
 
     // Generate primary CTA
     const primary = this.generateCTAByStyle(ctaStyle, businessName, businessType, location, platform, services);
-    
+
     // Generate alternatives for A/B testing
     const alternatives = this.generateAlternativeCTAs(businessName, businessType, location, platform, services);
-    
+
     // Get reasoning for CTA choice
     const reasoning = this.getCTAReasoning(ctaStyle, businessType, platform);
 
@@ -92,7 +92,7 @@ export class DynamicCTAGenerator {
 
     // Return style with highest count (most relevant)
     const bestStyle = Object.entries(styleCounts)
-      .sort(([,a], [,b]) => b - a)[0][0];
+      .sort(([, a], [, b]) => b - a)[0][0];
 
     return bestStyle;
   }
@@ -101,14 +101,14 @@ export class DynamicCTAGenerator {
    * Generate CTA based on selected style
    */
   private generateCTAByStyle(
-    style: string, 
-    businessName: string, 
-    businessType: string, 
-    location: string, 
+    style: string,
+    businessName: string,
+    businessType: string,
+    location: string,
     platform: string,
     services?: string
   ): string {
-    
+
     const timestamp = Date.now();
     const variation = timestamp % 4; // 4 variations per style
 
@@ -203,7 +203,7 @@ export class DynamicCTAGenerator {
     platform: string,
     services?: string
   ): string[] {
-    
+
     const alternativeStyles = ['URGENCY', 'INVITATION', 'BENEFIT_FOCUSED', 'COMMUNITY', 'CURIOSITY'];
     const alternatives: string[] = [];
 
@@ -213,7 +213,7 @@ export class DynamicCTAGenerator {
     });
 
     // Remove duplicates and return top 3
-    return [...new Set(alternatives)].slice(0, 3);
+    return Array.from(new Set(alternatives)).slice(0, 3);
   }
 
   /**

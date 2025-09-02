@@ -86,12 +86,11 @@ export class RSSFeedService {
         return cached.data;
       }
 
-      
+
       const response = await fetch(url, {
         headers: {
           'User-Agent': 'Nevis-AI-Content-Generator/1.0',
-        },
-        timeout: 10000,
+        }
       });
 
       if (!response.ok) {
@@ -137,13 +136,13 @@ export class RSSFeedService {
    */
   private extractText(field: any): string {
     if (!field) return '';
-    
+
     if (typeof field === 'string') return field;
     if (Array.isArray(field) && field.length > 0) {
       return typeof field[0] === 'string' ? field[0] : field[0]._ || '';
     }
     if (typeof field === 'object' && field._) return field._;
-    
+
     return '';
   }
 
@@ -171,14 +170,14 @@ export class RSSFeedService {
       .filter(word => word.length >= 3 && !stopWords.has(word))
       .slice(0, 10); // Limit to top 10 keywords per article
 
-    return [...new Set(words)]; // Remove duplicates
+    return Array.from(new Set(words)); // Remove duplicates
   }
 
   /**
    * Fetch all RSS feeds and return trending data
    */
   public async getTrendingData(): Promise<TrendingData> {
-    
+
     const allArticles: RSSArticle[] = [];
     const fetchPromises: Promise<RSSArticle[]>[] = [];
 
@@ -190,7 +189,7 @@ export class RSSFeedService {
     }
 
     const results = await Promise.allSettled(fetchPromises);
-    
+
     // Collect all successful results
     results.forEach((result) => {
       if (result.status === 'fulfilled') {
@@ -232,7 +231,7 @@ export class RSSFeedService {
    */
   private getTopItems(items: string[], limit: number): string[] {
     const counts = new Map<string, number>();
-    
+
     items.forEach(item => {
       const normalized = item.toLowerCase().trim();
       if (normalized.length >= 3) {
@@ -251,7 +250,7 @@ export class RSSFeedService {
    */
   public async getTrendingKeywordsByCategory(category: 'social' | 'business' | 'tech' | 'design'): Promise<string[]> {
     const trendingData = await this.getTrendingData();
-    
+
     const categoryFeeds = {
       social: ['socialMediaToday', 'socialMediaExaminer', 'bufferBlog', 'hootsuiteBlogs'],
       business: ['hubspotMarketing', 'contentMarketingInstitute', 'marketingProfs'],
@@ -259,7 +258,7 @@ export class RSSFeedService {
       design: ['canvaDesignSchool', 'adobeBlog', 'creativeBloq'],
     };
 
-    const categoryArticles = trendingData.articles.filter(article => 
+    const categoryArticles = trendingData.articles.filter(article =>
       categoryFeeds[category].includes(article.source)
     );
 
