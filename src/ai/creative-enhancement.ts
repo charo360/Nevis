@@ -16,34 +16,34 @@ function initializeAI() {
 function getApproachInstructions(approach: string, businessName: string, location: string, creativityBoost: number): string {
   switch (approach) {
     case 'DIRECT_BENEFIT':
-      return `Lead with the specific benefit customers get. Example: "8g protein per cookie - finally snacks that fuel kids properly" NOT generic benefits.`;
+      return `HEADLINES: Lead with specific benefit. Example: "8g Protein Per Cookie" SUBHEADLINES: Expand with business details. Example: "Finally snacks that fuel kids properly - made fresh daily in ${location}" CAPTIONS: Full benefit story with RSS/business data.`;
 
     case 'SOCIAL_PROOF':
-      return `Reference real community adoption. Example: "200+ ${location} families switched to these protein cookies" NOT generic testimonials.`;
+      return `HEADLINES: Reference community adoption. Example: "200+ ${location} Families Agree" SUBHEADLINES: Add business specifics. Example: "Our protein cookies beat sugar crashes every time" CAPTIONS: Full social proof story with testimonials and business intelligence.`;
 
     case 'PROBLEM_SOLUTION':
-      return `Start with the exact problem ${location} parents face. Example: "Tired of sugar crashes after snack time?" NOT generic problems.`;
+      return `HEADLINES: State the problem. Example: "Sugar Crashes Ruining Snacktime" SUBHEADLINES: Present solution. Example: "${businessName}'s protein cookies keep energy steady for hours" CAPTIONS: Full problem-solution narrative with business details.`;
 
     case 'LOCAL_INSIDER':
-      return `Sound like a ${location} local sharing insider knowledge. Use actual local references, not generic "local" language.`;
+      return `HEADLINES: Use local insider knowledge. Example: "${location} Parents Secret Weapon" SUBHEADLINES: Add business insider details. Example: "What 500+ local families know about our cookies" CAPTIONS: Full insider story with local references and business intelligence.`;
 
     case 'URGENCY_SCARCITY':
-      return `Create real urgency with specific details. Example: "Only 50 packs left this week" NOT generic "limited time" language.`;
+      return `HEADLINES: Create real urgency. Example: "Only 50 Packs Left" SUBHEADLINES: Add business context. Example: "This week's batch selling faster than expected" CAPTIONS: Full urgency story with business details and RSS trends.`;
 
     case 'QUESTION_HOOK':
-      return `Ask a specific question ${location} residents would relate to. NOT generic "Are you tired of..." questions.`;
+      return `HEADLINES: Ask specific question. Example: "Tired of Sugar Crashes?" SUBHEADLINES: Hint at solution. Example: "${businessName} has the protein-packed answer parents love" CAPTIONS: Full question-answer story with business intelligence.`;
 
     case 'STATISTIC_LEAD':
-      return `Start with a specific, relevant statistic about the business or industry. Use real numbers, not made-up stats.`;
+      return `HEADLINES: Lead with business statistic. Example: "95% Same-Day Fix Rate" SUBHEADLINES: Add context. Example: "Our certified technicians solve most issues within hours" CAPTIONS: Full statistic story with business details and proof.`;
 
     case 'STORY_ANGLE':
-      return `Tell a brief, specific story about ${businessName} or a customer. Make it feel real and local, not generic storytelling.`;
+      return `HEADLINES: Start story hook. Example: "Local Baker's Secret Recipe" SUBHEADLINES: Continue story. Example: "Three generations of ${location} families can't be wrong" CAPTIONS: Full story with business history and customer experiences.`;
 
     case 'COMPARISON':
-      return `Compare to what ${location} residents currently use. Be specific about the difference, not generic comparisons.`;
+      return `HEADLINES: Set up comparison. Example: "Better Than Downtown Options" SUBHEADLINES: Specify difference. Example: "Same quality, half the price, right in ${location}" CAPTIONS: Full comparison with business advantages and local benefits.`;
 
     case 'NEWS_TREND':
-      return `Connect to current trends or news relevant to ${location}. Use actual trending topics, not generic trend language.`;
+      return `HEADLINES: Connect to current news/trends. Example: "Holiday Rush Solution Found" SUBHEADLINES: Add business connection. Example: "${businessName} handles your busiest season stress-free" CAPTIONS: Full trend connection with RSS data and business solutions.`;
 
     default:
       return `Create unique content that could only apply to ${businessName} in ${location}. Be specific and authentic.`;
@@ -673,11 +673,17 @@ STRICT ANTI-REPETITION RULES:
 ❌ NEVER use "Discover", "Experience", "Taste the", "Try our"
 ❌ NEVER use formulaic patterns that sound like templates
 
-APPROACH-SPECIFIC REQUIREMENTS:
+APPROACH-SPECIFIC REQUIREMENTS (Apply to ALL components - headlines, subheadlines, captions):
 ${getApproachInstructions(selectedApproach, businessName, location, creativityBoost)}
 
 CREATIVITY BOOST ${creativityBoost} CHALLENGE:
-Create content that is so unique and specific to ${businessName} in ${location} that it could NEVER be used for any other business. Use the actual business data, trending information, and local context to create something genuinely original.
+Create ALL COMPONENTS (headline, subheadline, caption) that are so unique and specific to ${businessName} in ${location} that they could NEVER be used for any other business. Use the actual business data, trending information, RSS feeds, local events, and business intelligence to create something genuinely original.
+
+UNIFIED DATA INTEGRATION REQUIREMENTS:
+- HEADLINES: Must incorporate RSS trends, current events, or seasonal opportunities
+- SUBHEADLINES: Must reference specific business services, features, or intelligence data
+- CAPTIONS: Must weave together all data sources into compelling marketing copy
+- ALL COMPONENTS: Must tell the same story using the same data sources consistently
 
 GENERATION UNIQUENESS ID: ${uniqueGenerationId}
 Use this ID to ensure this content is completely different from any previous generation.
@@ -728,13 +734,37 @@ ${businessIntelligence ? `
 - Seasonal Opportunities: ${businessIntelligence.seasonalOpportunities?.join(', ') || 'year-round service'}
 ` : 'Use general business intelligence for this business type'}
 
-LIVE RSS TRENDING DATA:
+LIVE RSS TRENDING DATA (Use this for ALL components - headlines, subheadlines, captions):
 ${trendingData ? `
 - Current News Topics: ${trendingData.news?.slice(0, 3).map(n => n.title).join(', ') || 'No current news data'}
 - Social Media Trends: ${trendingData.socialTrends?.slice(0, 3).join(', ') || 'No social trends data'}
 - Local Events: ${trendingData.events?.slice(0, 2).map(e => e.name).join(', ') || 'No local events data'}
 - Market Insights: ${trendingData.insights?.slice(0, 2).join(', ') || 'No market insights'}
 ` : 'No live RSS data available - use general market knowledge'}
+
+HEADLINE GENERATION REQUIREMENTS (Use RSS data and business intelligence):
+- HEADLINES must reference current trends, events, or news when relevant
+- Connect ${businessName} to trending topics or local events naturally
+- Use specific business services/features from business details
+- Reference current market conditions or seasonal opportunities
+- Make headlines feel current and timely, not generic
+- Examples of RSS-integrated headlines:
+  * "Local Food Festival Winner" (if there's a food event)
+  * "Beat Holiday Rush Stress" (if trending topic is holiday stress)
+  * "New Year Fitness Goals" (if trending topic is resolutions)
+  * "Supply Chain Solution Found" (if news mentions supply issues)
+
+SUBHEADLINE GENERATION REQUIREMENTS (Build on headline with business intelligence):
+- SUBHEADLINES must expand on headline using specific business details
+- Reference actual services, products, or unique features offered
+- Use business intelligence data (industry trends, local opportunities)
+- Connect to target audience pain points and solutions
+- Support headline's promise with concrete business benefits
+- Examples of business-integrated subheadlines:
+  * "Our 15-year catering experience serves 200+ events monthly"
+  * "Same-day delivery available for all ${location} residents"
+  * "Certified organic ingredients sourced from local farms"
+  * "24/7 emergency service with 30-minute response time"
 
 SPECIFIC BUSINESS DETAILS:
 - Business Name: ${businessName}
@@ -786,9 +816,11 @@ WRITE LIKE THIS INSTEAD:
 ✅ "Nairobi parents are switching to Samaki Cookies. Here's why..."
 ✅ Direct, benefit-focused, action-driving copy
 
-CRITICAL INSTRUCTION:
+CRITICAL INSTRUCTION FOR ALL COMPONENTS:
 - USE THE REAL DATA PROVIDED: Incorporate actual business details, trending topics, and local information
-- REFERENCE SPECIFIC SERVICES: Mention actual services/products offered by ${businessName}
+- HEADLINES: Must reference RSS trends, events, or business intelligence naturally
+- SUBHEADLINES: Must mention actual services/products offered by ${businessName}
+- CAPTIONS: Must weave together all data sources into compelling marketing copy
 - CONNECT TO CURRENT TRENDS: Use the RSS trending data and current events when relevant
 - LEVERAGE BUSINESS INTELLIGENCE: Use the actual business strengths and value propositions provided
 - SPEAK LOCAL LANGUAGE: Use the regional language patterns and local cultural elements
@@ -797,6 +829,19 @@ CRITICAL INSTRUCTION:
 - Choose the approach that makes MOST SENSE for ${businessName} and current market conditions
 - Use your intelligence to create fresh, varied content each time
 - Let RSS data and business intelligence guide your approach selection
+
+HEADLINE INTEGRATION EXAMPLES:
+- If RSS shows "Local Food Festival": "Food Festival Winner Revealed"
+- If trending topic is "Holiday Stress": "Beat Holiday Rush Stress"
+- If business intelligence shows "24/7 Service": "Always Open Always Ready"
+- If local event is "Back to School": "School Rush Solution Found"
+- If seasonal opportunity is "Summer": "Summer Special Starts Now"
+
+SUBHEADLINE INTEGRATION EXAMPLES:
+- Business service: "Our certified technicians fix 95% of issues same-day"
+- Unique feature: "Only ${location} bakery using organic local flour"
+- Business intelligence: "Serving ${location} families for 15+ years with proven results"
+- Target audience: "Designed specifically for busy ${location} professionals"
 
 MARKETING COPY REQUIREMENTS:
 - WRITE MARKETING COPY, NOT CREATIVE WRITING: Sound like a business owner, not a poet
@@ -835,9 +880,9 @@ Generate ALL components as ONE cohesive campaign:
 UNIFIED_THEME: [the main theme/angle that connects everything - one sentence]
 KEY_MESSAGE: [the core message all components will reinforce - one sentence]
 
-HEADLINE: [5-word catchy headline that captures the key message]
-SUBHEADLINE: [supporting headline that expands on the main headline - max 14 words]
-CAPTION: [full social media caption that tells the complete story - marketing copy, not creative writing]
+HEADLINE: [5-word catchy headline using RSS trends/events/business intelligence - must feel current and specific to ${businessName}]
+SUBHEADLINE: [supporting headline using specific business services/features from business details - max 14 words that build on headline]
+CAPTION: [full social media caption that weaves together RSS data, business intelligence, and trending information - marketing copy, not creative writing]
 CTA: [MANDATORY CTA STYLE: ${selectedCtaStyle} - ${getCtaStyleInstructions(selectedCtaStyle, businessName, location)} - Max 8 words, completely unique]
 DESIGN_DIRECTION: [specific visual direction that matches the content tone and message]
 
