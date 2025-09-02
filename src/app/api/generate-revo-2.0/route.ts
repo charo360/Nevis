@@ -8,17 +8,17 @@ import { generateWithRevo20 } from '@/ai/revo-2.0-service';
 
 export async function POST(request: NextRequest) {
   try {
-    
+
     const body = await request.json();
-    const { 
-      businessType, 
-      platform, 
-      brandProfile, 
-      visualStyle, 
-      imageText, 
+    const {
+      businessType,
+      platform,
+      brandProfile,
+      visualStyle,
+      imageText,
       aspectRatio,
       includePeopleInDesigns,
-      useLocalLanguage 
+      useLocalLanguage
     } = body;
 
     // Validate required fields
@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    console.log('Revo 2.0 generation request:', {
       businessType,
       platform,
       visualStyle: visualStyle || 'modern',

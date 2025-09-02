@@ -11,19 +11,21 @@ export async function GET(request: NextRequest) {
     const location = searchParams.get('location') || 'Kenya';
     const businessType = searchParams.get('businessType') || 'restaurant';
 
-    
+
     // Capture console output
     const originalLog = console.log;
     const logs: string[] = [];
-    
+
+    console.log = (...args: any[]) => {
       logs.push(args.join(' '));
       originalLog(...args);
     };
 
     // Test RSS feeds
     await testRSSFeeds(location, businessType);
-    
+
     // Restore console.log
+    console.log = originalLog;
 
     return NextResponse.json({
       success: true,
