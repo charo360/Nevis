@@ -5,11 +5,45 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
+// Word Repetition Removal Function - Fixes issues like "buy now now pay later"
+function removeWordRepetitions(text: string): string {
+  // Simple approach: split by spaces and check for consecutive duplicate words
+  const words = text.split(/\s+/);
+  const cleanedWords: string[] = [];
+
+  for (let i = 0; i < words.length; i++) {
+    const currentWord = words[i];
+    const previousWord = cleanedWords[cleanedWords.length - 1];
+
+    // Skip if current word is the same as previous word (case-insensitive)
+    // Only for actual words (not empty strings)
+    if (currentWord && previousWord &&
+      currentWord.toLowerCase() === previousWord.toLowerCase() &&
+      currentWord.trim().length > 0) {
+      console.log(`🔧 Removed duplicate word: "${currentWord}"`);
+      continue; // Skip this duplicate word
+    }
+
+    cleanedWords.push(currentWord);
+  }
+
+  return cleanedWords.join(' ');
+}
+
 // Shared AI initialization to avoid duplicate variable names
 function initializeAI() {
   const geminiApiKey = process.env.GOOGLE_AI_API_KEY || process.env.GOOGLE_GENAI_API_KEY || process.env.GEMINI_API_KEY;
   const genAI = new GoogleGenerativeAI(geminiApiKey!);
-  return genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  // Use the same model as Revo 1.0 service for consistency
+  return genAI.getGenerativeModel({
+    model: 'gemini-2.5-flash-image-preview',
+    generationConfig: {
+      temperature: 0.9, // Higher temperature for more creative, varied responses
+      topP: 0.95,
+      topK: 40,
+      maxOutputTokens: 4096,
+    }
+  });
 }
 
 // Dynamic approach instructions to force variety
@@ -384,20 +418,42 @@ CONVERSION PSYCHOLOGY REQUIREMENTS:
 - Focus on what makes people instantly want to experience ${businessName}
 - Create curiosity gaps that make people want to know more
 
-CONVERSION-FOCUSED EXAMPLES:
+CONVERSION-FOCUSED EXAMPLES (DO NOT COPY THESE - CREATE SOMETHING COMPLETELY DIFFERENT):
 - "Secret Recipe Finally Revealed" (curiosity + exclusivity)
 - "Last Batch This Week" (scarcity + urgency)
 - "Addictive Flavors Warning Inside" (intrigue + benefit)
 - "Hidden Gem Locals Obsess" (social proof + exclusivity)
 - "Revolutionary Taste Experience Awaits" (innovation + anticipation)
 
+CRITICAL ANTI-REPETITION INSTRUCTIONS:
+❌ DO NOT use "2025's Best-Kept Secret" or any variation
+❌ DO NOT use "Chakula Kizuri" or repetitive Swahili phrases
+❌ DO NOT use "for your familia's delight" or similar family references
+❌ CREATE something completely original that has never been generated before
+❌ AVOID any pattern that sounds like a template or formula
+
 IMPORTANT: Generate ONLY ONE headline, not multiple options or lists.
 Do NOT write "Here are headlines" or provide multiple choices.
-Generate ONE unique headline that makes people instantly want to try ${businessName}. Focus on conversion, not just awareness.`;
+Generate ONE unique headline that makes people instantly want to try ${businessName}. Focus on conversion, not just awareness.
+Make it so specific to ${businessName} in ${location} that it could never be used for another business.`;
 
   try {
-    const result = await model.generateContent(prompt);
-    const headline = result.response.text().trim();
+    // Add unique generation context to prevent repetitive responses
+    const uniqueContext = `\n\nUNIQUE GENERATION CONTEXT: ${Date.now()}-${Math.random().toString(36).substr(2, 9)}
+    This generation must be completely different from any previous generation.
+    Use this unique context to ensure fresh, original content that has never been generated before.
+
+    CRITICAL WORD REPETITION RULES:
+    - NEVER repeat the same word consecutively (e.g., "buy now now pay" should be "buy now pay")
+    - Check each sentence for duplicate adjacent words before finalizing
+    - If you write "now now" or "the the" or any repeated word, remove the duplicate
+    - Read your output carefully to ensure no word appears twice in a row`;
+
+    const result = await model.generateContent(prompt + uniqueContext);
+    let headline = result.response.text().trim();
+
+    // Post-process to remove word repetitions
+    headline = removeWordRepetitions(headline);
 
     // Add randomization to approach and emotional impact to ensure variety
     const approaches = ['strategic', 'creative', 'authentic', 'bold', 'community-focused', 'innovative'];
@@ -423,9 +479,19 @@ Make it:
 - Uses psychological triggers like scarcity, urgency, or exclusivity
 - Locally relevant to ${location}
 
+CRITICAL ANTI-REPETITION RULES:
+❌ DO NOT use "2025's Best-Kept Secret" or any variation
+❌ DO NOT use "Chakula Kizuri" or repetitive Swahili phrases
+❌ DO NOT use "for your familia's delight" or similar family references
+❌ CREATE something completely original that has never been generated before
+
 Just return the headline, nothing else.`;
 
-      const retryResult = await model.generateContent(simplifiedHeadlinePrompt);
+      // Add unique generation context to headline retry as well
+      const headlineRetryContext = `\n\nUNIQUE HEADLINE RETRY CONTEXT: ${Date.now()}-${Math.random().toString(36).substr(2, 9)}
+      This headline retry must be completely different and avoid repetitive patterns.`;
+
+      const retryResult = await model.generateContent(simplifiedHeadlinePrompt + headlineRetryContext);
       const retryHeadline = retryResult.response.text().trim();
 
       console.log('✅ Headline retry successful:', retryHeadline);
@@ -441,9 +507,19 @@ Just return the headline, nothing else.`;
 
       // EMERGENCY AI GENERATION - Ultra Simple Prompt
       try {
-        const emergencyPrompt = `Write a catchy 5-word headline for ${businessName} in ${location}. Make it unique and compelling.`;
+        const emergencyPrompt = `Write a catchy 5-word headline for ${businessName} in ${location}. Make it unique and compelling.
 
-        const emergencyResult = await model.generateContent(emergencyPrompt);
+CRITICAL ANTI-REPETITION RULES:
+❌ DO NOT use "2025's Best-Kept Secret" or any variation
+❌ DO NOT use "Chakula Kizuri" or repetitive Swahili phrases
+❌ DO NOT use "for your familia's delight" or similar family references
+❌ CREATE something completely original that has never been generated before`;
+
+        // Add unique generation context to emergency headline generation as well
+        const headlineEmergencyContext = `\n\nUNIQUE HEADLINE EMERGENCY CONTEXT: ${Date.now()}-${Math.random().toString(36).substr(2, 9)}
+        This emergency headline must be completely different and avoid repetitive patterns.`;
+
+        const emergencyResult = await model.generateContent(emergencyPrompt + headlineEmergencyContext);
         const emergencyHeadline = emergencyResult.response.text().trim();
 
         console.log('🚨 Emergency headline generation successful');
@@ -536,14 +612,37 @@ CONVERSION-FOCUSED SUBHEADLINE REQUIREMENTS:
 - Sound like a successful conversion-focused marketer in ${location}
 - Should make the offer irresistible and create urgency to visit/buy
 
-Examples of effective ${location} subheadlines:
+Examples of effective ${location} subheadlines (DO NOT COPY THESE - CREATE SOMETHING COMPLETELY DIFFERENT):
 ${getLocalMarketingExamples(location, businessType).split('\n').map(line => line.replace('- "', '- "').replace('"', '" (subheadline style)')).slice(0, 3).join('\n')}
 
-Generate ONLY the subheadline text, nothing else.`;
+CRITICAL ANTI-REPETITION INSTRUCTIONS FOR SUBHEADLINES:
+❌ DO NOT use "2025's Best-Kept Secret" or any variation
+❌ DO NOT use "Chakula Kizuri" or repetitive Swahili phrases
+❌ DO NOT use "for your familia's delight" or similar family references
+❌ CREATE something completely original that has never been generated before
+❌ AVOID any pattern that sounds like a template or formula
+❌ Make it specific to ${businessName}'s actual services and features
+
+Generate ONLY the subheadline text, nothing else.
+Make it so specific to ${businessName} in ${location} that it could never be used for another business.`;
 
   try {
-    const result = await model.generateContent(prompt);
-    const subheadline = result.response.text().trim();
+    // Add unique generation context to prevent repetitive responses
+    const uniqueContext = `\n\nUNIQUE GENERATION CONTEXT: ${Date.now()}-${Math.random().toString(36).substr(2, 9)}
+    This subheadline generation must be completely different from any previous generation.
+    Use this unique context to ensure fresh, original subheadlines that have never been generated before.
+
+    CRITICAL WORD REPETITION RULES:
+    - NEVER repeat the same word consecutively (e.g., "buy now now pay" should be "buy now pay")
+    - Check each sentence for duplicate adjacent words before finalizing
+    - If you write "now now" or "the the" or any repeated word, remove the duplicate
+    - Read your output carefully to ensure no word appears twice in a row`;
+
+    const result = await model.generateContent(prompt + uniqueContext);
+    let subheadline = result.response.text().trim();
+
+    // Post-process to remove word repetitions
+    subheadline = removeWordRepetitions(subheadline);
 
     // Add randomization to framework and benefit
     const frameworks = ['benefit-focused', 'problem-solving', 'community-centered', 'expertise-driven', 'results-oriented'];
@@ -666,18 +765,30 @@ MANDATORY APPROACH: ${selectedApproach}
 You MUST use this specific approach - no other approach is allowed for this generation.
 
 STRICT ANTI-REPETITION RULES:
-❌ NEVER use "2025" or any year references
-❌ NEVER use "best-kept secret" or "secret" language
-❌ NEVER use "chakula kizuri" repeatedly - vary your Swahili
-❌ NEVER use "Shop now via the link in our bio! Karibu!" - create unique CTAs
-❌ NEVER use "Discover", "Experience", "Taste the", "Try our"
+❌ NEVER use "2025" or any year references like "2025's Best-Kept Secret"
+❌ NEVER use "best-kept secret", "secret", "hidden gem", or mystery language
+❌ NEVER use "chakula kizuri" - if using Swahili, use different phrases like "chakula bora", "vyakula vizuri", "lishe nzuri"
+❌ NEVER use "Shop now via the link in our bio! Karibu!" - create completely unique CTAs
+❌ NEVER use "Discover", "Experience", "Taste the", "Try our", "Indulge in"
 ❌ NEVER use formulaic patterns that sound like templates
+❌ NEVER repeat the same opening words or sentence structures
+❌ NEVER use "for your familia's delight" or similar repetitive family references
+❌ AVOID any phrase that sounds like it could be copy-pasted to another business
 
 APPROACH-SPECIFIC REQUIREMENTS (Apply to ALL components - headlines, subheadlines, captions):
 ${getApproachInstructions(selectedApproach, businessName, location, creativityBoost)}
 
 CREATIVITY BOOST ${creativityBoost} CHALLENGE:
 Create ALL COMPONENTS (headline, subheadline, caption) that are so unique and specific to ${businessName} in ${location} that they could NEVER be used for any other business. Use the actual business data, trending information, RSS feeds, local events, and business intelligence to create something genuinely original.
+
+MANDATORY UNIQUENESS REQUIREMENTS:
+- Each component must reference specific details about ${businessName}
+- Headlines must connect to current events, trends, or local happenings
+- Subheadlines must mention actual services, products, or business features
+- Captions must tell a story specific to this business and location
+- NO generic phrases that could apply to any ${businessType}
+- NO template-like language patterns
+- Every sentence must add unique value specific to ${businessName}
 
 UNIFIED DATA INTEGRATION REQUIREMENTS:
 - HEADLINES: Must incorporate RSS trends, current events, or seasonal opportunities
@@ -896,8 +1007,23 @@ IMPORTANT:
     console.log('🤖 Attempting UNIFIED content generation with Gemini...');
     console.log('📝 Prompt preview:', unifiedPrompt.substring(0, 200) + '...');
 
-    const result = await model.generateContent(unifiedPrompt);
-    const response = result.response.text().trim();
+    // Add unique generation context to prevent repetitive responses
+    const uniqueContext = `\n\nUNIQUE GENERATION CONTEXT: ${Date.now()}-${Math.random().toString(36).substr(2, 9)}
+    This unified content generation must be completely different from any previous generation.
+    Use this unique context to ensure fresh, original content that has never been generated before.
+    CRITICAL: Avoid any patterns like "2025's Best-Kept Secret", "Chakula Kizuri", or repetitive phrases.
+
+    CRITICAL WORD REPETITION RULES:
+    - NEVER repeat the same word consecutively (e.g., "buy now now pay" should be "buy now pay")
+    - Check each sentence for duplicate adjacent words before finalizing
+    - If you write "now now" or "the the" or any repeated word, remove the duplicate
+    - Read your output carefully to ensure no word appears twice in a row`;
+
+    const result = await model.generateContent(unifiedPrompt + uniqueContext);
+    let response = result.response.text().trim();
+
+    // Post-process to remove word repetitions from the entire response
+    response = removeWordRepetitions(response);
 
     console.log('✅ AI Response received (FULL):', response);
 
@@ -919,14 +1045,14 @@ IMPORTANT:
     console.log('- CTA:', ctaMatch?.[1]?.trim());
     console.log('- Design:', designMatch?.[1]?.trim());
 
-    // Extract all components
-    const unifiedTheme = unifiedThemeMatch?.[1]?.trim() || 'Quality local business';
-    const keyMessage = keyMessageMatch?.[1]?.trim() || 'Exceptional service for local community';
-    const headline = headlineMatch?.[1]?.trim() || `${businessName} ${location}`;
-    const subheadline = subheadlineMatch?.[1]?.trim() || `Quality ${businessType} in ${location}`;
-    const caption = captionMatch?.[1]?.trim() || response;
-    const callToAction = ctaMatch?.[1]?.trim() || generateFallbackCTA(platform);
-    const designDirection = designMatch?.[1]?.trim() || 'Clean, professional design with local elements';
+    // Extract all components and apply word repetition removal to each
+    const unifiedTheme = removeWordRepetitions(unifiedThemeMatch?.[1]?.trim() || 'Quality local business');
+    const keyMessage = removeWordRepetitions(keyMessageMatch?.[1]?.trim() || 'Exceptional service for local community');
+    const headline = removeWordRepetitions(headlineMatch?.[1]?.trim() || `${businessName} ${location}`);
+    const subheadline = removeWordRepetitions(subheadlineMatch?.[1]?.trim() || `Quality ${businessType} in ${location}`);
+    const caption = removeWordRepetitions(captionMatch?.[1]?.trim() || response);
+    const callToAction = removeWordRepetitions(ctaMatch?.[1]?.trim() || generateFallbackCTA(platform));
+    const designDirection = removeWordRepetitions(designMatch?.[1]?.trim() || 'Clean, professional design with local elements');
 
     // Generate dynamic engagement hooks
     const engagementHooks = generateDynamicEngagementHooks(businessType, location, industry);
@@ -969,6 +1095,13 @@ REQUIREMENTS:
 - End with an effective call-to-action
 - Make it conversion-focused and unique to this business
 
+CRITICAL ANTI-REPETITION RULES:
+❌ DO NOT use "2025's Best-Kept Secret" or any variation
+❌ DO NOT use "Chakula Kizuri" or repetitive Swahili phrases
+❌ DO NOT use "for your familia's delight" or similar family references
+❌ CREATE something completely original that has never been generated before
+❌ AVOID any pattern that sounds like a template or formula
+
 IMPORTANT: Generate ONLY ONE caption, not multiple options.
 
 Format:
@@ -977,8 +1110,21 @@ CTA: [write one call to action here]
 
 Do NOT write "Here are captions" or provide lists.`;
 
-      const retryResult = await model.generateContent(simplifiedPrompt);
-      const retryResponse = retryResult.response.text().trim();
+      // Add unique generation context to retry as well
+      const retryUniqueContext = `\n\nUNIQUE RETRY CONTEXT: ${Date.now()}-${Math.random().toString(36).substr(2, 9)}
+      This retry generation must be completely different and avoid repetitive patterns.
+
+      CRITICAL WORD REPETITION RULES:
+      - NEVER repeat the same word consecutively (e.g., "buy now now pay" should be "buy now pay")
+      - Check each sentence for duplicate adjacent words before finalizing
+      - If you write "now now" or "the the" or any repeated word, remove the duplicate
+      - Read your output carefully to ensure no word appears twice in a row`;
+
+      const retryResult = await model.generateContent(simplifiedPrompt + retryUniqueContext);
+      let retryResponse = retryResult.response.text().trim();
+
+      // Post-process to remove word repetitions from retry response
+      retryResponse = removeWordRepetitions(retryResponse);
 
       console.log('✅ Retry successful:', retryResponse.substring(0, 100) + '...');
 
@@ -986,8 +1132,8 @@ Do NOT write "Here are captions" or provide lists.`;
       const retryCaptionMatch = retryResponse.match(/CAPTION:\s*(.*?)(?=CTA:|$)/s);
       const retryCtaMatch = retryResponse.match(/CTA:\s*(.*?)$/s);
 
-      const retryCaption = retryCaptionMatch ? retryCaptionMatch[1].trim() : retryResponse;
-      const retryCallToAction = retryCtaMatch ? retryCtaMatch[1].trim() : generateFallbackCTA(platform);
+      const retryCaption = removeWordRepetitions(retryCaptionMatch ? retryCaptionMatch[1].trim() : retryResponse);
+      const retryCallToAction = removeWordRepetitions(retryCtaMatch ? retryCtaMatch[1].trim() : generateFallbackCTA(platform));
 
       return {
         caption: retryCaption,
@@ -1000,17 +1146,39 @@ Do NOT write "Here are captions" or provide lists.`;
 
       // EMERGENCY AI GENERATION - Ultra Simple Prompt
       try {
-        const emergencyPrompt = `Write ONE unique social media post for ${businessName} in ${location}. Make it compelling and different from typical posts. Include a call-to-action. Do NOT write "Here are posts" or provide multiple options. Write ONE post only.`;
+        const emergencyPrompt = `Write ONE unique social media post for ${businessName} in ${location}. Make it compelling and different from typical posts. Include a call-to-action.
 
-        const emergencyResult = await model.generateContent(emergencyPrompt);
-        const emergencyResponse = emergencyResult.response.text().trim();
+CRITICAL ANTI-REPETITION RULES:
+❌ DO NOT use "2025's Best-Kept Secret" or any variation
+❌ DO NOT use "Chakula Kizuri" or repetitive Swahili phrases
+❌ DO NOT use "for your familia's delight" or similar family references
+❌ CREATE something completely original that has never been generated before
+❌ AVOID any pattern that sounds like a template or formula
+
+Do NOT write "Here are posts" or provide multiple options. Write ONE post only.`;
+
+        // Add unique generation context to emergency generation as well
+        const emergencyUniqueContext = `\n\nUNIQUE EMERGENCY CONTEXT: ${Date.now()}-${Math.random().toString(36).substr(2, 9)}
+        This emergency generation must be completely different and avoid any repetitive patterns.
+
+        CRITICAL WORD REPETITION RULES:
+        - NEVER repeat the same word consecutively (e.g., "buy now now pay" should be "buy now pay")
+        - Check each sentence for duplicate adjacent words before finalizing
+        - If you write "now now" or "the the" or any repeated word, remove the duplicate
+        - Read your output carefully to ensure no word appears twice in a row`;
+
+        const emergencyResult = await model.generateContent(emergencyPrompt + emergencyUniqueContext);
+        let emergencyResponse = emergencyResult.response.text().trim();
+
+        // Post-process to remove word repetitions from emergency response
+        emergencyResponse = removeWordRepetitions(emergencyResponse);
 
         console.log('🚨 Emergency AI generation successful');
 
         return {
           caption: emergencyResponse,
           engagementHooks: generateDynamicEngagementHooks(businessType, location, industry),
-          callToAction: generateFallbackCTA(platform)
+          callToAction: removeWordRepetitions(generateFallbackCTA(platform))
         };
 
       } catch (emergencyError) {
@@ -1021,9 +1189,9 @@ Do NOT write "Here are captions" or provide lists.`;
         const uniqueId = Math.floor(Math.random() * 10000);
 
         return {
-          caption: `${businessName} in ${location} - where quality meets innovation. Every visit is a new experience that locals can't stop talking about. Join the community that knows great ${businessType}! #${timestamp}`,
+          caption: removeWordRepetitions(`${businessName} in ${location} - where quality meets innovation. Every visit is a new experience that locals can't stop talking about. Join the community that knows great ${businessType}! #${timestamp}`),
           engagementHooks: generateDynamicEngagementHooks(businessType, location, industry),
-          callToAction: generateFallbackCTA(platform)
+          callToAction: removeWordRepetitions(generateFallbackCTA(platform))
         };
       }
     }
