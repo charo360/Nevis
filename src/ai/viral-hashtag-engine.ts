@@ -17,7 +17,7 @@ export interface ViralHashtagStrategy {
 }
 
 export class ViralHashtagEngine {
-  
+
   /**
    * Generate viral hashtag strategy using real-time trending data
    */
@@ -29,7 +29,7 @@ export class ViralHashtagEngine {
     services?: string,
     targetAudience?: string
   ): Promise<ViralHashtagStrategy> {
-    
+
 
     try {
       // Get trending data from RSS feeds and trending enhancer
@@ -83,13 +83,13 @@ export class ViralHashtagEngine {
    */
   private async getTrendingHashtags(trendingData: any, businessType: string, platform: string): Promise<string[]> {
     const hashtags = [...trendingData.hashtags];
-    
+
     // Add business-relevant trending hashtags
     const businessTrending = this.getBusinessTrendingHashtags(businessType, platform);
     hashtags.push(...businessTrending);
 
     // Remove duplicates and return top trending
-    return [...new Set(hashtags)].slice(0, 8);
+    return Array.from(new Set(hashtags)).slice(0, 8);
   }
 
   /**
@@ -107,7 +107,7 @@ export class ViralHashtagEngine {
 
     const general = viralHashtags.general.sort(() => 0.5 - Math.random()).slice(0, 4);
     const platformSpecific = viralHashtags[platform.toLowerCase() as keyof typeof viralHashtags] || [];
-    
+
     return [...general, ...platformSpecific.slice(0, 3)];
   }
 
@@ -125,7 +125,7 @@ export class ViralHashtagEngine {
     };
 
     const baseNiche = nicheMap[businessType.toLowerCase()] || ['#business', '#service', '#quality', '#professional'];
-    
+
     // Add service-specific hashtags if provided
     if (services) {
       const serviceWords = services.toLowerCase().split(/[,\s]+/).filter(word => word.length > 3);
@@ -161,7 +161,7 @@ export class ViralHashtagEngine {
    */
   private getCommunityHashtags(businessType: string, targetAudience?: string): string[] {
     const communityHashtags = ['#community', '#local', '#support', '#family', '#friends', '#together', '#love'];
-    
+
     if (targetAudience) {
       const audienceWords = targetAudience.toLowerCase().split(/[,\s]+/).filter(word => word.length > 3);
       const audienceHashtags = audienceWords.slice(0, 2).map(word => `#${word.replace(/[^a-z0-9]/g, '')}`);
@@ -234,8 +234,8 @@ export class ViralHashtagEngine {
    */
   private optimizeForVirality(hashtags: string[]): string[] {
     // Remove duplicates
-    const unique = [...new Set(hashtags)];
-    
+    const unique = Array.from(new Set(hashtags));
+
     // Sort by estimated engagement potential (simplified scoring)
     const scored = unique.map(tag => ({
       tag,
@@ -243,7 +243,7 @@ export class ViralHashtagEngine {
     }));
 
     scored.sort((a, b) => b.score - a.score);
-    
+
     return scored.slice(0, 15).map(item => item.tag);
   }
 
@@ -252,29 +252,29 @@ export class ViralHashtagEngine {
    */
   private calculateViralScore(hashtag: string): number {
     let score = 0;
-    
+
     // High-engagement keywords get bonus points
     const viralKeywords = ['viral', 'trending', 'fyp', 'explore', 'amazing', 'incredible'];
     if (viralKeywords.some(keyword => hashtag.toLowerCase().includes(keyword))) {
       score += 10;
     }
-    
+
     // Platform-specific hashtags get bonus
     const platformKeywords = ['instagram', 'tiktok', 'reels', 'story'];
     if (platformKeywords.some(keyword => hashtag.toLowerCase().includes(keyword))) {
       score += 5;
     }
-    
+
     // Local hashtags get moderate bonus
     const localKeywords = ['local', 'community', 'neighborhood'];
     if (localKeywords.some(keyword => hashtag.toLowerCase().includes(keyword))) {
       score += 3;
     }
-    
+
     // Length penalty (very long hashtags perform worse)
     if (hashtag.length > 20) score -= 2;
     if (hashtag.length > 30) score -= 5;
-    
+
     return score + Math.random(); // Add randomness for variety
   }
 

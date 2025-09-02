@@ -3,7 +3,7 @@
  * Integrates RSS feed data to enhance content generation with trending topics
  */
 
-import { rssService, TrendingData } from '@/services/rss-feed-service';
+import { rssService, TrendingData } from '../services/rss-feed-service';
 
 export interface TrendingEnhancement {
   keywords: string[];
@@ -30,14 +30,14 @@ export class TrendingContentEnhancer {
    */
   private async getTrendingData(): Promise<TrendingData> {
     const now = Date.now();
-    
+
     if (this.trendingCache && (now - this.lastCacheUpdate) < this.cacheTimeout) {
       return this.trendingCache;
     }
 
     this.trendingCache = await rssService.getTrendingData();
     this.lastCacheUpdate = now;
-    
+
     return this.trendingCache;
   }
 
@@ -47,17 +47,17 @@ export class TrendingContentEnhancer {
   public async getTrendingEnhancement(context: ContentContext = {}): Promise<TrendingEnhancement> {
     try {
       const trendingData = await this.getTrendingData();
-      
+
       // Filter and prioritize based on context
       const relevantKeywords = this.filterKeywordsByContext(trendingData.keywords, context);
       const relevantTopics = this.filterTopicsByContext(trendingData.topics, context);
-      
+
       // Generate hashtags from trending keywords
       const hashtags = this.generateHashtags(relevantKeywords, context);
-      
+
       // Extract seasonal themes
       const seasonalThemes = this.extractSeasonalThemes(trendingData);
-      
+
       // Extract industry-specific buzz
       const industryBuzz = this.extractIndustryBuzz(trendingData, context.businessType);
 
@@ -71,7 +71,7 @@ export class TrendingContentEnhancer {
       };
 
     } catch (error) {
-      
+
       // Return fallback data
       return {
         keywords: ['trending', 'viral', 'popular', 'latest', 'new'],
@@ -137,11 +137,11 @@ export class TrendingContentEnhancer {
     // Remove topics that are too generic or not suitable for social media
     const filtered = topics.filter(topic => {
       const lower = topic.toLowerCase();
-      return !lower.includes('error') && 
-             !lower.includes('404') && 
-             !lower.includes('page not found') &&
-             lower.length > 10 && 
-             lower.length < 100;
+      return !lower.includes('error') &&
+        !lower.includes('404') &&
+        !lower.includes('page not found') &&
+        lower.length > 10 &&
+        lower.length < 100;
     });
 
     return filtered;
@@ -176,7 +176,7 @@ export class TrendingContentEnhancer {
     }
 
     // Remove duplicates and return
-    return [...new Set(hashtags)];
+    return Array.from(new Set(hashtags));
   }
 
   /**
@@ -200,9 +200,9 @@ export class TrendingContentEnhancer {
     };
 
     const currentSeasonalKeywords = seasonalKeywords[currentMonth as keyof typeof seasonalKeywords] || [];
-    
-    const seasonalThemes = trendingData.keywords.filter(keyword => 
-      currentSeasonalKeywords.some(seasonal => 
+
+    const seasonalThemes = trendingData.keywords.filter(keyword =>
+      currentSeasonalKeywords.some(seasonal =>
         keyword.toLowerCase().includes(seasonal.toLowerCase())
       )
     );
@@ -226,9 +226,9 @@ export class TrendingContentEnhancer {
     };
 
     const relevantKeywords = industryKeywords[businessType as keyof typeof industryKeywords] || [];
-    
-    const industryBuzz = trendingData.keywords.filter(keyword => 
-      relevantKeywords.some(industry => 
+
+    const industryBuzz = trendingData.keywords.filter(keyword =>
+      relevantKeywords.some(industry =>
         keyword.toLowerCase().includes(industry.toLowerCase())
       )
     );
@@ -241,7 +241,7 @@ export class TrendingContentEnhancer {
    */
   public async getTrendingPromptEnhancement(context: ContentContext = {}): Promise<string> {
     const enhancement = await this.getTrendingEnhancement(context);
-    
+
     const promptParts: string[] = [];
 
     if (enhancement.keywords.length > 0) {
