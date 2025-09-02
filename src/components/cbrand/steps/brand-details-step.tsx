@@ -47,10 +47,7 @@ export function BrandDetailsStep({
     const isColorUpdate = field === 'primaryColor' || field === 'accentColor' || field === 'backgroundColor';
     if (isColorUpdate && currentBrand?.id) {
       try {
-          brandId: currentBrand.id,
-          field,
-          value
-        });
+
 
         // Save color changes to Firebase immediately
         await updateProfile(currentBrand.id, { [field]: value });

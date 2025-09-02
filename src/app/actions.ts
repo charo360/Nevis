@@ -462,13 +462,6 @@ export async function generateContentWithArtifactsAction(
     } else {
       // Use active artifacts, prioritizing exact-use
       const activeArtifacts = artifactsService.getActiveArtifacts();
-        id: a.id,
-        name: a.name,
-        type: a.type,
-        usageType: a.usageType,
-        isActive: a.isActive,
-        instructions: a.instructions
-      })));
 
       const exactUseArtifacts = activeArtifacts.filter(a => a.usageType === 'exact-use');
       const referenceArtifacts = activeArtifacts.filter(a => a.usageType === 'reference');

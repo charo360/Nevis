@@ -162,7 +162,7 @@ export function LogoUploadStepFirebaseFirst({
 
     // Validate required fields
     const missingFields = [];
-    
+
     if (!brandProfile.businessName?.trim()) {
       missingFields.push('Business Name');
     }
@@ -209,14 +209,9 @@ export function LogoUploadStepFirebaseFirst({
         version: '1.0',
       };
 
-        businessName: profileToSave.businessName,
-        hasLogo: !!profileToSave.logoDataUrl,
-        logoLength: profileToSave.logoDataUrl?.length || 0
-      });
-
       // Save to Firebase first (primary storage)
       const profileId = await saveBrandProfileFirebaseFirst(profileToSave, userId);
-      
+
 
       toast({
         title: "Profile Saved Successfully!",
@@ -239,12 +234,12 @@ export function LogoUploadStepFirebaseFirst({
     }
   };
 
-  const isProfileComplete = brandProfile.businessName && 
-                           brandProfile.businessType && 
-                           brandProfile.location && 
-                           brandProfile.description && 
-                           brandProfile.services?.length > 0 && 
-                           brandProfile.logoDataUrl;
+  const isProfileComplete = brandProfile.businessName &&
+    brandProfile.businessType &&
+    brandProfile.location &&
+    brandProfile.description &&
+    brandProfile.services?.length > 0 &&
+    brandProfile.logoDataUrl;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -262,11 +257,10 @@ export function LogoUploadStepFirebaseFirst({
         <CardContent>
           {!brandProfile.logoDataUrl ? (
             <div
-              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                isDragOver
+              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${isDragOver
                   ? 'border-blue-400 bg-blue-50'
                   : 'border-gray-300 hover:border-gray-400'
-              }`}
+                }`}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}

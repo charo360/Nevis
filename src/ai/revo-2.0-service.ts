@@ -99,11 +99,6 @@ Return your response in this exact JSON format:
  */
 export async function generateWithRevo20(options: Revo20GenerationOptions): Promise<Revo20GenerationResult> {
   const startTime = Date.now();
-    businessType: options.businessType,
-    platform: options.platform,
-    visualStyle: options.visualStyle,
-    aspectRatio: options.aspectRatio
-  });
 
   try {
     // Step 1: Generate creative concept

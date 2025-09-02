@@ -1458,17 +1458,6 @@ const apiKey =
   process.env.NEXT_PUBLIC_GOOGLE_GENAI_API_KEY;
 
 if (!apiKey) {
-    server: {
-      GEMINI_API_KEY: !!process.env.GEMINI_API_KEY,
-      GOOGLE_API_KEY: !!process.env.GOOGLE_API_KEY,
-      GOOGLE_GENAI_API_KEY: !!process.env.GOOGLE_GENAI_API_KEY
-    },
-    client: {
-      NEXT_PUBLIC_GEMINI_API_KEY: !!process.env.NEXT_PUBLIC_GEMINI_API_KEY,
-      NEXT_PUBLIC_GOOGLE_API_KEY: !!process.env.NEXT_PUBLIC_GOOGLE_API_KEY,
-      NEXT_PUBLIC_GOOGLE_GENAI_API_KEY: !!process.env.NEXT_PUBLIC_GOOGLE_GENAI_API_KEY
-    }
-  });
 }
 
 // Initialize Google GenAI client with Revo 1.0 configuration

@@ -149,11 +149,6 @@ function QuickContentPage() {
 
   // Enhanced brand selection logic with persistence recovery
   useEffect(() => {
-      brandLoading,
-      brandsCount: brands.length,
-      currentBrand: currentBrand?.businessName || currentBrand?.name || 'null',
-      postsStorageAvailable: !!postsStorage
-    });
 
     if (!brandLoading) {
       // Add a small delay to ensure brands have time to load
