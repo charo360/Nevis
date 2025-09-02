@@ -1924,7 +1924,26 @@ ANTI-GENERIC REQUIREMENTS:
     const contentStructure = [];
     if (input.headline) contentStructure.push(`PRIMARY (Largest, most prominent): "${input.headline}"`);
     if (input.subheadline) contentStructure.push(`SECONDARY (Medium, supporting): "${input.subheadline}"`);
-    if (input.callToAction) contentStructure.push(`TERTIARY (Smaller, action-oriented): "${input.callToAction}"`);
+    if (input.callToAction) contentStructure.push(`CTA (Bold, action-oriented, prominent like "PAYA: YOUR FUTURE, NOW!" style): "${input.callToAction}"`);
+
+    // 🎯 CTA PROMINENCE INSTRUCTIONS (like Paya example)
+    const ctaInstructions = input.callToAction ? `
+
+🎯 CRITICAL CTA DISPLAY REQUIREMENTS (LIKE PAYA EXAMPLE):
+- The CTA "${input.callToAction}" MUST be displayed prominently on the design
+- Make it BOLD, LARGE, and VISUALLY STRIKING like "PAYA: YOUR FUTURE, NOW!"
+- Use high contrast colors to make the CTA stand out
+- Position it prominently - top, center, or as a banner across the design
+- Make the CTA text the MAIN FOCAL POINT of the design
+- Use typography that commands attention - bold, modern, impactful
+- Add visual elements (borders, backgrounds, highlights) to emphasize the CTA
+- The CTA should be the FIRST thing people notice when they see the design
+- Make it look like a professional marketing campaign CTA
+- Ensure it's readable from mobile devices - minimum 32px equivalent font size
+- EXAMPLE STYLE: Like "PAYA: YOUR FUTURE, NOW!" - bold, prominent, unmissable
+    ` : '';
+
+    console.log('🎯 CTA Instructions:', input.callToAction ? 'PROMINENT CTA ENABLED' : 'No CTA');
 
     // Get advanced design features
     const businessDesignDNA = getBusinessDesignDNA(input.businessType);
@@ -1957,12 +1976,18 @@ BUSINESS CONTEXT:
 - Message: ${input.imageText}
 - Location: ${input.location || 'Global'}
 
+${ctaInstructions}
+
+TEXT CONTENT TO DISPLAY:
+${contentStructure.map(item => `- ${item}`).join('\n')}
+
 DESIGN APPROACH:
 - Create a design that's VISUALLY APPEALING and engaging
 - Focus on the specific style: ${designVariations.style}
 - Make it look genuinely different from other design types
 - Each design type should have its own unique visual language
 - **MOST IMPORTANT: Make it look like a human designer made it, not AI**
+- **CRITICAL: Include ALL text content listed above in the design**
 
 VISUAL STYLE:
 - ${businessDesignDNA}
