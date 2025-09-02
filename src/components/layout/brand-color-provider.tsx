@@ -73,10 +73,6 @@ export function BrandColorProvider({ children }: BrandColorProviderProps) {
     const handleBrandChange = (event: any) => {
       if (event.detail && event.detail.brand) {
         const brand = event.detail.brand;
-          primaryColor: brand.primaryColor,
-          accentColor: brand.accentColor,
-          backgroundColor: brand.backgroundColor
-        });
 
         // Force immediate color update
         const newStyle = {
@@ -94,102 +90,102 @@ export function BrandColorProvider({ children }: BrandColorProviderProps) {
   }, []);
 
   useEffect(() => {
-      currentBrand: currentBrand ? {
-        name: currentBrand.businessName || currentBrand.name,
-        id: currentBrand.id,
-        primaryColor: currentBrand.primaryColor,
-        accentColor: currentBrand.accentColor,
-        backgroundColor: currentBrand.backgroundColor,
-        allKeys: Object.keys(currentBrand)
-      } : null,
+    currentBrand: currentBrand ? {
+      name: currentBrand.businessName || currentBrand.name,
+      id: currentBrand.id,
+      primaryColor: currentBrand.primaryColor,
+      accentColor: currentBrand.accentColor,
+      backgroundColor: currentBrand.backgroundColor,
+      allKeys: Object.keys(currentBrand)
+    } : null,
       loading
-    });
+  });
 
-    // Log the full brand object to see what properties it actually has
-    if (currentBrand) {
-    }
-
-    if (!currentBrand || loading) {
-      return;
-    }
-
-
-    // Get colors from brand object
-    let primaryColor = currentBrand.primaryColor;
-    let accentColor = currentBrand.accentColor;
-    let backgroundColor = currentBrand.backgroundColor;
-
-
-    // Always try localStorage fallback if any colors are missing or empty
-    const hasValidPrimary = primaryColor && primaryColor.trim() !== '' && primaryColor !== '#000000';
-    const hasValidAccent = accentColor && accentColor.trim() !== '' && accentColor !== '#000000';
-    const hasValidBackground = backgroundColor && backgroundColor.trim() !== '' && backgroundColor !== '#000000';
-
-    if (!hasValidPrimary || !hasValidAccent || !hasValidBackground) {
-
-      const localStorageColors = getColorsFromLocalStorage();
-      if (localStorageColors) {
-        primaryColor = hasValidPrimary ? primaryColor : localStorageColors.primaryColor;
-        accentColor = hasValidAccent ? accentColor : localStorageColors.accentColor;
-        backgroundColor = hasValidBackground ? backgroundColor : localStorageColors.backgroundColor;
-      } else {
-      }
-    } else {
-    }
-
-    const newStyle: React.CSSProperties = {};
-
-    // Apply primary color
-    if (primaryColor) {
-      const hslPrimary = hexToHsl(primaryColor);
-      if (hslPrimary) {
-        (newStyle as any)['--primary-hsl'] = hslPrimary;
-        (newStyle as any)['--primary'] = hslPrimary;
-        (newStyle as any)['--ring'] = hslPrimary;
-      }
-    } else {
-    }
-
-    // Apply accent color
-    if (accentColor) {
-      const hslAccent = hexToHsl(accentColor);
-      if (hslAccent) {
-        (newStyle as any)['--accent-hsl'] = hslAccent;
-        (newStyle as any)['--accent'] = hslAccent;
-      }
-    } else {
-    }
-
-    // Apply background color
-    if (backgroundColor) {
-      const hslBackground = hexToHsl(backgroundColor);
-      if (hslBackground) {
-        (newStyle as any)['--background-hsl'] = hslBackground;
-        (newStyle as any)['--background'] = hslBackground;
-      }
-    } else {
-    }
-
-    setStyle(newStyle);
-  }, [currentBrand, loading]);
-
-  if (loading) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <p>Loading Brand Colors...</p>
-      </div>
-    );
+  // Log the full brand object to see what properties it actually has
+  if (currentBrand) {
   }
 
+  if (!currentBrand || loading) {
+    return;
+  }
+
+
+  // Get colors from brand object
+  let primaryColor = currentBrand.primaryColor;
+  let accentColor = currentBrand.accentColor;
+  let backgroundColor = currentBrand.backgroundColor;
+
+
+  // Always try localStorage fallback if any colors are missing or empty
+  const hasValidPrimary = primaryColor && primaryColor.trim() !== '' && primaryColor !== '#000000';
+  const hasValidAccent = accentColor && accentColor.trim() !== '' && accentColor !== '#000000';
+  const hasValidBackground = backgroundColor && backgroundColor.trim() !== '' && backgroundColor !== '#000000';
+
+  if (!hasValidPrimary || !hasValidAccent || !hasValidBackground) {
+
+    const localStorageColors = getColorsFromLocalStorage();
+    if (localStorageColors) {
+      primaryColor = hasValidPrimary ? primaryColor : localStorageColors.primaryColor;
+      accentColor = hasValidAccent ? accentColor : localStorageColors.accentColor;
+      backgroundColor = hasValidBackground ? backgroundColor : localStorageColors.backgroundColor;
+    } else {
+    }
+  } else {
+  }
+
+  const newStyle: React.CSSProperties = {};
+
+  // Apply primary color
+  if (primaryColor) {
+    const hslPrimary = hexToHsl(primaryColor);
+    if (hslPrimary) {
+      (newStyle as any)['--primary-hsl'] = hslPrimary;
+      (newStyle as any)['--primary'] = hslPrimary;
+      (newStyle as any)['--ring'] = hslPrimary;
+    }
+  } else {
+  }
+
+  // Apply accent color
+  if (accentColor) {
+    const hslAccent = hexToHsl(accentColor);
+    if (hslAccent) {
+      (newStyle as any)['--accent-hsl'] = hslAccent;
+      (newStyle as any)['--accent'] = hslAccent;
+    }
+  } else {
+  }
+
+  // Apply background color
+  if (backgroundColor) {
+    const hslBackground = hexToHsl(backgroundColor);
+    if (hslBackground) {
+      (newStyle as any)['--background-hsl'] = hslBackground;
+      (newStyle as any)['--background'] = hslBackground;
+    }
+  } else {
+  }
+
+  setStyle(newStyle);
+}, [currentBrand, loading]);
+
+if (loading) {
   return (
-    <div
-      key={componentId}
-      data-cache-buster={CACHE_BUSTER}
-      data-component="brand-color-provider-v6-ultimate"
-      className="flex flex-1"
-      style={style}
-    >
-      {children}
+    <div className="flex-1 flex items-center justify-center">
+      <p>Loading Brand Colors...</p>
     </div>
   );
+}
+
+return (
+  <div
+    key={componentId}
+    data-cache-buster={CACHE_BUSTER}
+    data-component="brand-color-provider-v6-ultimate"
+    className="flex flex-1"
+    style={style}
+  >
+    {children}
+  </div>
+);
 }

@@ -220,11 +220,6 @@ export async function generateRevo15EnhancedDesign(
   ];
 
   try {
-      businessType: input.businessType,
-      platform: input.platform,
-      visualStyle: input.visualStyle,
-      brandName: input.brandProfile.businessName
-    });
 
     // Step 1: Generate design plan with Gemini 2.5 Flash
     const designPlan = await generateDesignPlan(input);

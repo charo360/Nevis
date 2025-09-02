@@ -114,10 +114,6 @@ export function CbrandWizardFirebaseFirst({ mode, brandId }: CbrandWizardFirebas
       // Find the saved profile from the refreshed brands list
       const updatedProfile = brands.find(brand => brand.id === profileId);
       if (updatedProfile) {
-          primaryColor: updatedProfile.primaryColor,
-          accentColor: updatedProfile.accentColor,
-          backgroundColor: updatedProfile.backgroundColor
-        });
         selectBrand(updatedProfile);
       } else {
         // Fallback to local data if refresh fails

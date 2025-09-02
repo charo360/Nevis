@@ -751,11 +751,6 @@ class ArtifactsService {
       }
 
       const artifacts = Array.from(this.artifacts.values());
-        id: a.id,
-        name: a.name,
-        isActive: a.isActive,
-        usageType: a.usageType
-      })));
       localStorage.setItem('artifacts', JSON.stringify(artifacts));
 
       const folders = Array.from(this.folders.values());
@@ -1008,87 +1003,87 @@ class ArtifactsService {
     const allArtifacts = Array.from(this.artifacts.values());
     const activeArtifacts = allArtifacts.filter(artifact => artifact.isActive);
 
-      id: a.id,
+    id: a.id,
       name: a.name,
-      isActive: a.isActive,
-      usageType: a.usageType
-    })));
+        isActive: a.isActive,
+          usageType: a.usageType
+  })));
 
     return activeArtifacts;
   }
 
-  /**
-   * Get active artifacts by usage type
-   */
-  getActiveArtifactsByUsageType(usageType: ArtifactUsageType): Artifact[] {
-    return this.getActiveArtifacts().filter(artifact => artifact.usageType === usageType);
-  }
+/**
+ * Get active artifacts by usage type
+ */
+getActiveArtifactsByUsageType(usageType: ArtifactUsageType): Artifact[] {
+  return this.getActiveArtifacts().filter(artifact => artifact.usageType === usageType);
+}
 
   /**
    * Deactivate all artifacts
    */
-  async deactivateAllArtifacts(): Promise<void> {
-    const artifacts = Array.from(this.artifacts.values());
-    for (const artifact of artifacts) {
-      if (artifact.isActive) {
-        artifact.isActive = false;
-        artifact.timestamps.modified = new Date();
-        this.artifacts.set(artifact.id, artifact);
-      }
+  async deactivateAllArtifacts(): Promise < void> {
+  const artifacts = Array.from(this.artifacts.values());
+  for(const artifact of artifacts) {
+    if (artifact.isActive) {
+      artifact.isActive = false;
+      artifact.timestamps.modified = new Date();
+      this.artifacts.set(artifact.id, artifact);
     }
-    await this.saveArtifactsToStorage();
   }
+    await this.saveArtifactsToStorage();
+}
 
   // === TEXT OVERLAY MANAGEMENT ===
 
   /**
    * Update artifact text overlay
    */
-  async updateArtifactTextOverlay(artifactId: string, textOverlay: ArtifactTextOverlay): Promise<boolean> {
-    const artifact = this.artifacts.get(artifactId);
-    if (!artifact) return false;
+  async updateArtifactTextOverlay(artifactId: string, textOverlay: ArtifactTextOverlay): Promise < boolean > {
+  const artifact = this.artifacts.get(artifactId);
+  if(!artifact) return false;
 
-    artifact.textOverlay = textOverlay;
-    artifact.timestamps.modified = new Date();
-    this.artifacts.set(artifactId, artifact);
+  artifact.textOverlay = textOverlay;
+  artifact.timestamps.modified = new Date();
+  this.artifacts.set(artifactId, artifact);
 
-    await this.saveArtifactsToStorage();
-    return true;
-  }
+  await this.saveArtifactsToStorage();
+  return true;
+}
 
   /**
    * Remove artifact text overlay
    */
-  async removeArtifactTextOverlay(artifactId: string): Promise<boolean> {
-    const artifact = this.artifacts.get(artifactId);
-    if (!artifact) return false;
+  async removeArtifactTextOverlay(artifactId: string): Promise < boolean > {
+  const artifact = this.artifacts.get(artifactId);
+  if(!artifact) return false;
 
-    artifact.textOverlay = undefined;
-    artifact.timestamps.modified = new Date();
-    this.artifacts.set(artifactId, artifact);
+  artifact.textOverlay = undefined;
+  artifact.timestamps.modified = new Date();
+  this.artifacts.set(artifactId, artifact);
 
-    await this.saveArtifactsToStorage();
-    return true;
-  }
+  await this.saveArtifactsToStorage();
+  return true;
+}
 
   /**
    * Update artifact usage type
    */
-  async updateArtifactUsageType(artifactId: string, usageType: ArtifactUsageType): Promise<boolean> {
-    const artifact = this.artifacts.get(artifactId);
-    if (!artifact) return false;
+  async updateArtifactUsageType(artifactId: string, usageType: ArtifactUsageType): Promise < boolean > {
+  const artifact = this.artifacts.get(artifactId);
+  if(!artifact) return false;
 
-    artifact.usageType = usageType;
-    artifact.timestamps.modified = new Date();
+  artifact.usageType = usageType;
+  artifact.timestamps.modified = new Date();
 
-    // Clear text overlay if changing from exact-use to reference
-    if (usageType === 'reference') {
-      artifact.textOverlay = undefined;
-    }
+  // Clear text overlay if changing from exact-use to reference
+  if(usageType === 'reference') {
+  artifact.textOverlay = undefined;
+}
 
-    this.artifacts.set(artifactId, artifact);
-    await this.saveArtifactsToStorage();
-    return true;
+this.artifacts.set(artifactId, artifact);
+await this.saveArtifactsToStorage();
+return true;
   }
 
   // === ENHANCED SEARCH METHODS ===
@@ -1096,77 +1091,77 @@ class ArtifactsService {
   /**
    * Enhanced search with new filters
    */
-  async searchArtifactsEnhanced(filters: EnhancedArtifactSearchFilters): Promise<ArtifactSearchResult> {
-    const startTime = Date.now();
-    let artifacts = Array.from(this.artifacts.values());
+  async searchArtifactsEnhanced(filters: EnhancedArtifactSearchFilters): Promise < ArtifactSearchResult > {
+  const startTime = Date.now();
+  let artifacts = Array.from(this.artifacts.values());
 
-    // Apply existing filters (from base search)
-    if (filters.query) {
-      const query = filters.query.toLowerCase();
-      artifacts = artifacts.filter(artifact =>
-        artifact.name.toLowerCase().includes(query) ||
-        artifact.description?.toLowerCase().includes(query) ||
-        artifact.tags.some(tag => tag.toLowerCase().includes(query))
-      );
-    }
+  // Apply existing filters (from base search)
+  if(filters.query) {
+  const query = filters.query.toLowerCase();
+  artifacts = artifacts.filter(artifact =>
+    artifact.name.toLowerCase().includes(query) ||
+    artifact.description?.toLowerCase().includes(query) ||
+    artifact.tags.some(tag => tag.toLowerCase().includes(query))
+  );
+}
 
-    if (filters.type && filters.type !== 'all') {
-      artifacts = artifacts.filter(artifact => artifact.type === filters.type);
-    }
+if (filters.type && filters.type !== 'all') {
+  artifacts = artifacts.filter(artifact => artifact.type === filters.type);
+}
 
-    if (filters.category && filters.category !== 'all') {
-      artifacts = artifacts.filter(artifact => artifact.category === filters.category);
-    }
+if (filters.category && filters.category !== 'all') {
+  artifacts = artifacts.filter(artifact => artifact.category === filters.category);
+}
 
-    // Apply new enhanced filters
-    if (filters.usageType) {
-      artifacts = artifacts.filter(artifact => artifact.usageType === filters.usageType);
-    }
+// Apply new enhanced filters
+if (filters.usageType) {
+  artifacts = artifacts.filter(artifact => artifact.usageType === filters.usageType);
+}
 
-    if (filters.uploadType) {
-      artifacts = artifacts.filter(artifact => artifact.uploadType === filters.uploadType);
-    }
+if (filters.uploadType) {
+  artifacts = artifacts.filter(artifact => artifact.uploadType === filters.uploadType);
+}
 
-    if (filters.folderId) {
-      artifacts = artifacts.filter(artifact => artifact.folderId === filters.folderId);
-    }
+if (filters.folderId) {
+  artifacts = artifacts.filter(artifact => artifact.folderId === filters.folderId);
+}
 
-    if (filters.isActive !== undefined) {
-      artifacts = artifacts.filter(artifact => artifact.isActive === filters.isActive);
-    }
+if (filters.isActive !== undefined) {
+  artifacts = artifacts.filter(artifact => artifact.isActive === filters.isActive);
+}
 
-    if (filters.hasTextOverlay !== undefined) {
-      artifacts = artifacts.filter(artifact =>
-        filters.hasTextOverlay ? !!artifact.textOverlay : !artifact.textOverlay
-      );
-    }
+if (filters.hasTextOverlay !== undefined) {
+  artifacts = artifacts.filter(artifact =>
+    filters.hasTextOverlay ? !!artifact.textOverlay : !artifact.textOverlay
+  );
+}
 
-    // Apply pagination
-    const totalCount = artifacts.length;
-    if (filters.limit) {
-      const offset = filters.offset || 0;
-      artifacts = artifacts.slice(offset, offset + filters.limit);
-    }
+// Apply pagination
+const totalCount = artifacts.length;
+if (filters.limit) {
+  const offset = filters.offset || 0;
+  artifacts = artifacts.slice(offset, offset + filters.limit);
+}
 
-    const executionTime = Date.now() - startTime;
+const executionTime = Date.now() - startTime;
 
-    return {
-      artifacts,
-      totalCount,
-      searchMetadata: {
-        query: filters,
-        executionTime,
-        suggestions: [] // Could implement search suggestions here
-      }
-    };
+return {
+  artifacts,
+  totalCount,
+  searchMetadata: {
+    query: filters,
+    executionTime,
+    suggestions: [] // Could implement search suggestions here
+  }
+};
   }
 
-  /**
-   * Get artifacts by folder
-   */
-  getArtifactsByFolder(folderId: string): Artifact[] {
-    return Array.from(this.artifacts.values()).filter(artifact => artifact.folderId === folderId);
-  }
+/**
+ * Get artifacts by folder
+ */
+getArtifactsByFolder(folderId: string): Artifact[] {
+  return Array.from(this.artifacts.values()).filter(artifact => artifact.folderId === folderId);
+}
 }
 
 // Export singleton instance
