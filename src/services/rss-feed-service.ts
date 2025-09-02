@@ -17,6 +17,7 @@ export interface RSSArticle {
 
 export interface TrendingData {
   keywords: string[];
+  hashtags: string[];         // Generated hashtags from keywords
   topics: string[];
   themes: string[];
   articles: RSSArticle[];
@@ -233,6 +234,7 @@ export class RSSFeedService {
       keywords: keywordCounts,
       hashtags: keywordCounts.map(keyword => `#${keyword.replace(/\s+/g, '')}`), // Convert keywords to hashtags
       topics: topicCounts,
+      themes: themeCounts,
       articles: allArticles.slice(0, 100), // Return top 100 most recent articles
       lastUpdated: new Date(),
       hashtagAnalytics
