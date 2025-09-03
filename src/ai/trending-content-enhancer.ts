@@ -72,14 +72,8 @@ export class TrendingContentEnhancer {
 
     } catch (error) {
 
-      // Return fallback data
-      return {
-        keywords: ['trending', 'viral', 'popular', 'latest', 'new'],
-        topics: ['social media trends', 'digital marketing', 'content creation'],
-        hashtags: ['#trending', '#viral', '#socialmedia', '#marketing'],
-        seasonalThemes: [],
-        industryBuzz: [],
-      };
+      // Return contextual fallback data based on current context
+      return this.generateContextualFallback(context);
     }
   }
 
@@ -234,6 +228,63 @@ export class TrendingContentEnhancer {
     );
 
     return industryBuzz;
+  }
+
+  /**
+   * Generate contextual fallback data without hardcoded placeholders
+   */
+  private generateContextualFallback(context: ContentContext): TrendingEnhancement {
+    const today = new Date();
+    const currentMonth = today.toLocaleDateString('en-US', { month: 'long' });
+    const currentDay = today.toLocaleDateString('en-US', { weekday: 'long' });
+
+    // Generate contextual keywords based on business type and current date
+    const keywords: string[] = [];
+    if (context.businessType) {
+      keywords.push(`${context.businessType} services`, `${context.businessType} solutions`);
+    }
+    keywords.push(`${currentDay} motivation`, `${currentMonth} opportunities`);
+
+    // Generate contextual topics
+    const topics: string[] = [];
+    if (context.businessType) {
+      topics.push(`${context.businessType} industry insights`);
+    }
+    if (context.location) {
+      topics.push(`${context.location} business community`);
+    }
+    topics.push(`${currentMonth} business trends`);
+
+    // Generate contextual hashtags
+    const hashtags: string[] = [];
+    if (context.businessType) {
+      hashtags.push(`#${context.businessType.replace(/\s+/g, '')}Business`);
+    }
+    if (context.location) {
+      const locationParts = context.location.split(',').map(part => part.trim());
+      locationParts.forEach(part => {
+        if (part.length > 2) {
+          hashtags.push(`#${part.replace(/\s+/g, '')}`);
+        }
+      });
+    }
+    hashtags.push(`#${currentDay}Motivation`, `#${currentMonth}${today.getFullYear()}`);
+
+    // Generate seasonal themes
+    const seasonalThemes: string[] = [];
+    const month = today.getMonth();
+    if (month >= 2 && month <= 4) seasonalThemes.push('Spring renewal', 'Fresh starts');
+    else if (month >= 5 && month <= 7) seasonalThemes.push('Summer energy', 'Outdoor activities');
+    else if (month >= 8 && month <= 10) seasonalThemes.push('Autumn preparation', 'Harvest season');
+    else seasonalThemes.push('Winter planning', 'Year-end reflection');
+
+    return {
+      keywords: keywords.slice(0, 15),
+      topics: topics.slice(0, 10),
+      hashtags: hashtags.slice(0, 10),
+      seasonalThemes: seasonalThemes.slice(0, 5),
+      industryBuzz: context.businessType ? [`${context.businessType} innovation`] : [],
+    };
   }
 
   /**

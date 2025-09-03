@@ -1,25 +1,55 @@
 /**
  * Viral Hashtag Engine - Real-time trending hashtag generation
  * Integrates with RSS feeds and trending data to generate viral hashtags
+ * Enhanced with Advanced Trending Hashtag Analyzer for superior relevance
  */
 
 import { trendingEnhancer } from './trending-content-enhancer';
+import { advancedHashtagAnalyzer, AnalysisContext } from './advanced-trending-hashtag-analyzer';
+import { intelligentHashtagMixer, MixingContext } from './intelligent-hashtag-mixer';
+import { hashtagPerformanceTracker } from './hashtag-performance-tracker';
 
 export interface ViralHashtagStrategy {
-  trending: string[];      // Currently trending hashtags
-  viral: string[];         // High-engagement viral hashtags  
+  trending: string[];      // Currently trending hashtags from RSS feeds
+  viral: string[];         // High-engagement viral hashtags
   niche: string[];         // Business-specific niche hashtags
   location: string[];      // Location-based hashtags
   community: string[];     // Community engagement hashtags
   seasonal: string[];      // Seasonal/timely hashtags
   platform: string[];     // Platform-specific hashtags
   total: string[];         // Final combined strategy (15 hashtags)
+
+  // Enhanced analytics from Advanced Hashtag Analyzer
+  analytics?: {
+    topPerformers: string[];
+    emergingTrends: string[];
+    businessOptimized: string[];
+    rssSourced: string[];
+    confidenceScore: number;
+
+    // Intelligent mixing analytics
+    mixingStrategy?: {
+      rssInfluence: number;
+      businessRelevance: number;
+      trendingScore: number;
+      diversityScore: number;
+      confidenceLevel: number;
+      algorithm: string;
+    };
+
+    // Performance learning insights
+    learningInsights?: {
+      learnedRecommendations: Array<{ hashtag: string; confidence: number; reason: string }>;
+      historicalPerformance: number;
+      improvementSuggestions: string[];
+    };
+  };
 }
 
 export class ViralHashtagEngine {
 
   /**
-   * Generate viral hashtag strategy using real-time trending data
+   * Generate viral hashtag strategy using advanced RSS analysis and real-time trending data
    */
   async generateViralHashtags(
     businessType: string,
@@ -30,9 +60,21 @@ export class ViralHashtagEngine {
     targetAudience?: string
   ): Promise<ViralHashtagStrategy> {
 
-
     try {
-      // Get trending data from RSS feeds and trending enhancer
+      // 🚀 ENHANCED: Use Advanced Hashtag Analyzer for superior RSS integration
+      const analysisContext: AnalysisContext = {
+        businessType,
+        businessName,
+        location,
+        platform,
+        services,
+        targetAudience
+      };
+
+      // Get advanced hashtag analysis with RSS integration
+      const advancedAnalysis = await advancedHashtagAnalyzer.analyzeHashtagTrends(analysisContext);
+
+      // Get traditional trending data as backup
       const trendingData = await trendingEnhancer.getTrendingEnhancement({
         businessType,
         location,
@@ -40,27 +82,74 @@ export class ViralHashtagEngine {
         targetAudience
       });
 
-
-      // Generate different hashtag categories
-      const trending = await this.getTrendingHashtags(trendingData, businessType, platform);
-      const viral = this.getViralHashtags(businessType, platform);
-      const niche = this.getNicheHashtags(businessType, services);
-      const location_tags = this.getLocationHashtags(location);
+      // 🔥 ENHANCED: Generate hashtag categories using advanced analysis
+      const trending = this.extractTrendingFromAnalysis(advancedAnalysis, trendingData);
+      const viral = this.getEnhancedViralHashtags(businessType, platform, advancedAnalysis);
+      const niche = this.getEnhancedNicheHashtags(businessType, services, advancedAnalysis);
+      const location_tags = this.getEnhancedLocationHashtags(location, advancedAnalysis);
       const community = this.getCommunityHashtags(businessType, targetAudience);
       const seasonal = this.getSeasonalHashtags();
-      const platform_tags = this.getPlatformHashtags(platform);
+      const platform_tags = this.getEnhancedPlatformHashtags(platform, advancedAnalysis);
 
-      // Combine and optimize for virality
-      const total = this.optimizeForVirality([
-        ...trending.slice(0, 4),
-        ...viral.slice(0, 3),
-        ...niche.slice(0, 2),
-        ...location_tags.slice(0, 2),
-        ...community.slice(0, 2),
-        ...seasonal.slice(0, 1),
-        ...platform_tags.slice(0, 1)
-      ]);
+      // 🧠 ENHANCED: Use Intelligent Hashtag Mixer for optimal combination
+      const mixingContext: MixingContext = {
+        businessType,
+        businessName,
+        location,
+        platform,
+        postContent: undefined, // Could be passed from content generation
+        targetAudience,
+        services,
+        priority: 'balanced', // Could be configurable
+        ...intelligentHashtagMixer.getOptimalWeights(businessType, platform)
+      };
 
+      // Create the current strategy for mixing
+      const currentStrategy = {
+        trending,
+        viral,
+        niche,
+        location: location_tags,
+        community,
+        seasonal,
+        platform: platform_tags,
+        total: [] // Will be filled by mixer
+      };
+
+      // Apply intelligent mixing
+      const intelligentMix = await intelligentHashtagMixer.createIntelligentMix(
+        advancedAnalysis,
+        currentStrategy,
+        mixingContext
+      );
+
+      // 🧠 ENHANCED: Get learned recommendations from performance tracking
+      const learnedRecommendations = hashtagPerformanceTracker.getLearnedRecommendations(
+        businessType,
+        platform,
+        location,
+        5
+      );
+
+      // 📊 Get performance insights for improvement suggestions
+      const performanceInsights = hashtagPerformanceTracker.getPerformanceInsights(
+        businessType,
+        platform,
+        location
+      );
+
+      // 🎯 Integrate learned recommendations with intelligent mix
+      const enhancedTotal = this.integrateLearnedRecommendations(
+        intelligentMix.final,
+        learnedRecommendations,
+        performanceInsights
+      );
+
+      // Use the enhanced hashtags as the final total
+      const total = enhancedTotal;
+
+      // Calculate confidence score based on RSS data quality
+      const confidenceScore = this.calculateConfidenceScore(advancedAnalysis);
 
       return {
         trending,
@@ -70,7 +159,31 @@ export class ViralHashtagEngine {
         community,
         seasonal,
         platform: platform_tags,
-        total
+        total,
+        analytics: {
+          topPerformers: advancedAnalysis.finalRecommendations.slice(0, 5),
+          emergingTrends: advancedAnalysis.emergingTrends.map(t => t.hashtag).slice(0, 3),
+          businessOptimized: advancedAnalysis.businessOptimized.map(b => b.hashtag).slice(0, 3),
+          rssSourced: this.extractRSSSourcedHashtags(advancedAnalysis),
+          confidenceScore,
+
+          // Include intelligent mixing analytics
+          mixingStrategy: {
+            rssInfluence: intelligentMix.analytics.rssInfluence,
+            businessRelevance: intelligentMix.analytics.businessRelevance,
+            trendingScore: intelligentMix.analytics.trendingScore,
+            diversityScore: intelligentMix.analytics.diversityScore,
+            confidenceLevel: intelligentMix.analytics.confidenceLevel,
+            algorithm: intelligentMix.analytics.mixingStrategy
+          },
+
+          // Include performance learning insights
+          learningInsights: {
+            learnedRecommendations,
+            historicalPerformance: this.calculateHistoricalPerformance(performanceInsights),
+            improvementSuggestions: performanceInsights.learningRecommendations
+          }
+        }
       };
 
     } catch (error) {
@@ -79,17 +192,224 @@ export class ViralHashtagEngine {
   }
 
   /**
-   * Get trending hashtags from RSS data
+   * Extract trending hashtags from advanced analysis
    */
-  private async getTrendingHashtags(trendingData: any, businessType: string, platform: string): Promise<string[]> {
-    const hashtags = [...trendingData.hashtags];
+  private extractTrendingFromAnalysis(advancedAnalysis: any, fallbackData: any): string[] {
+    // Prioritize RSS-sourced trending hashtags
+    const rssHashtags = advancedAnalysis.topTrending
+      .filter((analysis: any) => analysis.sources.some((source: string) =>
+        source !== 'business_generator' && source !== 'fallback'
+      ))
+      .map((analysis: any) => analysis.hashtag);
 
-    // Add business-relevant trending hashtags
-    const businessTrending = this.getBusinessTrendingHashtags(businessType, platform);
-    hashtags.push(...businessTrending);
+    // Add high-scoring emerging trends
+    const emergingHashtags = advancedAnalysis.emergingTrends
+      .filter((analysis: any) => analysis.trendingScore >= 3)
+      .map((analysis: any) => analysis.hashtag);
+
+    // Combine with fallback data if needed
+    const combined = [...rssHashtags, ...emergingHashtags, ...fallbackData.hashtags];
 
     // Remove duplicates and return top trending
-    return Array.from(new Set(hashtags)).slice(0, 8);
+    return Array.from(new Set(combined)).slice(0, 8);
+  }
+
+  /**
+   * Get enhanced viral hashtags using RSS analysis
+   */
+  private getEnhancedViralHashtags(businessType: string, platform: string, advancedAnalysis: any): string[] {
+    // Get traditional viral hashtags
+    const traditionalViral = this.getViralHashtags(businessType, platform);
+
+    // Add high-engagement hashtags from RSS analysis
+    const rssViral = advancedAnalysis.topTrending
+      .filter((analysis: any) => analysis.engagementPotential >= 7)
+      .map((analysis: any) => analysis.hashtag);
+
+    // Combine and prioritize
+    const combined = [...rssViral.slice(0, 4), ...traditionalViral.slice(0, 3)];
+    return Array.from(new Set(combined)).slice(0, 7);
+  }
+
+  /**
+   * Get enhanced niche hashtags using business analysis
+   */
+  private getEnhancedNicheHashtags(businessType: string, services: string | undefined, advancedAnalysis: any): string[] {
+    // Get traditional niche hashtags
+    const traditionalNiche = this.getNicheHashtags(businessType, services);
+
+    // Add business-optimized hashtags from RSS analysis
+    const rssNiche = advancedAnalysis.businessOptimized
+      .filter((analysis: any) => analysis.businessRelevance >= 6)
+      .map((analysis: any) => analysis.hashtag);
+
+    // Combine and prioritize
+    const combined = [...rssNiche.slice(0, 3), ...traditionalNiche.slice(0, 3)];
+    return Array.from(new Set(combined)).slice(0, 6);
+  }
+
+  /**
+   * Get enhanced location hashtags using location analysis
+   */
+  private getEnhancedLocationHashtags(location: string, advancedAnalysis: any): string[] {
+    // Get traditional location hashtags
+    const traditionalLocation = this.getLocationHashtags(location);
+
+    // Add location-specific hashtags from RSS analysis
+    const rssLocation = advancedAnalysis.locationSpecific
+      .filter((analysis: any) => analysis.locationRelevance >= 6)
+      .map((analysis: any) => analysis.hashtag);
+
+    // Combine and prioritize
+    const combined = [...rssLocation.slice(0, 2), ...traditionalLocation.slice(0, 2)];
+    return Array.from(new Set(combined)).slice(0, 4);
+  }
+
+  /**
+   * Get enhanced platform hashtags using platform analysis
+   */
+  private getEnhancedPlatformHashtags(platform: string, advancedAnalysis: any): string[] {
+    // Get traditional platform hashtags
+    const traditionalPlatform = this.getPlatformHashtags(platform);
+
+    // Add platform-optimized hashtags from RSS analysis
+    const rssPlatform = advancedAnalysis.platformNative
+      .filter((analysis: any) => analysis.platformOptimization >= 6)
+      .map((analysis: any) => analysis.hashtag);
+
+    // Combine and prioritize
+    const combined = [...rssPlatform.slice(0, 2), ...traditionalPlatform.slice(0, 2)];
+    return Array.from(new Set(combined)).slice(0, 4);
+  }
+
+  /**
+   * Intelligent hashtag mixing algorithm
+   */
+  private intelligentHashtagMixing(hashtags: string[], advancedAnalysis: any): string[] {
+    // Create a scoring system for hashtag selection
+    const hashtagScores = new Map<string, number>();
+
+    // Score each hashtag based on multiple factors
+    hashtags.forEach(hashtag => {
+      let score = 0;
+
+      // Find analysis for this hashtag
+      const analysis = this.findHashtagAnalysis(hashtag, advancedAnalysis);
+
+      if (analysis) {
+        score += analysis.relevanceScore * 0.3;
+        score += analysis.trendingScore * 0.25;
+        score += analysis.businessRelevance * 0.2;
+        score += analysis.engagementPotential * 0.15;
+        score += analysis.platformOptimization * 0.1;
+      } else {
+        // Default score for hashtags not in analysis
+        score = 5;
+      }
+
+      hashtagScores.set(hashtag, score);
+    });
+
+    // Sort by score and return top hashtags
+    const sortedHashtags = Array.from(hashtagScores.entries())
+      .sort(([, scoreA], [, scoreB]) => scoreB - scoreA)
+      .map(([hashtag]) => hashtag);
+
+    return sortedHashtags.slice(0, 15);
+  }
+
+  /**
+   * Find hashtag analysis in advanced analysis results
+   */
+  private findHashtagAnalysis(hashtag: string, advancedAnalysis: any): any {
+    const allAnalyses = [
+      ...advancedAnalysis.topTrending,
+      ...advancedAnalysis.businessOptimized,
+      ...advancedAnalysis.locationSpecific,
+      ...advancedAnalysis.platformNative,
+      ...advancedAnalysis.emergingTrends
+    ];
+
+    return allAnalyses.find((analysis: any) => analysis.hashtag === hashtag);
+  }
+
+  /**
+   * Calculate confidence score based on RSS data quality
+   */
+  private calculateConfidenceScore(advancedAnalysis: any): number {
+    let score = 0;
+    let factors = 0;
+
+    // Factor 1: Number of RSS sources
+    const rssSourceCount = this.countRSSSources(advancedAnalysis);
+    if (rssSourceCount > 0) {
+      score += Math.min(rssSourceCount * 2, 10);
+      factors++;
+    }
+
+    // Factor 2: Quality of trending data
+    const trendingQuality = advancedAnalysis.topTrending.length > 0 ? 8 : 3;
+    score += trendingQuality;
+    factors++;
+
+    // Factor 3: Business relevance coverage
+    const businessCoverage = advancedAnalysis.businessOptimized.length >= 3 ? 9 : 5;
+    score += businessCoverage;
+    factors++;
+
+    // Factor 4: Emerging trends availability
+    const emergingTrends = advancedAnalysis.emergingTrends.length > 0 ? 7 : 4;
+    score += emergingTrends;
+    factors++;
+
+    return factors > 0 ? Math.round(score / factors) : 5;
+  }
+
+  /**
+   * Count RSS sources in analysis
+   */
+  private countRSSSources(advancedAnalysis: any): number {
+    const sources = new Set<string>();
+
+    const allAnalyses = [
+      ...advancedAnalysis.topTrending,
+      ...advancedAnalysis.businessOptimized,
+      ...advancedAnalysis.locationSpecific,
+      ...advancedAnalysis.platformNative,
+      ...advancedAnalysis.emergingTrends
+    ];
+
+    allAnalyses.forEach((analysis: any) => {
+      analysis.sources.forEach((source: string) => {
+        if (source !== 'business_generator' && source !== 'fallback') {
+          sources.add(source);
+        }
+      });
+    });
+
+    return sources.size;
+  }
+
+  /**
+   * Extract RSS-sourced hashtags
+   */
+  private extractRSSSourcedHashtags(advancedAnalysis: any): string[] {
+    const allAnalyses = [
+      ...advancedAnalysis.topTrending,
+      ...advancedAnalysis.businessOptimized,
+      ...advancedAnalysis.locationSpecific,
+      ...advancedAnalysis.platformNative,
+      ...advancedAnalysis.emergingTrends
+    ];
+
+    return allAnalyses
+      .filter((analysis: any) =>
+        analysis.sources.some((source: string) =>
+          source !== 'business_generator' && source !== 'fallback'
+        )
+      )
+      .map((analysis: any) => analysis.hashtag)
+      .slice(0, 8);
   }
 
   /**
@@ -279,23 +599,152 @@ export class ViralHashtagEngine {
   }
 
   /**
-   * Fallback hashtags when trending data fails
+   * Enhanced fallback hashtags when trending data fails
    */
   private getFallbackHashtags(businessType: string, location: string, platform: string): ViralHashtagStrategy {
+    const fallbackTotal = [
+      '#trending', '#viral', `#${businessType.replace(/\s+/g, '')}`, '#local', '#community',
+      '#amazing', '#quality', '#professional', '#popular', '#new',
+      '#support', '#service', `#${platform.toLowerCase()}`, '#today', '#love'
+    ];
+
     return {
       trending: ['#trending', '#viral', '#popular', '#new'],
       viral: ['#amazing', '#incredible', '#mustsee', '#wow'],
-      niche: [`#${businessType}`, '#quality', '#professional', '#service'],
+      niche: [`#${businessType.replace(/\s+/g, '')}`, '#quality', '#professional', '#service'],
       location: ['#local', '#community', `#${location.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()}`],
       community: ['#community', '#support', '#family', '#love'],
       seasonal: ['#today', '#now'],
       platform: [`#${platform.toLowerCase()}`],
-      total: [
-        '#trending', '#viral', `#${businessType}`, '#local', '#community',
-        '#amazing', '#quality', '#professional', '#popular', '#new',
-        '#support', '#service', `#${platform.toLowerCase()}`, '#today', '#love'
-      ]
+      total: fallbackTotal,
+      analytics: {
+        topPerformers: fallbackTotal.slice(0, 5),
+        emergingTrends: ['#trending', '#viral', '#new'],
+        businessOptimized: [`#${businessType.replace(/\s+/g, '')}`, '#quality', '#professional'],
+        rssSourced: [], // No RSS data in fallback
+        confidenceScore: 3 // Low confidence for fallback
+      }
     };
+  }
+
+  /**
+   * 🧠 ENHANCED: Integrate learned recommendations with intelligent mix
+   */
+  private integrateLearnedRecommendations(
+    intelligentMix: string[],
+    learnedRecommendations: Array<{ hashtag: string; confidence: number; reason: string }>,
+    performanceInsights: any
+  ): string[] {
+    const enhancedHashtags = [...intelligentMix];
+
+    // Replace low-confidence hashtags with high-confidence learned recommendations
+    const highConfidenceRecommendations = learnedRecommendations.filter(rec => rec.confidence >= 0.7);
+
+    if (highConfidenceRecommendations.length > 0) {
+      // Find hashtags in the mix that might be replaced
+      const replaceableIndices: number[] = [];
+
+      // Look for hashtags that aren't in the top performers
+      const topPerformers = performanceInsights.topPerformingHashtags.map((h: any) => h.hashtag);
+
+      enhancedHashtags.forEach((hashtag, index) => {
+        if (!topPerformers.includes(hashtag) && index >= 10) { // Only replace from tertiary hashtags
+          replaceableIndices.push(index);
+        }
+      });
+
+      // Replace up to 3 hashtags with learned recommendations
+      const replacementCount = Math.min(
+        highConfidenceRecommendations.length,
+        replaceableIndices.length,
+        3
+      );
+
+      for (let i = 0; i < replacementCount; i++) {
+        const indexToReplace = replaceableIndices[i];
+        const recommendation = highConfidenceRecommendations[i];
+
+        // Only replace if the recommendation isn't already in the mix
+        if (!enhancedHashtags.includes(recommendation.hashtag)) {
+          enhancedHashtags[indexToReplace] = recommendation.hashtag;
+        }
+      }
+    }
+
+    return enhancedHashtags;
+  }
+
+  /**
+   * Calculate historical performance score
+   */
+  private calculateHistoricalPerformance(performanceInsights: any): number {
+    if (!performanceInsights.topPerformingHashtags.length) return 0;
+
+    const avgEngagement = performanceInsights.topPerformingHashtags
+      .reduce((sum: number, hashtag: any) => sum + hashtag.avgEngagement, 0) /
+      performanceInsights.topPerformingHashtags.length;
+
+    const avgSuccessRate = performanceInsights.topPerformingHashtags
+      .reduce((sum: number, hashtag: any) => sum + hashtag.successRate, 0) /
+      performanceInsights.topPerformingHashtags.length;
+
+    // Weighted score: 70% engagement, 30% success rate
+    return Math.round((avgEngagement * 0.7 + avgSuccessRate * 0.3) * 10) / 10;
+  }
+
+  /**
+   * 📊 ENHANCED: Method to track hashtag performance after post creation
+   */
+  public trackHashtagPerformance(
+    hashtags: string[],
+    platform: string,
+    businessType: string,
+    location: string,
+    engagement: {
+      likes: number;
+      comments: number;
+      shares: number;
+      views?: number;
+      clicks?: number;
+      total: number;
+    },
+    success: boolean = false
+  ): void {
+    const postData = {
+      postId: `post_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      hashtags,
+      platform,
+      businessType,
+      location,
+      timestamp: new Date(),
+      engagement,
+      success
+    };
+
+    hashtagPerformanceTracker.trackPostPerformance(postData);
+  }
+
+  /**
+   * 📈 Get performance insights for hashtag optimization
+   */
+  public getHashtagPerformanceInsights(
+    businessType?: string,
+    platform?: string,
+    location?: string
+  ) {
+    return hashtagPerformanceTracker.getPerformanceInsights(businessType, platform, location);
+  }
+
+  /**
+   * 🎯 Get learned hashtag recommendations
+   */
+  public getLearnedHashtagRecommendations(
+    businessType: string,
+    platform: string,
+    location: string,
+    count: number = 10
+  ) {
+    return hashtagPerformanceTracker.getLearnedRecommendations(businessType, platform, location, count);
   }
 }
 

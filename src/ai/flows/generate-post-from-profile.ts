@@ -17,7 +17,7 @@ import { getWeatherTool, getEventsTool } from '@/ai/tools/local-data';
 import { getEnhancedEventsTool, getEnhancedWeatherTool } from '@/ai/tools/enhanced-local-data';
 import { ENHANCED_CAPTION_PROMPT, PLATFORM_SPECIFIC_OPTIMIZATIONS } from '@/ai/prompts/enhanced-caption-prompt';
 import { ADVANCED_AI_PROMPT } from '@/ai/prompts/advanced-ai-prompt';
-import { generateHashtagStrategy, analyzeHashtags } from '@/ai/utils/hashtag-strategy';
+import { viralHashtagEngine } from '@/ai/viral-hashtag-engine';
 import { generateMarketIntelligence, generateRealTimeTrendingTopics } from '@/ai/utils/trending-topics';
 import { fetchLocalContext } from '@/ai/utils/real-time-trends-integration';
 import { selectRelevantContext, filterContextData } from '@/ai/utils/intelligent-context-selector';
@@ -846,15 +846,14 @@ const generatePostFromProfileFlow = ai.defineFlow(
       throw new Error('Failed to generate advanced AI post content.');
     }
 
-    // Step 9: Generate Strategic Hashtag Analysis (exactly 10 hashtags)
-    const hashtagStrategy = generateHashtagStrategy(
+    // 🚀 ENHANCED: Generate Strategic Hashtag Analysis using Advanced RSS-Integrated System
+    const viralHashtagStrategy = await viralHashtagEngine.generateViralHashtags(
       input.businessType,
+      input.businessName || input.businessType, // Use business name if available
       input.location,
       primaryPlatform,
       input.services,
-      input.targetAudience,
-      textOutput.catchyWords || textOutput.content, // Post topic from generated content
-      input.visualStyle || 'modern' // Design style
+      input.targetAudience
     );
 
     // Step 10: Generate Image for each variant in parallel
@@ -871,14 +870,8 @@ const generatePostFromProfileFlow = ai.defineFlow(
       textOutput.callToAction
     );
 
-    // Step 12: Convert hashtag strategy to exactly 10 hashtags
-    const finalHashtags = [
-      ...hashtagStrategy.trending,
-      ...hashtagStrategy.niche,
-      ...hashtagStrategy.branded,
-      ...hashtagStrategy.location,
-      ...hashtagStrategy.community
-    ].slice(0, 10); // Ensure exactly 10 hashtags
+    // 🎯 ENHANCED: Use Advanced RSS-Integrated Hashtags (exactly 10 hashtags)
+    const finalHashtags = viralHashtagStrategy.total.slice(0, 10); // Use the intelligently mixed hashtags
 
     // Step 13: Combine results with intelligently selected context
     return {
@@ -889,10 +882,14 @@ const generatePostFromProfileFlow = ai.defineFlow(
       hashtags: finalHashtags.join(' '), // Convert to string format
       contentVariants: textOutput.contentVariants,
       hashtagAnalysis: {
-        trending: hashtagStrategy.trending,
-        niche: hashtagStrategy.niche,
-        location: hashtagStrategy.location,
-        community: hashtagStrategy.community,
+        trending: viralHashtagStrategy.trending,
+        viral: viralHashtagStrategy.viral,
+        niche: viralHashtagStrategy.niche,
+        location: viralHashtagStrategy.location,
+        community: viralHashtagStrategy.community,
+        platform: viralHashtagStrategy.platform,
+        seasonal: viralHashtagStrategy.seasonal,
+        analytics: viralHashtagStrategy.analytics // Include advanced analytics
       },
       // Advanced AI features metadata (for future UI display)
       marketIntelligence: {

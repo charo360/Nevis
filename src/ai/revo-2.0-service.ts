@@ -268,49 +268,117 @@ async function generateImageWithGemini(prompt: string, options: Revo20Generation
 }
 
 /**
- * Generate caption and hashtags
+ * Generate caption and hashtags with AI-powered contextual generation
  */
 async function generateCaptionAndHashtags(options: Revo20GenerationOptions, concept: any): Promise<{ caption: string; hashtags: string[] }> {
   const { businessType, platform, brandProfile } = options;
 
   const prompt = `Create engaging ${platform} content for a ${businessType} business.
 
-Business: ${brandProfile.businessName || businessType}
-Location: ${brandProfile.location || 'Local area'}
-Concept: ${concept.concept}
-Catchwords: ${concept.catchwords.join(', ')}
+Business Details:
+- Name: ${brandProfile.businessName || businessType}
+- Type: ${businessType}
+- Location: ${brandProfile.location || 'Local area'}
+- Concept: ${concept.concept}
+- Catchwords: ${concept.catchwords.join(', ')}
 
 Create:
-1. A catchy, engaging caption (2-3 sentences max)
-2. Relevant hashtags (8-12 hashtags)
+1. A catchy, engaging caption (2-3 sentences max) that incorporates the concept and catchwords naturally
+2. 10 highly relevant, specific hashtags that are:
+   - Specific to this business and location
+   - Mix of business-specific, location-based, industry-relevant, and platform-optimized
+   - Avoid generic hashtags like #business, #professional, #quality, #local
+   - Discoverable and relevant to the target audience
+   - Appropriate for ${platform}
 
-Make it authentic, locally relevant, and engaging for ${platform}.
+Make the content authentic, locally relevant, and engaging for ${platform}.
 
 Format as JSON:
 {
   "caption": "Your engaging caption here",
-  "hashtags": ["hashtag1", "hashtag2", "hashtag3"]
+  "hashtags": ["#SpecificHashtag1", "#LocationBasedHashtag", "#IndustryRelevant", ...]
 }`;
 
   const response = await openai.chat.completions.create({
     model: 'gpt-4o',
     messages: [{ role: 'user', content: prompt }],
     temperature: 0.7,
-    max_tokens: 500
+    max_tokens: 600
   });
 
   try {
-    const result = JSON.parse(response.choices[0].message.content || '{}');
-    return {
-      caption: result.caption || `Professional ${businessType} services in ${brandProfile.location || 'your area'}`,
-      hashtags: result.hashtags || [`#${businessType.replace(/\s+/g, '')}`, '#professional', '#local', '#quality']
-    };
+    let responseContent = response.choices[0].message.content || '{}';
+
+    // Remove markdown code blocks if present
+    responseContent = responseContent.replace(/```json\s*|\s*```/g, '').trim();
+
+    const result = JSON.parse(responseContent);
+
+    // Validate the response
+    if (result.caption && Array.isArray(result.hashtags) && result.hashtags.length > 0) {
+      return {
+        caption: result.caption,
+        hashtags: result.hashtags.slice(0, 10) // Ensure max 10 hashtags
+      };
+    }
   } catch (error) {
-    return {
-      caption: `Professional ${businessType} services in ${brandProfile.location || 'your area'}`,
-      hashtags: [`#${businessType.replace(/\s+/g, '')}`, '#professional', '#local', '#quality']
-    };
+    console.warn('Failed to parse AI content response:', error);
   }
+
+  // Fallback with contextual generation (no hardcoded placeholders)
+  return generateContextualFallback(businessType, brandProfile, platform, concept);
+}
+
+/**
+ * Generate contextual fallback content without hardcoded placeholders
+ */
+function generateContextualFallback(
+  businessType: string,
+  brandProfile: BrandProfile,
+  platform: string,
+  concept: any
+): { caption: string; hashtags: string[] } {
+  const businessName = brandProfile.businessName || businessType;
+  const location = brandProfile.location || 'your area';
+
+  // Generate contextual caption
+  const caption = `${concept.catchwords[0] || 'Discover'} what makes ${businessName} special in ${location}! ${concept.concept || 'Experience the difference with our exceptional service.'}`;
+
+  // Generate contextual hashtags
+  const hashtags: string[] = [];
+
+  // Business-specific
+  hashtags.push(`#${businessName.replace(/\s+/g, '')}`);
+  hashtags.push(`#${businessType.replace(/\s+/g, '')}Business`);
+
+  // Location-based
+  const locationParts = location.split(',').map(part => part.trim());
+  locationParts.forEach(part => {
+    if (part.length > 2) {
+      hashtags.push(`#${part.replace(/\s+/g, '')}`);
+    }
+  });
+
+  // Platform-specific contextual
+  if (platform === 'instagram') {
+    hashtags.push('#InstagramContent', '#VisualStory');
+  } else if (platform === 'facebook') {
+    hashtags.push('#FacebookPost', '#CommunityBusiness');
+  } else if (platform === 'linkedin') {
+    hashtags.push('#LinkedInBusiness', '#ProfessionalServices');
+  } else if (platform === 'tiktok') {
+    hashtags.push('#TikTokBusiness', '#CreativeContent');
+  }
+
+  // Add current date context
+  const today = new Date();
+  const dayName = today.toLocaleDateString('en-US', { weekday: 'long' });
+  hashtags.push(`#${dayName}Vibes`);
+
+  return {
+    caption,
+    hashtags: [...new Set(hashtags)].slice(0, 10) // Remove duplicates and limit to 10
+  };
 }
 
 /**

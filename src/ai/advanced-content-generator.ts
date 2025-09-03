@@ -442,73 +442,250 @@ export class AdvancedContentGenerator {
   }
 
   /**
-   * Generate strategic hashtags with regional authenticity
+   * Generate strategic hashtags with AI-powered contextual generation
    */
   private async generateStrategicHashtags(
     profile: BusinessProfile,
     analysis: ContentAnalysis,
     platform: string
   ): Promise<string[]> {
-    const { businessIntelligence, trendingInsights } = analysis;
-
-    // Try regional hashtags first for authentic local content
-    const regionalProfile = regionalEngine.getRegionalProfile(profile.location);
-    if (regionalProfile) {
-      const regionalHashtags = regionalEngine.getRegionalHashtags(profile.location, profile.businessType);
-
-      // Add business-specific hashtags
-      const businessHashtags = [
-        `#${profile.businessName.replace(/\s+/g, '')}`,
-        `#${profile.businessType}`,
-      ];
-
-      // Combine regional and business hashtags
-      const combinedHashtags = [...regionalHashtags, ...businessHashtags];
-
-      // Add some trending hashtags if available
-      trendingInsights.platformSpecificTrends.slice(0, 2).forEach(hashtag => {
-        if (!combinedHashtags.includes(hashtag)) {
-          combinedHashtags.push(hashtag);
-        }
-      });
-
-      return combinedHashtags.slice(0, 10);
+    try {
+      // Use AI to generate contextual hashtags
+      const aiHashtags = await this.generateAIHashtags(profile, platform);
+      if (aiHashtags.length > 0) {
+        return aiHashtags;
+      }
+    } catch (error) {
+      console.warn('AI hashtag generation failed, using fallback:', error);
     }
 
-    // Fallback to original method for unsupported regions
+    // Try regional hashtags as fallback
+    try {
+      const regionalHashtags = await regionalEngine.getRegionalHashtags(
+        profile.location,
+        profile.businessType,
+        profile.businessName
+      );
+
+      if (regionalHashtags.length > 0) {
+        return regionalHashtags.slice(0, 10);
+      }
+    } catch (error) {
+      console.warn('Regional hashtag generation failed:', error);
+    }
+
+    // Final fallback - generate contextual hashtags without hardcoded values
+    return this.generateContextualFallbackHashtags(profile, platform);
+  }
+
+  /**
+   * Generate hashtags using AI for maximum relevance and engagement
+   */
+  private async generateAIHashtags(profile: BusinessProfile, platform: string): Promise<string[]> {
+    const { GoogleGenerativeAI } = await import('@google/generative-ai');
+    const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+    const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+    const prompt = `Generate 10 highly relevant, engaging hashtags for a ${profile.businessType} business on ${platform}.
+
+Business Details:
+- Name: ${profile.businessName}
+- Type: ${profile.businessType}
+- Location: ${profile.location}
+- Target Audience: ${profile.targetAudience || 'local customers'}
+- Brand Voice: ${profile.brandVoice || 'professional and friendly'}
+
+Requirements:
+1. Create hashtags that are specific to this business and location
+2. Include a mix of: business-specific, location-based, industry-relevant, and platform-optimized hashtags
+3. Avoid generic hashtags like #business, #professional, #quality, #local
+4. Make hashtags discoverable and relevant to the target audience
+5. Consider current trends and seasonal relevance
+6. Ensure hashtags are appropriate for ${platform}
+
+Return ONLY a JSON array of hashtags (including the # symbol):
+["#hashtag1", "#hashtag2", "#hashtag3", ...]`;
+
+    try {
+      const result = await model.generateContent(prompt);
+      let response = result.response.text();
+
+      // Remove markdown code blocks if present
+      response = response.replace(/```json\s*|\s*```/g, '').trim();
+
+      // Try to parse as complete JSON first
+      try {
+        const parsed = JSON.parse(response);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.slice(0, 10);
+        }
+      } catch {
+        // Fallback: extract JSON array from response
+        const hashtagsMatch = response.match(/\[.*?\]/);
+        if (hashtagsMatch) {
+          const hashtags = JSON.parse(hashtagsMatch[0]);
+          if (Array.isArray(hashtags) && hashtags.length > 0) {
+            return hashtags.slice(0, 10);
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to parse AI hashtag response:', error);
+    }
+
+    return [];
+  }
+
+  /**
+   * Generate contextual fallback hashtags without hardcoded placeholders
+   */
+  private generateContextualFallbackHashtags(profile: BusinessProfile, platform: string): string[] {
     const hashtags: string[] = [];
 
-    // Business-specific hashtags
+    // Business-specific hashtags (always include)
     hashtags.push(`#${profile.businessName.replace(/\s+/g, '')}`);
-    hashtags.push(`#${profile.businessType}`);
-    hashtags.push(`#${profile.location.replace(/\s+/g, '')}`);
 
-    // Industry hashtags
-    businessIntelligence.industryKeywords.slice(0, 3).forEach(keyword => {
-      hashtags.push(`#${keyword.replace(/\s+/g, '')}`);
-    });
+    // Varied business type hashtags
+    const businessTypeVariations = [
+      `#${profile.businessType.replace(/\s+/g, '')}Business`,
+      `#${profile.businessType.replace(/\s+/g, '')}Life`,
+      `#${profile.businessType.replace(/\s+/g, '')}Experience`,
+      `#${profile.businessType.replace(/\s+/g, '')}Excellence`,
+      `#${profile.businessType.replace(/\s+/g, '')}Quality`,
+      `#${profile.businessType.replace(/\s+/g, '')}Expert`
+    ];
+    hashtags.push(this.getRandomElement(businessTypeVariations));
 
-    // Trending hashtags
-    trendingInsights.platformSpecificTrends.slice(0, 4).forEach(hashtag => {
-      if (!hashtags.includes(hashtag)) {
-        hashtags.push(hashtag);
+    // Location-based hashtags with variations
+    const locationParts = profile.location.split(',').map(part => part.trim());
+    locationParts.forEach(part => {
+      if (part.length > 2) {
+        const locationVariations = [
+          `#${part.replace(/\s+/g, '')}`,
+          `#${part.replace(/\s+/g, '')}Business`,
+          `#${part.replace(/\s+/g, '')}Local`,
+          `#${part.replace(/\s+/g, '')}Community`,
+          `#${part.replace(/\s+/g, '')}Life`
+        ];
+        hashtags.push(this.getRandomElement(locationVariations));
       }
     });
 
-    // Platform-specific hashtags
+    // Dynamic contextual hashtags
+    const contextualHashtags = this.getDynamicContextualHashtags(profile.businessType, platform);
+    hashtags.push(...contextualHashtags);
+
+    // Time-based hashtags with variation
+    const timeBasedHashtags = this.getVariedTimeBasedHashtags();
+    hashtags.push(...timeBasedHashtags);
+
+    // Industry-specific dynamic hashtags
+    const industryHashtags = this.getVariedIndustryHashtags(profile.businessType);
+    hashtags.push(...industryHashtags);
+
+    return [...new Set(hashtags)].slice(0, 10); // Remove duplicates and limit to 10
+  }
+
+  /**
+   * Get a random element from an array
+   */
+  private getRandomElement<T>(array: T[]): T {
+    return array[Math.floor(Math.random() * array.length)];
+  }
+
+  /**
+   * Get multiple random elements from an array
+   */
+  private getRandomElements<T>(array: T[], count: number): T[] {
+    const shuffled = [...array].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, count);
+  }
+
+  /**
+   * Get dynamic contextual hashtags with variation
+   */
+  private getDynamicContextualHashtags(businessType: string, platform: string): string[] {
+    const hashtags: string[] = [];
+
+    // Platform-specific hashtags with variation
     const platformHashtags = {
-      instagram: ['#instagood', '#photooftheday'],
-      facebook: ['#community', '#local'],
-      twitter: ['#trending', '#news'],
-      linkedin: ['#business', '#professional'],
-      tiktok: ['#fyp', '#viral'],
+      instagram: ['#InstagramContent', '#VisualStory', '#InstaGood', '#PhotoOfTheDay', '#InstagramBusiness'],
+      facebook: ['#FacebookPost', '#CommunityFirst', '#SocialConnection', '#FacebookBusiness', '#CommunityLove'],
+      linkedin: ['#LinkedInContent', '#ProfessionalNetwork', '#BusinessGrowth', '#LinkedInPost', '#ProfessionalLife'],
+      tiktok: ['#TikTokContent', '#CreativeVideo', '#TikTokBusiness', '#VideoContent', '#CreativeExpression']
     };
 
     if (platformHashtags[platform as keyof typeof platformHashtags]) {
-      hashtags.push(...platformHashtags[platform as keyof typeof platformHashtags]);
+      const options = platformHashtags[platform as keyof typeof platformHashtags];
+      hashtags.push(...this.getRandomElements(options, 2));
     }
 
-    return hashtags.slice(0, 10); // Limit to 10 hashtags
+    return hashtags;
+  }
+
+  /**
+   * Get varied time-based hashtags
+   */
+  private getVariedTimeBasedHashtags(): string[] {
+    const today = new Date();
+    const timeOptions = [
+      // Day-based
+      [`#${today.toLocaleDateString('en-US', { weekday: 'long' })}Vibes`, `#${today.toLocaleDateString('en-US', { weekday: 'long' })}Motivation`],
+      // Month-based
+      [`#${today.toLocaleDateString('en-US', { month: 'long' })}${today.getFullYear()}`, `#${today.toLocaleDateString('en-US', { month: 'long' })}Goals`],
+      // Season-based
+      this.getSeasonalHashtags(),
+      // Time of day
+      this.getTimeOfDayHashtags()
+    ];
+
+    const selectedOptions = this.getRandomElements(timeOptions.flat(), 2);
+    return selectedOptions;
+  }
+
+  /**
+   * Get seasonal hashtags
+   */
+  private getSeasonalHashtags(): string[] {
+    const month = new Date().getMonth();
+    if (month >= 2 && month <= 4) return ['#SpringVibes', '#FreshStart', '#SpringEnergy'];
+    else if (month >= 5 && month <= 7) return ['#SummerVibes', '#SummerEnergy', '#SunnyDays'];
+    else if (month >= 8 && month <= 10) return ['#AutumnVibes', '#FallFlavors', '#HarvestSeason'];
+    else return ['#WinterVibes', '#CozyMoments', '#WarmthInWinter'];
+  }
+
+  /**
+   * Get time of day hashtags
+   */
+  private getTimeOfDayHashtags(): string[] {
+    const hour = new Date().getHours();
+    if (hour < 12) return ['#MorningMotivation', '#FreshStart', '#MorningEnergy'];
+    else if (hour < 17) return ['#AfternoonBoost', '#MidDayMoments', '#AfternoonVibes'];
+    else return ['#EveningVibes', '#NightTime', '#EveningEnergy'];
+  }
+
+  /**
+   * Get varied industry-specific hashtags
+   */
+  private getVariedIndustryHashtags(businessType: string): string[] {
+    const industryVariations = {
+      restaurant: ['#FoodieLife', '#CulinaryExperience', '#TasteOfExcellence', '#DiningExperience', '#FlavorJourney'],
+      retail: ['#ShoppingExperience', '#RetailTherapy', '#StyleStatement', '#QualityProducts', '#ShopLocal'],
+      service: ['#ServiceExcellence', '#CustomerFirst', '#ProfessionalService', '#TrustedService', '#QualityService'],
+      healthcare: ['#HealthAndWellness', '#CareYouCanTrust', '#HealthFirst', '#WellnessJourney', '#HealthcareExcellence'],
+      technology: ['#TechInnovation', '#DigitalSolutions', '#TechExcellence', '#InnovativeApproach', '#TechLeadership']
+    };
+
+    const businessKey = businessType.toLowerCase();
+    const matchingVariations = Object.keys(industryVariations).find(key => businessKey.includes(key));
+
+    if (matchingVariations) {
+      return this.getRandomElements(industryVariations[matchingVariations as keyof typeof industryVariations], 2);
+    }
+
+    // Generic business hashtags with variation
+    const genericOptions = ['#BusinessExcellence', '#QualityFirst', '#CustomerSatisfaction', '#ProfessionalService', '#TrustedBrand'];
+    return this.getRandomElements(genericOptions, 2);
   }
 
   /**

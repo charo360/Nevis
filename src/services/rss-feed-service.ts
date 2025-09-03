@@ -17,10 +17,20 @@ export interface RSSArticle {
 
 export interface TrendingData {
   keywords: string[];
+  hashtags: string[];         // Generated hashtags from keywords
   topics: string[];
   themes: string[];
   articles: RSSArticle[];
   lastUpdated: Date;
+
+  // Enhanced hashtag data
+  hashtagAnalytics?: {
+    trending: Array<{ hashtag: string; frequency: number; momentum: 'rising' | 'stable' | 'declining' }>;
+    byCategory: Record<string, string[]>;
+    byLocation: Record<string, string[]>;
+    byIndustry: Record<string, string[]>;
+    sentiment: Record<string, 'positive' | 'neutral' | 'negative'>;
+  };
 }
 
 export class RSSFeedService {
@@ -217,12 +227,17 @@ export class RSSFeedService {
     const themeCounts = this.getTopItems(allThemes, 20);
 
 
+    // 🚀 ENHANCED: Generate hashtag analytics
+    const hashtagAnalytics = this.generateHashtagAnalytics(allArticles, keywordCounts);
+
     return {
       keywords: keywordCounts,
+      hashtags: keywordCounts.map(keyword => `#${keyword.replace(/\s+/g, '')}`), // Convert keywords to hashtags
       topics: topicCounts,
       themes: themeCounts,
       articles: allArticles.slice(0, 100), // Return top 100 most recent articles
       lastUpdated: new Date(),
+      hashtagAnalytics
     };
   }
 
@@ -266,6 +281,175 @@ export class RSSFeedService {
     categoryArticles.forEach(article => keywords.push(...article.keywords));
 
     return this.getTopItems(keywords, 20);
+  }
+
+  /**
+   * 🚀 ENHANCED: Generate comprehensive hashtag analytics from RSS data
+   */
+  private generateHashtagAnalytics(articles: RSSArticle[], keywords: string[]): TrendingData['hashtagAnalytics'] {
+    const hashtagFrequency = new Map<string, number>();
+    const hashtagsByCategory = new Map<string, Set<string>>();
+    const hashtagsByLocation = new Map<string, Set<string>>();
+    const hashtagsByIndustry = new Map<string, Set<string>>();
+    const hashtagSentiment = new Map<string, 'positive' | 'neutral' | 'negative'>();
+
+    // Process articles for hashtag analytics
+    articles.forEach(article => {
+      const content = `${article.title} ${article.description}`.toLowerCase();
+
+      // Extract hashtags from content
+      const hashtags = content.match(/#[a-zA-Z0-9_]+/g) || [];
+
+      // Generate hashtags from keywords
+      const keywordHashtags = keywords
+        .filter(keyword => content.includes(keyword.toLowerCase()))
+        .map(keyword => `#${keyword.replace(/\s+/g, '')}`);
+
+      const allHashtags = [...hashtags, ...keywordHashtags];
+
+      allHashtags.forEach(hashtag => {
+        // Count frequency
+        hashtagFrequency.set(hashtag, (hashtagFrequency.get(hashtag) || 0) + 1);
+
+        // Categorize by article category
+        if (article.category) {
+          if (!hashtagsByCategory.has(article.category)) {
+            hashtagsByCategory.set(article.category, new Set());
+          }
+          hashtagsByCategory.get(article.category)!.add(hashtag);
+        }
+
+        // Categorize by source (as industry proxy)
+        if (article.source) {
+          const industry = this.mapSourceToIndustry(article.source);
+          if (!hashtagsByIndustry.has(industry)) {
+            hashtagsByIndustry.set(industry, new Set());
+          }
+          hashtagsByIndustry.get(industry)!.add(hashtag);
+        }
+
+        // Basic sentiment analysis
+        if (!hashtagSentiment.has(hashtag)) {
+          hashtagSentiment.set(hashtag, this.analyzeSentiment(content));
+        }
+      });
+    });
+
+    // Calculate trending hashtags with momentum
+    const trending = Array.from(hashtagFrequency.entries())
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 20)
+      .map(([hashtag, frequency]) => ({
+        hashtag,
+        frequency,
+        momentum: this.calculateMomentum(hashtag, articles) as 'rising' | 'stable' | 'declining'
+      }));
+
+    // Convert sets to arrays for the final result
+    const byCategory: Record<string, string[]> = {};
+    hashtagsByCategory.forEach((hashtags, category) => {
+      byCategory[category] = Array.from(hashtags).slice(0, 10);
+    });
+
+    const byLocation: Record<string, string[]> = {};
+    // Location analysis would require more sophisticated processing
+    // For now, we'll use a simple approach
+    byLocation['global'] = trending.slice(0, 10).map(t => t.hashtag);
+
+    const byIndustry: Record<string, string[]> = {};
+    hashtagsByIndustry.forEach((hashtags, industry) => {
+      byIndustry[industry] = Array.from(hashtags).slice(0, 8);
+    });
+
+    const sentiment: Record<string, 'positive' | 'neutral' | 'negative'> = {};
+    hashtagSentiment.forEach((sent, hashtag) => {
+      sentiment[hashtag] = sent;
+    });
+
+    return {
+      trending,
+      byCategory,
+      byLocation,
+      byIndustry,
+      sentiment
+    };
+  }
+
+  /**
+   * Map RSS source to industry category
+   */
+  private mapSourceToIndustry(source: string): string {
+    const industryMap: Record<string, string> = {
+      'socialMediaToday': 'social_media',
+      'socialMediaExaminer': 'social_media',
+      'bufferBlog': 'social_media',
+      'hootsuiteBlogs': 'social_media',
+      'hubspotMarketing': 'marketing',
+      'contentMarketingInstitute': 'marketing',
+      'marketingProfs': 'marketing',
+      'techCrunch': 'technology',
+      'theVerge': 'technology',
+      'wired': 'technology',
+      'canvaDesignSchool': 'design',
+      'adobeBlog': 'design',
+      'creativeBloq': 'design'
+    };
+
+    return industryMap[source] || 'general';
+  }
+
+  /**
+   * Calculate hashtag momentum based on recent usage
+   */
+  private calculateMomentum(hashtag: string, articles: RSSArticle[]): string {
+    const now = Date.now();
+    const recentArticles = articles.filter(article => {
+      const hoursSincePublished = (now - article.pubDate.getTime()) / (1000 * 60 * 60);
+      return hoursSincePublished <= 24;
+    });
+
+    const oldArticles = articles.filter(article => {
+      const hoursSincePublished = (now - article.pubDate.getTime()) / (1000 * 60 * 60);
+      return hoursSincePublished > 24 && hoursSincePublished <= 72;
+    });
+
+    const recentMentions = recentArticles.filter(article =>
+      `${article.title} ${article.description}`.toLowerCase().includes(hashtag.toLowerCase())
+    ).length;
+
+    const oldMentions = oldArticles.filter(article =>
+      `${article.title} ${article.description}`.toLowerCase().includes(hashtag.toLowerCase())
+    ).length;
+
+    if (recentMentions > oldMentions * 1.5) return 'rising';
+    if (recentMentions < oldMentions * 0.5) return 'declining';
+    return 'stable';
+  }
+
+  /**
+   * Basic sentiment analysis for hashtags
+   */
+  private analyzeSentiment(content: string): 'positive' | 'neutral' | 'negative' {
+    const positiveWords = [
+      'amazing', 'awesome', 'great', 'excellent', 'fantastic', 'wonderful',
+      'love', 'best', 'perfect', 'incredible', 'outstanding', 'brilliant',
+      'success', 'win', 'achieve', 'growth', 'improve', 'boost'
+    ];
+
+    const negativeWords = [
+      'bad', 'terrible', 'awful', 'horrible', 'worst', 'hate',
+      'fail', 'problem', 'issue', 'crisis', 'decline', 'drop',
+      'loss', 'damage', 'risk', 'threat', 'concern', 'worry'
+    ];
+
+    const words = content.toLowerCase().split(/\s+/);
+
+    const positiveCount = words.filter(word => positiveWords.includes(word)).length;
+    const negativeCount = words.filter(word => negativeWords.includes(word)).length;
+
+    if (positiveCount > negativeCount) return 'positive';
+    if (negativeCount > positiveCount) return 'negative';
+    return 'neutral';
   }
 }
 

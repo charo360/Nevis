@@ -92,6 +92,8 @@ export async function GET(req: Request) {
     };
 
     const tokenSecret = entry.requestTokenSecret || '';
+
+    console.log('Twitter OAuth callback debug:', {
       oauth_token,
       oauth_verifier,
       state,
@@ -160,20 +162,20 @@ export async function GET(req: Request) {
       }),
     });
 
-  // Clean up both mappings where present
-  if (resolvedState && states[resolvedState]) delete states[resolvedState];
-  if (oauth_token && states[oauth_token]) delete states[oauth_token];
-  await writeStates(states);
+    // Clean up both mappings where present
+    if (resolvedState && states[resolvedState]) delete states[resolvedState];
+    if (oauth_token && states[oauth_token]) delete states[oauth_token];
+    await writeStates(states);
 
     return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect`);
   } catch (err) {
-      error: err,
+    error: err,
       oauth_token,
       oauth_verifier,
       state,
       consumerKey: !!consumerKey,
-      consumerSecret: !!consumerSecret,
+        consumerSecret: !!consumerSecret,
     });
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect?error=twitter_failed`);
-  }
+  return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect?error=twitter_failed`);
+}
 }
