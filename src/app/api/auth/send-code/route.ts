@@ -82,6 +82,7 @@ export async function POST(req: NextRequest) {
         expiresAt: Timestamp.fromDate(expiresAt),
       })
     } catch (writeErr) {
+      console.error(
         'Firestore write failed for authCodes, writing fallback file:',
         writeErr instanceof Error ? writeErr.message : writeErr
       )
@@ -98,10 +99,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-  const html = verificationEmailHTML({ code, appName: 'Nevis', expiresMinutes: 15 })
-  const text = verificationEmailText({ code, appName: 'Nevis', expiresMinutes: 15 })
+    const html = verificationEmailHTML({ code, appName: 'Nevis', expiresMinutes: 15 })
+    const text = verificationEmailText({ code, appName: 'Nevis', expiresMinutes: 15 })
 
-  await sendEmail(normalizedEmail, 'Your Nevis verification code', html, text)
+    await sendEmail(normalizedEmail, 'Your Nevis verification code', html, text)
 
     return NextResponse.json({ ok: true })
   } catch (err: any) {

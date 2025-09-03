@@ -556,30 +556,115 @@ ${ending}`;
   }
 
   /**
-   * Get regional hashtags
+   * Get regional hashtags with AI-powered contextual generation
    */
-  public getRegionalHashtags(location: string, businessType: string): string[] {
-    const profile = this.getRegionalProfile(location);
-
-    if (!profile) {
-      return [`#${businessType}`, `#local`, `#quality`];
+  public async getRegionalHashtags(location: string, businessType: string, businessName?: string): Promise<string[]> {
+    try {
+      // Use AI to generate contextual regional hashtags
+      const aiHashtags = await this.generateAIRegionalHashtags(location, businessType, businessName);
+      if (aiHashtags.length > 0) {
+        return aiHashtags;
+      }
+    } catch (error) {
+      console.warn('AI regional hashtag generation failed, using contextual fallback:', error);
     }
 
+    // Fallback to contextual generation
+    return this.generateContextualRegionalHashtags(location, businessType, businessName);
+  }
+
+  /**
+   * Generate regional hashtags using AI for maximum local relevance
+   */
+  private async generateAIRegionalHashtags(location: string, businessType: string, businessName?: string): Promise<string[]> {
+    const { GoogleGenerativeAI } = await import('@google/generative-ai');
+    const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+    const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+    const prompt = `Generate 8 highly relevant, locally-focused hashtags for a ${businessType} business in ${location}.
+
+Business Details:
+- Type: ${businessType}
+- Location: ${location}
+${businessName ? `- Name: ${businessName}` : ''}
+
+Requirements:
+1. Create hashtags that are specific to this location and business type
+2. Include local cultural references and location-specific terms
+3. Avoid generic hashtags like #local, #business, #quality, #community
+4. Make hashtags discoverable by locals and tourists
+5. Consider local language, culture, and popular local terms
+6. Include location-specific food/business culture references
+
+Return ONLY a JSON array of hashtags (including the # symbol):
+["#hashtag1", "#hashtag2", "#hashtag3", ...]`;
+
+    try {
+      const result = await model.generateContent(prompt);
+      let response = result.response.text();
+
+      // Remove markdown code blocks if present
+      response = response.replace(/```json\s*|\s*```/g, '').trim();
+
+      // Try to parse as complete JSON first
+      try {
+        const parsed = JSON.parse(response);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.slice(0, 8);
+        }
+      } catch {
+        // Fallback: extract JSON array from response
+        const hashtagsMatch = response.match(/\[.*?\]/);
+        if (hashtagsMatch) {
+          const hashtags = JSON.parse(hashtagsMatch[0]);
+          if (Array.isArray(hashtags) && hashtags.length > 0) {
+            return hashtags.slice(0, 8);
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to parse AI regional hashtag response:', error);
+    }
+
+    return [];
+  }
+
+  /**
+   * Generate contextual regional hashtags without hardcoded placeholders
+   */
+  private generateContextualRegionalHashtags(location: string, businessType: string, businessName?: string): string[] {
     const hashtags: string[] = [];
 
-    // Add location-based hashtags
+    // Add business-specific hashtags
+    if (businessName) {
+      hashtags.push(`#${businessName.replace(/\s+/g, '')}`);
+    }
+    hashtags.push(`#${businessType.replace(/\s+/g, '')}Business`);
+
+    // Add location-based hashtags (more specific than generic)
+    const locationParts = location.split(',').map(part => part.trim());
+    locationParts.forEach(part => {
+      if (part.length > 2) {
+        hashtags.push(`#${part.replace(/\s+/g, '')}`);
+        // Add business type + location combination
+        hashtags.push(`#${part.replace(/\s+/g, '')}${businessType.replace(/\s+/g, '')}`);
+      }
+    });
+
+    // Add contextual hashtags based on location (more specific than hardcoded)
     if (location.toLowerCase().includes('nairobi')) {
-      hashtags.push('#NairobiEats', '#KenyanFood', '#NairobiLife', '#254Food');
+      hashtags.push('#NairobiEats', '#KenyanCuisine', '#254Business');
     } else if (location.toLowerCase().includes('lagos')) {
-      hashtags.push('#LagosEats', '#NaijaFood', '#LagosLife', '#9jaFood');
+      hashtags.push('#LagosEats', '#NaijaFlavors', '#LagosBusiness');
     } else if (location.toLowerCase().includes('johannesburg')) {
-      hashtags.push('#JoziEats', '#SouthAfricanFood', '#MzansiFood', '#JHBLife');
+      hashtags.push('#JoziEats', '#SouthAfricanTaste', '#JHBBusiness');
+    } else {
+      // For other locations, create dynamic hashtags
+      const cityName = locationParts[0]?.replace(/\s+/g, '') || 'Local';
+      hashtags.push(`#${cityName}Eats`, `#${cityName}Business`);
     }
 
-    // Add business type hashtags with local flavor
-    hashtags.push(`#${businessType}`, '#LocalBusiness', '#CommunityFavorite');
-
-    return hashtags;
+    return [...new Set(hashtags)].slice(0, 8); // Remove duplicates and limit to 8
   }
 }
 
