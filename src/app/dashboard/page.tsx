@@ -20,7 +20,7 @@ import {
   Clock,
   Plus
 } from 'lucide-react';
-import { useFirebaseAuth } from '@/hooks/use-firebase-auth';
+import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { loadStripe } from '@stripe/stripe-js'
 import {
@@ -33,11 +33,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { SidebarInset } from '@/components/ui/sidebar';
-import { useUnifiedBrand } from '@/contexts/unified-brand-context';
+import { useBrand } from '@/contexts/brand-context-mongo';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, loading: authLoading, signOut } = useFirebaseAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const { toast } = useToast();
   // If auth is loading, show spinner; if user is missing or anonymous, redirect to /auth
   React.useEffect(() => {
@@ -47,7 +47,7 @@ export default function DashboardPage() {
       }
     }
   }, [authLoading, user, router]);
-  const { currentBrand, brands } = useUnifiedBrand();
+  const { currentBrand, brands } = useBrand();
   const brandLabel = currentBrand?.businessName ?? (currentBrand as unknown as { name?: string })?.name ?? 'Unnamed Brand';
   const hasBrands = brands.length > 0;
   const brandCount = brands.length;
@@ -207,13 +207,13 @@ export default function DashboardPage() {
 
   return (
     <SidebarInset key={brandKey}>
-  <div className="flex-1 w-full max-w-[100vw] overflow-x-hidden space-y-6 px-6 py-6 lg:py-10 lg:px-12">
+      <div className="flex-1 w-full max-w-[100vw] overflow-x-hidden space-y-6 px-6 py-6 lg:py-10 lg:px-12">
         {/* Top navbar - visible navigation and user menu */}
         <div className="flex items-center justify-between mb-6 bg-white/80 backdrop-blur-sm border rounded-lg p-3 shadow-sm">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded flex items-center justify-center text-white font-semibold">
-                {brandLabel.slice(0,2).toUpperCase()}
+                {brandLabel.slice(0, 2).toUpperCase()}
               </div>
               <div className="hidden sm:block">
                 <div className="text-xs text-gray-500">Working on</div>
@@ -221,8 +221,8 @@ export default function DashboardPage() {
               </div>
             </div>
 
-      
-          
+
+
           </div>
 
           {/* User icon + dropdown (visible) */}
@@ -237,7 +237,7 @@ export default function DashboardPage() {
                 <button aria-label="Open user menu" className="flex items-center gap-3 rounded-full px-2 py-1 hover:bg-gray-50">
                   <Avatar>
                     <AvatarImage src={user?.photoURL || 'https://placehold.co/40x40.png'} alt={user?.displayName || 'User'} />
-                    <AvatarFallback>{(user?.displayName || user?.email || 'U').slice(0,2).toUpperCase()}</AvatarFallback>
+                    <AvatarFallback>{(user?.displayName || user?.email || 'U').slice(0, 2).toUpperCase()}</AvatarFallback>
                   </Avatar>
                 </button>
               </DropdownMenuTrigger>
@@ -342,7 +342,14 @@ export default function DashboardPage() {
                   <h3 className="font-semibold text-gray-900">{brandLabel}</h3>
                   <p className="text-sm text-gray-600">{currentBrand.businessType || 'General Business'}</p>
                   {currentBrand.location && (
-                    <p className="text-xs text-gray-500">{currentBrand.location}</p>
+                    <p className="text-xs text-gray-500">
+                      {typeof currentBrand.location === 'string'
+                        ? currentBrand.location
+                        : currentBrand.location
+                          ? `${currentBrand.location.city || ''}, ${currentBrand.location.country || ''}`.replace(/^,\s*/, '').replace(/,\s*$/, '')
+                          : ''
+                      }
+                    </p>
                   )}
                 </div>
               </div>

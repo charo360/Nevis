@@ -6,17 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { auth } from "@/lib/firebase/config";
-import {
-  reauthenticateWithCredential,
-  EmailAuthProvider,
-  updateEmail as fbUpdateEmail,
-  updatePassword as fbUpdatePassword,
-  deleteUser as fbDeleteUser,
-} from "firebase/auth";
-import { userService } from "@/lib/firebase/database";
+// Firebase imports removed - using MongoDB authentication
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -35,7 +27,7 @@ import { Loader2 } from "lucide-react";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, updateUserProfile } = useFirebaseAuth();
+  const { user, updateUserProfile } = useAuth();
   const { toast } = useToast();
 
   const [name, setName] = useState(user?.displayName || "");
@@ -115,11 +107,10 @@ export default function ProfilePage() {
                 <button
                   key={key}
                   onClick={() => setActiveTab(key)}
-                  className={`w-full text-left px-4 py-2 rounded-lg transition-colors font-medium text-sm ${
-                    activeTab === key
-                      ? "bg-primary/10 text-primary"
-                      : "text-gray-700 hover:bg-accent"
-                  }`}
+                  className={`w-full text-left px-4 py-2 rounded-lg transition-colors font-medium text-sm ${activeTab === key
+                    ? "bg-primary/10 text-primary"
+                    : "text-gray-700 hover:bg-accent"
+                    }`}
                 >
                   {label}
                 </button>
@@ -180,7 +171,7 @@ export default function ProfilePage() {
                   <CardDescription>Keep your account secure by updating your password</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={() => {}} className="space-y-6">
+                  <form onSubmit={() => { }} className="space-y-6">
                     <div className="space-y-4">
                       <div>
                         <Label htmlFor="current-password">Current Password</Label>
@@ -236,7 +227,7 @@ export default function ProfilePage() {
 
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => {}} disabled={!confirmPasswordForDelete} className="bg-destructive hover:bg-destructive/90">
+                          <AlertDialogAction onClick={() => { }} disabled={!confirmPasswordForDelete} className="bg-destructive hover:bg-destructive/90">
                             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Delete Account"}
                           </AlertDialogAction>
                         </AlertDialogFooter>

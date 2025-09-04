@@ -1,7 +1,7 @@
-// Hook for managing generated posts with Firestore
+// Hook for managing generated posts with MongoDB
 import { useState, useEffect, useCallback } from 'react';
-import { generatedPostFirebaseService } from '@/lib/firebase/services/generated-post-service';
-import { useUserId } from './use-firebase-auth';
+// MongoDB services accessed via API routes only
+import { useAuth } from './use-auth';
 import { useCurrentBrandProfile } from './use-brand-profiles';
 import type { GeneratedPost, Platform } from '@/lib/types';
 
@@ -13,7 +13,8 @@ export interface GeneratedPostsState {
 }
 
 export function useGeneratedPosts(limit: number = 10) {
-  const userId = useUserId();
+  const { user } = useAuth();
+  const userId = user?.userId;
   const { profile: currentProfile } = useCurrentBrandProfile();
   const [state, setState] = useState<GeneratedPostsState>({
     posts: [],
@@ -31,9 +32,14 @@ export function useGeneratedPosts(limit: number = 10) {
 
     try {
       setState(prev => ({ ...prev, loading: true, error: null }));
-      
-      const posts = await generatedPostFirebaseService.getUserGeneratedPosts(userId, { limit });
-      
+
+      // Load posts via API route
+      const response = await fetch(`/api/generated-posts?userId=${userId}&limit=${limit}`);
+      if (!response.ok) {
+        throw new Error('Failed to load posts');
+      }
+      const posts = await response.json();
+
       setState(prev => ({
         ...prev,
         posts,
@@ -56,16 +62,34 @@ export function useGeneratedPosts(limit: number = 10) {
 
     try {
       setState(prev => ({ ...prev, saving: true, error: null }));
-      
-      const postId = await generatedPostFirebaseService.saveGeneratedPost(post, userId, currentProfile.id);
-      
+
+      // Save post via API route
+      const response = await fetch('/api/generated-posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          post,
+          userId,
+          brandProfileId: currentProfile.id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save post');
+      }
+
+      const result = await response.json();
+      const postId = result.id;
+
       // Add to local state optimistically
       setState(prev => ({
         ...prev,
         posts: [{ ...post, id: postId }, ...prev.posts].slice(0, limit),
         saving: false,
       }));
-      
+
       return postId;
     } catch (error) {
       setState(prev => ({
@@ -91,13 +115,27 @@ export function useGeneratedPosts(limit: number = 10) {
     }
   ): Promise<void> => {
     try {
-      await generatedPostFirebaseService.updatePostAnalytics(postId, analytics);
-      
+      // Update analytics via API route
+      const response = await fetch(`/api/generated-posts/${postId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'analytics',
+          ...analytics,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update analytics');
+      }
+
       // Update local state
       setState(prev => ({
         ...prev,
-        posts: prev.posts.map(post => 
-          post.id === postId 
+        posts: prev.posts.map(post =>
+          post.id === postId
             ? { ...post, ...analytics }
             : post
         ),
@@ -115,14 +153,29 @@ export function useGeneratedPosts(limit: number = 10) {
     try {
       const firestoreStatus = status === 'posted' ? 'published' : 'draft';
       const publishedAt = status === 'posted' ? new Date() : undefined;
-      
-      await generatedPostFirebaseService.updatePostStatus(postId, firestoreStatus, undefined, publishedAt);
-      
+
+      // Update status via API route
+      const response = await fetch(`/api/generated-posts/${postId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'status',
+          status: firestoreStatus,
+          publishedAt,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update status');
+      }
+
       // Update local state
       setState(prev => ({
         ...prev,
-        posts: prev.posts.map(post => 
-          post.id === postId 
+        posts: prev.posts.map(post =>
+          post.id === postId
             ? { ...post, status }
             : post
         ),
@@ -135,8 +188,15 @@ export function useGeneratedPosts(limit: number = 10) {
   // Delete post
   const deletePost = useCallback(async (postId: string): Promise<void> => {
     try {
-      await generatedPostFirebaseService.delete(postId);
-      
+      // Delete post via API route
+      const response = await fetch(`/api/generated-posts/${postId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete post');
+      }
+
       // Update local state
       setState(prev => ({
         ...prev,
@@ -150,9 +210,14 @@ export function useGeneratedPosts(limit: number = 10) {
   // Get posts by platform
   const getPostsByPlatform = useCallback(async (platform: Platform): Promise<GeneratedPost[]> => {
     if (!userId) return [];
-    
+
     try {
-      return await generatedPostFirebaseService.getUserGeneratedPosts(userId, { platform, limit });
+      // Get posts by platform via API route
+      const response = await fetch(`/api/generated-posts?userId=${userId}&platform=${platform}&limit=${limit}`);
+      if (response.ok) {
+        return await response.json();
+      }
+      return [];
     } catch (error) {
       return [];
     }
@@ -161,10 +226,15 @@ export function useGeneratedPosts(limit: number = 10) {
   // Get posts by status
   const getPostsByStatus = useCallback(async (status: 'generated' | 'edited' | 'posted'): Promise<GeneratedPost[]> => {
     if (!userId) return [];
-    
+
     try {
       const firestoreStatus = status === 'posted' ? 'published' : 'draft';
-      return await generatedPostFirebaseService.getPostsByStatus(userId, firestoreStatus);
+      // Get posts by status via API route
+      const response = await fetch(`/api/generated-posts?userId=${userId}&status=${firestoreStatus}`);
+      if (response.ok) {
+        return await response.json();
+      }
+      return [];
     } catch (error) {
       return [];
     }
@@ -175,23 +245,8 @@ export function useGeneratedPosts(limit: number = 10) {
     loadPosts();
   }, [loadPosts]);
 
-  // Set up real-time listener
-  useEffect(() => {
-    if (!userId) return;
-
-    const unsubscribe = generatedPostFirebaseService.onUserDocumentsChange(
-      userId,
-      (posts) => {
-        setState(prev => ({
-          ...prev,
-          posts: posts.slice(0, limit),
-        }));
-      },
-      { limit, orderBy: 'createdAt', orderDirection: 'desc' }
-    );
-
-    return unsubscribe;
-  }, [userId, limit]);
+  // Note: Real-time updates removed for MongoDB migration
+  // Posts will be refreshed when operations are performed
 
   return {
     ...state,
@@ -222,13 +277,14 @@ export function useGeneratedPostsForBrand(brandProfileId: string, limit: number 
     try {
       setLoading(true);
       setError(null);
-      
-      const brandPosts = await generatedPostFirebaseService.getRecentPostsForBrand(
-        userId, 
-        brandProfileId, 
-        limit
-      );
-      
+
+      // Get brand posts via API route
+      const response = await fetch(`/api/generated-posts/brand/${brandProfileId}?userId=${userId}&limit=${limit}`);
+      if (!response.ok) {
+        throw new Error('Failed to load brand posts');
+      }
+      const brandPosts = await response.json();
+
       setPosts(brandPosts);
       setLoading(false);
     } catch (err) {
@@ -252,7 +308,7 @@ export function useGeneratedPostsForBrand(brandProfileId: string, limit: number 
 // Hook for post statistics
 export function usePostStatistics() {
   const { posts } = useGeneratedPosts(100); // Get more posts for statistics
-  
+
   const statistics = {
     total: posts.length,
     byPlatform: posts.reduce((acc, post) => {
@@ -263,11 +319,11 @@ export function usePostStatistics() {
       acc[post.status] = (acc[post.status] || 0) + 1;
       return acc;
     }, {} as Record<string, number>),
-    averageQuality: posts.length > 0 
-      ? posts.reduce((sum, post) => sum + (post.qualityScore || 0), 0) / posts.length 
+    averageQuality: posts.length > 0
+      ? posts.reduce((sum, post) => sum + (post.qualityScore || 0), 0) / posts.length
       : 0,
-    averageEngagement: posts.length > 0 
-      ? posts.reduce((sum, post) => sum + (post.engagementPrediction || 0), 0) / posts.length 
+    averageEngagement: posts.length > 0
+      ? posts.reduce((sum, post) => sum + (post.engagementPrediction || 0), 0) / posts.length
       : 0,
   };
 

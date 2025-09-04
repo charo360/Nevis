@@ -154,7 +154,12 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   // Copy functionality
   const handleCopyCaption = React.useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(post.content);
+      // Handle both string and object content formats
+      const contentText = typeof post.content === 'string'
+        ? post.content
+        : (post.content as any)?.text || 'No content available';
+
+      await navigator.clipboard.writeText(contentText);
       toast({
         title: "Caption Copied!",
         description: "The caption has been copied to your clipboard.",
@@ -170,7 +175,20 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
 
   const handleCopyHashtags = React.useCallback(async () => {
     try {
-      const hashtagsText = typeof post.hashtags === 'string' ? post.hashtags : post.hashtags?.join(' ') || '';
+      // Handle hashtags from different sources
+      let hashtags = post.hashtags;
+
+      // If no direct hashtags, check content.hashtags (database format)
+      if (!hashtags && typeof post.content === 'object' && (post.content as any)?.hashtags) {
+        hashtags = (post.content as any).hashtags;
+      }
+
+      const hashtagsText = typeof hashtags === 'string'
+        ? hashtags
+        : Array.isArray(hashtags)
+          ? hashtags.join(' ')
+          : '';
+
       await navigator.clipboard.writeText(hashtagsText);
       toast({
         title: "Hashtags Copied!",
@@ -575,7 +593,12 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
 
           <div className="space-y-2">
             <div className="flex items-start justify-between gap-2">
-              <p className="text-sm text-foreground line-clamp-4 flex-1">{post.content}</p>
+              <p className="text-sm text-foreground line-clamp-4 flex-1">
+                {typeof post.content === 'string'
+                  ? post.content
+                  : (post.content as any)?.text || 'No content available'
+                }
+              </p>
               <Button
                 variant="ghost"
                 size="sm"
@@ -592,25 +615,47 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
         <CardFooter className="p-4 pt-0">
           <div className="flex items-start justify-between gap-2">
             <div className="flex flex-wrap gap-1 flex-1">
-              {post.hashtags && (() => {
-                // Handle both string and array formats for hashtags
-                const hashtagsArray = typeof post.hashtags === 'string'
-                  ? post.hashtags.split(" ")
-                  : Array.isArray(post.hashtags)
-                    ? post.hashtags
-                    : [];
+              {(() => {
+                // Handle hashtags from different sources and formats
+                let hashtags = post.hashtags;
 
-                return hashtagsArray.map((tag, index) => (
-                  <Badge key={index} variant="secondary" className="font-normal">
-                    {tag}
-                  </Badge>
-                ));
+                // If no direct hashtags, check content.hashtags (database format)
+                if (!hashtags && typeof post.content === 'object' && (post.content as any)?.hashtags) {
+                  hashtags = (post.content as any).hashtags;
+                }
+
+                if (hashtags) {
+                  // Handle both string and array formats for hashtags
+                  const hashtagsArray = typeof hashtags === 'string'
+                    ? hashtags.split(" ")
+                    : Array.isArray(hashtags)
+                      ? hashtags
+                      : [];
+
+                  return hashtagsArray.map((tag, index) => (
+                    <Badge key={index} variant="secondary" className="font-normal">
+                      {tag}
+                    </Badge>
+                  ));
+                }
+
+                return null;
               })()}
-              {!post.hashtags && (
-                <Badge variant="secondary" className="font-normal">
-                  #enhanced #ai #design
-                </Badge>
-              )}
+              {(() => {
+                // Check if we have any hashtags to display
+                const hasHashtags = post.hashtags ||
+                  (typeof post.content === 'object' && (post.content as any)?.hashtags);
+
+                if (!hasHashtags) {
+                  return (
+                    <Badge variant="secondary" className="font-normal">
+                      #enhanced #ai #design
+                    </Badge>
+                  );
+                }
+
+                return null;
+              })()}
             </div>
             <Button
               variant="ghost"

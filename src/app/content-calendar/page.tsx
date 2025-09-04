@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { BrandProfile } from "@/lib/types";
 import type { CompleteBrandProfile } from "@/components/cbrand/cbrand-wizard";
 import { useRouter } from "next/navigation";
-import { useUnifiedBrand, useBrandStorage, useBrandChangeListener } from "@/contexts/unified-brand-context";
+import { useBrand } from "@/contexts/brand-context-mongo";
 import { UnifiedBrandLayout, BrandContent, BrandSwitchingStatus } from "@/components/layout/unified-brand-layout";
 import { STORAGE_FEATURES } from "@/lib/services/brand-scoped-storage";
 import { SidebarInset } from "@/components/ui/sidebar";
@@ -234,191 +234,191 @@ function ContentCalendarPageContent() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-7xl mx-auto">
-          {/* Compact Header */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-6">
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Content Calendar</h1>
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                Schedule services for content generation
-              </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => navigateMonth('prev')}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <h2 className="text-sm sm:text-lg font-semibold min-w-[140px] sm:min-w-[180px] text-center">
-              {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-            </h2>
-            <Button variant="outline" size="sm" onClick={() => navigateMonth('next')}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Color-Coded Services Overview */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              Available Services
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <div className="w-2 h-2 bg-blue-200 rounded-full"></div>
-                <div className="w-2 h-2 bg-green-200 rounded-full"></div>
-                <div className="w-2 h-2 bg-purple-200 rounded-full"></div>
-                <span>Color-coded</span>
+            {/* Compact Header */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-6">
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Content Calendar</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  Schedule services for content generation
+                </p>
               </div>
-            </CardTitle>
-            <CardDescription className="text-sm">
-              Each service has a unique color. Drag services to calendar days or click days to schedule
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="flex flex-wrap gap-2">
-              {services.map((service, index) => {
-                // Create a preview color indicator
-                const serviceColor = SERVICE_COLORS[index % SERVICE_COLORS.length];
-                return (
-                  <div
-                    key={service.id}
-                    className="cursor-move px-3 py-2 text-xs rounded-md border-2 border-dashed border-gray-300 bg-white transition-all hover:scale-105 hover:shadow-md"
-                    draggable
-                    onDragStart={(e) => {
-                      e.dataTransfer.setData('service', JSON.stringify(service));
-                    }}
-                    title={service.description}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: serviceColor.bg }}
-                      ></div>
-                      <div className="font-medium text-gray-800">{service.name}</div>
-                    </div>
-                    {service.description && (
-                      <div className="text-xs text-gray-600 mt-1 truncate max-w-[150px] ml-5">
-                        {service.description}
-                      </div>
-                    )}
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => navigateMonth('prev')}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <h2 className="text-sm sm:text-lg font-semibold min-w-[140px] sm:min-w-[180px] text-center">
+                  {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+                </h2>
+                <Button variant="outline" size="sm" onClick={() => navigateMonth('next')}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Color-Coded Services Overview */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  Available Services
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <div className="w-2 h-2 bg-blue-200 rounded-full"></div>
+                    <div className="w-2 h-2 bg-green-200 rounded-full"></div>
+                    <div className="w-2 h-2 bg-purple-200 rounded-full"></div>
+                    <span>Color-coded</span>
                   </div>
-                );
-              })}
-            </div>
-            {services.length === 0 && (
-              <p className="text-muted-foreground text-xs">
-                No services found. Please complete your brand profile to add services.
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Responsive Calendar Grid */}
-        <Card className="flex-1">
-          <CardContent className="p-2 sm:p-3">
-            {/* Day Headers */}
-            <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-1">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                <div key={day} className="p-1 text-center font-medium text-muted-foreground text-xs sm:text-sm">
-                  {day}
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  Each service has a unique color. Drag services to calendar days or click days to schedule
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="flex flex-wrap gap-2">
+                  {services.map((service, index) => {
+                    // Create a preview color indicator
+                    const serviceColor = SERVICE_COLORS[index % SERVICE_COLORS.length];
+                    return (
+                      <div
+                        key={service.id}
+                        className="cursor-move px-3 py-2 text-xs rounded-md border-2 border-dashed border-gray-300 bg-white transition-all hover:scale-105 hover:shadow-md"
+                        draggable
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData('service', JSON.stringify(service));
+                        }}
+                        title={service.description}
+                      >
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: serviceColor.bg }}
+                          ></div>
+                          <div className="font-medium text-gray-800">{service.name}</div>
+                        </div>
+                        {service.description && (
+                          <div className="text-xs text-gray-600 mt-1 truncate max-w-[150px] ml-5">
+                            {service.description}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
+                {services.length === 0 && (
+                  <p className="text-muted-foreground text-xs">
+                    No services found. Please complete your brand profile to add services.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
 
-            {/* Calendar Days */}
-            <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
-              {calendarDays.map((day) => (
-                <div
-                  key={day.date}
-                  className={`
+            {/* Responsive Calendar Grid */}
+            <Card className="flex-1">
+              <CardContent className="p-2 sm:p-3">
+                {/* Day Headers */}
+                <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-1">
+                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                    <div key={day} className="p-1 text-center font-medium text-muted-foreground text-xs sm:text-sm">
+                      {day}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Calendar Days */}
+                <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
+                  {calendarDays.map((day) => (
+                    <div
+                      key={day.date}
+                      className={`
                   min-h-[70px] sm:min-h-[85px] p-1 sm:p-2 border rounded-sm sm:rounded-md transition-colors text-xs sm:text-sm
                   ${day.isCurrentMonth ? 'bg-background' : 'bg-muted/30'}
                   ${day.isToday ? 'ring-1 sm:ring-2 ring-primary' : ''}
                   hover:bg-muted/50 cursor-pointer
                 `}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    const serviceData = e.dataTransfer.getData('service');
-                    if (serviceData) {
-                      const service = JSON.parse(serviceData);
-                      setSelectedDate(day.date);
-                      setIsScheduleDialogOpen(true);
-                    }
-                  }}
-                  onDragOver={(e) => e.preventDefault()}
-                  onClick={() => {
-                    setSelectedDate(day.date);
-                    setIsScheduleDialogOpen(true);
-                  }}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className={`text-xs sm:text-sm font-medium ${day.isCurrentMonth ? 'text-foreground' : 'text-muted-foreground'}`}>
-                      {day.day}
-                    </span>
-                    {day.content.length > 0 && (
-                      <Badge variant="outline" className="text-xs h-3 sm:h-4 px-1">
-                        {day.content.length}
-                      </Badge>
-                    )}
-                  </div>
-
-                  {/* Color-Coded Scheduled Content */}
-                  <div className="space-y-0.5">
-                    {day.content.slice(0, 3).map((content) => {
-                      // Find the service index to get its color
-                      const serviceIndex = services.findIndex(s => s.id === content.serviceId);
-                      const serviceColor = serviceIndex >= 0
-                        ? SERVICE_COLORS[serviceIndex % SERVICE_COLORS.length]
-                        : { bg: '#6B7280', text: '#FFFFFF' }; // Gray fallback
-
-                      return (
-                        <div
-                          key={content.id}
-                          className="text-xs px-2 py-1 rounded-md flex items-center justify-between group shadow-sm"
-                          style={{
-                            backgroundColor: serviceColor.bg,
-                            color: serviceColor.text
-                          }}
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium truncate">{content.serviceName}</div>
-                            <div className="text-xs opacity-80">{content.platform}</div>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 ml-1"
-                            style={{ color: serviceColor.text }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeScheduledContent(content.id);
-                            }}
-                          >
-                            <Trash2 className="h-2 w-2" />
-                          </Button>
-                        </div>
-                      );
-                    })}
-                    {day.content.length > 3 && (
-                      <div className="text-xs text-muted-foreground">
-                        +{day.content.length - 3} more
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        const serviceData = e.dataTransfer.getData('service');
+                        if (serviceData) {
+                          const service = JSON.parse(serviceData);
+                          setSelectedDate(day.date);
+                          setIsScheduleDialogOpen(true);
+                        }
+                      }}
+                      onDragOver={(e) => e.preventDefault()}
+                      onClick={() => {
+                        setSelectedDate(day.date);
+                        setIsScheduleDialogOpen(true);
+                      }}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className={`text-xs sm:text-sm font-medium ${day.isCurrentMonth ? 'text-foreground' : 'text-muted-foreground'}`}>
+                          {day.day}
+                        </span>
+                        {day.content.length > 0 && (
+                          <Badge variant="outline" className="text-xs h-3 sm:h-4 px-1">
+                            {day.content.length}
+                          </Badge>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Schedule Content Dialog */}
-        <ScheduleContentDialog
-          isOpen={isScheduleDialogOpen}
-          onClose={() => setIsScheduleDialogOpen(false)}
-          selectedDate={selectedDate}
-          services={services}
-          onSchedule={scheduleContent}
-        />
+                      {/* Color-Coded Scheduled Content */}
+                      <div className="space-y-0.5">
+                        {day.content.slice(0, 3).map((content) => {
+                          // Find the service index to get its color
+                          const serviceIndex = services.findIndex(s => s.id === content.serviceId);
+                          const serviceColor = serviceIndex >= 0
+                            ? SERVICE_COLORS[serviceIndex % SERVICE_COLORS.length]
+                            : { bg: '#6B7280', text: '#FFFFFF' }; // Gray fallback
+
+                          return (
+                            <div
+                              key={content.id}
+                              className="text-xs px-2 py-1 rounded-md flex items-center justify-between group shadow-sm"
+                              style={{
+                                backgroundColor: serviceColor.bg,
+                                color: serviceColor.text
+                              }}
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium truncate">{content.serviceName}</div>
+                                <div className="text-xs opacity-80">{content.platform}</div>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 ml-1"
+                                style={{ color: serviceColor.text }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeScheduledContent(content.id);
+                                }}
+                              >
+                                <Trash2 className="h-2 w-2" />
+                              </Button>
+                            </div>
+                          );
+                        })}
+                        {day.content.length > 3 && (
+                          <div className="text-xs text-muted-foreground">
+                            +{day.content.length - 3} more
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Schedule Content Dialog */}
+            <ScheduleContentDialog
+              isOpen={isScheduleDialogOpen}
+              onClose={() => setIsScheduleDialogOpen(false)}
+              selectedDate={selectedDate}
+              services={services}
+              onSchedule={scheduleContent}
+            />
+          </div>
         </div>
       </div>
-    </div>
     </SidebarInset>
   );
 }

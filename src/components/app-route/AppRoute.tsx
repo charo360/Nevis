@@ -8,7 +8,7 @@ const Dashboard = React.lazy(() => import('../../app/dashboard/page').then(m => 
 const Settings = React.lazy(() => import('../../app/settings/page').then(m => ({ default: m.default })));
 const Profile = React.lazy(() => import('../../app/profile/page').then(m => ({ default: m.default })));
 const BrandProfile = React.lazy(() => import('../../app/brand-profile/page').then(m => ({ default: m.default })));
-const BrandProfileFirebaseFirst = React.lazy(() => import('../../app/brand-profile-firebase-first/page').then(m => ({ default: m.default })));
+// Firebase brand profile removed - using MongoDB version
 const Brands = React.lazy(() => import('../../app/brands/page').then(m => ({ default: m.default })));
 const ContentCalendar = React.lazy(() => import('../../app/content-calendar/page').then(m => ({ default: m.default })));
 const CreativeStudio = React.lazy(() => import('../../app/creative-studio/page').then(m => ({ default: m.default })));
@@ -77,7 +77,7 @@ export function AppRoute() {
     { test: p => p.startsWith('/dashboard'), Component: Dashboard },
     { test: p => p.startsWith('/settings'), Component: Settings },
     { test: p => p.startsWith('/profile'), Component: Profile },
-    { test: p => p.startsWith('/brand-profile-firebase-first'), Component: BrandProfileFirebaseFirst },
+    // Firebase brand profile route removed
     { test: p => p.startsWith('/brand-profile'), Component: BrandProfile },
     { test: p => p.startsWith('/brands'), Component: Brands },
     { test: p => p.startsWith('/content-calendar'), Component: ContentCalendar },

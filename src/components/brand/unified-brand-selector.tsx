@@ -20,7 +20,7 @@ import {
   Settings,
   Sparkles
 } from 'lucide-react';
-import { useUnifiedBrand } from '@/contexts/unified-brand-context';
+import { useBrand } from '@/contexts/brand-context-mongo';
 import { useRouter } from 'next/navigation';
 import type { CompleteBrandProfile } from '@/components/cbrand/cbrand-wizard';
 
@@ -31,7 +31,7 @@ export function UnifiedBrandSelector() {
     brands,
     loading,
     selectBrand,
-  } = useUnifiedBrand();
+  } = useBrand();
 
   const [isOpen, setIsOpen] = useState(false);
 
@@ -84,7 +84,7 @@ export function UnifiedBrandSelector() {
   // No brands state
   if (!loading && brands.length === 0) {
     return (
-      <Button 
+      <Button
         onClick={handleCreateNew}
         className="min-w-[200px] bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
       >
@@ -111,7 +111,7 @@ export function UnifiedBrandSelector() {
             Brand Profiles ({brands.length})
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          
+
           {brands.map((brand) => (
             <DropdownMenuItem
               key={brand.id}
@@ -133,7 +133,7 @@ export function UnifiedBrandSelector() {
               </div>
             </DropdownMenuItem>
           ))}
-          
+
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleCreateNew} className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
@@ -154,8 +154,8 @@ export function UnifiedBrandSelector() {
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           className="min-w-[200px] border-2 border-blue-200 hover:border-blue-300 bg-blue-50 hover:bg-blue-100"
         >
           <div className="flex items-center gap-2 flex-1">
@@ -187,7 +187,7 @@ export function UnifiedBrandSelector() {
           Brand Profiles ({brands.length})
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        
+
         {brands.map((brand) => {
           const isSelected = currentBrand.id === brand.id;
           return (
@@ -215,7 +215,7 @@ export function UnifiedBrandSelector() {
             </DropdownMenuItem>
           );
         })}
-        
+
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleCreateNew} className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">

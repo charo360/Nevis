@@ -270,5 +270,53 @@
     "used": true,
     "createdAt": "2025-08-23T15:01:01.360Z",
     "expiresAt": "2025-08-23T15:16:01.360Z"
+  },
+  {
+    "email": "sm1761a@american.edu",
+    "code": "93692",
+    "type": "signup",
+    "used": false,
+    "createdAt": "2025-09-03T16:36:52.585Z",
+    "expiresAt": "2025-09-03T16:51:52.585Z"
+  },
+  {
+    "email": "sm1761a@american.edu",
+    "code": "87051",
+    "type": "signup",
+    "used": false,
+    "createdAt": "2025-09-03T16:36:52.691Z",
+    "expiresAt": "2025-09-03T16:51:52.691Z"
+  },
+  {
+    "email": "sm1761a@american.edu",
+    "code": "75588",
+    "type": "signup",
+    "used": false,
+    "createdAt": "2025-09-03T16:36:53.177Z",
+    "expiresAt": "2025-09-03T16:51:53.177Z"
+  },
+  {
+    "email": "sm1761a@american.edu",
+    "code": "35107",
+    "type": "signup",
+    "used": false,
+    "createdAt": "2025-09-03T16:36:53.230Z",
+    "expiresAt": "2025-09-03T16:51:53.230Z"
+  },
+  {
+    "email": "sm1761a@american.edu",
+    "code": "61333",
+    "type": "signup",
+    "used": false,
+    "createdAt": "2025-09-03T16:37:48.940Z",
+    "expiresAt": "2025-09-03T16:52:48.940Z"
+  },
+  {
+    "email": "sm1761a@american.edu",
+    "code": "34210",
+    "type": "signup",
+    "used": false,
+    "createdAt": "2025-09-03T16:38:00.321Z",
+    "expiresAt": "2025-09-03T16:53:00.321Z"
   }
 ]

@@ -21,13 +21,13 @@ import type { BrandProfile, GeneratedPost } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { User, PanelLeftClose, PanelLeftOpen } from "lucide-react";
-import { useUnifiedBrand, useBrandStorage, useBrandChangeListener } from "@/contexts/unified-brand-context";
+import { useBrand } from "@/contexts/brand-context-mongo";
 import { UnifiedBrandLayout, BrandContent, BrandSwitchingStatus } from "@/components/layout/unified-brand-layout";
 import { STORAGE_FEATURES, getStorageUsage, cleanupAllStorage } from "@/lib/services/brand-scoped-storage";
 import { processGeneratedPost } from "@/lib/services/generated-post-storage";
-import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+import { useAuth } from "@/hooks/use-auth";
 import { useGeneratedPosts } from "@/hooks/use-generated-posts";
-import "@/lib/utils/enable-firebase-storage"; // Load Firebase Storage utilities
+// Firebase Storage utilities removed - using MongoDB GridFS
 
 // No limit on posts - store all generated content
 
@@ -63,15 +63,179 @@ const cleanupBrandScopedStorage = (brandStorage: any) => {
 };
 
 function QuickContentPage() {
-  const { currentBrand, brands, loading: brandLoading, selectBrand } = useUnifiedBrand();
-  const postsStorage = useBrandStorage(STORAGE_FEATURES.QUICK_CONTENT);
+  const { currentBrand, brands, loading: brandLoading, selectBrand } = useBrand();
+  // Simple brand-scoped storage for posts
+  const postsStorage = React.useMemo(() => {
+    const brandId = currentBrand?.id || 'default';
+    const storageKey = `quick-content-${brandId}`;
+
+    return {
+      getItem: () => {
+        try {
+          const stored = localStorage.getItem(storageKey);
+          return stored ? JSON.parse(stored) : [];
+        } catch {
+          return [];
+        }
+      },
+      setItem: (posts: GeneratedPost[]) => {
+        try {
+          // Optimize posts before saving to prevent quota exceeded errors
+          const optimizedPosts = posts.map(post => ({
+            ...post,
+            // Compress or remove large image data if needed
+            imageUrl: post.imageUrl && post.imageUrl.length > 100000
+              ? post.imageUrl.substring(0, 100000) + '...[compressed]'
+              : post.imageUrl,
+            // Keep only essential data - handle both string and object content
+            content: (() => {
+              if (!post.content) return post.content;
+              if (typeof post.content === 'string') {
+                return post.content.substring(0, 1000);
+              }
+              // Handle object content (database format)
+              const contentText = (post.content as any)?.text || '';
+              return typeof contentText === 'string' ? contentText.substring(0, 1000) : contentText;
+            })()
+          }));
+
+          // Limit to 3 most recent posts to prevent storage overflow
+          const limitedPosts = optimizedPosts.slice(0, 3);
+
+          const dataToStore = JSON.stringify(limitedPosts);
+          const dataSize = new Blob([dataToStore]).size;
+          const maxSize = 2 * 1024 * 1024; // 2MB limit
+
+          if (dataSize > maxSize) {
+            // If still too large, keep only 1 post without image
+            const minimalPosts = limitedPosts.slice(0, 1).map(post => ({
+              ...post,
+              imageUrl: '', // Remove image data
+              content: (() => {
+                if (!post.content) return post.content;
+                if (typeof post.content === 'string') {
+                  return post.content.substring(0, 500);
+                }
+                // Handle object content (database format)
+                const contentText = (post.content as any)?.text || '';
+                return typeof contentText === 'string' ? contentText.substring(0, 500) : contentText;
+              })()
+            }));
+            localStorage.setItem(storageKey, JSON.stringify(minimalPosts));
+          } else {
+            localStorage.setItem(storageKey, dataToStore);
+          }
+        } catch (error) {
+          if (error.name === 'QuotaExceededError') {
+            // Clear all localStorage and try to save minimal data
+            this.handleQuotaExceeded(posts);
+          } else {
+            console.error('Failed to save posts:', error);
+          }
+        }
+      },
+
+      handleQuotaExceeded: (posts: GeneratedPost[]) => {
+        try {
+          // Clear all localStorage data
+          localStorage.clear();
+
+          // Save only the most recent post with minimal data
+          if (posts.length > 0) {
+            const minimalPost = {
+              id: posts[0].id || Date.now().toString(),
+              date: posts[0].date || new Date().toISOString(),
+              content: (() => {
+                if (!posts[0].content) return 'Generated content';
+                if (typeof posts[0].content === 'string') {
+                  return posts[0].content.substring(0, 200) + '...';
+                }
+                // Handle object content (database format)
+                const contentText = (posts[0].content as any)?.text || '';
+                return typeof contentText === 'string' ? contentText.substring(0, 200) + '...' : 'Generated content';
+              })(),
+              platform: posts[0].platform || 'instagram',
+              imageUrl: '', // No image data
+              note: 'Storage quota exceeded - full data not saved'
+            };
+            localStorage.setItem(storageKey, JSON.stringify([minimalPost]));
+          }
+        } catch (finalError) {
+          console.error('Final storage attempt failed:', finalError);
+        }
+      }
+    };
+  }, [currentBrand?.id]);
   const [generatedPosts, setGeneratedPosts] = useState<GeneratedPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
   const { open: sidebarOpen, toggleSidebar } = useSidebar();
-  const { user } = useFirebaseAuth();
-  const { savePost, saving } = useGeneratedPosts();
+  const { user } = useAuth();
+
+  // Custom save function that uses the current brand from MongoDB context
+  const savePostToDatabase = async (post: GeneratedPost) => {
+    if (!user?.userId || !currentBrand?.id) {
+      throw new Error('User must be authenticated and have a brand selected to save posts');
+    }
+
+    // Convert the post format to match MongoDB service expectations
+    const mongoPost = {
+      // Don't include id field - let MongoDB generate it
+      userId: user.userId,
+      brandProfileId: currentBrand.id,
+      platform: post.platform || 'instagram',
+      postType: post.postType || 'post',
+      content: {
+        text: post.content || '',
+        hashtags: Array.isArray(post.hashtags) ? post.hashtags : [post.hashtags].filter(Boolean),
+        imageUrl: post.imageUrl,
+        videoUrl: post.videoUrl,
+      },
+      // Include variants for platform-specific images
+      variants: post.variants || [],
+      // Include other post fields
+      imageUrl: post.imageUrl,
+      catchyWords: post.catchyWords,
+      subheadline: post.subheadline,
+      callToAction: post.callToAction,
+      metadata: {
+        businessType: currentBrand.businessType,
+        visualStyle: currentBrand.brandColors?.primary,
+        targetAudience: currentBrand.targetAudience,
+        generationPrompt: `Generated for ${currentBrand.businessName}`,
+        aiModel: 'revo-2.0',
+      },
+      status: post.status || 'generated',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const response = await fetch('/api/generated-posts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        post: mongoPost,
+        userId: user.userId,
+        brandProfileId: currentBrand.id,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      console.error('❌ API Response Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        errorData
+      });
+      throw new Error(errorData.error || `HTTP ${response.status}: Failed to save post`);
+    }
+
+    const result = await response.json();
+    return result.id;
+  };
 
   // Inline brand restoration function
   const forceBrandRestore = React.useCallback(() => {
@@ -105,8 +269,9 @@ function QuickContentPage() {
     }
   }, [brands, selectBrand]);
 
-  // Load posts when brand changes using unified brand system
-  useBrandChangeListener(React.useCallback((brand) => {
+  // Load posts when brand changes
+  React.useEffect(() => {
+    const brand = currentBrand;
     const brandName = brand?.businessName || brand?.name || 'none';
 
     if (!brand) {
@@ -117,56 +282,116 @@ function QuickContentPage() {
 
     setIsLoading(true);
 
-    try {
-      if (postsStorage) {
-        const posts = postsStorage.getItem<GeneratedPost[]>() || [];
+    // Load posts from database first, then fallback to localStorage
+    const loadPosts = async () => {
+      try {
+        // Try to load from database first
+        if (user?.userId && brand.id) {
+          console.log('🔄 Loading posts from database for brand:', brand.businessName);
+          const response = await fetch(`/api/generated-posts/brand/${brand.id}?userId=${user.userId}&limit=50`);
 
-        // Check if any posts have invalid dates
-        const hasInvalidDates = posts.some((post: GeneratedPost) =>
-          !post.date || isNaN(new Date(post.date).getTime())
-        );
+          if (response.ok) {
+            const databasePosts = await response.json();
+            console.log('✅ Loaded', databasePosts.length, 'posts from database');
 
-        if (hasInvalidDates) {
-          postsStorage.removeItem();
-          setGeneratedPosts([]);
-        } else {
-          setGeneratedPosts(posts);
+            if (databasePosts.length > 0) {
+              setGeneratedPosts(databasePosts);
+              setIsLoading(false);
+              return;
+            }
+          } else {
+            console.log('⚠️ Database load failed, trying localStorage fallback');
+          }
         }
 
-      } else {
-        setGeneratedPosts([]);
+        // Fallback to localStorage if database fails or no posts found
+        if (postsStorage) {
+          console.log('🔄 Loading posts from localStorage fallback');
+          const posts = postsStorage.getItem() || [];
+
+          // Check if any posts have invalid dates
+          const hasInvalidDates = posts.some((post: GeneratedPost) =>
+            !post.date || isNaN(new Date(post.date).getTime())
+          );
+
+          if (hasInvalidDates) {
+            // Clear invalid posts
+            postsStorage.setItem([]);
+            setGeneratedPosts([]);
+          } else {
+            // Limit posts to prevent future storage issues
+            const limitedPosts = posts.slice(0, 5);
+            if (limitedPosts.length < posts.length) {
+              postsStorage.setItem(limitedPosts);
+            }
+            setGeneratedPosts(limitedPosts);
+          }
+
+        } else {
+          setGeneratedPosts([]);
+        }
+      } catch (error) {
+        console.error('❌ Failed to load posts:', error);
+        // If loading fails due to storage issues, clear and start fresh
+        if (error.name === 'QuotaExceededError' || error.message?.includes('quota')) {
+          try {
+            localStorage.clear();
+            setGeneratedPosts([]);
+            toast({
+              title: "Storage Reset",
+              description: "Storage was full and has been cleared. You can now generate new content.",
+              variant: "default",
+            });
+          } catch (clearError) {
+            console.error('Failed to clear storage:', clearError);
+          }
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Failed to load data",
+            description: "Could not load your posts. Please try refreshing the page.",
+          });
+        }
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Failed to load data",
-        description: "Could not read your posts data. It might be corrupted.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [postsStorage, toast]));
+    };
+
+    // Call the async function
+    loadPosts();
+  }, [currentBrand, postsStorage, toast, user]);
 
   // Enhanced brand selection logic with persistence recovery
   useEffect(() => {
-
+    // Only proceed if brands have finished loading
     if (!brandLoading) {
-      // Add a small delay to ensure brands have time to load
+      // Add a longer delay to ensure brands have time to load properly
       const timer = setTimeout(() => {
+        console.log('🔍 Quick Content Brand Check:', {
+          brandsLength: brands.length,
+          currentBrand: currentBrand?.businessName || 'none',
+          brandLoading
+        });
+
         if (brands.length === 0) {
-          // No brands exist, redirect to brand setup
+          // Double-check that we're really done loading before redirecting
+          console.log('⚠️ No brands found, redirecting to brand profile setup');
           try { router.prefetch('/brand-profile'); } catch { }
           router.push('/brand-profile');
         } else if (brands.length > 0 && !currentBrand) {
+          console.log('🔄 Brands exist but no current brand selected, attempting restore');
           // Try to restore from persistence first
           const restored = forceBrandRestore();
 
           if (!restored) {
+            console.log('✅ Auto-selecting first brand:', brands[0].businessName);
             // If restoration failed, auto-select the first brand
             selectBrand(brands[0]);
           }
+        } else if (currentBrand) {
+          console.log('✅ Current brand already selected:', currentBrand.businessName);
         }
-      }, 1000); // 1 second delay
+      }, 2000); // Increased to 2 seconds to allow more time for loading
 
       return () => clearTimeout(timer);
     }
@@ -252,50 +477,90 @@ function QuickContentPage() {
       return;
     }
 
-    try {
-      // Save to localStorage first (immediate)
-      postsStorage.setItem(newPosts);
+    let databaseSaveSuccess = false;
+    let databasePostId = processedPost.id; // Use existing ID if post was already saved
 
-      // Also save to Firestore database (permanent backup)
-      if (user) {
+    // Check if post already has an ID (meaning it was already saved to database)
+    const postAlreadySaved = !!(processedPost.id && processedPost.id !== 'temp-id');
+
+    if (postAlreadySaved) {
+      console.log('✅ Post already saved to database with ID:', processedPost.id);
+      databaseSaveSuccess = true;
+      databasePostId = processedPost.id;
+    } else {
+      // Only save to database if post doesn't have an ID yet
+      if (user && currentBrand) {
         try {
-          const postId = await savePost(processedPost);
+          console.log('🔄 Saving post to database...', {
+            userId: user.userId,
+            brandId: currentBrand.id,
+            brandName: currentBrand.businessName,
+            postContent: (() => {
+              if (!processedPost.content) return 'No content';
+              if (typeof processedPost.content === 'string') {
+                return processedPost.content.substring(0, 50) + '...';
+              }
+              // Handle object content (database format)
+              const contentText = (processedPost.content as any)?.text || '';
+              return typeof contentText === 'string' ? contentText.substring(0, 50) + '...' : 'No content';
+            })()
+          });
 
-          // Update the post with the Firestore ID
-          const savedPost = { ...processedPost, id: postId };
+          databasePostId = await savePostToDatabase(processedPost);
+          console.log('✅ Post saved to database with ID:', databasePostId);
+          databaseSaveSuccess = true;
+
+          // Update the post with the database ID
+          const savedPost = { ...processedPost, id: databasePostId };
           const updatedPosts = [savedPost, ...generatedPosts];
           setGeneratedPosts(updatedPosts);
-          postsStorage.setItem(updatedPosts);
 
-          toast({
-            title: "Content Saved Successfully",
-            description: "Your content has been saved to both local storage and the database.",
-            variant: "default",
-          });
-        } catch (firestoreError) {
-          toast({
-            title: "Content Saved Locally",
-            description: "Content saved locally. Database save failed but content is secure.",
-            variant: "default",
-          });
+        } catch (databaseError) {
+          console.error('❌ Database save error:', databaseError);
+          databaseSaveSuccess = false;
         }
-      } else {
-        toast({
-          title: "Content Saved Locally",
-          description: "Content saved locally. Sign in to save to database permanently.",
-          variant: "default",
-        });
       }
-    } catch (error) {
+    }
 
-      // Show user-friendly error message
+    // Try to save to localStorage (secondary)
+    let localStorageSuccess = false;
+    try {
+      const postsToSave = databasePostId
+        ? [{ ...processedPost, id: databasePostId }, ...generatedPosts]
+        : newPosts;
+      postsStorage.setItem(postsToSave);
+      localStorageSuccess = true;
+    } catch (storageError) {
+      console.log('⚠️ localStorage save failed:', storageError.message);
+      localStorageSuccess = false;
+    }
+
+    // Show appropriate success/error message based on what succeeded
+    if (databaseSaveSuccess && localStorageSuccess) {
       toast({
-        title: "Storage Issue",
-        description: "Post generated successfully but couldn't be saved. Storage may be full.",
+        title: "Content Saved Successfully",
+        description: `Your content has been saved to both database and local storage. Post ID: ${databasePostId}`,
+        variant: "default",
+      });
+    } else if (databaseSaveSuccess && !localStorageSuccess) {
+      toast({
+        title: "Content Saved to Database",
+        description: `Your content has been saved to the database permanently. Post ID: ${databasePostId}. Local storage is full.`,
+        variant: "default",
+      });
+    } else if (!databaseSaveSuccess && localStorageSuccess) {
+      toast({
+        title: "Content Saved Locally",
+        description: !user ? "Sign in to save to database permanently." : "Database save failed, but content is saved locally.",
+        variant: "default",
+      });
+    } else {
+      // Both failed
+      toast({
+        title: "Save Failed",
+        description: "Could not save to database or local storage. Content is only in memory.",
         variant: "destructive",
       });
-
-      // Keep the post in memory even if storage fails
     }
   };
 
@@ -317,6 +582,29 @@ function QuickContentPage() {
         variant: "destructive",
         title: "Clear Failed",
         description: "Could not clear stored posts.",
+      });
+    }
+  };
+
+  // Comprehensive storage cleanup function
+  const clearAllStorage = () => {
+    try {
+      // Clear all localStorage
+      localStorage.clear();
+
+      // Reset posts state
+      setGeneratedPosts([]);
+
+      toast({
+        title: "Storage Cleared",
+        description: "All browser storage has been cleared. You can now generate new content without storage issues.",
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Clear Failed",
+        description: "Could not clear storage completely.",
       });
     }
   };
@@ -478,8 +766,12 @@ function QuickContentPage() {
                       brandProfile={{
                         businessName: currentBrand.businessName,
                         businessType: currentBrand.businessType || '',
-                        location: currentBrand.location || '',
-                        logoDataUrl: currentBrand.logoDataUrl || '',
+                        location: typeof currentBrand.location === 'string'
+                          ? currentBrand.location
+                          : currentBrand.location
+                            ? `${currentBrand.location.city || ''}, ${currentBrand.location.country || ''}`.replace(/^,\s*/, '').replace(/,\s*$/, '')
+                            : '',
+                        logoDataUrl: currentBrand.logoUrl || currentBrand.logoDataUrl || '',
                         visualStyle: currentBrand.visualStyle || '',
                         writingTone: currentBrand.writingTone || '',
                         contentThemes: currentBrand.contentThemes || '',
@@ -519,7 +811,7 @@ function QuickContentPage() {
           </div>
         </div>
       </main>
-    </SidebarInset>
+    </SidebarInset >
   );
 }
 

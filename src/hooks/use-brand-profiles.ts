@@ -1,7 +1,7 @@
-// Hook for managing brand profiles with Firestore
+// Hook for managing brand profiles with MongoDB
 import { useState, useEffect, useCallback } from 'react';
-import { brandProfileFirebaseService } from '@/lib/firebase/services/brand-profile-service';
-import { useUserId } from './use-firebase-auth';
+// MongoDB services accessed via API routes only
+import { useAuth } from './use-auth';
 import type { CompleteBrandProfile } from '@/components/cbrand/cbrand-wizard';
 
 export interface BrandProfilesState {
@@ -13,7 +13,8 @@ export interface BrandProfilesState {
 }
 
 export function useBrandProfiles() {
-  const userId = useUserId();
+  const { user } = useAuth();
+  const userId = user?.userId;
   const [state, setState] = useState<BrandProfilesState>({
     profiles: [],
     currentProfile: null,
@@ -32,12 +33,16 @@ export function useBrandProfiles() {
     try {
       setState(prev => ({ ...prev, loading: true, error: null }));
 
-      // Try to load from Firestore, fallback to localStorage
+      // Load from MongoDB
       let profiles: CompleteBrandProfile[] = [];
       try {
-        profiles = await brandProfileFirebaseService.getUserBrandProfiles(userId);
-      } catch (firebaseError) {
-        // Fallback to localStorage
+        // Use API route to load profiles
+        const response = await fetch(`/api/brand-profiles?userId=${userId}`);
+        if (response.ok) {
+          profiles = await response.json();
+        }
+      } catch (apiError) {
+        // Fallback to localStorage if API fails
         const stored = localStorage.getItem('completeBrandProfile');
         if (stored) {
           const profile = JSON.parse(stored);
@@ -71,7 +76,21 @@ export function useBrandProfiles() {
     try {
       setState(prev => ({ ...prev, saving: true, error: null }));
 
-      const profileId = await brandProfileFirebaseService.saveBrandProfile(profile, userId);
+      // Save profile via API route
+      const response = await fetch('/api/brand-profiles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ...profile, userId }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save profile');
+      }
+
+      const result = await response.json();
+      const profileId = result.id;
 
       // Reload profiles to get the updated list
       await loadProfiles();
@@ -132,7 +151,14 @@ export function useBrandProfiles() {
     try {
       setState(prev => ({ ...prev, error: null }));
 
-      await brandProfileFirebaseService.delete(profileId);
+      // Delete profile via API route
+      const response = await fetch(`/api/brand-profiles/${profileId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete profile');
+      }
 
       // Update local state
       setState(prev => ({
@@ -159,7 +185,12 @@ export function useBrandProfiles() {
   // Get profile by ID
   const getProfileById = useCallback(async (profileId: string): Promise<CompleteBrandProfile | null> => {
     try {
-      return await brandProfileFirebaseService.getBrandProfileById(profileId);
+      // Get profile via API route
+      const response = await fetch(`/api/brand-profiles/${profileId}`);
+      if (response.ok) {
+        return await response.json();
+      }
+      return null;
     } catch (error) {
       return null;
     }
@@ -170,50 +201,8 @@ export function useBrandProfiles() {
     loadProfiles();
   }, [loadProfiles]);
 
-  // Set up real-time listener
-  useEffect(() => {
-    if (!userId) return;
-
-    const unsubscribe = brandProfileFirebaseService.onUserDocumentsChange(
-      userId,
-      (profiles) => {
-        setState(prev => {
-          // Preserve the current profile if it still exists in the updated profiles
-          let preservedCurrentProfile = prev.currentProfile;
-
-          if (prev.currentProfile) {
-            // Check if current profile still exists in the updated list
-            const stillExists = profiles.find(p => p.id === (prev.currentProfile as any)?.id);
-            if (!stillExists) {
-              preservedCurrentProfile = null;
-            } else {
-              // Update with the latest version of the current profile
-              const updatedProfile = profiles.find(p => p.id === (prev.currentProfile as any)?.id);
-              if (updatedProfile) {
-                preservedCurrentProfile = updatedProfile;
-              }
-            }
-          }
-
-          // Only auto-select first profile if there's no current profile at all AND this is the initial load
-          const finalCurrentProfile = preservedCurrentProfile ||
-            (!prev.currentProfile && profiles.length > 0 ? profiles[0] : null);
-
-          if (finalCurrentProfile && !prev.currentProfile) {
-          }
-
-          return {
-            ...prev,
-            profiles,
-            currentProfile: finalCurrentProfile,
-          };
-        });
-      },
-      { orderBy: 'updatedAt', orderDirection: 'desc' }
-    );
-
-    return unsubscribe;
-  }, [userId]);
+  // Note: Real-time updates removed for MongoDB migration
+  // Profiles will be refreshed when operations are performed
 
   return {
     ...state,
