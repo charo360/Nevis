@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useUnifiedBrand } from '@/contexts/unified-brand-context';
+import { useBrand } from '@/contexts/brand-context-mongo';
 import { hexToHsl } from '@/lib/utils';
 
 // FORCE COMPLETE CACHE PURGE - TIMESTAMP: 2025-01-21-15:30:00
@@ -29,7 +29,7 @@ function getColorsFromLocalStorage() {
 }
 
 export function BrandColorProvider({ children }: BrandColorProviderProps) {
-  const { currentBrand, loading } = useUnifiedBrand();
+  const { currentBrand, loading } = useBrand();
 
   // Inline color persistence function
   const getPersistedColors = () => {

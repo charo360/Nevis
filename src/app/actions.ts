@@ -193,7 +193,7 @@ export async function generateContentAction(
       primaryColor: enhancedProfile.primaryColor || '#3B82F6',
       accentColor: enhancedProfile.accentColor || '#10B981',
       backgroundColor: enhancedProfile.backgroundColor || '#F8FAFC',
-      logoDataUrl: enhancedProfile.logoDataUrl,
+      logoDataUrl: (enhancedProfile as any).logoUrl || enhancedProfile.logoDataUrl,
       designExamples: effectiveDesignExamples,
       dayOfWeek: dayOfWeek,
       currentDate: currentDate,

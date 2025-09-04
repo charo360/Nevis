@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { useBrandProfilesFirebaseFirst } from '@/hooks/use-brand-profiles-firebase-first';
+import { useBrand } from '@/contexts/brand-context-mongo';
 import { brandScopedArtifactsService } from '@/lib/services/brand-scoped-artifacts-service';
 import { BrandScopedStorage, STORAGE_FEATURES, migrateAllGlobalStorage } from '@/lib/services/brand-scoped-storage';
 import type { CompleteBrandProfile } from '@/components/cbrand/cbrand-wizard';
@@ -41,17 +41,17 @@ interface UnifiedBrandProviderProps {
 
 export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
   const {
-    profiles: brands,
-    currentProfile,
+    brands,
+    currentBrand: currentProfile,
     loading,
     saving,
     error,
     saveProfile,
     updateProfile,
     deleteProfile,
-    setCurrentProfile,
-    reload: refreshBrands,
-  } = useBrandProfilesFirebaseFirst();
+    selectBrand: setCurrentProfile,
+    refreshBrands,
+  } = useBrand();
 
   const [currentBrand, setCurrentBrand] = useState<CompleteBrandProfile | null>(null);
   const [brandScopedServices, setBrandScopedServices] = useState<Map<string, any>>(new Map());

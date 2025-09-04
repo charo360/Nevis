@@ -20,8 +20,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { auth } from '@/lib/firebase/config';
-import { useFirebaseAuth } from '@/hooks/use-firebase-auth';
+import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { loadStripe } from '@stripe/stripe-js';
 import { Card, CardContent } from '@/components/ui/card';
@@ -30,7 +29,7 @@ import { Badge } from '@/components/ui/badge';
 export default function HomePage() {
   const router = useRouter();
   const [isVisible, setIsVisible] = useState(false);
-  const { user, signOut } = useFirebaseAuth();
+  const { user, signOut } = useAuth();
   const [sessionActive, setSessionActive] = useState<boolean>(false);
   const { toast } = useToast();
   const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');

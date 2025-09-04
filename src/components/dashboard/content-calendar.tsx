@@ -9,7 +9,7 @@ import { generateContentAction, generateEnhancedDesignAction, generateContentWit
 
 import { useToast } from "@/hooks/use-toast";
 import { useGeneratedPosts } from "@/hooks/use-generated-posts";
-import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+import { useAuth } from "@/hooks/use-auth";
 import type { BrandProfile, GeneratedPost, Platform, BrandConsistencyPreferences } from "@/lib/types";
 
 type RevoModel = 'revo-1.0' | 'revo-1.5';
@@ -37,7 +37,7 @@ const platforms: { name: Platform; icon: React.ElementType }[] = [
 export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUpdated }: ContentCalendarProps) {
   const [isGenerating, setIsGenerating] = React.useState<Platform | null>(null);
   const { toast } = useToast();
-  const { user } = useFirebaseAuth();
+  const { user } = useAuth();
   const { savePost, saving } = useGeneratedPosts();
 
   // Brand consistency preferences - default to consistent if design examples exist

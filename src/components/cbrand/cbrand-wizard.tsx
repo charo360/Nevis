@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useUnifiedBrand } from '@/contexts/unified-brand-context';
+import { useBrand } from '@/contexts/brand-context-mongo';
 
 // Import validation and progress components
 import { ProgressIndicator } from './progress-indicator';
@@ -89,7 +89,7 @@ interface CbrandWizardProps {
 }
 
 export function CbrandWizard({ mode, brandId }: CbrandWizardProps = {}) {
-  const { currentBrand, loading: brandLoading } = useUnifiedBrand();
+  const { currentBrand, loading: brandLoading } = useBrand();
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
 

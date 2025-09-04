@@ -252,7 +252,12 @@ export default function BrandsPage() {
                       {brand.location && (
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <MapPin className="h-3 w-3" />
-                          <span className="truncate">{brand.location}</span>
+                          <span className="truncate">
+                            {typeof brand.location === 'string'
+                              ? brand.location
+                              : `${brand.location.city || ''}, ${brand.location.country || ''}`.replace(/^,\s*/, '').replace(/,\s*$/, '')
+                            }
+                          </span>
                         </div>
                       )}
                       {brand.websiteUrl && (

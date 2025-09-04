@@ -1,4 +1,4 @@
- 'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -20,16 +20,12 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-import { useFirebaseAuth } from '@/hooks/use-firebase-auth';
+import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { auth } from '@/lib/firebase/config';
-import VerifyEmail from '@/components/auth/VerifyEmail';
-import LoginForm from '@/components/auth/LoginForm';
-import SignupForm from '@/components/auth/SignupForm';
 
 export default function AuthPage() {
   const router = useRouter();
-  const { signIn, signUp, signInAnonymous, loading } = useFirebaseAuth();
+  const { signIn, signUp, loading } = useAuth();
   const { toast } = useToast();
 
   const [signInData, setSignInData] = useState({
@@ -49,9 +45,7 @@ export default function AuthPage() {
     confirmPassword: ''
   });
 
-  // Signup verification flow
-  const [showVerifyModal, setShowVerifyModal] = useState(false);
-  const [pendingSignUp, setPendingSignUp] = useState<typeof signUpData | null>(null);
+  // Remove Firebase verification flow - MongoDB auth is direct
 
   // Password visibility toggles
   const [showSignInPassword, setShowSignInPassword] = useState(false);
@@ -89,54 +83,23 @@ export default function AuthPage() {
     }
 
     try {
-      // Send verification code first. Do not create user until verified.
-      const res = await fetch('/api/auth/send-code', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: signUpData.email, type: 'signup' }),
-      });
-      const body = await res.json();
-      if (res.ok && body.ok) {
-  setPendingSignUp(signUpData);
-  setShowVerifyModal(true);
-  toast({ title: 'Verification code sent', description: 'Check your inbox for the 5-digit code.' });
-      } else {
-        toast({ variant: 'destructive', title: 'Failed to send verification', description: body.error || 'Please try again.' });
-      }
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Sign up failed', description: error instanceof Error ? error.message : 'Please try again.' });
-    }
-  };
-
-  const finishSignUpAfterVerification = async () => {
-    if (!pendingSignUp) return;
-    try {
-      await signUp(pendingSignUp.email, pendingSignUp.password, pendingSignUp.name);
-      toast({ title: 'Account created!', description: 'Welcome — your account is ready.' });
-      setShowVerifyModal(false);
-      setPendingSignUp(null);
-      router.push('/dashboard');
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Sign up failed', description: error instanceof Error ? error.message : 'Please try again.' });
-    }
-  };
-
-  const handleDemoMode = async () => {
-    try {
-      await signInAnonymous();
+      // Direct signup with MongoDB - no email verification needed
+      await signUp(signUpData.email, signUpData.password, signUpData.name);
       toast({
-        title: "Demo mode activated!",
-        description: "Welcome to your dashboard! Explore all features without creating an account.",
+        title: 'Account created!',
+        description: 'Welcome — your account is ready.'
       });
       router.push('/dashboard');
     } catch (error) {
       toast({
-        variant: "destructive",
-        title: "Demo mode failed",
-        description: "Please try again.",
+        variant: 'destructive',
+        title: 'Sign up failed',
+        description: error instanceof Error ? error.message : 'Please try again.'
       });
     }
   };
+
+  // Demo mode removed - users must create accounts
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -171,29 +134,9 @@ export default function AuthPage() {
 
         <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
           <CardHeader className="pb-4">
-            <div className="flex items-center justify-center mb-4">
-              <Button
-                onClick={handleDemoMode}
-                disabled={loading}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                size="lg"
-              >
-                {loading ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Zap className="w-4 h-4 mr-2" />
-                )}
-                Try Demo Mode (No Account Needed)
-              </Button>
-            </div>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <Separator className="w-full" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-gray-500">Or continue with email</span>
-              </div>
+            <div className="text-center">
+              <h1 className="text-2xl font-bold tracking-tight">Welcome to Nevis</h1>
+              <p className="text-muted-foreground mt-2">Sign in to your account or create a new one</p>
             </div>
           </CardHeader>
 
@@ -205,28 +148,156 @@ export default function AuthPage() {
               </TabsList>
 
               <TabsContent value="signin" className="space-y-4 mt-6">
-                <LoginForm
-                  signInData={signInData}
-                  setSignInData={setSignInData}
-                  showSignInPassword={showSignInPassword}
-                  setShowSignInPassword={setShowSignInPassword}
-                  loading={loading}
-                  handleSignIn={handleSignIn}
-                />
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-email">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signin-email"
+                        type="email"
+                        placeholder="Enter your email"
+                        value={signInData.email}
+                        onChange={(e) => setSignInData(prev => ({ ...prev, email: e.target.value }))}
+                        className="pl-10"
+                        disabled={loading}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-password">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signin-password"
+                        type={showSignInPassword ? "text" : "password"}
+                        placeholder="Enter your password"
+                        value={signInData.password}
+                        onChange={(e) => setSignInData(prev => ({ ...prev, password: e.target.value }))}
+                        className="pl-10 pr-10"
+                        disabled={loading}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowSignInPassword(!showSignInPassword)}
+                        disabled={loading}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={handleSignIn}
+                    className="w-full"
+                    disabled={loading || !signInData.email || !signInData.password}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Signing In...
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="mr-2 h-4 w-4" />
+                        Sign In
+                      </>
+                    )}
+                  </Button>
+                </div>
               </TabsContent>
 
               <TabsContent value="signup" className="space-y-4 mt-6">
-                <SignupForm
-                  signUpData={signUpData}
-                  setSignUpData={setSignUpData}
-                  loading={loading}
-                  handleSignUp={handleSignUp}
-                />
-                {showVerifyModal && pendingSignUp && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center">
-                    <VerifyEmail email={pendingSignUp.email} onSuccess={finishSignUpAfterVerification} type="signup" />
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-name">Full Name</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signup-name"
+                        type="text"
+                        placeholder="Enter your full name"
+                        value={signUpData.name}
+                        onChange={(e) => setSignUpData(prev => ({ ...prev, name: e.target.value }))}
+                        className="pl-10"
+                        disabled={loading}
+                      />
+                    </div>
                   </div>
-                )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-email">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signup-email"
+                        type="email"
+                        placeholder="Enter your email"
+                        value={signUpData.email}
+                        onChange={(e) => setSignUpData(prev => ({ ...prev, email: e.target.value }))}
+                        className="pl-10"
+                        disabled={loading}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signup-password"
+                        type="password"
+                        placeholder="Create a password"
+                        value={signUpData.password}
+                        onChange={(e) => setSignUpData(prev => ({ ...prev, password: e.target.value }))}
+                        className="pl-10"
+                        disabled={loading}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-confirm-password">Confirm Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signup-confirm-password"
+                        type="password"
+                        placeholder="Confirm your password"
+                        value={signUpData.confirmPassword || ''}
+                        onChange={(e) => setSignUpData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                        className="pl-10"
+                        disabled={loading}
+                      />
+                    </div>
+                    {signUpData.password && signUpData.confirmPassword && signUpData.password !== signUpData.confirmPassword && (
+                      <p className="text-sm text-red-600">Passwords don't match</p>
+                    )}
+                  </div>
+
+                  <Button
+                    onClick={handleSignUp}
+                    className="w-full"
+                    disabled={loading || !signUpData.email || !signUpData.password || !signUpData.name || !signUpData.confirmPassword || signUpData.password !== signUpData.confirmPassword}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating Account...
+                      </>
+                    ) : (
+                      <>
+                        <User className="mr-2 h-4 w-4" />
+                        Create Account
+                      </>
+                    )}
+                  </Button>
+                </div>
               </TabsContent>
             </Tabs>
           </CardContent>

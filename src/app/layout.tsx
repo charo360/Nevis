@@ -7,7 +7,8 @@ import type { Metadata } from 'next';
 import { Toaster } from "@/components/ui/toaster"
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/app-sidebar';
-import { AuthWrapper } from '@/components/auth/auth-wrapper';
+import { AuthWrapper } from '@/components/auth/auth-wrapper-mongo';
+import { BrandProvider } from '@/contexts/brand-context-mongo';
 import { UnifiedBrandProvider } from '@/contexts/unified-brand-context';
 import { BrandColorProvider } from '@/components/layout/brand-color-provider';
 import React, { Suspense, useEffect, useState } from 'react';
@@ -17,10 +18,7 @@ import { usePathname } from 'next/navigation';
 // The AppRoute client component is lazy-loaded and will render client pages inside the layout.
 const AppRouteClient = React.lazy(() => import('@/components/app-route/AppRoute').then(m => ({ default: m.default })));
 
-// Import test function for development
-if (typeof window !== 'undefined') {
-  import('@/lib/test-database');
-}
+// MongoDB test import removed - use API routes instead
 
 
 
@@ -78,11 +76,13 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased overflow-x-hidden" suppressHydrationWarning>
         <AuthWrapper requireAuth={false}>
-          <UnifiedBrandProvider>
-            <ConditionalLayout useAppRoute={true}>
-              {children}
-            </ConditionalLayout>
-          </UnifiedBrandProvider>
+          <BrandProvider>
+            <UnifiedBrandProvider>
+              <ConditionalLayout useAppRoute={true}>
+                {children}
+              </ConditionalLayout>
+            </UnifiedBrandProvider>
+          </BrandProvider>
         </AuthWrapper>
         <Toaster />
       </body>

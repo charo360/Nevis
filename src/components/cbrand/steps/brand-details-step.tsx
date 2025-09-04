@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useUnifiedBrand } from '@/contexts/unified-brand-context';
+import { useBrand } from '@/contexts/brand-context-mongo';
 import {
   Building2,
   Users,
@@ -36,7 +36,7 @@ export function BrandDetailsStep({
   onPrevious
 }: BrandDetailsStepProps) {
   const [activeTab, setActiveTab] = useState('basic');
-  const { currentBrand, updateProfile, selectBrand } = useUnifiedBrand();
+  const { currentBrand, updateProfile, selectBrand } = useBrand();
 
   const handleInputChange = async (field: keyof CompleteBrandProfile, value: string) => {
 

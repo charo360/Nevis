@@ -3,8 +3,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useFirebaseAuth } from '@/hooks/use-firebase-auth';
-import { userService } from '@/lib/firebase/database';
+import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
@@ -12,9 +11,9 @@ import { Switch } from '@/components/ui/switch';
 import { Info } from 'lucide-react';
 
 export default function SettingsPage() {
-  const { user, signOut } = useFirebaseAuth();
+  const { user, signOut } = useAuth();
   const { toast } = useToast();
-  const [billingPlan, setBillingPlan] = useState<'free'|'starter'|'growth'|'pro'|'power'>('free');
+  const [billingPlan, setBillingPlan] = useState<'free' | 'starter' | 'growth' | 'pro' | 'power'>('free');
   const [loading, setLoading] = useState(false);
 
   // Load user's current subscription from Firestore (client SDK)
@@ -250,7 +249,7 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
-          
+
 
           <Card className="border-destructive/50">
             <CardHeader>

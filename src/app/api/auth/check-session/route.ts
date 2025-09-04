@@ -1,23 +1,23 @@
 import { NextResponse } from 'next/server';
-import adminApp, { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { verifyToken, getUserFromToken } from '@/lib/auth/jwt';
+import { userService } from '@/lib/mongodb/database';
 
 export async function POST(req: Request) {
   try {
     const authHeader = req.headers.get('authorization') || '';
     if (!authHeader.startsWith('Bearer ')) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const idToken = authHeader.split(' ')[1];
-    const decoded = await adminAuth.verifyIdToken(idToken).catch(() => null);
+    const token = authHeader.split(' ')[1];
+    const decoded = verifyToken(token);
     if (!decoded) return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
 
-    const uid = decoded.uid;
+    const userId = decoded.userId;
 
     try {
-      const userRef = adminDb.collection('users').doc(uid);
-      const snap = await userRef.get();
-      if (!snap.exists) return NextResponse.json({ ok: false, reason: 'no-user' });
-      const data = snap.data() as any;
-      const session = data.session || null;
+      const user = await userService.findOne({ userId });
+      if (!user) return NextResponse.json({ ok: false, reason: 'no-user' });
+
+      const session = (user as any).session || null;
 
       if (!session) return NextResponse.json({ ok: false, reason: 'no-session' });
 
@@ -29,22 +29,22 @@ export async function POST(req: Request) {
       const inactivityLimitMs = 30 * 60 * 1000;
       if (lastActive && now.getTime() - lastActive.getTime() > inactivityLimitMs) {
         // mark session inactive
-        await userRef.set({ session: { active: false } }, { merge: true });
+        await userService.updateById(user._id!.toString(), { session: { active: false } });
         return NextResponse.json({ ok: false, reason: 'inactive' });
       }
 
       // Max session duration rule: 12 hours
       if (sessionExpiresAt && now > sessionExpiresAt) {
-        await userRef.set({ session: { active: false } }, { merge: true });
+        await userService.updateById(user._id!.toString(), { session: { active: false } });
         return NextResponse.json({ ok: false, reason: 'expired' });
       }
 
       return NextResponse.json({ ok: true, lastActive: session.lastActive, sessionExpiresAt: session.sessionExpiresAt });
     } catch (e: any) {
-      // Detect Firestore permission errors and return a helpful hint
+      // Detect MongoDB connection errors
       const msg = String(e?.message || e);
-      if (msg.includes('PERMISSION_DENIED') || msg.includes('Missing or insufficient permissions')) {
-        return NextResponse.json({ ok: false, reason: 'permission_denied', hint: 'Check Firebase Admin credentials and IAM roles (service account needs Firestore access).' }, { status: 503 });
+      if (msg.includes('connection') || msg.includes('timeout')) {
+        return NextResponse.json({ ok: false, reason: 'database_error', hint: 'Check MongoDB connection and credentials.' }, { status: 503 });
       }
       return NextResponse.json({ ok: false, reason: 'error' }, { status: 500 });
     }

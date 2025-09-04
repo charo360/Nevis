@@ -6,12 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Database, RefreshCw, User, FileText, Image, BarChart3 } from 'lucide-react';
-import { useFirebaseAuth } from '@/hooks/use-firebase-auth';
+import { useAuth } from '@/hooks/use-auth';
 import { useBrandProfiles } from '@/hooks/use-brand-profiles';
 import { useGeneratedPosts } from '@/hooks/use-generated-posts';
 
 export default function DatabaseDebugPage() {
-  const { user, loading: authLoading } = useFirebaseAuth();
+  const { user, loading: authLoading } = useAuth();
   const { profiles, loading: profilesLoading } = useBrandProfiles();
   const { posts, loading: postsLoading } = useGeneratedPosts(50); // Get more posts for debugging
   const [refreshKey, setRefreshKey] = useState(0);
@@ -139,7 +139,7 @@ export default function DatabaseDebugPage() {
                             </Badge>
                           </div>
                         </div>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
                             <p className="text-sm text-gray-600 mb-1">Content</p>
@@ -210,7 +210,7 @@ export default function DatabaseDebugPage() {
                           </div>
                           <Badge variant="outline">{profile.businessType}</Badge>
                         </div>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
                             <p className="text-sm text-gray-600 mb-1">Description</p>
