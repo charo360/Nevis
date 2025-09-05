@@ -6,6 +6,45 @@
 import { generateText, generateMultimodal, GEMINI_2_5_MODELS } from './google-ai-direct';
 import { BrandProfile } from '@/lib/types';
 
+/**
+ * Get platform-specific aspect ratio for optimal social media display
+ */
+function getPlatformAspectRatio(platform: string): '1:1' | '16:9' | '9:16' | '21:9' | '4:5' {
+  const platformLower = platform.toLowerCase();
+
+  // Instagram Stories, Reels, TikTok - Vertical 9:16
+  if (platformLower.includes('story') ||
+    platformLower.includes('reel') ||
+    platformLower.includes('tiktok')) {
+    return '9:16';
+  }
+
+  // Facebook, Twitter/X, LinkedIn, YouTube - Landscape 16:9
+  if (platformLower.includes('facebook') ||
+    platformLower.includes('twitter') ||
+    platformLower.includes('linkedin') ||
+    platformLower.includes('youtube')) {
+    return '16:9';
+  }
+
+  // Instagram Feed, Pinterest - Square 1:1 (default)
+  return '1:1';
+}
+
+/**
+ * Get platform-specific dimension text for prompts
+ */
+function getPlatformDimensionsText(aspectRatio: string): string {
+  switch (aspectRatio) {
+    case '1:1': return 'Square format - 1080x1080px';
+    case '16:9': return 'Landscape format - 1200x675px';
+    case '9:16': return 'Portrait format - 1080x1920px';
+    case '4:5': return 'Portrait format - 1080x1350px';
+    case '21:9': return 'Ultra-wide format - 1200x514px';
+    default: return 'Square format - 1080x1080px';
+  }
+}
+
 export interface Revo15DesignInput {
   businessType: string;
   platform: string;
@@ -74,6 +113,7 @@ BRAND PROFILE:
 
 DESIGN REQUIREMENTS:
 - Platform: ${input.platform}
+- Aspect Ratio: ${(input as any).aspectRatio || getPlatformAspectRatio(input.platform)} (${getPlatformDimensionsText((input as any).aspectRatio || getPlatformAspectRatio(input.platform))})
 - Visual Style: ${input.visualStyle}
 - Text Content: "${input.imageText}"
 - Include People: ${input.includePeopleInDesigns !== false ? 'Yes' : 'No'}
@@ -211,22 +251,29 @@ export async function generateRevo15EnhancedDesign(
   input: Revo15DesignInput
 ): Promise<Revo15DesignResult> {
   const startTime = Date.now();
+
+  // Auto-detect platform-specific aspect ratio
+  const aspectRatio = getPlatformAspectRatio(input.platform);
+  const enhancedInput = { ...input, aspectRatio };
+  console.log(`🎯 Revo 1.5: Using ${aspectRatio} aspect ratio for ${input.platform}`);
+
   const enhancementsApplied: string[] = [
     'Two-Step Design Process',
     'Gemini 2.5 Flash Planning',
     'Gemini 2.5 Flash Image Preview Generation',
     'Advanced Design Strategy',
-    'Premium Visual Quality'
+    'Premium Visual Quality',
+    `Platform-Optimized ${aspectRatio} Format`
   ];
 
   try {
 
     // Step 1: Generate design plan with Gemini 2.5 Flash
-    const designPlan = await generateDesignPlan(input);
+    const designPlan = await generateDesignPlan(enhancedInput);
     enhancementsApplied.push('Strategic Design Planning');
 
     // Step 2: Generate final image with Gemini 2.5 Flash Image Preview
-    const imageUrl = await generateFinalImage(input, designPlan);
+    const imageUrl = await generateFinalImage(enhancedInput, designPlan);
     enhancementsApplied.push('Premium Image Generation');
 
     const result: Revo15DesignResult = {

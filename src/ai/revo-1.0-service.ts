@@ -1467,6 +1467,45 @@ const ai = new GoogleGenerativeAI(apiKey);
 const REVO_1_0_MODEL = 'gemini-2.5-flash-image-preview';
 
 /**
+ * Get platform-specific aspect ratio for optimal social media display
+ */
+function getPlatformAspectRatio(platform: string): '1:1' | '16:9' | '9:16' | '21:9' | '4:5' {
+  const platformLower = platform.toLowerCase();
+
+  // Instagram Stories, Reels, TikTok - Vertical 9:16
+  if (platformLower.includes('story') ||
+    platformLower.includes('reel') ||
+    platformLower.includes('tiktok')) {
+    return '9:16';
+  }
+
+  // Facebook, Twitter/X, LinkedIn, YouTube - Landscape 16:9
+  if (platformLower.includes('facebook') ||
+    platformLower.includes('twitter') ||
+    platformLower.includes('linkedin') ||
+    platformLower.includes('youtube')) {
+    return '16:9';
+  }
+
+  // Instagram Feed, Pinterest - Square 1:1 (default)
+  return '1:1';
+}
+
+/**
+ * Get platform-specific dimension text for prompts
+ */
+function getPlatformDimensionsText(aspectRatio: string): string {
+  switch (aspectRatio) {
+    case '1:1': return 'Square format - 1080x1080px';
+    case '16:9': return 'Landscape format - 1200x675px';
+    case '9:16': return 'Portrait format - 1080x1920px';
+    case '4:5': return 'Portrait format - 1080x1350px';
+    case '21:9': return 'Ultra-wide format - 1200x514px';
+    default: return 'Square format - 1080x1080px';
+  }
+}
+
+/**
  * Generate content using Revo 1.0 with Gemini 2.5 Flash Image Preview
  */
 export async function generateRevo10Content(input: {
@@ -1486,6 +1525,10 @@ export async function generateRevo10Content(input: {
   visualStyle?: string;
 }) {
   try {
+    // Auto-detect platform-specific aspect ratio
+    const aspectRatio = getPlatformAspectRatio(input.platform);
+    console.log(`🎯 Revo 1.0: Using ${aspectRatio} aspect ratio for ${input.platform}`);
+
     // Convert input to BusinessProfile for advanced analysis
     const businessProfile: BusinessProfile = {
       businessName: input.businessName,
@@ -1657,7 +1700,7 @@ export async function generateRevo10Content(input: {
       },
       variants: [{
         platform: input.platform,
-        aspectRatio: '1:1',
+        aspectRatio: getPlatformAspectRatio(input.platform),
         imageUrl: '' // Will be generated separately
       }],
       generatedAt: new Date().toISOString()
@@ -1733,9 +1776,11 @@ Remember: You're a creative human designer, not an AI. Think with imagination an
     const design = response.text();
 
 
+    const aspectRatio = getPlatformAspectRatio(input.platform);
+
     return {
       design: design.trim(),
-      aspectRatio: '1:1',
+      aspectRatio,
       resolution: '2048x2048',
       quality: 'enhanced'
     };
@@ -1997,9 +2042,11 @@ TECHNICAL REQUIREMENTS:
     }
 
 
+    const aspectRatio = getPlatformAspectRatio(input.platform);
+
     return {
       imageUrl: imageUrl,
-      aspectRatio: '1:1',
+      aspectRatio,
       resolution: '2048x2048',
       quality: 'enhanced'
     };
