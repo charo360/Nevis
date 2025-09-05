@@ -8,7 +8,6 @@ import { PostCard } from "@/components/dashboard/post-card";
 import { generateContentAction, generateEnhancedDesignAction, generateContentWithArtifactsAction } from "@/app/actions";
 
 import { useToast } from "@/hooks/use-toast";
-import { useGeneratedPosts } from "@/hooks/use-generated-posts";
 import { useAuth } from "@/hooks/use-auth";
 import type { BrandProfile, GeneratedPost, Platform, BrandConsistencyPreferences } from "@/lib/types";
 
@@ -38,7 +37,6 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
   const [isGenerating, setIsGenerating] = React.useState<Platform | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
-  const { savePost, saving } = useGeneratedPosts();
 
   // Brand consistency preferences - default to consistent if design examples exist
   const [brandConsistency, setBrandConsistency] = React.useState<BrandConsistencyPreferences>({
@@ -174,17 +172,8 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
       }
 
 
-      // Save to Firestore database first
-      try {
-        const postId = await savePost(newPost);
-
-        // Update the post with the Firestore ID
-        const savedPost = { ...newPost, id: postId };
-        onPostGenerated(savedPost);
-      } catch (saveError) {
-        // Fallback to localStorage if Firestore fails
-        onPostGenerated(newPost);
-      }
+      // Let the parent component handle saving
+      onPostGenerated(newPost);
 
       // Dynamic toast message based on generation type
       let title = "Content Generated!";

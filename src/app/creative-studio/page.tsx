@@ -36,12 +36,25 @@ function CreativeStudioPageContent() {
     if (brand) {
       // Load any Creative Studio specific data for this brand
       if (creativeStudioStorage) {
-        const studioData = creativeStudioStorage.getItem();
-        if (studioData) {
+        try {
+          const studioSettings = creativeStudioStorage.loadSettings();
+          const studioProjects = creativeStudioStorage.loadProjects();
+          const studioAssets = creativeStudioStorage.loadAssets();
+
+          console.log('✅ Creative Studio data loaded for brand:', brand.businessName, {
+            settingsLoaded: !!studioSettings,
+            projectsCount: studioProjects?.length || 0,
+            assetsCount: studioAssets?.length || 0,
+          });
+
           // Apply any saved studio settings here
+          if (studioSettings) {
+            // Apply settings to the studio interface
+          }
+        } catch (error) {
+          console.error('❌ Error loading Creative Studio data:', error);
         }
       }
-    } else {
     }
   });
 

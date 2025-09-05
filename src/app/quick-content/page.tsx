@@ -26,7 +26,6 @@ import { UnifiedBrandLayout, BrandContent, BrandSwitchingStatus } from "@/compon
 import { STORAGE_FEATURES, getStorageUsage, cleanupAllStorage } from "@/lib/services/brand-scoped-storage";
 import { processGeneratedPost } from "@/lib/services/generated-post-storage";
 import { useAuth } from "@/hooks/use-auth";
-import { useGeneratedPosts } from "@/hooks/use-generated-posts";
 import { useQuickContentStorage } from "@/hooks/use-feature-storage";
 // Firebase Storage utilities removed - using MongoDB GridFS
 
