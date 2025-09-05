@@ -30,6 +30,7 @@ import { useQuickContentStorage } from "@/hooks/use-feature-storage";
 // Firebase Storage utilities removed - using MongoDB GridFS
 
 // No limit on posts - store all generated content
+const MAX_POSTS_TO_STORE = 100; // Increased from 5 to 100 posts
 
 // Brand-scoped storage cleanup utility
 const cleanupBrandScopedStorage = (brandStorage: any) => {
@@ -47,17 +48,21 @@ const cleanupBrandScopedStorage = (brandStorage: any) => {
       return post;
     });
 
-    if (fixedPosts.length > 5) {
-      // Keep only the 5 most recent posts
-      const recentPosts = fixedPosts.slice(0, 5);
+    // REMOVED THE 5-POST LIMIT - Now stores up to 100 posts
+    if (fixedPosts.length > MAX_POSTS_TO_STORE) {
+      // Keep only the most recent posts (up to MAX_POSTS_TO_STORE)
+      const recentPosts = fixedPosts
+        .sort((a, b) => new Date(b.date || b.createdAt).getTime() - new Date(a.date || a.createdAt).getTime())
+        .slice(0, MAX_POSTS_TO_STORE);
       brandStorage.setItem(recentPosts);
       return recentPosts;
     } else {
-      // Save the fixed posts back
+      // Save all fixed posts back
       brandStorage.setItem(fixedPosts);
       return fixedPosts;
     }
   } catch (error) {
+    console.error('❌ Error in cleanupBrandScopedStorage:', error);
   }
   return null;
 };
