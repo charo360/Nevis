@@ -504,3 +504,4 @@ export class ContentGenerationEngine {
     return postType as 'caption' | 'story' | 'reel' | 'carousel' || 'caption';
   }
 }
+
