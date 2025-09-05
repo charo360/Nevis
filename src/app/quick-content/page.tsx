@@ -27,6 +27,7 @@ import { STORAGE_FEATURES, getStorageUsage, cleanupAllStorage } from "@/lib/serv
 import { processGeneratedPost } from "@/lib/services/generated-post-storage";
 import { useAuth } from "@/hooks/use-auth";
 import { useGeneratedPosts } from "@/hooks/use-generated-posts";
+import { useQuickContentStorage } from "@/hooks/use-feature-storage";
 // Firebase Storage utilities removed - using MongoDB GridFS
 
 // No limit on posts - store all generated content
@@ -64,108 +65,24 @@ const cleanupBrandScopedStorage = (brandStorage: any) => {
 
 function QuickContentPage() {
   const { currentBrand, brands, loading: brandLoading, selectBrand } = useBrand();
-  // Simple brand-scoped storage for posts
-  const postsStorage = React.useMemo(() => {
-    const brandId = currentBrand?.id || 'default';
-    const storageKey = `quick-content-${brandId}`;
 
+  // Use isolated Quick Content storage (completely separate from Creative Studio)
+  const quickContentStorage = useQuickContentStorage();
+
+  // Legacy storage wrapper for backward compatibility
+  const postsStorage = React.useMemo(() => {
     return {
       getItem: () => {
-        try {
-          const stored = localStorage.getItem(storageKey);
-          return stored ? JSON.parse(stored) : [];
-        } catch {
-          return [];
-        }
+        return quickContentStorage.loadPosts();
       },
       setItem: (posts: GeneratedPost[]) => {
-        try {
-          // Optimize posts before saving to prevent quota exceeded errors
-          const optimizedPosts = posts.map(post => ({
-            ...post,
-            // Compress or remove large image data if needed
-            imageUrl: post.imageUrl && post.imageUrl.length > 100000
-              ? post.imageUrl.substring(0, 100000) + '...[compressed]'
-              : post.imageUrl,
-            // Keep only essential data - handle both string and object content
-            content: (() => {
-              if (!post.content) return post.content;
-              if (typeof post.content === 'string') {
-                return post.content.substring(0, 1000);
-              }
-              // Handle object content (database format)
-              const contentText = (post.content as any)?.text || '';
-              return typeof contentText === 'string' ? contentText.substring(0, 1000) : contentText;
-            })()
-          }));
-
-          // Limit to 3 most recent posts to prevent storage overflow
-          const limitedPosts = optimizedPosts.slice(0, 3);
-
-          const dataToStore = JSON.stringify(limitedPosts);
-          const dataSize = new Blob([dataToStore]).size;
-          const maxSize = 2 * 1024 * 1024; // 2MB limit
-
-          if (dataSize > maxSize) {
-            // If still too large, keep only 1 post without image
-            const minimalPosts = limitedPosts.slice(0, 1).map(post => ({
-              ...post,
-              imageUrl: '', // Remove image data
-              content: (() => {
-                if (!post.content) return post.content;
-                if (typeof post.content === 'string') {
-                  return post.content.substring(0, 500);
-                }
-                // Handle object content (database format)
-                const contentText = (post.content as any)?.text || '';
-                return typeof contentText === 'string' ? contentText.substring(0, 500) : contentText;
-              })()
-            }));
-            localStorage.setItem(storageKey, JSON.stringify(minimalPosts));
-          } else {
-            localStorage.setItem(storageKey, dataToStore);
-          }
-        } catch (error) {
-          if (error.name === 'QuotaExceededError') {
-            // Clear all localStorage and try to save minimal data
-            this.handleQuotaExceeded(posts);
-          } else {
-            console.error('Failed to save posts:', error);
-          }
-        }
+        return quickContentStorage.savePosts(posts);
       },
-
-      handleQuotaExceeded: (posts: GeneratedPost[]) => {
-        try {
-          // Clear all localStorage data
-          localStorage.clear();
-
-          // Save only the most recent post with minimal data
-          if (posts.length > 0) {
-            const minimalPost = {
-              id: posts[0].id || Date.now().toString(),
-              date: posts[0].date || new Date().toISOString(),
-              content: (() => {
-                if (!posts[0].content) return 'Generated content';
-                if (typeof posts[0].content === 'string') {
-                  return posts[0].content.substring(0, 200) + '...';
-                }
-                // Handle object content (database format)
-                const contentText = (posts[0].content as any)?.text || '';
-                return typeof contentText === 'string' ? contentText.substring(0, 200) + '...' : 'Generated content';
-              })(),
-              platform: posts[0].platform || 'instagram',
-              imageUrl: '', // No image data
-              note: 'Storage quota exceeded - full data not saved'
-            };
-            localStorage.setItem(storageKey, JSON.stringify([minimalPost]));
-          }
-        } catch (finalError) {
-          console.error('Final storage attempt failed:', finalError);
-        }
-      }
     };
-  }, [currentBrand?.id]);
+  }, [quickContentStorage]);
+
+  // ✅ Quick Content now uses completely isolated storage
+  // This will never conflict with Creative Studio data
   const [generatedPosts, setGeneratedPosts] = useState<GeneratedPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
@@ -427,25 +344,25 @@ function QuickContentPage() {
       try {
         // Try Firebase Storage first
         const processedPost = await processGeneratedPost(post, user.uid);
-
-
+  
+  
         // Show success message
         toast({
           title: "Images Saved to Cloud",
           description: "Images have been permanently saved to Firebase Storage.",
           variant: "default",
         });
-
+  
         return processedPost;
       } catch (storageError) {
-
+  
         // Fallback: Save to database with data URLs (temporary)
         toast({
           title: "Content Saved to Database",
           description: "Images stored temporarily. Please update Firebase Storage rules for permanent cloud storage.",
           variant: "default",
         });
-
+  
         return post; // Return original post with data URLs
       }
       */

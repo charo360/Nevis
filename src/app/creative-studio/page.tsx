@@ -20,11 +20,16 @@ import { ImageEditor } from "@/components/studio/image-editor";
 import { useUnifiedBrand, useBrandStorage, useBrandChangeListener } from "@/contexts/unified-brand-context";
 import { UnifiedBrandLayout, BrandContent, BrandSwitchingStatus } from "@/components/layout/unified-brand-layout";
 import { STORAGE_FEATURES } from "@/lib/services/brand-scoped-storage";
+import { useCreativeStudioStorage } from "@/hooks/use-feature-storage";
 
 function CreativeStudioPageContent() {
   const { currentBrand } = useUnifiedBrand();
   const [editorImage, setEditorImage] = useState<string | null>(null);
-  const creativeStudioStorage = useBrandStorage(STORAGE_FEATURES.CREATIVE_STUDIO);
+
+  // ✅ Creative Studio uses completely isolated storage
+  // This will never conflict with Quick Content data
+  const creativeStudioStorage = useCreativeStudioStorage();
+  const legacyStorage = useBrandStorage(STORAGE_FEATURES.CREATIVE_STUDIO);
 
   // Load Creative Studio data when brand changes
   useBrandChangeListener((brand) => {
