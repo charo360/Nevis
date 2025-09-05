@@ -69,17 +69,13 @@ function QuickContentPage() {
   // Use isolated Quick Content storage (completely separate from Creative Studio)
   const quickContentStorage = useQuickContentStorage();
 
-  // Legacy storage wrapper for backward compatibility
+  // Legacy storage wrapper for backward compatibility - using direct functions to avoid dependency issues
   const postsStorage = React.useMemo(() => {
     return {
-      getItem: () => {
-        return quickContentStorage.loadPosts();
-      },
-      setItem: (posts: GeneratedPost[]) => {
-        return quickContentStorage.savePosts(posts);
-      },
+      getItem: quickContentStorage.loadPosts,
+      setItem: quickContentStorage.savePosts,
     };
-  }, [quickContentStorage]);
+  }, [quickContentStorage.loadPosts, quickContentStorage.savePosts]);
 
   // ✅ Quick Content now uses completely isolated storage
   // This will never conflict with Creative Studio data
