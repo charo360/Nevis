@@ -44,8 +44,15 @@ export function BrandProvider({ children }: BrandProviderProps) {
 
   // Load brands when user changes
   useEffect(() => {
+    console.log('🔍 Brand context: User effect triggered', {
+      userId: user?.userId,
+      userExists: !!user,
+      brandsCount: brands.length,
+      loading
+    });
+
     if (user?.userId) {
-      console.log('🔄 User changed, loading brands for:', user.userId);
+      console.log('🔄 User authenticated, loading brands for:', user.userId);
       loadBrands();
     } else {
       console.log('🚫 No user, clearing brands');
@@ -55,12 +62,18 @@ export function BrandProvider({ children }: BrandProviderProps) {
     }
   }, [user?.userId]);
 
-  // Additional effect to ensure brands load after login
+  // Additional effect to ensure brands load after login with a slight delay
   // This helps with timing issues where auth state updates don't immediately trigger brand loading
   useEffect(() => {
     if (user?.userId && brands.length === 0 && !loading) {
-      console.log('🔄 Ensuring brands are loaded after login for:', user.userId);
-      loadBrands();
+      console.log('🔄 Backup brand loading triggered for:', user.userId);
+      // Add a small delay to ensure auth state is fully settled
+      const timer = setTimeout(() => {
+        console.log('⏰ Executing delayed brand loading...');
+        loadBrands();
+      }, 200);
+
+      return () => clearTimeout(timer);
     }
   }, [user?.userId, brands.length, loading]);
 

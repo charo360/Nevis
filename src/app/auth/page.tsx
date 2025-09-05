@@ -57,24 +57,26 @@ export default function AuthPage() {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      console.log('🔐 Starting login process...');
       await signIn(signInData.email, signInData.password);
+      console.log('✅ Login successful, auth state should be updated');
 
-      // Immediately refresh brands after successful login to ensure they load
-      console.log('🔄 Refreshing brands after successful login');
-      try {
-        await refreshBrands();
-        console.log('✅ Brands refreshed successfully after login');
-      } catch (brandError) {
-        console.warn('⚠️ Failed to refresh brands after login:', brandError);
-        // Don't fail the login process if brand refresh fails
-      }
+      // Don't call refreshBrands immediately - let the brand context react to auth state changes
+      // The brand context useEffect will handle loading brands when user state updates
 
       toast({
         title: "Welcome back!",
         description: "You've been signed in successfully.",
       });
-      router.push('/dashboard');
+
+      // Small delay to ensure auth state is fully settled before navigation
+      setTimeout(() => {
+        console.log('🚀 Navigating to dashboard...');
+        router.push('/dashboard');
+      }, 100);
+
     } catch (error) {
+      console.error('❌ Login failed:', error);
       toast({
         variant: "destructive",
         title: "Sign in failed",

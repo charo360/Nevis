@@ -32,12 +32,14 @@ export function useAuth() {
   useEffect(() => {
     const loadStoredAuth = async () => {
       try {
+        console.log('🔍 Loading stored auth on mount...');
         const storedToken = localStorage.getItem(ACCESS_TOKEN_KEY);
         const storedUserData = localStorage.getItem(USER_DATA_KEY);
 
         if (storedToken && storedUserData) {
+          console.log('📱 Found stored auth data, verifying token...');
           const userData = JSON.parse(storedUserData) as AuthUser;
-          
+
           // Verify token is still valid
           const response = await fetch('/api/auth/verify', {
             method: 'POST',
@@ -48,16 +50,19 @@ export function useAuth() {
           });
 
           if (response.ok) {
+            console.log('✅ Token verified successfully, user authenticated:', userData.userId);
             setAuthState({
               user: userData,
               loading: false,
               error: null,
             });
           } else {
+            console.warn('⚠️ Token verification failed, attempting refresh...');
             // Token is invalid, try to refresh
             await refreshToken();
           }
         } else {
+          console.log('🚫 No stored auth data found');
           setAuthState({
             user: null,
             loading: false,
@@ -65,7 +70,7 @@ export function useAuth() {
           });
         }
       } catch (error) {
-        console.error('Error loading stored auth:', error);
+        console.error('❌ Error loading stored auth:', error);
         setAuthState({
           user: null,
           loading: false,
@@ -94,8 +99,10 @@ export function useAuth() {
   // Refresh access token
   const refreshToken = useCallback(async (): Promise<boolean> => {
     try {
+      console.log('🔄 Attempting to refresh access token...');
       const storedRefreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
       if (!storedRefreshToken) {
+        console.log('❌ No refresh token found in localStorage');
         return false;
       }
 
@@ -108,6 +115,7 @@ export function useAuth() {
       });
 
       if (response.ok) {
+        console.log('✅ Token refresh successful');
         const data = await response.json();
         const user: AuthUser = {
           userId: data.user.userId,
@@ -123,8 +131,12 @@ export function useAuth() {
           loading: false,
           error: null,
         });
+        console.log('✅ Auth state updated after token refresh for user:', user.userId);
         return true;
       } else {
+        console.error('❌ Token refresh failed with status:', response.status);
+        const errorData = await response.text();
+        console.error('❌ Token refresh error response:', errorData);
         clearAuthData();
         setAuthState({
           user: null,
@@ -134,7 +146,7 @@ export function useAuth() {
         return false;
       }
     } catch (error) {
-      console.error('Token refresh error:', error);
+      console.error('❌ Token refresh error:', error);
       clearAuthData();
       setAuthState({
         user: null,
@@ -148,6 +160,7 @@ export function useAuth() {
   // Sign in with email and password
   const signIn = async (email: string, password: string): Promise<void> => {
     try {
+      console.log('🔐 SignIn: Starting authentication for:', email);
       setAuthState(prev => ({ ...prev, loading: true, error: null }));
 
       const response = await fetch('/api/auth/login', {
@@ -161,6 +174,7 @@ export function useAuth() {
       const data = await response.json();
 
       if (response.ok && data.success) {
+        console.log('✅ SignIn: Authentication successful for user:', data.user.userId);
         const user: AuthUser = {
           userId: data.user.userId,
           email: data.user.email,
@@ -169,12 +183,14 @@ export function useAuth() {
           isAnonymous: false,
         };
 
+        console.log('💾 SignIn: Storing auth data and updating state...');
         storeAuthData(data.token, data.refreshToken, user);
         setAuthState({
           user,
           loading: false,
           error: null,
         });
+        console.log('✅ SignIn: Auth state updated successfully');
       } else {
         setAuthState({
           user: null,
