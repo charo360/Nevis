@@ -96,6 +96,44 @@ export function useAuth() {
     localStorage.removeItem(USER_DATA_KEY);
   }, []);
 
+  // Clear all user-related data from localStorage (brands, settings, etc.)
+  const clearAllUserData = useCallback(() => {
+    console.log('🧹 Clearing all user-related data from localStorage...');
+
+    // Clear auth data
+    clearAuthData();
+
+    // Clear brand-related data
+    localStorage.removeItem('selectedBrandId');
+    localStorage.removeItem('currentBrandData');
+    localStorage.removeItem('brandColors');
+
+    // Clear all brand-scoped storage (artifacts, posts, etc.)
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (
+        key.includes('_brand_') ||
+        key.includes('artifacts_') ||
+        key.includes('quick-content_') ||
+        key.includes('creative-studio_') ||
+        key.includes('qc-') ||
+        key.includes('cs-') ||
+        key.endsWith('_posts') ||
+        key.startsWith('cbrand_')
+      )) {
+        keysToRemove.push(key);
+      }
+    }
+
+    keysToRemove.forEach(key => {
+      localStorage.removeItem(key);
+      console.log('🗑️ Removed localStorage key:', key);
+    });
+
+    console.log('✅ All user data cleared from localStorage');
+  }, [clearAuthData]);
+
   // Refresh access token
   const refreshToken = useCallback(async (): Promise<boolean> => {
     try {
@@ -137,7 +175,7 @@ export function useAuth() {
         console.error('❌ Token refresh failed with status:', response.status);
         const errorData = await response.text();
         console.error('❌ Token refresh error response:', errorData);
-        clearAuthData();
+        clearAllUserData();
         setAuthState({
           user: null,
           loading: false,
@@ -147,7 +185,7 @@ export function useAuth() {
       }
     } catch (error) {
       console.error('❌ Token refresh error:', error);
-      clearAuthData();
+      clearAllUserData();
       setAuthState({
         user: null,
         loading: false,
@@ -155,12 +193,17 @@ export function useAuth() {
       });
       return false;
     }
-  }, [storeAuthData, clearAuthData]);
+  }, [storeAuthData, clearAllUserData]);
 
   // Sign in with email and password
   const signIn = async (email: string, password: string): Promise<void> => {
     try {
       console.log('🔐 SignIn: Starting authentication for:', email);
+
+      // Clear any existing user data to prevent cross-contamination between accounts
+      console.log('🧹 Clearing previous user data before login...');
+      clearAllUserData();
+
       setAuthState(prev => ({ ...prev, loading: true, error: null }));
 
       const response = await fetch('/api/auth/login', {
@@ -213,6 +256,12 @@ export function useAuth() {
   // Sign up with email and password
   const signUp = async (email: string, password: string, displayName?: string): Promise<void> => {
     try {
+      console.log('📝 SignUp: Starting registration for:', email);
+
+      // Clear any existing user data to ensure clean state for new user
+      console.log('🧹 Clearing any existing user data before registration...');
+      clearAllUserData();
+
       setAuthState(prev => ({ ...prev, loading: true, error: null }));
 
       const response = await fetch('/api/auth/register', {
@@ -310,14 +359,16 @@ export function useAuth() {
   // Sign out
   const signOut = async (): Promise<void> => {
     try {
-      clearAuthData();
+      console.log('🚪 Signing out user...');
+      clearAllUserData(); // Clear all user data, not just auth tokens
       setAuthState({
         user: null,
         loading: false,
         error: null,
       });
+      console.log('✅ User signed out successfully');
     } catch (error) {
-      console.error('Sign out error:', error);
+      console.error('❌ Sign out error:', error);
       throw error;
     }
   };
