@@ -17,7 +17,10 @@ import {
   ChevronRight,
   Globe,
   Users,
-  TrendingUp
+  TrendingUp,
+  Database,
+  Clock,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
