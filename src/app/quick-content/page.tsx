@@ -198,51 +198,66 @@ function QuickContentPage() {
     // Load posts from database first, then fallback to localStorage
     const loadPosts = async () => {
       try {
+        // Load from both database AND localStorage, then combine them
+        let databasePosts: GeneratedPost[] = [];
+        let localStoragePosts: GeneratedPost[] = [];
+
         // Try to load from database first
         if (user?.userId && brand.id) {
           console.log('🔄 Loading posts from database for brand:', brand.businessName);
-          const response = await fetch(`/api/generated-posts/brand/${brand.id}?userId=${user.userId}&limit=50`);
-
-          if (response.ok) {
-            const databasePosts = await response.json();
-            console.log('✅ Loaded', databasePosts.length, 'posts from database');
-
-            if (databasePosts.length > 0) {
-              setGeneratedPosts(databasePosts);
-              setIsLoading(false);
-              return;
+          try {
+            const response = await fetch(`/api/generated-posts/brand/${brand.id}?userId=${user.userId}&limit=50`);
+            if (response.ok) {
+              databasePosts = await response.json();
+              console.log('✅ Loaded', databasePosts.length, 'posts from database');
+            } else {
+              console.log('⚠️ Database load failed, status:', response.status);
             }
-          } else {
-            console.log('⚠️ Database load failed, trying localStorage fallback');
+          } catch (dbError) {
+            console.log('⚠️ Database load error:', dbError);
           }
         }
 
-        // Fallback to localStorage if database fails or no posts found
+        // Also load from localStorage
         if (postsStorage) {
-          console.log('🔄 Loading posts from localStorage fallback');
-          const posts = postsStorage.getItem() || [];
+          console.log('🔄 Loading posts from localStorage');
+          const storedPosts = postsStorage.getItem() || [];
 
-          // Check if any posts have invalid dates
-          const hasInvalidDates = posts.some((post: GeneratedPost) =>
-            !post.date || isNaN(new Date(post.date).getTime())
+          // Filter out invalid posts
+          const validPosts = storedPosts.filter((post: GeneratedPost) =>
+            post.date && !isNaN(new Date(post.date).getTime())
           );
 
-          if (hasInvalidDates) {
-            // Clear invalid posts
-            postsStorage.setItem([]);
-            setGeneratedPosts([]);
-          } else {
-            // Limit posts to prevent future storage issues
-            const limitedPosts = posts.slice(0, 5);
-            if (limitedPosts.length < posts.length) {
-              postsStorage.setItem(limitedPosts);
-            }
-            setGeneratedPosts(limitedPosts);
-          }
-
-        } else {
-          setGeneratedPosts([]);
+          localStoragePosts = validPosts;
+          console.log('✅ Loaded', localStoragePosts.length, 'posts from localStorage');
         }
+
+        // Combine database and localStorage posts, removing duplicates
+        const combinedPosts = [...databasePosts];
+
+        // Add localStorage posts that aren't already in database posts
+        localStoragePosts.forEach(localPost => {
+          const existsInDatabase = databasePosts.some(dbPost =>
+            dbPost.id === localPost.id ||
+            (dbPost.content?.text === localPost.content?.text &&
+              Math.abs(new Date(dbPost.createdAt || dbPost.date).getTime() - new Date(localPost.date).getTime()) < 5000)
+          );
+
+          if (!existsInDatabase) {
+            combinedPosts.push(localPost);
+          }
+        });
+
+        // Sort by date (newest first)
+        combinedPosts.sort((a, b) => {
+          const dateA = new Date(a.createdAt || a.date).getTime();
+          const dateB = new Date(b.createdAt || b.date).getTime();
+          return dateB - dateA;
+        });
+
+        console.log(`✅ Combined posts: ${databasePosts.length} from database + ${localStoragePosts.length} from localStorage = ${combinedPosts.length} total`);
+
+        setGeneratedPosts(combinedPosts);
       } catch (error) {
         console.error('❌ Failed to load posts:', error);
         // If loading fails due to storage issues, clear and start fresh
