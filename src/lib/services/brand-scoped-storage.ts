@@ -729,15 +729,15 @@ export function cleanupAllStorage(): void {
       console.log(`📦 Quick Content Storage: ${optimizedPosts.length} posts, ${formatBytes(dataSize)}`);
 
       // If still too large, reduce further
-      if (dataSize > 1024 * 1024) { // 1MB limit
-        console.warn('⚠️ Posts still too large, reducing to 25 most recent');
-        const reducedPosts = optimizedPosts.slice(0, 25);
-        localStorage.setItem(key, JSON.stringify(reducedPosts));
-      } else {
-        localStorage.setItem(key, serialized);
-      }
+      if(dataSize > 1024 * 1024) { // 1MB limit
+    console.warn('⚠️ Posts still too large, reducing to 25 most recent');
+    const reducedPosts = optimizedPosts.slice(0, 25);
+    localStorage.setItem(key, JSON.stringify(reducedPosts));
+  } else {
+    localStorage.setItem(key, serialized);
+  }
 
-    } catch (error) {
+} catch (error) {
   console.error('❌ Failed to save posts with rotation:', error);
 
   // Emergency fallback: clear all posts and save just the newest 10
