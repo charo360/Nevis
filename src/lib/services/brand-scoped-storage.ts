@@ -678,34 +678,6 @@ export function getStorageUsage(): {
   };
 }
 
-/**
- * Clean up all old data across all brands and features
- */
-export function cleanupAllStorage(): void {
-
-  const keysToCheck: string[] = [];
-
-  // Collect all keys
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key) keysToCheck.push(key);
-  }
-
-  // Clean up brand-scoped data
-  keysToCheck.forEach(key => {
-    if (key.includes('_') && !key.includes('migration_completed')) {
-      try {
-        const data = JSON.parse(localStorage.getItem(key) || '[]');
-        if (Array.isArray(data) && data.length > 10) {
-          // Keep only recent items
-          const recentData = data.slice(-10);
-          localStorage.setItem(key, JSON.stringify(recentData));
-        }
-      } catch (error) {
-      }
-    }
-  });
-
   /**
    * Set item with automatic post rotation for Quick Content
    * Keeps only the most recent posts to prevent quota issues
@@ -729,68 +701,160 @@ export function cleanupAllStorage(): void {
       console.log(`📦 Quick Content Storage: ${optimizedPosts.length} posts, ${formatBytes(dataSize)}`);
 
       // If still too large, reduce further
-      if(dataSize > 1024 * 1024) { // 1MB limit
-    console.warn('⚠️ Posts still too large, reducing to 25 most recent');
-    const reducedPosts = optimizedPosts.slice(0, 25);
-    localStorage.setItem(key, JSON.stringify(reducedPosts));
-  } else {
-    localStorage.setItem(key, serialized);
-  }
+      if (dataSize > 1024 * 1024) { // 1MB limit
+        console.warn('⚠️ Posts still too large, reducing to 25 most recent');
+        const reducedPosts = optimizedPosts.slice(0, 25);
+        localStorage.setItem(key, JSON.stringify(reducedPosts));
+      } else {
+        localStorage.setItem(key, serialized);
+      }
 
-} catch (error) {
-  console.error('❌ Failed to save posts with rotation:', error);
+    } catch (error) {
+      console.error('❌ Failed to save posts with rotation:', error);
 
-  // Emergency fallback: clear all posts and save just the newest 10
-  try {
-    const key = this.getStorageKey();
-    const emergencyPosts = posts
-      .sort((a, b) => new Date(b.date || b.generatedAt || 0).getTime() - new Date(a.date || a.generatedAt || 0).getTime())
-      .slice(0, 10)
-      .map(post => ({
-        id: post.id,
-        date: post.date || post.generatedAt,
-        platform: post.platform,
-        content: post.content?.substring(0, 200) + '...' || 'Generated content',
-        hashtags: post.hashtags?.slice(0, 5) || [],
-        status: post.status || 'generated'
-      }));
+      // Emergency fallback: clear all posts and save just the newest 10
+      try {
+        const key = this.getStorageKey();
+        const emergencyPosts = posts
+          .sort((a, b) => new Date(b.date || b.generatedAt || 0).getTime() - new Date(a.date || a.generatedAt || 0).getTime())
+          .slice(0, 10)
+          .map(post => ({
+            id: post.id,
+            date: post.date || post.generatedAt,
+            platform: post.platform,
+            content: post.content?.substring(0, 200) + '...' || 'Generated content',
+            hashtags: post.hashtags?.slice(0, 5) || [],
+            status: post.status || 'generated'
+          }));
 
-    localStorage.setItem(key, JSON.stringify(emergencyPosts));
-    console.log('✅ Emergency fallback: Saved 10 most recent posts');
-  } catch (emergencyError) {
-    console.error('❌ Emergency fallback failed:', emergencyError);
-    // Clear the key entirely
-    localStorage.removeItem(key);
-  }
-}
+        localStorage.setItem(key, JSON.stringify(emergencyPosts));
+        console.log('✅ Emergency fallback: Saved 10 most recent posts');
+      } catch (emergencyError) {
+        console.error('❌ Emergency fallback failed:', emergencyError);
+        // Clear the key entirely
+        localStorage.removeItem(key);
+      }
+    }
   }
 
   /**
    * Optimize individual post for storage
    */
   private optimizePostForStorage(post: any): any {
+    return {
+      id: post.id,
+      date: post.date || post.generatedAt,
+      platform: post.platform,
+      postType: post.postType || 'post',
+      // Keep imageUrl but remove large base64 data
+      imageUrl: post.imageUrl?.startsWith('data:') ? '' : post.imageUrl,
+      // Truncate long content
+      content: post.content?.length > 500 ? post.content.substring(0, 500) + '...' : post.content,
+      // Limit hashtags
+      hashtags: post.hashtags?.slice(0, 10) || [],
+      status: post.status || 'generated',
+      // Keep essential metadata only
+      metadata: post.metadata ? {
+        model: post.metadata.model,
+        qualityScore: post.metadata.qualityScore
+      } : undefined,
+      // Remove variants to save space
+      variants: undefined
+    };
+  }
+}
+
+/**
+ * Factory function to create brand-scoped storage for different features
+ */
+export function createBrandScopedStorage(brandId: string, feature: string): BrandScopedStorage {
+  return new BrandScopedStorage({ brandId, feature });
+}
+
+/**
+ * Hook-like function to get brand-scoped storage that updates when brand changes
+ */
+export function useBrandScopedStorage(brandId: string | null, feature: string): BrandScopedStorage | null {
+  if (!brandId) {
+    return null;
+  }
+
+  return createBrandScopedStorage(brandId, feature);
+}
+
+/**
+ * Utility to migrate all global storage to brand-scoped storage
+ */
+export function migrateAllGlobalStorage(brandId: string, features: string[]): void {
+  features.forEach(feature => {
+    const storage = createBrandScopedStorage(brandId, feature);
+
+    // This will automatically migrate if brand-scoped data doesn't exist
+    storage.getItem();
+  });
+}
+
+/**
+ * Get localStorage usage statistics
+ */
+export function getStorageUsage(): {
+  used: number;
+  total: number;
+  percentage: number;
+  usedFormatted: string;
+  totalFormatted: string;
+} {
+  let used = 0;
+
+  try {
+    // Calculate used space
+    for (let key in localStorage) {
+      if (localStorage.hasOwnProperty(key)) {
+        used += localStorage[key].length + key.length;
+      }
+    }
+  } catch (error) {
+  }
+
+  // Estimate total available space (varies by browser, ~5-10MB)
+  const total = 10 * 1024 * 1024; // 10MB estimate
+  const percentage = (used / total) * 100;
+
   return {
-    id: post.id,
-    date: post.date || post.generatedAt,
-    platform: post.platform,
-    postType: post.postType || 'post',
-    // Keep imageUrl but remove large base64 data
-    imageUrl: post.imageUrl?.startsWith('data:') ? '' : post.imageUrl,
-    // Truncate long content
-    content: post.content?.length > 500 ? post.content.substring(0, 500) + '...' : post.content,
-    // Limit hashtags
-    hashtags: post.hashtags?.slice(0, 10) || [],
-    status: post.status || 'generated',
-    // Keep essential metadata only
-    metadata: post.metadata ? {
-      model: post.metadata.model,
-      qualityScore: post.metadata.qualityScore
-    } : undefined,
-    // Remove variants to save space
-    variants: undefined
+    used,
+    total,
+    percentage,
+    usedFormatted: formatBytes(used),
+    totalFormatted: formatBytes(total)
   };
 }
 
+/**
+ * Clean up all old data across all brands and features
+ */
+export function cleanupAllStorage(): void {
+  const keysToCheck: string[] = [];
+
+  // Collect all keys
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key) keysToCheck.push(key);
+  }
+
+  // Clean up brand-scoped data
+  keysToCheck.forEach(key => {
+    if (key.includes('_') && !key.includes('migration_completed')) {
+      try {
+        const data = JSON.parse(localStorage.getItem(key) || '[]');
+        if (Array.isArray(data) && data.length > 10) {
+          // Keep only recent items
+          const recentData = data.slice(-10);
+          localStorage.setItem(key, JSON.stringify(recentData));
+        }
+      } catch (error) {
+      }
+    }
+  });
 }
 
 /**
