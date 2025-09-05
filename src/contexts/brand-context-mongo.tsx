@@ -41,6 +41,7 @@ export function BrandProvider({ children }: BrandProviderProps) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
 
   // Load brands when user changes
   useEffect(() => {
@@ -241,6 +242,7 @@ export function BrandProvider({ children }: BrandProviderProps) {
 
   // Refresh brands list
   const refreshBrands = async (): Promise<void> => {
+    setHasAttemptedLoad(false); // Reset flag to allow fresh load
     await loadBrands();
   };
 
