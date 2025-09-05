@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       businessType,
       platform,
       visualStyle: visualStyle || 'modern',
-      aspectRatio: aspectRatio || '1:1'
+      aspectRatio: aspectRatio || 'auto-detected'
     });
 
     // Generate content with Revo 2.0
@@ -78,6 +78,13 @@ export async function GET() {
     requiredFields: ['businessType', 'platform', 'brandProfile'],
     optionalFields: ['visualStyle', 'imageText', 'aspectRatio'],
     model: 'Gemini 2.5 Flash Image Preview',
-    version: '2.0.0'
+    version: '2.0.0',
+    features: [
+      'Auto-detects platform-specific aspect ratios',
+      'Instagram: 1:1 (feed) or 9:16 (stories/reels)',
+      'Facebook/Twitter/LinkedIn: 16:9 (landscape)',
+      'TikTok: 9:16 (vertical)',
+      'Platform-optimized dimensions and descriptions'
+    ]
   });
 }

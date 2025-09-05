@@ -36,6 +36,77 @@ export interface Revo20GenerationResult {
 }
 
 /**
+ * Get platform-specific aspect ratio for optimal social media display
+ */
+function getPlatformAspectRatio(platform: string): '1:1' | '16:9' | '9:16' | '21:9' | '4:5' {
+  const platformLower = platform.toLowerCase();
+
+  // Instagram Stories, Reels, TikTok - Vertical 9:16
+  if (platformLower.includes('story') ||
+    platformLower.includes('reel') ||
+    platformLower.includes('tiktok')) {
+    return '9:16';
+  }
+
+  // Facebook, Twitter/X, LinkedIn, YouTube - Landscape 16:9
+  if (platformLower.includes('facebook') ||
+    platformLower.includes('twitter') ||
+    platformLower.includes('linkedin') ||
+    platformLower.includes('youtube')) {
+    return '16:9';
+  }
+
+  // Instagram Feed, Pinterest - Square 1:1 (default)
+  return '1:1';
+}
+
+/**
+ * Get platform-specific dimension text for prompts
+ */
+function getPlatformDimensionsText(aspectRatio: string): string {
+  switch (aspectRatio) {
+    case '1:1': return 'Square format - 1080x1080px';
+    case '16:9': return 'Landscape format - 1200x675px';
+    case '9:16': return 'Portrait format - 1080x1920px';
+    case '4:5': return 'Portrait format - 1080x1350px';
+    case '21:9': return 'Ultra-wide format - 1200x514px';
+    default: return 'Square format - 1080x1080px';
+  }
+}
+
+/**
+ * Get platform-specific description for prompts
+ */
+function getPlatformDescription(platform: string): string {
+  const platformLower = platform.toLowerCase();
+
+  if (platformLower.includes('instagram')) {
+    if (platformLower.includes('story') || platformLower.includes('reel')) {
+      return 'mobile-first vertical viewing with high engagement';
+    }
+    return 'mobile-first square feed posts with high visual impact';
+  }
+
+  if (platformLower.includes('facebook')) {
+    return 'news feed display with broad audience appeal';
+  }
+
+  if (platformLower.includes('twitter')) {
+    return 'timeline display with quick visual impact';
+  }
+
+  if (platformLower.includes('linkedin')) {
+    return 'professional networking with business-focused content';
+  }
+
+  if (platformLower.includes('tiktok')) {
+    return 'vertical mobile video with Gen Z appeal';
+  }
+
+  return 'social media engagement and brand awareness';
+}
+
+/**
  * Generate enhanced creative concept using GPT-4
  */
 async function generateCreativeConcept(options: Revo20GenerationOptions): Promise<any> {
@@ -101,17 +172,23 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
   const startTime = Date.now();
 
   try {
+    // Auto-detect platform-specific aspect ratio if not provided
+    const aspectRatio = options.aspectRatio || getPlatformAspectRatio(options.platform);
+    const enhancedOptions = { ...options, aspectRatio };
+
+    console.log(`🎯 Revo 2.0: Using ${aspectRatio} aspect ratio for ${options.platform}`);
+
     // Step 1: Generate creative concept
-    const concept = await generateCreativeConcept(options);
+    const concept = await generateCreativeConcept(enhancedOptions);
 
     // Step 2: Build enhanced prompt
-    const enhancedPrompt = buildEnhancedPrompt(options, concept);
+    const enhancedPrompt = buildEnhancedPrompt(enhancedOptions, concept);
 
     // Step 3: Generate image with Gemini 2.5 Flash Image Preview
-    const imageResult = await generateImageWithGemini(enhancedPrompt, options);
+    const imageResult = await generateImageWithGemini(enhancedPrompt, enhancedOptions);
 
     // Step 4: Generate caption and hashtags
-    const contentResult = await generateCaptionAndHashtags(options, concept);
+    const contentResult = await generateCaptionAndHashtags(enhancedOptions, concept);
 
     const processingTime = Date.now() - startTime;
 
@@ -150,8 +227,8 @@ VISUAL DIRECTION: ${concept.visualDirection}
 
 DESIGN REQUIREMENTS:
 - Style: ${visualStyle}, premium quality
-- Aspect Ratio: ${aspectRatio}
-- Platform: ${platform} optimized
+- Aspect Ratio: ${aspectRatio} (${getPlatformDimensionsText(aspectRatio)})
+- Platform: ${platform} optimized for ${getPlatformDescription(platform)}
 - Business: ${brandProfile.businessName || businessType}
 - Location: ${brandProfile.location || 'Professional setting'}
 
