@@ -129,28 +129,10 @@ export default function AuthPage() {
       </Button>
 
       <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-              <Sparkles className="w-7 h-7 text-white" />
-            </div>
-            <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Crevo
-            </span>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Welcome to Crevo
-          </h1>
-          <p className="text-gray-600">
-            Sign in to your account or create a new one to get started
-          </p>
-        </div>
-
         <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
           <CardHeader className="pb-4">
             <div className="text-center">
-              <h1 className="text-2xl font-bold tracking-tight">Welcome to Nevis</h1>
+              <h1 className="text-2xl font-bold tracking-tight">Welcome to Crevo</h1>
               <p className="text-muted-foreground mt-2">Sign in to your account or create a new one</p>
             </div>
           </CardHeader>
