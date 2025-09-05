@@ -48,24 +48,28 @@ export function BrandProvider({ children }: BrandProviderProps) {
       userId: user?.userId,
       userExists: !!user,
       brandsCount: brands.length,
-      loading
+      loading,
+      hasAttemptedLoad
     });
 
     if (user?.userId) {
       console.log('🔄 User authenticated, loading brands for:', user.userId);
+      setHasAttemptedLoad(false); // Reset flag for new user
       loadBrands();
     } else {
       console.log('🚫 No user, clearing brands');
       setBrands([]);
       setCurrentBrand(null);
       setLoading(false);
+      setHasAttemptedLoad(false);
     }
   }, [user?.userId]);
 
   // Additional effect to ensure brands load after login with a slight delay
   // This helps with timing issues where auth state updates don't immediately trigger brand loading
+  // Only triggers once per user session to prevent infinite loops
   useEffect(() => {
-    if (user?.userId && brands.length === 0 && !loading) {
+    if (user?.userId && brands.length === 0 && !loading && !hasAttemptedLoad) {
       console.log('🔄 Backup brand loading triggered for:', user.userId);
       // Add a small delay to ensure auth state is fully settled
       const timer = setTimeout(() => {
@@ -75,7 +79,7 @@ export function BrandProvider({ children }: BrandProviderProps) {
 
       return () => clearTimeout(timer);
     }
-  }, [user?.userId, brands.length, loading]);
+  }, [user?.userId, brands.length, loading, hasAttemptedLoad]);
 
   // Load all brands for the current user
   const loadBrands = async () => {
@@ -88,6 +92,7 @@ export function BrandProvider({ children }: BrandProviderProps) {
       console.log('🔄 Loading brands for user:', user.userId);
       setLoading(true);
       setError(null);
+      setHasAttemptedLoad(true); // Mark that we've attempted to load
 
       // Load brands via API route
       const response = await fetch(`/api/brand-profiles?userId=${user.userId}`);
@@ -151,7 +156,8 @@ export function BrandProvider({ children }: BrandProviderProps) {
       const result = await response.json();
       const profileId = result.id;
 
-      // Refresh brands list
+      // Refresh brands list and reset attempt flag so new brand appears
+      setHasAttemptedLoad(false);
       await loadBrands();
 
       return profileId;
