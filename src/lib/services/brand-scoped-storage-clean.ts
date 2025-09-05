@@ -49,26 +49,58 @@ export class BrandScopedStorage {
    */
   setItem(data: any): void {
     try {
-      // ENHANCED APPROACH: Implement post rotation for Quick Content
-      if (this.feature === 'quick-content' && Array.isArray(data)) {
-        this.setItemWithRotation(data);
+      // SMART APPROACH: Only strip large image data, keep URLs
+      const optimizedData = this.optimizeImageData(data);
+      const key = this.getStorageKey();
+      const serialized = JSON.stringify(optimizedData);
+
+      // Check storage stats before attempting to store
+      const stats = this.getStorageStats();
+      const dataSize = new Blob([serialized]).size;
+      const maxSize = 500 * 1024; // 500KB limit per item (much more aggressive)
+
+
+      // Always perform cleanup before saving to ensure maximum space
+      this.aggressiveCleanup();
+
+      if (dataSize > maxSize) {
+
+        // Try fallback 1: Use aggressive stripping (old method)
+        const strippedData = this.stripImageData(data);
+        const strippedSerialized = JSON.stringify(strippedData);
+        const strippedSize = new Blob([strippedSerialized]).size;
+
+        if (strippedSize <= maxSize) {
+          localStorage.setItem(key, strippedSerialized);
+          return;
+        }
+
+        // Try fallback 2: Use minimal data
+        const minimalData = this.extractMinimalData(strippedData);
+        const minimalSerialized = JSON.stringify(minimalData);
+        const minimalSize = new Blob([minimalSerialized]).size;
+
+        if (minimalSize > maxSize) {
+          this.removeItem(); // Clear existing data
+          // Store emergency placeholder
+          const emergency = {
+            id: Date.now().toString(),
+            date: new Date().toISOString(),
+            content: 'Content generated but not stored due to size limits',
+            platform: 'instagram'
+          };
+          localStorage.setItem(key, JSON.stringify([emergency]));
+        } else {
+          localStorage.setItem(key, minimalSerialized);
+        }
         return;
       }
 
-      // Original logic for other features
-      const key = this.getStorageKey();
-      const serialized = JSON.stringify(data);
       localStorage.setItem(key, serialized);
     } catch (error) {
-      console.error(`Error saving data for ${this.feature}:`, error);
-
-      // Fallback: try to save a minimal version
-      try {
-        const key = this.getStorageKey();
-        const minimalData = Array.isArray(data) ? data.slice(-5) : data;
-        localStorage.setItem(key, JSON.stringify(minimalData));
-      } catch (fallbackError) {
-        console.error('Fallback save also failed:', fallbackError);
+      if (error.name === 'QuotaExceededError') {
+        this.handleQuotaExceeded(data);
+      } else {
       }
     }
   }
@@ -571,91 +603,6 @@ export class BrandScopedStorage {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
 
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  }
-
-  /**
-   * Set item with automatic post rotation for Quick Content
-   * Keeps only the most recent posts to prevent quota issues
-   */
-  private setItemWithRotation(posts: any[]): void {
-    try {
-      const key = this.getStorageKey();
-      const MAX_POSTS = 50; // Maximum posts to keep per brand
-
-      // Sort posts by date (newest first) and limit to MAX_POSTS
-      const sortedPosts = posts
-        .sort((a, b) => new Date(b.date || b.generatedAt || 0).getTime() - new Date(a.date || a.generatedAt || 0).getTime())
-        .slice(0, MAX_POSTS);
-
-      // Optimize each post for storage
-      const optimizedPosts = sortedPosts.map(post => this.optimizePostForStorage(post));
-
-      const serialized = JSON.stringify(optimizedPosts);
-      const dataSize = new Blob([serialized]).size;
-
-      console.log(`📦 Quick Content Storage: ${optimizedPosts.length} posts, ${formatBytes(dataSize)}`);
-
-      // If still too large, reduce further
-      if (dataSize > 1024 * 1024) { // 1MB limit
-        console.warn('⚠️ Posts still too large, reducing to 25 most recent');
-        const reducedPosts = optimizedPosts.slice(0, 25);
-        localStorage.setItem(key, JSON.stringify(reducedPosts));
-      } else {
-        localStorage.setItem(key, serialized);
-      }
-
-    } catch (error) {
-      console.error('❌ Failed to save posts with rotation:', error);
-
-      // Emergency fallback: clear all posts and save just the newest 10
-      try {
-        const key = this.getStorageKey();
-        const emergencyPosts = posts
-          .sort((a, b) => new Date(b.date || b.generatedAt || 0).getTime() - new Date(a.date || a.generatedAt || 0).getTime())
-          .slice(0, 10)
-          .map(post => ({
-            id: post.id,
-            date: post.date || post.generatedAt,
-            platform: post.platform,
-            content: post.content?.substring(0, 200) + '...' || 'Generated content',
-            hashtags: post.hashtags?.slice(0, 5) || [],
-            status: post.status || 'generated'
-          }));
-
-        localStorage.setItem(key, JSON.stringify(emergencyPosts));
-        console.log('✅ Emergency fallback: Saved 10 most recent posts');
-      } catch (emergencyError) {
-        console.error('❌ Emergency fallback failed:', emergencyError);
-        // Clear the key entirely
-        localStorage.removeItem(key);
-      }
-    }
-  }
-
-  /**
-   * Optimize individual post for storage
-   */
-  private optimizePostForStorage(post: any): any {
-    return {
-      id: post.id,
-      date: post.date || post.generatedAt,
-      platform: post.platform,
-      postType: post.postType || 'post',
-      // Keep imageUrl but remove large base64 data
-      imageUrl: post.imageUrl?.startsWith('data:') ? '' : post.imageUrl,
-      // Truncate long content
-      content: post.content?.length > 500 ? post.content.substring(0, 500) + '...' : post.content,
-      // Limit hashtags
-      hashtags: post.hashtags?.slice(0, 10) || [],
-      status: post.status || 'generated',
-      // Keep essential metadata only
-      metadata: post.metadata ? {
-        model: post.metadata.model,
-        qualityScore: post.metadata.qualityScore
-      } : undefined,
-      // Remove variants to save space
-      variants: undefined
-    };
   }
 }
 
