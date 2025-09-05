@@ -5,9 +5,9 @@
 
 import { useMemo, useCallback, useEffect, useState } from 'react';
 import { useBrand } from '@/contexts/brand-context-mongo';
-import { 
-  FeatureStorageService, 
-  createQuickContentStorage, 
+import {
+  FeatureStorageService,
+  createQuickContentStorage,
   createCreativeStudioStorage,
   STORAGE_CATEGORIES,
   migrateToFeatureStorage
@@ -19,7 +19,7 @@ import {
  */
 export function useQuickContentStorage(subFeature?: string) {
   const { currentBrand } = useBrand();
-  
+
   const storage = useMemo(() => {
     const brandId = currentBrand?.id || 'default';
     return createQuickContentStorage(brandId, subFeature);
@@ -75,30 +75,30 @@ export function useQuickContentStorage(subFeature?: string) {
     return storage.getStorageStats();
   }, [storage]);
 
-  return {
+  return useMemo(() => ({
     // Post management
     savePosts,
     loadPosts,
-    
+
     // Settings management
     saveSettings,
     loadSettings,
-    
+
     // Draft management
     saveDrafts,
     loadDrafts,
-    
+
     // Template management
     saveTemplates,
     loadTemplates,
-    
+
     // Utility functions
     clearAll,
     getStats,
-    
+
     // Direct storage access (for advanced usage)
     storage,
-  };
+  }), [savePosts, loadPosts, saveSettings, loadSettings, saveDrafts, loadDrafts, saveTemplates, loadTemplates, clearAll, getStats, storage]);
 }
 
 /**
@@ -107,7 +107,7 @@ export function useQuickContentStorage(subFeature?: string) {
  */
 export function useCreativeStudioStorage(subFeature?: string) {
   const { currentBrand } = useBrand();
-  
+
   const storage = useMemo(() => {
     const brandId = currentBrand?.id || 'default';
     return createCreativeStudioStorage(brandId, subFeature);
@@ -179,38 +179,38 @@ export function useCreativeStudioStorage(subFeature?: string) {
     return storage.getStorageStats();
   }, [storage]);
 
-  return {
+  return useMemo(() => ({
     // Project management
     saveProjects,
     loadProjects,
-    
+
     // Asset management
     saveAssets,
     loadAssets,
-    
+
     // Design management
     saveDesigns,
     loadDesigns,
-    
+
     // Iteration management
     saveIterations,
     loadIterations,
-    
+
     // Settings management
     saveSettings,
     loadSettings,
-    
+
     // Chat history management
     saveChatHistory,
     loadChatHistory,
-    
+
     // Utility functions
     clearAll,
     getStats,
-    
+
     // Direct storage access (for advanced usage)
     storage,
-  };
+  }), [saveProjects, loadProjects, saveAssets, loadAssets, saveDesigns, loadDesigns, saveIterations, loadIterations, saveSettings, loadSettings, saveChatHistory, loadChatHistory, clearAll, getStats, storage]);
 }
 
 /**
@@ -269,11 +269,11 @@ export function useStorageMonitor() {
     return qcResult && csResult;
   }, [clearQuickContent, clearCreativeStudio]);
 
-  return {
+  return useMemo(() => ({
     storageStats,
     refreshStats,
     clearQuickContent,
     clearCreativeStudio,
     clearAll,
-  };
+  }), [storageStats, refreshStats, clearQuickContent, clearCreativeStudio, clearAll]);
 }
