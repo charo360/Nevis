@@ -245,21 +245,24 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto">
           <div className={`text-center transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
             <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-full px-4 py-2 mb-8">
-              <Sparkles className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-medium text-gray-700">AI-Powered Content Creation</span>
+              <Brain className="w-4 h-4 text-blue-600" />
+              <span className="text-sm font-medium text-gray-700">🤖 AI Agent Designer</span>
             </div>
 
             <h1 className="text-6xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">
-              AI-Powered Brand
+              Meet Your AI
               <br />
               <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Content Creation
+                Brand Designer
               </span>
             </h1>
 
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-12 leading-relaxed">
-              The only platform with <strong>Multi-AI Architecture</strong>, <strong>Cultural Intelligence</strong>, and <strong>Business Context</strong>.
-              Generate platform-optimized content that understands your brand, location, and audience.
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-4 leading-relaxed">
+              <strong>Train Once. Create Forever.</strong>
+            </p>
+
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto mb-12 leading-relaxed">
+              Say goodbye to templates. Your personal AI designer learns your brand DNA and creates professional social media content in seconds—tailored, consistent, and ready to post.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
@@ -268,7 +271,7 @@ export default function HomePage() {
                 size="lg"
                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-8 py-4 h-auto cursor-pointer z-10 relative"
               >
-                Start Creating Free
+                Train Your AI Free – No Credit Card Required
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
 
@@ -279,7 +282,7 @@ export default function HomePage() {
                 className="text-lg px-8 py-4 h-auto border-gray-300 hover:bg-gray-50"
               >
                 <Play className="mr-2 w-5 h-5" />
-                Watch Demo
+                Watch 30s Demo
               </Button>
             </div>
 
@@ -291,14 +294,14 @@ export default function HomePage() {
                     <div key={i} className="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full border-2 border-white" />
                   ))}
                 </div>
-                <span>Trusted by 10,000+ creators</span>
+                <span>Trusted by 10,000+ businesses</span>
               </div>
 
               <div className="flex items-center gap-1">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                 ))}
-                <span className="ml-2">4.9/5 rating</span>
+                <span className="ml-2">4.9/5 on G2</span>
               </div>
             </div>
           </div>
@@ -310,96 +313,96 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              Why Crevo Beats
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> The Competition</span>
+              Why Teams Choose
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Crevo</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Unlike Canva, Buffer, or Jasper - Crevo combines <strong>3 AI models</strong>, <strong>cultural intelligence</strong>,
-              and <strong>business context</strong> in one platform. Here's what makes us different:
+              <strong>The Only AI Agent That Eliminates Design Work Forever</strong><br />
+              Crevo's AI designer learns your brand, adapts to global audiences, and creates content in seconds.
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Feature 1 - Multi-AI Architecture */}
+            {/* Feature 1 - Intelligent AI Designer */}
             <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
               <CardContent className="p-8">
                 <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                   <Brain className="w-6 h-6 text-white" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">Multi-AI Architecture</h3>
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">🤖 Intelligent AI Designer</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  <strong>Revo 1.0, 1.5 & 2.0</strong> - Three specialized AI models for different quality levels.
-                  Gemini 2.5 Flash + OpenAI GPT + AIML FLUX working together for superior results.
+                  Learns your brand DNA to create perfectly aligned content—<strong>no templates needed</strong>.
+                  Your personal designer that understands your style, voice, and visual identity.
                 </p>
               </CardContent>
             </Card>
 
-            {/* Feature 2 - Cultural Intelligence */}
+            {/* Feature 2 - Multi-AI Architecture */}
             <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
               <CardContent className="p-8">
                 <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <Globe className="w-6 h-6 text-white" />
+                  <Zap className="w-6 h-6 text-white" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">Cultural Intelligence</h3>
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">🧠 Multi-AI Architecture</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  Location-aware content with <strong>local language integration</strong>. AI understands cultural context
-                  and creates region-specific content that resonates with your audience.
+                  Combines <strong>Revo 1.0, 1.5, and 2.0 agents</strong> for tailored quality and content types.
+                  Choose the right AI power for your specific needs and budget.
                 </p>
               </CardContent>
             </Card>
 
-            {/* Feature 3 - Business Intelligence */}
+            {/* Feature 3 - Culturally Intelligent Agent */}
             <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
               <CardContent className="p-8">
                 <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <TrendingUp className="w-6 h-6 text-white" />
+                  <Globe className="w-6 h-6 text-white" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">Business Intelligence</h3>
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">🌍 Culturally Intelligent Agent</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  <strong>RSS feeds</strong>, <strong>competitor analysis</strong>, and <strong>trending topics</strong> integration.
-                  AI creates content based on real-time business context and market trends.
+                  Adapts content for <strong>local languages and trends</strong> (e.g., US vs. Japanese audiences).
+                  Perfect for global businesses reaching diverse markets.
                 </p>
               </CardContent>
             </Card>
 
-            {/* Feature 4 - Platform-Specific Optimization */}
+            {/* Feature 4 - Business Intelligence Agent */}
             <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
               <CardContent className="p-8">
                 <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <Target className="w-6 h-6 text-white" />
+                  <TrendingUp className="w-6 h-6 text-white" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">Platform-Specific Optimization</h3>
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">📊 Business Intelligence Agent</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  <strong>Automatic aspect ratio detection</strong> for Instagram (1:1), Facebook (16:9), Stories (9:16).
-                  Each platform gets perfectly optimized dimensions and content.
+                  Tracks <strong>RSS feeds, competitors, and trends</strong> to keep content fresh.
+                  Your agent stays updated with market changes and industry news automatically.
                 </p>
               </CardContent>
             </Card>
 
-            {/* Feature 5 - Brand-Scoped Management */}
+            {/* Feature 5 - Always-On Agent */}
             <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
               <CardContent className="p-8">
                 <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <Palette className="w-6 h-6 text-white" />
+                  <Target className="w-6 h-6 text-white" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">Complete Brand Management</h3>
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">⚡ Always-On Agent</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  <strong>Brand-scoped storage</strong>, colors, logos, and voice consistency.
-                  Manage multiple brands with complete isolation and professional brand intelligence.
+                  Creates <strong>platform-optimized content</strong> for Instagram, LinkedIn, Facebook, and more
+                  in 30 seconds. Perfect dimensions and formatting every time.
                 </p>
               </CardContent>
             </Card>
 
-            {/* Feature 6 - Unlimited Storage */}
+            {/* Feature 6 - Smart Agent Memory */}
             <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
               <CardContent className="p-8">
                 <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <Zap className="w-6 h-6 text-white" />
+                  <Database className="w-6 h-6 text-white" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">Unlimited Content Generation</h3>
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">💾 Smart Agent Memory</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  <strong>Advanced quota management</strong> prevents storage issues. Generate unlimited posts
-                  with automatic optimization and intelligent storage rotation.
+                  Remembers all <strong>brand preferences</strong> with unlimited content generation.
+                  Your agent gets smarter with every interaction and never forgets your style.
                 </p>
               </CardContent>
             </Card>
@@ -407,92 +410,101 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Competitive Comparison Section */}
+      {/* AI Agent vs Traditional Tools Section */}
       <section className="relative px-6 py-20 bg-gradient-to-br from-gray-50 to-blue-50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              How Crevo Compares to
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> The Competition</span>
+              Your AI Agent vs.
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Their Tools</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              See why businesses choose Crevo over Canva, Buffer, Jasper, and other platforms
+              See why 10,000+ businesses choose Crevo's intelligent agent over template-based tools.
             </p>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full bg-white rounded-2xl shadow-xl overflow-hidden">
-              <thead className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-                <tr>
-                  <th className="px-6 py-4 text-left font-semibold">Feature</th>
-                  <th className="px-6 py-4 text-center font-semibold">
-                    <div className="flex items-center justify-center gap-2">
-                      <Sparkles className="w-5 h-5" />
-                      Crevo
-                    </div>
-                  </th>
-                  <th className="px-6 py-4 text-center font-semibold">Canva</th>
-                  <th className="px-6 py-4 text-center font-semibold">Buffer</th>
-                  <th className="px-6 py-4 text-center font-semibold">Jasper</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                <tr className="hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium">Multi-AI Architecture</td>
-                  <td className="px-6 py-4 text-center">
-                    <CheckCircle className="w-5 h-5 text-green-500 mx-auto" />
-                  </td>
-                  <td className="px-6 py-4 text-center text-gray-400">✗</td>
-                  <td className="px-6 py-4 text-center text-gray-400">✗</td>
-                  <td className="px-6 py-4 text-center text-gray-400">✗</td>
-                </tr>
-                <tr className="hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium">Cultural Intelligence</td>
-                  <td className="px-6 py-4 text-center">
-                    <CheckCircle className="w-5 h-5 text-green-500 mx-auto" />
-                  </td>
-                  <td className="px-6 py-4 text-center text-gray-400">✗</td>
-                  <td className="px-6 py-4 text-center text-gray-400">✗</td>
-                  <td className="px-6 py-4 text-center text-gray-400">✗</td>
-                </tr>
-                <tr className="hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium">Business Intelligence (RSS, Trends)</td>
-                  <td className="px-6 py-4 text-center">
-                    <CheckCircle className="w-5 h-5 text-green-500 mx-auto" />
-                  </td>
-                  <td className="px-6 py-4 text-center text-gray-400">✗</td>
-                  <td className="px-6 py-4 text-center text-orange-400">Limited</td>
-                  <td className="px-6 py-4 text-center text-gray-400">✗</td>
-                </tr>
-                <tr className="hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium">Platform-Specific Optimization</td>
-                  <td className="px-6 py-4 text-center">
-                    <CheckCircle className="w-5 h-5 text-green-500 mx-auto" />
-                  </td>
-                  <td className="px-6 py-4 text-center text-orange-400">Basic</td>
-                  <td className="px-6 py-4 text-center text-orange-400">Basic</td>
-                  <td className="px-6 py-4 text-center text-gray-400">✗</td>
-                </tr>
-                <tr className="hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium">AI Content + Design Integration</td>
-                  <td className="px-6 py-4 text-center">
-                    <CheckCircle className="w-5 h-5 text-green-500 mx-auto" />
-                  </td>
-                  <td className="px-6 py-4 text-center text-orange-400">Limited AI</td>
-                  <td className="px-6 py-4 text-center text-gray-400">✗</td>
-                  <td className="px-6 py-4 text-center text-orange-400">Text Only</td>
-                </tr>
-                <tr className="hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium">Brand-Scoped Management</td>
-                  <td className="px-6 py-4 text-center">
-                    <CheckCircle className="w-5 h-5 text-green-500 mx-auto" />
-                  </td>
-                  <td className="px-6 py-4 text-center text-orange-400">Basic</td>
-                  <td className="px-6 py-4 text-center text-orange-400">Basic</td>
-                  <td className="px-6 py-4 text-center text-orange-400">Basic</td>
-                </tr>
-              </tbody>
-            </table>
+          <div className="grid md:grid-cols-2 gap-12 max-w-5xl mx-auto">
+            {/* Traditional Tools Column */}
+            <div className="bg-white rounded-2xl shadow-xl p-8">
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Palette className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Traditional Tools</h3>
+                <p className="text-gray-600">(Canva, Buffer, etc.)</p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg">
+                  <X className="w-5 h-5 text-red-500 flex-shrink-0" />
+                  <span className="text-gray-700">Browse 1000+ templates</span>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg">
+                  <X className="w-5 h-5 text-red-500 flex-shrink-0" />
+                  <span className="text-gray-700">Manually adjust colors & fonts</span>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg">
+                  <X className="w-5 h-5 text-red-500 flex-shrink-0" />
+                  <span className="text-gray-700">Hope for brand consistency</span>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg">
+                  <X className="w-5 h-5 text-red-500 flex-shrink-0" />
+                  <span className="text-gray-700">Repeat every time</span>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg">
+                  <Clock className="w-5 h-5 text-red-500 flex-shrink-0" />
+                  <span className="text-gray-700"><strong>10–15 minutes per post</strong></span>
+                </div>
+              </div>
+            </div>
+
+            {/* Your AI Brand Agent Column */}
+            <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl shadow-xl p-8 border-2 border-blue-200">
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Brain className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">🤖 Your AI Brand Agent</h3>
+                <div className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                  <Sparkles className="w-4 h-4" />
+                  Intelligent
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  <span className="text-gray-700">Train your agent once</span>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  <span className="text-gray-700">Agent creates instantly</span>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  <span className="text-gray-700">Agent remembers everything</span>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  <span className="text-gray-700">Agent works 24/7</span>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                  <Zap className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  <span className="text-gray-700"><strong>30 seconds per post</strong></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-center mt-12">
+            <Button
+              onClick={handleGetStarted}
+              size="lg"
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-8 py-4 h-auto"
+            >
+              See How It Works
+              <ArrowRight className="ml-2 w-5 h-5" />
+            </Button>
           </div>
         </div>
       </section>
@@ -502,10 +514,11 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              How it works
+              How It Works
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Get started in minutes with our simple 3-step process
+              <strong>Get Started in Under 5 Minutes</strong><br />
+              Train your AI agent and start creating professional content instantly.
             </p>
           </div>
 
@@ -514,16 +527,16 @@ export default function HomePage() {
             <div className="text-center group">
               <div className="relative mb-8">
                 <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
-                  <Users className="w-10 h-10 text-white" />
+                  <Brain className="w-10 h-10 text-white" />
                 </div>
                 <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
                   1
                 </div>
               </div>
-              <h3 className="text-2xl font-semibold text-gray-900 mb-4">Create Brand Profile</h3>
+              <h3 className="text-2xl font-semibold text-gray-900 mb-4">Train Your Agent</h3>
               <p className="text-gray-600 leading-relaxed">
-                Set up your brand with <strong>colors, logo, location, and business type</strong>.
-                Our AI analyzes your brand context and cultural requirements automatically.
+                Enter your <strong>website URL</strong>, and your AI learns your brand's voice and style.
+                Your agent analyzes colors, fonts, messaging, and visual identity automatically.
               </p>
             </div>
 
@@ -531,16 +544,16 @@ export default function HomePage() {
             <div className="text-center group">
               <div className="relative mb-8">
                 <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
-                  <Brain className="w-10 h-10 text-white" />
+                  <Sparkles className="w-10 h-10 text-white" />
                 </div>
                 <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
                   2
                 </div>
               </div>
-              <h3 className="text-2xl font-semibold text-gray-900 mb-4">Choose AI Model & Platform</h3>
+              <h3 className="text-2xl font-semibold text-gray-900 mb-4">Generate Content</h3>
               <p className="text-gray-600 leading-relaxed">
-                Select from <strong>Revo 1.0, 1.5, or 2.0</strong> based on quality needs.
-                Pick your platform (Instagram, Facebook, Twitter) for automatic optimization.
+                Choose a <strong>platform</strong>, and your agent creates tailored posts in seconds.
+                Perfect dimensions, on-brand colors, and engaging copy—automatically.
               </p>
             </div>
 
@@ -548,16 +561,16 @@ export default function HomePage() {
             <div className="text-center group">
               <div className="relative mb-8">
                 <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
-                  <Sparkles className="w-10 h-10 text-white" />
+                  <TrendingUp className="w-10 h-10 text-white" />
                 </div>
                 <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
                   3
                 </div>
               </div>
-              <h3 className="text-2xl font-semibold text-gray-900 mb-4">Generate & Download</h3>
+              <h3 className="text-2xl font-semibold text-gray-900 mb-4">Publish & Grow</h3>
               <p className="text-gray-600 leading-relaxed">
-                AI creates <strong>culturally-aware content</strong> with trending topics, business intelligence,
-                and perfect aspect ratios. Download HD images instantly.
+                Share <strong>optimized content</strong> and track engagement with analytics.
+                Your agent learns from performance to create even better content over time.
               </p>
             </div>
           </div>
@@ -569,7 +582,7 @@ export default function HomePage() {
               size="lg"
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-8 py-4 h-auto"
             >
-              Start Your Free Trial
+              Train Your Agent Now
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
           </div>
@@ -581,10 +594,10 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              Loved by creators worldwide
+              Loved by Businesses Worldwide
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Join thousands of businesses and creators who trust Crevo for their content needs
+              <strong>See Why Teams Trust Crevo's AI Agent</strong>
             </p>
           </div>
 
@@ -598,7 +611,7 @@ export default function HomePage() {
                   ))}
                 </div>
                 <p className="text-gray-700 mb-6 leading-relaxed">
-                  "The multi-AI architecture is game-changing! Revo 2.0 creates stunning designs while the cultural intelligence helps us connect with our global audience. No other platform comes close."
+                  "Our AI agent cut post creation from 15 minutes to 30 seconds. Engagement soared by 300%! It's like having a designer that never sleeps."
                 </p>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white font-semibold">
@@ -606,7 +619,7 @@ export default function HomePage() {
                   </div>
                   <div>
                     <p className="font-semibold text-gray-900">Sarah Chen</p>
-                    <p className="text-sm text-gray-600">Marketing Director, Global Tech</p>
+                    <p className="text-sm text-gray-600">Marketing Director, TechFlow</p>
                   </div>
                 </div>
               </CardContent>
@@ -621,7 +634,7 @@ export default function HomePage() {
                   ))}
                 </div>
                 <p className="text-gray-700 mb-6 leading-relaxed">
-                  "The business intelligence integration is incredible! RSS feeds and trending topics keep our content fresh and relevant. The platform-specific optimization saves us hours of manual work."
+                  "It's like a designer that never sleeps. Perfectly on-brand every time. The agent learns our style and creates content that looks like our team made it."
                 </p>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-400 rounded-full flex items-center justify-center text-white font-semibold">
@@ -629,7 +642,7 @@ export default function HomePage() {
                   </div>
                   <div>
                     <p className="font-semibold text-gray-900">Marcus Rodriguez</p>
-                    <p className="text-sm text-gray-600">Founder, Digital Agency</p>
+                    <p className="text-sm text-gray-600">Founder, GrowthLab</p>
                   </div>
                 </div>
               </CardContent>
@@ -644,7 +657,7 @@ export default function HomePage() {
                   ))}
                 </div>
                 <p className="text-gray-700 mb-6 leading-relaxed">
-                  "Finally, a platform that understands international markets! The cultural intelligence creates content that resonates locally while maintaining brand consistency. Unlimited storage is a huge bonus."
+                  "We serve 3x more clients with the same team. Crevo's agent is a game changer. The cultural intelligence makes our global campaigns resonate perfectly."
                 </p>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-semibold">
@@ -652,7 +665,7 @@ export default function HomePage() {
                   </div>
                   <div>
                     <p className="font-semibold text-gray-900">Alex Thompson</p>
-                    <p className="text-sm text-gray-600">CEO, International Brand Agency</p>
+                    <p className="text-sm text-gray-600">CEO, Creative Studio</p>
                   </div>
                 </div>
               </CardContent>
@@ -767,11 +780,13 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              Simple, Credit-Based
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Pricing</span>
+              Train Your AI Agent Today
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
-              Pay once, use anytime. Credits never expire. Choose the AI quality that fits your needs.
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-4">
+              <strong>Pay once, use anytime. Credits never expire.</strong>
+            </p>
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto mb-8">
+              Compare: Canva Pro costs $120/year; our $29 Growth Agent trains your agent + creates 150+ posts.
             </p>
 
             {/* Key Benefits */}
@@ -830,8 +845,8 @@ export default function HomePage() {
                 <div className="flex justify-center mb-4">
                   <Star className="w-6 h-6 text-gray-500" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">Free Plan</h3>
-                <p className="text-sm text-gray-600 mb-4">Perfect for trying out Crevo AI</p>
+                <h3 className="text-xl font-bold mb-2">Try Agent Free</h3>
+                <p className="text-sm text-gray-600 mb-4">Basic agent training, Watermarked images</p>
 
                 <div className="mb-4">
                   <span className="text-3xl font-bold">$0</span>
@@ -866,7 +881,7 @@ export default function HomePage() {
                   className="w-full"
                   variant="outline"
                 >
-                  Get Started Free
+                  Train Agent Free – No Credit Card Required
                 </Button>
               </CardContent>
             </Card>
@@ -877,8 +892,8 @@ export default function HomePage() {
                 <div className="flex justify-center mb-4">
                   <Zap className="w-6 h-6 text-blue-500" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">Starter Pack</h3>
-                <p className="text-sm text-gray-600 mb-4">Ideal for occasional users</p>
+                <h3 className="text-xl font-bold mb-2">Starter Agent</h3>
+                <p className="text-sm text-gray-600 mb-4">HD generations, No watermark, Agent memory</p>
 
                 <div className="mb-4">
                   <span className="text-3xl font-bold">$10</span>
@@ -930,8 +945,8 @@ export default function HomePage() {
                 <div className="flex justify-center mb-4">
                   <Target className="w-6 h-6 text-blue-500" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">Growth Pack</h3>
-                <p className="text-sm text-gray-600 mb-4">Most popular for growing businesses</p>
+                <h3 className="text-xl font-bold mb-2">Growth Agent</h3>
+                <p className="text-sm text-gray-600 mb-4">Priority speed, Advanced models, Priority support</p>
 
                 <div className="mb-4">
                   <span className="text-3xl font-bold">$29</span>
@@ -979,8 +994,8 @@ export default function HomePage() {
                 <div className="flex justify-center mb-4">
                   <BarChart3 className="w-6 h-6 text-purple-500" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">Pro Pack</h3>
-                <p className="text-sm text-gray-600 mb-4">For professional creators</p>
+                <h3 className="text-xl font-bold mb-2">Pro Agent</h3>
+                <p className="text-sm text-gray-600 mb-4">Bulk generations, API access, Early features</p>
 
                 <div className="mb-4">
                   <span className="text-3xl font-bold">$49</span>
@@ -1029,8 +1044,8 @@ export default function HomePage() {
                 <div className="flex justify-center mb-4">
                   <Brain className="w-6 h-6 text-indigo-500" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">Power Users</h3>
-                <p className="text-sm text-gray-600 mb-4">For agencies & power users</p>
+                <h3 className="text-xl font-bold mb-2">Enterprise Agent</h3>
+                <p className="text-sm text-gray-600 mb-4">White-label, Team collaboration, Custom integrations</p>
 
                 <div className="mb-4">
                   <span className="text-3xl font-bold">$99</span>
@@ -1079,20 +1094,20 @@ export default function HomePage() {
             <h3 className="text-2xl font-bold text-center mb-8">Frequently Asked Questions</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
-                <h4 className="font-semibold mb-2">How do credits work?</h4>
-                <p className="text-gray-600 text-sm">Credits vary by AI model: Revo 1.0 = 1 credit, Revo 1.5 = 1.5 credits, Revo 2.0 = 2 credits per generation.</p>
+                <h4 className="font-semibold mb-2">How does the AI agent train?</h4>
+                <p className="text-gray-600 text-sm">Your agent analyzes your website and content to learn your brand's voice, colors, and style.</p>
+              </div>
+              <div>
+                <h4 className="font-semibold mb-2">What do credits do?</h4>
+                <p className="text-gray-600 text-sm">Credits power content generation: Revo 1.0 = 1 credit, Revo 1.5 = 1.5 credits, Revo 2.0 = 2 credits per post.</p>
               </div>
               <div>
                 <h4 className="font-semibold mb-2">Do credits expire?</h4>
-                <p className="text-gray-600 text-sm">No! Your credits never expire. Use them whenever you need them.</p>
+                <p className="text-gray-600 text-sm">No, credits never expire. Use them anytime.</p>
               </div>
               <div>
-                <h4 className="font-semibold mb-2">Can I upgrade anytime?</h4>
-                <p className="text-gray-600 text-sm">Yes! You can purchase additional credit packs anytime. Credits stack up.</p>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-2">What's the difference between AI models?</h4>
-                <p className="text-gray-600 text-sm">Higher versions provide better quality, more features, and enhanced AI capabilities but cost more credits.</p>
+                <h4 className="font-semibold mb-2">How does Crevo compare to Canva?</h4>
+                <p className="text-gray-600 text-sm">Crevo's AI agent learns your brand and automates content with cultural intelligence, unlike Canva's template-based tools.</p>
               </div>
             </div>
           </div>
@@ -1110,10 +1125,10 @@ export default function HomePage() {
 
             <div className="relative z-10">
               <h2 className="text-4xl md:text-5xl font-bold mb-6">
-                Ready to transform your content?
+                Ready to Meet Your AI Designer?
               </h2>
               <p className="text-xl mb-8 text-white/90 max-w-2xl mx-auto">
-                Join thousands of creators and businesses who are already using Crevo to create amazing content. Start your free trial today.
+                Join 10,000+ businesses who trust their AI agent to create professional content. Train your agent in under 5 minutes.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -1122,7 +1137,7 @@ export default function HomePage() {
                   size="lg"
                   className="bg-white text-gray-900 hover:bg-gray-100 text-lg px-8 py-4 h-auto font-semibold"
                 >
-                  Start Creating Free
+                  Train Your AI Agent Free
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
 
