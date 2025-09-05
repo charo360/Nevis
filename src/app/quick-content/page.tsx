@@ -388,6 +388,7 @@ function QuickContentPage() {
   };
 
   const handlePostGenerated = async (post: GeneratedPost) => {
+    console.log('🔄 Processing individual post:', post.id || 'no-id');
 
     // Process images with Firebase Storage upload
     let processedPost = await processPostImages(post);
@@ -408,87 +409,62 @@ function QuickContentPage() {
     let databaseSaveSuccess = false;
     let databasePostId = processedPost.id; // Use existing ID if post was already saved
 
-    // Check if post already has an ID (meaning it was already saved to database)
-    const postAlreadySaved = !!(processedPost.id && processedPost.id !== 'temp-id');
+    // Always try to save to database for each individual post
+    if (user?.userId && currentBrand?.id) {
+      try {
+        console.log('🔄 Saving individual post to database...', {
+          userId: user.userId,
+          brandId: currentBrand.id,
+          brandName: currentBrand.businessName,
+          postContent: (() => {
+            if (!processedPost.content) return 'No content';
+            if (typeof processedPost.content === 'string') {
+              return processedPost.content.substring(0, 50) + '...';
+            }
+            // Handle object content (database format)
+            const contentText = (processedPost.content as any)?.text || '';
+            return typeof contentText === 'string' ? contentText.substring(0, 50) + '...' : 'No content';
+          })()
+        });
 
-    if (postAlreadySaved) {
-      console.log('✅ Post already saved to database with ID:', processedPost.id);
-      databaseSaveSuccess = true;
-      databasePostId = processedPost.id;
-    } else {
-      // Only save to database if post doesn't have an ID yet
-      if (user && currentBrand) {
-        try {
-          console.log('🔄 Saving post to database...', {
-            userId: user.userId,
-            brandId: currentBrand.id,
-            brandName: currentBrand.businessName,
-            postContent: (() => {
-              if (!processedPost.content) return 'No content';
-              if (typeof processedPost.content === 'string') {
-                return processedPost.content.substring(0, 50) + '...';
-              }
-              // Handle object content (database format)
-              const contentText = (processedPost.content as any)?.text || '';
-              return typeof contentText === 'string' ? contentText.substring(0, 50) + '...' : 'No content';
-            })()
-          });
+        databasePostId = await savePostToDatabase(processedPost);
+        console.log('✅ Individual post saved to database with ID:', databasePostId);
+        databaseSaveSuccess = true;
 
-          databasePostId = await savePostToDatabase(processedPost);
-          console.log('✅ Post saved to database with ID:', databasePostId);
-          databaseSaveSuccess = true;
+        // Update the post with the database ID
+        const savedPost = { ...processedPost, id: databasePostId };
+        const updatedPosts = [savedPost, ...generatedPosts.filter(p => p.id !== processedPost.id)];
+        setGeneratedPosts(updatedPosts);
 
-          // Update the post with the database ID
-          const savedPost = { ...processedPost, id: databasePostId };
-          const updatedPosts = [savedPost, ...generatedPosts];
-          setGeneratedPosts(updatedPosts);
-
-        } catch (databaseError) {
-          console.error('❌ Database save error:', databaseError);
-          databaseSaveSuccess = false;
-        }
+      } catch (databaseError) {
+        console.error('❌ Individual post database save error:', databaseError);
+        databaseSaveSuccess = false;
       }
     }
 
-    // Try to save to localStorage (secondary)
+    // Save to localStorage as backup
     let localStorageSuccess = false;
     try {
       const postsToSave = databasePostId
-        ? [{ ...processedPost, id: databasePostId }, ...generatedPosts]
+        ? [{ ...processedPost, id: databasePostId }, ...generatedPosts.filter(p => p.id !== processedPost.id)]
         : newPosts;
       postsStorage.setItem(postsToSave);
       localStorageSuccess = true;
+      console.log('✅ Individual post saved to localStorage');
     } catch (storageError) {
-      console.log('⚠️ localStorage save failed:', storageError.message);
+      console.log('⚠️ Individual post localStorage save failed:', storageError.message);
       localStorageSuccess = false;
     }
 
-    // Show appropriate success/error message based on what succeeded
+    // Show success message for individual post
     if (databaseSaveSuccess && localStorageSuccess) {
-      toast({
-        title: "Content Saved Successfully",
-        description: `Your content has been saved to both database and local storage. Post ID: ${databasePostId}`,
-        variant: "default",
-      });
+      console.log(`✅ Post saved successfully to both database (${databasePostId}) and localStorage`);
     } else if (databaseSaveSuccess && !localStorageSuccess) {
-      toast({
-        title: "Content Saved to Database",
-        description: `Your content has been saved to the database permanently. Post ID: ${databasePostId}. Local storage is full.`,
-        variant: "default",
-      });
+      console.log(`✅ Post saved to database (${databasePostId}) but localStorage failed`);
     } else if (!databaseSaveSuccess && localStorageSuccess) {
-      toast({
-        title: "Content Saved Locally",
-        description: !user ? "Sign in to save to database permanently." : "Database save failed, but content is saved locally.",
-        variant: "default",
-      });
+      console.log(`⚠️ Post saved to localStorage only, database save failed`);
     } else {
-      // Both failed
-      toast({
-        title: "Save Failed",
-        description: "Could not save to database or local storage. Content is only in memory.",
-        variant: "destructive",
-      });
+      console.log(`❌ Post save failed for both database and localStorage`);
     }
   };
 
