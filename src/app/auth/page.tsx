@@ -22,11 +22,13 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
+import { useBrandOperations } from '@/contexts/brand-context-mongo';
 
 export default function AuthPage() {
   const router = useRouter();
   const { signIn, signUp, loading } = useAuth();
   const { toast } = useToast();
+  const { refreshBrands } = useBrandOperations();
 
   const [signInData, setSignInData] = useState({
     email: '',
@@ -56,6 +58,17 @@ export default function AuthPage() {
     e.preventDefault();
     try {
       await signIn(signInData.email, signInData.password);
+
+      // Immediately refresh brands after successful login to ensure they load
+      console.log('🔄 Refreshing brands after successful login');
+      try {
+        await refreshBrands();
+        console.log('✅ Brands refreshed successfully after login');
+      } catch (brandError) {
+        console.warn('⚠️ Failed to refresh brands after login:', brandError);
+        // Don't fail the login process if brand refresh fails
+      }
+
       toast({
         title: "Welcome back!",
         description: "You've been signed in successfully.",
