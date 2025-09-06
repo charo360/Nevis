@@ -65,6 +65,9 @@ HEADLINE CREATIVITY REQUIREMENTS:
 - "Business Name: Smart Technology..."
 - Any headline starting with business name + colon
 - Formulaic business name prefixes
+- Repetitive opening patterns like "Tired of..." appearing everywhere
+- Starting headlines with the same words repeatedly across different businesses
+- Using static templates that don't adapt to unique business context
 
 ✅ DYNAMIC CREATIVE APPROACH:
 - ANALYZE the specific business context, current trends, and target audience
@@ -77,6 +80,9 @@ HEADLINE CREATIVITY REQUIREMENTS:
   * Platform-specific engagement patterns
 - CREATE headlines that feel fresh, relevant, and perfectly timed
 - FOCUS on customer outcomes and value, not business name prominence
+- AVOID repetitive opening words - each headline should start differently
+- USE varied psychological triggers: urgency, curiosity, benefit, problem-solving, aspiration
+- ENSURE each business gets unique, context-specific headlines
 - AVOID repetitive patterns - each headline should be uniquely crafted for its context
 
 {{#if contentVariation}}
