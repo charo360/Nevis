@@ -37,9 +37,33 @@ export default function HomePage() {
   const { toast } = useToast();
   const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
 
+  // Typewriter animation for "AI Designer"
+  const [displayText, setDisplayText] = useState('');
+  const [showCursor, setShowCursor] = useState(true);
+  const fullText = 'AI Designer';
+
   useEffect(() => {
     setIsVisible(true);
   }, []);
+
+  // Typewriter animation effect
+  useEffect(() => {
+    if (!isVisible) return;
+
+    let currentIndex = 0;
+    const timer = setInterval(() => {
+      if (currentIndex <= fullText.length) {
+        setDisplayText(fullText.slice(0, currentIndex));
+        currentIndex++;
+      } else {
+        clearInterval(timer);
+        // Hide cursor after animation completes
+        setTimeout(() => setShowCursor(false), 1000);
+      }
+    }, 150); // 150ms delay between each character
+
+    return () => clearInterval(timer);
+  }, [isVisible, fullText]);
 
   // Heartbeat: ping server every 5 minutes to extend session (only for logged in users)
   useEffect(() => {
@@ -256,7 +280,8 @@ export default function HomePage() {
               Meet the First
               <br />
               <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                AI Designer
+                {displayText}
+                {showCursor && <span className="animate-pulse text-blue-600">|</span>}
               </span>
             </h1>
 
