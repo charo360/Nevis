@@ -618,7 +618,7 @@ export default function HomePage() {
                 </p>
                 <div className="flex items-center gap-3">
                   <img
-                    src="https://images.unsplash.com/photo-1494790108755-2616b612b786?w=40&h=40&fit=crop&crop=face&auto=format&q=80"
+                    src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=40&h=40&fit=crop&crop=face&auto=format&q=80"
                     alt="Sarah Chen"
                     className="w-10 h-10 rounded-full object-cover"
                   />
