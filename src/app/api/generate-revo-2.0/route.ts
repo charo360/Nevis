@@ -56,17 +56,12 @@ export async function POST(request: NextRequest) {
       qualityScore: result.qualityScore,
       processingTime: result.processingTime,
       enhancementsApplied: result.enhancementsApplied,
-<<<<<<< HEAD
       headline: result.headline,
       subheadline: result.subheadline,
       caption: result.caption,
       cta: result.cta,
       hashtags: result.hashtags,
       businessIntelligence: result.businessIntelligence,
-=======
-      caption: result.caption,
-      hashtags: result.hashtags,
->>>>>>> 46f32151ed9503d241dab0f668e479a278288e2c
       message: 'Revo 2.0 Enhanced content generated successfully'
     });
 
@@ -89,22 +84,12 @@ export async function GET() {
     model: 'Gemini 2.5 Flash Image Preview with Business Intelligence',
     version: '2.0.1',
     features: [
-<<<<<<< HEAD
       'Business-specific headlines',
       'Strategic subheadlines',
       'Sophisticated captions',
       'Compelling CTAs',
       'AI-powered hashtags',
       'Business intelligence analysis'
-=======
-      'Creative concept generation',
-      'Enhanced prompt engineering',
-      'Brand consistency optimization',
-      'Platform-specific formatting',
-      'Cultural relevance integration',
-      'AI-powered captions',
-      'Smart hashtag generation'
->>>>>>> 46f32151ed9503d241dab0f668e479a278288e2c
     ]
   });
 }
