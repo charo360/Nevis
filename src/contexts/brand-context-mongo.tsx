@@ -35,7 +35,7 @@ interface BrandProviderProps {
 }
 
 export function BrandProvider({ children }: BrandProviderProps) {
-  const { user } = useAuth();
+  const { user, getAccessToken } = useAuth();
   const [currentBrand, setCurrentBrand] = useState<CompleteBrandProfile | null>(null);
   const [brands, setBrands] = useState<CompleteBrandProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,8 +95,18 @@ export function BrandProvider({ children }: BrandProviderProps) {
       setError(null);
       setHasAttemptedLoad(true); // Mark that we've attempted to load
 
+      const token = getAccessToken();
+      if (!token) {
+        throw new Error('No access token available');
+      }
+
       // Load brands via API route
-      const response = await fetch(`/api/brand-profiles?userId=${user.userId}`);
+      const response = await fetch('/api/brand-profiles', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
       if (!response.ok) {
         throw new Error('Failed to load brand profiles');
       }
@@ -135,19 +145,19 @@ export function BrandProvider({ children }: BrandProviderProps) {
       setSaving(true);
       setError(null);
 
-      // Ensure userId is set
-      const profileWithUserId = {
-        ...profile,
-        userId: user.userId,
-      };
+      const token = getAccessToken();
+      if (!token) {
+        throw new Error('No access token available');
+      }
 
       // Save brand profile via API route
       const response = await fetch('/api/brand-profiles', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(profileWithUserId),
+        body: JSON.stringify(profile),
       });
 
       if (!response.ok) {
@@ -177,11 +187,17 @@ export function BrandProvider({ children }: BrandProviderProps) {
       setSaving(true);
       setError(null);
 
+      const token = getAccessToken();
+      if (!token) {
+        throw new Error('No access token available');
+      }
+
       // Update brand profile via API route
       const response = await fetch(`/api/brand-profiles/${profileId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(updates),
       });
@@ -214,9 +230,17 @@ export function BrandProvider({ children }: BrandProviderProps) {
       setSaving(true);
       setError(null);
 
+      const token = getAccessToken();
+      if (!token) {
+        throw new Error('No access token available');
+      }
+
       // Delete brand profile via API route
       const response = await fetch(`/api/brand-profiles/${profileId}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
       });
 
       if (!response.ok) {
