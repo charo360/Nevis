@@ -230,7 +230,8 @@ export async function generateContentAction(
 
     return newPost;
   } catch (error) {
-    throw new Error("Failed to generate content. Please try again later.");
+    console.error('❌ Content generation error:', error);
+    throw new Error(`Failed to generate content: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
