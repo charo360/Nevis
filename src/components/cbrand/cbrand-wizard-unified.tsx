@@ -184,8 +184,8 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
       selectBrand(savedProfile);
     }
 
-    // Navigate to content calendar or dashboard
-    router.push('/content-calendar');
+    // Navigate to quick content to test the content generation fixes
+    router.push('/quick-content-mongo');
   };
 
   const calculateProgress = () => {
