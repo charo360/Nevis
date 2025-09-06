@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
+import { TwitterApi } from 'twitter-api-v2';
 import fs from 'fs/promises';
 import path from 'path';
-import crypto from 'crypto';
-import fetch from 'node-fetch';
 
 const STATE_STORE = path.resolve(process.cwd(), 'tmp', 'oauth-states.json');
 
@@ -20,102 +19,60 @@ async function writeStates(data: any) {
   await fs.writeFile(STATE_STORE, JSON.stringify(data, null, 2), 'utf-8');
 }
 
-function percentEncode(str: string) {
-  return encodeURIComponent(str)
-    .replace(/[!'()*]/g, (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase());
-}
-
-function hmacSha1(key: string, base: string) {
-  return crypto.createHmac('sha1', key).update(base).digest('base64');
-}
-
-function buildOAuthHeader(params: Record<string, string>) {
-  const header = Object.keys(params)
-    .map((k) => `${percentEncode(k)}="${percentEncode(params[k])}"`)
-    .join(', ');
-  return `OAuth ${header}`;
-}
-
-function buildSignature(method: string, url: string, params: Record<string, string>, consumerSecret: string, tokenSecret = '') {
-  const encodedParams = Object.keys(params)
-    .sort()
-    .map((k) => `${percentEncode(k)}=${percentEncode(params[k])}`)
-    .join('&');
-
-  const baseString = `${method.toUpperCase()}&${percentEncode(url)}&${percentEncode(encodedParams)}`;
-  const signingKey = `${percentEncode(consumerSecret)}&${percentEncode(tokenSecret)}`;
-  return hmacSha1(signingKey, baseString);
-}
-
 export async function GET(req: Request) {
-  const state = crypto.randomBytes(12).toString('hex');
-  const states = await readStates();
-  // Allow demoUser via query param or x-demo-user header
   const url = new URL(req.url);
-  const demoUser = String(url.searchParams.get('demoUser') || req.headers.get('x-demo-user') || 'demo');
+  const authHeader = req.headers.get('authorization') || '';
 
-  // Build request-token call to Twitter (OAuth 1.0a)
-  const consumerKey = process.env.TWITTER_API_KEY || process.env.TWITTER_CLIENT_ID;
-  const consumerSecret = process.env.TWITTER_SECRET_KEY || process.env.TWITTER_CLIENT_SECRET;
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
-  if (!consumerKey || !consumerSecret) {
-    // Nothing configured — persist minimal state and redirect with error
-    states[state] = { createdAt: Date.now(), error: 'twitter-not-configured' };
-    await writeStates(states);
-    return NextResponse.redirect(`${baseUrl}/social-connect?error=twitter_not_configured`);
+  // Get user ID from Bearer token or query param
+  let userId: string | null = null;
+  let accessToken: string | null = null;
+
+  if (authHeader.startsWith('Bearer ')) {
+    accessToken = authHeader.split(' ')[1];
+    // For now, we'll use a simple userId from query or generate one
+    userId = url.searchParams.get('userId') || 'user_' + Date.now();
+  } else {
+    // Fallback for demo/development
+    userId = url.searchParams.get('userId') || 'demo';
   }
-  // Ensure callback URL is encoded and deterministic
-  const callbackUrl = `${baseUrl}/api/social/oauth/twitter/callback`;
-  const callbackWithState = `${callbackUrl}?state=${encodeURIComponent(state)}`;
 
-  // OAuth params for request_token
-  const oauthParams: Record<string, string> = {
-    oauth_callback: callbackUrl,
-    oauth_consumer_key: consumerKey,
-    oauth_nonce: crypto.randomBytes(16).toString('hex'),
-    oauth_signature_method: 'HMAC-SHA1',
-    oauth_timestamp: Math.floor(Date.now() / 1000).toString(),
-    oauth_version: '1.0',
-  };
-
-  // Build signature
-  const requestTokenUrl = 'https://api.twitter.com/oauth/request_token';
-  const signature = buildSignature('POST', requestTokenUrl, oauthParams, consumerSecret);
-  oauthParams['oauth_signature'] = signature;
-
-  const authHeader = buildOAuthHeader(oauthParams);
-
-  // Call Twitter to obtain request token
   try {
-    const res = await fetch(requestTokenUrl, {
-      method: 'POST',
-      headers: { Authorization: authHeader },
-      // include callback as form field if Twitter requires it in body
-      body: new URLSearchParams({ oauth_callback: callbackWithState }).toString(),
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001';
+    
+    // For development, use the production callback URL if NEXT_PUBLIC_APP_URL is not set
+    const isDevelopment = !process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_APP_URL.includes('localhost');
+    const prodCallbackUrl = 'https://crevo.app/api/social/oauth/twitter/callback';
+    const devCallbackUrl = `${baseUrl}/api/social/oauth/twitter/callback`;
+    const callbackUrl = isDevelopment ? prodCallbackUrl : devCallbackUrl;
+
+    // Initialize Twitter client with OAuth 2.0
+    const twitterClient = new TwitterApi({
+      clientId: process.env.TWITTER_CLIENT_ID || process.env.TWITTER_API_KEY!,
+      clientSecret: process.env.TWITTER_CLIENT_SECRET || process.env.TWITTER_SECRET_KEY!,
     });
 
-    const text = await res.text();
-    // Twitter responds with form-encoded string
-    const parsed = Object.fromEntries(new URLSearchParams(text));
-    if (!parsed.oauth_token) {
-      states[state] = { createdAt: Date.now(), error: 'request-token-failed', resp: text };
-      await writeStates(states);
-      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect`);
-    }
+    // Generate OAuth 2.0 authentication URL
+    const { url: authUrl, codeVerifier, state } = twitterClient.generateOAuth2AuthLink(
+      callbackUrl,
+      {
+        scope: ['tweet.read', 'tweet.write', 'users.read', 'offline.access']
+      }
+    );
 
-  // persist the request token secret for the callback exchange
-  // store both by our generated state and by the returned oauth_token so the callback
-  // can recover the mapping even if Twitter doesn't echo our state parameter back.
-  states[state] = { createdAt: Date.now(), requestToken: parsed.oauth_token };
-  states[parsed.oauth_token] = { createdAt: Date.now(), requestTokenSecret: parsed.oauth_token_secret, demoUser, state };
-  await writeStates(states);
-
-    // Redirect user to authorize URL
-    const authorizeUrl = `https://api.twitter.com/oauth/authorize?oauth_token=${parsed.oauth_token}`;
-    return NextResponse.redirect(authorizeUrl);
-  } catch (err) {
-    states[state] = { createdAt: Date.now(), error: 'request-failed', err: String(err) };
+    // Store the codeVerifier and state for the callback
+    const states = await readStates();
+    states[state] = {
+      createdAt: Date.now(),
+      codeVerifier,
+      userId,
+      accessToken,
+    };
     await writeStates(states);
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect`);
+
+    return NextResponse.redirect(authUrl);
+  } catch (error) {
+    console.error('Twitter OAuth initiation error:', error);
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001';
+    return NextResponse.redirect(`${baseUrl}/social-connect?error=twitter_oauth_failed`);
   }
 }

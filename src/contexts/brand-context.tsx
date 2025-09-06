@@ -50,11 +50,6 @@ export function BrandProvider({ children }: BrandProviderProps) {
 
   // Sync current brand with the hook's current profile
   useEffect(() => {
-      currentProfile: currentProfile?.businessName || (currentProfile as any)?.name,
-      currentBrand: currentBrand?.businessName,
-      brandsCount: brands.length
-    });
-
     // Only sync if currentProfile exists and is different from currentBrand
     // Don't override manual selections
     if (currentProfile && currentProfile !== currentBrand) {
@@ -84,10 +79,6 @@ export function BrandProvider({ children }: BrandProviderProps) {
   };
 
   const selectBrand = (brand: CompleteBrandProfile | null) => {
-      currentBrand: currentBrand?.businessName,
-      currentProfile: currentProfile?.businessName
-    });
-
     // Normalize the brand data structure
     const normalizedBrand = normalizeBrand(brand);
 
