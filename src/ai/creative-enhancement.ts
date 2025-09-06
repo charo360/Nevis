@@ -1433,6 +1433,260 @@ IMPORTANT:
 
     // Enhanced subheadline quality improvement
     const enhancedSubheadline = enhanceSubheadlineQuality(cleanedSubheadline, businessType, location);
+    
+    // Storytelling and local language enhancement
+    const enhanceWithStorytellingAndLocalLanguage = (text: string, businessType: string, location: string) => {
+      // Local language integration based on location
+      const getLocalLanguageEnhancement = (location: string, businessType: string) => {
+        const locationLower = location.toLowerCase();
+        
+        if (locationLower.includes('kenya')) {
+          const swahiliPhrases = {
+            'restaurant': ['Chakula bora', 'Tamu sana', 'Karibu'],
+            'fitness': ['Mazoezi', 'Afya bora', 'Nguvu'],
+            'finance': ['Pesa', 'Uchumi', 'Faida'],
+            'beauty': ['Urembo', 'Pambo', 'Kipaji'],
+            'default': ['Bora', 'Vizuri', 'Safi']
+          };
+          const phrases = swahiliPhrases[businessType] || swahiliPhrases.default;
+          return phrases[Math.floor(Math.random() * phrases.length)];
+        }
+        
+        if (locationLower.includes('nigeria')) {
+          const pidginPhrases = {
+            'restaurant': ['Food sweet', 'Chop well', 'Tasty'],
+            'fitness': ['Fit body', 'Strong', 'Healthy'],
+            'finance': ['Money', 'Cash', 'Profit'],
+            'beauty': ['Fine', 'Beautiful', 'Gorgeous'],
+            'default': ['Good', 'Better', 'Best']
+          };
+          const phrases = pidginPhrases[businessType] || pidginPhrases.default;
+          return phrases[Math.floor(Math.random() * phrases.length)];
+        }
+        
+        if (locationLower.includes('south africa')) {
+          const afrikaansPhrases = {
+            'restaurant': ['Lekker kos', 'Heerlik', 'Smakelijk'],
+            'fitness': ['Sterk', 'Gesond', 'Fiks'],
+            'finance': ['Geld', 'Wins', 'Voordeel'],
+            'beauty': ['Mooi', 'Pragtig', 'Skoon'],
+            'default': ['Goed', 'Beter', 'Beste']
+          };
+          const phrases = afrikaansPhrases[businessType] || afrikaansPhrases.default;
+          return phrases[Math.floor(Math.random() * phrases.length)];
+        }
+        
+        return null; // No local language enhancement for other locations
+      };
+      
+      // Comprehensive Marketing Message Frameworks
+      const getMarketingEnhancement = (businessType: string) => {
+        const marketingFrameworks = {
+          'restaurant': {
+            storytelling: [
+              'From farm to table',
+              'Where tradition meets taste',
+              'Every bite tells a story',
+              'Crafted with love, served with pride'
+            ],
+            emotional: [
+              'Satisfy your cravings',
+              'Indulge in excellence',
+              'Taste the difference',
+              'Savor every moment'
+            ],
+            socialProof: [
+              'Join thousands of satisfied customers',
+              'As seen on local food blogs',
+              'Rated #1 by locals',
+              'Where foodies gather'
+            ],
+            urgency: [
+              'Limited time menu',
+              'Fresh daily specials',
+              'While supplies last',
+              'Today only'
+            ],
+            value: [
+              'Best value in town',
+              'Premium quality, fair price',
+              'More for your money',
+              'Quality you can taste'
+            ]
+          },
+          'fitness': {
+            storytelling: [
+              'Your transformation starts here',
+              'From struggle to strength',
+              'Every rep builds character',
+              'Where champions are made'
+            ],
+            emotional: [
+              'Unleash your potential',
+              'Break through barriers',
+              'Feel the power',
+              'Achieve your goals'
+            ],
+            socialProof: [
+              'Join the fitness community',
+              'Proven results by real people',
+              'Where winners train',
+              'Trusted by athletes'
+            ],
+            urgency: [
+              'Start your journey today',
+              'Limited spots available',
+              'New year, new you',
+              'Don\'t wait, transform now'
+            ],
+            value: [
+              'Maximum results, minimum time',
+              'Professional training, personal attention',
+              'All-inclusive fitness solution',
+              'Value that builds strength'
+            ]
+          },
+          'finance': {
+            storytelling: [
+              'From dreams to reality',
+              'Your financial future starts now',
+              'Where money meets opportunity',
+              'Building wealth, one step at a time'
+            ],
+            emotional: [
+              'Secure your future',
+              'Take control of your money',
+              'Invest in yourself',
+              'Build lasting wealth'
+            ],
+            socialProof: [
+              'Trusted by thousands',
+              'Proven investment strategies',
+              'Where smart money grows',
+              'Join successful investors'
+            ],
+            urgency: [
+              'Start investing today',
+              'Don\'t miss market opportunities',
+              'Limited time offer',
+              'Act now, secure later'
+            ],
+            value: [
+              'Maximum returns, minimum risk',
+              'Professional advice, personal service',
+              'All-in-one financial solution',
+              'Value that compounds'
+            ]
+          },
+          'beauty': {
+            storytelling: [
+              'Reveal your true beauty',
+              'Where confidence begins',
+              'Your glow-up starts here',
+              'Beauty that tells your story'
+            ],
+            emotional: [
+              'Feel beautiful inside and out',
+              'Boost your confidence',
+              'Love the skin you\'re in',
+              'Radiate natural beauty'
+            ],
+            socialProof: [
+              'Join the beauty revolution',
+              'As seen on social media',
+              'Where beauty experts go',
+              'Trusted by influencers'
+            ],
+            urgency: [
+              'Book your transformation today',
+              'Limited appointment slots',
+              'New season, new look',
+              'Don\'t wait, glow now'
+            ],
+            value: [
+              'Premium beauty, accessible prices',
+              'Professional results, personal touch',
+              'All-inclusive beauty package',
+              'Value that shows'
+            ]
+          },
+          'default': {
+            storytelling: [
+              'Where excellence begins',
+              'Your success story starts here',
+              'From good to great',
+              'Where dreams become reality'
+            ],
+            emotional: [
+              'Experience the difference',
+              'Feel the quality',
+              'Trust in excellence',
+              'Believe in better'
+            ],
+            socialProof: [
+              'Join satisfied customers',
+              'Proven track record',
+              'Where quality meets service',
+              'Trusted by the community'
+            ],
+            urgency: [
+              'Limited time offer',
+              'Act now, benefit later',
+              'Don\'t miss out',
+              'Secure your spot today'
+            ],
+            value: [
+              'Best value guaranteed',
+              'Quality you can trust',
+              'All-in-one solution',
+              'Value that lasts'
+            ]
+          }
+        };
+        
+        const frameworks = marketingFrameworks[businessType] || marketingFrameworks.default;
+        const frameworkTypes = Object.keys(frameworks);
+        const randomType = frameworkTypes[Math.floor(Math.random() * frameworkTypes.length)];
+        const randomFramework = frameworks[randomType][Math.floor(Math.random() * frameworks[randomType].length)];
+        
+        return {
+          text: randomFramework,
+          type: randomType
+        };
+      };
+      
+      // Only enhance if text is short and could benefit from marketing frameworks
+      if (text.length < 20) {
+        const localEnhancement = getLocalLanguageEnhancement(location, businessType);
+        const marketingEnhancement = getMarketingEnhancement(businessType);
+        
+        // 30% chance to add local language (not forced)
+        if (localEnhancement && Math.random() < 0.3) {
+          text = `${localEnhancement} - ${text}`;
+        }
+        
+        // 50% chance to add marketing framework element
+        if (Math.random() < 0.5) {
+          const enhancement = marketingEnhancement.text;
+          const type = marketingEnhancement.type;
+          
+          // Different formatting based on framework type
+          if (type === 'storytelling') {
+            text = `${enhancement}: ${text}`;
+          } else if (type === 'emotional') {
+            text = `${enhancement} - ${text}`;
+          } else if (type === 'socialProof') {
+            text = `${enhancement} - ${text}`;
+          } else if (type === 'urgency') {
+            text = `${enhancement}! ${text}`;
+          } else if (type === 'value') {
+            text = `${enhancement} - ${text}`;
+          }
+        }
+      }
+      
+      return text;
+    };
 
     // Dynamic headline enhancement for unified content
     if (finalHeadline.length < 15 || finalHeadline.includes(businessName) || finalHeadline.includes(businessType)) {
@@ -1596,10 +1850,15 @@ Generate ONE unique headline that makes people instantly want to try the service
     }
 
 
+    // Apply storytelling and local language enhancement to all content
+    const enhancedHeadline = enhanceWithStorytellingAndLocalLanguage(finalHeadline, businessType, location);
+    const enhancedSubheadlineFinal = enhanceWithStorytellingAndLocalLanguage(enhancedSubheadline, businessType, location);
+    const enhancedCaption = enhanceWithStorytellingAndLocalLanguage(cleanedCaption, businessType, location);
+
     return {
-      headline: finalHeadline,
-      subheadline: enhancedSubheadline,
-      caption: cleanedCaption,
+      headline: enhancedHeadline,
+      subheadline: enhancedSubheadlineFinal,
+      caption: enhancedCaption,
       callToAction,
       engagementHooks,
       designDirection: removeWordRepetitions(designMatch?.[1]?.trim() || `Clean, professional design with local elements. IMPORTANT: Include the CTA "${callToAction}" as prominent text overlay on the design - make it bold, readable, and visually striking with professional marketing appeal.`),
@@ -1608,7 +1867,7 @@ Generate ONE unique headline that makes people instantly want to try the service
       hashtags: viralHashtags.total, // Add viral hashtags to response
       hashtagStrategy: viralHashtags, // Include full strategy for analysis
       ctaStrategy: ctaStrategy, // Include CTA strategy for analysis
-      imageText: `${finalHeadline}\n\n${enhancedSubheadline}\n\n${callToAction}` // Pass cleaned text as imageText for design integration
+      imageText: `${enhancedHeadline}\n\n${enhancedSubheadlineFinal}\n\n${callToAction}` // Pass enhanced text as imageText for design integration
     };
   } catch (error) {
     return {
