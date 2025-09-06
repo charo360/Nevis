@@ -304,7 +304,7 @@ export function WebsiteAnalysisStep({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-4">
       {/* Website URL Input */}
       <Card>
         <CardHeader>

@@ -141,7 +141,7 @@ export function LogoUploadStepUnified({
     brandProfile.services?.length > 0;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-4">
       <div className="text-center">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Step 3: Logo Upload & Final Review</h2>
         <p className="text-gray-600">Upload your logo and review your complete brand profile</p>

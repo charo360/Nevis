@@ -91,7 +91,7 @@ export function BrandDetailsStep({
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-4">
       <Card>
         <CardHeader>
           <CardTitle>Complete Brand Details</CardTitle>
@@ -513,7 +513,7 @@ export function BrandDetailsStep({
       </Card>
 
       {/* Navigation */}
-      <div className="flex justify-between">
+      <div className="flex justify-between pt-4">
         <Button variant="outline" onClick={onPrevious}>
           <ChevronLeft className="mr-2 h-4 w-4" />
           Previous Step
