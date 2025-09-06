@@ -21,30 +21,64 @@ async function writeStates(data: any) {
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  const demoUser = url.searchParams.get('demoUser') || 'demo-user';
+  const authHeader = req.headers.get('authorization') || '';
 
-  const state = crypto.randomBytes(12).toString('hex');
-  const states = await readStates();
-  states[state] = { demoUser, createdAt: Date.now() };
-  await writeStates(states);
+  // Get user ID from Bearer token or query param
+  let userId: string | null = null;
+  let accessToken: string | null = null;
 
-  const clientId = process.env.LINKEDIN_CLIENT_ID;
-  if (!clientId) {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
-    return NextResponse.redirect(`${baseUrl}/social-connect?error=linkedin_not_configured`);
+  if (authHeader.startsWith('Bearer ')) {
+    accessToken = authHeader.split(' ')[1];
+    // For now, we'll use a simple userId from query or generate one
+    userId = url.searchParams.get('userId') || 'user_' + Date.now();
+  } else {
+    // Fallback for demo/development
+    userId = url.searchParams.get('userId') || 'demo';
   }
 
-  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/api/social/oauth/linkedin/callback`;
-  // pass space-separated scopes and let URLSearchParams encode them once
-  const scope = 'r_liteprofile r_emailaddress';
+  // Get account type from query params
+  const accountType = url.searchParams.get('accountType') || 'personal';
 
-  const linkedinUrl = new URL('https://www.linkedin.com/oauth/v2/authorization');
-  linkedinUrl.searchParams.append('response_type', 'code');
-  linkedinUrl.searchParams.append('client_id', clientId);
-  linkedinUrl.searchParams.append('redirect_uri', redirectUri);
-  linkedinUrl.searchParams.append('state', state);
-  linkedinUrl.searchParams.append('scope', scope);
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001';
 
+    // For development, use the production callback URL if NEXT_PUBLIC_APP_URL is not set
+    const isDevelopment = !process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_APP_URL.includes('localhost');
+    const prodCallbackUrl = 'https://crevo.app/api/social/oauth/linkedin/callback';
+    const devCallbackUrl = `${baseUrl}/api/social/oauth/linkedin/callback`;
+    const callbackUrl = isDevelopment ? prodCallbackUrl : devCallbackUrl;
 
-  return NextResponse.redirect(linkedinUrl.toString());
+    // LinkedIn OAuth 2.0 configuration
+    const clientId = process.env.LINKEDIN_CLIENT_ID || '770tjdh8uh1whr';
+
+    // Determine scopes based on account type
+    const scopes = accountType === 'company'
+      ? ['r_liteprofile', 'r_emailaddress', 'w_member_social', 'rw_organization_admin']
+      : ['r_liteprofile', 'r_emailaddress', 'w_member_social'];
+
+    // Generate state parameter
+    const state = crypto.randomBytes(12).toString('hex');
+    const states = await readStates();
+    states[state] = {
+      userId,
+      accessToken,
+      accountType,
+      createdAt: Date.now()
+    };
+    await writeStates(states);
+
+    // Generate LinkedIn OAuth URL
+    const linkedinUrl = `https://www.linkedin.com/oauth/v2/authorization?` +
+      `response_type=code` +
+      `&client_id=${clientId}` +
+      `&redirect_uri=${encodeURIComponent(callbackUrl)}` +
+      `&scope=${encodeURIComponent(scopes.join(' '))}` +
+      `&state=${state}`;
+
+    return NextResponse.redirect(linkedinUrl);
+  } catch (error) {
+    console.error('LinkedIn OAuth initiation error:', error);
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001';
+    return NextResponse.redirect(`${baseUrl}/social-connect?error=linkedin_oauth_failed`);
+  }
 }

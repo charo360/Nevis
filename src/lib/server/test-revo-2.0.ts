@@ -56,14 +56,6 @@ export async function testRevo20Generation(): Promise<boolean> {
     const hasHashtags = result.hashtags && result.hashtags.length > 0;
     const hasQualityScore = result.qualityScore > 0;
     
-      hasImage,
-      hasCaption,
-      hasHashtags,
-      hasQualityScore,
-      model: result.model,
-      processingTime: result.processingTime
-    });
-
     if (hasImage && hasCaption && hasHashtags && hasQualityScore) {
       return true;
     } else {
