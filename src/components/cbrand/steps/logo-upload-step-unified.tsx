@@ -29,7 +29,7 @@ export function LogoUploadStepUnified({
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-  const { saveProfile } = useUnifiedBrand();
+  const { saveProfile, updateProfile } = useUnifiedBrand();
   const { user } = useAuth();
 
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -78,6 +78,16 @@ export function LogoUploadStepUnified({
       return;
     }
 
+    // Validate that logo is uploaded (mandatory)
+    if (!brandProfile.logoDataUrl) {
+      toast({
+        variant: "destructive",
+        title: "Logo Required",
+        description: "Please upload a logo before saving your brand profile.",
+      });
+      return;
+    }
+
     setIsSaving(true);
 
     try {
@@ -90,31 +100,52 @@ export function LogoUploadStepUnified({
         version: '1.0',
       };
 
-      // In create mode, remove any existing ID to ensure a new profile is created
-      if (mode === 'create' && profileToSave.id) {
-        delete profileToSave.id;
-        console.log('🆕 Create mode: Removed existing ID to create new profile');
+      let profileId: string;
+
+      if (mode === 'edit' && profileToSave.id) {
+        // Edit mode: Update existing profile
+        console.log('✏️ Edit mode: Updating existing profile with ID:', profileToSave.id);
+        console.log('💾 Updating profile via unified context with logo data:', {
+          businessName: profileToSave.businessName,
+          hasLogo: !!profileToSave.logoDataUrl,
+          logoLength: profileToSave.logoDataUrl?.length || 0,
+          colors: {
+            primaryColor: profileToSave.primaryColor,
+            accentColor: profileToSave.accentColor,
+            backgroundColor: profileToSave.backgroundColor
+          }
+        });
+
+        await updateProfile(profileToSave.id, profileToSave);
+        profileId = profileToSave.id;
+        console.log('✅ Profile updated via unified context successfully:', profileId);
+      } else {
+        // Create mode: Create new profile
+        if (profileToSave.id) {
+          delete profileToSave.id;
+          console.log('🆕 Create mode: Removed existing ID to create new profile');
+        }
+
+        console.log('💾 Creating new profile via unified context with logo data:', {
+          businessName: profileToSave.businessName,
+          hasLogo: !!profileToSave.logoDataUrl,
+          logoLength: profileToSave.logoDataUrl?.length || 0,
+          colors: {
+            primaryColor: profileToSave.primaryColor,
+            accentColor: profileToSave.accentColor,
+            backgroundColor: profileToSave.backgroundColor
+          }
+        });
+
+        profileId = await saveProfile(profileToSave);
+        console.log('✅ Profile created via unified context successfully:', profileId);
       }
 
-      console.log('💾 Saving profile to Firebase via unified context with logo data:', {
-        businessName: profileToSave.businessName,
-        hasLogo: !!profileToSave.logoDataUrl,
-        logoLength: profileToSave.logoDataUrl?.length || 0,
-        colors: {
-          primaryColor: profileToSave.primaryColor,
-          accentColor: profileToSave.accentColor,
-          backgroundColor: profileToSave.backgroundColor
-        }
-      });
-
-      // Save to MongoDB using unified context (this will automatically update the unified brand state)
-      const profileId = await saveProfile(profileToSave);
-
-      console.log('✅ Profile saved to MongoDB via unified context successfully:', profileId);
-
       toast({
-        title: "Profile Saved Successfully!",
-        description: "Your brand profile has been saved to the cloud with logo included.",
+        title: mode === 'edit' ? "Profile Updated Successfully!" : "Profile Created Successfully!",
+        description: mode === 'edit'
+          ? "Your brand profile has been updated with the new information and logo."
+          : "Your brand profile has been created and saved to the cloud with logo included.",
       });
 
       // Call completion callback

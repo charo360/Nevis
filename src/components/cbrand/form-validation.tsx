@@ -103,10 +103,9 @@ export function validateBrandProfile(profile: CompleteBrandProfile, step?: numbe
 
   // Step 3 validation (Logo Upload)
   if (!step || step >= 3) {
-    // Temporarily removed logo requirement to test logo persistence
-    // if (!profile.logoDataUrl) {
-    //   errors.logoDataUrl = 'Logo upload is required to complete your brand profile';
-    // }
+    if (!profile.logoDataUrl) {
+      errors.logoDataUrl = 'Logo upload is required to complete your brand profile';
+    }
   }
 
   return {
