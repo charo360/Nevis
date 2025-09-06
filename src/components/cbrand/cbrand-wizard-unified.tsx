@@ -6,8 +6,7 @@ import { WebsiteAnalysisStep } from './steps/website-analysis-step';
 import { BrandDetailsStep } from './steps/brand-details-step';
 import { LogoUploadStepUnified } from './steps/logo-upload-step-unified';
 import { useUnifiedBrand } from '@/contexts/unified-brand-context';
-import { loadBrandProfileFirebaseFirst } from '@/lib/firebase/services/brand-profile-firebase-first';
-import { useUserId } from '@/hooks/use-firebase-auth';
+import { useAuth, useUserId } from '@/hooks/use-auth';
 import type { CompleteBrandProfile } from './cbrand-wizard';
 
 interface CbrandWizardUnifiedProps {
@@ -21,33 +20,28 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
   const [brandProfile, setBrandProfile] = useState<CompleteBrandProfile>({
     businessName: '',
     businessType: '',
-    businessDescription: '',
     description: '',
     location: '',
     services: [],
-    websiteUrl: '',
-    designExamples: [],
-    logoDataUrl: '',
+    targetAudience: '',
+    keyFeatures: '',
+    competitiveAdvantages: '',
+    contactPhone: '',
+    contactEmail: '',
+    contactAddress: '',
+    visualStyle: '',
+    writingTone: '',
+    contentThemes: '',
     primaryColor: '#3b82f6',
     accentColor: '#10b981',
     backgroundColor: '#f8fafc',
-    targetAudience: '',
-    brandPersonality: '',
-    competitorAnalysis: '',
-    uniqueSellingProposition: '',
-    brandValues: '',
-    communicationStyle: '',
-    visualStyle: '',
-    contentThemes: [],
-    socialMediaPlatforms: [],
-    contentGoals: [],
-    postingFrequency: '',
-    engagementStrategy: '',
-    hashtagStrategy: '',
-    isComplete: false,
-    version: '1.0',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    facebookUrl: '',
+    instagramUrl: '',
+    twitterUrl: '',
+    linkedinUrl: '',
+    websiteUrl: '',
+    logoDataUrl: '',
+    designExamples: [],
   });
 
   const { currentBrand, selectBrand, brands, saveProfile, updateProfile, refreshBrands } = useUnifiedBrand();
@@ -78,13 +72,15 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
           return;
         }
 
-        // For create mode or when no brand is selected, try to load from Firebase
+        // For create mode or when no brand is selected, try to load from unified context
         if (userId) {
-          console.log('🔄 Loading from Firebase for create mode or no current brand');
-          const savedProfile = await loadBrandProfileFirebaseFirst(userId);
-          if (savedProfile) {
+          console.log('🔄 Loading from unified context for create mode or no current brand');
+          await refreshBrands();
+          // Use the first available brand if any exist
+          if (brands.length > 0) {
+            const savedProfile = brands[0];
             setBrandProfile(savedProfile);
-            console.log('✅ Loaded existing profile from Firebase:', savedProfile.businessName);
+            console.log('✅ Loaded existing profile from unified context:', savedProfile.businessName);
             return;
           }
         }
