@@ -617,9 +617,11 @@ export default function HomePage() {
                   "Our AI agent cut post creation from 15 minutes to 30 seconds. Engagement soared by 300%! It's like having a designer that never sleeps."
                 </p>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white font-semibold">
-                    S
-                  </div>
+                  <img
+                    src="https://images.unsplash.com/photo-1494790108755-2616b612b786?w=40&h=40&fit=crop&crop=face&auto=format&q=80"
+                    alt="Sarah Chen"
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
                   <div>
                     <p className="font-semibold text-gray-900">Sarah Chen</p>
                     <p className="text-sm text-gray-600">Marketing Director, TechFlow</p>
@@ -640,9 +642,11 @@ export default function HomePage() {
                   "It's like a designer that never sleeps. Perfectly on-brand every time. The agent learns our style and creates content that looks like our team made it."
                 </p>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-400 rounded-full flex items-center justify-center text-white font-semibold">
-                    M
-                  </div>
+                  <img
+                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face&auto=format&q=80"
+                    alt="Marcus Rodriguez"
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
                   <div>
                     <p className="font-semibold text-gray-900">Marcus Rodriguez</p>
                     <p className="text-sm text-gray-600">Founder, GrowthLab</p>
@@ -663,9 +667,11 @@ export default function HomePage() {
                   "We serve 3x more clients with the same team. Crevo's agent is a game changer. The cultural intelligence makes our global campaigns resonate perfectly."
                 </p>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-semibold">
-                    A
-                  </div>
+                  <img
+                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face&auto=format&q=80"
+                    alt="Alex Thompson"
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
                   <div>
                     <p className="font-semibold text-gray-900">Alex Thompson</p>
                     <p className="text-sm text-gray-600">CEO, Creative Studio</p>
