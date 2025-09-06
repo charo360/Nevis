@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Upload, Image as ImageIcon, ArrowLeft, Save, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUnifiedBrand } from '@/contexts/unified-brand-context';
-import { useUserId } from '@/hooks/use-firebase-auth';
+import { useAuth } from '@/hooks/use-auth';
 import type { CompleteBrandProfile } from '../cbrand-wizard';
 
 interface LogoUploadStepUnifiedProps {
@@ -28,7 +28,7 @@ export function LogoUploadStepUnified({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { saveProfile } = useUnifiedBrand();
-  const userId = useUserId();
+  const { user } = useAuth();
 
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -67,7 +67,7 @@ export function LogoUploadStepUnified({
   };
 
   const handleSave = async () => {
-    if (!userId) {
+    if (!user?.userId) {
       toast({
         variant: "destructive",
         title: "Authentication Required",

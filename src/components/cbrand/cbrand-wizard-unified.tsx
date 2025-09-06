@@ -6,8 +6,7 @@ import { WebsiteAnalysisStep } from './steps/website-analysis-step';
 import { BrandDetailsStep } from './steps/brand-details-step';
 import { LogoUploadStepUnified } from './steps/logo-upload-step-unified';
 import { useUnifiedBrand } from '@/contexts/unified-brand-context';
-import { loadBrandProfileFirebaseFirst } from '@/lib/firebase/services/brand-profile-firebase-first';
-import { useUserId } from '@/hooks/use-firebase-auth';
+import { useAuth } from '@/hooks/use-auth';
 import type { CompleteBrandProfile } from './cbrand-wizard';
 
 interface CbrandWizardUnifiedProps {
@@ -51,7 +50,7 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
   });
 
   const { currentBrand, selectBrand, brands, saveProfile, updateProfile, refreshBrands } = useUnifiedBrand();
-  const userId = useUserId();
+  const { user } = useAuth();
   const router = useRouter();
 
   // Load existing profile on component mount
@@ -61,7 +60,7 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
         console.log('🔄 Loading brand profile (Unified). Mode:', mode, 'BrandId:', brandId, 'CurrentBrand:', currentBrand?.businessName);
 
         // If we're in edit mode with a specific brandId, load that brand
-        if (mode === 'edit' && brandId && userId) {
+        if (mode === 'edit' && brandId && user?.userId) {
           console.log('🔄 Loading brand for edit mode:', brandId);
           // For now, we'll use the current brand from context if it matches
           if (currentBrand && currentBrand.id === brandId) {
@@ -78,13 +77,13 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
           return;
         }
 
-        // For create mode or when no brand is selected, try to load from Firebase
-        if (userId) {
-          console.log('🔄 Loading from Firebase for create mode or no current brand');
-          const savedProfile = await loadBrandProfileFirebaseFirst(userId);
-          if (savedProfile) {
-            setBrandProfile(savedProfile);
-            console.log('✅ Loaded existing profile from Firebase:', savedProfile.businessName);
+        // For create mode or when no brand is selected, use existing brands from MongoDB
+        if (user?.userId && brands.length > 0) {
+          console.log('🔄 Using existing brands from MongoDB');
+          const firstBrand = brands[0];
+          if (firstBrand) {
+            setBrandProfile(firstBrand);
+            console.log('✅ Loaded existing profile from MongoDB:', firstBrand.businessName);
             return;
           }
         }
@@ -96,7 +95,7 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
     };
 
     loadExistingProfile();
-  }, [mode, brandId, currentBrand, userId]);
+  }, [mode, brandId, currentBrand, user?.userId]);
 
   const updateBrandProfile = async (updates: Partial<CompleteBrandProfile>) => {
     console.log('🔧 UNIFIED WIZARD updateBrandProfile called with updates:', updates);
@@ -104,11 +103,11 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
     // Update local state immediately
     setBrandProfile(prev => ({ ...prev, ...updates }));
 
-    // If this is a color update and we have a current brand with an ID, save to Firebase immediately
+    // If this is a color update and we have a current brand with an ID, save to MongoDB immediately
     const isColorUpdate = updates.primaryColor || updates.accentColor || updates.backgroundColor;
     if (isColorUpdate && currentBrand?.id) {
       try {
-        console.log('🎨 Color update detected, saving to Firebase:', {
+        console.log('🎨 Color update detected, saving to MongoDB:', {
           brandId: currentBrand.id,
           updates: {
             primaryColor: updates.primaryColor,
@@ -117,16 +116,16 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
           }
         });
 
-        // Save color changes to Firebase immediately
+        // Save color changes to MongoDB immediately
         await updateProfile(currentBrand.id, updates);
 
         // Update the current brand in the unified context with new colors
         const updatedBrand = { ...currentBrand, ...updates };
         selectBrand(updatedBrand);
 
-        console.log('✅ Color changes saved to Firebase and context updated');
+        console.log('✅ Color changes saved to MongoDB and context updated');
       } catch (error) {
-        console.error('❌ Failed to save color changes to Firebase:', error);
+        console.error('❌ Failed to save color changes to MongoDB:', error);
         // Don't throw error to avoid disrupting user experience
       }
     }
@@ -158,7 +157,7 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
       });
       selectBrand(immediateProfile);
 
-      // Then refresh brands from Firebase to ensure consistency
+      // Then refresh brands from MongoDB to ensure consistency
       console.log('🔄 Refreshing brands from unified context for consistency...');
       await refreshBrands();
 
@@ -166,8 +165,8 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
       setTimeout(() => {
         const updatedProfile = brands.find(brand => brand.id === profileId);
         if (updatedProfile) {
-          console.log('✅ Re-selecting with fresh Firebase data:', updatedProfile.businessName);
-          console.log('🎨 Fresh colors from Firebase:', {
+          console.log('✅ Re-selecting with fresh MongoDB data:', updatedProfile.businessName);
+          console.log('🎨 Fresh colors from MongoDB:', {
             primaryColor: updatedProfile.primaryColor,
             accentColor: updatedProfile.accentColor,
             backgroundColor: updatedProfile.backgroundColor
