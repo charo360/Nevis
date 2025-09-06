@@ -300,19 +300,26 @@ export class AdvancedContentGenerator {
     // Create headline templates based on content type
     const templates = {
       promotional: [
-        `${this.getRandomElement(powerWords)} ${profile.businessName} ${this.getRandomElement(businessIntelligence.valuePropositions)}`,
-        `${this.getRandomElement(culturalContext.localPhrases)} ${this.getRandomElement(trendingWords)} at ${profile.businessName}`,
-        `${profile.businessName}: ${this.getRandomElement(businessIntelligence.businessStrengths)} that ${this.getRandomElement(businessIntelligence.targetEmotions)}`,
+        `${this.getRandomElement(powerWords)} ${this.getRandomElement(businessIntelligence.valuePropositions)} at ${profile.businessName}`,
+        `${this.getRandomElement(culturalContext.localPhrases)} ${this.getRandomElement(trendingWords)} from ${profile.businessName}`,
+        `${this.getRandomElement(businessIntelligence.businessStrengths)} that ${this.getRandomElement(businessIntelligence.targetEmotions)} - ${profile.businessName}`,
+        `${this.getRandomElement(trendingWords)} ${this.getRandomElement(businessIntelligence.valuePropositions)}`,
+        `${this.getRandomElement(powerWords)} ${this.getRandomElement(businessIntelligence.businessStrengths)}`,
+        `${this.getRandomElement(businessIntelligence.targetEmotions)} ${this.getRandomElement(trendingWords)}`,
       ],
       educational: [
         `${this.getRandomElement(trendingWords)} secrets from ${profile.businessName}`,
-        `Why ${profile.businessName} ${this.getRandomElement(businessIntelligence.businessStrengths)} matters`,
+        `Why ${this.getRandomElement(businessIntelligence.businessStrengths)} matters for your ${this.getRandomElement(businessIntelligence.industryKeywords)}`,
         `The ${this.getRandomElement(powerWords)} guide to ${this.getRandomElement(businessIntelligence.industryKeywords)}`,
+        `${this.getRandomElement(powerWords)} ${this.getRandomElement(businessIntelligence.industryKeywords)} insights`,
+        `${this.getRandomElement(businessIntelligence.businessStrengths)} explained`,
       ],
       entertaining: [
-        `${this.getRandomElement(culturalContext.localPhrases)}! ${profile.businessName} ${this.getRandomElement(trendingWords)}`,
-        `${profile.businessName} + ${this.getRandomElement(trendingWords)} = ${this.getRandomElement(powerWords)}`,
-        `When ${this.getRandomElement(businessIntelligence.targetEmotions)} meets ${profile.businessName}`,
+        `${this.getRandomElement(culturalContext.localPhrases)}! ${this.getRandomElement(trendingWords)} ${this.getRandomElement(businessIntelligence.valuePropositions)}`,
+        `${this.getRandomElement(trendingWords)} + ${this.getRandomElement(businessIntelligence.businessStrengths)} = ${this.getRandomElement(powerWords)}`,
+        `When ${this.getRandomElement(businessIntelligence.targetEmotions)} meets ${this.getRandomElement(trendingWords)}`,
+        `${this.getRandomElement(powerWords)} ${this.getRandomElement(businessIntelligence.targetEmotions)}`,
+        `${this.getRandomElement(culturalContext.localPhrases)} ${this.getRandomElement(businessIntelligence.valuePropositions)}`,
       ],
       seasonal: [
         `${this.getRandomElement(trendingInsights.seasonalTrends)} ${this.getRandomElement(powerWords)} at ${profile.businessName}`,

@@ -149,7 +149,7 @@ function buildDALLE3Prompt(input: OpenAIEnhancedDesignInput): string {
   // Advanced people inclusion logic for better engagement with HD face rendering
   const shouldIncludePeople = shouldIncludePeopleInDesign(businessType, imageText, visualStyle);
   const peopleInstructions = shouldIncludePeople
-    ? 'Include diverse, authentic people (various ethnicities, ages) with PERFECT FACIAL FEATURES - complete faces, symmetrical features, natural expressions, professional poses. Ensure faces are fully visible, well-lit, and anatomically correct with no deformations or missing features.'
+    ? getCulturallyAppropriatePersonDescription(location)
     : 'Focus on clean, minimalist design without people, emphasizing the product/service/message with ultra-sharp details.';
 
   // Enhanced platform-specific optimization
@@ -563,4 +563,47 @@ ${artifactInstructions}
 - Follow these instructions precisely when creating the design
 - These instructions specify how to use specific content elements
 ` : ''}`;
+}
+
+function getCulturallyAppropriatePersonDescription(location: string): string {
+  const locationKey = location.toLowerCase();
+
+  // African countries - prioritize Black/African people for cultural authenticity
+  const africanCountries = ['kenya', 'nigeria', 'south africa', 'ghana', 'uganda', 'tanzania', 'ethiopia', 'rwanda', 'zambia', 'zimbabwe', 'botswana', 'namibia', 'malawi', 'mozambique', 'senegal', 'mali', 'burkina faso', 'ivory coast', 'cameroon', 'chad', 'sudan', 'egypt', 'morocco', 'algeria', 'tunisia', 'libya'];
+
+  for (const country of africanCountries) {
+    if (locationKey.includes(country)) {
+      return 'Include authentic Black/African people with PERFECT FACIAL FEATURES - complete faces, symmetrical features, natural expressions, professional poses. Show local African people in modern, professional settings that reflect contemporary African life. Ensure faces are fully visible, well-lit, and anatomically correct with no deformations or missing features. Emphasize cultural authenticity and local representation.';
+    }
+  }
+
+  // Asian countries - prioritize Asian people
+  const asianCountries = ['china', 'japan', 'korea', 'india', 'thailand', 'vietnam', 'singapore', 'malaysia', 'indonesia', 'philippines', 'bangladesh', 'pakistan', 'sri lanka'];
+
+  for (const country of asianCountries) {
+    if (locationKey.includes(country)) {
+      return 'Include authentic Asian people with PERFECT FACIAL FEATURES - complete faces, symmetrical features, natural expressions, professional poses. Show local Asian people in modern, professional settings. Ensure faces are fully visible, well-lit, and anatomically correct with no deformations or missing features. Emphasize cultural authenticity and local representation.';
+    }
+  }
+
+  // Middle Eastern countries
+  const middleEasternCountries = ['saudi arabia', 'uae', 'qatar', 'kuwait', 'bahrain', 'oman', 'jordan', 'lebanon', 'syria', 'iraq', 'iran', 'turkey', 'israel', 'palestine'];
+
+  for (const country of middleEasternCountries) {
+    if (locationKey.includes(country)) {
+      return 'Include authentic Middle Eastern people with PERFECT FACIAL FEATURES - complete faces, symmetrical features, natural expressions, professional poses. Show local Middle Eastern people in modern, professional settings. Ensure faces are fully visible, well-lit, and anatomically correct with no deformations or missing features. Emphasize cultural authenticity and local representation.';
+    }
+  }
+
+  // Latin American countries
+  const latinAmericanCountries = ['mexico', 'brazil', 'argentina', 'colombia', 'peru', 'venezuela', 'chile', 'ecuador', 'bolivia', 'paraguay', 'uruguay', 'guatemala', 'honduras', 'el salvador', 'nicaragua', 'costa rica', 'panama', 'cuba', 'dominican republic', 'puerto rico'];
+
+  for (const country of latinAmericanCountries) {
+    if (locationKey.includes(country)) {
+      return 'Include authentic Latino/Hispanic people with PERFECT FACIAL FEATURES - complete faces, symmetrical features, natural expressions, professional poses. Show local Latino/Hispanic people in modern, professional settings. Ensure faces are fully visible, well-lit, and anatomically correct with no deformations or missing features. Emphasize cultural authenticity and local representation.';
+    }
+  }
+
+  // Default for Western countries and others - diverse representation
+  return 'Include diverse, authentic people (various ethnicities, ages) with PERFECT FACIAL FEATURES - complete faces, symmetrical features, natural expressions, professional poses. Ensure faces are fully visible, well-lit, and anatomically correct with no deformations or missing features. Show people in modern, professional settings with cultural sensitivity.';
 }
