@@ -16,13 +16,15 @@ interface LogoUploadStepUnifiedProps {
   updateBrandProfile: (updates: Partial<CompleteBrandProfile>) => void;
   onPrevious: () => void;
   onSaveComplete: (profileId: string) => void;
+  mode?: string | null;
 }
 
 export function LogoUploadStepUnified({
   brandProfile,
   updateBrandProfile,
   onPrevious,
-  onSaveComplete
+  onSaveComplete,
+  mode
 }: LogoUploadStepUnifiedProps) {
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -87,6 +89,12 @@ export function LogoUploadStepUnified({
         isComplete: true,
         version: '1.0',
       };
+
+      // In create mode, remove any existing ID to ensure a new profile is created
+      if (mode === 'create' && profileToSave.id) {
+        delete profileToSave.id;
+        console.log('🆕 Create mode: Removed existing ID to create new profile');
+      }
 
       console.log('💾 Saving profile to Firebase via unified context with logo data:', {
         businessName: profileToSave.businessName,

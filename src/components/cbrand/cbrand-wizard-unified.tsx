@@ -77,7 +77,14 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
           return;
         }
 
-        // For create mode or when no brand is selected, use existing brands from MongoDB
+        // For create mode, always start with empty profile
+        if (mode === 'create') {
+          console.log('📝 Create mode: Starting with empty profile');
+          // Keep the default empty profile that was set in useState
+          return;
+        }
+
+        // For non-create mode, try to load existing brands from MongoDB
         if (user?.userId && brands.length > 0) {
           console.log('🔄 Using existing brands from MongoDB');
           const firstBrand = brands[0];
@@ -250,6 +257,7 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
             updateBrandProfile={updateBrandProfile}
             onPrevious={handlePrevious}
             onSaveComplete={handleSaveComplete}
+            mode={mode}
           />
         );
       default:
