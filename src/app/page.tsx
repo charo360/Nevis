@@ -253,10 +253,10 @@ export default function HomePage() {
             </div>
 
             <h1 className="text-6xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">
-              Meet the First AI
+              Meet the First
               <br />
               <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Brand Designer
+                AI Designer
               </span>
             </h1>
 
