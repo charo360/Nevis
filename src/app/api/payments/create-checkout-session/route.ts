@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import adminApp, { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { verifyToken } from '@/lib/auth/jwt';
+import { userService } from '@/lib/mongodb/database';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '2025-07-30.basil' });
 
@@ -22,9 +23,7 @@ export async function POST(req: Request) {
     }
 
     const idToken = authHeader.split(' ')[1];
-    const decoded = await adminAuth.verifyIdToken(idToken).catch((e) => {
-      return null;
-    });
+    const decoded = verifyToken(idToken);
 
     if (!decoded) return NextResponse.json({ error: 'Unauthorized - invalid token' }, { status: 401 });
 
@@ -36,7 +35,7 @@ export async function POST(req: Request) {
     // For free plan, don't create Stripe session — create pending succeeded payment and return a simple response
     if (planId === 'free') {
       const doc = {
-        userId: decoded.uid,
+        userId: decoded.userId,
         planId,
         amount: 0,
         currency: 'usd',
@@ -47,7 +46,8 @@ export async function POST(req: Request) {
       } as any;
 
       try {
-        await adminDb.collection('payments').add(doc);
+        // TODO: Save to MongoDB payments collection
+        console.log('Free plan payment recorded:', doc);
       } catch (e) {
       }
 
@@ -73,14 +73,14 @@ export async function POST(req: Request) {
       ],
       success_url: successUrl,
       cancel_url: cancelUrl,
-      metadata: { userId: decoded.uid, planId },
-      client_reference_id: decoded.uid,
+      metadata: { userId: decoded.userId, planId },
+      client_reference_id: decoded.userId,
     });
 
     // persist pending payment keyed by session id
     try {
       const payload = {
-        userId: decoded.uid,
+        userId: decoded.userId,
         planId,
         amount: plan.amountCents / 100,
         currency: 'usd',
@@ -90,7 +90,8 @@ export async function POST(req: Request) {
         createdAt: new Date().toISOString(),
       } as any;
 
-      await adminDb.collection('payments').doc(session.id).set(payload);
+      // TODO: Save to MongoDB payments collection
+      console.log('Payment session created:', payload);
     } catch (e) {
       // continue — do not leak internal error to end user unnecessarily
     }

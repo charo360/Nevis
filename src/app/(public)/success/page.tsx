@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { auth } from '@/lib/firebase/config';
-import { useFirebaseAuth } from '@/hooks/use-firebase-auth';
+import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Sparkles, ArrowRight } from 'lucide-react';
@@ -14,7 +13,7 @@ export default function PaymentSuccessPage() {
   const [recording, setRecording] = useState<'idle' | 'loading' | 'done' | 'failed'>('idle');
   const search = useSearchParams();
   const router = useRouter();
-  const { user } = useFirebaseAuth();
+  const { user, getAccessToken } = useAuth();
 
   const sessionId = search?.get('session_id') || null;
 
@@ -26,21 +25,30 @@ export default function PaymentSuccessPage() {
 
   useEffect(() => {
     // If we have a session_id and user is logged in, attempt to record payment
-    if (!sessionId) return;
+    if (!sessionId || !user) return;
 
     const record = async () => {
       setRecording('loading');
       try {
-        const idToken = auth?.currentUser ? await auth.currentUser.getIdToken() : null;
+        const idToken = getAccessToken();
         if (!idToken) {
           setRecording('failed');
           return;
         }
 
+        // For now, we'll use default values - in a real app you'd fetch session details from Stripe
         const res = await fetch('/api/payments/record', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ idToken, sessionId, planId: 'growth', amount: 29, currency: 'usd' })
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({
+            sessionId,
+            planId: 'growth', // TODO: Get from session or URL params
+            amount: 29, // TODO: Get from session
+            currency: 'usd'
+          })
         });
 
         const json = await res.json();
@@ -60,7 +68,7 @@ export default function PaymentSuccessPage() {
     }, 800);
 
     return () => clearTimeout(t);
-  }, [sessionId, user]);
+  }, [sessionId, user, getAccessToken]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center py-12 px-4">
