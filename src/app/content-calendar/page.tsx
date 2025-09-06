@@ -16,6 +16,7 @@ import type { CompleteBrandProfile } from "@/components/cbrand/cbrand-wizard";
 import { useRouter } from "next/navigation";
 import { useBrand } from "@/contexts/brand-context-mongo";
 import { UnifiedBrandLayout, BrandContent, BrandSwitchingStatus } from "@/components/layout/unified-brand-layout";
+import { useUnifiedBrand, useBrandStorage, useBrandChangeListener } from "@/contexts/unified-brand-context";
 import { STORAGE_FEATURES } from "@/lib/services/brand-scoped-storage";
 import { SidebarInset } from "@/components/ui/sidebar";
 
