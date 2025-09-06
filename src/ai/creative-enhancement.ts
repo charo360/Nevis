@@ -1078,7 +1078,7 @@ IMPORTANT:
       caption,
       callToAction,
       engagementHooks,
-      designDirection: removeWordRepetitions(designMatch?.[1]?.trim() || `Clean, professional design with local elements. IMPORTANT: Include the CTA "${callToAction}" as prominent text overlay on the design - make it bold, readable, and visually striking like "PAYA: YOUR FUTURE, NOW!" style.`),
+      designDirection: removeWordRepetitions(designMatch?.[1]?.trim() || `Clean, professional design with local elements. IMPORTANT: Include the CTA "${callToAction}" as prominent text overlay on the design - make it bold, readable, and visually striking with professional marketing appeal.`),
       unifiedTheme,
       keyMessage,
       hashtags: viralHashtags.total, // Add viral hashtags to response

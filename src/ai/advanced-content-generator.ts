@@ -28,6 +28,7 @@ export interface SocialMediaPost {
   cta: string;
   hashtags: string[];
   platform: string;
+  imageUrl?: string; // Add imageUrl field
   engagement?: number;
   performance?: 'high' | 'medium' | 'low';
 }
@@ -297,34 +298,40 @@ export class AdvancedContentGenerator {
     const powerWords = [...businessIntelligence.industryKeywords, ...culturalContext.localPhrases];
     const trendingWords = trendingInsights.currentTrends.slice(0, 5);
 
-    // Create headline templates based on content type
+    // Create headline templates based on content type - AVOID "CompanyName: FAST, EASY, BETTER" patterns
     const templates = {
       promotional: [
-        `${this.getRandomElement(powerWords)} ${this.getRandomElement(businessIntelligence.valuePropositions)} at ${profile.businessName}`,
-        `${this.getRandomElement(culturalContext.localPhrases)} ${this.getRandomElement(trendingWords)} from ${profile.businessName}`,
-        `${this.getRandomElement(businessIntelligence.businessStrengths)} that ${this.getRandomElement(businessIntelligence.targetEmotions)} - ${profile.businessName}`,
+        // Creative, engaging headlines without company name prefix
+        `${this.getRandomElement(powerWords)} ${this.getRandomElement(businessIntelligence.valuePropositions)}`,
+        `${this.getRandomElement(businessIntelligence.businessStrengths)} That ${this.getRandomElement(businessIntelligence.targetEmotions)}`,
         `${this.getRandomElement(trendingWords)} ${this.getRandomElement(businessIntelligence.valuePropositions)}`,
-        `${this.getRandomElement(powerWords)} ${this.getRandomElement(businessIntelligence.businessStrengths)}`,
+        `${this.getRandomElement(culturalContext.localPhrases)} ${this.getRandomElement(businessIntelligence.businessStrengths)}`,
         `${this.getRandomElement(businessIntelligence.targetEmotions)} ${this.getRandomElement(trendingWords)}`,
+        `Revolutionary ${this.getRandomElement(businessIntelligence.valuePropositions)}`,
+        `Experience ${this.getRandomElement(businessIntelligence.businessStrengths)}`,
+        `Discover ${this.getRandomElement(powerWords)} Solutions`,
       ],
       educational: [
-        `${this.getRandomElement(trendingWords)} secrets from ${profile.businessName}`,
-        `Why ${this.getRandomElement(businessIntelligence.businessStrengths)} matters for your ${this.getRandomElement(businessIntelligence.industryKeywords)}`,
-        `The ${this.getRandomElement(powerWords)} guide to ${this.getRandomElement(businessIntelligence.industryKeywords)}`,
-        `${this.getRandomElement(powerWords)} ${this.getRandomElement(businessIntelligence.industryKeywords)} insights`,
-        `${this.getRandomElement(businessIntelligence.businessStrengths)} explained`,
+        `${this.getRandomElement(trendingWords)} Secrets Revealed`,
+        `Why ${this.getRandomElement(businessIntelligence.businessStrengths)} Matters`,
+        `The Ultimate ${this.getRandomElement(businessIntelligence.industryKeywords)} Guide`,
+        `${this.getRandomElement(powerWords)} ${this.getRandomElement(businessIntelligence.industryKeywords)} Insights`,
+        `${this.getRandomElement(businessIntelligence.businessStrengths)} Explained Simply`,
+        `Master ${this.getRandomElement(businessIntelligence.industryKeywords)} Today`,
       ],
       entertaining: [
-        `${this.getRandomElement(culturalContext.localPhrases)}! ${this.getRandomElement(trendingWords)} ${this.getRandomElement(businessIntelligence.valuePropositions)}`,
-        `${this.getRandomElement(trendingWords)} + ${this.getRandomElement(businessIntelligence.businessStrengths)} = ${this.getRandomElement(powerWords)}`,
-        `When ${this.getRandomElement(businessIntelligence.targetEmotions)} meets ${this.getRandomElement(trendingWords)}`,
-        `${this.getRandomElement(powerWords)} ${this.getRandomElement(businessIntelligence.targetEmotions)}`,
-        `${this.getRandomElement(culturalContext.localPhrases)} ${this.getRandomElement(businessIntelligence.valuePropositions)}`,
+        `${this.getRandomElement(culturalContext.localPhrases)}! ${this.getRandomElement(trendingWords)} Magic`,
+        `${this.getRandomElement(trendingWords)} + ${this.getRandomElement(businessIntelligence.businessStrengths)} = Amazing`,
+        `When ${this.getRandomElement(businessIntelligence.targetEmotions)} Meets Innovation`,
+        `${this.getRandomElement(powerWords)} ${this.getRandomElement(businessIntelligence.targetEmotions)} Awaits`,
+        `${this.getRandomElement(culturalContext.localPhrases)} Excellence`,
+        `Pure ${this.getRandomElement(businessIntelligence.valuePropositions)} Energy`,
       ],
       seasonal: [
-        `${this.getRandomElement(trendingInsights.seasonalTrends)} ${this.getRandomElement(powerWords)} at ${profile.businessName}`,
-        `${profile.businessName}'s ${this.getRandomElement(businessIntelligence.seasonalOpportunities)}`,
-        `${this.getRandomElement(culturalContext.localEvents)} special: ${this.getRandomElement(businessIntelligence.valuePropositions)}`,
+        `${this.getRandomElement(trendingInsights.seasonalTrends)} Special Edition`,
+        `Limited Time ${this.getRandomElement(businessIntelligence.seasonalOpportunities)}`,
+        `${this.getRandomElement(culturalContext.localEvents)} Celebration`,
+        `Seasonal ${this.getRandomElement(businessIntelligence.valuePropositions)} Magic`,
       ],
     };
 
