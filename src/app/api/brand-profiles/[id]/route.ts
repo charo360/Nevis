@@ -31,10 +31,10 @@ export async function GET(
 // PUT /api/brand-profiles/[id] - Update brand profile
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const profileId = params.id;
+    const { id: profileId } = await params;
     const updates = await request.json();
 
     await brandProfileMongoService.updateBrandProfile(profileId, updates);
@@ -51,10 +51,10 @@ export async function PUT(
 // DELETE /api/brand-profiles/[id] - Delete brand profile
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const profileId = params.id;
+    const { id: profileId } = await params;
 
     await brandProfileMongoService.deleteBrandProfile(profileId);
     return NextResponse.json({ success: true });
