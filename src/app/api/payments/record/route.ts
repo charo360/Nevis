@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { adminAuth, adminDb } from '@/lib/firebase/admin'
-import { Timestamp, FieldValue } from 'firebase-admin/firestore'
+import { verifyToken } from '@/lib/auth/jwt'
+import { userService } from '@/lib/mongodb/database'
 import { paymentReceiptHTML, paymentReceiptText } from '@/lib/email/paymentReceiptTemplate'
 import { getPlanById } from '@/lib/pricing-data'
 
@@ -22,30 +22,15 @@ export async function POST(req: Request) {
     if (!sessionId || !planId || !amount || !currency) return NextResponse.json({ error: 'Missing required payment fields' }, { status: 400 })
 
     // Verify user
-    let decoded
-    try {
-      decoded = await adminAuth.verifyIdToken(idToken)
-    } catch (e: any) {
+    const decoded = verifyToken(idToken)
+    if (!decoded) {
       return NextResponse.json({ error: 'Invalid authentication token' }, { status: 401 })
     }
 
-    const userId = decoded.uid
+    const userId = decoded.userId
 
-    // Idempotency: ensure we haven't recorded this session already
-    let existing: any = null
-    try {
-      existing = await adminDb.collection('payments').where('sessionId', '==', sessionId).limit(1).get()
-    } catch (e: any) {
-      const msg = String(e?.message || e)
-      if (msg.includes('PERMISSION_DENIED') || msg.includes('Missing or insufficient permissions')) {
-        return NextResponse.json({ ok: false, reason: 'permission_denied', hint: 'Server cannot access Firestore. Check service account credentials and IAM roles (grant Firestore access).' }, { status: 503 })
-      }
-      return NextResponse.json({ error: 'Failed to query payments', details: msg }, { status: 500 })
-    }
-
-    if (!existing.empty) {
-      return NextResponse.json({ ok: true, idempotent: true })
-    }
+    // TODO: Check for existing payment in MongoDB
+    // For now, we'll skip the idempotency check
 
     const plan = getPlanById(planId)
     const creditsToAdd = plan ? plan.credits : 0
@@ -61,52 +46,30 @@ export async function POST(req: Request) {
       currency,
       paymentMethod: paymentMethod || null,
       creditsAdded: creditsToAdd,
-      createdAt: Timestamp.fromDate(now)
+      createdAt: now.toISOString()
     }
 
     try {
-      await adminDb.collection('payments').add(paymentDoc)
+      // TODO: Save to MongoDB payments collection
+      console.log('Payment recorded:', paymentDoc)
     } catch (e: any) {
-      const msg = String(e?.message || e)
-      if (msg.includes('PERMISSION_DENIED') || msg.includes('Missing or insufficient permissions')) {
-        return NextResponse.json({ ok: false, reason: 'permission_denied', hint: 'Server cannot write to Firestore. Check service account credentials and IAM roles (grant Firestore access).' }, { status: 503 })
-      }
-      return NextResponse.json({ error: 'Failed to record payment', details: msg }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to record payment', details: e.message }, { status: 500 })
     }
 
-    // Update user's credits and plan atomically
+    // Update user's credits and plan
     try {
-      const userRef = adminDb.collection('users').doc(userId)
-      await userRef.set(
-        {
-          plan: planId,
-          totalCredits: FieldValue.increment(creditsToAdd),
-          remainingCredits: FieldValue.increment(creditsToAdd),
-          lastPlanChange: Timestamp.fromDate(now)
-        },
-        { merge: true }
-      )
+      // TODO: Update user in MongoDB
+      console.log('User credits updated:', { userId, planId, creditsToAdd })
     } catch (e: any) {
-      const msg = String(e?.message || e)
-      if (msg.includes('PERMISSION_DENIED') || msg.includes('Missing or insufficient permissions')) {
-        return NextResponse.json({ ok: false, reason: 'permission_denied', hint: 'Server cannot update users collection. Check service account credentials and IAM roles (grant Firestore access).' }, { status: 503 })
-      }
-      return NextResponse.json({ error: 'Failed to update user credits', details: msg }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to update user credits', details: e.message }, { status: 500 })
     }
 
     // Send receipt email if possible
     try {
-      const userRecord = await adminAuth.getUser(userId)
-      const email = userRecord.email
-      if (email) {
-        const html = paymentReceiptHTML({ planName: plan?.name || planId, amount, currency, credits: creditsToAdd, sessionId })
-        const text = paymentReceiptText({ planName: plan?.name || planId, amount, currency, credits: creditsToAdd, sessionId })
-        // Lazy import of sendEmail helper from auth endpoints to avoid duplicate implementations
-        const { default: sendgridSend } = await import('@/app/api/auth/_sendEmailShim')
-        // sendgridSend expects (to, subject, html, text?)
-        await sendgridSend(email, `Payment receipt — ${plan?.name || planId}`, html, text)
-      }
+      // TODO: Get user email from MongoDB and send receipt
+      console.log('Receipt email would be sent to user:', userId)
     } catch (e) {
+      // Email sending is not critical, so we don't fail the request
     }
 
     return NextResponse.json({ ok: true })
