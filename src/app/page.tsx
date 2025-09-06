@@ -348,8 +348,8 @@ export default function HomePage() {
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-4">🧠 Multi-AI Architecture</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  Combines <strong>Revo 1.0, 1.5, and 2.0 agents</strong> for tailored quality and content types.
-                  Choose the right AI power for your specific needs and budget.
+                  <strong>Multiple quality tiers</strong> trained on thousands of professional designs.
+                  Choose the perfect balance of quality and speed for your content needs.
                 </p>
               </CardContent>
             </Card>
@@ -699,7 +699,7 @@ export default function HomePage() {
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">3 AI Models in One Platform</h3>
-                  <p className="text-gray-600">Gemini 2.5 Flash + OpenAI GPT + AIML FLUX working together. Choose quality level based on your needs and budget.</p>
+                  <p className="text-gray-600">We've trained our model with thousands of professional designs to understand what makes great visual content.</p>
                 </div>
               </div>
 
@@ -810,31 +810,31 @@ export default function HomePage() {
 
             {/* AI Model Costs */}
             <div className="max-w-2xl mx-auto mb-12">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Credit Costs by AI Model:</h3>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Credit Costs by Quality Tier:</h3>
               <div className="grid grid-cols-3 gap-4">
                 <div className="p-4 border rounded-lg bg-white">
                   <div className="flex items-center justify-center mb-2">
                     <Zap className="w-5 h-5 text-blue-500" />
                   </div>
-                  <div className="text-sm font-medium">Revo 1.0</div>
+                  <div className="text-sm font-medium">Basic</div>
                   <div className="text-lg font-bold text-blue-600">1 credit</div>
-                  <div className="text-xs text-gray-500">Basic AI</div>
+                  <div className="text-xs text-gray-500">Fast & Efficient</div>
                 </div>
                 <div className="p-4 border rounded-lg bg-white">
                   <div className="flex items-center justify-center mb-2">
                     <Sparkles className="w-5 h-5 text-purple-500" />
                   </div>
-                  <div className="text-sm font-medium">Revo 1.5</div>
+                  <div className="text-sm font-medium">Enhanced</div>
                   <div className="text-lg font-bold text-purple-600">1.5 credits</div>
-                  <div className="text-xs text-gray-500">Enhanced AI</div>
+                  <div className="text-xs text-gray-500">Higher Quality</div>
                 </div>
                 <div className="p-4 border rounded-lg bg-white">
                   <div className="flex items-center justify-center mb-2">
                     <Brain className="w-5 h-5 text-indigo-500" />
                   </div>
-                  <div className="text-sm font-medium">Revo 2.0</div>
+                  <div className="text-sm font-medium">Premium</div>
                   <div className="text-lg font-bold text-indigo-600">2 credits</div>
-                  <div className="text-xs text-gray-500">Premium AI</div>
+                  <div className="text-xs text-gray-500">Best Quality</div>
                 </div>
               </div>
             </div>
@@ -1102,7 +1102,7 @@ export default function HomePage() {
               </div>
               <div>
                 <h4 className="font-semibold mb-2">What do credits do?</h4>
-                <p className="text-gray-600 text-sm">Credits power content generation: Revo 1.0 = 1 credit, Revo 1.5 = 1.5 credits, Revo 2.0 = 2 credits per post.</p>
+                <p className="text-gray-600 text-sm">Credits power content generation with different quality tiers: Basic = 1 credit, Enhanced = 1.5 credits, Premium = 2 credits per post.</p>
               </div>
               <div>
                 <h4 className="font-semibold mb-2">Do credits expire?</h4>
