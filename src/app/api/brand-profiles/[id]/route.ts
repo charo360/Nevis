@@ -29,7 +29,7 @@ export async function GET(
 
     const profileId = params.id;
 
-    const profile = await brandProfileMongoService.getBrandProfileById(profileId);
+    const profile = await brandProfileMongoService.loadBrandProfile(profileId);
     if (!profile) {
       return NextResponse.json(
         { error: 'Profile not found' },
@@ -83,7 +83,7 @@ export async function PUT(
     const updates = await request.json();
 
     // Verify the profile belongs to the authenticated user
-    const existingProfile = await brandProfileMongoService.getBrandProfileById(profileId);
+    const existingProfile = await brandProfileMongoService.loadBrandProfile(profileId);
     if (!existingProfile) {
       return NextResponse.json(
         { error: 'Profile not found' },
@@ -136,7 +136,7 @@ export async function DELETE(
     const { id: profileId } = await params;
 
     // Verify the profile belongs to the authenticated user
-    const existingProfile = await brandProfileMongoService.getBrandProfileById(profileId);
+    const existingProfile = await brandProfileMongoService.loadBrandProfile(profileId);
     if (!existingProfile) {
       return NextResponse.json(
         { error: 'Profile not found' },
