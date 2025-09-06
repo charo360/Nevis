@@ -58,6 +58,27 @@ CRITICAL: Each post must be completely different from previous generations:
 - Vary hashtag themes and combinations
 - Never repeat the same content pattern or messaging approach
 
+HEADLINE CREATIVITY REQUIREMENTS:
+❌ FORBIDDEN PATTERNS - NEVER USE THESE:
+- "Business Name: Description" (e.g., "PAYA: YOUR FUTURE, FLEXIBLE, FAST!")
+- "Business Name: Your Exclusive..." 
+- "Business Name: Smart Technology..."
+- Any headline starting with business name + colon
+- Formulaic business name prefixes
+
+✅ DYNAMIC CREATIVE APPROACH:
+- ANALYZE the specific business context, current trends, and target audience
+- DETERMINE the most effective psychological trigger for THIS moment
+- CHOOSE the optimal opening approach based on:
+  * Current trending topics and cultural moments
+  * Business type and industry dynamics
+  * Target audience pain points and desires
+  * Seasonal relevance and timing
+  * Platform-specific engagement patterns
+- CREATE headlines that feel fresh, relevant, and perfectly timed
+- FOCUS on customer outcomes and value, not business name prominence
+- AVOID repetitive patterns - each headline should be uniquely crafted for its context
+
 {{#if contentVariation}}
 MANDATORY CONTENT VARIATION APPROACH - {{{contentVariation}}}:
 
@@ -147,6 +168,35 @@ PSYCHOLOGICAL TRIGGERS FOR MAXIMUM ENGAGEMENT:
 ✅ **Reciprocity**: Valuable tips and free insights
 ✅ **Tribal Identity**: Community belonging and shared values
 
+INTELLIGENT CONTENT ANALYSIS FRAMEWORK:
+
+Before generating any content, perform this analysis:
+
+1. **CURRENT MOMENT ANALYSIS:**
+   - What's trending in {{{businessType}}} industry RIGHT NOW?
+   - What cultural moments or events are happening in {{{location}}}?
+   - What seasonal factors or timing opportunities exist?
+   - What psychological triggers would work best for this specific audience TODAY?
+
+2. **BUSINESS CONTEXT ANALYSIS:**
+   - What makes THIS specific business unique in the current market?
+   - What pain points are customers experiencing RIGHT NOW?
+   - What solutions or benefits are most relevant TODAY?
+   - How can we differentiate from competitors in this moment?
+
+3. **AUDIENCE PSYCHOLOGY ANALYSIS:**
+   - What emotions are people feeling in {{{location}}} right now?
+   - What would make them stop scrolling and engage?
+   - What language and tone would resonate most powerfully?
+   - What call-to-action would feel most natural and compelling?
+
+4. **PLATFORM OPTIMIZATION ANALYSIS:**
+   - What content performs best on {{{platform}}} at this time?
+   - What visual and text combinations drive engagement?
+   - How can we leverage current algorithm preferences?
+
+Use this analysis to create content that feels perfectly timed and contextually brilliant.
+
 CONTENT GENERATION REQUIREMENTS:
 
 Generate a comprehensive social media post with these components:
@@ -162,14 +212,17 @@ Generate a comprehensive social media post with these components:
    - Feel like it was written by a real person, not AI
 
 2. **CATCHY WORDS (catchyWords)**:
-   - Create relevant, business-focused catchy words (max 5 words)
+   - ANALYZE the current context, trends, and business situation to determine the most compelling headline
+   - Create relevant, business-focused catchy words (max 5 words) that feel perfectly timed
    - MUST be directly related to the specific business services/products
-   - Use clear, professional language that matches the business type
-   - Focus on the business value proposition or key service
+   - Use language that matches the business type AND current cultural moment
+   - Focus on the business value proposition or key service that resonates RIGHT NOW
    - Avoid generic phrases like "Banking Made Easy" or random financial terms
-   - Examples: For a restaurant: "Fresh Daily Specials", For a gym: "Transform Your Body", For a salon: "Expert Hair Care"
+   - CRITICAL: NEVER start with business name + colon pattern (e.g., "PAYA: YOUR FUTURE")
+   - CREATE headlines that feel fresh, relevant, and perfectly timed for this specific moment
+   - Consider: What would make THIS business stand out TODAY? What's the most compelling angle RIGHT NOW?
    - Required for ALL posts - this is the main visual text
-   - Optimize for visual impact and business relevance
+   - Optimize for visual impact, business relevance, and current cultural context
 
 3. **SUBHEADLINE (subheadline)** - OPTIONAL:
    - Add only when it would make the post more effective
@@ -194,31 +247,31 @@ Generate a comprehensive social media post with these components:
    - Optimize quantity for platform (Instagram: 20-30, LinkedIn: 3-5, etc.)
 
 6. **CONTENT VARIANTS (contentVariants)**:
-   Generate 2-3 alternative approaches:
+   Generate 2-3 alternative approaches based on your intelligent analysis:
 
-   **Variant 1 - Trending Topic Angle**:
-   - Hook into current trending conversation
-   - Connect trend to business value naturally
-   - Use viral content patterns
-   - Include shareability factors
+   **Variant 1 - [DYNAMIC ANGLE BASED ON CURRENT TRENDS]**:
+   - Analyze what's trending RIGHT NOW and create a variant that hooks into the most relevant conversation
+   - Connect the trend to business value in a way that feels natural and timely
+   - Use viral content patterns that are currently working
+   - Include shareability factors that match current social media behavior
 
-   **Variant 2 - Cultural Connection Angle**:
-   - Start with local cultural reference
-   - Show deep community understanding
-   - Use location-specific language naturally
-   - Build authentic local connections
+   **Variant 2 - [DYNAMIC ANGLE BASED ON CULTURAL MOMENT]**:
+   - Identify the most relevant cultural moment or local event happening NOW
+   - Show deep community understanding that feels current and authentic
+   - Use language and references that resonate with what people are experiencing TODAY
+   - Build connections that feel timely and relevant
 
-   **Variant 3 - Competitor Differentiation Angle**:
-   - Address common industry pain points differently
-   - Highlight unique business approach
-   - Use contrarian but respectful positioning
-   - Show authentic expertise and experience
+   **Variant 3 - [DYNAMIC ANGLE BASED ON AUDIENCE PSYCHOLOGY]**:
+   - Analyze what your specific audience needs to hear RIGHT NOW
+   - Address their current pain points or desires in a fresh way
+   - Use psychological triggers that are most effective for this moment
+   - Show authentic expertise that feels perfectly timed
 
    For each variant, provide:
    - The alternative caption content
-   - The strategic approach used
-   - Why this variant will drive traffic and engagement
-   - Cultural sensitivity considerations
+   - The strategic approach used (based on your analysis)
+   - Why this variant will drive traffic and engagement in THIS specific moment
+   - Cultural sensitivity considerations for the current context
 
 QUALITY STANDARDS:
 - Every word serves engagement or conversion purpose

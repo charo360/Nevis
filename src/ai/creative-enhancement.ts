@@ -31,6 +31,61 @@ function removeWordRepetitions(text: string): string {
   return cleanedWords.join(' ');
 }
 
+// Helper function to remove business name + colon pattern
+function cleanBusinessNamePattern(text: string): string {
+  // Remove patterns like "PAYA: FAST, EASY, BETTER" -> "FAST, EASY, BETTER"
+  // Remove patterns like "Business Name: Description" -> "Description"
+  // Handle various business name patterns
+  let cleaned = text
+    .replace(/^[A-Z\s]+:\s*/i, '') // Remove "BUSINESS NAME: "
+    .replace(/^[A-Z][a-z]+\s+[A-Z][a-z]+:\s*/i, '') // Remove "Business Name: "
+    .replace(/^[A-Z]+:\s*/i, '') // Remove "PAYA: "
+    .replace(/^[A-Z][a-z]+:\s*/i, '') // Remove "Paya: "
+    .trim();
+
+  // If the text is too short after cleaning, return original
+  if (cleaned.length < 3) {
+    return text;
+  }
+
+  return cleaned;
+}
+
+// Enhanced subheadline quality improvement function
+function enhanceSubheadlineQuality(subheadline: string, businessType: string, location: string): string {
+  // Remove extra punctuation and clean up
+  let enhanced = subheadline
+    .replace(/\s+/g, ' ') // Remove extra spaces
+    .replace(/\s*,\s*$/, '') // Remove trailing commas
+    .replace(/\s*\.\s*$/, '') // Remove trailing periods
+    .replace(/\s*;\s*$/, '') // Remove trailing semicolons
+    .trim();
+
+  // Ensure proper word count (8-12 words)
+  const words = enhanced.split(' ');
+  if (words.length > 12) {
+    // Trim to 12 words, keeping the most impactful words
+    enhanced = words.slice(0, 12).join(' ');
+  }
+
+  // Add local language enhancement for Kenya
+  if (location.toLowerCase().includes('kenya')) {
+    // Enhance with natural Swahili integration
+    enhanced = enhanced
+      .replace(/\b(fast|quick|speedy)\b/gi, 'haraka')
+      .replace(/\b(easy|simple|simple)\b/gi, 'rahisi')
+      .replace(/\b(good|great|excellent)\b/gi, 'bora')
+      .replace(/\b(money|cash|payment)\b/gi, 'pesa');
+  }
+
+  // Ensure it ends with impact
+  if (!enhanced.match(/[!?.]$/)) {
+    enhanced += '!';
+  }
+
+  return enhanced;
+}
+
 // Shared AI initialization to avoid duplicate variable names
 function initializeAI() {
   const geminiApiKey = process.env.GOOGLE_AI_API_KEY || process.env.GOOGLE_GENAI_API_KEY || process.env.GEMINI_API_KEY;
@@ -416,8 +471,10 @@ CONVERSION PSYCHOLOGY REQUIREMENTS:
 - Sound like a successful local marketer who knows conversion psychology
 - Incorporate trending elements naturally (don't force them)
 - Use language patterns that drive action in ${location}
-- Focus on what makes people instantly want to experience ${businessName}
+- Focus on what makes people instantly want to experience the service/product
 - Create curiosity gaps that make people want to know more
+- CRITICAL: NEVER start with business name + colon pattern (e.g., "${businessName}: DESCRIPTION")
+- Create headlines that stand alone without business name prefix
 
 CONVERSION-FOCUSED EXAMPLES (DO NOT COPY THESE - CREATE SOMETHING COMPLETELY DIFFERENT):
 - "Secret Recipe Finally Revealed" (curiosity + exclusivity)
@@ -435,8 +492,10 @@ CRITICAL ANTI-REPETITION INSTRUCTIONS:
 
 IMPORTANT: Generate ONLY ONE headline, not multiple options or lists.
 Do NOT write "Here are headlines" or provide multiple choices.
-Generate ONE unique headline that makes people instantly want to try ${businessName}. Focus on conversion, not just awareness.
-Make it so specific to ${businessName} in ${location} that it could never be used for another business.`;
+Generate ONE unique headline that makes people instantly want to try the service/product. Focus on conversion, not just awareness.
+CRITICAL: NEVER start with business name + colon pattern (e.g., "${businessName}: DESCRIPTION")
+Create headlines that stand alone without business name prefix
+Make it so specific to the service/product in ${location} that it could never be used for another business.`;
 
   try {
     // Add unique generation context to prevent repetitive responses
@@ -455,6 +514,9 @@ Make it so specific to ${businessName} in ${location} that it could never be use
 
     // Post-process to remove word repetitions
     headline = removeWordRepetitions(headline);
+    
+    // Post-processing cleanup to remove business name + colon pattern
+    headline = cleanBusinessNamePattern(headline);
 
     // Add randomization to approach and emotional impact to ensure variety
     const approaches = ['strategic', 'creative', 'authentic', 'bold', 'community-focused', 'innovative'];
@@ -597,8 +659,8 @@ LOCAL MARKET INTELLIGENCE:
 REGIONAL MARKETING STRATEGY:
 Create a subheadline that makes locals think "I need to try this place!" Use trending keywords naturally and speak like successful marketers in ${location} do. Focus on what makes ${businessName} irresistible to people in ${location}.
 
-CONVERSION-FOCUSED SUBHEADLINE REQUIREMENTS:
-- Maximum 14 words that trigger immediate action and desire
+REVO 1.5 PREMIUM SUBHEADLINE REQUIREMENTS:
+- Maximum 8-12 words for maximum impact and readability
 - Use psychological triggers: social proof, scarcity, exclusivity, urgency
 - Create FOMO (Fear of Missing Out) - make people think they'll regret not trying
 - Include specific benefits that answer "What's in it for me?"
@@ -606,6 +668,10 @@ CONVERSION-FOCUSED SUBHEADLINE REQUIREMENTS:
 - Build on the headline's promise with compelling reasons to act NOW
 - Sound like a successful conversion-focused marketer in ${location}
 - Should make the offer irresistible and create urgency to visit/buy
+- Maintain consistent tone and flow across all subheadlines
+- Use local language naturally (Swahili for Kenya, etc.) without forcing it
+- Keep it concise but impactful - every word must earn its place
+- Ensure smooth readability and natural rhythm
 
 Examples of effective ${location} subheadlines (DO NOT COPY THESE - CREATE SOMETHING COMPLETELY DIFFERENT):
 ${getLocalMarketingExamples(location, businessType).split('\n').map(line => line.replace('- "', '- "').replace('"', '" (subheadline style)')).slice(0, 3).join('\n')}
@@ -638,6 +704,9 @@ Make it so specific to ${businessName} in ${location} that it could never be use
 
     // Post-process to remove word repetitions
     subheadline = removeWordRepetitions(subheadline);
+
+    // Post-processing cleanup to remove business name + colon pattern
+    subheadline = cleanBusinessNamePattern(subheadline);
 
     // Add randomization to framework and benefit
     const frameworks = ['benefit-focused', 'problem-solving', 'community-centered', 'expertise-driven', 'results-oriented'];
@@ -848,27 +917,34 @@ ${trendingData ? `
 
 HEADLINE GENERATION REQUIREMENTS (Use RSS data and business intelligence):
 - HEADLINES must reference current trends, events, or news when relevant
-- Connect ${businessName} to trending topics or local events naturally
+- Connect the service/product to trending topics or local events naturally
 - Use specific business services/features from business details
 - Reference current market conditions or seasonal opportunities
 - Make headlines feel current and timely, not generic
+- CRITICAL: NEVER start with business name + colon pattern (e.g., "${businessName}: DESCRIPTION")
+- Create headlines that stand alone without business name prefix
 - Examples of RSS-integrated headlines:
   * "Local Food Festival Winner" (if there's a food event)
   * "Beat Holiday Rush Stress" (if trending topic is holiday stress)
   * "New Year Fitness Goals" (if trending topic is resolutions)
   * "Supply Chain Solution Found" (if news mentions supply issues)
 
-SUBHEADLINE GENERATION REQUIREMENTS (Build on headline with business intelligence):
+REVO 1.5 PREMIUM SUBHEADLINE GENERATION REQUIREMENTS:
 - SUBHEADLINES must expand on headline using specific business details
 - Reference actual services, products, or unique features offered
 - Use business intelligence data (industry trends, local opportunities)
 - Connect to target audience pain points and solutions
 - Support headline's promise with concrete business benefits
+- MAXIMUM 8-12 words for maximum impact and readability
+- Use local language naturally (Swahili for Kenya, etc.) without forcing it
+- Maintain consistent tone and flow across all subheadlines
+- Keep it concise but impactful - every word must earn its place
+- Ensure smooth readability and natural rhythm
 - Examples of business-integrated subheadlines:
-  * "Our 15-year catering experience serves 200+ events monthly"
-  * "Same-day delivery available for all ${location} residents"
-  * "Certified organic ingredients sourced from local farms"
-  * "24/7 emergency service with 30-minute response time"
+  * "15-year experience, 200+ events monthly"
+  * "Same-day delivery for ${location} residents"
+  * "Certified organic, locally sourced ingredients"
+  * "24/7 service, 30-minute response time"
 
 SPECIFIC BUSINESS DETAILS:
 - Business Name: ${businessName}
@@ -1034,6 +1110,14 @@ IMPORTANT:
     const subheadline = removeWordRepetitions(subheadlineMatch?.[1]?.trim() || `Quality ${businessType} in ${location}`);
     const caption = removeWordRepetitions(captionMatch?.[1]?.trim() || response);
 
+    // Post-processing cleanup to remove business name + colon pattern from all text components
+    const cleanedHeadline = cleanBusinessNamePattern(headline);
+    const cleanedSubheadline = cleanBusinessNamePattern(subheadline);
+    const cleanedCaption = cleanBusinessNamePattern(caption);
+
+    // Enhanced subheadline quality improvement
+    const enhancedSubheadline = enhanceSubheadlineQuality(cleanedSubheadline, businessType, location);
+
     // 🎯 GENERATE DYNAMIC CTA using AI and business intelligence
     const ctaStrategy = await dynamicCTAGenerator.generateDynamicCTA(
       businessName,
@@ -1073,9 +1157,9 @@ IMPORTANT:
 
 
     return {
-      headline,
-      subheadline,
-      caption,
+      headline: cleanedHeadline,
+      subheadline: enhancedSubheadline,
+      caption: cleanedCaption,
       callToAction,
       engagementHooks,
       designDirection: removeWordRepetitions(designMatch?.[1]?.trim() || `Clean, professional design with local elements. IMPORTANT: Include the CTA "${callToAction}" as prominent text overlay on the design - make it bold, readable, and visually striking with professional marketing appeal.`),
@@ -1084,7 +1168,7 @@ IMPORTANT:
       hashtags: viralHashtags.total, // Add viral hashtags to response
       hashtagStrategy: viralHashtags, // Include full strategy for analysis
       ctaStrategy: ctaStrategy, // Include CTA strategy for analysis
-      imageText: callToAction // Pass CTA as imageText for design integration
+      imageText: `${cleanedHeadline}\n\n${enhancedSubheadline}\n\n${callToAction}` // Pass cleaned text as imageText for design integration
     };
   } catch (error) {
     return {

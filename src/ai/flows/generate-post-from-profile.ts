@@ -223,7 +223,9 @@ export type GeneratePostFromProfileOutput = z.infer<typeof GeneratePostFromProfi
  * Combines catchy words, subheadline, and call to action into a single text for image overlay
  */
 function combineTextComponents(catchyWords: string, subheadline?: string, callToAction?: string): string {
-  const components = [catchyWords];
+  // Clean catchy words to remove business name + colon pattern
+  const cleanCatchyWords = cleanBusinessNamePattern(catchyWords);
+  const components = [cleanCatchyWords];
 
   if (subheadline && subheadline.trim()) {
     components.push(subheadline.trim());
@@ -234,6 +236,28 @@ function combineTextComponents(catchyWords: string, subheadline?: string, callTo
   }
 
   return components.join('\n');
+}
+
+/**
+ * Removes business name + colon pattern from catchy words
+ */
+function cleanBusinessNamePattern(text: string): string {
+  // Remove patterns like "PAYA: FAST, EASY, BETTER" -> "FAST, EASY, BETTER"
+  // Remove patterns like "Business Name: Description" -> "Description"
+  // Handle various business name patterns
+  let cleaned = text
+    .replace(/^[A-Z\s]+:\s*/i, '') // Remove "BUSINESS NAME: "
+    .replace(/^[A-Z][a-z]+\s+[A-Z][a-z]+:\s*/i, '') // Remove "Business Name: "
+    .replace(/^[A-Z]+:\s*/i, '') // Remove "PAYA: "
+    .replace(/^[A-Z][a-z]+:\s*/i, '') // Remove "Paya: "
+    .trim();
+  
+  // If the text is too short after cleaning, return original
+  if (cleaned.length < 3) {
+    return text;
+  }
+  
+  return cleaned;
 }
 
 // Define the enhanced text generation prompt
@@ -370,6 +394,31 @@ async function generateImageForVariant(
   // Get business-specific design DNA
   const businessDNA = BUSINESS_TYPE_DESIGN_DNA[input.businessType as keyof typeof BUSINESS_TYPE_DESIGN_DNA] || BUSINESS_TYPE_DESIGN_DNA.default;
 
+  // Enhanced ethnicity representation for African locations
+  const getEthnicityInstructions = (location: string, businessType: string) => {
+    const locationKey = location.toLowerCase();
+    const africanCountries = ['kenya', 'nigeria', 'south africa', 'ghana', 'uganda', 'tanzania', 'ethiopia', 'rwanda', 'zambia', 'zimbabwe', 'botswana', 'namibia', 'malawi', 'mozambique', 'senegal', 'mali', 'burkina faso', 'ivory coast', 'cameroon', 'chad', 'sudan', 'egypt', 'morocco', 'algeria', 'tunisia', 'libya'];
+    
+    for (const country of africanCountries) {
+      if (locationKey.includes(country)) {
+        return `
+**CRITICAL ETHNICITY REQUIREMENTS FOR ${location.toUpperCase()}:**
+- MANDATORY: Include authentic Black/African people with PERFECT FACIAL FEATURES
+- Show complete faces, symmetrical features, natural expressions, professional poses
+- Display local African people in modern, professional settings that reflect contemporary African life
+- Ensure faces are fully visible, well-lit, and anatomically correct with no deformations
+- Emphasize cultural authenticity and local representation
+- For ${businessType} business: Show African professionals, customers, or business owners
+- AVOID: Non-African people as primary subjects when business is in Africa
+- PRIORITY: 80%+ of people in the image should be Black/African when business is in African country
+- Cultural context: Reflect the specific African country's modern business environment`;
+      }
+    }
+    return '';
+  };
+
+  const ethnicityInstructions = getEthnicityInstructions(input.location, input.businessType);
+
   // Get current design trends
   let trendInstructions = '';
   try {
@@ -426,6 +475,8 @@ async function generateImageForVariant(
 **MANDATORY TEMPLATE DESCRIPTION:** ${selectedTemplate.description}
 **REQUIRED ELEMENTS:** ${selectedTemplate.elements.join(', ')}
 **ABSOLUTELY FORBIDDEN:** ${selectedTemplate.forbidden.join(', ')}
+
+${ethnicityInstructions}
 
 **CRITICAL: You MUST follow the template style exactly. Do NOT default to illustrations if the template specifies otherwise.**
 

@@ -2392,7 +2392,7 @@ function getCulturallyAppropriatePersonDescription(location: string): string {
 
   for (const country of africanCountries) {
     if (locationKey.includes(country)) {
-      return 'Include authentic Black/African people with PERFECT FACIAL FEATURES - complete faces, symmetrical features, natural expressions, professional poses. Show local African people in modern, professional settings that reflect contemporary African life. Ensure faces are fully visible, well-lit, and anatomically correct with no deformations or missing features. Emphasize cultural authenticity and local representation.';
+      return 'MANDATORY: Include authentic Black/African people with PERFECT FACIAL FEATURES - complete faces, symmetrical features, natural expressions, professional poses. Show local African people in modern, professional settings that reflect contemporary African life. Ensure faces are fully visible, well-lit, and anatomically correct with no deformations or missing features. PRIORITY: 80%+ of people in the image should be Black/African when business is in African country. AVOID: Non-African people as primary subjects when business is in Africa. Emphasize cultural authenticity and local representation.';
     }
   }
 
