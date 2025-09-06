@@ -64,6 +64,7 @@ export function ActiveArtifactsIndicator({
       loadActiveArtifacts();
       onArtifactDeactivate?.(artifactId);
     } catch (error) {
+      console.error('Failed to deactivate artifact:', error);
     }
   };
 
