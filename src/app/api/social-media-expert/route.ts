@@ -120,6 +120,34 @@ async function handlePostGeneration(
         platform,
         postType || 'social_post'
       );
+
+      // Generate image for the post using Revo 1.0
+      try {
+        const { generateRevo10Image } = await import('@/ai/revo-1.0-service');
+
+        const imageResult = await generateRevo10Image({
+          businessType: businessProfile.businessType,
+          businessName: businessProfile.businessName,
+          platform: platform,
+          visualStyle: businessProfile.visualStyle || 'modern',
+          primaryColor: businessProfile.brandColors?.primary || '#3B82F6',
+          accentColor: businessProfile.brandColors?.secondary,
+          backgroundColor: businessProfile.brandColors?.background || '#F8FAFC',
+          imageText: `${post.headline} | ${post.subheadline || ''} | ${post.cta}`.trim(),
+          designDescription: `Create a professional ${businessProfile.businessType} design for ${platform}`,
+          logoDataUrl: businessProfile.logoDataUrl,
+          location: businessProfile.location,
+          headline: post.headline,
+          subheadline: post.subheadline,
+          callToAction: post.cta
+        });
+
+        post.imageUrl = imageResult.imageUrl;
+      } catch (imageError) {
+        console.error('Image generation failed:', imageError);
+        // Continue without image
+      }
+
       posts.push(post);
     } catch (error) {
       // Fallback to old system if advanced fails

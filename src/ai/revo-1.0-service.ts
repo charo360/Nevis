@@ -1930,12 +1930,17 @@ VISUAL STYLE:
 - Use colors and elements that match this specific style
 - Typography should match the style's mood and approach
 
-🌍 SUBTLE LOCAL TOUCH (NOT OVERWHELMING):
+🌍 CULTURAL REPRESENTATION & LOCAL TOUCH:
 - ${culturalContext}
 - **Keep cultural elements subtle and natural - don't force them**
 - Use local colors and textures naturally, not as obvious cultural markers
 - Make it feel authentic to the location without being stereotypical
 - Focus on the design style first, local elements second
+
+${peopleInstructions ? `
+👥 PEOPLE REPRESENTATION:
+${peopleInstructions}
+` : ''}
 
 DESIGN VARIATION:
 **STYLE: ${designVariations.style}**
