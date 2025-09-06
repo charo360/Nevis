@@ -1,4 +1,4 @@
-import { CbrandWizard } from '@/components/cbrand/cbrand-wizard';
+import { CbrandWizardUnified } from '@/components/cbrand/cbrand-wizard-unified';
 
 export default function CbrandPage() {
   return (
@@ -6,7 +6,7 @@ export default function CbrandPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Complete Brand Profile Setup
+            Create New Brand Profile
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Create a comprehensive brand profile with AI-powered analysis,
@@ -14,7 +14,7 @@ export default function CbrandPage() {
           </p>
         </div>
 
-        <CbrandWizard />
+        <CbrandWizardUnified mode="create" />
       </div>
     </div>
   );
