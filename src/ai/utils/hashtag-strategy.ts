@@ -250,7 +250,7 @@ export async function generateHashtagStrategy(
   /**
    * Analyzes hashtag effectiveness
    */
-  export function analyzeHashtags(hashtags: string[]): HashtagAnalysis[] {
+  function analyzeHashtags(hashtags: string[]): HashtagAnalysis[] {
     return hashtags.map(hashtag => ({
       hashtag,
       category: categorizeHashtag(hashtag),
@@ -433,3 +433,4 @@ export async function generateHashtagStrategy(
       designBased: []
     };
   }
+}

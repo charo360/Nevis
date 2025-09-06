@@ -14,103 +14,166 @@ async function readStates() {
   }
 }
 
-async function removeState(state: string) {
-  try {
-    const raw = await fs.readFile(STATE_STORE, 'utf-8');
-    const data = JSON.parse(raw || '{}');
-    delete data[state];
-    await fs.writeFile(STATE_STORE, JSON.stringify(data, null, 2), 'utf-8');
-  } catch (e) {
-    // ignore
-  }
+async function writeStates(data: any) {
+  await fs.mkdir(path.dirname(STATE_STORE), { recursive: true });
+  await fs.writeFile(STATE_STORE, JSON.stringify(data, null, 2), 'utf-8');
 }
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const code = url.searchParams.get('code');
   const state = url.searchParams.get('state');
-  const error = url.searchParams.get('error');
 
-  if (error) {
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect?error=instagram_denied`);
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001';
+
+  if (!code || !state) {
+    return NextResponse.redirect(`${baseUrl}/social-connect?error=invalid_request`);
   }
 
-  if (!state) return NextResponse.json({ error: 'Missing state' }, { status: 400 });
-
-  const states = await readStates();
-  const entry = states[state];
-  if (!entry) return NextResponse.json({ error: 'Invalid state' }, { status: 400 });
-
   try {
-    const clientId = process.env.INSTAGRAM_APP_ID;
-    const clientSecret = process.env.INSTAGRAM_APP_SECRET;
-    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/api/social/oauth/instagram/callback`;
+    // Read stored state
+    const states = await readStates();
+    const storedState = states[state];
 
-    if (!clientId || !clientSecret) {
-      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect?error=instagram_not_configured`);
+    if (!storedState) {
+      return NextResponse.redirect(`${baseUrl}/social-connect?error=invalid_state`);
     }
 
-    // Exchange code for short-lived access token
-    const tokenUrl = 'https://api.instagram.com/oauth/access_token';
-    const tokenRes = await fetch(tokenUrl, {
+    const { userId, accessToken: storedAccessToken, accountType } = storedState;
+
+    // For development, accept callbacks from production URL
+    const prodCallbackUrl = 'https://crevo.app/api/social/oauth/instagram/callback';
+    const devCallbackUrl = `${baseUrl}/api/social/oauth/instagram/callback`;
+    const acceptedCallbackUrls = [devCallbackUrl];
+    if (baseUrl.includes('localhost')) {
+      acceptedCallbackUrls.push(prodCallbackUrl);
+    }
+
+    // Exchange code for access token using Facebook's Graph API
+    const clientId = process.env.FACEBOOK_APP_ID!;
+    const clientSecret = process.env.FACEBOOK_APP_SECRET!;
+    const redirectUri = prodCallbackUrl; // Use production URL since that's what we registered
+
+    const tokenUrl = new URL('https://graph.facebook.com/v19.0/oauth/access_token');
+    tokenUrl.searchParams.append('client_id', clientId);
+    tokenUrl.searchParams.append('redirect_uri', redirectUri);
+    tokenUrl.searchParams.append('client_secret', clientSecret);
+    tokenUrl.searchParams.append('code', code);
+
+    const tokenRes = await fetch(tokenUrl.toString());
+    const tokenJson: any = await tokenRes.json();
+
+    if (tokenJson.error) {
+      console.error('Instagram token error:', tokenJson.error);
+      return NextResponse.redirect(`${baseUrl}/social-connect?error=instagram_token_failed`);
+    }
+
+    const accessToken = tokenJson.access_token;
+
+    // Get user info from Facebook
+    const userUrl = new URL('https://graph.facebook.com/v19.0/me');
+    userUrl.searchParams.append('fields', 'id,name');
+    userUrl.searchParams.append('access_token', accessToken);
+
+    const userRes = await fetch(userUrl.toString());
+    const userJson: any = await userRes.json();
+
+    if (userJson.error) {
+      console.error('Instagram user error:', userJson.error);
+      return NextResponse.redirect(`${baseUrl}/social-connect?error=instagram_user_failed`);
+    }
+
+    // Handle different account types
+    let instagramUsername = null;
+    let instagramUserId = null;
+    let pageName = null;
+
+    if (accountType === 'business') {
+      // For business accounts, get Facebook pages first
+      const pagesUrl = new URL('https://graph.facebook.com/v19.0/me/accounts');
+      pagesUrl.searchParams.append('access_token', accessToken);
+
+      const pagesRes = await fetch(pagesUrl.toString());
+      const pagesJson: any = await pagesRes.json();
+
+      if (pagesJson.data && pagesJson.data.length > 0) {
+        // Use the first page (in a real app, you'd let the user choose)
+        const page = pagesJson.data[0];
+        pageName = page.name;
+
+        // Get Instagram business account connected to this page
+        const igAccountUrl = new URL(`https://graph.facebook.com/v19.0/${page.id}`);
+        igAccountUrl.searchParams.append('fields', 'instagram_business_account');
+        igAccountUrl.searchParams.append('access_token', accessToken);
+
+        const igAccountRes = await fetch(igAccountUrl.toString());
+        const igAccountJson: any = await igAccountRes.json();
+
+        if (igAccountJson.instagram_business_account) {
+          instagramUserId = igAccountJson.instagram_business_account.id;
+
+          // Get Instagram account info
+          const igInfoUrl = new URL(`https://graph.facebook.com/v19.0/${instagramUserId}`);
+          igInfoUrl.searchParams.append('fields', 'username,profile_picture_url');
+          igInfoUrl.searchParams.append('access_token', accessToken);
+
+          const igInfoRes = await fetch(igInfoUrl.toString());
+          const igInfoJson: any = await igInfoRes.json();
+
+          if (!igInfoJson.error) {
+            instagramUsername = igInfoJson.username;
+          }
+        }
+      }
+    } else {
+      // For personal accounts, use Instagram Basic Display API
+      const basicDisplayUrl = new URL('https://graph.instagram.com/me');
+      basicDisplayUrl.searchParams.append('fields', 'id,username');
+      basicDisplayUrl.searchParams.append('access_token', accessToken);
+
+      const basicDisplayRes = await fetch(basicDisplayUrl.toString());
+      const basicDisplayJson: any = await basicDisplayRes.json();
+
+      if (!basicDisplayJson.error) {
+        instagramUserId = basicDisplayJson.id;
+        instagramUsername = basicDisplayJson.username;
+      }
+    }
+
+    // Store connection via connections API
+    const connectionsResponse = await fetch(`${baseUrl}/api/social/connections`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${storedAccessToken}`,
+        'x-demo-user': userId // Fallback for demo/development
       },
-      body: new URLSearchParams({
-        client_id: clientId,
-        client_secret: clientSecret,
-        grant_type: 'authorization_code',
-        redirect_uri: redirectUri,
-        code: code || '',
-      }),
-    });
-
-    const tokenData: any = await tokenRes.json();
-
-    if (tokenData.error) {
-      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect?error=instagram_token`);
-    }
-
-    const accessToken = tokenData.access_token;
-    const userId = tokenData.user_id;
-
-    // Exchange short-lived token for long-lived token (60 days)
-    const longLivedTokenUrl = `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${clientSecret}&access_token=${accessToken}`;
-    const longLivedRes = await fetch(longLivedTokenUrl);
-    const longLivedData: any = await longLivedRes.json();
-
-    if (longLivedData.error) {
-      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect?error=instagram_token`);
-    }
-
-    const longLivedToken = longLivedData.access_token;
-
-    // Get user profile
-    const profileUrl = `https://graph.instagram.com/${userId}?fields=id,username,account_type,media_count&access_token=${longLivedToken}`;
-    const profileRes = await fetch(profileUrl);
-    const profileData: any = await profileRes.json();
-
-    if (profileData.error) {
-      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect?error=instagram_profile`);
-    }
-
-    // Persist connection
-    await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/api/social/connections`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-demo-user': entry.demoUser },
       body: JSON.stringify({
         platform: 'instagram',
-        socialId: userId,
-        accessToken: longLivedToken,
-        profile: profileData,
+        socialId: instagramUserId || userJson.id,
+        accessToken,
+        profile: {
+          username: instagramUsername,
+          name: userJson.name,
+          accountType,
+          pageName
+        },
       }),
     });
 
-    await removeState(state);
+    if (!connectionsResponse.ok) {
+      console.error('Failed to store Instagram connection:', await connectionsResponse.text());
+    }
 
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect`);
+    // Clean up state
+    delete states[state];
+    await writeStates(states);
+
+    // For development, redirect to localhost
+    const redirectUrl = `http://localhost:3001/social-connect?oauth_success=true&platform=instagram&username=${encodeURIComponent(instagramUsername || userJson.name)}`;
+    return NextResponse.redirect(redirectUrl);
   } catch (error) {
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect?error=instagram_failed`);
+    console.error('Instagram OAuth callback error:', error);
+    return NextResponse.redirect(`http://localhost:3001/social-connect?error=instagram_callback_failed`);
   }
 }
