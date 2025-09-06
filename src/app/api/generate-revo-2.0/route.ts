@@ -56,11 +56,6 @@ export async function POST(request: NextRequest) {
       qualityScore: result.qualityScore,
       processingTime: result.processingTime,
       enhancementsApplied: result.enhancementsApplied,
-<<<<<<< HEAD
-      caption: result.caption,
-      hashtags: result.hashtags,
-      message: 'Revo 2.0 content generated successfully'
-=======
       headline: result.headline,
       subheadline: result.subheadline,
       caption: result.caption,
@@ -68,7 +63,6 @@ export async function POST(request: NextRequest) {
       hashtags: result.hashtags,
       businessIntelligence: result.businessIntelligence,
       message: 'Revo 2.0 Enhanced content generated successfully'
->>>>>>> database
     });
 
   } catch (error) {
@@ -76,31 +70,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
-<<<<<<< HEAD
-      message: 'Revo 2.0 generation failed'
-=======
       message: 'Revo 2.0 Enhanced generation failed'
->>>>>>> database
     }, { status: 500 });
   }
 }
 
 export async function GET() {
   return NextResponse.json({
-<<<<<<< HEAD
-    message: 'Revo 2.0 Generation API',
-    description: 'Use POST method to generate content with Revo 2.0',
-    requiredFields: ['businessType', 'platform', 'brandProfile'],
-    optionalFields: ['visualStyle', 'imageText', 'aspectRatio'],
-    model: 'Gemini 2.5 Flash Image Preview',
-    version: '2.0.0',
-    features: [
-      'Auto-detects platform-specific aspect ratios',
-      'Instagram: 1:1 (feed) or 9:16 (stories/reels)',
-      'Facebook/Twitter/LinkedIn: 16:9 (landscape)',
-      'TikTok: 9:16 (vertical)',
-      'Platform-optimized dimensions and descriptions'
-=======
     message: 'Revo 2.0 Enhanced Generation API',
     description: 'Use POST method to generate sophisticated content with Revo 2.0',
     requiredFields: ['businessType', 'platform', 'brandProfile'],
@@ -114,7 +90,6 @@ export async function GET() {
       'Compelling CTAs',
       'AI-powered hashtags',
       'Business intelligence analysis'
->>>>>>> database
     ]
   });
 }
