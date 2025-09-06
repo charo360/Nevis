@@ -61,29 +61,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-<<<<<<< HEAD
     const { id: profileId } = await params;
-=======
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'Authorization token required' },
-        { status: 401 }
-      );
-    }
-
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-    const decoded = verifyToken(token);
-
-    if (!decoded) {
-      return NextResponse.json(
-        { error: 'Invalid or expired token' },
-        { status: 401 }
-      );
-    }
-
-    const profileId = params.id;
->>>>>>> 46f32151ed9503d241dab0f668e479a278288e2c
     const updates = await request.json();
 
     // Verify the profile belongs to the authenticated user
@@ -119,29 +97,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-<<<<<<< HEAD
     const { id: profileId } = await params;
-=======
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'Authorization token required' },
-        { status: 401 }
-      );
-    }
-
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-    const decoded = verifyToken(token);
-
-    if (!decoded) {
-      return NextResponse.json(
-        { error: 'Invalid or expired token' },
-        { status: 401 }
-      );
-    }
-
-    const profileId = params.id;
->>>>>>> 46f32151ed9503d241dab0f668e479a278288e2c
 
     // Verify the profile belongs to the authenticated user
     const existingProfile = await brandProfileMongoService.getBrandProfileById(profileId);

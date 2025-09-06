@@ -8,11 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Upload, Image as ImageIcon, ArrowLeft, Save, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUnifiedBrand } from '@/contexts/unified-brand-context';
-<<<<<<< HEAD
 import { useAuth } from '@/hooks/use-auth';
-=======
-import { useAuth, useUserId } from '@/hooks/use-auth';
->>>>>>> 46f32151ed9503d241dab0f668e479a278288e2c
 import type { CompleteBrandProfile } from '../cbrand-wizard';
 
 interface LogoUploadStepUnifiedProps {
@@ -94,7 +90,6 @@ export function LogoUploadStepUnified({
         version: '1.0',
       };
 
-<<<<<<< HEAD
       // In create mode, remove any existing ID to ensure a new profile is created
       if (mode === 'create' && profileToSave.id) {
         delete profileToSave.id;
@@ -102,9 +97,6 @@ export function LogoUploadStepUnified({
       }
 
       console.log('💾 Saving profile to Firebase via unified context with logo data:', {
-=======
-      console.log('💾 Saving profile to MongoDB via unified context with logo data:', {
->>>>>>> 46f32151ed9503d241dab0f668e479a278288e2c
         businessName: profileToSave.businessName,
         hasLogo: !!profileToSave.logoDataUrl,
         logoLength: profileToSave.logoDataUrl?.length || 0,
