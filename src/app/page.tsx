@@ -265,7 +265,7 @@ export default function HomePage() {
             </p>
 
             <p className="text-lg text-gray-600 max-w-3xl mx-auto mb-12 leading-relaxed">
-              Say goodbye to templates. Your personal AI designer learns your brand DNA and creates professional social media content in seconds—tailored, consistent, and ready to post.
+              Say goodbye to templates. Your personal AI designer learns your brand DNA and creates professional social media content in seconds—more consistent than human designers, faster than any team, and always ready to post.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
@@ -396,16 +396,16 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            {/* Feature 6 - Smart Agent Memory */}
+            {/* Feature 6 - Superhuman Consistency */}
             <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
               <CardContent className="p-8">
                 <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <Database className="w-6 h-6 text-white" />
+                  <CheckCircle className="w-6 h-6 text-white" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">💾 Smart Agent Memory</h3>
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">🏆 Superhuman Consistency</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  Remembers all <strong>brand preferences</strong> with unlimited content generation.
-                  Your agent gets smarter with every interaction and never forgets your style.
+                  Your AI designer <strong>never forgets brand guidelines</strong>, never has off days, and never creates inconsistent content.
+                  Perfect execution, every single time—something even the best human designers can't guarantee.
                 </p>
               </CardContent>
             </Card>
