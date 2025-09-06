@@ -1088,10 +1088,10 @@ IMPORTANT:
     };
   } catch (error) {
     return {
-      headline: `${businessName} - ${businessType}`,
-      subheadline: `Quality ${businessType} services in ${location}`,
-      caption: `Experience the best ${businessType} services at ${businessName}. Located in ${location}, we're committed to excellence.`,
-      callToAction: `Visit ${businessName} today!`,
+      headline: `Quality ${businessType} Services`,
+      subheadline: `Professional ${businessType} solutions in ${location}`,
+      caption: `Experience exceptional ${businessType} services in ${location}. We're committed to delivering excellence that exceeds expectations.`,
+      callToAction: `Get started today!`,
       engagementHooks: ['Quality service', 'Local expertise', 'Customer satisfaction'],
       designDirection: 'Professional, clean design with local elements',
       unifiedTheme: 'Professional excellence',
@@ -1169,8 +1169,8 @@ Do NOT write "Here are captions" or provide lists.`;
     );
 
     return {
-      headline: `${businessName} - ${businessType}`,
-      subheadline: `Quality ${businessType} services in ${location}`,
+      headline: `Professional ${businessType} Solutions`,
+      subheadline: `Expert ${businessType} services in ${location}`,
       caption: retryCaption,
       engagementHooks: generateDynamicEngagementHooks(businessType, location, industry),
       callToAction: retryCallToAction,
@@ -1519,7 +1519,7 @@ export function generateCreativeHeadline(
   context: any
 ): { headline: string; style: string; tone: string } {
   return {
-    headline: `${businessName} - ${businessType}`,
+    headline: `Quality ${businessType} Services`,
     style: 'professional',
     tone: 'engaging'
   };
