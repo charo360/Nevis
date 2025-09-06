@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const webpack = require('webpack');
+
 const nextConfig = {
   typescript: {
     // Temporarily ignore TypeScript errors during development
@@ -93,7 +95,7 @@ const nextConfig = {
       // Ignore specific problematic modules
       config.plugins = config.plugins || [];
       config.plugins.push(
-        new config.webpack.IgnorePlugin({
+        new webpack.IgnorePlugin({
           resourceRegExp: /^(async_hooks|fs\/promises|http2|dns|net|tls)$/,
         })
       );

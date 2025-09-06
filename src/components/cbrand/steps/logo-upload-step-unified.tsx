@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Upload, Image as ImageIcon, ArrowLeft, Save, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUnifiedBrand } from '@/contexts/unified-brand-context';
-import { useUserId } from '@/hooks/use-firebase-auth';
+import { useAuth, useUserId } from '@/hooks/use-auth';
 import type { CompleteBrandProfile } from '../cbrand-wizard';
 
 interface LogoUploadStepUnifiedProps {
@@ -88,7 +88,7 @@ export function LogoUploadStepUnified({
         version: '1.0',
       };
 
-      console.log('💾 Saving profile to Firebase via unified context with logo data:', {
+      console.log('💾 Saving profile to MongoDB via unified context with logo data:', {
         businessName: profileToSave.businessName,
         hasLogo: !!profileToSave.logoDataUrl,
         logoLength: profileToSave.logoDataUrl?.length || 0,
@@ -99,10 +99,10 @@ export function LogoUploadStepUnified({
         }
       });
 
-      // Save to Firebase using unified context (this will automatically update the unified brand state)
+      // Save to MongoDB using unified context (this will automatically update the unified brand state)
       const profileId = await saveProfile(profileToSave);
 
-      console.log('✅ Profile saved to Firebase via unified context successfully:', profileId);
+      console.log('✅ Profile saved to MongoDB via unified context successfully:', profileId);
 
       toast({
         title: "Profile Saved Successfully!",
@@ -226,7 +226,7 @@ export function LogoUploadStepUnified({
                 <div className="flex flex-wrap gap-1 mt-1">
                   {brandProfile.services?.map((service, index) => (
                     <Badge key={index} variant="secondary" className="text-xs">
-                      {service}
+                      {typeof service === 'string' ? service : service.name}
                     </Badge>
                   ))}
                 </div>
