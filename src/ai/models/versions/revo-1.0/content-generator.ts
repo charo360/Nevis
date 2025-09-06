@@ -195,7 +195,7 @@ export class Revo10ContentGenerator implements IContentGenerator {
       businessType: profile.businessType,
       location: profile.location,
       writingTone: profile.writingTone,
-      contentThemes: profile.contentThemes,
+      contentThemes: Array.isArray(profile.contentThemes) ? profile.contentThemes : [],
       visualStyle: profile.visualStyle,
       logoDataUrl: profile.logoDataUrl,
       designExamples: brandConsistency?.strictConsistency ? (profile.designExamples || []) : [],
