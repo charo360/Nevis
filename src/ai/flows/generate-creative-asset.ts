@@ -215,10 +215,93 @@ The user's instruction is: "${remainingPrompt}"`;
             // Get business-specific design DNA
             const businessDNA = BUSINESS_TYPE_DESIGN_DNA[bp.businessType as keyof typeof BUSINESS_TYPE_DESIGN_DNA] || BUSINESS_TYPE_DESIGN_DNA.default;
 
+            // Enhanced target market representation for all locations
+            const getTargetMarketInstructions = (location: string, businessType: string, targetAudience: string) => {
+                const locationKey = location.toLowerCase();
+                const africanCountries = ['kenya', 'nigeria', 'south africa', 'ghana', 'uganda', 'tanzania', 'ethiopia', 'rwanda', 'zambia', 'zimbabwe', 'botswana', 'namibia', 'malawi', 'mozambique', 'senegal', 'mali', 'burkina faso', 'ivory coast', 'cameroon', 'chad', 'sudan', 'egypt', 'morocco', 'algeria', 'tunisia', 'libya'];
+                
+                // Get business-specific target market
+                const getBusinessTargetMarket = (businessType: string) => {
+                    const businessTypeLower = businessType.toLowerCase();
+                    
+                    if (businessTypeLower.includes('restaurant') || businessTypeLower.includes('food') || businessTypeLower.includes('cafe')) {
+                        return 'diverse families, couples, food enthusiasts, local community members';
+                    } else if (businessTypeLower.includes('fitness') || businessTypeLower.includes('gym') || businessTypeLower.includes('health')) {
+                        return 'fitness enthusiasts, health-conscious individuals, athletes, people working out';
+                    } else if (businessTypeLower.includes('beauty') || businessTypeLower.includes('salon') || businessTypeLower.includes('spa')) {
+                        return 'beauty-conscious individuals, people getting beauty treatments, fashion-forward people';
+                    } else if (businessTypeLower.includes('retail') || businessTypeLower.includes('shop') || businessTypeLower.includes('store')) {
+                        return 'shoppers, customers browsing products, families shopping, fashion enthusiasts';
+                    } else if (businessTypeLower.includes('finance') || businessTypeLower.includes('bank') || businessTypeLower.includes('payment')) {
+                        return 'business professionals, entrepreneurs, people using financial services, tech-savvy individuals';
+                    } else if (businessTypeLower.includes('tech') || businessTypeLower.includes('software') || businessTypeLower.includes('digital')) {
+                        return 'tech professionals, entrepreneurs, digital natives, people using technology';
+                    } else if (businessTypeLower.includes('education') || businessTypeLower.includes('school') || businessTypeLower.includes('training')) {
+                        return 'students, teachers, parents, people learning, educational professionals';
+                    } else if (businessTypeLower.includes('real estate') || businessTypeLower.includes('property') || businessTypeLower.includes('housing')) {
+                        return 'homebuyers, families, property investors, people looking for homes';
+                    } else if (businessTypeLower.includes('automotive') || businessTypeLower.includes('car') || businessTypeLower.includes('vehicle')) {
+                        return 'car owners, drivers, automotive enthusiasts, people with vehicles';
+                    } else if (businessTypeLower.includes('healthcare') || businessTypeLower.includes('medical') || businessTypeLower.includes('clinic')) {
+                        return 'patients, healthcare workers, families, people seeking medical care';
+                    } else {
+                        return 'local community members, customers, people using the service';
+                    }
+                };
+
+                const targetMarket = getBusinessTargetMarket(businessType);
+                
+                // Check if it's an African country
+                const isAfricanCountry = africanCountries.some(country => locationKey.includes(country));
+                
+                if (isAfricanCountry) {
+                    return `
+**CRITICAL TARGET MARKET REPRESENTATION FOR ${location.toUpperCase()}:**
+- MANDATORY: Include authentic Black/African people who represent the target market
+- Show people who would actually use ${businessType} services: ${targetMarket}
+- Display local African people in settings relevant to ${businessType} business
+- Ensure faces are fully visible, well-lit, and anatomically correct with no deformations
+- Emphasize cultural authenticity and local representation
+- AVOID: Generic office workers - show people who match the target audience
+- PRIORITY: 80%+ of people in the image should be Black/African when business is in African country
+- Context: Show people in ${businessType}-relevant settings, not generic offices
+- Target Audience: ${targetAudience || targetMarket}`;
+                } else {
+                    return `
+**TARGET MARKET REPRESENTATION FOR ${location.toUpperCase()}:**
+- Include people who represent the target market: ${targetMarket}
+- Show people who would actually use ${businessType} services
+- Display people in settings relevant to ${businessType} business
+- Ensure faces are fully visible, well-lit, and anatomically correct
+- Context: Show people in ${businessType}-relevant settings, not generic offices
+- Target Audience: ${targetAudience || targetMarket}`;
+                }
+            };
+
+            const targetMarketInstructions = getTargetMarketInstructions(bp.location || '', bp.businessType, bp.targetAudience || '');
+
+            // Clean business name pattern from content
+            const cleanBusinessNamePattern = (text: string): string => {
+                let cleaned = text
+                    .replace(/^[A-Z\s]+:\s*/i, '') // Remove "BUSINESS NAME: "
+                    .replace(/^[A-Z][a-z]+\s+[A-Z][a-z]+:\s*/i, '') // Remove "Business Name: "
+                    .replace(/^[A-Z]+:\s*/i, '') // Remove "PAYA: "
+                    .replace(/^[A-Z][a-z]+:\s*/i, '') // Remove "Paya: "
+                    .trim();
+                
+                if (cleaned.length < 3) {
+                    return text;
+                }
+                
+                return cleaned;
+            };
+
+            const cleanedContent = cleanBusinessNamePattern(remainingPrompt);
+
             let onBrandPrompt = `Create a stunning, professional social media ${input.outputType} for ${bp.businessName || 'this business'}.
 
 BUSINESS: ${bp.businessName || 'Professional Business'} (${bp.businessType})
-CONTENT: "${remainingPrompt}"
+CONTENT: "${cleanedContent}"
 STYLE: ${bp.visualStyle}, modern, clean, professional
 
 FORMAT: ${input.aspectRatio ? `${input.aspectRatio} aspect ratio` : 'Square 1:1 format'}
@@ -227,6 +310,8 @@ BRAND COLORS (use prominently):
 ${bp.primaryColor ? `- Primary: ${bp.primaryColor}` : ''}
 ${bp.accentColor ? `- Accent: ${bp.accentColor}` : ''}
 ${bp.backgroundColor ? `- Background: ${bp.backgroundColor}` : ''}
+
+${targetMarketInstructions}
 
 REQUIREMENTS:
 - High-quality, professional design

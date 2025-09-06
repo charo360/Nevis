@@ -226,7 +226,7 @@ export function LogoUploadStepUnified({
                 <div className="flex flex-wrap gap-1 mt-1">
                   {brandProfile.services?.map((service, index) => (
                     <Badge key={index} variant="secondary" className="text-xs">
-                      {service}
+                      {typeof service === 'string' ? service : service.name}
                     </Badge>
                   ))}
                 </div>
