@@ -439,7 +439,40 @@ export async function generateBusinessSpecificHeadline(
   const regionalLanguage = getRegionalLanguageStyle(location);
   const marketingStyle = getRegionalMarketingStyle(location);
 
+  // Get real-time contextual data for intelligent content generation
+  const getContextualData = async () => {
+    try {
+      return {
+        news: trendingData?.news?.slice(0, 3).map(n => n.title).join(', ') || 'No current news data',
+        socialTrends: trendingData?.socialTrends?.slice(0, 3).join(', ') || 'No social trends data',
+        events: trendingData?.events?.slice(0, 2).map(e => e.name).join(', ') || 'No local events data',
+        insights: trendingData?.insights?.slice(0, 2).join(', ') || 'No market insights',
+        weather: trendingData?.weather || 'No weather data',
+        culturalMoments: trendingData?.culturalMoments || 'No cultural data'
+      };
+    } catch (error) {
+      return {
+        news: 'No current news data',
+        socialTrends: 'No social trends data',
+        events: 'No local events data',
+        insights: 'No market insights',
+        weather: 'No weather data',
+        culturalMoments: 'No cultural data'
+      };
+    }
+  };
+
+  const contextualData = await getContextualData();
+
   const prompt = `You are a brilliant local marketing expert who deeply understands ${location} culture, language, and market dynamics. You stay updated with current trends and know exactly how businesses in ${location} market themselves successfully.
+
+REAL-TIME CONTEXTUAL DATA (Analyze and use what's relevant):
+- Current News: ${contextualData.news}
+- Social Media Trends: ${contextualData.socialTrends}
+- Local Events: ${contextualData.events}
+- Market Insights: ${contextualData.insights}
+- Weather: ${contextualData.weather}
+- Cultural Moments: ${contextualData.culturalMoments}
 
 BUSINESS INTELLIGENCE:
 - Business: ${businessName} (${businessType})
@@ -460,6 +493,25 @@ LOCAL MARKET INTELLIGENCE:
 - Competitive Advantages: ${industry.uniqueValue.slice(0, 2).join(', ')}
 - Market Opportunities: ${industry.opportunities.slice(0, 2).join(', ')}
 - How locals in ${location} talk about ${businessType}: ${getLocalBusinessLanguage(location, businessType)}
+
+INTELLIGENT RELEVANCE FILTERING:
+- ANALYZE the real-time data above and ONLY use information that's directly relevant to ${businessType} customers in ${location}
+- IGNORE irrelevant data - don't force connections that don't make sense
+- CONNECT your business ONLY to trending conversations, events, or cultural moments that actually relate to ${businessType}
+- CONSIDER what ${businessType} customers are actually talking about and caring about in this location
+- USE psychological triggers that resonate with current local sentiment and needs SPECIFIC TO ${businessType}
+- CREATE headlines that feel like they were written by someone who truly understands this moment AND this business
+- ENSURE content reflects what's actually happening in the world that's RELEVANT to your business
+- FOCUS on timely relevance and authentic local connection SPECIFIC TO ${businessType}
+- MAKE people think "This business really gets what's happening right now AND understands my needs"
+
+RELEVANCE CRITERIA:
+- News must relate to ${businessType}, local economy, or customer needs
+- Social trends must be relevant to ${businessType} customers or local community
+- Events must be related to ${businessType}, local business, or customer interests
+- Weather must impact ${businessType} services or customer behavior
+- Cultural moments must be relevant to ${businessType} customers or local traditions
+- Market insights must be specific to ${businessType} industry or local market
 
 REGIONAL MARKETING STRATEGY:
 You understand that in ${location}, people respond to ${marketingStyle} marketing. Use the trending keywords naturally and speak like locals do. Create content that feels authentic to ${location} culture and current market trends.
@@ -487,6 +539,10 @@ CRITICAL ANTI-REPETITION INSTRUCTIONS:
 ❌ DO NOT use "2025's Best-Kept Secret" or any variation
 ❌ DO NOT use "Chakula Kizuri" or repetitive Swahili phrases
 ❌ DO NOT use "for your familia's delight" or similar family references
+❌ DO NOT use "Tired of..." or similar repetitive opening patterns
+❌ DO NOT start headlines with the same words repeatedly across different businesses
+❌ DO NOT use static templates that don't adapt to unique business context
+❌ DO NOT repeat opening phrases like "Tired of waiting", "Tired of slow", etc.
 ❌ CREATE something completely original that has never been generated before
 ❌ AVOID any pattern that sounds like a template or formula
 
@@ -502,6 +558,22 @@ Make it so specific to the service/product in ${location} that it could never be
     const uniqueContext = `\n\nUNIQUE GENERATION CONTEXT: ${Date.now()}-${Math.random().toString(36).substr(2, 9)}
     This generation must be completely different from any previous generation.
     Use this unique context to ensure fresh, original content that has never been generated before.
+    
+    CRITICAL: NEVER use "Tired of..." or any variation. This is FORBIDDEN.
+    CRITICAL: NEVER start with repetitive opening words.
+    CRITICAL: Each headline must be completely unique and context-specific.
+    
+    INTELLIGENT CONTEXTUAL ANALYSIS REQUIREMENTS:
+    - ANALYZE real-time data: RSS feeds, trending topics, local events, weather, cultural moments
+    - EXAMINE business-specific information: services, location, target audience, unique value proposition
+    - CONSIDER current market conditions, seasonal factors, and local community needs
+    - IDENTIFY what people are actually talking about and caring about RIGHT NOW in this location
+    - CONNECT your business to relevant trending conversations, events, or cultural moments
+    - USE psychological triggers that resonate with current local sentiment and needs
+    - CREATE headlines that feel like they were written by someone who truly understands this moment
+    - ENSURE content reflects what's actually happening in the world, not generic templates
+    - FOCUS on timely relevance and authentic local connection
+    - MAKE people think "This business really gets what's happening right now"
 
     CRITICAL WORD REPETITION RULES:
     - NEVER repeat the same word consecutively (e.g., "buy now now pay" should be "buy now pay")
@@ -514,13 +586,217 @@ Make it so specific to the service/product in ${location} that it could never be
 
     // Post-process to remove word repetitions
     headline = removeWordRepetitions(headline);
-    
+
     // Post-processing cleanup to remove business name + colon pattern
     headline = cleanBusinessNamePattern(headline);
+
+    // Check for repetitive patterns and encourage variety
+    const checkForRepetitivePatterns = (text: string) => {
+      // Check if this looks like a repetitive template
+      const repetitivePatterns = [
+        /^Tired\s+of\s+waiting/i,
+        /^Tired\s+of\s+slow/i,
+        /^Tired\s+of\s+delays/i,
+        /^Tired\s+of\s+waiting\s+around/i,
+        /^Tired\s+of\s+waiting\s+in\s+line/i,
+        /^Tired\s+of\s+waiting\s+forever/i
+      ];
+
+      // If it matches a repetitive pattern, it's likely a template
+      const isRepetitive = repetitivePatterns.some(pattern => pattern.test(text));
+
+      if (isRepetitive) {
+        // Generate a more dynamic alternative
+        const dynamicAlternatives = [
+          `Revolutionary ${businessType} solution`,
+          `Transform your ${businessType} experience`,
+          `Discover the future of ${businessType}`,
+          `Unlock ${businessType} excellence`,
+          `Experience ${businessType} innovation`,
+          `Master ${businessType} success`,
+          `Elevate your ${businessType} game`,
+          `Breakthrough ${businessType} technology`
+        ];
+
+        return dynamicAlternatives[Math.floor(Math.random() * dynamicAlternatives.length)];
+      }
+
+      return text; // Keep the original if it's not repetitive
+    };
+
+    headline = checkForRepetitivePatterns(headline);
 
     // Add randomization to approach and emotional impact to ensure variety
     const approaches = ['strategic', 'creative', 'authentic', 'bold', 'community-focused', 'innovative'];
     const emotions = ['engaging', 'inspiring', 'trustworthy', 'exciting', 'confident', 'welcoming'];
+
+    // Dynamic headline enhancement - if headline is too short after cleaning, enhance it
+    if (headline.length < 10) {
+      const dynamicEnhancements = [
+        `Revolutionary ${businessType} solution`,
+        `Transform your ${businessType} experience`,
+        `Discover the future of ${businessType}`,
+        `Unlock ${businessType} excellence`,
+        `Experience ${businessType} innovation`,
+        `Master ${businessType} success`,
+        `Elevate your ${businessType} game`,
+        `Breakthrough ${businessType} technology`,
+        `Next-level ${businessType} service`,
+        `Premium ${businessType} experience`
+      ];
+
+      const randomEnhancement = dynamicEnhancements[Math.floor(Math.random() * dynamicEnhancements.length)];
+      headline = randomEnhancement;
+    }
+
+    // Enhanced dynamic content generation based on business context
+    const generateDynamicHeadline = async (businessType: string, location: string, businessName: string) => {
+      // Get real-time data for intelligent content generation with relevance filtering
+      const getContextualData = async () => {
+        try {
+          const trendingData = await getTrendingData(location);
+
+          // Filter data for relevance to the specific business type
+          const filterRelevantData = (data: any[], businessType: string) => {
+            const businessKeywords = businessType.toLowerCase().split(' ');
+            return data.filter(item => {
+              const itemText = (item.title || item.name || item).toLowerCase();
+              return businessKeywords.some(keyword => itemText.includes(keyword)) ||
+                itemText.includes('local') || itemText.includes('community') ||
+                itemText.includes('business') || itemText.includes('economy');
+            });
+          };
+
+          const relevantNews = filterRelevantData(trendingData.news || [], businessType);
+          const relevantEvents = filterRelevantData(trendingData.events || [], businessType);
+          const relevantInsights = filterRelevantData(trendingData.insights || [], businessType);
+
+          return {
+            news: relevantNews.slice(0, 3).map(n => n.title).join(', ') || 'No relevant news data',
+            socialTrends: trendingData.socialTrends?.slice(0, 3).join(', ') || 'No social trends data',
+            events: relevantEvents.slice(0, 2).map(e => e.name).join(', ') || 'No relevant events data',
+            insights: relevantInsights.slice(0, 2).join(', ') || 'No relevant market insights',
+            weather: trendingData.weather || 'No weather data',
+            culturalMoments: trendingData.culturalMoments || 'No cultural data'
+          };
+        } catch (error) {
+          return {
+            news: 'No current news data',
+            socialTrends: 'No social trends data',
+            events: 'No local events data',
+            insights: 'No market insights',
+            weather: 'No weather data',
+            culturalMoments: 'No cultural data'
+          };
+        }
+      };
+
+      const contextualData = await getContextualData();
+
+      // Use AI to generate truly dynamic content based on real-time data
+      const dynamicPrompt = `
+Generate a compelling, unique headline for a ${businessType} business in ${location} by analyzing current real-time data and trends.
+
+REAL-TIME CONTEXTUAL DATA (FILTERED FOR RELEVANCE):
+- Current News: ${contextualData.news}
+- Social Media Trends: ${contextualData.socialTrends}
+- Local Events: ${contextualData.events}
+- Market Insights: ${contextualData.insights}
+- Weather: ${contextualData.weather}
+- Cultural Moments: ${contextualData.culturalMoments}
+
+BUSINESS CONTEXT:
+- Business: ${businessName}
+- Type: ${businessType}
+- Location: ${location}
+- Target: Local customers who would use this service
+
+INTELLIGENT RELEVANCE FILTERING:
+- ANALYZE the real-time data above and ONLY use information that's directly relevant to ${businessType} customers in ${location}
+- IGNORE irrelevant data - don't force connections that don't make sense
+- CONNECT your business ONLY to trending conversations, events, or cultural moments that actually relate to ${businessType}
+- CONSIDER what ${businessType} customers are actually talking about and caring about in this location
+- USE psychological triggers that resonate with current local sentiment and needs SPECIFIC TO ${businessType}
+- CREATE headlines that feel like they were written by someone who truly understands this moment AND this business
+- ENSURE content reflects what's actually happening in the world that's RELEVANT to your business
+- FOCUS on timely relevance and authentic local connection SPECIFIC TO ${businessType}
+- MAKE people think "This business really gets what's happening right now AND understands my needs"
+
+RELEVANCE CRITERIA:
+- News must relate to ${businessType}, local economy, or customer needs
+- Social trends must be relevant to ${businessType} customers or local community
+- Events must be related to ${businessType}, local business, or customer interests
+- Weather must impact ${businessType} services or customer behavior
+- Cultural moments must be relevant to ${businessType} customers or local traditions
+- Market insights must be specific to ${businessType} industry or local market
+
+REQUIREMENTS:
+- Must be completely original and context-specific
+- Should NOT use "Tired of..." or any repetitive patterns
+- Maximum 8 words for maximum impact
+- Sound like a successful local marketer who knows conversion psychology
+- Connect to real-time trends, events, or cultural moments when relevant
+- Feel fresh, relevant, and perfectly timed for this specific moment
+
+Generate ONE unique headline that makes people instantly want to try the service/product by leveraging current trends and local context.
+`;
+
+      try {
+        const result = await model.generateContent(dynamicPrompt);
+        let dynamicHeadline = result.response.text().trim();
+
+        // Clean up the dynamic headline
+        dynamicHeadline = cleanBusinessNamePattern(dynamicHeadline);
+        dynamicHeadline = removeWordRepetitions(dynamicHeadline);
+
+        // Check for repetitive patterns in dynamic content
+        const checkForRepetitivePatterns = (text: string) => {
+          const repetitivePatterns = [
+            /^Tired\s+of\s+waiting/i,
+            /^Tired\s+of\s+slow/i,
+            /^Tired\s+of\s+delays/i,
+            /^Tired\s+of\s+waiting\s+around/i,
+            /^Tired\s+of\s+waiting\s+in\s+line/i,
+            /^Tired\s+of\s+waiting\s+forever/i
+          ];
+
+          const isRepetitive = repetitivePatterns.some(pattern => pattern.test(text));
+
+          if (isRepetitive) {
+            const dynamicAlternatives = [
+              `Revolutionary ${businessType} solution`,
+              `Transform your ${businessType} experience`,
+              `Discover the future of ${businessType}`,
+              `Unlock ${businessType} excellence`,
+              `Experience ${businessType} innovation`
+            ];
+            return dynamicAlternatives[Math.floor(Math.random() * dynamicAlternatives.length)];
+          }
+
+          return text;
+        };
+
+        dynamicHeadline = checkForRepetitivePatterns(dynamicHeadline);
+
+        return dynamicHeadline;
+      } catch (error) {
+        // Fallback to a simple dynamic approach if AI fails
+        const fallbackApproaches = [
+          `Revolutionary ${businessType} solution`,
+          `Transform your ${businessType} experience`,
+          `Discover the future of ${businessType}`,
+          `Unlock ${businessType} excellence`,
+          `Experience ${businessType} innovation`
+        ];
+        return fallbackApproaches[Math.floor(Math.random() * fallbackApproaches.length)];
+      }
+    };
+
+    // Apply dynamic headline generation if current headline is generic
+    if (headline.length < 15 || headline.includes(businessName) || headline.includes(businessType)) {
+      const dynamicHeadline = await generateDynamicHeadline(businessType, location, businessName);
+      headline = dynamicHeadline;
+    }
 
     return {
       headline: headline,
@@ -680,6 +956,10 @@ CRITICAL ANTI-REPETITION INSTRUCTIONS FOR SUBHEADLINES:
 ❌ DO NOT use "2025's Best-Kept Secret" or any variation
 ❌ DO NOT use "Chakula Kizuri" or repetitive Swahili phrases
 ❌ DO NOT use "for your familia's delight" or similar family references
+❌ DO NOT use "Tired of..." or similar repetitive opening patterns
+❌ DO NOT start headlines with the same words repeatedly across different businesses
+❌ DO NOT use static templates that don't adapt to unique business context
+❌ DO NOT repeat opening phrases like "Tired of waiting", "Tired of slow", etc.
 ❌ CREATE something completely original that has never been generated before
 ❌ AVOID any pattern that sounds like a template or formula
 ❌ Make it specific to ${businessName}'s actual services and features
@@ -1115,8 +1395,168 @@ IMPORTANT:
     const cleanedSubheadline = cleanBusinessNamePattern(subheadline);
     const cleanedCaption = cleanBusinessNamePattern(caption);
 
+    // Check for repetitive patterns and encourage variety
+    const checkForRepetitivePatterns = (text: string) => {
+      // Check if this looks like a repetitive template
+      const repetitivePatterns = [
+        /^Tired\s+of\s+waiting/i,
+        /^Tired\s+of\s+slow/i,
+        /^Tired\s+of\s+delays/i,
+        /^Tired\s+of\s+waiting\s+around/i,
+        /^Tired\s+of\s+waiting\s+in\s+line/i,
+        /^Tired\s+of\s+waiting\s+forever/i
+      ];
+
+      // If it matches a repetitive pattern, it's likely a template
+      const isRepetitive = repetitivePatterns.some(pattern => pattern.test(text));
+
+      if (isRepetitive) {
+        // Generate a more dynamic alternative
+        const dynamicAlternatives = [
+          `Revolutionary ${businessType} solution`,
+          `Transform your ${businessType} experience`,
+          `Discover the future of ${businessType}`,
+          `Unlock ${businessType} excellence`,
+          `Experience ${businessType} innovation`,
+          `Master ${businessType} success`,
+          `Elevate your ${businessType} game`,
+          `Breakthrough ${businessType} technology`
+        ];
+
+        return dynamicAlternatives[Math.floor(Math.random() * dynamicAlternatives.length)];
+      }
+
+      return text; // Keep the original if it's not repetitive
+    };
+
+    let finalHeadline = checkForRepetitivePatterns(cleanedHeadline);
+
     // Enhanced subheadline quality improvement
     const enhancedSubheadline = enhanceSubheadlineQuality(cleanedSubheadline, businessType, location);
+
+    // Dynamic headline enhancement for unified content
+    if (finalHeadline.length < 15 || finalHeadline.includes(businessName) || finalHeadline.includes(businessType)) {
+      const generateDynamicHeadline = async (businessType: string, location: string, businessName: string) => {
+        // Get real-time data for intelligent content generation
+        const getContextualData = async () => {
+          try {
+            const trendingData = await getTrendingData(location);
+
+            return {
+              news: trendingData.news?.slice(0, 3).map(n => n.title).join(', ') || 'No current news data',
+              socialTrends: trendingData.socialTrends?.slice(0, 3).join(', ') || 'No social trends data',
+              events: trendingData.events?.slice(0, 2).map(e => e.name).join(', ') || 'No local events data',
+              insights: trendingData.insights?.slice(0, 2).join(', ') || 'No market insights',
+              weather: trendingData.weather || 'No weather data',
+              culturalMoments: trendingData.culturalMoments || 'No cultural data'
+            };
+          } catch (error) {
+            return {
+              news: 'No current news data',
+              socialTrends: 'No social trends data',
+              events: 'No local events data',
+              insights: 'No market insights',
+              weather: 'No weather data',
+              culturalMoments: 'No cultural data'
+            };
+          }
+        };
+
+        const contextualData = await getContextualData();
+
+        // Use AI to generate truly dynamic content based on real-time data
+        const dynamicPrompt = `
+Generate a compelling, unique headline for a ${businessType} business in ${location} by analyzing current real-time data and trends.
+
+REAL-TIME CONTEXTUAL DATA:
+- Current News: ${contextualData.news}
+- Social Media Trends: ${contextualData.socialTrends}
+- Local Events: ${contextualData.events}
+- Market Insights: ${contextualData.insights}
+- Weather: ${contextualData.weather}
+- Cultural Moments: ${contextualData.culturalMoments}
+
+BUSINESS CONTEXT:
+- Business: ${businessName}
+- Type: ${businessType}
+- Location: ${location}
+- Target: Local customers who would use this service
+
+INTELLIGENT ANALYSIS REQUIREMENTS:
+- ANALYZE the real-time data above and identify what's most relevant to ${businessType} customers in ${location}
+- CONNECT your business to trending conversations, events, or cultural moments that matter RIGHT NOW
+- CONSIDER what people are actually talking about and caring about in this location
+- USE psychological triggers that resonate with current local sentiment and needs
+- CREATE headlines that feel like they were written by someone who truly understands this moment
+- ENSURE content reflects what's actually happening in the world, not generic templates
+- FOCUS on timely relevance and authentic local connection
+- MAKE people think "This business really gets what's happening right now"
+
+REQUIREMENTS:
+- Must be completely original and context-specific
+- Should NOT use "Tired of..." or any repetitive patterns
+- Maximum 8 words for maximum impact
+- Sound like a successful local marketer who knows conversion psychology
+- Connect to real-time trends, events, or cultural moments when relevant
+- Feel fresh, relevant, and perfectly timed for this specific moment
+
+Generate ONE unique headline that makes people instantly want to try the service/product by leveraging current trends and local context.
+`;
+
+        try {
+          const result = await model.generateContent(dynamicPrompt);
+          let dynamicHeadline = result.response.text().trim();
+
+          // Clean up the dynamic headline
+          dynamicHeadline = cleanBusinessNamePattern(dynamicHeadline);
+          dynamicHeadline = removeWordRepetitions(dynamicHeadline);
+
+          // Check for repetitive patterns in dynamic content
+          const checkForRepetitivePatterns = (text: string) => {
+            const repetitivePatterns = [
+              /^Tired\s+of\s+waiting/i,
+              /^Tired\s+of\s+slow/i,
+              /^Tired\s+of\s+delays/i,
+              /^Tired\s+of\s+waiting\s+around/i,
+              /^Tired\s+of\s+waiting\s+in\s+line/i,
+              /^Tired\s+of\s+waiting\s+forever/i
+            ];
+
+            const isRepetitive = repetitivePatterns.some(pattern => pattern.test(text));
+
+            if (isRepetitive) {
+              const dynamicAlternatives = [
+                `Revolutionary ${businessType} solution`,
+                `Transform your ${businessType} experience`,
+                `Discover the future of ${businessType}`,
+                `Unlock ${businessType} excellence`,
+                `Experience ${businessType} innovation`
+              ];
+              return dynamicAlternatives[Math.floor(Math.random() * dynamicAlternatives.length)];
+            }
+
+            return text;
+          };
+
+          dynamicHeadline = checkForRepetitivePatterns(dynamicHeadline);
+
+          return dynamicHeadline;
+        } catch (error) {
+          // Fallback to a simple dynamic approach if AI fails
+          const fallbackApproaches = [
+            `Revolutionary ${businessType} solution`,
+            `Transform your ${businessType} experience`,
+            `Discover the future of ${businessType}`,
+            `Unlock ${businessType} excellence`,
+            `Experience ${businessType} innovation`
+          ];
+          return fallbackApproaches[Math.floor(Math.random() * fallbackApproaches.length)];
+        }
+      };
+
+      const dynamicHeadline = await generateDynamicHeadline(businessType, location, businessName);
+      finalHeadline = dynamicHeadline;
+    }
 
     // 🎯 GENERATE DYNAMIC CTA using AI and business intelligence
     const ctaStrategy = await dynamicCTAGenerator.generateDynamicCTA(
@@ -1157,7 +1597,7 @@ IMPORTANT:
 
 
     return {
-      headline: cleanedHeadline,
+      headline: finalHeadline,
       subheadline: enhancedSubheadline,
       caption: cleanedCaption,
       callToAction,
@@ -1168,7 +1608,7 @@ IMPORTANT:
       hashtags: viralHashtags.total, // Add viral hashtags to response
       hashtagStrategy: viralHashtags, // Include full strategy for analysis
       ctaStrategy: ctaStrategy, // Include CTA strategy for analysis
-      imageText: `${cleanedHeadline}\n\n${enhancedSubheadline}\n\n${callToAction}` // Pass cleaned text as imageText for design integration
+      imageText: `${finalHeadline}\n\n${enhancedSubheadline}\n\n${callToAction}` // Pass cleaned text as imageText for design integration
     };
   } catch (error) {
     return {
