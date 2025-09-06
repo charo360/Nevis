@@ -1588,7 +1588,7 @@ export async function generateRevo10Content(input: {
       .replace('{services}', input.services || '')
       .replace('{keyFeatures}', input.keyFeatures || '')
       .replace('{competitiveAdvantages}', input.competitiveAdvantages || '')
-      .replace('{contentThemes}', input.contentThemes.join(', ') || 'general business content');
+      .replace('{contentThemes}', Array.isArray(input.contentThemes) ? input.contentThemes.join(', ') : 'general business content');
 
 
     // 🎨 CREATIVE CAPTION GENERATION: Apply creative enhancement system
