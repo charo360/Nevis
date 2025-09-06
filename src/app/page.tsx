@@ -39,30 +39,56 @@ export default function HomePage() {
 
   // Typewriter animation for "AI Designer"
   const [displayText, setDisplayText] = useState('');
-  const [showCursor, setShowCursor] = useState(true);
   const fullText = 'AI Designer';
 
   useEffect(() => {
     setIsVisible(true);
   }, []);
 
-  // Typewriter animation effect
+  // Typewriter animation effect - infinite loop
   useEffect(() => {
     if (!isVisible) return;
 
     let currentIndex = 0;
-    const timer = setInterval(() => {
-      if (currentIndex <= fullText.length) {
-        setDisplayText(fullText.slice(0, currentIndex));
-        currentIndex++;
-      } else {
-        clearInterval(timer);
-        // Hide cursor after animation completes
-        setTimeout(() => setShowCursor(false), 1000);
-      }
-    }, 150); // 150ms delay between each character
+    let isDeleting = false;
 
-    return () => clearInterval(timer);
+    const typewriterLoop = () => {
+      const timer = setInterval(() => {
+        if (!isDeleting) {
+          // Typing phase
+          if (currentIndex <= fullText.length) {
+            setDisplayText(fullText.slice(0, currentIndex));
+            currentIndex++;
+          } else {
+            // Pause at end before deleting
+            clearInterval(timer);
+            setTimeout(() => {
+              isDeleting = true;
+              typewriterLoop();
+            }, 2000); // 2 second pause when complete
+          }
+        } else {
+          // Deleting phase
+          if (currentIndex > 0) {
+            setDisplayText(fullText.slice(0, currentIndex - 1));
+            currentIndex--;
+          } else {
+            // Pause before retyping
+            clearInterval(timer);
+            setTimeout(() => {
+              isDeleting = false;
+              typewriterLoop();
+            }, 500); // 0.5 second pause when empty
+          }
+        }
+      }, isDeleting ? 75 : 150); // Faster deletion, slower typing
+
+      return timer;
+    };
+
+    const initialTimer = typewriterLoop();
+
+    return () => clearInterval(initialTimer);
   }, [isVisible, fullText]);
 
   // Heartbeat: ping server every 5 minutes to extend session (only for logged in users)
@@ -281,7 +307,7 @@ export default function HomePage() {
               <br />
               <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
                 {displayText}
-                {showCursor && <span className="animate-pulse text-blue-600">|</span>}
+                <span className="animate-pulse text-blue-600">|</span>
               </span>
             </h1>
 
