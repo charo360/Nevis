@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import adminApp, { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { verifyToken } from '@/lib/auth/jwt';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -42,8 +42,8 @@ export async function POST(req: Request) {
 
     if (authHeader.startsWith('Bearer ')) {
       const idToken = authHeader.split(' ')[1];
-      const decoded = await adminAuth.verifyIdToken(idToken);
-      userId = decoded.uid;
+      const decoded = verifyToken(idToken);
+      userId = decoded?.userId || null;
     } else if (req.headers.get('x-demo-user')) {
       // Allow demo requests in dev when a demo header is present
       userId = String(req.headers.get('x-demo-user'));
@@ -74,71 +74,22 @@ export async function POST(req: Request) {
     const key = `${userId}_${platform}`;
     const now = new Date().toISOString();
 
-    // If we don't have admin creds available, skip admin write and use local fallback
-    if (!hasAdminCredentials()) {
-      const local = await readLocalStore();
-      const keyName = `${userId}_${platform}`;
-      local[keyName] = {
-        userId,
-        platform,
-        socialId,
-        accessToken,
-        // support either accessTokenSecret or older refreshToken field
-        accessTokenSecret: accessTokenSecret || refreshToken || null,
-        expiresAt: expiresAt || null,
-        profile: profile || {},
-        createdAt: now,
-        updatedAt: now,
-      };
-      await writeLocalStore(local);
-      return NextResponse.json({ ok: true, fallback: true });
-    }
-
-    // Debug: log project and collection path
-    try {
-      const proj = (adminDb as any)._databaseId?.projectId || process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-    } catch (e) {}
-
-    const fullPath = `socialConnections/${key}`;
-    const docRef = adminDb.doc(fullPath);
-
-    try {
-      await docRef.set(
-        {
-          userId,
-          platform,
-          socialId,
-          accessToken,
-          // persist twitter secret under a clear name
-          accessTokenSecret: accessTokenSecret || refreshToken || null,
-          expiresAt: expiresAt || null,
-          profile: profile || {},
-          createdAt: now,
-          updatedAt: now,
-        },
-        { merge: true }
-      );
-    } catch (writeErr) {
-      // Fallback to local JSON store for development when admin fails
-      try {
-        const local = await readLocalStore();
-        const keyName = `${userId}_${platform}`;
-        local[keyName] = {
-          userId,
-          platform,
-          socialId,
-          accessToken,
-          refreshToken: refreshToken || null,
-          expiresAt: expiresAt || null,
-          profile: profile || {},
-          createdAt: now,
-          updatedAt: now,
-        };
-        await writeLocalStore(local);
-      } catch (localErr) {
-        throw writeErr; // rethrow original
-      }
-    }
+    // Store connection in local storage
+    const local = await readLocalStore();
+    const keyName = `${userId}_${platform}`;
+    local[keyName] = {
+      userId,
+      platform,
+      socialId,
+      accessToken,
+      // support either accessTokenSecret or older refreshToken field
+      accessTokenSecret: accessTokenSecret || refreshToken || null,
+      expiresAt: expiresAt || null,
+      profile: profile || {},
+      createdAt: now,
+      updatedAt: now,
+    };
+    await writeLocalStore(local);
 
     return NextResponse.json({ ok: true });
   } catch (error: any) {
@@ -153,8 +104,8 @@ export async function GET(req: Request) {
 
     if (authHeader.startsWith('Bearer ')) {
       const idToken = authHeader.split(' ')[1];
-      const decoded = await adminAuth.verifyIdToken(idToken);
-      userId = decoded.uid;
+      const decoded = verifyToken(idToken);
+      userId = decoded?.userId || null;
     } else if (req.headers.get('x-demo-user')) {
       userId = String(req.headers.get('x-demo-user'));
     }
@@ -168,35 +119,10 @@ export async function GET(req: Request) {
       twitter: !!(process.env.TWITTER_API_KEY || process.env.TWITTER_CLIENT_ID || process.env.TWITTER_API_KEY),
     };
 
-    // If there are no admin credentials, skip admin read and use local store.
-    if (!hasAdminCredentials()) {
-      const local = await readLocalStore();
-      const results = Object.values(local).filter((c: any) => c.userId === userId && (configuredProviders as any)[c.platform]);
-      return NextResponse.json({ connections: results, fallback: true });
-    }
-
-    try {
-      const snapshot = await adminDb.collection('socialConnections').where('userId', '==', userId).get();
-      const results: any[] = [];
-      snapshot.forEach((doc: any) => {
-        const data = { id: doc.id, ...doc.data() };
-        // Only return configured providers
-        if (configuredProviders[data.platform as keyof typeof configuredProviders]) {
-          results.push(data);
-        }
-      });
-
-      return NextResponse.json({ connections: results });
-    } catch (readErr) {
-      try {
-        const local = await readLocalStore();
-        const results = Object.values(local).filter((c: any) => c.userId === userId && (configuredProviders as any)[c.platform]);
-        return NextResponse.json({ connections: results });
-      } catch (localErr) {
-        const msg = (readErr && (readErr as any).message) || String(readErr);
-        return NextResponse.json({ error: msg }, { status: 500 });
-      }
-    }
+    // Use local store for social connections
+    const local = await readLocalStore();
+    const results = Object.values(local).filter((c: any) => c.userId === userId && (configuredProviders as any)[c.platform]);
+    return NextResponse.json({ connections: results });
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || String(error) }, { status: 500 });
   }
@@ -209,8 +135,8 @@ export async function DELETE(req: Request) {
 
     if (authHeader.startsWith('Bearer ')) {
       const idToken = authHeader.split(' ')[1];
-      const decoded = await adminAuth.verifyIdToken(idToken);
-      userId = decoded.uid;
+      const decoded = verifyToken(idToken);
+      userId = decoded?.userId || null;
     } else if (req.headers.get('x-demo-user')) {
       userId = String(req.headers.get('x-demo-user'));
     }
@@ -222,30 +148,14 @@ export async function DELETE(req: Request) {
     if (!platform) return NextResponse.json({ error: 'Missing platform' }, { status: 400 });
 
     const key = `${userId}_${platform}`;
-    const fullPath = `socialConnections/${key}`;
 
-    // If admin creds aren't available, remove from local fallback store
-    if (!hasAdminCredentials()) {
-      try {
-        const local = await readLocalStore();
-        delete local[key];
-        await writeLocalStore(local);
-      } catch (localErr) {
-        return NextResponse.json({ error: String(localErr) }, { status: 500 });
-      }
-    } else {
-      try {
-        await adminDb.doc(fullPath).delete();
-      } catch (err) {
-        // remove from local
-        try {
-          const local = await readLocalStore();
-          delete local[key];
-          await writeLocalStore(local);
-        } catch (localErr) {
-          return NextResponse.json({ error: String(err) }, { status: 500 });
-        }
-      }
+    // Remove from local store
+    try {
+      const local = await readLocalStore();
+      delete local[key];
+      await writeLocalStore(local);
+    } catch (localErr) {
+      return NextResponse.json({ error: String(localErr) }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true });
