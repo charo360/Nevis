@@ -14,43 +14,46 @@ async function readStates() {
   }
 }
 
-async function removeState(state: string) {
-  try {
-    const raw = await fs.readFile(STATE_STORE, 'utf-8');
-    const data = JSON.parse(raw || '{}');
-    delete data[state];
-    await fs.writeFile(STATE_STORE, JSON.stringify(data, null, 2), 'utf-8');
-  } catch (e) {
-    // ignore
-  }
+async function writeStates(data: any) {
+  await fs.mkdir(path.dirname(STATE_STORE), { recursive: true });
+  await fs.writeFile(STATE_STORE, JSON.stringify(data, null, 2), 'utf-8');
 }
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const code = url.searchParams.get('code');
   const state = url.searchParams.get('state');
-  const error = url.searchParams.get('error');
 
-  if (error) {
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect?error=linkedin_denied`);
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001';
+
+  if (!code || !state) {
+    return NextResponse.redirect(`${baseUrl}/social-connect?error=invalid_request`);
   }
 
-  if (!state) return NextResponse.json({ error: 'Missing state' }, { status: 400 });
-
-  const states = await readStates();
-  const entry = states[state];
-  if (!entry) return NextResponse.json({ error: 'Invalid state' }, { status: 400 });
-
   try {
-    const clientId = process.env.LINKEDIN_CLIENT_ID;
-    const clientSecret = process.env.LINKEDIN_CLIENT_SECRET;
-    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/api/social/oauth/linkedin/callback`;
+    // Read stored state
+    const states = await readStates();
+    const storedState = states[state];
 
-    if (!clientId || !clientSecret) {
-      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect?error=linkedin_not_configured`);
+    if (!storedState) {
+      return NextResponse.redirect(`${baseUrl}/social-connect?error=invalid_state`);
+    }
+
+    const { userId, accessToken: storedAccessToken, accountType } = storedState;
+
+    // For development, accept callbacks from production URL
+    const prodCallbackUrl = 'https://crevo.app/api/social/oauth/linkedin/callback';
+    const devCallbackUrl = `${baseUrl}/api/social/oauth/linkedin/callback`;
+    const acceptedCallbackUrls = [devCallbackUrl];
+    if (baseUrl.includes('localhost')) {
+      acceptedCallbackUrls.push(prodCallbackUrl);
     }
 
     // Exchange code for access token
+    const clientId = process.env.LINKEDIN_CLIENT_ID || '770tjdh8uh1whr';
+    const clientSecret = process.env.LINKEDIN_CLIENT_SECRET!;
+    const redirectUri = prodCallbackUrl; // Use production URL since that's what we registered
+
     const tokenUrl = 'https://www.linkedin.com/oauth/v2/accessToken';
     const tokenRes = await fetch(tokenUrl, {
       method: 'POST',
@@ -59,7 +62,7 @@ export async function GET(req: Request) {
       },
       body: new URLSearchParams({
         grant_type: 'authorization_code',
-        code: code || '',
+        code: code,
         redirect_uri: redirectUri,
         client_id: clientId,
         client_secret: clientSecret,
@@ -69,51 +72,99 @@ export async function GET(req: Request) {
     const tokenData: any = await tokenRes.json();
 
     if (tokenData.error) {
-      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect?error=linkedin_token`);
+      console.error('LinkedIn token error:', tokenData.error);
+      return NextResponse.redirect(`${baseUrl}/social-connect?error=linkedin_token_failed`);
     }
 
     const accessToken = tokenData.access_token;
 
-    // Get basic profile
-    const profileRes = await fetch('https://api.linkedin.com/v2/me', {
+    // Get user profile information
+    const profileResponse = await fetch('https://api.linkedin.com/v2/me', {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'X-Restli-Protocol-Version': '2.0.0'
       }
     });
-    const profileData: any = await profileRes.json();
+
+    if (!profileResponse.ok) {
+      console.error('LinkedIn profile error:', profileResponse.statusText);
+      return NextResponse.redirect(`${baseUrl}/social-connect?error=linkedin_profile_failed`);
+    }
+
+    const profileData: any = await profileResponse.json();
 
     // Get email address
-    const emailRes = await fetch('https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))', {
+    const emailResponse = await fetch('https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))', {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'X-Restli-Protocol-Version': '2.0.0'
       }
     });
-    const emailData: any = await emailRes.json();
 
-    // Combine profile and email data
-    const combinedProfile = {
-      ...profileData,
-      email: emailData?.elements?.[0]?.['handle~']?.emailAddress
-    };
+    let email = '';
+    if (emailResponse.ok) {
+      const emailData: any = await emailResponse.json();
+      if (emailData.elements && emailData.elements.length > 0) {
+        email = emailData.elements[0]['handle~'].emailAddress;
+      }
+    }
 
-    // Persist connection
-    await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/api/social/connections`, {
+    // For company pages, get organization information
+    let companyName = '';
+    if (accountType === 'company') {
+      const companyResponse = await fetch(
+        'https://api.linkedin.com/v2/organizationalEntityAcls?q=roleAssignee&role=ADMINISTRATOR&projection=(elements*(organizationalTarget~(localizedName)))',
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'X-Restli-Protocol-Version': '2.0.0'
+          }
+        }
+      );
+
+      if (companyResponse.ok) {
+        const companyData: any = await companyResponse.json();
+        if (companyData.elements && companyData.elements.length > 0) {
+          companyName = companyData.elements[0]['organizationalTarget~'].localizedName;
+        }
+      }
+    }
+
+    // Store connection via connections API
+    const connectionsResponse = await fetch(`${baseUrl}/api/social/connections`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-demo-user': entry.demoUser },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${storedAccessToken}`,
+        'x-demo-user': userId // Fallback for demo/development
+      },
       body: JSON.stringify({
         platform: 'linkedin',
         socialId: profileData.id,
         accessToken,
-        profile: combinedProfile,
+        profile: {
+          username: profileData.preferredUsername || email,
+          name: profileData.localizedFirstName + ' ' + profileData.localizedLastName,
+          email,
+          accountType,
+          companyName
+        },
       }),
     });
 
-    await removeState(state);
+    if (!connectionsResponse.ok) {
+      console.error('Failed to store LinkedIn connection:', await connectionsResponse.text());
+    }
 
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect`);
+    // Clean up state
+    delete states[state];
+    await writeStates(states);
+
+    // For development, redirect to localhost
+    const redirectUrl = `http://localhost:3001/social-connect?oauth_success=true&platform=linkedin&username=${encodeURIComponent(profileData.preferredUsername || email)}`;
+    return NextResponse.redirect(redirectUrl);
   } catch (error) {
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect?error=linkedin_failed`);
+    console.error('LinkedIn OAuth callback error:', error);
+    return NextResponse.redirect(`http://localhost:3001/social-connect?error=linkedin_callback_failed`);
   }
 }

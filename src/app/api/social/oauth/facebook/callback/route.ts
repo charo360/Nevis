@@ -14,15 +14,9 @@ async function readStates() {
   }
 }
 
-async function removeState(state: string) {
-  try {
-    const raw = await fs.readFile(STATE_STORE, 'utf-8');
-    const data = JSON.parse(raw || '{}');
-    delete data[state];
-    await fs.writeFile(STATE_STORE, JSON.stringify(data, null, 2), 'utf-8');
-  } catch (e) {
-    // ignore
-  }
+async function writeStates(data: any) {
+  await fs.mkdir(path.dirname(STATE_STORE), { recursive: true });
+  await fs.writeFile(STATE_STORE, JSON.stringify(data, null, 2), 'utf-8');
 }
 
 export async function GET(req: Request) {
@@ -30,42 +24,53 @@ export async function GET(req: Request) {
   const code = url.searchParams.get('code');
   const state = url.searchParams.get('state');
 
-  if (!state) return NextResponse.json({ error: 'Missing state' }, { status: 400 });
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001';
 
-  const states = await readStates();
-  const entry = states[state];
-  if (!entry) return NextResponse.json({ error: 'Invalid state' }, { status: 400 });
+  if (!code || !state) {
+    return NextResponse.redirect(`${baseUrl}/social-connect?error=invalid_request`);
+  }
 
   try {
-    const clientId = process.env.FACEBOOK_API_KEY;
-    const clientSecret = process.env.FACEBOOK_SECRET_KEY || process.env.FACEBOOK_CLIENT_SECRET;
-    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/api/social/oauth/facebook/callback`;
+    // Read stored state
+    const states = await readStates();
+    const storedState = states[state];
 
-    if (!code) {
-      return NextResponse.json({ error: 'Missing code' }, { status: 400 });
+    if (!storedState) {
+      return NextResponse.redirect(`${baseUrl}/social-connect?error=invalid_state`);
     }
 
-    if (!clientId || !clientSecret) {
-      return NextResponse.json({ error: 'Facebook not configured' }, { status: 500 });
+    const { userId, accessToken: storedAccessToken } = storedState;
+
+    // For development, accept callbacks from production URL
+    const prodCallbackUrl = 'https://crevo.app/api/social/oauth/facebook/callback';
+    const devCallbackUrl = `${baseUrl}/api/social/oauth/facebook/callback`;
+    const acceptedCallbackUrls = [devCallbackUrl];
+    if (baseUrl.includes('localhost')) {
+      acceptedCallbackUrls.push(prodCallbackUrl);
     }
 
     // Exchange code for access token
+    const clientId = process.env.FACEBOOK_APP_ID || process.env.FACEBOOK_API_KEY || process.env.FACEBOOK_CLIENT_ID!;
+    const clientSecret = process.env.FACEBOOK_APP_SECRET || process.env.FACEBOOK_SECRET_KEY || process.env.FACEBOOK_CLIENT_SECRET!;
+    const redirectUri = prodCallbackUrl; // Use production URL since that's what we registered
+
     const tokenUrl = new URL('https://graph.facebook.com/v19.0/oauth/access_token');
     tokenUrl.searchParams.append('client_id', clientId);
     tokenUrl.searchParams.append('redirect_uri', redirectUri);
     tokenUrl.searchParams.append('client_secret', clientSecret);
-    tokenUrl.searchParams.append('code', code as string);
+    tokenUrl.searchParams.append('code', code);
 
     const tokenRes = await fetch(tokenUrl.toString());
     const tokenJson: any = await tokenRes.json();
 
     if (tokenJson.error) {
-      return NextResponse.json({ error: tokenJson.error }, { status: 400 });
+      console.error('Facebook token error:', tokenJson.error);
+      return NextResponse.redirect(`${baseUrl}/social-connect?error=facebook_token_failed`);
     }
 
     const accessToken = tokenJson.access_token;
 
-    // Fetch profile with email
+    // Fetch user profile
     const profileUrl = new URL('https://graph.facebook.com/v19.0/me');
     profileUrl.searchParams.append('fields', 'id,name,email');
     profileUrl.searchParams.append('access_token', accessToken);
@@ -74,25 +79,47 @@ export async function GET(req: Request) {
     const profileJson: any = await profileRes.json();
 
     if (profileJson.error) {
-      return NextResponse.json({ error: profileJson.error }, { status: 400 });
+      console.error('Facebook profile error:', profileJson.error);
+      return NextResponse.redirect(`${baseUrl}/social-connect?error=facebook_profile_failed`);
     }
 
-    // Persist connection (single POST)
-    await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/api/social/connections`, {
+    // Fetch user's pages
+    const pagesUrl = new URL('https://graph.facebook.com/v19.0/me/accounts');
+    pagesUrl.searchParams.append('access_token', accessToken);
+
+    const pagesRes = await fetch(pagesUrl.toString());
+    const pagesJson: any = await pagesRes.json();
+
+    // Store connection via connections API
+    const connectionsResponse = await fetch(`${baseUrl}/api/social/connections`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-demo-user': entry.demoUser },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${storedAccessToken}`,
+        'x-demo-user': userId // Fallback for demo/development
+      },
       body: JSON.stringify({
         platform: 'facebook',
         socialId: profileJson.id,
         accessToken,
         profile: profileJson,
+        pages: pagesJson.data || [],
       }),
     });
 
-    await removeState(state);
+    if (!connectionsResponse.ok) {
+      console.error('Failed to store Facebook connection:', await connectionsResponse.text());
+    }
 
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect`);
+    // Clean up state
+    delete states[state];
+    await writeStates(states);
+
+    // For development, redirect to localhost
+    const redirectUrl = `http://localhost:3001/social-connect?oauth_success=true&platform=facebook&username=${encodeURIComponent(profileJson.name)}`;
+    return NextResponse.redirect(redirectUrl);
   } catch (error) {
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/social-connect?error=facebook_failed`);
+    console.error('Facebook OAuth callback error:', error);
+    return NextResponse.redirect(`http://localhost:3001/social-connect?error=facebook_callback_failed`);
   }
 }

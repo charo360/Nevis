@@ -7,9 +7,29 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import OpenAI from 'openai';
 import type { BrandProfile, Platform } from '@/lib/types';
 
-// Initialize AI clients
-const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+// Initialize AI clients lazily to avoid build-time issues
+let ai: GoogleGenerativeAI | null = null;
+let openai: OpenAI | null = null;
+
+function getGoogleAI(): GoogleGenerativeAI {
+  if (!ai) {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY environment variable is required');
+    }
+    ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  }
+  return ai;
+}
+
+function getOpenAI(): OpenAI {
+  if (!openai) {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY environment variable is required');
+    }
+    openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+  return openai;
+}
 
 // Revo 2.0 uses Gemini 2.5 Flash Image Preview (same as Revo 1.0 but with enhanced prompting)
 const REVO_2_0_MODEL = 'gemini-2.5-flash-image-preview';
@@ -140,7 +160,7 @@ Return your response in this exact JSON format:
   "targetEmotions": ["emotion1", "emotion2", "emotion3"]
 }`;
 
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAI().chat.completions.create({
     model: 'gpt-4o',
     messages: [{ role: 'user', content: prompt }],
     temperature: 0.8,
@@ -268,7 +288,7 @@ async function generateImageWithGemini(prompt: string, options: Revo20Generation
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
 
-      const model = ai.getGenerativeModel({
+      const model = getGoogleAI().getGenerativeModel({
         model: REVO_2_0_MODEL,
         generationConfig: {
           temperature: 0.7,
@@ -376,7 +396,7 @@ Format as JSON:
   "hashtags": ["#SpecificHashtag1", "#LocationBasedHashtag", "#IndustryRelevant", ...]
 }`;
 
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAI().chat.completions.create({
     model: 'gpt-4o',
     messages: [{ role: 'user', content: prompt }],
     temperature: 0.7,
@@ -464,7 +484,7 @@ function generateContextualFallback(
 export async function testRevo20Availability(): Promise<boolean> {
   try {
 
-    const model = ai.getGenerativeModel({ model: REVO_2_0_MODEL });
+    const model = getGoogleAI().getGenerativeModel({ model: REVO_2_0_MODEL });
     const response = await model.generateContent('Create a simple test image with the text "Revo 2.0 Test" on a modern gradient background');
 
     const parts = response.candidates?.[0]?.content?.parts || [];

@@ -16,10 +16,6 @@ export class TempImageService {
       const [header, base64Data] = dataUrl.split(',');
       const mimeType = header.match(/data:([^;]+)/)?.[1] || 'image/png';
       
-        mimeType,
-        dataLength: base64Data?.length || 0
-      });
-
       // For FLUX Kontext Max, we need to try different approaches:
       
       // Approach 1: Try the data URL directly (some APIs accept this)
