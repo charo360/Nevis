@@ -274,7 +274,7 @@ export default function HomePage() {
                 size="lg"
                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-8 py-4 h-auto cursor-pointer z-10 relative"
               >
-                Train Your AI Free – No Credit Card Required
+                Start Free – No Credit Card Required
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
 
@@ -585,7 +585,7 @@ export default function HomePage() {
               size="lg"
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-8 py-4 h-auto"
             >
-              Train Your Agent Now
+              Start Free
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
           </div>
@@ -884,7 +884,7 @@ export default function HomePage() {
                   className="w-full"
                   variant="outline"
                 >
-                  Train Agent Free – No Credit Card Required
+                  Start Free – No Credit Card Required
                 </Button>
               </CardContent>
             </Card>
@@ -1140,7 +1140,7 @@ export default function HomePage() {
                   size="lg"
                   className="bg-white text-gray-900 hover:bg-gray-100 text-lg px-8 py-4 h-auto font-semibold"
                 >
-                  Train Your AI Agent Free
+                  Start Free
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
 
