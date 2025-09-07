@@ -90,23 +90,30 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
             if (selectedRevoModel === 'revo-2.0' && outputType === 'image' && brandProfile) {
                 // Use Revo 2.0 next-generation AI for images with brand profile
                 const revo2Result = await generateRevo2CreativeAssetAction(
-                    currentInput,
                     brandProfile,
+                    'Instagram', // Default platform for Creative Studio
+                    currentInput,
                     {
-                        platform: 'Instagram', // Default platform for Creative Studio
                         aspectRatio: '1:1', // Default to square for Creative Studio
-                        style: 'photographic',
-                        quality: 'ultra',
-                        mood: 'professional'
+                        visualStyle: 'professional',
+                        includePeopleInDesigns: false
                     }
                 );
 
-                aiResponse = {
-                    id: (Date.now() + 1).toString(),
-                    role: 'assistant',
-                    content: `🎨 Your professional design has been created! This image was generated using advanced AI with brand integration and professional design principles for optimal results.`,
-                    imageUrl: revo2Result.imageUrl,
-                };
+                if (revo2Result.success && revo2Result.imageUrl) {
+                    aiResponse = {
+                        id: (Date.now() + 1).toString(),
+                        role: 'assistant',
+                        content: `🎨 Your professional design has been created! This image was generated using advanced AI with brand integration and professional design principles for optimal results.`,
+                        imageUrl: revo2Result.imageUrl,
+                    };
+                } else {
+                    aiResponse = {
+                        id: (Date.now() + 1).toString(),
+                        role: 'assistant',
+                        content: `❌ Revo 2.0 generation failed: ${revo2Result.error || 'Unknown error'}. Please try again.`,
+                    };
+                }
             } else if (selectedRevoModel === 'revo-1.5' && outputType === 'image' && brandProfile) {
                 // Use enhanced design generation for images with brand profile
                 const enhancedResult = await generateEnhancedDesignAction(
