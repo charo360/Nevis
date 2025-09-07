@@ -127,7 +127,8 @@ export class TextDetectionService {
     try {
       const { createWorker } = await import('tesseract.js');
 
-      const worker = createWorker({
+      // Create worker with language - v6 simplified API
+      const worker = await createWorker('eng', 1, {
         logger: m => {
           if (m.status === 'recognizing text') {
             console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
@@ -135,12 +136,7 @@ export class TextDetectionService {
         }
       });
 
-      // Initialize worker with proper v6 API
-      await worker.load();
-      await worker.loadLanguage('eng');
-      await worker.initialize('eng');
-
-      // Recognize text with v6 API
+      // Recognize text with v6 API - no need for separate load/loadLanguage/initialize
       const { data } = await worker.recognize(imageUrl);
 
       console.log('📝 OCR Raw Response:', data);

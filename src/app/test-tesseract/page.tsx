@@ -22,12 +22,12 @@ export default function TestTesseractPage() {
 
     try {
       console.log('🔍 Testing Tesseract.js installation...');
-      
+
       // Import Tesseract.js
       const { createWorker } = await import('tesseract.js');
       console.log('✅ Tesseract.js imported successfully');
 
-      // Create worker
+      // Create worker with v6 API
       const worker = await createWorker('eng', 1, {
         logger: m => {
           console.log('Tesseract Logger:', m);
@@ -167,8 +167,8 @@ export default function TestTesseractPage() {
                     <div key={index} className="flex items-center justify-between p-2 border rounded">
                       <span className="font-mono">{word.text}</span>
                       <div className="text-sm text-muted-foreground">
-                        {Math.round(word.confidence)}% | 
-                        ({word.bbox?.x0}, {word.bbox?.y0}) 
+                        {Math.round(word.confidence)}% |
+                        ({word.bbox?.x0}, {word.bbox?.y0})
                         {word.bbox?.x1 - word.bbox?.x0}×{word.bbox?.y1 - word.bbox?.y0}
                       </div>
                     </div>

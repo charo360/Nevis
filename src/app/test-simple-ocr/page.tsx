@@ -27,13 +27,10 @@ export default function TestSimpleOCRPage() {
       const { createWorker } = await import('tesseract.js');
       console.log('✅ Tesseract imported successfully');
 
-      const worker = createWorker({
+      // Create worker with language - v6 simplified API
+      const worker = await createWorker('eng', 1, {
         logger: m => console.log('OCR:', m)
       });
-
-      await worker.load();
-      await worker.loadLanguage('eng');
-      await worker.initialize('eng');
 
       const { data } = await worker.recognize('https://tesseract.projectnaptha.com/img/eng_bw.png');
 
