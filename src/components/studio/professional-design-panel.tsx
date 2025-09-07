@@ -95,134 +95,136 @@ export function ProfessionalDesignPanel({ brandProfile, onEditImage }: Professio
   };
 
   return (
-    <div className="h-full grid grid-cols-12 gap-6">
-      {/* Left Panel - Asset Library */}
-      <div className="col-span-3 space-y-4">
-        <Card className="h-fit">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Upload className="w-5 h-5" />
-              Asset Library
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <AssetLibrary
-              assets={uploadedAssets}
-              onUpload={handleAssetUpload}
-              brandProfile={brandProfile}
-            />
-          </CardContent>
-        </Card>
-
-        <Card className="h-fit">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Palette className="w-5 h-5" />
-              Style Controls
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <StyleControls
-              selectedTemplate={selectedTemplate}
-              onTemplateChange={setSelectedTemplate}
-              brandProfile={brandProfile}
-            />
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Center Panel - Design Preview */}
-      <div className="col-span-6">
-        <Card className="h-full">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Eye className="w-5 h-5" />
-                Design Preview
-              </CardTitle>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline">1:1 Square</Badge>
-                <Badge variant="outline">1080×1080</Badge>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="flex-1">
-            <DesignPreview
-              assets={uploadedAssets}
-              textElements={textElements}
-              template={selectedTemplate}
-              generatedImage={generatedImage}
-              isGenerating={isGenerating}
-              brandProfile={brandProfile}
-              onEditImage={onEditImage}
-            />
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Right Panel - Text Controls & Generation */}
-      <div className="col-span-3 space-y-4">
-        <Card className="h-fit">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Type className="w-5 h-5" />
-              Text Controls
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <TextControls
-              textElements={textElements}
-              onChange={handleTextChange}
-              brandProfile={brandProfile}
-            />
-          </CardContent>
-        </Card>
-
-        <Card className="h-fit">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Wand2 className="w-5 h-5" />
-              AI Generation
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <PromptBuilder
-              assets={uploadedAssets}
-              textElements={textElements}
-              template={selectedTemplate}
-              brandProfile={brandProfile}
-              onGenerate={handleGenerate}
-              isGenerating={isGenerating}
-            />
-          </CardContent>
-        </Card>
-
-        {generatedImage && (
-          <Card className="h-fit">
+    <div className="h-full flex flex-col overflow-hidden">
+      <div className="flex-1 grid grid-cols-12 gap-6 min-h-0">
+        {/* Left Panel - Asset Library */}
+        <div className="col-span-3 flex flex-col space-y-4 overflow-hidden">
+          <Card className="flex-shrink-0">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg">
-                <Download className="w-5 h-5" />
-                Export Options
+                <Upload className="w-5 h-5" />
+                Asset Library
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Button variant="outline" size="sm" className="w-full">
-                  <Download className="w-4 h-4 mr-2" />
-                  Download HD
-                </Button>
-                <Button variant="outline" size="sm" className="w-full">
-                  <Save className="w-4 h-4 mr-2" />
-                  Save to Artifacts
-                </Button>
-                <Button variant="outline" size="sm" className="w-full">
-                  <Share className="w-4 h-4 mr-2" />
-                  Share Design
-                </Button>
-              </div>
+            <CardContent className="max-h-[400px] overflow-y-auto">
+              <AssetLibrary
+                assets={uploadedAssets}
+                onUpload={handleAssetUpload}
+                brandProfile={brandProfile}
+              />
             </CardContent>
           </Card>
-        )}
+
+          <Card className="flex-shrink-0">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Palette className="w-5 h-5" />
+                Style Controls
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="max-h-[300px] overflow-y-auto">
+              <StyleControls
+                selectedTemplate={selectedTemplate}
+                onTemplateChange={setSelectedTemplate}
+                brandProfile={brandProfile}
+              />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Center Panel - Design Preview */}
+        <div className="col-span-6 flex flex-col min-h-0">
+          <Card className="h-full flex flex-col">
+            <CardHeader className="pb-3 flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Eye className="w-5 h-5" />
+                  Design Preview
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">1:1 Square</Badge>
+                  <Badge variant="outline">1080×1080</Badge>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="flex-1 min-h-0">
+              <DesignPreview
+                assets={uploadedAssets}
+                textElements={textElements}
+                template={selectedTemplate}
+                generatedImage={generatedImage}
+                isGenerating={isGenerating}
+                brandProfile={brandProfile}
+                onEditImage={onEditImage}
+              />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Panel - Text Controls & Generation */}
+        <div className="col-span-3 flex flex-col space-y-4 overflow-hidden">
+          <Card className="flex-shrink-0">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Type className="w-5 h-5" />
+                Text Controls
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="max-h-[400px] overflow-y-auto">
+              <TextControls
+                textElements={textElements}
+                onChange={handleTextChange}
+                brandProfile={brandProfile}
+              />
+            </CardContent>
+          </Card>
+
+          <Card className="flex-shrink-0">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Wand2 className="w-5 h-5" />
+                AI Generation
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="max-h-[300px] overflow-y-auto">
+              <PromptBuilder
+                assets={uploadedAssets}
+                textElements={textElements}
+                template={selectedTemplate}
+                brandProfile={brandProfile}
+                onGenerate={handleGenerate}
+                isGenerating={isGenerating}
+              />
+            </CardContent>
+          </Card>
+
+          {generatedImage && (
+            <Card className="flex-shrink-0">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Download className="w-5 h-5" />
+                  Export Options
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <Button variant="outline" size="sm" className="w-full">
+                    <Download className="w-4 h-4 mr-2" />
+                    Download HD
+                  </Button>
+                  <Button variant="outline" size="sm" className="w-full">
+                    <Save className="w-4 h-4 mr-2" />
+                    Save to Artifacts
+                  </Button>
+                  <Button variant="outline" size="sm" className="w-full">
+                    <Share className="w-4 h-4 mr-2" />
+                    Share Design
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     </div>
   );

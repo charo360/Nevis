@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { 
-  Upload, 
-  Image as ImageIcon, 
-  X, 
+import {
+  Upload,
+  Image as ImageIcon,
+  X,
   Plus,
   Crown,
   Palette,
@@ -41,7 +41,7 @@ export function AssetLibrary({ assets, onUpload, brandProfile }: AssetLibraryPro
     if (!files) return;
 
     const newAssets: DesignAsset[] = [];
-    
+
     Array.from(files).forEach((file) => {
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
@@ -55,7 +55,7 @@ export function AssetLibrary({ assets, onUpload, brandProfile }: AssetLibraryPro
             position: { x: 0, y: 0 }
           };
           newAssets.push(asset);
-          
+
           if (newAssets.length === files.length) {
             onUpload(newAssets);
           }
@@ -125,13 +125,12 @@ export function AssetLibrary({ assets, onUpload, brandProfile }: AssetLibraryPro
           <Upload className="w-4 h-4" />
           <span className="text-sm font-medium">Upload Assets</span>
         </div>
-        
+
         <div
-          className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-            dragOver 
-              ? 'border-primary bg-primary/5' 
+          className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${dragOver
+              ? 'border-primary bg-primary/5'
               : 'border-muted-foreground/25 hover:border-primary/50'
-          }`}
+            }`}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -178,8 +177,8 @@ export function AssetLibrary({ assets, onUpload, brandProfile }: AssetLibraryPro
               {assets.length}
             </Badge>
           </div>
-          
-          <ScrollArea className="h-48">
+
+          <ScrollArea className="h-40 pr-2">
             <div className="space-y-2">
               {assets.map((asset) => (
                 <Card key={asset.id} className="group">
