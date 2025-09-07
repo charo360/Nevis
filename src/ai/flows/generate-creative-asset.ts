@@ -416,7 +416,7 @@ ${designDNA}`;
             let creativePrompt = `You are an expert creative director specializing in high-end advertisements. Generate a compelling, high-quality social media advertisement ${input.outputType} based on the following instruction: "${remainingPrompt}".
 
 ⚡ GEMINI 2.0 FLASH HD QUALITY ENHANCEMENTS:
-- MAXIMUM RESOLUTION: Ultra-high definition rendering (4K+ quality)
+- MOBILE-OPTIMIZED RESOLUTION: 1080x1080px HD square format for perfect mobile viewing
 - SMALL FONT SIZE EXCELLENCE: Perfect rendering at 8pt, 10pt, 12pt, and all small font sizes
 - TINY TEXT PRECISION: Every character sharp and legible even when font size is very small
 - HIGH-DPI SMALL TEXT: Render small fonts as if on 300+ DPI display for maximum sharpness
@@ -424,7 +424,8 @@ ${designDNA}`;
 - SHARP DETAILS: Crystal-clear textures, no blur or artifacts
 - PROFESSIONAL LIGHTING: Studio-quality lighting with proper shadows
 - PREMIUM COMPOSITION: Golden ratio layouts with perfect balance
-- ADVANCED COLOR THEORY: Perfect contrast ratios (7:1 minimum) with vibrant, accurate colors`;
+- ADVANCED COLOR THEORY: Perfect contrast ratios (7:1 minimum) with vibrant, accurate colors
+- SQUARE FORMAT: 1:1 aspect ratio optimized for Instagram, Facebook, Twitter, LinkedIn mobile`;
 
             if (input.outputType === 'image' && imageText) {
                 creativePrompt += `

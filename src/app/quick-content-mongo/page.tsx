@@ -7,12 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { 
-  Sparkles, 
-  Download, 
-  Copy, 
-  Heart, 
-  MessageCircle, 
+import {
+  Sparkles,
+  Download,
+  Copy,
+  Heart,
+  MessageCircle,
   Share2,
   User,
   PanelLeftClose,
@@ -39,11 +39,57 @@ export default function QuickContentMongo() {
   const { toast } = useToast();
   const { user } = useAuth();
   const { currentBrand, brands, loading: brandLoading } = useBrand();
-  
+
   const [generatedPosts, setGeneratedPosts] = useState<GeneratedPost[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedPlatform, setSelectedPlatform] = useState('instagram');
+  const [selectedAspectRatio, setSelectedAspectRatio] = useState<'1:1' | '16:9' | '9:16'>('1:1');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Get optimal aspect ratio for platform
+  const getOptimalAspectRatio = (platform: string): '1:1' | '16:9' | '9:16' => {
+    switch (platform.toLowerCase()) {
+      case 'instagram':
+        return '1:1'; // Square for feed posts
+      case 'facebook':
+      case 'twitter':
+      case 'linkedin':
+        return '16:9'; // Landscape for better engagement
+      default:
+        return '1:1';
+    }
+  };
+
+  // Get available aspect ratios for platform
+  const getAvailableAspectRatios = (platform: string): Array<{ value: '1:1' | '16:9' | '9:16', label: string, description: string }> => {
+    const base = [
+      { value: '1:1' as const, label: '1:1 Square', description: '1080×1080' },
+      { value: '16:9' as const, label: '16:9 Landscape', description: '1200×675' },
+      { value: '9:16' as const, label: '9:16 Portrait', description: '1080×1920' }
+    ];
+
+    switch (platform.toLowerCase()) {
+      case 'instagram':
+        return [
+          { value: '1:1' as const, label: '1:1 Square', description: 'Feed Posts (1080×1080)' },
+          { value: '9:16' as const, label: '9:16 Portrait', description: 'Stories/Reels (1080×1920)' }
+        ];
+      case 'facebook':
+        return [
+          { value: '16:9' as const, label: '16:9 Landscape', description: 'Posts (1200×675)' },
+          { value: '1:1' as const, label: '1:1 Square', description: 'Alternative (1080×1080)' },
+          { value: '9:16' as const, label: '9:16 Portrait', description: 'Stories (1080×1920)' }
+        ];
+      case 'twitter':
+      case 'linkedin':
+        return [
+          { value: '16:9' as const, label: '16:9 Landscape', description: 'Posts (1200×675)' },
+          { value: '1:1' as const, label: '1:1 Square', description: 'Alternative (1080×1080)' }
+        ];
+      default:
+        return base;
+    }
+  };
 
   // Load generated posts
   useEffect(() => {
@@ -98,7 +144,7 @@ export default function QuickContentMongo() {
       }
 
       const data = await response.json();
-      
+
       if (data.success && data.data.posts.length > 0) {
         const newPost: GeneratedPost = {
           id: Date.now().toString(),
@@ -112,7 +158,7 @@ export default function QuickContentMongo() {
         };
 
         setGeneratedPosts(prev => [newPost, ...prev]);
-        
+
         toast({
           title: "Content Generated!",
           description: "Your social media post has been created successfully.",
@@ -158,7 +204,7 @@ export default function QuickContentMongo() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      
+
       toast({
         title: "Downloaded!",
         description: "Image downloaded successfully",
@@ -196,7 +242,7 @@ export default function QuickContentMongo() {
           >
             {sidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
           </Button>
-          
+
           <div className="flex items-center space-x-2">
             <h1 className="text-lg font-semibold">Quick Content</h1>
             {currentBrand && (
@@ -251,10 +297,31 @@ export default function QuickContentMongo() {
                             key={platform}
                             variant={selectedPlatform === platform ? 'default' : 'outline'}
                             size="sm"
-                            onClick={() => setSelectedPlatform(platform)}
+                            onClick={() => {
+                              setSelectedPlatform(platform);
+                              setSelectedAspectRatio(getOptimalAspectRatio(platform));
+                            }}
                             className="capitalize"
                           >
                             {platform}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium">Image Size</label>
+                      <div className="space-y-2 mt-2">
+                        {getAvailableAspectRatios(selectedPlatform).map((ratio) => (
+                          <Button
+                            key={ratio.value}
+                            variant={selectedAspectRatio === ratio.value ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setSelectedAspectRatio(ratio.value)}
+                            className="w-full justify-between text-left"
+                          >
+                            <span>{ratio.label}</span>
+                            <span className="text-xs text-muted-foreground">{ratio.description}</span>
                           </Button>
                         ))}
                       </div>

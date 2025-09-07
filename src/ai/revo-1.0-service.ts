@@ -1491,15 +1491,16 @@ function getPlatformAspectRatio(platform: string): '1:1' | '16:9' | '9:16' | '21
 
 /**
  * Get platform-specific dimension text for prompts
+ * MOBILE-FIRST: Optimized for 1080x1080px square format
  */
 function getPlatformDimensionsText(aspectRatio: string): string {
   switch (aspectRatio) {
-    case '1:1': return 'Square format - 1080x1080px';
-    case '16:9': return 'Landscape format - 1200x675px';
-    case '9:16': return 'Portrait format - 1080x1920px';
-    case '4:5': return 'Portrait format - 1080x1350px';
-    case '21:9': return 'Ultra-wide format - 1200x514px';
-    default: return 'Square format - 1080x1080px';
+    case '1:1': return 'Square format - 1080x1080px HD (Mobile-optimized)';
+    case '16:9': return 'Square format - 1080x1080px HD (Mobile-optimized)';
+    case '9:16': return 'Portrait format - 1080x1920px (Stories/Reels)';
+    case '4:5': return 'Square format - 1080x1080px HD (Mobile-optimized)';
+    case '21:9': return 'Square format - 1080x1080px HD (Mobile-optimized)';
+    default: return 'Square format - 1080x1080px HD (Mobile-optimized)';
   }
 }
 
@@ -1974,10 +1975,11 @@ WHAT TO INCLUDE:
 - **Style-appropriate typography** and layout
 
 TECHNICAL REQUIREMENTS:
-- Resolution: 2048x2048 pixels
-- Format: Square (1:1)
-- Text must be readable on mobile
+- Resolution: 1080x1080 pixels HD (Mobile-optimized)
+- Format: Square (1:1) - Perfect for all mobile devices
+- Text must be readable on mobile screens
 - Logo integration should look natural
+- Optimized for Instagram, Facebook, Twitter, LinkedIn mobile viewing
 
 🎨 GOAL: Create a ${designVariations.style.toLowerCase()} design that looks completely different from other design types while feeling genuinely human-made. Focus on the specific style requirements, make it unique, and add subtle local touches without being overwhelming. The design should look like a skilled human designer created it, not AI.`;
 
@@ -2049,8 +2051,8 @@ TECHNICAL REQUIREMENTS:
 
     return {
       imageUrl: imageUrl,
-      aspectRatio,
-      resolution: '2048x2048',
+      aspectRatio: '1:1', // Force square format for mobile optimization
+      resolution: '1080x1080',
       quality: 'enhanced'
     };
 

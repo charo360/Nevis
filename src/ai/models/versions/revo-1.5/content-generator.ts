@@ -3,10 +3,10 @@
  * Enhanced content generation with advanced features
  */
 
-import type { 
-  IContentGenerator, 
-  ContentGenerationRequest, 
-  GenerationResponse 
+import type {
+  IContentGenerator,
+  ContentGenerationRequest,
+  GenerationResponse
 } from '../../types/model-types';
 import type { GeneratedPost } from '@/lib/types';
 import { generatePostFromProfile } from '@/ai/flows/generate-post-from-profile';
@@ -19,7 +19,7 @@ export class Revo15ContentGenerator implements IContentGenerator {
    */
   async generateContent(request: ContentGenerationRequest): Promise<GenerationResponse<GeneratedPost>> {
     const startTime = Date.now();
-    
+
     try {
 
       // Validate request
@@ -139,10 +139,10 @@ export class Revo15ContentGenerator implements IContentGenerator {
 
     const servicesString = Array.isArray(profile.services)
       ? profile.services.map(service =>
-          typeof service === 'object' && service.name
-            ? `${service.name}: ${service.description || ''}`
-            : service
-        ).join('\n')
+        typeof service === 'object' && service.name
+          ? `${service.name}: ${service.description || ''}`
+          : service
+      ).join('\n')
       : profile.services || '';
 
     return {
@@ -184,21 +184,12 @@ export class Revo15ContentGenerator implements IContentGenerator {
   }
 
   /**
-   * Get optimal aspect ratio for platform (Revo 1.5 supports multiple)
+   * Get optimal aspect ratio for platform - ALL PLATFORMS USE 1:1 FOR HIGHEST QUALITY
    */
   private getOptimalAspectRatio(platform: string): string {
-    switch (platform) {
-      case 'Instagram':
-        return '1:1'; // Square for feed, can also do 9:16 for stories
-      case 'Facebook':
-        return '16:9'; // Landscape for better engagement
-      case 'Twitter':
-        return '16:9'; // Landscape works well
-      case 'LinkedIn':
-        return '16:9'; // Professional landscape format
-      default:
-        return '1:1';
-    }
+    // ALL PLATFORMS USE 1:1 SQUARE FOR MAXIMUM QUALITY
+    // No cropping = No quality loss from Gemini's native 1024x1024
+    return '1:1';
   }
 
   /**
@@ -210,20 +201,20 @@ export class Revo15ContentGenerator implements IContentGenerator {
     // Content quality checks
     if (post.content && post.content.length > 50) score += 0.5;
     if (post.content && post.content.length > 150) score += 0.5;
-    
+
     // Enhanced content features
     if (post.subheadline && post.subheadline.trim().length > 0) score += 0.5;
     if (post.callToAction && post.callToAction.trim().length > 0) score += 0.5;
-    
+
     // Hashtag quality and analysis
     if (post.hashtags && post.hashtags.length >= 8) score += 0.5;
     if (post.hashtagAnalysis) score += 0.5;
-    
+
     // Advanced features
     if (post.contentVariants && post.contentVariants.length > 0) score += 0.5;
     if (post.marketIntelligence) score += 0.5;
     if (post.localContext) score += 0.5;
-    
+
     // Image generation success
     if (post.variants && post.variants.length > 0 && post.variants[0].imageUrl) {
       score += 0.5;
@@ -238,17 +229,17 @@ export class Revo15ContentGenerator implements IContentGenerator {
    */
   private getAppliedEnhancements(request: ContentGenerationRequest): string[] {
     const enhancements = ['enhanced-ai-engine', 'advanced-prompting'];
-    
+
     if (request.artifactIds && request.artifactIds.length > 0) {
       enhancements.push('artifact-integration');
     }
-    
+
     if (request.profile.location) {
       enhancements.push('local-context', 'real-time-context');
     }
-    
+
     enhancements.push('trending-topics', 'quality-optimization', 'brand-consistency-advanced');
-    
+
     return enhancements;
   }
 
@@ -259,13 +250,13 @@ export class Revo15ContentGenerator implements IContentGenerator {
     try {
       // Check if we can access enhanced AI services
       const hasGeminiKey = !!(
-        process.env.GEMINI_API_KEY || 
-        process.env.GOOGLE_API_KEY || 
+        process.env.GEMINI_API_KEY ||
+        process.env.GOOGLE_API_KEY ||
         process.env.GOOGLE_GENAI_API_KEY
       );
-      
+
       const hasOpenAIKey = !!process.env.OPENAI_API_KEY;
-      
+
       return hasGeminiKey || hasOpenAIKey;
     } catch (error) {
       return false;

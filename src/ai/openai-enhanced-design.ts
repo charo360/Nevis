@@ -415,12 +415,13 @@ function getPlatformSpecifications(platform: string): string {
 
 /**
  * Get appropriate image size for platform (DALL-E 3 Latest Model)
+ * MOBILE-FIRST: All platforms use square format for optimal mobile viewing
  * DALL-E 3 supports: 1024x1024, 1792x1024, 1024x1792
  */
 function getPlatformSize(platform: string): '1024x1024' | '1792x1024' | '1024x1792' {
   const platformLower = platform.toLowerCase();
 
-  // Vertical formats (9:16 aspect ratio)
+  // Vertical formats (9:16 aspect ratio) - only for Stories/Reels
   if (platformLower.includes('story') ||
     platformLower.includes('reel') ||
     platformLower.includes('tiktok') ||
@@ -428,16 +429,8 @@ function getPlatformSize(platform: string): '1024x1024' | '1792x1024' | '1024x17
     return '1024x1792';
   }
 
-  // Horizontal formats (16:9 aspect ratio)
-  if (platformLower.includes('linkedin') ||
-    platformLower.includes('twitter') ||
-    platformLower.includes('facebook') ||
-    platformLower.includes('youtube') ||
-    platformLower.includes('banner')) {
-    return '1792x1024';
-  }
-
-  // Square format (1:1 aspect ratio) - default for most social media posts
+  // MOBILE-OPTIMIZED: All other platforms use square format (1:1)
+  // This ensures perfect mobile viewing on Instagram, Facebook, Twitter, LinkedIn
   return '1024x1024';
 }
 

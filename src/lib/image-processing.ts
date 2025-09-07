@@ -19,38 +19,13 @@ export interface PlatformDimensions {
 
 /**
  * Get target dimensions for each platform
+ * MOBILE-FIRST: All platforms now use 1080x1080px square format for optimal mobile viewing
  */
 export function getPlatformDimensions(platform: string): PlatformDimensions {
   const platformLower = platform.toLowerCase();
 
-  // LinkedIn - 16:9 landscape (matches Revo 2.0 backend)
-  if (platformLower.includes('linkedin')) {
-    return {
-      width: 1200,
-      height: 675, // Standardized to match backend generation
-      aspectRatio: '16:9'
-    };
-  }
-
-  // Facebook - 16:9 landscape (matches Revo 2.0 backend)
-  if (platformLower.includes('facebook')) {
-    return {
-      width: 1200,
-      height: 675, // Standardized to match backend generation
-      aspectRatio: '16:9'
-    };
-  }
-
-  // Twitter - 16:9 landscape (matches Revo 2.0 backend)
-  if (platformLower.includes('twitter')) {
-    return {
-      width: 1200,
-      height: 675, // Standardized to match backend generation
-      aspectRatio: '16:9'
-    };
-  }
-
-  // Instagram Stories - 9:16 portrait
+  // MOBILE-OPTIMIZED: All platforms use square format for best mobile experience
+  // Only exceptions are Stories/Reels which need portrait format
   if (platformLower.includes('story') || platformLower.includes('reel')) {
     return {
       width: 1080,
@@ -59,10 +34,11 @@ export function getPlatformDimensions(platform: string): PlatformDimensions {
     };
   }
 
-  // Instagram Feed - 1:1 square (keep original)
+  // DEFAULT: Square format (1:1) - 1080x1080px HD for all platforms
+  // Perfect for Instagram, Facebook, Twitter, LinkedIn on mobile
   return {
-    width: 1024,
-    height: 1024,
+    width: 1080,
+    height: 1080,
     aspectRatio: '1:1'
   };
 }

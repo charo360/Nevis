@@ -15,14 +15,15 @@ export const modelCapabilities: Record<RevoModelId, ModelCapabilities> = {
     videoGeneration: false, // Not supported in 1.0
     enhancedFeatures: true, // Upgraded from false
     artifactSupport: false, // Basic model doesn't support artifacts
-    aspectRatios: ['1:1'], // Only square images
+    aspectRatios: ['1:1'], // Mobile-optimized square format only
     maxQuality: 9, // Upgraded from 7 for Gemini 2.5 Flash Image Preview
     supportedPlatforms: ['Instagram', 'Facebook', 'Twitter', 'LinkedIn'] as Platform[],
     advancedPrompting: true,
     brandConsistency: true, // Enhanced brand consistency
     realTimeContext: true, // Now enabled for better context
     perfectTextRendering: true, // NEW: Gemini 2.5 Flash Image Preview feature
-    highResolution: true // NEW: 2048x2048 support
+    highResolution: true, // NEW: 1080x1080px HD mobile-optimized
+    mobileOptimized: true // NEW: Optimized for mobile viewing
   },
 
   'revo-1.5': {
@@ -32,12 +33,13 @@ export const modelCapabilities: Record<RevoModelId, ModelCapabilities> = {
     videoGeneration: false, // Video coming in 2.0
     enhancedFeatures: true,
     artifactSupport: true, // Full artifact support
-    aspectRatios: ['1:1', '16:9', '9:16'], // Multiple aspect ratios
+    aspectRatios: ['1:1', '9:16'], // Mobile-optimized: square + stories
     maxQuality: 8, // Superior quality
     supportedPlatforms: ['Instagram', 'Facebook', 'Twitter', 'LinkedIn'] as Platform[],
     advancedPrompting: true,
     brandConsistency: true, // Advanced brand consistency
-    realTimeContext: true // Real-time context and trends
+    realTimeContext: true, // Real-time context and trends
+    mobileOptimized: true // NEW: Optimized for mobile viewing
   },
 
 

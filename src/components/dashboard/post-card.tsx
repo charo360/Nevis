@@ -133,22 +133,11 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   }, [post.date]);
   const { toast } = useToast();
 
-  // Platform-specific dimensions - MUST match backend Revo 2.0 generation
+  // Platform-specific dimensions - ALL PLATFORMS USE 1:1 FOR HIGHEST QUALITY
   const getPlatformDimensions = React.useCallback((platform: Platform) => {
-    switch (platform.toLowerCase()) {
-      case 'instagram':
-        return { width: 1080, height: 1080, aspectClass: 'aspect-square' };
-      case 'facebook':
-        return { width: 1200, height: 675, aspectClass: 'aspect-[16/9]' };
-      case 'twitter':
-        return { width: 1200, height: 675, aspectClass: 'aspect-[16/9]' };
-      case 'linkedin':
-        return { width: 1200, height: 675, aspectClass: 'aspect-[16/9]' };
-      case 'tiktok':
-        return { width: 1080, height: 1920, aspectClass: 'aspect-[9/16]' };
-      default:
-        return { width: 1080, height: 1080, aspectClass: 'aspect-square' };
-    }
+    // ALL PLATFORMS USE 1:1 SQUARE FOR MAXIMUM QUALITY
+    // No cropping = No quality loss from Gemini's native 1024x1024
+    return { width: 1080, height: 1080, aspectClass: 'aspect-square' };
   }, []);
 
   // Copy functionality

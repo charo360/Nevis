@@ -82,15 +82,16 @@ function getPlatformAspectRatio(platform: string): '1:1' | '16:9' | '9:16' | '21
 
 /**
  * Get platform-specific dimension text for prompts
+ * MOBILE-FIRST: Optimized for 1080x1080px square format
  */
 function getPlatformDimensionsText(aspectRatio: string): string {
   switch (aspectRatio) {
-    case '1:1': return 'Square format - 1080x1080px';
-    case '16:9': return 'Landscape format - 1200x675px';
-    case '9:16': return 'Portrait format - 1080x1920px';
-    case '4:5': return 'Portrait format - 1080x1350px';
-    case '21:9': return 'Ultra-wide format - 1200x514px';
-    default: return 'Square format - 1080x1080px';
+    case '1:1': return 'Square format - 1080x1080px HD (Mobile-optimized)';
+    case '16:9': return 'Square format - 1080x1080px HD (Mobile-optimized)';
+    case '9:16': return 'Portrait format - 1080x1920px (Stories/Reels)';
+    case '4:5': return 'Square format - 1080x1080px HD (Mobile-optimized)';
+    case '21:9': return 'Square format - 1080x1080px HD (Mobile-optimized)';
+    default: return 'Square format - 1080x1080px HD (Mobile-optimized)';
   }
 }
 
