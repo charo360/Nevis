@@ -50,7 +50,13 @@ export function TextDetectionEditor({ imageUrl, onSave, onCancel }: TextDetectio
   const [showDetections, setShowDetections] = useState(true);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [selectedText, setSelectedText] = useState<string | null>(null);
+  const [currentImageUrl, setCurrentImageUrl] = useState<string>(imageUrl);
   const { toast } = useToast();
+
+  // Keep local image URL in sync when prop changes
+  useEffect(() => {
+    setCurrentImageUrl(imageUrl);
+  }, [imageUrl]);
 
   // Load image and initialize canvas
   useEffect(() => {
@@ -68,8 +74,8 @@ export function TextDetectionEditor({ imageUrl, onSave, onCancel }: TextDetectio
       ctx.drawImage(img, 0, 0);
       setImageLoaded(true);
     };
-    img.src = imageUrl;
-  }, [imageUrl]);
+    img.src = currentImageUrl;
+  }, [currentImageUrl]);
 
   // Redraw canvas when detections change
   useEffect(() => {
@@ -100,7 +106,7 @@ export function TextDetectionEditor({ imageUrl, onSave, onCancel }: TextDetectio
         });
       }
     };
-    img.src = imageUrl;
+    img.src = currentImageUrl;
   };
 
   const drawDetectionBox = (ctx: CanvasRenderingContext2D, detection: DetectedText) => {
@@ -151,7 +157,7 @@ export function TextDetectionEditor({ imageUrl, onSave, onCancel }: TextDetectio
       console.log('🔍 Starting real OCR text detection...');
 
       // Use the real OCR service
-      const detections = await textDetectionService.detectText(imageUrl);
+      const detections = await textDetectionService.detectText(currentImageUrl);
 
       console.log('📝 OCR Results:', detections);
 
@@ -281,17 +287,31 @@ export function TextDetectionEditor({ imageUrl, onSave, onCancel }: TextDetectio
   const processImageWithEdits = async () => {
     setIsProcessing(true);
     try {
-      // In production, this would:
-      // 1. Remove original text using inpainting
-      // 2. Add new text in the same locations
-      // 3. Return the edited image URL
+      // Build text edits payload using current edited text values
+      const textEdits = detectedTexts.map(t => ({
+        region: {
+          id: t.id,
+          text: t.text,
+          x: t.x,
+          y: t.y,
+          width: t.width,
+          height: t.height,
+          confidence: t.confidence,
+          fontSize: t.fontSize,
+          fontFamily: t.fontFamily,
+          color: t.color
+        },
+        newText: t.newText && t.newText.length > 0 ? t.newText : t.text
+      }));
 
-      // For now, simulate processing
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      const editedImageUrl = await textDetectionService.processImageWithTextEdits({
+        imageUrl: currentImageUrl,
+        textEdits
+      });
 
-      // Mock edited image URL
-      const editedImageUrl = imageUrl; // In production, this would be the processed image
-
+      // Update local image and notify parent
+      setCurrentImageUrl(editedImageUrl);
+      setDetectedTexts([]);
       onSave(editedImageUrl);
 
       toast({
