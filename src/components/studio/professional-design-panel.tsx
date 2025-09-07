@@ -161,24 +161,9 @@ export function ProfessionalDesignPanel({ brandProfile, onEditImage }: Professio
           </Card>
         </div>
 
-        {/* Right Panel - Text Controls & Generation */}
+        {/* Right Panel - Generation & Text Controls */}
         <div className="col-span-3 flex flex-col space-y-4 overflow-hidden">
-          <Card className="flex-shrink-0">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Type className="w-5 h-5" />
-                Text Controls
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="max-h-[450px] overflow-y-auto">
-              <TextControls
-                textElements={textElements}
-                onChange={handleTextChange}
-                brandProfile={brandProfile}
-              />
-            </CardContent>
-          </Card>
-
+          {/* AI Generation - Move to top for visibility */}
           <Card className="flex-shrink-0">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg">
@@ -186,7 +171,7 @@ export function ProfessionalDesignPanel({ brandProfile, onEditImage }: Professio
                 AI Generation
               </CardTitle>
             </CardHeader>
-            <CardContent className="max-h-[500px] overflow-y-auto">
+            <CardContent className="max-h-[400px] overflow-y-auto">
               <PromptBuilder
                 assets={uploadedAssets}
                 textElements={textElements}
@@ -194,6 +179,22 @@ export function ProfessionalDesignPanel({ brandProfile, onEditImage }: Professio
                 brandProfile={brandProfile}
                 onGenerate={handleGenerate}
                 isGenerating={isGenerating}
+              />
+            </CardContent>
+          </Card>
+
+          <Card className="flex-shrink-0">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Type className="w-5 h-5" />
+                Text Controls
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="max-h-[350px] overflow-y-auto">
+              <TextControls
+                textElements={textElements}
+                onChange={handleTextChange}
+                brandProfile={brandProfile}
               />
             </CardContent>
           </Card>
