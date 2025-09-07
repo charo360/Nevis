@@ -9,12 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { 
-  Type, 
-  Move, 
-  Palette, 
-  AlignLeft, 
-  AlignCenter, 
+import {
+  Type,
+  Move,
+  Palette,
+  AlignLeft,
+  AlignCenter,
   AlignRight,
   Bold,
   Italic,
@@ -24,7 +24,8 @@ import {
   Plus,
   Download,
   Undo,
-  Redo
+  Redo,
+  Loader2
 } from 'lucide-react';
 
 interface TextElement {
@@ -64,6 +65,7 @@ export function ImageTextEditor({ imageUrl, onSave, onCancel }: ImageTextEditorP
   const [history, setHistory] = useState<TextElement[][]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Font options
   const fontFamilies = [
@@ -274,7 +276,7 @@ export function ImageTextEditor({ imageUrl, onSave, onCancel }: ImageTextEditorP
 
       ctx.font = `${element.fontSize}px ${element.fontFamily}`;
       const metrics = ctx.measureText(element.text);
-      
+
       return (
         x >= element.x - 10 &&
         x <= element.x + metrics.width + 10 &&
@@ -327,15 +329,52 @@ export function ImageTextEditor({ imageUrl, onSave, onCancel }: ImageTextEditorP
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    canvas.toBlob((blob) => {
-      if (blob) {
-        const url = URL.createObjectURL(blob);
-        onSave(url);
-      }
-    }, 'image/png');
+    setIsExporting(true);
+
+    // Create a temporary canvas for export without selection indicators
+    const exportCanvas = document.createElement('canvas');
+    const exportCtx = exportCanvas.getContext('2d');
+    if (!exportCtx) {
+      setIsExporting(false);
+      return;
+    }
+
+    // Set canvas dimensions
+    exportCanvas.width = canvas.width;
+    exportCanvas.height = canvas.height;
+
+    // Clear the export canvas
+    exportCtx.clearRect(0, 0, exportCanvas.width, exportCanvas.height);
+
+    // Redraw original image
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      exportCtx.drawImage(img, 0, 0);
+
+      // Draw all text elements WITHOUT selection indicators
+      textElements.forEach(element => {
+        drawTextElement(exportCtx, element);
+      });
+
+      // Export the clean canvas
+      exportCanvas.toBlob((blob) => {
+        setIsExporting(false);
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          onSave(url);
+        }
+      }, 'image/png');
+    };
+
+    img.onerror = () => {
+      setIsExporting(false);
+    };
+
+    img.src = imageUrl;
   };
 
-  const selectedElementData = selectedElement 
+  const selectedElementData = selectedElement
     ? textElements.find(el => el.id === selectedElement)
     : null;
 
@@ -353,6 +392,14 @@ export function ImageTextEditor({ imageUrl, onSave, onCancel }: ImageTextEditorP
             className="border border-gray-300 cursor-crosshair max-w-full max-h-full"
             style={{ maxWidth: '80vw', maxHeight: '80vh' }}
           />
+          {isExporting && (
+            <div className="absolute inset-0 bg-black/20 flex items-center justify-center rounded">
+              <div className="bg-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span className="text-sm font-medium">Exporting clean image...</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -397,9 +444,8 @@ export function ImageTextEditor({ imageUrl, onSave, onCancel }: ImageTextEditorP
               {textElements.map((element) => (
                 <div
                   key={element.id}
-                  className={`p-2 border rounded cursor-pointer ${
-                    selectedElement === element.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
-                  }`}
+                  className={`p-2 border rounded cursor-pointer ${selectedElement === element.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                    }`}
                   onClick={() => setSelectedElement(element.id)}
                 >
                   <div className="flex items-center justify-between">
@@ -482,8 +528,8 @@ export function ImageTextEditor({ imageUrl, onSave, onCancel }: ImageTextEditorP
                   <Button
                     variant={selectedElementData.fontWeight === 'bold' ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => updateSelectedElement({ 
-                      fontWeight: selectedElementData.fontWeight === 'bold' ? 'normal' : 'bold' 
+                    onClick={() => updateSelectedElement({
+                      fontWeight: selectedElementData.fontWeight === 'bold' ? 'normal' : 'bold'
                     })}
                   >
                     <Bold className="w-4 h-4" />
@@ -491,8 +537,8 @@ export function ImageTextEditor({ imageUrl, onSave, onCancel }: ImageTextEditorP
                   <Button
                     variant={selectedElementData.fontStyle === 'italic' ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => updateSelectedElement({ 
-                      fontStyle: selectedElementData.fontStyle === 'italic' ? 'normal' : 'italic' 
+                    onClick={() => updateSelectedElement({
+                      fontStyle: selectedElementData.fontStyle === 'italic' ? 'normal' : 'italic'
                     })}
                   >
                     <Italic className="w-4 h-4" />
@@ -500,8 +546,8 @@ export function ImageTextEditor({ imageUrl, onSave, onCancel }: ImageTextEditorP
                   <Button
                     variant={selectedElementData.textDecoration === 'underline' ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => updateSelectedElement({ 
-                      textDecoration: selectedElementData.textDecoration === 'underline' ? 'none' : 'underline' 
+                    onClick={() => updateSelectedElement({
+                      textDecoration: selectedElementData.textDecoration === 'underline' ? 'none' : 'underline'
                     })}
                   >
                     <Underline className="w-4 h-4" />
@@ -543,9 +589,8 @@ export function ImageTextEditor({ imageUrl, onSave, onCancel }: ImageTextEditorP
                     {colorPresets.map((color) => (
                       <button
                         key={color}
-                        className={`w-8 h-8 rounded border-2 ${
-                          selectedElementData.color === color ? 'border-blue-500' : 'border-gray-300'
-                        }`}
+                        className={`w-8 h-8 rounded border-2 ${selectedElementData.color === color ? 'border-blue-500' : 'border-gray-300'
+                          }`}
                         style={{ backgroundColor: color }}
                         onClick={() => updateSelectedElement({ color })}
                       />
@@ -592,11 +637,29 @@ export function ImageTextEditor({ imageUrl, onSave, onCancel }: ImageTextEditorP
 
           {/* Action Buttons */}
           <div className="space-y-2">
-            <Button onClick={exportImage} className="w-full">
-              <Download className="w-4 h-4 mr-2" />
-              Save Changes
+            <Button
+              onClick={exportImage}
+              className="w-full"
+              disabled={isExporting}
+            >
+              {isExporting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 mr-2" />
+                  Save Changes
+                </>
+              )}
             </Button>
-            <Button variant="outline" onClick={onCancel} className="w-full">
+            <Button
+              variant="outline"
+              onClick={onCancel}
+              className="w-full"
+              disabled={isExporting}
+            >
               Cancel
             </Button>
           </div>
