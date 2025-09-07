@@ -167,27 +167,55 @@ Recreate the content within the black-masked region based on this instruction, e
 
         } else if (input.referenceAssetUrl) {
             // This is a generation prompt with an uploaded image that should be integrated into the design
-            let referencePrompt = `You are an expert creative director specializing in high-end advertisements and design integration. You will be given an uploaded image and a text prompt with instructions.
+            let referencePrompt = `You are an expert creative director and AI design specialist with advanced image analysis capabilities. You will be given an uploaded image and a text prompt with instructions.
 
-🎯 **CRITICAL INTEGRATION REQUIREMENT:** The uploaded image is NOT just a reference - it must be INTEGRATED as a key design element in the final output, similar to how a brand logo would be integrated.
+🎯 **INTELLIGENT IMAGE INTEGRATION MISSION:**
+Analyze the uploaded image deeply and make intelligent creative decisions about how to best incorporate it into a stunning design.
 
-Your task is to create a professional design that incorporates the uploaded image as a central design element while following the user's instructions.
+**STEP 1: SMART IMAGE ANALYSIS**
+First, analyze the uploaded image to understand:
+- Content type (product, person, landscape, object, logo, artwork, etc.)
+- Image quality, lighting conditions, and photographic style
+- Dominant colors, textures, and visual elements
+- Emotional tone and aesthetic appeal
+- Best potential use case for maximum visual impact
 
-**Integration Approaches:**
-- **Product Integration:** If the uploaded image contains a product, person, or object, integrate it naturally into the scene (e.g., person using a product, product in a lifestyle setting)
-- **Background Integration:** Use the uploaded image as a sophisticated background element, applying professional design treatments
-- **Collage Integration:** Combine the uploaded image with complementary design elements to create a cohesive composition
-- **Overlay Integration:** Layer the uploaded image with text, graphics, and brand elements for a professional advertisement look
-- **Style Matching:** Ensure the final design matches the style, lighting, and mood of the uploaded image
+**STEP 2: INTELLIGENT INTEGRATION STRATEGY**
+Based on your analysis, intelligently choose the OPTIMAL approach:
 
-**Design Quality Standards:**
-- Maintain professional advertising quality
-- Ensure seamless integration (no obvious cut-and-paste appearance)
-- Apply consistent lighting and color grading
-- Create visual hierarchy with the uploaded image as a key focal point
-- Add professional design elements (typography, graphics, effects) that complement the uploaded image
+🏆 **HERO SHOWCASE:** If it's a product, service, or key object:
+   - Make it the star with professional product photography styling
+   - Create compelling compositions highlighting its best features
+   - Use dramatic lighting, shadows, and backgrounds for maximum appeal
+   - Position as primary focal point with supporting design elements
 
-The user's instruction is: "${remainingPrompt}"`;
+🎨 **ARTISTIC BACKGROUND:** If it works as a scene or backdrop:
+   - Transform into sophisticated background with professional effects
+   - Apply tasteful overlays, gradients, or color grading for impact
+   - Ensure perfect text readability with smart contrast enhancements
+   - Create depth and visual interest while maintaining focus
+
+🖼️ **DYNAMIC COMPOSITION:** For lifestyle, people, or complex scenes:
+   - Create magazine-quality layouts with creative positioning
+   - Combine with complementary graphics and typography
+   - Use advanced composition techniques (rule of thirds, golden ratio)
+   - Build visual narratives that tell compelling stories
+
+✨ **SEAMLESS INTEGRATION:** For logos, graphics, or decorative elements:
+   - Blend naturally using professional design techniques
+   - Apply appropriate effects, shadows, and styling for cohesion
+   - Maintain perfect visual hierarchy and balance
+   - Create harmony between all design components
+
+**STEP 3: PROFESSIONAL EXECUTION**
+- Ensure integration looks expertly crafted, never amateur
+- Maintain consistent lighting, color harmony, and visual style
+- The uploaded image should enhance overall design impact
+- Create natural visual flow guiding the viewer's eye
+
+**USER'S CREATIVE VISION:** "${remainingPrompt}"
+
+Analyze the uploaded image, make intelligent creative decisions, and create a breathtaking professional design that showcases the image in the most impactful way while perfectly fulfilling the user's vision.`;
 
             if (imageText) {
                 referencePrompt += `\n\n**Text Overlay Integration:** The user has provided specific text in quotes: "${imageText}". You MUST overlay this text on the design in a way that complements both the uploaded image and the overall composition. Ensure the text is readable and professionally integrated.`
@@ -394,14 +422,18 @@ ${designDNA}`;
                   * Add text shadows, outlines, or semi-transparent backgrounds for readability
                   * Position text using rule of thirds for optimal composition
                   * Ensure text is the primary focal point of the design` : 'No text should be added to the asset.'}`;
-                // Handle uploaded image integration
+                // Handle uploaded image integration with AI intelligence
                 if (hasUploadedImage) {
-                    onBrandPrompt += `\n- **🎯 UPLOADED IMAGE INTEGRATION:** A user has uploaded an image that must be INTEGRATED as a key design element in the final output. This is NOT just a reference - it must be prominently featured and professionally integrated into the design.`;
-                    onBrandPrompt += `\n  * **Integration Priority:** The uploaded image should be a central focal point of the design`;
-                    onBrandPrompt += `\n  * **Professional Quality:** Ensure seamless integration with no obvious cut-and-paste appearance`;
-                    onBrandPrompt += `\n  * **Style Harmony:** Match the lighting, color grading, and style of the uploaded image`;
-                    onBrandPrompt += `\n  * **Brand Coordination:** Integrate both the uploaded image AND brand elements harmoniously`;
-                    onBrandPrompt += `\n  * **Design Approaches:** Use product integration, background integration, collage techniques, or overlay methods as appropriate`;
+                    onBrandPrompt += `\n- **🎯 INTELLIGENT UPLOADED IMAGE INTEGRATION:** A user has uploaded an image that must be INTELLIGENTLY ANALYZED and INTEGRATED as a key design element.`;
+                    onBrandPrompt += `\n  * **AI Analysis Required:** First analyze the uploaded image to understand its content, style, quality, and best integration approach`;
+                    onBrandPrompt += `\n  * **Smart Integration Decision:** Based on your analysis, intelligently choose the optimal integration method:`;
+                    onBrandPrompt += `\n    - If it's a product/object: Make it the hero element with professional product styling`;
+                    onBrandPrompt += `\n    - If it's a scene/background: Use as sophisticated backdrop with professional effects`;
+                    onBrandPrompt += `\n    - If it's a person/lifestyle: Create dynamic, magazine-style compositions`;
+                    onBrandPrompt += `\n    - If it's a logo/graphic: Blend seamlessly with other design elements`;
+                    onBrandPrompt += `\n  * **Professional Execution:** Ensure expert-level integration with consistent lighting, color harmony, and visual flow`;
+                    onBrandPrompt += `\n  * **Brand Synergy:** Coordinate the uploaded image with brand colors, logo, and overall brand aesthetic`;
+                    onBrandPrompt += `\n  * **Creative Excellence:** The uploaded image should enhance and elevate the overall design impact`;
                     promptParts.push({ media: { url: input.referenceAssetUrl!, contentType: getMimeTypeFromDataURI(input.referenceAssetUrl!) } });
                 }
 
@@ -424,13 +456,17 @@ ${designDNA}`;
                     onBrandPrompt += `\n- **Text Overlay:** The following text MUST be overlaid on the video in a stylish, readable font: "${imageText}". It is critical that the text is clearly readable, well-composed, and not cut off. The entire text must be visible.`
                 }
 
-                // Handle uploaded image integration for video
+                // Handle uploaded image integration for video with AI intelligence
                 if (hasUploadedImage) {
-                    onBrandPrompt += `\n- **🎯 UPLOADED IMAGE INTEGRATION (VIDEO):** A user has uploaded an image that must be INTEGRATED as a key visual element throughout the video sequence.`;
-                    onBrandPrompt += `\n  * **Video Integration:** The uploaded image should be prominently featured and integrated naturally into the video narrative`;
-                    onBrandPrompt += `\n  * **Seamless Incorporation:** Use the uploaded image as a central element, background, or key prop in the video`;
-                    onBrandPrompt += `\n  * **Brand Harmony:** Coordinate the uploaded image with brand elements and logo placement`;
-                    onBrandPrompt += `\n  * **Professional Quality:** Ensure the integration looks natural and professionally produced`;
+                    onBrandPrompt += `\n- **🎯 INTELLIGENT VIDEO IMAGE INTEGRATION:** A user has uploaded an image that must be INTELLIGENTLY ANALYZED and INTEGRATED throughout the video sequence.`;
+                    onBrandPrompt += `\n  * **Smart Video Analysis:** Analyze the uploaded image to determine the best video integration approach:`;
+                    onBrandPrompt += `\n    - Product/Object: Feature as hero element with dynamic camera movements and transitions`;
+                    onBrandPrompt += `\n    - Scene/Background: Use as cinematic backdrop with professional video effects`;
+                    onBrandPrompt += `\n    - Person/Lifestyle: Create engaging narrative sequences showcasing the subject`;
+                    onBrandPrompt += `\n    - Logo/Graphic: Integrate as animated brand element throughout the video`;
+                    onBrandPrompt += `\n  * **Cinematic Quality:** Ensure professional video production quality with smooth transitions and visual flow`;
+                    onBrandPrompt += `\n  * **Brand Storytelling:** Weave the uploaded image into a compelling brand narrative that engages viewers`;
+                    onBrandPrompt += `\n  * **Visual Continuity:** Maintain consistent style, lighting, and mood throughout the video sequence`;
                     promptParts.push({ media: { url: input.referenceAssetUrl!, contentType: getMimeTypeFromDataURI(input.referenceAssetUrl!) } });
                 }
 
