@@ -73,7 +73,7 @@ function CreativeStudioPageContent() {
     primaryColor: currentBrand.primaryColor,
     accentColor: currentBrand.accentColor,
     backgroundColor: currentBrand.backgroundColor,
-    logoDataUrl: currentBrand.logoDataUrl,
+    logoDataUrl: currentBrand.logoUrl,
     websiteUrl: currentBrand.websiteUrl,
     socialMedia: {
       facebook: currentBrand.facebookUrl,

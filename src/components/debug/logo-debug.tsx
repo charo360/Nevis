@@ -23,29 +23,29 @@ export function LogoDebug() {
           <strong>Brand Name:</strong> {currentBrand.businessName || currentBrand.name || 'N/A'}
         </div>
         <div>
-          <strong>Logo Data URL:</strong> 
-          {currentBrand.logoDataUrl ? (
-            <span className="text-green-600"> ✅ Present ({currentBrand.logoDataUrl.length} chars)</span>
+          <strong>Logo Data URL:</strong>
+          {currentBrand.logoUrl ? (
+            <span className="text-green-600"> ✅ Present ({currentBrand.logoUrl.length} chars)</span>
           ) : (
             <span className="text-red-600"> ❌ Missing</span>
           )}
         </div>
-        {currentBrand.logoDataUrl && (
+        {currentBrand.logoUrl && (
           <div>
             <strong>Logo Preview:</strong>
             <div className="mt-2 p-2 bg-white border rounded">
-              <img 
-                src={currentBrand.logoDataUrl} 
-                alt="Logo Preview" 
+              <img
+                src={currentBrand.logoUrl}
+                alt="Logo Preview"
                 className="max-w-[100px] max-h-[100px] object-contain"
               />
             </div>
           </div>
         )}
         <div>
-          <strong>Logo URL Preview:</strong> 
+          <strong>Logo URL Preview:</strong>
           <code className="text-xs bg-gray-100 p-1 rounded block mt-1 break-all">
-            {currentBrand.logoDataUrl ? currentBrand.logoDataUrl.substring(0, 100) + '...' : 'No logo data'}
+            {currentBrand.logoUrl ? currentBrand.logoUrl.substring(0, 100) + '...' : 'No logo data'}
           </code>
         </div>
       </div>
