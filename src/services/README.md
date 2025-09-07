@@ -4,7 +4,7 @@ This service provides clean, professional text overlay on background images usin
 
 ## Problem Solved
 
-Previously, the system was asking AI models (Gemini 2.0 Flash, GPT-Image 1) to generate text directly in images, which resulted in:
+Previously, the system was asking AI models (Gemini 2.5 Flash Image Preview, GPT-Image 1) to generate text directly in images, which resulted in:
 - Corrupted, unreadable text
 - Gibberish characters
 - Poor font rendering

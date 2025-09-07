@@ -137,7 +137,7 @@ Designs are automatically optimized for the target platform with appropriate siz
 ## 🔄 Fallback Strategy
 
 If OpenAI DALL-E 3 fails, the system automatically falls back to:
-1. **Gemini 2.0 Flash**: Google's latest image generation model
+1. **Gemini 2.5 Flash Image Preview**: Google's latest image generation model
 2. **Enhanced Error Handling**: Detailed error messages and retry logic
 3. **Quality Maintenance**: Consistent quality across all generation methods
 

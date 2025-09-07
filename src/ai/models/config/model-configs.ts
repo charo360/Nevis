@@ -9,26 +9,9 @@ import { modelPricing } from './pricing';
 
 // Base configurations for different AI services
 const baseConfigs = {
-  'gemini-2.0': {
-    aiService: 'gemini-2.0' as const,
-    fallbackServices: ['gemini-2.5', 'openai'],
-    maxRetries: 3,
-    timeout: 30000,
-    qualitySettings: {
-      imageResolution: '1024x1024',
-      compressionLevel: 85,
-      enhancementLevel: 5
-    },
-    promptSettings: {
-      temperature: 0.7,
-      maxTokens: 2048,
-      topP: 0.9,
-      topK: 40
-    }
-  },
   'gemini-2.5': {
     aiService: 'gemini-2.5' as const,
-    fallbackServices: ['gemini-2.0', 'openai'],
+    fallbackServices: ['openai'],
     maxRetries: 2,
     timeout: 45000,
     qualitySettings: {
@@ -45,7 +28,7 @@ const baseConfigs = {
   },
   'openai': {
     aiService: 'openai' as const,
-    fallbackServices: ['gemini-2.5', 'gemini-2.0'],
+    fallbackServices: ['gemini-2.5'],
     maxRetries: 3,
     timeout: 35000,
     qualitySettings: {

@@ -415,7 +415,7 @@ ${designDNA}`;
             // This is a new, un-branded, creative prompt.
             let creativePrompt = `You are an expert creative director specializing in high-end advertisements. Generate a compelling, high-quality social media advertisement ${input.outputType} based on the following instruction: "${remainingPrompt}".
 
-⚡ GEMINI 2.0 FLASH HD QUALITY ENHANCEMENTS:
+⚡ GEMINI 2.5 FLASH IMAGE PREVIEW QUALITY ENHANCEMENTS:
 - MOBILE-OPTIMIZED RESOLUTION: 1080x1080px HD square format for perfect mobile viewing
 - SMALL FONT SIZE EXCELLENCE: Perfect rendering at 8pt, 10pt, 12pt, and all small font sizes
 - TINY TEXT PRECISION: Every character sharp and legible even when font size is very small
@@ -493,13 +493,13 @@ Ensure the text is readable and well-composed.`
                     attempts++;
 
                     // Determine which model to use based on preferred model parameter
-                    let modelToUse = 'googleai/gemini-2.0-flash-preview-image-generation'; // Default
+                    let modelToUse = 'googleai/gemini-2.5-flash-image-preview'; // Default
 
                     if (input.preferredModel) {
                         // Map Gemini model names to Genkit model identifiers
                         const modelMapping: Record<string, string> = {
                             'gemini-2.5-flash-image-preview': 'googleai/gemini-2.5-flash-image-preview',
-                            'gemini-2.0-flash-preview-image-generation': 'googleai/gemini-2.0-flash-preview-image-generation',
+                            'gemini-2.5-flash-image-preview': 'googleai/gemini-2.5-flash-image-preview',
                             'gemini-2.5-flash': 'googleai/gemini-2.5-flash'
                         };
 

@@ -14,7 +14,7 @@ import {
 import { SidebarInset } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ChatLayout } from "@/components/studio/chat-layout";
+import { ProfessionalStudio } from "@/components/studio/professional-studio";
 import { User, Palette } from "lucide-react";
 import { ImageEditor } from "@/components/studio/image-editor";
 import { useUnifiedBrand, useBrandStorage, useBrandChangeListener } from "@/contexts/unified-brand-context";
@@ -111,25 +111,25 @@ function CreativeStudioPageContent() {
           </DropdownMenuContent>
         </DropdownMenu>
       </header>
-      <main className="flex-1 overflow-auto">
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-          <div className="container mx-auto px-4 py-8">
-            <div className="max-w-7xl mx-auto">
-              {editorImage ? (
+      <main className="flex-1 overflow-hidden">
+        {editorImage ? (
+          <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+            <div className="container mx-auto px-4 py-8">
+              <div className="max-w-7xl mx-auto">
                 <ImageEditor
                   imageUrl={editorImage}
                   onClose={() => setEditorImage(null)}
                   brandProfile={brandProfile}
                 />
-              ) : (
-                <ChatLayout
-                  brandProfile={brandProfile}
-                  onEditImage={setEditorImage}
-                />
-              )}
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <ProfessionalStudio
+            brandProfile={brandProfile}
+            onEditImage={setEditorImage}
+          />
+        )}
       </main>
     </SidebarInset>
   );

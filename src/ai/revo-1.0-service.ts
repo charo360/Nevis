@@ -1,6 +1,6 @@
 /**
  * Revo 1.0 - Enhanced AI Service with Gemini 2.5 Flash Image Preview
- * Upgraded from Gemini 2.0 to provide enhanced quality and perfect text rendering
+ * Enhanced with Gemini 2.5 Flash Image Preview for enhanced quality and perfect text rendering
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';

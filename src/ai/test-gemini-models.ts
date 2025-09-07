@@ -22,8 +22,8 @@ const POSSIBLE_MODEL_NAMES = [
   'gemini-2.5-flash-002',
   'gemini-2.5-flash-001',
   'gemini-2.5-flash',
-  'gemini-2.0-flash-exp',
-  'gemini-2.0-flash-thinking-exp-1219',
+  'gemini-2.5-flash-exp',
+  'gemini-2.5-flash-thinking-exp-1219',
   'gemini-exp-1206',
   'gemini-exp-1121'
 ];

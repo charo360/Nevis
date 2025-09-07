@@ -126,7 +126,7 @@ class ModelFactory implements IModelFactory {
     const errors: string[] = [];
 
     // Validate AI service
-    const validServices = ['gemini-2.0', 'gemini-2.5', 'openai', 'imagen-4'];
+    const validServices = ['gemini-2.5', 'openai', 'imagen-4'];
     if (!validServices.includes(config.aiService)) {
       errors.push(`Invalid AI service: ${config.aiService}`);
     }

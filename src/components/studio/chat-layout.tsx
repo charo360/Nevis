@@ -104,7 +104,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 aiResponse = {
                     id: (Date.now() + 1).toString(),
                     role: 'assistant',
-                    content: `🌟 ${selectedRevoModel} Revolutionary AI Generated!\n\nQuality Score: ${revo2Result.qualityScore}/10\nEnhancements: ${revo2Result.enhancementsApplied.join(', ')}\nProcessing Time: ${revo2Result.processingTime}ms\n\nThis image was created using our next-generation AI engine with revolutionary capabilities and ultra-high quality results.`,
+                    content: `🎨 Your professional design has been created! This image was generated using advanced AI with brand integration and professional design principles for optimal results.`,
                     imageUrl: revo2Result.imageUrl,
                 };
             } else if (selectedRevoModel === 'revo-1.5' && outputType === 'image' && brandProfile) {
@@ -122,7 +122,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 aiResponse = {
                     id: (Date.now() + 1).toString(),
                     role: 'assistant',
-                    content: `✨ ${selectedRevoModel} Enhanced Design Generated!\n\nQuality Score: ${enhancedResult.qualityScore}/10\nEnhancements: ${enhancedResult.enhancementsApplied.join(', ')}\nProcessing Time: ${enhancedResult.processingTime}ms\n\nThis design uses professional design principles, platform optimization, and quality validation for superior results.`,
+                    content: `✨ Your enhanced design is ready! This professional-quality image has been optimized for your brand and platform with advanced design principles.`,
                     imageUrl: enhancedResult.imageUrl,
                 };
             } else {

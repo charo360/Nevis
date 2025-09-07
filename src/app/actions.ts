@@ -315,7 +315,7 @@ export async function generateEnhancedDesignAction(
     }
 
 
-    // Try Gemini 2.5 first (best quality), then fallback to OpenAI, then Gemini 2.0 HD
+    // Try Gemini 2.5 first (best quality), then fallback to OpenAI, then Gemini 2.5 Flash Image Preview
     let result;
 
     try {
@@ -380,8 +380,8 @@ export async function generateEnhancedDesignAction(
 }
 
 /**
- * Generate enhanced design specifically using Gemini 2.0 Flash HD
- * This action forces the use of Gemini HD for maximum quality
+ * Generate enhanced design specifically using Gemini 2.5 Flash Image Preview
+ * This action forces the use of Gemini 2.5 Flash Image Preview for maximum quality
  */
 export async function generateGeminiHDDesignAction(
   businessType: string,
@@ -397,7 +397,7 @@ export async function generateGeminiHDDesignAction(
 ): Promise<PostVariant> {
   try {
     if (!brandProfile) {
-      throw new Error('Brand profile is required for Gemini HD design generation');
+      throw new Error('Brand profile is required for Gemini 2.5 Flash Image Preview design generation');
     }
 
 
@@ -421,7 +421,7 @@ export async function generateGeminiHDDesignAction(
       hashtags: [],
     };
   } catch (error) {
-    throw new Error(`Gemini HD design generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(`Gemini 2.5 Flash Image Preview design generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 

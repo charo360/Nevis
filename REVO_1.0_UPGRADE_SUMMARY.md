@@ -1,12 +1,12 @@
 # Revo 1.0 Upgrade Summary: Gemini 2.5 Flash Image Preview
 
 ## Overview
-Revo 1.0 has been successfully upgraded from Gemini 2.0 to **Gemini 2.5 Flash Image Preview**, significantly enhancing its capabilities while maintaining its cost-effective positioning.
+Revo 1.0 has been successfully upgraded to **Gemini 2.5 Flash Image Preview**, significantly enhancing its capabilities while maintaining its cost-effective positioning.
 
 ## 🚀 Major Upgrades
 
 ### AI Engine Upgrade
-- **Before**: Gemini 2.0 (basic AI capabilities)
+- **Before**: Basic AI capabilities
 - **After**: Gemini 2.5 Flash Image Preview (advanced AI with native image generation)
 
 ### Image Quality Improvements
@@ -35,7 +35,7 @@ Revo 1.0 has been successfully upgraded from Gemini 2.0 to **Gemini 2.5 Flash Im
 ## 🔧 Technical Improvements
 
 ### Configuration Updates
-- **AI Service**: `gemini-2.0` → `gemini-2.5-flash-image-preview`
+- **AI Service**: `gemini-2.5-flash-image-preview`
 - **Timeout**: 30s → **45s** (for better quality generation)
 - **Temperature**: 0.5 → **0.7** (more creative output)
 - **TopP**: 0.8 → **0.9** (better quality)

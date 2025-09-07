@@ -18,7 +18,7 @@ try {
   if (configContent.includes('gemini-2.5-flash-image-preview')) {
     console.log('✅ AI Service: Successfully upgraded to Gemini 2.5 Flash Image Preview');
   } else {
-    console.log('❌ AI Service: Still using old Gemini 2.0');
+    console.log('❌ AI Service: Not using Gemini 2.5 Flash Image Preview');
   }
   
   // Check resolution upgrade

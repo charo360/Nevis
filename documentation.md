@@ -22,7 +22,7 @@ The system starts by collecting crucial pieces of information from your brand pr
 
 ### 2. The AI Model
 
-We use Google's `gemini-2.0-flash-preview-image-generation` model. This is a powerful multimodal AI that can understand and process both text instructions and image inputs (your logo) simultaneously.
+We use Google's `gemini-2.5-flash-image-preview` model. This is a powerful multimodal AI that can understand and process both text instructions and image inputs (your logo) simultaneously.
 
 ### 3. The Prompting Strategy
 

@@ -160,7 +160,7 @@ Format your response as a detailed JSON object with all specifications clearly o
 }
 
 /**
- * Generate complete design using REAL AI image generation with Gemini 2.0 Flash
+ * Generate complete design using REAL AI image generation with Gemini 2.5 Flash Image Preview
  * NO MORE HARDCODED SVG TEMPLATES - ONLY REAL AI GENERATION
  */
 export async function generateEnhancedDesign(
@@ -210,7 +210,7 @@ export async function generateEnhancedDesign(
       qualityScore: 9.5, // High quality score for real AI generation
       enhancementsApplied,
       processingTime: Date.now() - startTime,
-      model: 'gemini-2.0-flash-image'
+      model: 'gemini-2.5-flash-image-preview'
     };
 
 

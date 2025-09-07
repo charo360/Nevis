@@ -26,7 +26,7 @@ export class Revo10DesignGenerator implements IDesignGenerator {
         throw new Error('Invalid design generation request for Revo 1.0');
       }
 
-      // Generate design using basic Gemini 2.0 approach
+      // Generate design using Gemini 2.5 Flash Image Preview approach
       const designResult = await this.generateBasicDesign(request);
 
       const processingTime = Date.now() - startTime;
@@ -63,7 +63,7 @@ export class Revo10DesignGenerator implements IDesignGenerator {
   }
 
   /**
-   * Generate basic design using Gemini 2.0
+   * Generate basic design using Gemini 2.5 Flash Image Preview
    */
   private async generateBasicDesign(request: DesignGenerationRequest): Promise<PostVariant> {
     try {
