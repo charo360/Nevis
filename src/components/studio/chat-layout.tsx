@@ -88,32 +88,27 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
             let aiResponse: Message;
 
             if (selectedRevoModel === 'revo-2.0' && outputType === 'image' && brandProfile) {
-                // Use Revo 2.0 next-generation AI for images with brand profile
-                const revo2Result = await generateRevo2CreativeAssetAction(
-                    brandProfile,
-                    'Instagram', // Default platform for Creative Studio
+                // Use Creative Studio's advanced creative asset generation for Revo 2.0
+                // This provides unique Creative Studio features like inpainting, outpainting,
+                // character consistency, and intelligent editing capabilities
+                result = await generateCreativeAssetAction(
                     currentInput,
-                    {
-                        aspectRatio: '1:1', // Default to square for Creative Studio
-                        visualStyle: 'professional',
-                        includePeopleInDesigns: false
-                    }
+                    outputType,
+                    currentImageDataUrl,
+                    useBrandProfile,
+                    brandProfile,
+                    null, // maskDataUrl - Creative Studio can handle inpainting
+                    outputType === 'video' ? aspectRatio : undefined,
+                    'gemini-2.5-flash-image-preview' // Use Revo 2.0 model specifically
                 );
 
-                if (revo2Result.success && revo2Result.imageUrl) {
-                    aiResponse = {
-                        id: (Date.now() + 1).toString(),
-                        role: 'assistant',
-                        content: `🎨 Your professional design has been created! This image was generated using advanced AI with brand integration and professional design principles for optimal results.`,
-                        imageUrl: revo2Result.imageUrl,
-                    };
-                } else {
-                    aiResponse = {
-                        id: (Date.now() + 1).toString(),
-                        role: 'assistant',
-                        content: `❌ Revo 2.0 generation failed: ${revo2Result.error || 'Unknown error'}. Please try again.`,
-                    };
-                }
+                aiResponse = {
+                    id: (Date.now() + 1).toString(),
+                    role: 'assistant',
+                    content: `🚀 Your Revo 2.0 creative asset is ready! This image was generated using next-generation AI with advanced Creative Studio capabilities including character consistency, intelligent editing, and premium brand integration.`,
+                    imageUrl: result.imageUrl,
+                    videoUrl: result.videoUrl,
+                };
             } else if (selectedRevoModel === 'revo-1.5' && outputType === 'image' && brandProfile) {
                 // Use enhanced design generation for images with brand profile
                 const enhancedResult = await generateEnhancedDesignAction(

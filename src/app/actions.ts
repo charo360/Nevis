@@ -254,7 +254,8 @@ export async function generateCreativeAssetAction(
   useBrandProfile: boolean,
   brandProfile: BrandProfile | null,
   maskDataUrl: string | null | undefined,
-  aspectRatio: '16:9' | '9:16' | undefined
+  aspectRatio: '16:9' | '9:16' | undefined,
+  preferredModel?: string
 ): Promise<CreativeAsset> {
   try {
     const result = await generateCreativeAssetFlow({
@@ -265,6 +266,7 @@ export async function generateCreativeAssetAction(
       brandProfile: useBrandProfile ? brandProfile : null,
       maskDataUrl,
       aspectRatio,
+      preferredModel,
     });
     return result;
   } catch (error) {
