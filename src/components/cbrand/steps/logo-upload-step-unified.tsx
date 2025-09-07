@@ -172,22 +172,22 @@ export function LogoUploadStepUnified({
     brandProfile.services?.length > 0;
 
   return (
-    <div className="p-6 space-y-4">
-      <div className="text-center">
+    <div className="w-full space-y-4">
+      <div className="text-center px-8 py-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Step 3: Logo Upload & Final Review</h2>
         <p className="text-gray-600">Upload your logo and review your complete brand profile</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-8">
         {/* Logo Upload Section */}
-        <Card>
-          <CardHeader>
+        <Card className="w-full">
+          <CardHeader className="px-6 py-4">
             <CardTitle className="flex items-center gap-2">
               <ImageIcon className="h-5 w-5" />
               Logo Upload
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="px-6 pb-6 space-y-4">
             {brandProfile.logoDataUrl ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg">
@@ -235,14 +235,14 @@ export function LogoUploadStepUnified({
         </Card>
 
         {/* Profile Summary */}
-        <Card>
-          <CardHeader>
+        <Card className="w-full">
+          <CardHeader className="px-6 py-4">
             <CardTitle className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5" />
               Profile Summary
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="px-6 pb-6 space-y-4">
             <div className="space-y-3">
               <div>
                 <h4 className="font-medium text-gray-900">Business Information</h4>
@@ -319,7 +319,7 @@ export function LogoUploadStepUnified({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex justify-between pt-6">
+      <div className="flex justify-between pt-6 px-8">
         <Button variant="outline" onClick={onPrevious}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Previous

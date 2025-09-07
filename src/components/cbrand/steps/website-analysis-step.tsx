@@ -304,10 +304,10 @@ export function WebsiteAnalysisStep({
   };
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="w-full space-y-4">
       {/* Website URL Input */}
-      <Card>
-        <CardHeader>
+      <Card className="w-full">
+        <CardHeader className="px-8 py-6">
           <CardTitle className="flex items-center gap-2">
             <Globe className="h-5 w-5" />
             AI Website Analysis
@@ -323,7 +323,7 @@ export function WebsiteAnalysisStep({
             </p>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="px-8 pb-8 space-y-4">
           <div>
             <Label htmlFor="website-url">Website URL</Label>
             <Input
@@ -468,8 +468,8 @@ export function WebsiteAnalysisStep({
 
       {/* Comprehensive Analysis Results */}
       {analysisComplete && brandProfile.description && (
-        <Card>
-          <CardHeader>
+        <Card className="w-full">
+          <CardHeader className="px-8 py-6">
             <CardTitle className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-green-600" />
               AI Analysis Results
@@ -478,7 +478,7 @@ export function WebsiteAnalysisStep({
               Review and edit the extracted information. All fields are editable and will be used to populate your brand profile.
             </p>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="px-8 pb-8 space-y-6">
             {/* Core Business Information */}
             <div>
               <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
@@ -769,7 +769,7 @@ export function WebsiteAnalysisStep({
       )}
 
       {/* Navigation */}
-      <div className="flex justify-between">
+      <div className="flex justify-between px-8">
         <Button
           variant="outline"
           onClick={handleSkipAnalysis}

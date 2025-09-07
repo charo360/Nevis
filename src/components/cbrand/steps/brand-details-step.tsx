@@ -91,15 +91,15 @@ export function BrandDetailsStep({
   ];
 
   return (
-    <div className="p-6 space-y-4">
-      <Card>
-        <CardHeader>
+    <div className="w-full space-y-4">
+      <Card className="w-full max-w-none">
+        <CardHeader className="px-8 py-6">
           <CardTitle>Complete Brand Details</CardTitle>
           <p className="text-gray-600">
             Fill in comprehensive information about your brand across 6 key areas
           </p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-8 pb-8 w-full max-w-none">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-6">
               {sections.map((section) => {
@@ -118,7 +118,7 @@ export function BrandDetailsStep({
             </TabsList>
 
             {/* Section 1: Basic Information */}
-            <TabsContent value="basic" className="space-y-4 mt-6">
+            <TabsContent value="basic" className="w-full space-y-4 mt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="businessName">Business Name *</Label>
@@ -173,7 +173,7 @@ export function BrandDetailsStep({
             </TabsContent>
 
             {/* Section 2: Services & Target Audience */}
-            <TabsContent value="services" className="space-y-4 mt-6">
+            <TabsContent value="services" className="w-full space-y-4 mt-6">
               <div>
                 <div className="mb-3">
                   <Label>Services/Products Offered *</Label>
@@ -287,7 +287,7 @@ export function BrandDetailsStep({
             </TabsContent>
 
             {/* Section 3: Contact Information */}
-            <TabsContent value="contact" className="space-y-4 mt-6">
+            <TabsContent value="contact" className="w-full space-y-4 mt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="contactPhone">Phone Number</Label>
@@ -327,7 +327,7 @@ export function BrandDetailsStep({
             </TabsContent>
 
             {/* Section 4: Brand Identity & Voice */}
-            <TabsContent value="identity" className="space-y-4 mt-6">
+            <TabsContent value="identity" className="w-full space-y-4 mt-6">
               <div>
                 <Label htmlFor="visualStyle">Visual Style</Label>
                 <Textarea
@@ -366,7 +366,7 @@ export function BrandDetailsStep({
             </TabsContent>
 
             {/* Section 5: Brand Colors */}
-            <TabsContent value="colors" className="space-y-4 mt-6">
+            <TabsContent value="colors" className="w-full space-y-4 mt-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="primaryColor">Primary Color</Label>
@@ -447,7 +447,7 @@ export function BrandDetailsStep({
             </TabsContent>
 
             {/* Section 6: Social Media */}
-            <TabsContent value="social" className="space-y-4 mt-6">
+            <TabsContent value="social" className="w-full space-y-4 mt-6">
               <div className="mb-4">
                 <p className="text-sm text-gray-600">
                   Add your social media links to help with content distribution and brand consistency.
@@ -513,7 +513,7 @@ export function BrandDetailsStep({
       </Card>
 
       {/* Navigation */}
-      <div className="flex justify-between pt-4">
+      <div className="flex justify-between pt-4 px-8">
         <Button variant="outline" onClick={onPrevious}>
           <ChevronLeft className="mr-2 h-4 w-4" />
           Previous Step

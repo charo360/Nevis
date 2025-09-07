@@ -261,55 +261,51 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Progress Bar */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-700">Progress</span>
-              <span className="text-sm font-medium text-gray-700">{calculateProgress()}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-in-out"
-                style={{ width: `${calculateProgress()}%` }}
-              ></div>
-            </div>
-          </div>
-
-          {/* Step Navigation */}
-          <div className="flex items-center justify-center mb-8">
-            <div className="flex items-center space-x-4">
-              {[1, 2, 3].map((step) => (
-                <div key={step} className="flex items-center">
-                  <div className={`
-                    w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium
-                    ${currentStep === step
-                      ? 'bg-blue-600 text-white'
-                      : currentStep > step
-                        ? 'bg-green-600 text-white'
-                        : 'bg-gray-300 text-gray-600'
-                    }
-                  `}>
-                    {step}
-                  </div>
-                  {step < 3 && (
-                    <div className={`
-                      w-16 h-1 mx-2
-                      ${currentStep > step ? 'bg-green-600' : 'bg-gray-300'}
-                    `} />
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Step Content */}
-          <div className="bg-white rounded-lg shadow-lg">
-            {renderStep()}
-          </div>
+    <div className="w-full">
+      {/* Progress Bar */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium text-gray-700">Progress</span>
+          <span className="text-sm font-medium text-gray-700">{calculateProgress()}%</span>
         </div>
+        <div className="w-full bg-gray-200 rounded-full h-2">
+          <div
+            className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-in-out"
+            style={{ width: `${calculateProgress()}%` }}
+          ></div>
+        </div>
+      </div>
+
+      {/* Step Navigation */}
+      <div className="flex items-center justify-center mb-8">
+        <div className="flex items-center space-x-4">
+          {[1, 2, 3].map((step) => (
+            <div key={step} className="flex items-center">
+              <div className={`
+                w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium
+                ${currentStep === step
+                  ? 'bg-blue-600 text-white'
+                  : currentStep > step
+                    ? 'bg-green-600 text-white'
+                    : 'bg-gray-300 text-gray-600'
+                }
+              `}>
+                {step}
+              </div>
+              {step < 3 && (
+                <div className={`
+                  w-16 h-1 mx-2
+                  ${currentStep > step ? 'bg-green-600' : 'bg-gray-300'}
+                `} />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Step Content */}
+      <div className="bg-white rounded-lg shadow-lg w-full">
+        {renderStep()}
       </div>
     </div>
   );
