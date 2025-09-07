@@ -14,7 +14,7 @@ function BrandProfileContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="w-full px-6 py-8">
+      <div className="w-full px-4 py-8">
         <div className="w-full">
           {/* Header */}
           <div className="text-center mb-8">

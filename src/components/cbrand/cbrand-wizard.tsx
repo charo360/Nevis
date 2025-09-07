@@ -297,7 +297,7 @@ export function CbrandWizard({ mode, brandId }: CbrandWizardProps = {}) {
   // Show loading state while profile is being loaded
   if (isLoading) {
     return (
-      <div className="w-full px-6 lg:px-12">
+      <div className="w-full px-4">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -309,7 +309,7 @@ export function CbrandWizard({ mode, brandId }: CbrandWizardProps = {}) {
   }
 
   return (
-    <div className="w-full px-6 lg:px-12">
+    <div className="w-full px-4">
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-4">

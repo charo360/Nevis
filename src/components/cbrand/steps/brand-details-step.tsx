@@ -38,6 +38,44 @@ export function BrandDetailsStep({
   const [activeTab, setActiveTab] = useState('basic');
   const { currentBrand, updateProfile, selectBrand } = useBrand();
 
+  // Helper function to check if a required field is empty
+  const isRequiredFieldEmpty = (fieldValue: string | undefined | null): boolean => {
+    return !fieldValue || fieldValue.trim() === '';
+  };
+
+  // Helper function to get input styling based on validation
+  const getInputClassName = (fieldValue: string | undefined | null, isRequired: boolean = false): string => {
+    const baseClasses = "mt-1";
+    if (isRequired && isRequiredFieldEmpty(fieldValue)) {
+      return `${baseClasses} border-red-500 focus:border-red-500 focus:ring-red-500`;
+    }
+    return baseClasses;
+  };
+
+  // Helper function to get label styling based on validation
+  const getLabelClassName = (fieldValue: string | undefined | null, isRequired: boolean = false): string => {
+    if (isRequired && isRequiredFieldEmpty(fieldValue)) {
+      return "text-red-600 font-medium";
+    }
+    return "";
+  };
+
+  // Helper function to check if a section has missing required fields
+  const sectionHasMissingFields = (sectionId: string): boolean => {
+    switch (sectionId) {
+      case 'basic':
+        return isRequiredFieldEmpty(brandProfile.businessName) ||
+          isRequiredFieldEmpty(brandProfile.businessType) ||
+          isRequiredFieldEmpty(brandProfile.location) ||
+          isRequiredFieldEmpty(brandProfile.description);
+      case 'services':
+        return brandProfile.services.length === 0 ||
+          brandProfile.services.some(service => isRequiredFieldEmpty(service.name));
+      default:
+        return false;
+    }
+  };
+
   const handleInputChange = async (field: keyof CompleteBrandProfile, value: string) => {
 
     // Update local state immediately
@@ -93,25 +131,32 @@ export function BrandDetailsStep({
   return (
     <div className="w-full space-y-4">
       <Card className="w-full max-w-none">
-        <CardHeader className="px-8 py-6">
+        <CardHeader className="px-6 py-6">
           <CardTitle>Complete Brand Details</CardTitle>
           <p className="text-gray-600">
             Fill in comprehensive information about your brand across 6 key areas
           </p>
         </CardHeader>
-        <CardContent className="px-8 pb-8 w-full max-w-none">
+        <CardContent className="px-6 pb-8 w-full max-w-none">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-6">
               {sections.map((section) => {
                 const Icon = section.icon;
+                const hasMissingFields = sectionHasMissingFields(section.id);
                 return (
                   <TabsTrigger
                     key={section.id}
                     value={section.id}
-                    className="flex flex-col items-center gap-1 p-2"
+                    className={`flex flex-col items-center gap-1 p-2 relative ${hasMissingFields ? 'text-red-600 border-red-300' : ''
+                      }`}
                   >
-                    <Icon className="h-4 w-4" />
-                    <span className="text-xs">{section.label}</span>
+                    <Icon className={`h-4 w-4 ${hasMissingFields ? 'text-red-600' : ''}`} />
+                    <span className={`text-xs ${hasMissingFields ? 'text-red-600 font-medium' : ''}`}>
+                      {section.label}
+                    </span>
+                    {hasMissingFields && (
+                      <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></div>
+                    )}
                   </TabsTrigger>
                 );
               })}
@@ -121,54 +166,96 @@ export function BrandDetailsStep({
             <TabsContent value="basic" className="w-full space-y-4 mt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="businessName">Business Name *</Label>
+                  <Label
+                    htmlFor="businessName"
+                    className={getLabelClassName(brandProfile.businessName, true)}
+                  >
+                    Business Name *
+                  </Label>
                   <Input
                     id="businessName"
                     value={brandProfile.businessName || ''}
                     onChange={(e) => handleInputChange('businessName', e.target.value)}
                     placeholder="e.g., ABC Development Company, Metro Properties, The Corner Cafe"
-                    className="mt-1"
+                    className={getInputClassName(brandProfile.businessName, true)}
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Enter your actual brand/company name, not the business type
-                  </p>
+                  {isRequiredFieldEmpty(brandProfile.businessName) ? (
+                    <p className="text-xs text-red-600 mt-1 font-medium">
+                      ⚠️ Business name is required
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Enter your actual brand/company name, not the business type
+                    </p>
+                  )}
                 </div>
                 <div>
-                  <Label htmlFor="businessType">Business Type *</Label>
+                  <Label
+                    htmlFor="businessType"
+                    className={getLabelClassName(brandProfile.businessType, true)}
+                  >
+                    Business Type *
+                  </Label>
                   <Input
                     id="businessType"
                     value={brandProfile.businessType || ''}
                     onChange={(e) => handleInputChange('businessType', e.target.value)}
                     placeholder="e.g., Real Estate Development, Restaurant, Tech Startup"
-                    className="mt-1"
+                    className={getInputClassName(brandProfile.businessType, true)}
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Enter the category/industry your business operates in
-                  </p>
+                  {isRequiredFieldEmpty(brandProfile.businessType) ? (
+                    <p className="text-xs text-red-600 mt-1 font-medium">
+                      ⚠️ Business type is required
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Enter the category/industry your business operates in
+                    </p>
+                  )}
                 </div>
               </div>
 
               <div>
-                <Label htmlFor="location">Location *</Label>
+                <Label
+                  htmlFor="location"
+                  className={getLabelClassName(brandProfile.location, true)}
+                >
+                  Location *
+                </Label>
                 <Input
                   id="location"
                   value={brandProfile.location || ''}
                   onChange={(e) => handleInputChange('location', e.target.value)}
                   placeholder="City, State/Country"
-                  className="mt-1"
+                  className={getInputClassName(brandProfile.location, true)}
                 />
+                {isRequiredFieldEmpty(brandProfile.location) && (
+                  <p className="text-xs text-red-600 mt-1 font-medium">
+                    ⚠️ Location is required
+                  </p>
+                )}
               </div>
 
               <div>
-                <Label htmlFor="description">Business Description *</Label>
+                <Label
+                  htmlFor="description"
+                  className={getLabelClassName(brandProfile.description, true)}
+                >
+                  Business Description *
+                </Label>
                 <Textarea
                   id="description"
                   value={brandProfile.description || ''}
                   onChange={(e) => handleInputChange('description', e.target.value)}
                   placeholder="Describe what your business does, your mission, and what makes you unique..."
                   rows={4}
-                  className="mt-1"
+                  className={getInputClassName(brandProfile.description, true)}
                 />
+                {isRequiredFieldEmpty(brandProfile.description) && (
+                  <p className="text-xs text-red-600 mt-1 font-medium">
+                    ⚠️ Business description is required
+                  </p>
+                )}
               </div>
             </TabsContent>
 
@@ -176,18 +263,26 @@ export function BrandDetailsStep({
             <TabsContent value="services" className="w-full space-y-4 mt-6">
               <div>
                 <div className="mb-3">
-                  <Label>Services/Products Offered *</Label>
-                  <p className="text-xs text-gray-500 mt-1">Add your main services or products (description optional)</p>
+                  <Label className={brandProfile.services.length === 0 ? "text-red-600 font-medium" : ""}>
+                    Services/Products Offered *
+                  </Label>
+                  {brandProfile.services.length === 0 ? (
+                    <p className="text-xs text-red-600 mt-1 font-medium">
+                      ⚠️ At least one service/product is required
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-500 mt-1">Add your main services or products (description optional)</p>
+                  )}
                 </div>
 
                 {brandProfile.services.length === 0 && (
-                  <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                    <p className="text-gray-500 mb-3">No services added yet</p>
+                  <div className="text-center py-8 border-2 border-dashed border-red-300 rounded-lg bg-red-50">
+                    <p className="text-red-600 mb-3 font-medium">⚠️ No services added yet - This is required</p>
                     <Button
                       type="button"
                       variant="outline"
                       onClick={addService}
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 border-red-300 text-red-600 hover:bg-red-100"
                     >
                       <Plus className="h-4 w-4" />
                       Add Your First Service
@@ -204,14 +299,22 @@ export function BrandDetailsStep({
                     </div>
 
                     {brandProfile.services.map((service, index) => (
-                      <div key={index} className="border rounded p-3 bg-gray-50">
+                      <div key={index} className={`border rounded p-3 ${isRequiredFieldEmpty(service.name) ? 'bg-red-50 border-red-300' : 'bg-gray-50'}`}>
                         <div className="flex items-center gap-3">
                           <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <Input
-                              value={service.name || ''}
-                              onChange={(e) => updateService(index, 'name', e.target.value)}
-                              placeholder="e.g., Web Design, Consulting"
-                            />
+                            <div>
+                              <Input
+                                value={service.name || ''}
+                                onChange={(e) => updateService(index, 'name', e.target.value)}
+                                placeholder="e.g., Web Design, Consulting"
+                                className={getInputClassName(service.name, true)}
+                              />
+                              {isRequiredFieldEmpty(service.name) && (
+                                <p className="text-xs text-red-600 mt-1 font-medium">
+                                  ⚠️ Service name is required
+                                </p>
+                              )}
+                            </div>
                             <Input
                               value={service.description || ''}
                               onChange={(e) => updateService(index, 'description', e.target.value)}

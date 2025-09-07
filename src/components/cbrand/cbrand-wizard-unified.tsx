@@ -261,7 +261,7 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full max-w-none">
       {/* Progress Bar */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">
@@ -304,7 +304,7 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
       </div>
 
       {/* Step Content */}
-      <div className="bg-white rounded-lg shadow-lg w-full">
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-none">
         {renderStep()}
       </div>
     </div>
