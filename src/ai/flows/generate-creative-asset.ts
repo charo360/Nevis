@@ -166,39 +166,55 @@ Recreate the content within the black-masked region based on this instruction, e
             promptParts.push({ media: { url: input.maskDataUrl, contentType: getMimeTypeFromDataURI(input.maskDataUrl) } });
 
         } else if (input.referenceAssetUrl) {
-            // This is a generation prompt with a reference asset (image or video).
-            let referencePrompt = `You are an expert creative director specializing in high-end advertisements. You will be given a reference asset and a text prompt with instructions.
-Your task is to generate a new asset that is inspired by the reference asset and follows the new instructions.
+            // This is a generation prompt with an uploaded image that should be integrated into the design
+            let referencePrompt = `You are an expert creative director specializing in high-end advertisements and design integration. You will be given an uploaded image and a text prompt with instructions.
 
-Your primary goal is to intelligently interpret the user's request, considering the provided reference asset. Do not just copy the reference.
-Analyze the user's prompt for common editing terminology and apply it creatively. For example:
-- If asked to "change the background," intelligently isolate the main subject and replace the background with a new one that matches the prompt, preserving the foreground subject.
-- If asked to "make the logo bigger" or "change the text color," perform those specific edits while maintaining the overall composition.
-- If the prompt is more general, use the reference asset for style, color, and subject inspiration to create a new, distinct asset.
+🎯 **CRITICAL INTEGRATION REQUIREMENT:** The uploaded image is NOT just a reference - it must be INTEGRATED as a key design element in the final output, similar to how a brand logo would be integrated.
+
+Your task is to create a professional design that incorporates the uploaded image as a central design element while following the user's instructions.
+
+**Integration Approaches:**
+- **Product Integration:** If the uploaded image contains a product, person, or object, integrate it naturally into the scene (e.g., person using a product, product in a lifestyle setting)
+- **Background Integration:** Use the uploaded image as a sophisticated background element, applying professional design treatments
+- **Collage Integration:** Combine the uploaded image with complementary design elements to create a cohesive composition
+- **Overlay Integration:** Layer the uploaded image with text, graphics, and brand elements for a professional advertisement look
+- **Style Matching:** Ensure the final design matches the style, lighting, and mood of the uploaded image
+
+**Design Quality Standards:**
+- Maintain professional advertising quality
+- Ensure seamless integration (no obvious cut-and-paste appearance)
+- Apply consistent lighting and color grading
+- Create visual hierarchy with the uploaded image as a key focal point
+- Add professional design elements (typography, graphics, effects) that complement the uploaded image
 
 The user's instruction is: "${remainingPrompt}"`;
 
             if (imageText) {
-                referencePrompt += `\n\n**Explicit Text Overlay:** The user has provided specific text in quotes: "${imageText}". You MUST overlay this text on the image. If there was existing text, replace it. Ensure the new text is readable and well-composed.`
+                referencePrompt += `\n\n**Text Overlay Integration:** The user has provided specific text in quotes: "${imageText}". You MUST overlay this text on the design in a way that complements both the uploaded image and the overall composition. Ensure the text is readable and professionally integrated.`
             }
 
             if (input.outputType === 'video') {
-                referencePrompt += `\n\n**Video Specifics:** Generate a video that is cinematically interesting, well-composed, and has a sense of completeness. Create a well-composed shot with a clear beginning, middle, and end, even within a short duration. Avoid abrupt cuts or unfinished scenes.`;
+                referencePrompt += `\n\n**Video Integration:** Create a video that showcases the uploaded image as a key element throughout the sequence. The uploaded image should be prominently featured and integrated naturally into the video narrative.`;
                 if (imageText) {
-                    referencePrompt += `\n\n**Text Overlay:** The following text MUST be overlaid on the video in a stylish, readable font: "${imageText}". It is critical that the text is clearly readable, well-composed, and not cut off. The entire text must be visible.`;
+                    referencePrompt += `\n\n**Video Text Overlay:** The following text MUST be overlaid on the video in a stylish, readable font: "${imageText}". Position it to complement the uploaded image integration.`;
                 }
             }
 
             if (input.useBrandProfile && input.brandProfile) {
                 const bp = input.brandProfile;
-                let brandGuidelines = '\n\n**Brand Guidelines:**';
+                let brandGuidelines = '\n\n**Brand Integration Guidelines:**';
 
                 if (bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
                     promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
-                    brandGuidelines += ` A logo has also been provided. Integrate it naturally into the new design.`
+                    brandGuidelines += ` A brand logo has also been provided. Integrate BOTH the uploaded image AND the brand logo naturally into the design, ensuring they work together harmoniously.`
                 } else if (bp.logoDataUrl && bp.logoDataUrl.includes('image/svg+xml')) {
-                    brandGuidelines += ` Create a design that represents the brand identity (SVG logo format not supported by AI model).`
+                    brandGuidelines += ` Create a design that represents the brand identity while prominently featuring the uploaded image.`
                 }
+
+                brandGuidelines += `\n- Use brand colors: ${bp.primaryColor || 'brand-appropriate colors'}`;
+                brandGuidelines += `\n- Match brand style: ${bp.visualStyle || 'professional'}`;
+                brandGuidelines += `\n- Target audience: ${bp.targetAudience || 'general audience'}`;
+
                 referencePrompt += brandGuidelines;
             }
 
@@ -210,7 +226,9 @@ The user's instruction is: "${remainingPrompt}"`;
 
         } else if (input.useBrandProfile && input.brandProfile) {
             // This is a new, on-brand asset generation with advanced design principles.
+            // May also include an uploaded image for integration
             const bp = input.brandProfile;
+            const hasUploadedImage = !!input.referenceAssetUrl;
 
             // Get business-specific design DNA
             const businessDNA = BUSINESS_TYPE_DESIGN_DNA[bp.businessType as keyof typeof BUSINESS_TYPE_DESIGN_DNA] || BUSINESS_TYPE_DESIGN_DNA.default;
@@ -219,11 +237,11 @@ The user's instruction is: "${remainingPrompt}"`;
             const getTargetMarketInstructions = (location: string, businessType: string, targetAudience: string) => {
                 const locationKey = location.toLowerCase();
                 const africanCountries = ['kenya', 'nigeria', 'south africa', 'ghana', 'uganda', 'tanzania', 'ethiopia', 'rwanda', 'zambia', 'zimbabwe', 'botswana', 'namibia', 'malawi', 'mozambique', 'senegal', 'mali', 'burkina faso', 'ivory coast', 'cameroon', 'chad', 'sudan', 'egypt', 'morocco', 'algeria', 'tunisia', 'libya'];
-                
+
                 // Get business-specific target market
                 const getBusinessTargetMarket = (businessType: string) => {
                     const businessTypeLower = businessType.toLowerCase();
-                    
+
                     if (businessTypeLower.includes('restaurant') || businessTypeLower.includes('food') || businessTypeLower.includes('cafe')) {
                         return 'diverse families, couples, food enthusiasts, local community members';
                     } else if (businessTypeLower.includes('fitness') || businessTypeLower.includes('gym') || businessTypeLower.includes('health')) {
@@ -250,10 +268,10 @@ The user's instruction is: "${remainingPrompt}"`;
                 };
 
                 const targetMarket = getBusinessTargetMarket(businessType);
-                
+
                 // Check if it's an African country
                 const isAfricanCountry = africanCountries.some(country => locationKey.includes(country));
-                
+
                 if (isAfricanCountry) {
                     return `
 **CRITICAL TARGET MARKET REPRESENTATION FOR ${location.toUpperCase()}:**
@@ -288,11 +306,11 @@ The user's instruction is: "${remainingPrompt}"`;
                     .replace(/^[A-Z]+:\s*/i, '') // Remove "PAYA: "
                     .replace(/^[A-Z][a-z]+:\s*/i, '') // Remove "Paya: "
                     .trim();
-                
+
                 if (cleaned.length < 3) {
                     return text;
                 }
-                
+
                 return cleaned;
             };
 
@@ -376,7 +394,18 @@ ${designDNA}`;
                   * Add text shadows, outlines, or semi-transparent backgrounds for readability
                   * Position text using rule of thirds for optimal composition
                   * Ensure text is the primary focal point of the design` : 'No text should be added to the asset.'}`;
-                onBrandPrompt += `\n- **Logo Placement:** The provided logo must be integrated naturally into the design (e.g., on a product, a sign, or as a subtle watermark).`;
+                // Handle uploaded image integration
+                if (hasUploadedImage) {
+                    onBrandPrompt += `\n- **🎯 UPLOADED IMAGE INTEGRATION:** A user has uploaded an image that must be INTEGRATED as a key design element in the final output. This is NOT just a reference - it must be prominently featured and professionally integrated into the design.`;
+                    onBrandPrompt += `\n  * **Integration Priority:** The uploaded image should be a central focal point of the design`;
+                    onBrandPrompt += `\n  * **Professional Quality:** Ensure seamless integration with no obvious cut-and-paste appearance`;
+                    onBrandPrompt += `\n  * **Style Harmony:** Match the lighting, color grading, and style of the uploaded image`;
+                    onBrandPrompt += `\n  * **Brand Coordination:** Integrate both the uploaded image AND brand elements harmoniously`;
+                    onBrandPrompt += `\n  * **Design Approaches:** Use product integration, background integration, collage techniques, or overlay methods as appropriate`;
+                    promptParts.push({ media: { url: input.referenceAssetUrl!, contentType: getMimeTypeFromDataURI(input.referenceAssetUrl!) } });
+                }
+
+                onBrandPrompt += `\n- **Logo Placement:** ${bp.logoDataUrl ? 'The provided logo must be integrated naturally into the design (e.g., on a product, a sign, or as a subtle watermark)' : 'Include brand identity elements in the design'}.`;
                 onBrandPrompt += `\n- **Critical Language Rule:** ALL text must be in clear, readable ENGLISH only. Never use foreign languages, corrupted text, or unreadable symbols.`;
 
                 if (bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
@@ -394,6 +423,17 @@ ${designDNA}`;
                 if (imageText) {
                     onBrandPrompt += `\n- **Text Overlay:** The following text MUST be overlaid on the video in a stylish, readable font: "${imageText}". It is critical that the text is clearly readable, well-composed, and not cut off. The entire text must be visible.`
                 }
+
+                // Handle uploaded image integration for video
+                if (hasUploadedImage) {
+                    onBrandPrompt += `\n- **🎯 UPLOADED IMAGE INTEGRATION (VIDEO):** A user has uploaded an image that must be INTEGRATED as a key visual element throughout the video sequence.`;
+                    onBrandPrompt += `\n  * **Video Integration:** The uploaded image should be prominently featured and integrated naturally into the video narrative`;
+                    onBrandPrompt += `\n  * **Seamless Incorporation:** Use the uploaded image as a central element, background, or key prop in the video`;
+                    onBrandPrompt += `\n  * **Brand Harmony:** Coordinate the uploaded image with brand elements and logo placement`;
+                    onBrandPrompt += `\n  * **Professional Quality:** Ensure the integration looks natural and professionally produced`;
+                    promptParts.push({ media: { url: input.referenceAssetUrl!, contentType: getMimeTypeFromDataURI(input.referenceAssetUrl!) } });
+                }
+
                 if (bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
                     onBrandPrompt += `\n- **Logo Placement:** The provided logo must be integrated naturally into the design.`;
                     promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
