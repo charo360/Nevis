@@ -90,6 +90,7 @@ const analyzeBrandPrompt = ai.definePrompt({
   name: 'analyzeBrandPrompt',
   input: { schema: AnalyzeBrandInputSchema },
   output: { schema: AnalyzeBrandOutputSchema },
+  model: 'googleai/gemini-2.5-flash', // Use regular flash model that supports JSON mode
   prompt: `You are an expert brand strategist, business analyst, and design consultant with deep expertise in brand identity, visual design, and digital marketing. Your task is to perform an extremely comprehensive and detailed analysis of THIS SPECIFIC BUSINESS based on its website and design examples.
 
   **CRITICAL INSTRUCTION: BE COMPANY-SPECIFIC, NOT GENERIC**
