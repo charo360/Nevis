@@ -27,9 +27,22 @@ export async function POST(request: NextRequest) {
       brandProfile: brandProfile?.businessName || 'none'
     });
 
+    // Check if required environment variables are available
+    const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
+    if (!geminiKey) {
+      throw new Error('Gemini API key not found in environment variables');
+    }
+
     // Use the creative asset generation flow
     const { generateCreativeAsset } = await import('@/ai/flows/generate-creative-asset');
-    
+
+    console.log('Calling generateCreativeAsset with:', {
+      outputType: 'image',
+      useBrandProfile: !!brandProfile,
+      preferredModel: 'gemini-2.5-flash-image-preview',
+      hasReferenceAsset: !!(assets?.[0]?.url)
+    });
+
     const result = await generateCreativeAsset({
       prompt,
       outputType: 'image',
@@ -39,6 +52,11 @@ export async function POST(request: NextRequest) {
       maskDataUrl: null,
       preferredModel: 'gemini-2.5-flash-image-preview',
       aspectRatio: aspectRatio === '1:1' ? undefined : aspectRatio // Let it auto-detect for 1:1
+    });
+
+    console.log('generateCreativeAsset result:', {
+      hasImageUrl: !!result.imageUrl,
+      imageUrlLength: result.imageUrl?.length || 0
     });
 
     if (!result.imageUrl) {
@@ -53,7 +71,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Professional Studio generation failed:', error);
-    
+
     return NextResponse.json({
       success: false,
       error: 'Failed to generate professional design',
