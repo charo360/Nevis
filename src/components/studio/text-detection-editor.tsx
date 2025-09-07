@@ -7,11 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { 
-  Scan, 
-  Edit3, 
-  Trash2, 
-  Download, 
+import {
+  Scan,
+  Edit3,
+  Trash2,
+  Download,
   Loader2,
   Eye,
   EyeOff,
@@ -19,6 +19,7 @@ import {
   Wand2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { textDetectionService } from '@/services/text-detection-service';
 
 interface DetectedText {
   id: string;
@@ -108,7 +109,7 @@ export function TextDetectionEditor({ imageUrl, onSave, onCancel }: TextDetectio
     // Set box style based on state
     const isSelected = selectedText === detection.id;
     const isEditing = detection.isEditing;
-    
+
     if (isSelected) {
       ctx.strokeStyle = '#007bff';
       ctx.lineWidth = 3;
@@ -126,7 +127,7 @@ export function TextDetectionEditor({ imageUrl, onSave, onCancel }: TextDetectio
     // Draw confidence badge
     ctx.fillStyle = isSelected ? '#007bff' : isEditing ? '#28a745' : '#dc3545';
     ctx.fillRect(detection.x, detection.y - 20, 60, 20);
-    
+
     ctx.fillStyle = 'white';
     ctx.font = '12px Arial';
     ctx.fillText(`${Math.round(detection.confidence * 100)}%`, detection.x + 5, detection.y - 8);
@@ -134,7 +135,7 @@ export function TextDetectionEditor({ imageUrl, onSave, onCancel }: TextDetectio
     // Draw text preview
     ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
     ctx.fillRect(detection.x, detection.y + detection.height, detection.width, 25);
-    
+
     ctx.fillStyle = 'white';
     ctx.font = '14px Arial';
     const displayText = detection.newText || detection.text;
@@ -144,71 +145,65 @@ export function TextDetectionEditor({ imageUrl, onSave, onCancel }: TextDetectio
     ctx.restore();
   };
 
-  // Mock OCR function - in production, this would call a real OCR service
+  // Real OCR function using Tesseract.js
   const detectTextInImage = async (): Promise<DetectedText[]> => {
-    // Simulate OCR processing time
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      console.log('🔍 Starting real OCR text detection...');
 
-    // Mock detected text regions - in production, this would come from OCR API
-    const mockDetections: DetectedText[] = [
-      {
-        id: '1',
-        text: 'Sample Text Here',
-        x: 100,
-        y: 50,
-        width: 200,
-        height: 30,
-        confidence: 0.95,
-        isEditing: false,
-        fontSize: 24,
-        fontFamily: 'Arial',
-        color: '#000000'
-      },
-      {
-        id: '2',
-        text: 'Another Text Block',
-        x: 150,
-        y: 200,
-        width: 180,
-        height: 25,
-        confidence: 0.88,
-        isEditing: false,
-        fontSize: 20,
-        fontFamily: 'Arial',
-        color: '#333333'
-      },
-      {
-        id: '3',
-        text: 'Bottom Text',
-        x: 80,
-        y: 350,
-        width: 150,
-        height: 28,
-        confidence: 0.92,
-        isEditing: false,
-        fontSize: 22,
-        fontFamily: 'Arial',
-        color: '#000000'
-      }
-    ];
+      // Use the real OCR service
+      const detections = await textDetectionService.detectText(imageUrl);
 
-    return mockDetections;
+      console.log('📝 OCR Results:', detections);
+
+      // Convert to DetectedText format
+      return detections.map(detection => ({
+        id: detection.id,
+        text: detection.text,
+        x: detection.x,
+        y: detection.y,
+        width: detection.width,
+        height: detection.height,
+        confidence: detection.confidence,
+        isEditing: false,
+        fontSize: detection.fontSize,
+        fontFamily: detection.fontFamily,
+        color: detection.color
+      }));
+
+    } catch (error) {
+      console.error('OCR detection failed:', error);
+      throw error;
+    }
   };
 
   const handleDetectText = async () => {
     setIsDetecting(true);
     try {
+      toast({
+        title: 'Starting OCR Detection',
+        description: 'Analyzing image for text regions...',
+      });
+
       const detections = await detectTextInImage();
       setDetectedTexts(detections);
-      toast({
-        title: 'Text Detection Complete',
-        description: `Found ${detections.length} text regions in the image.`,
-      });
+
+      if (detections.length > 0) {
+        toast({
+          title: 'Text Detection Complete',
+          description: `Found ${detections.length} text region${detections.length === 1 ? '' : 's'} in the image.`,
+        });
+      } else {
+        toast({
+          title: 'No Text Detected',
+          description: 'No readable text was found in this image. Try with an image containing clear, readable text.',
+        });
+      }
     } catch (error) {
+      console.error('Text detection error:', error);
       toast({
         variant: 'destructive',
         title: 'Detection Failed',
-        description: 'Failed to detect text in the image.',
+        description: 'Failed to detect text in the image. Please try again or use a different image.',
       });
     } finally {
       setIsDetecting(false);
@@ -268,7 +263,7 @@ export function TextDetectionEditor({ imageUrl, onSave, onCancel }: TextDetectio
     const y = event.clientY - rect.top;
 
     // Check if click is on any detected text
-    const clickedText = detectedTexts.find(text => 
+    const clickedText = detectedTexts.find(text =>
       x >= text.x && x <= text.x + text.width &&
       y >= text.y && y <= text.y + text.height
     );
@@ -290,15 +285,15 @@ export function TextDetectionEditor({ imageUrl, onSave, onCancel }: TextDetectio
       // 1. Remove original text using inpainting
       // 2. Add new text in the same locations
       // 3. Return the edited image URL
-      
+
       // For now, simulate processing
       await new Promise(resolve => setTimeout(resolve, 3000));
-      
+
       // Mock edited image URL
       const editedImageUrl = imageUrl; // In production, this would be the processed image
-      
+
       onSave(editedImageUrl);
-      
+
       toast({
         title: 'Text Editing Complete',
         description: 'Your image has been updated with the edited text.',
@@ -357,28 +352,28 @@ export function TextDetectionEditor({ imageUrl, onSave, onCancel }: TextDetectio
 
           {/* Detection Controls */}
           <div className="space-y-2">
-            <Button 
-              onClick={handleDetectText} 
-              className="w-full" 
+            <Button
+              onClick={handleDetectText}
+              className="w-full"
               disabled={isDetecting}
             >
               {isDetecting ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Detecting Text...
+                  Analyzing Image with OCR...
                 </>
               ) : (
                 <>
                   <Scan className="w-4 h-4 mr-2" />
-                  Detect Text in Image
+                  Detect Text with OCR
                 </>
               )}
             </Button>
-            
+
             {detectedTexts.length > 0 && (
-              <Button 
-                variant="outline" 
-                onClick={() => setDetectedTexts([])} 
+              <Button
+                variant="outline"
+                onClick={() => setDetectedTexts([])}
                 className="w-full"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
@@ -400,13 +395,12 @@ export function TextDetectionEditor({ imageUrl, onSave, onCancel }: TextDetectio
                 {detectedTexts.map((text) => (
                   <div
                     key={text.id}
-                    className={`p-3 border rounded cursor-pointer transition-colors ${
-                      selectedText === text.id 
-                        ? 'border-blue-500 bg-blue-50' 
-                        : text.isEditing 
+                    className={`p-3 border rounded cursor-pointer transition-colors ${selectedText === text.id
+                      ? 'border-blue-500 bg-blue-50'
+                      : text.isEditing
                         ? 'border-green-500 bg-green-50'
                         : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                      }`}
                     onClick={() => setSelectedText(text.id)}
                   >
                     <div className="flex items-center justify-between mb-2">
@@ -437,11 +431,11 @@ export function TextDetectionEditor({ imageUrl, onSave, onCancel }: TextDetectio
                         </Button>
                       </div>
                     </div>
-                    
+
                     <div className="text-sm">
                       <strong>Original:</strong> {text.text}
                     </div>
-                    
+
                     {text.newText && text.newText !== text.text && (
                       <div className="text-sm text-green-600">
                         <strong>New:</strong> {text.newText}
@@ -469,7 +463,7 @@ export function TextDetectionEditor({ imageUrl, onSave, onCancel }: TextDetectio
                     placeholder="Enter new text..."
                   />
                 </div>
-                
+
                 <div className="flex gap-2">
                   <Button
                     onClick={() => handleSaveTextEdit(editingText.id)}
@@ -495,8 +489,8 @@ export function TextDetectionEditor({ imageUrl, onSave, onCancel }: TextDetectio
 
           {/* Action Buttons */}
           <div className="space-y-2">
-            <Button 
-              onClick={processImageWithEdits} 
+            <Button
+              onClick={processImageWithEdits}
               className="w-full"
               disabled={isProcessing || detectedTexts.length === 0}
             >
@@ -512,9 +506,9 @@ export function TextDetectionEditor({ imageUrl, onSave, onCancel }: TextDetectio
                 </>
               )}
             </Button>
-            <Button 
-              variant="outline" 
-              onClick={onCancel} 
+            <Button
+              variant="outline"
+              onClick={onCancel}
               className="w-full"
               disabled={isProcessing}
             >
@@ -528,11 +522,12 @@ export function TextDetectionEditor({ imageUrl, onSave, onCancel }: TextDetectio
               <CardTitle className="text-sm">How to Use</CardTitle>
             </CardHeader>
             <CardContent className="text-xs space-y-2">
-              <p>1. Click "Detect Text" to find text in the image</p>
-              <p>2. Click on detected text boxes to edit them</p>
-              <p>3. Edit the text content in the panel</p>
-              <p>4. Click "Apply Text Edits" to process the image</p>
-              <p>5. Toggle visibility with the eye icon</p>
+              <p>1. Click "Detect Text with OCR" to analyze the image</p>
+              <p>2. OCR will find and highlight text regions</p>
+              <p>3. Click on detected text boxes to edit them</p>
+              <p>4. Edit the text content in the panel</p>
+              <p>5. Click "Apply Text Edits" to process the image</p>
+              <p>6. Toggle visibility with the eye icon</p>
             </CardContent>
           </Card>
         </div>
