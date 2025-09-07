@@ -21,6 +21,7 @@ import { useUnifiedBrand, useBrandStorage, useBrandChangeListener } from "@/cont
 import { UnifiedBrandLayout, BrandContent, BrandSwitchingStatus } from "@/components/layout/unified-brand-layout";
 import { STORAGE_FEATURES } from "@/lib/services/brand-scoped-storage";
 import { useCreativeStudioStorage } from "@/hooks/use-feature-storage";
+import { LogoDebug } from "@/components/debug/logo-debug";
 
 function CreativeStudioPageContent() {
   const { currentBrand } = useUnifiedBrand();
@@ -77,7 +78,7 @@ function CreativeStudioPageContent() {
     primaryColor: currentBrand.primaryColor,
     accentColor: currentBrand.accentColor,
     backgroundColor: currentBrand.backgroundColor,
-    logoDataUrl: currentBrand.logoUrl,
+    logoDataUrl: currentBrand.logoDataUrl,
     websiteUrl: currentBrand.websiteUrl,
     socialMedia: {
       facebook: currentBrand.facebookUrl,
@@ -94,6 +95,12 @@ function CreativeStudioPageContent() {
 
   return (
     <SidebarInset fullWidth>
+      {/* Debug component to check logo data */}
+      {currentBrand && (
+        <div className="p-4 border-b bg-yellow-50">
+          <LogoDebug />
+        </div>
+      )}
       <header className="flex h-14 items-center justify-between border-b bg-card px-4 lg:h-[60px] lg:px-6">
         <div />
         <DropdownMenu>
