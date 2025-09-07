@@ -798,36 +798,36 @@ export function WebsiteAnalysisStep({
               {dialogType === 'timeout' && 'Analysis Timed Out'}
               {dialogType === 'error' && 'Analysis Unavailable'}
             </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-3">
-              <p>{dialogMessage}</p>
+            <div className="space-y-3 text-sm text-muted-foreground">
+              <div>{dialogMessage}</div>
 
               {dialogType === 'blocked' && (
                 <div className="bg-blue-50 p-3 rounded-lg">
-                  <p className="text-sm text-blue-800">
+                  <div className="text-sm text-blue-800">
                     <strong>Don't worry!</strong> Many professional websites block automated tools for security.
                     You can still create an amazing brand profile by filling in the details manually.
-                  </p>
+                  </div>
                 </div>
               )}
 
               {dialogType === 'timeout' && (
                 <div className="bg-yellow-50 p-3 rounded-lg">
-                  <p className="text-sm text-yellow-800">
+                  <div className="text-sm text-yellow-800">
                     <strong>No problem!</strong> You can try again later or proceed manually.
                     The manual setup gives you full control over your brand information.
-                  </p>
+                  </div>
                 </div>
               )}
 
               {dialogType === 'error' && (
                 <div className="bg-orange-50 p-3 rounded-lg">
-                  <p className="text-sm text-orange-800">
+                  <div className="text-sm text-orange-800">
                     <strong>That's okay!</strong> Technical issues happen sometimes.
                     You can create an excellent brand profile by entering the information yourself.
-                  </p>
+                  </div>
                 </div>
               )}
-            </AlertDialogDescription>
+            </div>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setWebsiteUrl('')}>
