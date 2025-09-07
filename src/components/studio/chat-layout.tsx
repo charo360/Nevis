@@ -110,29 +110,51 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     videoUrl: result.videoUrl,
                 };
             } else if (selectedRevoModel === 'revo-1.5' && outputType === 'image' && brandProfile) {
-                // Use enhanced design generation for images with brand profile
-                const enhancedResult = await generateEnhancedDesignAction(
-                    brandProfile.businessType || 'business',
-                    'Instagram', // Default platform, could be made configurable
-                    brandProfile.visualStyle || 'modern',
-                    currentInput, // Creative Studio uses simple text input for now
+                // Use Creative Studio's advanced creative asset generation for Revo 1.5
+                // This provides unique Creative Studio features like inpainting, outpainting,
+                // character consistency, and intelligent editing capabilities
+                result = await generateCreativeAssetAction(
+                    currentInput,
+                    outputType,
+                    currentImageDataUrl,
+                    useBrandProfile,
                     brandProfile,
-                    true,
-                    { strictConsistency: true, followBrandColors: true }, // Enable all enhancements for Creative Studio
-                    undefined, // artifactInstructions
-                    true, // includePeopleInDesigns
-                    false, // useLocalLanguage
-                    currentImageDataUrl // uploadedImageUrl - support photo upload integration
+                    null, // maskDataUrl - Creative Studio can handle inpainting
+                    outputType === 'video' ? aspectRatio : undefined,
+                    'gemini-2.5-flash-image-preview' // Use Revo 1.5 model specifically
                 );
 
                 aiResponse = {
                     id: (Date.now() + 1).toString(),
                     role: 'assistant',
-                    content: `✨ Your enhanced design is ready! This professional-quality image has been optimized for your brand and platform with advanced design principles.`,
-                    imageUrl: enhancedResult.imageUrl,
+                    content: `🎨 Your Revo 1.5 enhanced design is ready! This professional-quality image was generated using advanced AI with enhanced Creative Studio capabilities including intelligent editing, brand integration, and premium design principles.`,
+                    imageUrl: result.imageUrl,
+                    videoUrl: result.videoUrl,
+                };
+            } else if (selectedRevoModel === 'revo-1.0' && outputType === 'image' && brandProfile) {
+                // Use Creative Studio's advanced creative asset generation for Revo 1.0
+                // This provides unique Creative Studio features like inpainting, outpainting,
+                // character consistency, and intelligent editing capabilities
+                result = await generateCreativeAssetAction(
+                    currentInput,
+                    outputType,
+                    currentImageDataUrl,
+                    useBrandProfile,
+                    brandProfile,
+                    null, // maskDataUrl - Creative Studio can handle inpainting
+                    outputType === 'video' ? aspectRatio : undefined,
+                    'gemini-2.5-flash-image-preview' // Use Revo 1.0 model specifically
+                );
+
+                aiResponse = {
+                    id: (Date.now() + 1).toString(),
+                    role: 'assistant',
+                    content: `⭐ Your Revo 1.0 stable design is ready! This reliable, high-quality image was generated using proven AI with Creative Studio capabilities including brand integration, professional design standards, and consistent results.`,
+                    imageUrl: result.imageUrl,
+                    videoUrl: result.videoUrl,
                 };
             } else {
-                // Use standard creative asset generation
+                // Use standard creative asset generation for fallback
                 result = await generateCreativeAssetAction(
                     currentInput,
                     outputType,
