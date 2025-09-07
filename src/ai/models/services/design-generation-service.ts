@@ -215,32 +215,11 @@ export class DesignGenerationService implements IDesignGenerationService {
 
   /**
    * Get optimal aspect ratio for platform and model
+   * STANDARDIZED: ALL platforms use 1:1 for maximum quality
    */
   getOptimalAspectRatio(platform: string, modelId: RevoModelId): string {
-    // Get model capabilities
-    const model = modelRegistry.getModel(modelId);
-    if (!model) {
-      return '1:1'; // Default fallback
-    }
-
-    const supportedRatios = model.model.capabilities.aspectRatios;
-
-    // Platform preferences - ALL PLATFORMS USE 1:1 FOR HIGHEST QUALITY
-    const platformPreferences: Record<string, string[]> = {
-      'Instagram': ['1:1'],
-      'Facebook': ['1:1'],
-      'Twitter': ['1:1'],
-      'LinkedIn': ['1:1']
-    };
-
-    const preferred = platformPreferences[platform] || ['1:1'];
-
-    // Find first supported ratio that matches platform preference
-    for (const ratio of preferred) {
-      if (supportedRatios.includes(ratio)) {
-        return ratio;
-      }
-    }
+    // ALL platforms use 1:1 for maximum quality
+    return '1:1';
 
     // Fallback to first supported ratio
     return supportedRatios[0] || '1:1';

@@ -196,7 +196,7 @@ export class Revo15Implementation implements IModelImplementation {
       },
       advancedDesign: {
         enabled: true,
-        aspectRatios: ['1:1', '16:9', '9:16'],
+        aspectRatios: ['1:1'], // STANDARDIZED: Only 1:1 for maximum quality
         qualityEnhancements: ['color-harmony', 'layout-optimization', 'brand-consistency'],
         textOverlay: 'advanced'
       },

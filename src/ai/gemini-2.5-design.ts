@@ -859,32 +859,15 @@ function buildLayoutGuidance(platform: string, businessType: string): string {
 
 /**
  * Get platform-specific specifications for image generation
+ * STANDARDIZED: ALL platforms use 1:1 square format for maximum quality
  */
 function getPlatformSpecifications(platform: string) {
-  const specs = {
-    instagram: {
-      name: 'Instagram',
-      dimensions: '1080x1080px (square)',
-      description: 'Instagram feed post optimized for mobile viewing'
-    },
-    facebook: {
-      name: 'Facebook',
-      dimensions: '1200x630px (landscape)',
-      description: 'Facebook post optimized for news feed'
-    },
-    twitter: {
-      name: 'Twitter/X',
-      dimensions: '1200x675px (landscape)',
-      description: 'Twitter post optimized for timeline viewing'
-    },
-    linkedin: {
-      name: 'LinkedIn',
-      dimensions: '1200x627px (landscape)',
-      description: 'LinkedIn post optimized for professional networking'
-    }
+  // ALL platforms use the same square format for maximum quality
+  return {
+    name: platform,
+    dimensions: '1080x1080px (square)',
+    description: `${platform} post optimized for maximum quality and mobile viewing`
   };
-
-  return specs[platform.toLowerCase() as keyof typeof specs] || specs.instagram;
 }
 
 /**

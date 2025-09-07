@@ -372,7 +372,7 @@ export class Revo15DesignGenerator implements IDesignGenerator {
         'Requires both Gemini models available'
       ],
       supportedPlatforms: ['Instagram', 'Facebook', 'Twitter', 'LinkedIn'],
-      supportedAspectRatios: ['1:1', '16:9', '9:16'],
+      supportedAspectRatios: ['1:1'], // STANDARDIZED: Only 1:1 for maximum quality
       averageProcessingTime: '25-45 seconds',
       qualityRange: '8-9.8/10',
       costPerGeneration: 2,

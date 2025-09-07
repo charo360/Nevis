@@ -420,40 +420,12 @@ function validateAndCleanText(text: string): string {
 
 /**
  * Get appropriate aspect ratio for platform (Gemini 2.0 Flash HD)
- * Updated with optimal dimensions for each social media platform
+ * STANDARDIZED: ALL platforms use 1:1 for maximum quality (no stories/reels)
  */
 function getPlatformAspectRatio(platform: string): string {
-  const platformLower = platform.toLowerCase();
-
-  // Vertical formats (9:16 aspect ratio)
-  if (platformLower.includes('story') ||
-    platformLower.includes('reel') ||
-    platformLower.includes('tiktok') ||
-    platformLower.includes('youtube short')) {
-    return '9:16';
-  }
-
-  // Platform-specific optimized aspect ratios
-  if (platformLower.includes('linkedin')) {
-    return '16:9'; // LinkedIn posts: 1200x627 (optimal for professional content)
-  }
-
-  if (platformLower.includes('facebook')) {
-    return '16:9'; // Facebook posts: 1200x630 (optimal for news feed)
-  }
-
-  if (platformLower.includes('twitter')) {
-    return '16:9'; // Twitter posts: 1200x675 (optimal for timeline)
-  }
-
-  // Other horizontal formats
-  if (platformLower.includes('youtube') ||
-    platformLower.includes('banner')) {
-    return '16:9';
-  }
-
-  // Instagram and default - Square format (1:1 aspect ratio)
-  return '1:1'; // Instagram posts: 1080x1080 (optimal for feed)
+  // ALL PLATFORMS - Square format (1:1 aspect ratio) for maximum quality
+  // LinkedIn, Facebook, Twitter, YouTube, Instagram, TikTok, etc.
+  return '1:1'; // 1080x1080 (maximum quality, no cropping needed)
 }
 
 /**

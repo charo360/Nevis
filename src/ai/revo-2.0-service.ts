@@ -57,42 +57,21 @@ export interface Revo20GenerationResult {
 
 /**
  * Get platform-specific aspect ratio for optimal social media display
+ * STANDARDIZED: ALL platforms use 1:1 for maximum quality (no stories/reels)
  */
 function getPlatformAspectRatio(platform: string): '1:1' | '16:9' | '9:16' | '21:9' | '4:5' {
-  const platformLower = platform.toLowerCase();
-
-  // Instagram Stories, Reels, TikTok - Vertical 9:16
-  if (platformLower.includes('story') ||
-    platformLower.includes('reel') ||
-    platformLower.includes('tiktok')) {
-    return '9:16';
-  }
-
-  // Facebook, Twitter/X, LinkedIn, YouTube - Landscape 16:9
-  if (platformLower.includes('facebook') ||
-    platformLower.includes('twitter') ||
-    platformLower.includes('linkedin') ||
-    platformLower.includes('youtube')) {
-    return '16:9';
-  }
-
-  // Instagram Feed, Pinterest - Square 1:1 (default)
+  // ALL PLATFORMS use Square 1:1 for maximum quality
+  // Facebook, Twitter/X, LinkedIn, YouTube, Instagram Feed, Pinterest, TikTok
   return '1:1';
 }
 
 /**
  * Get platform-specific dimension text for prompts
- * MOBILE-FIRST: Optimized for 1080x1080px square format
+ * STANDARDIZED: ALL platforms use 1:1 square format (no stories/reels)
  */
 function getPlatformDimensionsText(aspectRatio: string): string {
-  switch (aspectRatio) {
-    case '1:1': return 'Square format - 1080x1080px HD (Mobile-optimized)';
-    case '16:9': return 'Square format - 1080x1080px HD (Mobile-optimized)';
-    case '9:16': return 'Portrait format - 1080x1920px (Stories/Reels)';
-    case '4:5': return 'Square format - 1080x1080px HD (Mobile-optimized)';
-    case '21:9': return 'Square format - 1080x1080px HD (Mobile-optimized)';
-    default: return 'Square format - 1080x1080px HD (Mobile-optimized)';
-  }
+  // ALL platforms use square format for maximum quality
+  return 'Square format - 1080x1080px HD (Maximum quality)';
 }
 
 /**

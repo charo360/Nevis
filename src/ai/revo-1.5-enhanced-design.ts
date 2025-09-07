@@ -17,17 +17,11 @@ function getPlatformAspectRatio(platform: string): '1:1' | '16:9' | '9:16' | '21
 
 /**
  * Get platform-specific dimension text for prompts
- * MOBILE-FIRST: Optimized for 1080x1080px square format
+ * STANDARDIZED: ALL platforms use 1:1 square format (no stories/reels)
  */
 function getPlatformDimensionsText(aspectRatio: string): string {
-  switch (aspectRatio) {
-    case '1:1': return 'Square format - 1080x1080px HD (Mobile-optimized)';
-    case '16:9': return 'Square format - 1080x1080px HD (Mobile-optimized)';
-    case '9:16': return 'Portrait format - 1080x1920px (Stories/Reels)';
-    case '4:5': return 'Square format - 1080x1080px HD (Mobile-optimized)';
-    case '21:9': return 'Square format - 1080x1080px HD (Mobile-optimized)';
-    default: return 'Square format - 1080x1080px HD (Mobile-optimized)';
-  }
+  // ALL platforms use square format for maximum quality
+  return 'Square format - 1080x1080px HD (Maximum quality)';
 }
 
 export interface Revo15DesignInput {
