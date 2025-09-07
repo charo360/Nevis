@@ -85,7 +85,36 @@ export function ProfessionalDesignPanel({ brandProfile, onEditImage }: Professio
 
       // Simulate professional generation process
       setTimeout(() => {
-        setGeneratedImage('https://placehold.co/1080x1080/6366f1/white?text=Professional+Design+Created');
+        // Create a simple data URL for the generated design preview
+        const canvas = document.createElement('canvas');
+        canvas.width = 1080;
+        canvas.height = 1080;
+        const ctx = canvas.getContext('2d');
+
+        if (ctx) {
+          // Create gradient background
+          const gradient = ctx.createLinearGradient(0, 0, 1080, 1080);
+          gradient.addColorStop(0, '#6366f1');
+          gradient.addColorStop(1, '#8b5cf6');
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, 0, 1080, 1080);
+
+          // Add text
+          ctx.fillStyle = 'white';
+          ctx.font = 'bold 48px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText('Professional Design', 540, 480);
+          ctx.font = '32px Arial';
+          ctx.fillText('Generated Successfully!', 540, 540);
+
+          // Add brand name if available
+          if (brandProfile?.businessName) {
+            ctx.font = 'bold 36px Arial';
+            ctx.fillText(brandProfile.businessName, 540, 600);
+          }
+
+          setGeneratedImage(canvas.toDataURL('image/png'));
+        }
         setIsGenerating(false);
       }, 3000);
     } catch (error) {
