@@ -129,42 +129,45 @@ export function BrandSelector() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
 
-        {brands.map((brand: any) => {
-          const isSelected = currentBrand && brand.id === (currentBrand as any).id;
-          const brandName = brand.businessName || brand.name || 'Brand';
-          const brandInitials = brandName
-            ?.split(' ')
-            .map((word: string) => word[0])
-            .join('')
-            .toUpperCase()
-            .slice(0, 2) || 'BR';
+        {/* Scrollable brand list - shows first 4 brands, rest are scrollable */}
+        <div className="max-h-[280px] overflow-y-auto">
+          {brands.map((brand: any) => {
+            const isSelected = currentBrand && brand.id === (currentBrand as any).id;
+            const brandName = brand.businessName || brand.name || 'Brand';
+            const brandInitials = brandName
+              ?.split(' ')
+              .map((word: string) => word[0])
+              .join('')
+              .toUpperCase()
+              .slice(0, 2) || 'BR';
 
-          return (
-            <DropdownMenuItem
-              key={brand.id}
-              onClick={() => handleBrandSelect(brand)}
-              className="flex items-center gap-2 p-2 cursor-pointer"
-            >
-              <Avatar className="h-6 w-6">
-                <AvatarImage src={brand.logoDataUrl} />
-                <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                  {brandInitials}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col items-start min-w-0 flex-1">
-                <span className="text-sm font-medium truncate max-w-[140px]">
-                  {brand.businessName || brand.name || 'Unnamed Brand'}
-                </span>
-                <span className="text-xs text-muted-foreground truncate max-w-[140px]">
-                  {brand.businessType || 'General Business'}
-                </span>
-              </div>
-              {isSelected && (
-                <Check className="h-4 w-4 text-primary" />
-              )}
-            </DropdownMenuItem>
-          );
-        })}
+            return (
+              <DropdownMenuItem
+                key={brand.id}
+                onClick={() => handleBrandSelect(brand)}
+                className="flex items-center gap-2 p-2 cursor-pointer"
+              >
+                <Avatar className="h-6 w-6">
+                  <AvatarImage src={brand.logoDataUrl} />
+                  <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                    {brandInitials}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col items-start min-w-0 flex-1">
+                  <span className="text-sm font-medium truncate max-w-[140px]">
+                    {brand.businessName || brand.name || 'Unnamed Brand'}
+                  </span>
+                  <span className="text-xs text-muted-foreground truncate max-w-[140px]">
+                    {brand.businessType || 'General Business'}
+                  </span>
+                </div>
+                {isSelected && (
+                  <Check className="h-4 w-4 text-primary" />
+                )}
+              </DropdownMenuItem>
+            );
+          })}
+        </div>
 
         <DropdownMenuSeparator />
 

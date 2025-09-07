@@ -112,27 +112,30 @@ export function UnifiedBrandSelector() {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
 
-          {brands.map((brand) => (
-            <DropdownMenuItem
-              key={brand.id}
-              onClick={() => handleBrandSelect(brand)}
-              className="flex items-center gap-3 p-3 cursor-pointer"
-            >
-              <Avatar className="w-8 h-8">
-                {brand.logoDataUrl ? (
-                  <AvatarImage src={brand.logoDataUrl} alt={getBrandDisplayName(brand)} />
-                ) : (
-                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs">
-                    {getBrandInitials(brand)}
-                  </AvatarFallback>
-                )}
-              </Avatar>
-              <div className="flex-1">
-                <div className="font-medium">{getBrandDisplayName(brand)}</div>
-                <div className="text-sm text-gray-500">{getBrandType(brand)}</div>
-              </div>
-            </DropdownMenuItem>
-          ))}
+          {/* Scrollable brand list - shows first 4 brands, rest are scrollable */}
+          <div className="max-h-[320px] overflow-y-auto">
+            {brands.map((brand) => (
+              <DropdownMenuItem
+                key={brand.id}
+                onClick={() => handleBrandSelect(brand)}
+                className="flex items-center gap-3 p-3 cursor-pointer"
+              >
+                <Avatar className="w-8 h-8">
+                  {brand.logoDataUrl ? (
+                    <AvatarImage src={brand.logoDataUrl} alt={getBrandDisplayName(brand)} />
+                  ) : (
+                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs">
+                      {getBrandInitials(brand)}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+                <div className="flex-1">
+                  <div className="font-medium">{getBrandDisplayName(brand)}</div>
+                  <div className="text-sm text-gray-500">{getBrandType(brand)}</div>
+                </div>
+              </DropdownMenuItem>
+            ))}
+          </div>
 
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleCreateNew} className="flex items-center gap-2">
@@ -188,33 +191,36 @@ export function UnifiedBrandSelector() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
 
-        {brands.map((brand) => {
-          const isSelected = currentBrand.id === brand.id;
-          return (
-            <DropdownMenuItem
-              key={brand.id}
-              onClick={() => handleBrandSelect(brand)}
-              className="flex items-center gap-3 p-3 cursor-pointer"
-            >
-              <Avatar className="w-8 h-8">
-                {brand.logoDataUrl ? (
-                  <AvatarImage src={brand.logoDataUrl} alt={getBrandDisplayName(brand)} />
-                ) : (
-                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs">
-                    {getBrandInitials(brand)}
-                  </AvatarFallback>
+        {/* Scrollable brand list - shows first 4 brands, rest are scrollable */}
+        <div className="max-h-[320px] overflow-y-auto">
+          {brands.map((brand) => {
+            const isSelected = currentBrand.id === brand.id;
+            return (
+              <DropdownMenuItem
+                key={brand.id}
+                onClick={() => handleBrandSelect(brand)}
+                className="flex items-center gap-3 p-3 cursor-pointer"
+              >
+                <Avatar className="w-8 h-8">
+                  {brand.logoDataUrl ? (
+                    <AvatarImage src={brand.logoDataUrl} alt={getBrandDisplayName(brand)} />
+                  ) : (
+                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs">
+                      {getBrandInitials(brand)}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+                <div className="flex-1">
+                  <div className="font-medium">{getBrandDisplayName(brand)}</div>
+                  <div className="text-sm text-gray-500">{getBrandType(brand)}</div>
+                </div>
+                {isSelected && (
+                  <Check className="w-4 h-4 text-green-600" />
                 )}
-              </Avatar>
-              <div className="flex-1">
-                <div className="font-medium">{getBrandDisplayName(brand)}</div>
-                <div className="text-sm text-gray-500">{getBrandType(brand)}</div>
-              </div>
-              {isSelected && (
-                <Check className="w-4 h-4 text-green-600" />
-              )}
-            </DropdownMenuItem>
-          );
-        })}
+              </DropdownMenuItem>
+            );
+          })}
+        </div>
 
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleCreateNew} className="flex items-center gap-2">
