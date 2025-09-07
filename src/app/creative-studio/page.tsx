@@ -62,7 +62,11 @@ function CreativeStudioPageContent() {
   const brandProfile: BrandProfile | null = currentBrand ? {
     businessName: currentBrand.businessName,
     businessType: currentBrand.businessType,
-    location: currentBrand.location,
+    location: typeof currentBrand.location === 'string'
+      ? currentBrand.location
+      : currentBrand.location
+        ? `${currentBrand.location.city || ''}, ${currentBrand.location.country || ''}`.replace(/^,\s*/, '').replace(/,\s*$/, '') || 'Location'
+        : 'Location',
     description: currentBrand.description,
     targetAudience: currentBrand.targetAudience,
     keyFeatures: currentBrand.keyFeatures,
