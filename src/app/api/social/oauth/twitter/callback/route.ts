@@ -47,20 +47,16 @@ export async function GET(req: Request) {
       clientSecret: process.env.TWITTER_CLIENT_SECRET || process.env.TWITTER_SECRET_KEY!,
     });
 
-    const callbackUrl = `${baseUrl}/api/social/oauth/twitter/callback`;
-
-    // Also accept callbacks from production URL in development
-    const prodCallbackUrl = 'https://crevo.app/api/social/oauth/twitter/callback';
-    const acceptedCallbackUrls = [callbackUrl];
-    if (baseUrl.includes('localhost')) {
-      acceptedCallbackUrls.push(prodCallbackUrl);
-    }
+  // Build deterministic callbackUrl from NEXT_PUBLIC_APP_URL or localhost
+  const baseUrlRaw = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001';
+  const baseUrlClean = baseUrlRaw.replace(/\/$/, '');
+  const callbackUrl = `${baseUrlClean}/api/social/oauth/twitter/callback`;
 
     // Get access token
     const { client: loggedClient, accessToken, refreshToken } = await twitterClient.loginWithOAuth2({
       code,
       codeVerifier,
-      redirectUri: prodCallbackUrl, // Use production URL since that's what we registered with Twitter
+      redirectUri: callbackUrl,
     });
 
     // Get user info

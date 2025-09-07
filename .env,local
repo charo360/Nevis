@@ -1,0 +1,88 @@
+# Social provider credentials (normalized names expected by the app)
+TWITTER_API_KEY=REDACTED_FOR_GIT
+TWITTER_CLIENT_ID=REDACTED_FOR_GIT
+TWITTER_SECRET_KEY=REDACTED_FOR_GIT
+TWITTER_CLIENT_SECRET=REDACTED_FOR_GIT
+NEXT_PUBLIC_APP_URL=https://crevo.app
+TWITTER_REDIRECT_URI=https://crevo.app/api/social/oauth/twitter/callback
+
+FACEBOOK_API_KEY=REDACTED_FOR_GIT
+FACEBOOK_CLIENT_ID=REDACTED_FOR_GIT
+FACEBOOK_SECRET_KEY=REDACTED_FOR_GIT
+FACEBOOK_CLIENT_SECRET=REDACTED_FOR_GIT
+# Also expose a NEXT_PUBLIC alias so client-side checks (if any) pick it up
+NEXT_PUBLIC_FACEBOOK_API_KEY=REDACTED_FOR_GIT
+
+
+
+# JWT Configuration for MongoDB Authentication
+JWT_SECRET=REDACTED_FOR_GIT
+JWT_REFRESH_SECRET=REDACTED_FOR_GIT
+
+# MongoDB Database Connection
+
+INSTAGRAM_APP_ID=REDACTED_FOR_GIT
+INSTAGRAM_CLIENT_ID=REDACTED_FOR_GIT
+INSTAGRAM_APP_SECRET=REDACTED_FOR_GIT
+INSTAGRAM_CLIENT_SECRET=REDACTED_FOR_GIT
+
+LINKEDIN_APP_ID=REDACTED_FOR_GIT
+LINKEDIN_CLIENT_ID=REDACTED_FOR_GIT
+LINKEDIN_APP_SECRET=REDACTED_FOR_GIT
+LINKEDIN_CLIENT_SECRET=REDACTED_FOR_GIT
+# Google AI API Key for Gemini
+# Get your API key from: https://aistudio.google.com/app/apikey
+GEMINI_API_KEY=REDACTED_FOR_GIT
+
+
+# News API (for current events) - ACTIVE
+NEWS_API_KEY=REDACTED_FOR_GIT
+
+# Twitter API v2 (for trending hashtags) - ACTIVE
+TWITTER_BEARER_TOKEN=REDACTED_FOR_GIT
+
+# Google Trends via RSS Feeds (no API key needed) - ACTIVE
+GOOGLE_TRENDS_RSS_ENABLED=true
+
+# Reddit via RSS Feeds (no API key needed) - ACTIVE
+REDDIT_RSS_ENABLED=true
+
+DATABASE=REDACTED_FOR_GIT
+
+# YouTube Data API (for video trends)
+# Get your API key from: https://console.developers.google.com/
+# YOUTUBE_API_KEY=your_youtube_api_key_here
+
+# Eventbrite API (for local events) - ACTIVE
+EVENTBRITE_API_KEY=REDACTED_FOR_GIT
+
+# OpenWeather API (for weather context) - ACTIVE
+OPENWEATHER_API_KEY=REDACTED_FOR_GIT
+
+# =============================================================================
+# OPENAI API KEY (for Enhanced Design Generation with DALL-E 3)
+# =============================================================================
+
+# OpenAI API Key for DALL-E 3 Enhanced Design Generation
+# Get your API key from: https://platform.openai.com/api-keys
+# IMPORTANT: Replace with your actual OpenAI API key to enable enhanced design generation
+OPENAI_API_KEY=REDACTED_FOR_GIT
+
+# =============================================================================
+# FIREBASE CONFIGURATION - REMOVED (Now using MongoDB)
+# =============================================================================
+
+# Firebase configuration has been removed in favor of MongoDB
+# All Firebase-related environment variables have been cleaned up
+
+# Development Environment
+NODE_ENV=development
+
+SENDGRID_API_KEY=REDACTED_FOR_GIT
+SENDGRID_FROM=sam@crevo.app
+
+STRIPE_SECRET_KEY=REDACTED_FOR_GIT
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=REDACTED_FOR_GIT
+
+
+STRIPE_WEBHOOK_SECRET=REDACTED_FOR_GIT
