@@ -170,7 +170,7 @@ export function ProfessionalDesignPanel({ brandProfile, onEditImage }: Professio
                 Text Controls
               </CardTitle>
             </CardHeader>
-            <CardContent className="max-h-[400px] overflow-y-auto">
+            <CardContent className="max-h-[450px] overflow-y-auto">
               <TextControls
                 textElements={textElements}
                 onChange={handleTextChange}
@@ -186,7 +186,7 @@ export function ProfessionalDesignPanel({ brandProfile, onEditImage }: Professio
                 AI Generation
               </CardTitle>
             </CardHeader>
-            <CardContent className="max-h-[300px] overflow-y-auto">
+            <CardContent className="max-h-[500px] overflow-y-auto">
               <PromptBuilder
                 assets={uploadedAssets}
                 textElements={textElements}
