@@ -118,28 +118,30 @@ export class TextDetectionService {
   }
 
   /**
-   * Client-side OCR using Tesseract.js
+   * Client-side OCR using Tesseract.js v6
    * Real text detection with accurate bounding boxes
    */
   private async tesseractOCR(imageUrl: string): Promise<DetectedTextRegion[]> {
-    const { createWorker } = await import('tesseract.js');
-
-    console.log('🔍 Starting OCR text detection...');
-
-    const worker = await createWorker('eng', 1, {
-      logger: m => {
-        if (m.status === 'recognizing text') {
-          console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
-        }
-      }
-    });
+    console.log('🔍 Starting OCR text detection with Tesseract.js v6...');
 
     try {
-      // Get both words and lines for better text grouping
-      const { data } = await worker.recognize(imageUrl, {
-        tessedit_pageseg_mode: '6', // Uniform block of text
-        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,!?-:;()[]{}"\''
+      const { createWorker } = await import('tesseract.js');
+
+      const worker = createWorker({
+        logger: m => {
+          if (m.status === 'recognizing text') {
+            console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
+          }
+        }
       });
+
+      // Initialize worker with proper v6 API
+      await worker.load();
+      await worker.loadLanguage('eng');
+      await worker.initialize('eng');
+
+      // Recognize text with v6 API
+      const { data } = await worker.recognize(imageUrl);
 
       console.log('📝 OCR Raw Response:', data);
       console.log('📝 OCR Detection Results:', {
@@ -196,7 +198,7 @@ export class TextDetectionService {
 
       console.log('📝 Text blocks created:', textBlocks.length);
 
-      return textBlocks.map((block, index) => ({
+      const finalResults = textBlocks.map((block, index) => ({
         id: `tesseract-${index}`,
         text: block.text,
         x: block.x,
@@ -209,12 +211,15 @@ export class TextDetectionService {
         color: '#000000'
       }));
 
+      // Terminate worker
+      await worker.terminate();
+      console.log('✅ OCR processing complete');
+
+      return finalResults;
+
     } catch (ocrError) {
       console.error('OCR processing error:', ocrError);
       throw ocrError;
-    } finally {
-      await worker.terminate();
-      console.log('✅ OCR processing complete');
     }
   }
 
