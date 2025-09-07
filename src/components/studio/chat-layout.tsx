@@ -2,17 +2,16 @@
 import * as React from 'react';
 import { ChatMessages } from './chat-messages';
 import { ChatInput } from './chat-input';
-import { ImageTextEditor } from './image-text-editor';
-import { TextDetectionEditor } from './text-detection-editor';
+import { PromptBuilder } from './prompt-builder';
 import type { BrandProfile, Message } from '@/lib/types';
 import Balancer from 'react-wrap-balancer';
 import { Card, CardContent } from '@/components/ui/card';
-import { Bot } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Bot, ChevronDown, ChevronUp, Wand2 } from 'lucide-react';
 import { generateCreativeAssetAction, generateEnhancedDesignAction } from '@/app/actions';
 import { generateRevo2CreativeAssetAction } from '@/app/actions/revo-2-actions';
 import { useToast } from '@/hooks/use-toast';
 import { type RevoModel } from '@/components/ui/revo-model-selector';
-import { useImageTextEditor } from '@/hooks/use-image-text-editor';
 
 
 interface ChatLayoutProps {
@@ -30,16 +29,9 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
     const [outputType, setOutputType] = React.useState<'image' | 'video'>('image');
     const [aspectRatio, setAspectRatio] = React.useState<'16:9' | '9:16'>('16:9');
     const [selectedRevoModel, setSelectedRevoModel] = React.useState<RevoModel>('revo-1.5');
+    const [isPromptBuilderOpen, setIsPromptBuilderOpen] = React.useState(false);
     const { toast } = useToast();
 
-    // Text editor state
-    const { startEditing, saveEditing, cancelEditing, getActiveSession } = useImageTextEditor();
-    const [isTextEditorOpen, setIsTextEditorOpen] = React.useState(false);
-    const [textEditorImageUrl, setTextEditorImageUrl] = React.useState<string | null>(null);
-
-    // Text detection editor state
-    const [isTextDetectionOpen, setIsTextDetectionOpen] = React.useState(false);
-    const [textDetectionImageUrl, setTextDetectionImageUrl] = React.useState<string | null>(null);
 
 
     React.useEffect(() => {
@@ -67,73 +59,21 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
         }
     }
 
-    const handleEditText = (imageUrl: string) => {
-        const sessionId = startEditing(imageUrl);
-        setTextEditorImageUrl(imageUrl);
-        setIsTextEditorOpen(true);
-    };
+    const togglePromptBuilder = React.useCallback(() => {
+        setIsPromptBuilderOpen(prev => !prev);
+    }, []);
 
-    const handleSaveTextEdit = (editedImageUrl: string) => {
-        const activeSession = getActiveSession();
-        if (activeSession) {
-            saveEditing(activeSession.id, editedImageUrl);
+    const handlePromptGenerated = (prompt: string) => {
+        // Auto-fill the chat input with the generated prompt
+        setInput(prompt);
+        // Close the prompt builder to show the chat input
+        setIsPromptBuilderOpen(false);
 
-            // Update the message with the edited image
-            setMessages(prevMessages =>
-                prevMessages.map(msg =>
-                    msg.imageUrl === activeSession.originalImageUrl
-                        ? { ...msg, imageUrl: editedImageUrl }
-                        : msg
-                )
-            );
-        }
-
-        setIsTextEditorOpen(false);
-        setTextEditorImageUrl(null);
-
+        // Show success message
         toast({
-            title: 'Text Edit Saved',
-            description: 'Your image has been updated with the new text.',
+            title: 'Prompt Added to Chat',
+            description: 'Your design brief has been added to the chat input. Ready to generate! The form stays populated so you can easily create variations by reopening the builder.',
         });
-    };
-
-    const handleCancelTextEdit = () => {
-        const activeSession = getActiveSession();
-        if (activeSession) {
-            cancelEditing(activeSession.id);
-        }
-
-        setIsTextEditorOpen(false);
-        setTextEditorImageUrl(null);
-    };
-
-    const handleDetectText = (imageUrl: string) => {
-        setTextDetectionImageUrl(imageUrl);
-        setIsTextDetectionOpen(true);
-    };
-
-    const handleSaveTextDetection = (editedImageUrl: string) => {
-        // Update the message with the edited image
-        setMessages(prevMessages =>
-            prevMessages.map(msg =>
-                msg.imageUrl === textDetectionImageUrl
-                    ? { ...msg, imageUrl: editedImageUrl }
-                    : msg
-            )
-        );
-
-        setIsTextDetectionOpen(false);
-        setTextDetectionImageUrl(null);
-
-        toast({
-            title: 'Text Detection Complete',
-            description: 'Your image has been updated with the edited text.',
-        });
-    };
-
-    const handleCancelTextDetection = () => {
-        setIsTextDetectionOpen(false);
-        setTextDetectionImageUrl(null);
     };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -276,6 +216,49 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
 
     return (
         <div className="relative flex h-full flex-col">
+            {/* Prompt Builder Section */}
+            <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                <div className="p-4">
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            togglePromptBuilder();
+                        }}
+                        className="w-full justify-between"
+                    >
+                        <div className="flex items-center gap-2">
+                            <Wand2 className="h-4 w-4" />
+                            {isPromptBuilderOpen ? 'Design Brief Builder' : 'Create New Design Brief'}
+                        </div>
+                        {isPromptBuilderOpen ? (
+                            <ChevronUp className="h-4 w-4" />
+                        ) : (
+                            <ChevronDown className="h-4 w-4" />
+                        )}
+                    </Button>
+
+                    {isPromptBuilderOpen && (
+                        <div className="mt-4 max-h-[60vh] overflow-y-auto">
+                            <div className="p-4 bg-green-50 border border-green-200 rounded">
+                                <h3 className="font-bold text-green-800">✅ Prompt Builder is Working!</h3>
+                                <div className="text-sm text-green-700 mt-2">
+                                    The state toggle is working correctly. The PromptBuilder component will be restored once we confirm this is working.
+                                </div>
+                                <button
+                                    onClick={() => setIsPromptBuilderOpen(false)}
+                                    className="mt-2 px-3 py-1 bg-green-600 text-white rounded text-sm"
+                                >
+                                    Close Test
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
             <div className="flex-1 overflow-y-auto">
                 {messages.length === 0 && !isLoading ? (
                     <div className="flex h-full flex-col items-center justify-center text-center p-4">
@@ -283,11 +266,11 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                             <CardContent className="p-6">
                                 <Bot className="mx-auto h-12 w-12 text-primary mb-4" />
                                 <h1 className="text-2xl font-bold font-headline">Creative Studio</h1>
-                                <p className="text-muted-foreground mt-2">
+                                <div className="text-muted-foreground mt-2">
                                     <Balancer>
-                                        Welcome to your AI-powered creative partner. Describe the ad you want, upload an image to edit, or start from scratch.
+                                        Welcome to your AI-powered creative partner. Use the Design Brief Builder above to create structured prompts, or describe what you want directly in the chat. The builder form stays populated so you can easily create multiple design variations!
                                     </Balancer>
-                                </p>
+                                </div>
                             </CardContent>
                         </Card>
                     </div>
@@ -297,8 +280,6 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                         isLoading={isLoading}
                         onSetReferenceAsset={handleSetReferenceAsset}
                         onEditImage={onEditImage}
-                        onEditText={handleEditText}
-                        onDetectText={handleDetectText}
                     />
                 )}
             </div>
@@ -323,28 +304,6 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 selectedRevoModel={selectedRevoModel}
                 setSelectedRevoModel={setSelectedRevoModel}
             />
-
-            {/* Text Editor Modal */}
-            {isTextEditorOpen && textEditorImageUrl && (
-                <div className="fixed inset-0 z-50 bg-black/80">
-                    <ImageTextEditor
-                        imageUrl={textEditorImageUrl}
-                        onSave={handleSaveTextEdit}
-                        onCancel={handleCancelTextEdit}
-                    />
-                </div>
-            )}
-
-            {/* Text Detection Editor Modal */}
-            {isTextDetectionOpen && textDetectionImageUrl && (
-                <div className="fixed inset-0 z-50 bg-black/80">
-                    <TextDetectionEditor
-                        imageUrl={textDetectionImageUrl}
-                        onSave={handleSaveTextDetection}
-                        onCancel={handleCancelTextDetection}
-                    />
-                </div>
-            )}
         </div>
     );
 }

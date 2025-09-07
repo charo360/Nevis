@@ -3,7 +3,7 @@ import * as React from 'react';
 import type { Message } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ChatAvatar } from './chat-avatar';
-import { Loader2, Download, Wand, Brush, Type, Scan } from 'lucide-react';
+import { Loader2, Download, Wand, Brush } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -14,11 +14,9 @@ interface ChatMessagesProps {
   isLoading: boolean;
   onSetReferenceAsset: (url: string | null | undefined, type: 'image' | 'video') => void;
   onEditImage: (url: string) => void;
-  onEditText: (url: string) => void;
-  onDetectText: (url: string) => void;
 }
 
-export function ChatMessages({ messages, isLoading, onSetReferenceAsset, onEditImage, onEditText, onDetectText }: ChatMessagesProps) {
+export function ChatMessages({ messages, isLoading, onSetReferenceAsset, onEditImage }: ChatMessagesProps) {
   const scrollableContainerRef = React.useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -98,34 +96,6 @@ export function ChatMessages({ messages, isLoading, onSetReferenceAsset, onEditI
                   <div className="group relative w-full max-w-sm overflow-hidden rounded-md border">
                     <Image src={message.imageUrl} alt="Generated image" width={512} height={512} className="w-full h-auto object-contain" crossOrigin='anonymous' />
                     <div className="absolute top-2 right-2 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="secondary"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => onDetectText(message.imageUrl!)}
-                          >
-                            <Scan className="h-4 w-4" />
-                            <span className="sr-only">Detect & Edit Text</span>
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Detect & Edit Existing Text</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="secondary"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => onEditText(message.imageUrl!)}
-                          >
-                            <Type className="h-4 w-4" />
-                            <span className="sr-only">Add Text</span>
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Add New Text Overlay</TooltipContent>
-                      </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button

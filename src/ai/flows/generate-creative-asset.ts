@@ -169,6 +169,18 @@ Recreate the content within the black-masked region based on this instruction, e
             // This is a generation prompt with an uploaded image that should be integrated into the design
             let referencePrompt = `You are an expert creative director and AI design specialist with advanced image analysis capabilities. You will be given an uploaded image and a text prompt with instructions.
 
+🚫 **CRITICAL: DO NOT CREATE LOGOS** 🚫
+- DO NOT generate logo designs, brand marks, or simple graphic symbols
+- DO NOT create minimalist logo-style graphics
+- DO NOT focus primarily on logo creation or branding elements
+- CREATE COMPLETE MARKETING DESIGNS with full layouts, backgrounds, and compositions
+
+✅ **CREATE COMPLETE MARKETING DESIGNS** ✅
+- Generate comprehensive social media post designs
+- Include backgrounds, graphics, text layouts, and visual hierarchy
+- Create full marketing compositions with multiple design elements
+- Focus on complete visual storytelling and marketing impact
+
 🎯 **INTELLIGENT IMAGE INTEGRATION MISSION:**
 Analyze the uploaded image deeply and make intelligent creative decisions about how to best incorporate it into a stunning design.
 
@@ -234,9 +246,9 @@ Analyze the uploaded image, make intelligent creative decisions, and create a br
 
                 if (bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
                     promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
-                    brandGuidelines += ` A brand logo has also been provided. Integrate BOTH the uploaded image AND the brand logo naturally into the design, ensuring they work together harmoniously.`
+                    brandGuidelines += ` Create a complete marketing design that uses the uploaded image as the main design element. If a brand logo is provided, integrate it as a small brand identifier within the larger marketing composition - focus on creating a full marketing design, not a logo-centric layout.`
                 } else if (bp.logoDataUrl && bp.logoDataUrl.includes('image/svg+xml')) {
-                    brandGuidelines += ` Create a design that represents the brand identity while prominently featuring the uploaded image.`
+                    brandGuidelines += ` Create a comprehensive marketing design that represents the brand identity while prominently featuring the uploaded image as the main visual element.`
                 }
 
                 brandGuidelines += `\n- Use brand colors: ${bp.primaryColor || 'brand-appropriate colors'}`;
@@ -443,7 +455,9 @@ ${designDNA}`;
                     promptParts.push({ media: { url: input.referenceAssetUrl!, contentType: getMimeTypeFromDataURI(input.referenceAssetUrl!) } });
                 }
 
-                onBrandPrompt += `\n- **Logo Integration:** ${bp.logoDataUrl ? 'If a logo is provided, integrate it subtly as a small brand element within the larger marketing design - the logo should be a minor element, not the main focus' : 'Include subtle brand identity elements in the design'}.`;
+                onBrandPrompt += `\n- **MARKETING DESIGN FOCUS:** Create a complete, professional marketing design with full layout composition. This should be a comprehensive social media post design, NOT just a logo. Include backgrounds, graphics, text elements, and visual hierarchy.`;
+                onBrandPrompt += `\n- **Brand Integration:** ${bp.logoDataUrl ? 'If a logo is provided, integrate it as a small brand element within the complete marketing design - focus on creating a full marketing composition, not logo-centric design' : 'Create a complete marketing design that represents the brand identity'}.`;
+                onBrandPrompt += `\n- **Design Completeness:** Generate a full marketing design with backgrounds, graphics, text layouts, and visual elements - NOT just a logo or simple graphic.`;
                 onBrandPrompt += `\n- **Critical Language Rule:** ALL text must be in clear, readable ENGLISH only. Never use foreign languages, corrupted text, or unreadable symbols.`;
 
                 if (bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
@@ -477,10 +491,11 @@ ${designDNA}`;
                 }
 
                 if (bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
-                    onBrandPrompt += `\n- **Logo Integration:** If a logo is provided, integrate it as a small, subtle brand element within the complete marketing design - focus on the overall design composition, not the logo.`;
+                    onBrandPrompt += `\n- **COMPLETE MARKETING DESIGN:** Create a full marketing video with comprehensive visual storytelling - NOT just logo animation. Include backgrounds, graphics, text elements, and complete scene composition.`;
+                    onBrandPrompt += `\n- **Brand Element Integration:** If a logo is provided, integrate it as a small brand element within the complete marketing video - focus on creating a full marketing story, not logo-centric content.`;
                     promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
                 } else if (bp.logoDataUrl && bp.logoDataUrl.includes('image/svg+xml')) {
-                    onBrandPrompt += `\n- **Brand Identity:** Create a complete marketing design that represents the brand identity and style with full layout composition.`;
+                    onBrandPrompt += `\n- **COMPREHENSIVE MARKETING VIDEO:** Create a complete marketing video that represents the brand identity with full scene composition, storytelling, and visual elements.`;
                 }
 
                 // Add selected design examples as reference
