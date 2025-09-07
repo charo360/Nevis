@@ -37,13 +37,10 @@ export async function GET(req: Request) {
   }
 
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001';
-    
-    // For development, use the production callback URL if NEXT_PUBLIC_APP_URL is not set
-    const isDevelopment = !process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_APP_URL.includes('localhost');
-    const prodCallbackUrl = 'https://crevo.app/api/social/oauth/twitter/callback';
-    const devCallbackUrl = `${baseUrl}/api/social/oauth/twitter/callback`;
-    const callbackUrl = isDevelopment ? prodCallbackUrl : devCallbackUrl;
+  // Use NEXT_PUBLIC_APP_URL when available (build-time / production). Fall back to localhost for local dev.
+  const baseUrlRaw = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001';
+  const baseUrl = baseUrlRaw.replace(/\/$/, '');
+  const callbackUrl = `${baseUrl}/api/social/oauth/twitter/callback`;
 
     // Initialize Twitter client with OAuth 2.0
     const twitterClient = new TwitterApi({
@@ -58,6 +55,22 @@ export async function GET(req: Request) {
         scope: ['tweet.read', 'tweet.write', 'users.read', 'offline.access']
       }
     );
+
+  // Sanity-check the generated URL params to catch redirect_uri / client_id mismatches early
+    try {
+      const parsed = new URL(authUrl);
+      const redirectParam = parsed.searchParams.get('redirect_uri');
+
+  // Log non-sensitive metadata to help debug 400 errors from X/Twitter
+  console.info('[twitter-oauth] generated authUrl callbackUrl=', callbackUrl);
+
+  if (redirectParam && redirectParam !== callbackUrl) {
+        console.error('[twitter-oauth] redirect_uri mismatch', { redirectParam, callbackUrl });
+        // Continue — still store state and redirect, but surface the mismatch in logs for diagnosis
+      }
+    } catch (e) {
+      console.warn('[twitter-oauth] failed to parse generated authUrl', e?.message || e);
+    }
 
     // Store the codeVerifier and state for the callback
     const states = await readStates();
