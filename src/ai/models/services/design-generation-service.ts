@@ -3,8 +3,8 @@
  * Provides a unified interface for design generation across all model versions
  */
 
-import type { 
-  DesignGenerationRequest, 
+import type {
+  DesignGenerationRequest,
   GenerationResponse,
   RevoModelId,
   ModelSelectionCriteria
@@ -26,7 +26,7 @@ export interface IDesignGenerationService {
 export class DesignGenerationService implements IDesignGenerationService {
   private static instance: DesignGenerationService;
 
-  private constructor() {}
+  private constructor() { }
 
   /**
    * Get singleton instance
@@ -43,7 +43,7 @@ export class DesignGenerationService implements IDesignGenerationService {
    */
   async generateDesign(request: DesignGenerationRequest): Promise<GenerationResponse<PostVariant>> {
     const startTime = Date.now();
-    
+
     try {
 
       // Validate request
@@ -115,7 +115,7 @@ export class DesignGenerationService implements IDesignGenerationService {
       });
 
     } catch (error) {
-      
+
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Auto-selection failed',
@@ -225,16 +225,16 @@ export class DesignGenerationService implements IDesignGenerationService {
 
     const supportedRatios = model.model.capabilities.aspectRatios;
 
-    // Platform preferences
+    // Platform preferences - ALL PLATFORMS USE 1:1 FOR HIGHEST QUALITY
     const platformPreferences: Record<string, string[]> = {
-      'Instagram': ['1:1', '9:16'],
-      'Facebook': ['16:9', '1:1'],
-      'Twitter': ['16:9', '1:1'],
-      'LinkedIn': ['16:9', '1:1']
+      'Instagram': ['1:1'],
+      'Facebook': ['1:1'],
+      'Twitter': ['1:1'],
+      'LinkedIn': ['1:1']
     };
 
     const preferred = platformPreferences[platform] || ['1:1'];
-    
+
     // Find first supported ratio that matches platform preference
     for (const ratio of preferred) {
       if (supportedRatios.includes(ratio)) {

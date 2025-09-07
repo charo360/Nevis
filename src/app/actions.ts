@@ -96,18 +96,9 @@ export async function analyzeBrandAction(
 }
 
 const getAspectRatioForPlatform = (platform: Platform): string => {
-  switch (platform) {
-    case 'Instagram':
-      return '1:1'; // Square
-    case 'Facebook':
-      return '16:9'; // Landscape - Facebook posts are landscape format
-    case 'Twitter':
-      return '16:9'; // Landscape
-    case 'LinkedIn':
-      return '16:9'; // Landscape - LinkedIn posts are landscape format
-    default:
-      return '1:1';
-  }
+  // ALL PLATFORMS USE 1:1 SQUARE FOR MAXIMUM QUALITY
+  // No cropping = No quality loss from Gemini's native 1024x1024
+  return '1:1';
 }
 
 export async function generateContentAction(

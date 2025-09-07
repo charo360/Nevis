@@ -7,27 +7,11 @@ import { generateText, generateMultimodal, GEMINI_2_5_MODELS } from './google-ai
 import { BrandProfile } from '@/lib/types';
 
 /**
- * Get platform-specific aspect ratio for optimal social media display
+ * Get platform-specific aspect ratio - ALL PLATFORMS USE 1:1 FOR HIGHEST QUALITY
  */
 function getPlatformAspectRatio(platform: string): '1:1' | '16:9' | '9:16' | '21:9' | '4:5' {
-  const platformLower = platform.toLowerCase();
-
-  // Instagram Stories, Reels, TikTok - Vertical 9:16
-  if (platformLower.includes('story') ||
-    platformLower.includes('reel') ||
-    platformLower.includes('tiktok')) {
-    return '9:16';
-  }
-
-  // Facebook, Twitter/X, LinkedIn, YouTube - Landscape 16:9
-  if (platformLower.includes('facebook') ||
-    platformLower.includes('twitter') ||
-    platformLower.includes('linkedin') ||
-    platformLower.includes('youtube')) {
-    return '16:9';
-  }
-
-  // Instagram Feed, Pinterest - Square 1:1 (default)
+  // ALL PLATFORMS USE 1:1 SQUARE FOR MAXIMUM QUALITY
+  // No cropping = No quality loss from Gemini's native 1024x1024
   return '1:1';
 }
 
@@ -241,11 +225,11 @@ function buildEnhancedImagePrompt(input: Revo15DesignInput, designPlan: any): st
   const getTargetMarketInstructions = (location: string, businessType: string, targetAudience: string) => {
     const locationKey = location.toLowerCase();
     const africanCountries = ['kenya', 'nigeria', 'south africa', 'ghana', 'uganda', 'tanzania', 'ethiopia', 'rwanda', 'zambia', 'zimbabwe', 'botswana', 'namibia', 'malawi', 'mozambique', 'senegal', 'mali', 'burkina faso', 'ivory coast', 'cameroon', 'chad', 'sudan', 'egypt', 'morocco', 'algeria', 'tunisia', 'libya'];
-    
+
     // Get business-specific target market
     const getBusinessTargetMarket = (businessType: string) => {
       const businessTypeLower = businessType.toLowerCase();
-      
+
       if (businessTypeLower.includes('restaurant') || businessTypeLower.includes('food') || businessTypeLower.includes('cafe')) {
         return 'diverse families, couples, food enthusiasts, local community members';
       } else if (businessTypeLower.includes('fitness') || businessTypeLower.includes('gym') || businessTypeLower.includes('health')) {
@@ -272,10 +256,10 @@ function buildEnhancedImagePrompt(input: Revo15DesignInput, designPlan: any): st
     };
 
     const targetMarket = getBusinessTargetMarket(businessType);
-    
+
     // Check if it's an African country
     const isAfricanCountry = africanCountries.some(country => locationKey.includes(country));
-    
+
     if (isAfricanCountry) {
       return `
 **CRITICAL TARGET MARKET REPRESENTATION FOR ${location.toUpperCase()}:**
@@ -301,8 +285,8 @@ function buildEnhancedImagePrompt(input: Revo15DesignInput, designPlan: any): st
   };
 
   const targetMarketInstructions = getTargetMarketInstructions(
-    input.brandProfile.location || '', 
-    input.businessType, 
+    input.brandProfile.location || '',
+    input.businessType,
     input.brandProfile.targetAudience || ''
   );
 
@@ -314,11 +298,11 @@ function buildEnhancedImagePrompt(input: Revo15DesignInput, designPlan: any): st
       .replace(/^[A-Z]+:\s*/i, '') // Remove "PAYA: "
       .replace(/^[A-Z][a-z]+:\s*/i, '') // Remove "Paya: "
       .trim();
-    
+
     if (cleaned.length < 3) {
       return text;
     }
-    
+
     return cleaned;
   };
 
