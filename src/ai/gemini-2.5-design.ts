@@ -167,17 +167,14 @@ export async function generateEnhancedDesign(
   input: Gemini25DesignInput
 ): Promise<Gemini25DesignResult> {
   const startTime = Date.now();
-  const enhancementsApplied: string[] = ['Gemini 2.5 Flash Image Preview Generation', 'Professional Design Principles', 'Brand Integration'];
+  const enhancementsApplied: string[] = [];
 
   try {
-
     // Use the superior Gemini 2.5 Flash Image Preview generation
     const { generateCreativeAsset } = await import('@/ai/flows/generate-creative-asset');
 
     // Build comprehensive AI prompt for image generation
     const imagePrompt = buildComprehensiveImagePrompt(input);
-    enhancementsApplied.push('Comprehensive AI Prompting');
-
 
     // Generate image with Gemini 2.5 Flash Image Preview (superior text rendering)
     const creativeResult = await generateCreativeAsset({
@@ -195,24 +192,14 @@ export async function generateEnhancedDesign(
       throw new Error('No image URL returned from Gemini 2.5 Flash Image Preview');
     }
 
-    enhancementsApplied.push(
-      'Gemini 2.5 Flash Image Preview HD Generation',
-      'Ultra-High Quality Settings',
-      'Perfect Text Rendering',
-      'Professional Design Generation',
-      'Brand Color Compliance',
-      'Platform Optimization'
-    );
-
     const result: Gemini25DesignResult = {
       imageUrl,
-      designSpecs: { prompt: imagePrompt }, // Store the prompt as specs
-      qualityScore: 9.5, // High quality score for real AI generation
+      designSpecs: { prompt: imagePrompt },
+      qualityScore: 9.5,
       enhancementsApplied,
       processingTime: Date.now() - startTime,
       model: 'gemini-2.5-flash-image-preview'
     };
-
 
     return result;
 
