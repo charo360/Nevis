@@ -64,8 +64,14 @@ export async function analyzeBrandAction(
     };
   } catch (error) {
 
+    // Log the actual error for debugging
+    console.error('Website analysis error:', error);
+
     // Return structured error response instead of throwing
     const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+
+    // Log the error message for debugging
+    console.error('Error message:', errorMessage);
 
     if (errorMessage.includes('fetch') || errorMessage.includes('403') || errorMessage.includes('blocked')) {
       return {
