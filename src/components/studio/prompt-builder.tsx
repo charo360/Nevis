@@ -8,9 +8,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { 
-  Wand2, 
-  Eye, 
+import {
+  Wand2,
+  Eye,
   Sparkles,
   Zap,
   Settings,
@@ -41,13 +41,13 @@ interface PromptBuilderProps {
   isGenerating: boolean;
 }
 
-export function PromptBuilder({ 
-  assets, 
-  textElements, 
-  template, 
-  brandProfile, 
-  onGenerate, 
-  isGenerating 
+export function PromptBuilder({
+  assets,
+  textElements,
+  template,
+  brandProfile,
+  onGenerate,
+  isGenerating
 }: PromptBuilderProps) {
   const [generatedPrompt, setGeneratedPrompt] = useState('');
   const [showPrompt, setShowPrompt] = useState(false);
@@ -127,7 +127,7 @@ export function PromptBuilder({
     prompt += `- Create visually balanced composition\n`;
     prompt += `- Optimize for social media engagement\n`;
     prompt += `- Ensure high-quality, crisp output\n`;
-    
+
     if (brandProfile?.location) {
       prompt += `- Consider cultural context for ${brandProfile.location}\n`;
     }
@@ -152,8 +152,11 @@ export function PromptBuilder({
 
   const hasRequiredContent = () => {
     const hasText = textElements.some(el => el.content.trim());
-    const hasAssets = assets.length > 0 || brandProfile?.logoDataUrl;
-    return hasText || hasAssets;
+    const hasAssets = assets.length > 0;
+    const hasBrandProfile = brandProfile?.businessName || brandProfile?.logoDataUrl;
+
+    // Allow generation if user has any content: text, assets, or brand profile
+    return hasText || hasAssets || hasBrandProfile;
   };
 
   return (
@@ -180,7 +183,7 @@ export function PromptBuilder({
 
       {!hasRequiredContent() && (
         <div className="text-xs text-muted-foreground text-center">
-          Add text or upload assets to enable generation
+          Add text, upload assets, or ensure your brand profile is complete to enable generation
         </div>
       )}
 
@@ -223,13 +226,13 @@ export function PromptBuilder({
                     )}
                   </Button>
                 </div>
-                
+
                 <Textarea
                   value={generatedPrompt}
                   readOnly
                   className="text-xs font-mono resize-none min-h-[200px]"
                 />
-                
+
                 <div className="text-xs text-muted-foreground">
                   <p>This prompt combines your inputs with professional design principles</p>
                 </div>
@@ -247,7 +250,7 @@ export function PromptBuilder({
               <Settings className="w-4 h-4 text-primary" />
               <span className="text-sm font-medium">Generation Settings</span>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="flex items-center gap-1">
                 <div className="w-2 h-2 bg-green-500 rounded-full" />
