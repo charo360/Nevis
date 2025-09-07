@@ -14,7 +14,7 @@ import {
 import { SidebarInset } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ProfessionalStudio } from "@/components/studio/professional-studio";
+import { ChatLayout } from "@/components/studio/chat-layout";
 import { User, Palette } from "lucide-react";
 import { ImageEditor } from "@/components/studio/image-editor";
 import { useUnifiedBrand, useBrandStorage, useBrandChangeListener } from "@/contexts/unified-brand-context";
@@ -125,10 +125,16 @@ function CreativeStudioPageContent() {
             </div>
           </div>
         ) : (
-          <ProfessionalStudio
-            brandProfile={brandProfile}
-            onEditImage={setEditorImage}
-          />
+          <div className="h-full bg-gradient-to-br from-blue-50 to-indigo-100">
+            <div className="container mx-auto px-4 py-8 h-full">
+              <div className="max-w-7xl mx-auto h-full">
+                <ChatLayout
+                  brandProfile={brandProfile}
+                  onEditImage={setEditorImage}
+                />
+              </div>
+            </div>
+          </div>
         )}
       </main>
     </SidebarInset>
