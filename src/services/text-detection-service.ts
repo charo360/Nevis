@@ -141,21 +141,60 @@ export class TextDetectionService {
         tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,!?-:;()[]{}"\''
       });
 
+      console.log('📝 OCR Raw Response:', data);
       console.log('📝 OCR Detection Results:', {
         confidence: data.confidence,
-        wordsFound: data.words.length,
-        linesFound: data.lines.length
+        wordsFound: data.words?.length || 0,
+        linesFound: data.lines?.length || 0,
+        text: data.text
       });
+
+      // Check if words array exists and has content
+      if (!data.words || data.words.length === 0) {
+        console.warn('No words detected by OCR, trying fallback approach');
+
+        // Fallback: use basic text detection if words array is not available
+        if (data.text && data.text.trim().length > 0) {
+          console.log('Using fallback text detection');
+          return [{
+            id: 'tesseract-fallback-0',
+            text: data.text.trim(),
+            x: 50,
+            y: 50,
+            width: 200,
+            height: 30,
+            confidence: (data.confidence || 50) / 100,
+            fontSize: 16,
+            fontFamily: 'Arial',
+            color: '#000000'
+          }];
+        }
+
+        return [];
+      }
 
       // Filter out low-confidence detections and combine nearby words into text blocks
       const validWords = data.words.filter(word =>
+        word && // Word exists
         word.confidence > 30 && // Minimum 30% confidence
+        word.text && // Text exists
         word.text.trim().length > 0 && // Not empty
-        word.text.trim() !== ' ' // Not just whitespace
+        word.text.trim() !== ' ' && // Not just whitespace
+        word.bbox && // Bounding box exists
+        word.bbox.x0 !== undefined && word.bbox.y0 !== undefined // Valid coordinates
       );
+
+      console.log('📝 Valid words after filtering:', validWords.length);
+
+      if (validWords.length === 0) {
+        console.warn('No valid words found after filtering');
+        return [];
+      }
 
       // Group words into text blocks based on proximity
       const textBlocks = this.groupWordsIntoBlocks(validWords);
+
+      console.log('📝 Text blocks created:', textBlocks.length);
 
       return textBlocks.map((block, index) => ({
         id: `tesseract-${index}`,
@@ -170,6 +209,9 @@ export class TextDetectionService {
         color: '#000000'
       }));
 
+    } catch (ocrError) {
+      console.error('OCR processing error:', ocrError);
+      throw ocrError;
     } finally {
       await worker.terminate();
       console.log('✅ OCR processing complete');
