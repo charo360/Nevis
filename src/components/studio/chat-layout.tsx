@@ -3,6 +3,7 @@ import * as React from 'react';
 import { ChatMessages } from './chat-messages';
 import { ChatInput } from './chat-input';
 import { ImageTextEditor } from './image-text-editor';
+import { TextDetectionEditor } from './text-detection-editor';
 import type { BrandProfile, Message } from '@/lib/types';
 import Balancer from 'react-wrap-balancer';
 import { Card, CardContent } from '@/components/ui/card';
@@ -35,6 +36,10 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
     const { startEditing, saveEditing, cancelEditing, getActiveSession } = useImageTextEditor();
     const [isTextEditorOpen, setIsTextEditorOpen] = React.useState(false);
     const [textEditorImageUrl, setTextEditorImageUrl] = React.useState<string | null>(null);
+
+    // Text detection editor state
+    const [isTextDetectionOpen, setIsTextDetectionOpen] = React.useState(false);
+    const [textDetectionImageUrl, setTextDetectionImageUrl] = React.useState<string | null>(null);
 
 
     React.useEffect(() => {
@@ -100,6 +105,35 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
 
         setIsTextEditorOpen(false);
         setTextEditorImageUrl(null);
+    };
+
+    const handleDetectText = (imageUrl: string) => {
+        setTextDetectionImageUrl(imageUrl);
+        setIsTextDetectionOpen(true);
+    };
+
+    const handleSaveTextDetection = (editedImageUrl: string) => {
+        // Update the message with the edited image
+        setMessages(prevMessages =>
+            prevMessages.map(msg =>
+                msg.imageUrl === textDetectionImageUrl
+                    ? { ...msg, imageUrl: editedImageUrl }
+                    : msg
+            )
+        );
+
+        setIsTextDetectionOpen(false);
+        setTextDetectionImageUrl(null);
+
+        toast({
+            title: 'Text Detection Complete',
+            description: 'Your image has been updated with the edited text.',
+        });
+    };
+
+    const handleCancelTextDetection = () => {
+        setIsTextDetectionOpen(false);
+        setTextDetectionImageUrl(null);
     };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -264,6 +298,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                         onSetReferenceAsset={handleSetReferenceAsset}
                         onEditImage={onEditImage}
                         onEditText={handleEditText}
+                        onDetectText={handleDetectText}
                     />
                 )}
             </div>
@@ -296,6 +331,17 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                         imageUrl={textEditorImageUrl}
                         onSave={handleSaveTextEdit}
                         onCancel={handleCancelTextEdit}
+                    />
+                </div>
+            )}
+
+            {/* Text Detection Editor Modal */}
+            {isTextDetectionOpen && textDetectionImageUrl && (
+                <div className="fixed inset-0 z-50 bg-black/80">
+                    <TextDetectionEditor
+                        imageUrl={textDetectionImageUrl}
+                        onSave={handleSaveTextDetection}
+                        onCancel={handleCancelTextDetection}
                     />
                 </div>
             )}
