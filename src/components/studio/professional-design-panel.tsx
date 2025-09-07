@@ -75,50 +75,82 @@ export function ProfessionalDesignPanel({ brandProfile, onEditImage }: Professio
   const handleGenerate = async () => {
     setIsGenerating(true);
     try {
-      // Generate professional design with all inputs
-      console.log('Generating professional design with:', {
+      // Build professional design prompt
+      const textContent = textElements
+        .filter(el => el.content.trim())
+        .map(el => `${el.type}: ${el.content}`)
+        .join(', ');
+
+      const assetInfo = uploadedAssets.length > 0
+        ? `with ${uploadedAssets.length} uploaded asset(s)`
+        : '';
+
+      const designPrompt = `Create a professional ${selectedTemplate} style social media design for ${brandProfile?.businessName || 'business'}. ${textContent}. ${assetInfo}. Use brand colors and professional layout. 1:1 square format, high quality, readable text.`;
+
+      console.log('Generating professional design with AI:', {
+        prompt: designPrompt,
         assets: uploadedAssets.length,
         textElements: textElements.filter(el => el.content.trim()).length,
         template: selectedTemplate,
         brandProfile: brandProfile?.businessName
       });
 
-      // Simulate professional generation process
-      setTimeout(() => {
-        // Create a simple data URL for the generated design preview
-        const canvas = document.createElement('canvas');
-        canvas.width = 1080;
-        canvas.height = 1080;
-        const ctx = canvas.getContext('2d');
+      // Call the Professional Studio API
+      const response = await fetch('/api/professional-studio', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: designPrompt,
+          textElements: textElements.filter(el => el.content.trim()),
+          assets: uploadedAssets,
+          template: selectedTemplate,
+          brandProfile: brandProfile,
+          aspectRatio: '1:1'
+        }),
+      });
 
-        if (ctx) {
-          // Create gradient background
-          const gradient = ctx.createLinearGradient(0, 0, 1080, 1080);
-          gradient.addColorStop(0, '#6366f1');
-          gradient.addColorStop(1, '#8b5cf6');
-          ctx.fillStyle = gradient;
-          ctx.fillRect(0, 0, 1080, 1080);
+      const result = await response.json();
 
-          // Add text
-          ctx.fillStyle = 'white';
-          ctx.font = 'bold 48px Arial';
-          ctx.textAlign = 'center';
-          ctx.fillText('Professional Design', 540, 480);
-          ctx.font = '32px Arial';
-          ctx.fillText('Generated Successfully!', 540, 540);
+      if (!response.ok) {
+        throw new Error(result.message || result.error || 'API request failed');
+      }
 
-          // Add brand name if available
-          if (brandProfile?.businessName) {
-            ctx.font = 'bold 36px Arial';
-            ctx.fillText(brandProfile.businessName, 540, 600);
-          }
+      if (result.success && result.imageUrl) {
+        setGeneratedImage(result.imageUrl);
+      } else {
+        throw new Error('No image URL returned from API');
+      }
 
-          setGeneratedImage(canvas.toDataURL('image/png'));
-        }
-        setIsGenerating(false);
-      }, 3000);
+      setIsGenerating(false);
     } catch (error) {
       console.error('Professional design generation failed:', error);
+
+      // Fallback to demo for now if AI fails
+      const canvas = document.createElement('canvas');
+      canvas.width = 1080;
+      canvas.height = 1080;
+      const ctx = canvas.getContext('2d');
+
+      if (ctx) {
+        ctx.fillStyle = '#ef4444';
+        ctx.fillRect(0, 0, 1080, 1080);
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 36px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('AI Generation Failed', 540, 480);
+        ctx.font = '24px Arial';
+        ctx.fillText('Using Demo Preview', 540, 540);
+        ctx.fillText('Check API keys & connection', 540, 580);
+        if (error instanceof Error) {
+          ctx.font = '18px Arial';
+          ctx.fillText(error.message.substring(0, 40), 540, 620);
+        }
+
+        setGeneratedImage(canvas.toDataURL('image/png'));
+      }
+
       setIsGenerating(false);
     }
   };
