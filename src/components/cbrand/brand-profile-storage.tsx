@@ -223,7 +223,7 @@ export function getCompletionPercentage(profile: CompleteBrandProfile): number {
     'visualStyle', 'writingTone', 'contentThemes',
     'primaryColor', 'accentColor', 'backgroundColor',
     'facebookUrl', 'instagramUrl', 'twitterUrl', 'linkedinUrl',
-    'websiteUrl', 'logoDataUrl'
+    'websiteUrl', 'logoUrl'
   ];
 
   const completedFields = allFields.filter(field => {

@@ -59,7 +59,7 @@
 ## 🎯 Key Upgrades Verified
 
 ### 🚀 AI Engine Upgrade
-- **Before**: Gemini 2.0 (basic AI capabilities)
+- **Before**: Basic AI capabilities
 - **After**: ✅ Gemini 2.5 Flash Image Preview (advanced AI with native image generation)
 
 ### 🖼️ Image Quality Improvements
@@ -79,7 +79,7 @@
 - **Tier**: ✅ Basic → **Enhanced**
 
 ### 🔧 Technical Improvements
-- **AI Service**: ✅ `gemini-2.0` → `gemini-2.5-flash-image-preview`
+- **AI Service**: ✅ `gemini-2.5-flash-image-preview`
 - **Timeout**: ✅ 30s → **45s** (for better quality generation)
 - **Temperature**: ✅ 0.5 → **0.7** (more creative output)
 - **TopP**: ✅ 0.8 → **0.9** (better quality)

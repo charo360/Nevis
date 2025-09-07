@@ -62,7 +62,11 @@ function CreativeStudioPageContent() {
   const brandProfile: BrandProfile | null = currentBrand ? {
     businessName: currentBrand.businessName,
     businessType: currentBrand.businessType,
-    location: currentBrand.location,
+    location: typeof currentBrand.location === 'string'
+      ? currentBrand.location
+      : currentBrand.location
+        ? `${currentBrand.location.city || ''}, ${currentBrand.location.country || ''}`.replace(/^,\s*/, '').replace(/,\s*$/, '') || 'Location'
+        : 'Location',
     description: currentBrand.description,
     targetAudience: currentBrand.targetAudience,
     keyFeatures: currentBrand.keyFeatures,
@@ -73,7 +77,7 @@ function CreativeStudioPageContent() {
     primaryColor: currentBrand.primaryColor,
     accentColor: currentBrand.accentColor,
     backgroundColor: currentBrand.backgroundColor,
-    logoDataUrl: currentBrand.logoDataUrl,
+    logoDataUrl: currentBrand.logoUrl,
     websiteUrl: currentBrand.websiteUrl,
     socialMedia: {
       facebook: currentBrand.facebookUrl,
@@ -111,25 +115,31 @@ function CreativeStudioPageContent() {
           </DropdownMenuContent>
         </DropdownMenu>
       </header>
-      <main className="flex-1 overflow-auto">
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-          <div className="container mx-auto px-4 py-8">
-            <div className="max-w-7xl mx-auto">
-              {editorImage ? (
+      <main className="flex-1 overflow-hidden">
+        {editorImage ? (
+          <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+            <div className="container mx-auto px-4 py-8">
+              <div className="max-w-7xl mx-auto">
                 <ImageEditor
                   imageUrl={editorImage}
                   onClose={() => setEditorImage(null)}
                   brandProfile={brandProfile}
                 />
-              ) : (
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="h-full bg-gradient-to-br from-blue-50 to-indigo-100">
+            <div className="container mx-auto px-4 py-8 h-full">
+              <div className="max-w-7xl mx-auto h-full">
                 <ChatLayout
                   brandProfile={brandProfile}
                   onEditImage={setEditorImage}
                 />
-              )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </main>
     </SidebarInset>
   );

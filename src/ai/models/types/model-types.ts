@@ -36,7 +36,7 @@ export interface ModelPricing {
 
 // Model configuration interface
 export interface ModelConfig {
-  aiService: 'gemini-2.0' | 'gemini-2.5' | 'openai' | 'gemini-2.5-flash-image';
+  aiService: 'gemini-2.5' | 'openai' | 'gemini-2.5-flash-image';
   fallbackServices: string[];
   maxRetries: number;
   timeout: number;

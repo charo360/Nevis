@@ -1,10 +1,10 @@
-# Gemini 2.0 Flash HD Ultra-Quality Upgrade
+# Gemini 2.5 Flash Image Preview Ultra-Quality Upgrade
 
-This document outlines the comprehensive upgrade to use Gemini 2.0 Flash with Ultra-HD quality settings and enhanced image generation capabilities.
+This document outlines the comprehensive upgrade to use Gemini 2.5 Flash Image Preview with Ultra-HD quality settings and enhanced image generation capabilities.
 
 ## 🚀 What's New in This Upgrade
 
-### **Gemini 2.0 Flash HD Features**
+### **Gemini 2.5 Flash Image Preview Features**
 - **Ultra-HD Image Generation**: Maximum quality settings with 4K+ rendering
 - **Perfect Text Rendering**: Crystal-clear text at any font size (8pt-12pt+)
 - **Superior Face Generation**: Complete, anatomically correct faces with no deformations
@@ -15,7 +15,7 @@ This document outlines the comprehensive upgrade to use Gemini 2.0 Flash with Ul
 ### **Technical Improvements**
 - **Enhanced Configuration**: Optimized guidance scale and negative prompts
 - **HD Quality Settings**: Maximum resolution with professional-grade output
-- **Advanced Prompting**: 2025 best practices for Gemini 2.0 Flash
+- **Advanced Prompting**: 2025 best practices for Gemini 2.5 Flash Image Preview
 - **Quality Scoring**: Increased quality score to 9.7/10 for HD capabilities
 - **Dual Model Support**: Automatic fallback between OpenAI and Gemini
 
@@ -23,17 +23,17 @@ This document outlines the comprehensive upgrade to use Gemini 2.0 Flash with Ul
 
 ### **1. Advanced Prompt Engineering**
 ```typescript
-// Enhanced prompt structure for Gemini 2.0 Flash HD
-const prompt = `Create a stunning, professional ${platform} social media post using Gemini 2.0 Flash's advanced HD capabilities.
+// Enhanced prompt structure for Gemini 2.5 Flash Image Preview
+const prompt = `Create a stunning, professional ${platform} social media post using Gemini 2.5 Flash Image Preview's advanced capabilities.
 
-🎯 CRITICAL TEXT REQUIREMENT (GEMINI 2.0 FLASH ULTRA-PRECISION MODE):
+🎯 CRITICAL TEXT REQUIREMENT (GEMINI 2.5 FLASH IMAGE PREVIEW ULTRA-PRECISION MODE):
 "${imageText}"
 - Render ONLY this exact text - NO additional text, placeholder text, or random words
 - ULTRA-HD TEXT RENDERING: Perfect character formation at any font size
 - SMALL FONT MASTERY: Crystal-clear rendering at 8pt, 10pt, 12pt sizes
 - HIGH-DPI RENDERING: Render text as if on 300+ DPI display
 
-⚡ GEMINI 2.0 FLASH ULTRA-HD QUALITY ENHANCEMENTS:
+⚡ GEMINI 2.5 FLASH IMAGE PREVIEW ULTRA-HD QUALITY ENHANCEMENTS:
 - MAXIMUM RESOLUTION: Ultra-high definition rendering (4K+ quality)
 - PERFECT ANATOMY: Complete, symmetrical faces with natural expressions
 - SHARP DETAILS: Crystal-clear textures, no blur or artifacts
@@ -43,7 +43,7 @@ const prompt = `Create a stunning, professional ${platform} social media post us
 ### **2. HD Quality Configuration**
 ```typescript
 const { media } = await generateWithRetry({
-  model: 'googleai/gemini-2.0-flash-preview-image-generation',
+  model: 'googleai/gemini-2.5-flash-image-preview',
   prompt: enhancedPrompt,
   config: {
     responseModalities: ['TEXT', 'IMAGE'],
@@ -158,7 +158,7 @@ All generated images support HD downloads:
 
 The system uses intelligent fallback:
 1. **Primary**: OpenAI GPT-Image 1 (9.9/10 quality)
-2. **Secondary**: Gemini 2.0 Flash HD (9.7/10 quality)
+2. **Secondary**: Gemini 2.5 Flash Image Preview (9.7/10 quality)
 3. **Tertiary**: Standard Gemini with enhanced prompting (8.5/10 quality)
 
 ## 🎯 Best Practices
@@ -189,4 +189,4 @@ The system uses intelligent fallback:
 - **Batch Generation**: Multiple variations for A/B testing
 - **Real-time Optimization**: Dynamic quality adjustment based on performance
 
-This upgrade positions Nevis at the forefront of AI-powered design generation with both OpenAI GPT-Image 1 and Gemini 2.0 Flash HD capabilities, ensuring maximum quality and reliability.
+This upgrade positions Nevis at the forefront of AI-powered design generation with both OpenAI GPT-Image 1 and Gemini 2.5 Flash Image Preview capabilities, ensuring maximum quality and reliability.

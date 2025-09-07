@@ -107,8 +107,8 @@ export function LogoUploadStepUnified({
         console.log('✏️ Edit mode: Updating existing profile with ID:', profileToSave.id);
         console.log('💾 Updating profile via unified context with logo data:', {
           businessName: profileToSave.businessName,
-          hasLogo: !!profileToSave.logoDataUrl,
-          logoLength: profileToSave.logoDataUrl?.length || 0,
+          hasLogo: !!profileToSave.logoUrl,
+          logoLength: profileToSave.logoUrl?.length || 0,
           colors: {
             primaryColor: profileToSave.primaryColor,
             accentColor: profileToSave.accentColor,

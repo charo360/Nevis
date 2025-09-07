@@ -35,6 +35,7 @@ export interface GeminiHDEnhancedDesignInput {
     followBrandColors: boolean;
   };
   artifactInstructions?: string;
+  designReferences?: string[]; // Base64 encoded reference images
 }
 
 export interface GeminiHDEnhancedDesignResult {
@@ -67,7 +68,7 @@ async function generateWithRetry(request: GenerateRequest, retries = 3, delay = 
 }
 
 /**
- * Generate Ultra-HD design using Gemini 2.0 Flash with maximum quality settings
+ * Generate Ultra-HD design using Gemini 2.5 Flash Image Preview with maximum quality settings
  * This provides superior image quality, perfect text rendering, and HD downloads
  */
 export async function generateGeminiHDEnhancedDesign(
@@ -88,9 +89,9 @@ export async function generateGeminiHDEnhancedDesign(
     // Get platform-specific aspect ratio for proper image generation
     const aspectRatio = getPlatformAspectRatio(input.platform);
 
-    // Build enhanced prompt optimized for Gemini 2.0 Flash HD generation
+    // Build enhanced prompt optimized for Gemini 2.5 Flash Image Preview generation
     const enhancedPrompt = buildGeminiHDPrompt(inputWithCleanText, aspectRatio);
-    enhancementsApplied.push('Gemini 2.0 Flash HD Optimized Prompting', 'Text Validation & Cleaning');
+    enhancementsApplied.push('Gemini 2.5 Flash Image Preview Optimized Prompting', 'Text Validation & Cleaning');
 
 
     // Build prompt parts array with media inputs like standard generation
@@ -118,13 +119,13 @@ export async function generateGeminiHDEnhancedDesign(
       });
     }
 
-    // Generate image with Gemini 2.0 Flash with HD quality settings and platform-specific aspect ratio
+    // Generate image with Gemini 2.5 Flash Image Preview with HD quality settings and platform-specific aspect ratio
     const { media } = await generateWithRetry({
-      model: 'googleai/gemini-2.0-flash-preview-image-generation',
+      model: 'googleai/gemini-2.5-flash-image-preview',
       prompt: promptParts,
       config: {
         responseModalities: ['TEXT', 'IMAGE'],
-        // Note: Gemini 2.0 Flash handles aspect ratio through prompt instructions
+        // Note: Gemini 2.5 Flash Image Preview handles aspect ratio through prompt instructions
         // The aspect ratio is specified in the prompt itself for better control
       },
     });
@@ -135,7 +136,7 @@ export async function generateGeminiHDEnhancedDesign(
     }
 
     enhancementsApplied.push(
-      'Gemini 2.0 Flash HD Generation',
+      'Gemini 2.5 Flash Image Preview Generation',
       'Ultra-High Quality Settings',
       'Perfect Text Rendering',
       'Professional Face Generation',
@@ -154,7 +155,7 @@ export async function generateGeminiHDEnhancedDesign(
 
     return {
       imageUrl,
-      qualityScore: 9.7, // Gemini 2.0 Flash HD - Excellent quality
+      qualityScore: 9.7, // Gemini 2.5 Flash Image Preview - Excellent quality
       enhancementsApplied,
       processingTime: Date.now() - startTime,
     };
@@ -164,7 +165,7 @@ export async function generateGeminiHDEnhancedDesign(
 }
 
 /**
- * Build optimized prompt for Gemini 2.0 Flash HD generation
+ * Build optimized prompt for Gemini 2.5 Flash Image Preview generation
  * Enhanced with best practices for maximum quality and accuracy
  */
 function buildGeminiHDPrompt(input: GeminiHDEnhancedDesignInput, aspectRatio: string): string {
@@ -307,7 +308,7 @@ ${platformSpecs}
 - Platform Optimization: ${platformSpecs}
 - Human Elements: ${peopleInstructions}
 
-⚡ GEMINI 2.0 FLASH ULTRA-HD QUALITY ENHANCEMENTS:
+⚡ GEMINI 2.5 FLASH IMAGE PREVIEW ULTRA-HD QUALITY ENHANCEMENTS:
 - MAXIMUM RESOLUTION: Ultra-high definition rendering (4K+ quality)
 - SMALL FONT SIZE EXCELLENCE: Perfect rendering at 8pt, 10pt, 12pt, and all small font sizes
 - TINY TEXT PRECISION: Every character sharp and legible even when font size is very small
@@ -385,7 +386,7 @@ ${artifactInstructions}
 }
 
 /**
- * Validate and clean text input for better Gemini 2.0 Flash results
+ * Validate and clean text input for better Gemini 2.5 Flash Image Preview results
  * MINIMAL cleaning to preserve text accuracy
  */
 function validateAndCleanText(text: string): string {
@@ -419,7 +420,7 @@ function validateAndCleanText(text: string): string {
 }
 
 /**
- * Get appropriate aspect ratio for platform (Gemini 2.0 Flash HD)
+ * Get appropriate aspect ratio for platform (Gemini 2.5 Flash Image Preview)
  * STANDARDIZED: ALL platforms use 1:1 for maximum quality (no stories/reels)
  */
 function getPlatformAspectRatio(platform: string): string {
@@ -429,7 +430,7 @@ function getPlatformAspectRatio(platform: string): string {
 }
 
 /**
- * Enhanced platform specifications for Gemini 2.0 Flash HD
+ * Enhanced platform specifications for Gemini 2.5 Flash Image Preview
  */
 function getPlatformSpecifications(platform: string): string {
   const platformLower = platform.toLowerCase();
@@ -494,7 +495,7 @@ export async function generateGeminiHDEnhancedDesignWithFallback(
   input: GeminiHDEnhancedDesignInput
 ): Promise<GeminiHDEnhancedDesignResult> {
   try {
-    // First attempt: Gemini 2.0 Flash HD generation
+    // First attempt: Gemini 2.5 Flash Image Preview generation
     return await generateGeminiHDEnhancedDesign(input);
   } catch (error) {
 
@@ -532,11 +533,11 @@ export async function generateGeminiHDEnhancedDesignWithFallback(
       }
 
       const { media } = await generateWithRetry({
-        model: 'googleai/gemini-2.0-flash-preview-image-generation',
+        model: 'googleai/gemini-2.5-flash-image-preview',
         prompt: promptParts,
         config: {
           responseModalities: ['TEXT', 'IMAGE'],
-          // Note: Gemini 2.0 Flash handles aspect ratio through prompt instructions
+          // Note: Gemini 2.5 Flash Image Preview handles aspect ratio through prompt instructions
           // The aspect ratio is specified in the prompt itself for better control
         },
       });
@@ -549,7 +550,7 @@ export async function generateGeminiHDEnhancedDesignWithFallback(
       return {
         imageUrl,
         qualityScore: 8.5, // Lower score for fallback but still high quality
-        enhancementsApplied: ['Gemini 2.0 Flash Fallback', 'Enhanced Prompting', 'Brand Integration'],
+        enhancementsApplied: ['Gemini 2.5 Flash Image Preview Fallback', 'Enhanced Prompting', 'Brand Integration'],
         processingTime: Date.now() - startTime,
       };
     } catch (fallbackError) {

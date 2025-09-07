@@ -368,7 +368,6 @@ export async function generateRevo15EnhancedDesign(
   // Auto-detect platform-specific aspect ratio
   const aspectRatio = getPlatformAspectRatio(input.platform);
   const enhancedInput = { ...input, aspectRatio };
-  console.log(`🎯 Revo 1.5: Using ${aspectRatio} aspect ratio for ${input.platform}`);
 
   const enhancementsApplied: string[] = [
     'Two-Step Design Process',
@@ -399,7 +398,6 @@ export async function generateRevo15EnhancedDesign(
       planningModel: GEMINI_2_5_MODELS.FLASH,
       generationModel: GEMINI_2_5_MODELS.FLASH_IMAGE_PREVIEW
     };
-
 
     return result;
 

@@ -160,24 +160,21 @@ Format your response as a detailed JSON object with all specifications clearly o
 }
 
 /**
- * Generate complete design using REAL AI image generation with Gemini 2.0 Flash
+ * Generate complete design using REAL AI image generation with Gemini 2.5 Flash Image Preview
  * NO MORE HARDCODED SVG TEMPLATES - ONLY REAL AI GENERATION
  */
 export async function generateEnhancedDesign(
   input: Gemini25DesignInput
 ): Promise<Gemini25DesignResult> {
   const startTime = Date.now();
-  const enhancementsApplied: string[] = ['Gemini 2.5 Flash Image Preview Generation', 'Professional Design Principles', 'Brand Integration'];
+  const enhancementsApplied: string[] = [];
 
   try {
-
     // Use the superior Gemini 2.5 Flash Image Preview generation
     const { generateCreativeAsset } = await import('@/ai/flows/generate-creative-asset');
 
     // Build comprehensive AI prompt for image generation
     const imagePrompt = buildComprehensiveImagePrompt(input);
-    enhancementsApplied.push('Comprehensive AI Prompting');
-
 
     // Generate image with Gemini 2.5 Flash Image Preview (superior text rendering)
     const creativeResult = await generateCreativeAsset({
@@ -195,24 +192,14 @@ export async function generateEnhancedDesign(
       throw new Error('No image URL returned from Gemini 2.5 Flash Image Preview');
     }
 
-    enhancementsApplied.push(
-      'Gemini 2.5 Flash Image Preview HD Generation',
-      'Ultra-High Quality Settings',
-      'Perfect Text Rendering',
-      'Professional Design Generation',
-      'Brand Color Compliance',
-      'Platform Optimization'
-    );
-
     const result: Gemini25DesignResult = {
       imageUrl,
-      designSpecs: { prompt: imagePrompt }, // Store the prompt as specs
-      qualityScore: 9.5, // High quality score for real AI generation
+      designSpecs: { prompt: imagePrompt },
+      qualityScore: 9.5,
       enhancementsApplied,
       processingTime: Date.now() - startTime,
-      model: 'gemini-2.0-flash-image'
+      model: 'gemini-2.5-flash-image-preview'
     };
-
 
     return result;
 
@@ -781,6 +768,17 @@ CREATIVE DESIGN VARIETY:
   * Grid-based structured designs
   * Organic flowing compositions
   * Layered depth with foreground/background elements
+
+LOGO INTEGRATION REQUIREMENTS:
+${brandProfile.logoDataUrl ? `🚨 CRITICAL: A brand logo has been provided and MUST be used in the design.
+- Use ONLY the provided logo image - never create or generate a new logo
+- The uploaded logo is the official brand logo and must be used exactly as provided
+- Integrate the provided logo naturally and prominently into the design
+- Ensure logo is clearly visible and properly sized (minimum 10% of design area)
+- Position logo strategically (top-left, top-right, center, or bottom as appropriate)
+- Logo should be one of the first things viewers notice in the design
+- If space is limited, reduce other elements to ensure logo prominence
+- Logo visibility is more important than other design elements` : '- No logo provided, focus on typography and brand colors for brand identity'}
 
 REQUIREMENTS:
 - Square 1:1 aspect ratio for ${platform}

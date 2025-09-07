@@ -166,39 +166,95 @@ Recreate the content within the black-masked region based on this instruction, e
             promptParts.push({ media: { url: input.maskDataUrl, contentType: getMimeTypeFromDataURI(input.maskDataUrl) } });
 
         } else if (input.referenceAssetUrl) {
-            // This is a generation prompt with a reference asset (image or video).
-            let referencePrompt = `You are an expert creative director specializing in high-end advertisements. You will be given a reference asset and a text prompt with instructions.
-Your task is to generate a new asset that is inspired by the reference asset and follows the new instructions.
+            // This is a generation prompt with an uploaded image that should be integrated into the design
+            let referencePrompt = `You are an expert creative director and AI design specialist with advanced image analysis capabilities. You will be given an uploaded image and a text prompt with instructions.
 
-Your primary goal is to intelligently interpret the user's request, considering the provided reference asset. Do not just copy the reference.
-Analyze the user's prompt for common editing terminology and apply it creatively. For example:
-- If asked to "change the background," intelligently isolate the main subject and replace the background with a new one that matches the prompt, preserving the foreground subject.
-- If asked to "make the logo bigger" or "change the text color," perform those specific edits while maintaining the overall composition.
-- If the prompt is more general, use the reference asset for style, color, and subject inspiration to create a new, distinct asset.
+🚫 **CRITICAL: DO NOT CREATE LOGOS** 🚫
+- DO NOT generate logo designs, brand marks, or simple graphic symbols
+- DO NOT create minimalist logo-style graphics
+- DO NOT focus primarily on logo creation or branding elements
+- CREATE COMPLETE MARKETING DESIGNS with full layouts, backgrounds, and compositions
 
-The user's instruction is: "${remainingPrompt}"`;
+✅ **CREATE COMPLETE MARKETING DESIGNS** ✅
+- Generate comprehensive social media post designs
+- Include backgrounds, graphics, text layouts, and visual hierarchy
+- Create full marketing compositions with multiple design elements
+- Focus on complete visual storytelling and marketing impact
+
+🎯 **INTELLIGENT IMAGE INTEGRATION MISSION:**
+Analyze the uploaded image deeply and make intelligent creative decisions about how to best incorporate it into a stunning design.
+
+**STEP 1: SMART IMAGE ANALYSIS**
+First, analyze the uploaded image to understand:
+- Content type (product, person, landscape, object, logo, artwork, etc.)
+- Image quality, lighting conditions, and photographic style
+- Dominant colors, textures, and visual elements
+- Emotional tone and aesthetic appeal
+- Best potential use case for maximum visual impact
+
+**STEP 2: INTELLIGENT INTEGRATION STRATEGY**
+Based on your analysis, intelligently choose the OPTIMAL approach:
+
+🏆 **HERO SHOWCASE:** If it's a product, service, or key object:
+   - Make it the star with professional product photography styling
+   - Create compelling compositions highlighting its best features
+   - Use dramatic lighting, shadows, and backgrounds for maximum appeal
+   - Position as primary focal point with supporting design elements
+
+🎨 **ARTISTIC BACKGROUND:** If it works as a scene or backdrop:
+   - Transform into sophisticated background with professional effects
+   - Apply tasteful overlays, gradients, or color grading for impact
+   - Ensure perfect text readability with smart contrast enhancements
+   - Create depth and visual interest while maintaining focus
+
+🖼️ **DYNAMIC COMPOSITION:** For lifestyle, people, or complex scenes:
+   - Create magazine-quality layouts with creative positioning
+   - Combine with complementary graphics and typography
+   - Use advanced composition techniques (rule of thirds, golden ratio)
+   - Build visual narratives that tell compelling stories
+
+✨ **SEAMLESS INTEGRATION:** For logos, graphics, or decorative elements:
+   - Blend naturally using professional design techniques
+   - Apply appropriate effects, shadows, and styling for cohesion
+   - Maintain perfect visual hierarchy and balance
+   - Create harmony between all design components
+
+**STEP 3: PROFESSIONAL EXECUTION**
+- Ensure integration looks expertly crafted, never amateur
+- Maintain consistent lighting, color harmony, and visual style
+- The uploaded image should enhance overall design impact
+- Create natural visual flow guiding the viewer's eye
+
+**USER'S CREATIVE VISION:** "${remainingPrompt}"
+
+Analyze the uploaded image, make intelligent creative decisions, and create a breathtaking professional design that showcases the image in the most impactful way while perfectly fulfilling the user's vision.`;
 
             if (imageText) {
-                referencePrompt += `\n\n**Explicit Text Overlay:** The user has provided specific text in quotes: "${imageText}". You MUST overlay this text on the image. If there was existing text, replace it. Ensure the new text is readable and well-composed.`
+                referencePrompt += `\n\n**Text Overlay Integration:** The user has provided specific text in quotes: "${imageText}". You MUST overlay this text on the design in a way that complements both the uploaded image and the overall composition. Ensure the text is readable and professionally integrated.`
             }
 
             if (input.outputType === 'video') {
-                referencePrompt += `\n\n**Video Specifics:** Generate a video that is cinematically interesting, well-composed, and has a sense of completeness. Create a well-composed shot with a clear beginning, middle, and end, even within a short duration. Avoid abrupt cuts or unfinished scenes.`;
+                referencePrompt += `\n\n**Video Integration:** Create a video that showcases the uploaded image as a key element throughout the sequence. The uploaded image should be prominently featured and integrated naturally into the video narrative.`;
                 if (imageText) {
-                    referencePrompt += `\n\n**Text Overlay:** The following text MUST be overlaid on the video in a stylish, readable font: "${imageText}". It is critical that the text is clearly readable, well-composed, and not cut off. The entire text must be visible.`;
+                    referencePrompt += `\n\n**Video Text Overlay:** The following text MUST be overlaid on the video in a stylish, readable font: "${imageText}". Position it to complement the uploaded image integration.`;
                 }
             }
 
             if (input.useBrandProfile && input.brandProfile) {
                 const bp = input.brandProfile;
-                let brandGuidelines = '\n\n**Brand Guidelines:**';
+                let brandGuidelines = '\n\n**Brand Integration Guidelines:**';
 
                 if (bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
                     promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
-                    brandGuidelines += ` A logo has also been provided. Integrate it naturally into the new design.`
+                    brandGuidelines += ` Create a complete marketing design that uses the uploaded image as the main design element. If a brand logo is provided, integrate it as a small brand identifier within the larger marketing composition - focus on creating a full marketing design, not a logo-centric layout.`
                 } else if (bp.logoDataUrl && bp.logoDataUrl.includes('image/svg+xml')) {
-                    brandGuidelines += ` Create a design that represents the brand identity (SVG logo format not supported by AI model).`
+                    brandGuidelines += ` Create a comprehensive marketing design that represents the brand identity while prominently featuring the uploaded image as the main visual element.`
                 }
+
+                brandGuidelines += `\n- Use brand colors: ${bp.primaryColor || 'brand-appropriate colors'}`;
+                brandGuidelines += `\n- Match brand style: ${bp.visualStyle || 'professional'}`;
+                brandGuidelines += `\n- Target audience: ${bp.targetAudience || 'general audience'}`;
+
                 referencePrompt += brandGuidelines;
             }
 
@@ -210,7 +266,9 @@ The user's instruction is: "${remainingPrompt}"`;
 
         } else if (input.useBrandProfile && input.brandProfile) {
             // This is a new, on-brand asset generation with advanced design principles.
+            // May also include an uploaded image for integration
             const bp = input.brandProfile;
+            const hasUploadedImage = !!input.referenceAssetUrl;
 
             // Get business-specific design DNA
             const businessDNA = BUSINESS_TYPE_DESIGN_DNA[bp.businessType as keyof typeof BUSINESS_TYPE_DESIGN_DNA] || BUSINESS_TYPE_DESIGN_DNA.default;
@@ -219,11 +277,11 @@ The user's instruction is: "${remainingPrompt}"`;
             const getTargetMarketInstructions = (location: string, businessType: string, targetAudience: string) => {
                 const locationKey = location.toLowerCase();
                 const africanCountries = ['kenya', 'nigeria', 'south africa', 'ghana', 'uganda', 'tanzania', 'ethiopia', 'rwanda', 'zambia', 'zimbabwe', 'botswana', 'namibia', 'malawi', 'mozambique', 'senegal', 'mali', 'burkina faso', 'ivory coast', 'cameroon', 'chad', 'sudan', 'egypt', 'morocco', 'algeria', 'tunisia', 'libya'];
-                
+
                 // Get business-specific target market
                 const getBusinessTargetMarket = (businessType: string) => {
                     const businessTypeLower = businessType.toLowerCase();
-                    
+
                     if (businessTypeLower.includes('restaurant') || businessTypeLower.includes('food') || businessTypeLower.includes('cafe')) {
                         return 'diverse families, couples, food enthusiasts, local community members';
                     } else if (businessTypeLower.includes('fitness') || businessTypeLower.includes('gym') || businessTypeLower.includes('health')) {
@@ -250,10 +308,10 @@ The user's instruction is: "${remainingPrompt}"`;
                 };
 
                 const targetMarket = getBusinessTargetMarket(businessType);
-                
+
                 // Check if it's an African country
                 const isAfricanCountry = africanCountries.some(country => locationKey.includes(country));
-                
+
                 if (isAfricanCountry) {
                     return `
 **CRITICAL TARGET MARKET REPRESENTATION FOR ${location.toUpperCase()}:**
@@ -288,17 +346,20 @@ The user's instruction is: "${remainingPrompt}"`;
                     .replace(/^[A-Z]+:\s*/i, '') // Remove "PAYA: "
                     .replace(/^[A-Z][a-z]+:\s*/i, '') // Remove "Paya: "
                     .trim();
-                
+
                 if (cleaned.length < 3) {
                     return text;
                 }
-                
+
                 return cleaned;
             };
 
             const cleanedContent = cleanBusinessNamePattern(remainingPrompt);
 
-            let onBrandPrompt = `Create a stunning, professional social media ${input.outputType} for ${bp.businessName || 'this business'}.
+            let onBrandPrompt = `Create a stunning, professional FULL MARKETING DESIGN (NOT just a logo) for social media ${input.outputType} for ${bp.businessName || 'this business'}.
+
+🎯 **DESIGN TYPE:** Complete marketing design with layout, imagery, text, and visual elements - NOT a standalone logo
+🎨 **VISUAL APPROACH:** Full-scale marketing composition with backgrounds, imagery, text overlays, and complete design elements
 
 BUSINESS: ${bp.businessName || 'Professional Business'} (${bp.businessType})
 CONTENT: "${cleanedContent}"
@@ -314,12 +375,15 @@ ${bp.backgroundColor ? `- Background: ${bp.backgroundColor}` : ''}
 ${targetMarketInstructions}
 
 REQUIREMENTS:
-- High-quality, professional design
-- ${bp.visualStyle} aesthetic
-- Clean, modern layout
-- Perfect for ${bp.businessType} business
-- Brand colors prominently featured
-- Professional social media appearance`;
+- **FULL MARKETING DESIGN** - Complete layout with backgrounds, imagery, text, and visual elements
+- **NOT A LOGO** - Create a comprehensive marketing design, not just a logo or brand mark
+- High-quality, professional design composition
+- ${bp.visualStyle} aesthetic with complete visual hierarchy
+- Clean, modern layout with multiple design elements
+- Perfect for ${bp.businessType} business marketing
+- Brand colors prominently featured throughout the design
+- Professional social media marketing appearance
+- Include backgrounds, imagery, text layouts, and complete design composition`;
 
             // Intelligent design examples processing
             let designDNA = '';
@@ -376,7 +440,24 @@ ${designDNA}`;
                   * Add text shadows, outlines, or semi-transparent backgrounds for readability
                   * Position text using rule of thirds for optimal composition
                   * Ensure text is the primary focal point of the design` : 'No text should be added to the asset.'}`;
-                onBrandPrompt += `\n- **Logo Placement:** The provided logo must be integrated naturally into the design (e.g., on a product, a sign, or as a subtle watermark).`;
+                // Handle uploaded image integration with AI intelligence
+                if (hasUploadedImage) {
+                    onBrandPrompt += `\n- **🎯 INTELLIGENT UPLOADED IMAGE INTEGRATION:** A user has uploaded an image that must be INTELLIGENTLY ANALYZED and INTEGRATED as a key design element.`;
+                    onBrandPrompt += `\n  * **AI Analysis Required:** First analyze the uploaded image to understand its content, style, quality, and best integration approach`;
+                    onBrandPrompt += `\n  * **Smart Integration Decision:** Based on your analysis, intelligently choose the optimal integration method:`;
+                    onBrandPrompt += `\n    - If it's a product/object: Make it the hero element with professional product styling`;
+                    onBrandPrompt += `\n    - If it's a scene/background: Use as sophisticated backdrop with professional effects`;
+                    onBrandPrompt += `\n    - If it's a person/lifestyle: Create dynamic, magazine-style compositions`;
+                    onBrandPrompt += `\n    - If it's a logo/graphic: Blend seamlessly with other design elements`;
+                    onBrandPrompt += `\n  * **Professional Execution:** Ensure expert-level integration with consistent lighting, color harmony, and visual flow`;
+                    onBrandPrompt += `\n  * **Brand Synergy:** Coordinate the uploaded image with brand colors, logo, and overall brand aesthetic`;
+                    onBrandPrompt += `\n  * **Creative Excellence:** The uploaded image should enhance and elevate the overall design impact`;
+                    promptParts.push({ media: { url: input.referenceAssetUrl!, contentType: getMimeTypeFromDataURI(input.referenceAssetUrl!) } });
+                }
+
+                onBrandPrompt += `\n- **MARKETING DESIGN FOCUS:** Create a complete, professional marketing design with full layout composition. This should be a comprehensive social media post design, NOT just a logo. Include backgrounds, graphics, text elements, and visual hierarchy.`;
+                onBrandPrompt += `\n- **Brand Integration:** ${bp.logoDataUrl ? 'If a logo is provided, integrate it as a small brand element within the complete marketing design - focus on creating a full marketing composition, not logo-centric design' : 'Create a complete marketing design that represents the brand identity'}.`;
+                onBrandPrompt += `\n- **Design Completeness:** Generate a full marketing design with backgrounds, graphics, text layouts, and visual elements - NOT just a logo or simple graphic.`;
                 onBrandPrompt += `\n- **Critical Language Rule:** ALL text must be in clear, readable ENGLISH only. Never use foreign languages, corrupted text, or unreadable symbols.`;
 
                 if (bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
@@ -394,11 +475,27 @@ ${designDNA}`;
                 if (imageText) {
                     onBrandPrompt += `\n- **Text Overlay:** The following text MUST be overlaid on the video in a stylish, readable font: "${imageText}". It is critical that the text is clearly readable, well-composed, and not cut off. The entire text must be visible.`
                 }
+
+                // Handle uploaded image integration for video with AI intelligence
+                if (hasUploadedImage) {
+                    onBrandPrompt += `\n- **🎯 INTELLIGENT VIDEO IMAGE INTEGRATION:** A user has uploaded an image that must be INTELLIGENTLY ANALYZED and INTEGRATED throughout the video sequence.`;
+                    onBrandPrompt += `\n  * **Smart Video Analysis:** Analyze the uploaded image to determine the best video integration approach:`;
+                    onBrandPrompt += `\n    - Product/Object: Feature as hero element with dynamic camera movements and transitions`;
+                    onBrandPrompt += `\n    - Scene/Background: Use as cinematic backdrop with professional video effects`;
+                    onBrandPrompt += `\n    - Person/Lifestyle: Create engaging narrative sequences showcasing the subject`;
+                    onBrandPrompt += `\n    - Logo/Graphic: Integrate as animated brand element throughout the video`;
+                    onBrandPrompt += `\n  * **Cinematic Quality:** Ensure professional video production quality with smooth transitions and visual flow`;
+                    onBrandPrompt += `\n  * **Brand Storytelling:** Weave the uploaded image into a compelling brand narrative that engages viewers`;
+                    onBrandPrompt += `\n  * **Visual Continuity:** Maintain consistent style, lighting, and mood throughout the video sequence`;
+                    promptParts.push({ media: { url: input.referenceAssetUrl!, contentType: getMimeTypeFromDataURI(input.referenceAssetUrl!) } });
+                }
+
                 if (bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
-                    onBrandPrompt += `\n- **Logo Placement:** The provided logo must be integrated naturally into the design.`;
+                    onBrandPrompt += `\n- **COMPLETE MARKETING DESIGN:** Create a full marketing video with comprehensive visual storytelling - NOT just logo animation. Include backgrounds, graphics, text elements, and complete scene composition.`;
+                    onBrandPrompt += `\n- **Brand Element Integration:** If a logo is provided, integrate it as a small brand element within the complete marketing video - focus on creating a full marketing story, not logo-centric content.`;
                     promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
                 } else if (bp.logoDataUrl && bp.logoDataUrl.includes('image/svg+xml')) {
-                    onBrandPrompt += `\n- **Brand Identity:** Create a design that represents the brand identity and style.`;
+                    onBrandPrompt += `\n- **COMPREHENSIVE MARKETING VIDEO:** Create a complete marketing video that represents the brand identity with full scene composition, storytelling, and visual elements.`;
                 }
 
                 // Add selected design examples as reference
@@ -415,7 +512,7 @@ ${designDNA}`;
             // This is a new, un-branded, creative prompt.
             let creativePrompt = `You are an expert creative director specializing in high-end advertisements. Generate a compelling, high-quality social media advertisement ${input.outputType} based on the following instruction: "${remainingPrompt}".
 
-⚡ GEMINI 2.0 FLASH HD QUALITY ENHANCEMENTS:
+⚡ GEMINI 2.5 FLASH IMAGE PREVIEW QUALITY ENHANCEMENTS:
 - MOBILE-OPTIMIZED RESOLUTION: 1080x1080px HD square format for perfect mobile viewing
 - SMALL FONT SIZE EXCELLENCE: Perfect rendering at 8pt, 10pt, 12pt, and all small font sizes
 - TINY TEXT PRECISION: Every character sharp and legible even when font size is very small
@@ -493,13 +590,13 @@ Ensure the text is readable and well-composed.`
                     attempts++;
 
                     // Determine which model to use based on preferred model parameter
-                    let modelToUse = 'googleai/gemini-2.0-flash-preview-image-generation'; // Default
+                    let modelToUse = 'googleai/gemini-2.5-flash-image-preview'; // Default
 
                     if (input.preferredModel) {
                         // Map Gemini model names to Genkit model identifiers
                         const modelMapping: Record<string, string> = {
                             'gemini-2.5-flash-image-preview': 'googleai/gemini-2.5-flash-image-preview',
-                            'gemini-2.0-flash-preview-image-generation': 'googleai/gemini-2.0-flash-preview-image-generation',
+                            'gemini-2.5-flash-image-preview': 'googleai/gemini-2.5-flash-image-preview',
                             'gemini-2.5-flash': 'googleai/gemini-2.5-flash'
                         };
 

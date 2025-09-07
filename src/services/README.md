@@ -1,64 +1,16 @@
-# Text Overlay Service
+# Services
 
-This service provides clean, professional text overlay on background images using PIL/Pillow, solving the corrupted text issue from AI image generation models.
+This directory contains backend services for the Nevis application.
 
-## Problem Solved
+## Available Services
 
-Previously, the system was asking AI models (Gemini 2.0 Flash, GPT-Image 1) to generate text directly in images, which resulted in:
-- Corrupted, unreadable text
-- Gibberish characters
-- Poor font rendering
-- Inconsistent text quality
-
-## Solution
-
-**Two-Step Process:**
-1. **Background Generation**: AI models generate clean backgrounds with NO text
-2. **Text Overlay**: Python PIL/Pillow service adds clean, readable text
-
-## Architecture
-
-```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   AI Model      │    │  Text Overlay    │    │  Final Image    │
-│  (Background)   │───▶│   Service        │───▶│  (With Text)    │
-│   NO TEXT       │    │  (PIL/Pillow)    │    │  Clean & Clear  │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-```
-
-## Files
-
-- `text-overlay-service.py` - Python Flask service using PIL/Pillow
-- `text-overlay-client.ts` - TypeScript client for the service
-- `requirements.txt` - Python dependencies
-- `Dockerfile` - Container setup
-- `start-text-overlay-service.sh` - Development startup script
+- `events.ts` - Event management service
+- `rss-feed-service.ts` - RSS feed processing service
+- `weather.ts` - Weather data service
 
 ## Setup
 
-### Option 1: Local Development
-```bash
-cd src/services
-pip install -r requirements.txt
-python text-overlay-service.py
-```
-
-### Option 2: Docker
-```bash
-cd src/services
-docker build -t text-overlay-service .
-docker run -p 5000:5000 text-overlay-service
-```
-
-## Usage
-
-The service automatically integrates with the image generation flow:
-
-1. AI generates background image (NO TEXT)
-2. System calls text overlay service
-3. Service returns image with clean text overlay
-
-## Configuration
+Services are integrated into the Next.js application and don't require separate setup.
 
 Set environment variable for service URL:
 ```bash

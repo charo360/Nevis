@@ -141,7 +141,7 @@ export function ChatInput({
                     <span className="sr-only">Attach image</span>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Attach a reference image</TooltipContent>
+                <TooltipContent>Upload image to integrate into design</TooltipContent>
               </Tooltip>
             </TooltipProvider>
             <input

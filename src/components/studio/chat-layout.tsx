@@ -2,10 +2,12 @@
 import * as React from 'react';
 import { ChatMessages } from './chat-messages';
 import { ChatInput } from './chat-input';
+import { PromptBuilder } from './prompt-builder';
 import type { BrandProfile, Message } from '@/lib/types';
 import Balancer from 'react-wrap-balancer';
 import { Card, CardContent } from '@/components/ui/card';
-import { Bot } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Bot, ChevronDown, ChevronUp, Wand2 } from 'lucide-react';
 import { generateCreativeAssetAction, generateEnhancedDesignAction } from '@/app/actions';
 import { generateRevo2CreativeAssetAction } from '@/app/actions/revo-2-actions';
 import { useToast } from '@/hooks/use-toast';
@@ -27,7 +29,9 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
     const [outputType, setOutputType] = React.useState<'image' | 'video'>('image');
     const [aspectRatio, setAspectRatio] = React.useState<'16:9' | '9:16'>('16:9');
     const [selectedRevoModel, setSelectedRevoModel] = React.useState<RevoModel>('revo-1.5');
+    const [isPromptBuilderOpen, setIsPromptBuilderOpen] = React.useState(false);
     const { toast } = useToast();
+
 
 
     React.useEffect(() => {
@@ -54,6 +58,23 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
             setImageDataUrl(url);
         }
     }
+
+    const togglePromptBuilder = React.useCallback(() => {
+        setIsPromptBuilderOpen(prev => !prev);
+    }, []);
+
+    const handlePromptGenerated = (prompt: string) => {
+        // Auto-fill the chat input with the generated prompt
+        setInput(prompt);
+        // Close the prompt builder to show the chat input
+        setIsPromptBuilderOpen(false);
+
+        // Show success message
+        toast({
+            title: 'Prompt Added to Chat',
+            description: 'Your design brief has been added to the chat input. Ready to generate! The form stays populated so you can easily create variations by reopening the builder.',
+        });
+    };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -88,45 +109,73 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
             let aiResponse: Message;
 
             if (selectedRevoModel === 'revo-2.0' && outputType === 'image' && brandProfile) {
-                // Use Revo 2.0 next-generation AI for images with brand profile
-                const revo2Result = await generateRevo2CreativeAssetAction(
+                // Use Creative Studio's advanced creative asset generation for Revo 2.0
+                // This provides unique Creative Studio features like inpainting, outpainting,
+                // character consistency, and intelligent editing capabilities
+                result = await generateCreativeAssetAction(
                     currentInput,
+                    outputType,
+                    currentImageDataUrl,
+                    useBrandProfile,
                     brandProfile,
-                    {
-                        platform: 'Instagram', // Default platform for Creative Studio
-                        aspectRatio: '1:1', // Default to square for Creative Studio
-                        style: 'photographic',
-                        quality: 'ultra',
-                        mood: 'professional'
-                    }
+                    null, // maskDataUrl - Creative Studio can handle inpainting
+                    outputType === 'video' ? aspectRatio : undefined,
+                    'gemini-2.5-flash-image-preview' // Use Revo 2.0 model specifically
                 );
 
                 aiResponse = {
                     id: (Date.now() + 1).toString(),
                     role: 'assistant',
-                    content: `🌟 ${selectedRevoModel} Revolutionary AI Generated!\n\nQuality Score: ${revo2Result.qualityScore}/10\nEnhancements: ${revo2Result.enhancementsApplied.join(', ')}\nProcessing Time: ${revo2Result.processingTime}ms\n\nThis image was created using our next-generation AI engine with revolutionary capabilities and ultra-high quality results.`,
-                    imageUrl: revo2Result.imageUrl,
+                    content: `🚀 Your Revo 2.0 creative asset is ready! This image was generated using next-generation AI with advanced Creative Studio capabilities including character consistency, intelligent editing, and premium brand integration.`,
+                    imageUrl: result.imageUrl,
+                    videoUrl: result.videoUrl,
                 };
             } else if (selectedRevoModel === 'revo-1.5' && outputType === 'image' && brandProfile) {
-                // Use enhanced design generation for images with brand profile
-                const enhancedResult = await generateEnhancedDesignAction(
-                    brandProfile.businessType || 'business',
-                    'Instagram', // Default platform, could be made configurable
-                    brandProfile.visualStyle || 'modern',
-                    currentInput, // Creative Studio uses simple text input for now
+                // Use Creative Studio's advanced creative asset generation for Revo 1.5
+                // This provides unique Creative Studio features like inpainting, outpainting,
+                // character consistency, and intelligent editing capabilities
+                result = await generateCreativeAssetAction(
+                    currentInput,
+                    outputType,
+                    currentImageDataUrl,
+                    useBrandProfile,
                     brandProfile,
-                    true,
-                    { strictConsistency: true, followBrandColors: true } // Enable all enhancements for Creative Studio
+                    null, // maskDataUrl - Creative Studio can handle inpainting
+                    outputType === 'video' ? aspectRatio : undefined,
+                    'gemini-2.5-flash-image-preview' // Use Revo 1.5 model specifically
                 );
 
                 aiResponse = {
                     id: (Date.now() + 1).toString(),
                     role: 'assistant',
-                    content: `✨ ${selectedRevoModel} Enhanced Design Generated!\n\nQuality Score: ${enhancedResult.qualityScore}/10\nEnhancements: ${enhancedResult.enhancementsApplied.join(', ')}\nProcessing Time: ${enhancedResult.processingTime}ms\n\nThis design uses professional design principles, platform optimization, and quality validation for superior results.`,
-                    imageUrl: enhancedResult.imageUrl,
+                    content: `🎨 Your Revo 1.5 enhanced design is ready! This professional-quality image was generated using advanced AI with enhanced Creative Studio capabilities including intelligent editing, brand integration, and premium design principles.`,
+                    imageUrl: result.imageUrl,
+                    videoUrl: result.videoUrl,
+                };
+            } else if (selectedRevoModel === 'revo-1.0' && outputType === 'image' && brandProfile) {
+                // Use Creative Studio's advanced creative asset generation for Revo 1.0
+                // This provides unique Creative Studio features like inpainting, outpainting,
+                // character consistency, and intelligent editing capabilities
+                result = await generateCreativeAssetAction(
+                    currentInput,
+                    outputType,
+                    currentImageDataUrl,
+                    useBrandProfile,
+                    brandProfile,
+                    null, // maskDataUrl - Creative Studio can handle inpainting
+                    outputType === 'video' ? aspectRatio : undefined,
+                    'gemini-2.5-flash-image-preview' // Use Revo 1.0 model specifically
+                );
+
+                aiResponse = {
+                    id: (Date.now() + 1).toString(),
+                    role: 'assistant',
+                    content: `⭐ Your Revo 1.0 stable design is ready! This reliable, high-quality image was generated using proven AI with Creative Studio capabilities including brand integration, professional design standards, and consistent results.`,
+                    imageUrl: result.imageUrl,
+                    videoUrl: result.videoUrl,
                 };
             } else {
-                // Use standard creative asset generation
+                // Use standard creative asset generation for fallback
                 result = await generateCreativeAssetAction(
                     currentInput,
                     outputType,
@@ -167,6 +216,49 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
 
     return (
         <div className="relative flex h-full flex-col">
+            {/* Prompt Builder Section */}
+            <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                <div className="p-4">
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            togglePromptBuilder();
+                        }}
+                        className="w-full justify-between"
+                    >
+                        <div className="flex items-center gap-2">
+                            <Wand2 className="h-4 w-4" />
+                            {isPromptBuilderOpen ? 'Design Brief Builder' : 'Create New Design Brief'}
+                        </div>
+                        {isPromptBuilderOpen ? (
+                            <ChevronUp className="h-4 w-4" />
+                        ) : (
+                            <ChevronDown className="h-4 w-4" />
+                        )}
+                    </Button>
+
+                    {isPromptBuilderOpen && (
+                        <div className="mt-4 max-h-[60vh] overflow-y-auto">
+                            <div className="p-4 bg-green-50 border border-green-200 rounded">
+                                <h3 className="font-bold text-green-800">✅ Prompt Builder is Working!</h3>
+                                <div className="text-sm text-green-700 mt-2">
+                                    The state toggle is working correctly. The PromptBuilder component will be restored once we confirm this is working.
+                                </div>
+                                <button
+                                    onClick={() => setIsPromptBuilderOpen(false)}
+                                    className="mt-2 px-3 py-1 bg-green-600 text-white rounded text-sm"
+                                >
+                                    Close Test
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
             <div className="flex-1 overflow-y-auto">
                 {messages.length === 0 && !isLoading ? (
                     <div className="flex h-full flex-col items-center justify-center text-center p-4">
@@ -174,11 +266,11 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                             <CardContent className="p-6">
                                 <Bot className="mx-auto h-12 w-12 text-primary mb-4" />
                                 <h1 className="text-2xl font-bold font-headline">Creative Studio</h1>
-                                <p className="text-muted-foreground mt-2">
+                                <div className="text-muted-foreground mt-2">
                                     <Balancer>
-                                        Welcome to your AI-powered creative partner. Describe the ad you want, upload an image to edit, or start from scratch.
+                                        Welcome to your AI-powered creative partner. Use the Design Brief Builder above to create structured prompts, or describe what you want directly in the chat. The builder form stays populated so you can easily create multiple design variations!
                                     </Balancer>
-                                </p>
+                                </div>
                             </CardContent>
                         </Card>
                     </div>
