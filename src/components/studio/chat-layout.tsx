@@ -242,18 +242,10 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
 
                     {isPromptBuilderOpen && (
                         <div className="mt-4 max-h-[60vh] overflow-y-auto">
-                            <div className="p-4 bg-green-50 border border-green-200 rounded">
-                                <h3 className="font-bold text-green-800">✅ Prompt Builder is Working!</h3>
-                                <div className="text-sm text-green-700 mt-2">
-                                    The state toggle is working correctly. The PromptBuilder component will be restored once we confirm this is working.
-                                </div>
-                                <button
-                                    onClick={() => setIsPromptBuilderOpen(false)}
-                                    className="mt-2 px-3 py-1 bg-green-600 text-white rounded text-sm"
-                                >
-                                    Close Test
-                                </button>
-                            </div>
+                            <PromptBuilder
+                                brandProfile={brandProfile}
+                                onPromptGenerated={handlePromptGenerated}
+                            />
                         </div>
                     )}
                 </div>
