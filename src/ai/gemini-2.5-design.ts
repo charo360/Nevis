@@ -782,6 +782,17 @@ CREATIVE DESIGN VARIETY:
   * Organic flowing compositions
   * Layered depth with foreground/background elements
 
+LOGO INTEGRATION REQUIREMENTS:
+${brandProfile.logoDataUrl ? `🚨 CRITICAL: A brand logo has been provided and MUST be used in the design.
+- Use ONLY the provided logo image - never create or generate a new logo
+- The uploaded logo is the official brand logo and must be used exactly as provided
+- Integrate the provided logo naturally and prominently into the design
+- Ensure logo is clearly visible and properly sized (minimum 10% of design area)
+- Position logo strategically (top-left, top-right, center, or bottom as appropriate)
+- Logo should be one of the first things viewers notice in the design
+- If space is limited, reduce other elements to ensure logo prominence
+- Logo visibility is more important than other design elements` : '- No logo provided, focus on typography and brand colors for brand identity'}
+
 REQUIREMENTS:
 - Square 1:1 aspect ratio for ${platform}
 - High-quality, professional design
