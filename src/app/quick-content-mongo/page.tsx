@@ -46,49 +46,20 @@ export default function QuickContentMongo() {
   const [selectedAspectRatio, setSelectedAspectRatio] = useState<'1:1' | '16:9' | '9:16'>('1:1');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // Get optimal aspect ratio for platform
+  // Get optimal aspect ratio for platform - ALL PLATFORMS USE 1:1 FOR HIGHEST QUALITY
   const getOptimalAspectRatio = (platform: string): '1:1' | '16:9' | '9:16' => {
-    switch (platform.toLowerCase()) {
-      case 'instagram':
-        return '1:1'; // Square for feed posts
-      case 'facebook':
-      case 'twitter':
-      case 'linkedin':
-        return '16:9'; // Landscape for better engagement
-      default:
-        return '1:1';
-    }
+    // ALL PLATFORMS USE 1:1 SQUARE FOR MAXIMUM QUALITY
+    // No cropping = No quality loss from Gemini's native 1024x1024
+    return '1:1';
   };
 
-  // Get available aspect ratios for platform
+  // Get available aspect ratios for platform - ALL PLATFORMS USE 1:1 FOR HIGHEST QUALITY
   const getAvailableAspectRatios = (platform: string): Array<{ value: '1:1' | '16:9' | '9:16', label: string, description: string }> => {
-    const base = [
-      { value: '1:1' as const, label: '1:1 Square', description: '1080×1080' },
-      { value: '16:9' as const, label: '16:9 Landscape', description: '1200×675' },
-      { value: '9:16' as const, label: '9:16 Portrait', description: '1080×1920' }
+    // ALL PLATFORMS USE 1:1 SQUARE FOR MAXIMUM QUALITY
+    // No cropping = No quality loss from Gemini's native 1024x1024
+    return [
+      { value: '1:1' as const, label: '1:1 Square', description: 'Maximum Quality (1080×1080)' }
     ];
-
-    switch (platform.toLowerCase()) {
-      case 'instagram':
-        return [
-          { value: '1:1' as const, label: '1:1 Square', description: 'Feed Posts (1080×1080)' },
-          { value: '9:16' as const, label: '9:16 Portrait', description: 'Stories/Reels (1080×1920)' }
-        ];
-      case 'facebook':
-        return [
-          { value: '16:9' as const, label: '16:9 Landscape', description: 'Posts (1200×675)' },
-          { value: '1:1' as const, label: '1:1 Square', description: 'Alternative (1080×1080)' },
-          { value: '9:16' as const, label: '9:16 Portrait', description: 'Stories (1080×1920)' }
-        ];
-      case 'twitter':
-      case 'linkedin':
-        return [
-          { value: '16:9' as const, label: '16:9 Landscape', description: 'Posts (1200×675)' },
-          { value: '1:1' as const, label: '1:1 Square', description: 'Alternative (1080×1080)' }
-        ];
-      default:
-        return base;
-    }
   };
 
   // Load generated posts

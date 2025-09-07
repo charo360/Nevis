@@ -1465,27 +1465,11 @@ const ai = new GoogleGenerativeAI(apiKey);
 const REVO_1_0_MODEL = 'gemini-2.5-flash-image-preview';
 
 /**
- * Get platform-specific aspect ratio for optimal social media display
+ * Get platform-specific aspect ratio - ALL PLATFORMS USE 1:1 FOR HIGHEST QUALITY
  */
 function getPlatformAspectRatio(platform: string): '1:1' | '16:9' | '9:16' | '21:9' | '4:5' {
-  const platformLower = platform.toLowerCase();
-
-  // Instagram Stories, Reels, TikTok - Vertical 9:16
-  if (platformLower.includes('story') ||
-    platformLower.includes('reel') ||
-    platformLower.includes('tiktok')) {
-    return '9:16';
-  }
-
-  // Facebook, Twitter/X, LinkedIn, YouTube - Landscape 16:9
-  if (platformLower.includes('facebook') ||
-    platformLower.includes('twitter') ||
-    platformLower.includes('linkedin') ||
-    platformLower.includes('youtube')) {
-    return '16:9';
-  }
-
-  // Instagram Feed, Pinterest - Square 1:1 (default)
+  // ALL PLATFORMS USE 1:1 SQUARE FOR MAXIMUM QUALITY
+  // No cropping = No quality loss from Gemini's native 1024x1024
   return '1:1';
 }
 
