@@ -2,6 +2,7 @@
 import * as React from 'react';
 import { ChatMessages } from './chat-messages';
 import { ChatInput } from './chat-input';
+import { ImageTextEditor } from './image-text-editor';
 import type { BrandProfile, Message } from '@/lib/types';
 import Balancer from 'react-wrap-balancer';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,6 +11,7 @@ import { generateCreativeAssetAction, generateEnhancedDesignAction } from '@/app
 import { generateRevo2CreativeAssetAction } from '@/app/actions/revo-2-actions';
 import { useToast } from '@/hooks/use-toast';
 import { type RevoModel } from '@/components/ui/revo-model-selector';
+import { useImageTextEditor } from '@/hooks/use-image-text-editor';
 
 
 interface ChatLayoutProps {
@@ -28,6 +30,11 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
     const [aspectRatio, setAspectRatio] = React.useState<'16:9' | '9:16'>('16:9');
     const [selectedRevoModel, setSelectedRevoModel] = React.useState<RevoModel>('revo-1.5');
     const { toast } = useToast();
+
+    // Text editor state
+    const { startEditing, saveEditing, cancelEditing, getActiveSession } = useImageTextEditor();
+    const [isTextEditorOpen, setIsTextEditorOpen] = React.useState(false);
+    const [textEditorImageUrl, setTextEditorImageUrl] = React.useState<string | null>(null);
 
 
     React.useEffect(() => {
@@ -54,6 +61,46 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
             setImageDataUrl(url);
         }
     }
+
+    const handleEditText = (imageUrl: string) => {
+        const sessionId = startEditing(imageUrl);
+        setTextEditorImageUrl(imageUrl);
+        setIsTextEditorOpen(true);
+    };
+
+    const handleSaveTextEdit = (editedImageUrl: string) => {
+        const activeSession = getActiveSession();
+        if (activeSession) {
+            saveEditing(activeSession.id, editedImageUrl);
+
+            // Update the message with the edited image
+            setMessages(prevMessages =>
+                prevMessages.map(msg =>
+                    msg.imageUrl === activeSession.originalImageUrl
+                        ? { ...msg, imageUrl: editedImageUrl }
+                        : msg
+                )
+            );
+        }
+
+        setIsTextEditorOpen(false);
+        setTextEditorImageUrl(null);
+
+        toast({
+            title: 'Text Edit Saved',
+            description: 'Your image has been updated with the new text.',
+        });
+    };
+
+    const handleCancelTextEdit = () => {
+        const activeSession = getActiveSession();
+        if (activeSession) {
+            cancelEditing(activeSession.id);
+        }
+
+        setIsTextEditorOpen(false);
+        setTextEditorImageUrl(null);
+    };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -216,6 +263,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                         isLoading={isLoading}
                         onSetReferenceAsset={handleSetReferenceAsset}
                         onEditImage={onEditImage}
+                        onEditText={handleEditText}
                     />
                 )}
             </div>
@@ -240,6 +288,17 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 selectedRevoModel={selectedRevoModel}
                 setSelectedRevoModel={setSelectedRevoModel}
             />
+
+            {/* Text Editor Modal */}
+            {isTextEditorOpen && textEditorImageUrl && (
+                <div className="fixed inset-0 z-50 bg-black/80">
+                    <ImageTextEditor
+                        imageUrl={textEditorImageUrl}
+                        onSave={handleSaveTextEdit}
+                        onCancel={handleCancelTextEdit}
+                    />
+                </div>
+            )}
         </div>
     );
 }
