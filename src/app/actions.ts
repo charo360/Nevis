@@ -285,7 +285,8 @@ export async function generateEnhancedDesignAction(
   brandConsistency?: { strictConsistency: boolean; followBrandColors: boolean },
   artifactInstructions?: string,
   includePeopleInDesigns: boolean = true,
-  useLocalLanguage: boolean = false
+  useLocalLanguage: boolean = false,
+  uploadedImageUrl?: string | null
 ): Promise<{
   imageUrl: string;
   qualityScore: number;
@@ -332,6 +333,7 @@ export async function generateEnhancedDesignAction(
         artifactInstructions,
         includePeopleInDesigns,
         useLocalLanguage,
+        designReferences: uploadedImageUrl ? [uploadedImageUrl] : undefined,
       });
 
 
@@ -348,6 +350,7 @@ export async function generateEnhancedDesignAction(
           brandProfile,
           brandConsistency,
           artifactInstructions,
+          designReferences: uploadedImageUrl ? [uploadedImageUrl] : undefined,
         });
 
       } catch (openaiError) {
@@ -362,6 +365,7 @@ export async function generateEnhancedDesignAction(
           brandProfile,
           brandConsistency,
           artifactInstructions,
+          designReferences: uploadedImageUrl ? [uploadedImageUrl] : undefined,
         });
 
       }

@@ -35,6 +35,7 @@ export interface GeminiHDEnhancedDesignInput {
     followBrandColors: boolean;
   };
   artifactInstructions?: string;
+  designReferences?: string[]; // Base64 encoded reference images
 }
 
 export interface GeminiHDEnhancedDesignResult {

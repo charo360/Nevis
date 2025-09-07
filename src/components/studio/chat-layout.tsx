@@ -118,7 +118,11 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     currentInput, // Creative Studio uses simple text input for now
                     brandProfile,
                     true,
-                    { strictConsistency: true, followBrandColors: true } // Enable all enhancements for Creative Studio
+                    { strictConsistency: true, followBrandColors: true }, // Enable all enhancements for Creative Studio
+                    undefined, // artifactInstructions
+                    true, // includePeopleInDesigns
+                    false, // useLocalLanguage
+                    currentImageDataUrl // uploadedImageUrl - support photo upload integration
                 );
 
                 aiResponse = {
