@@ -344,7 +344,10 @@ Analyze the uploaded image, make intelligent creative decisions, and create a br
 
             const cleanedContent = cleanBusinessNamePattern(remainingPrompt);
 
-            let onBrandPrompt = `Create a stunning, professional social media ${input.outputType} for ${bp.businessName || 'this business'}.
+            let onBrandPrompt = `Create a stunning, professional FULL MARKETING DESIGN (NOT just a logo) for social media ${input.outputType} for ${bp.businessName || 'this business'}.
+
+🎯 **DESIGN TYPE:** Complete marketing design with layout, imagery, text, and visual elements - NOT a standalone logo
+🎨 **VISUAL APPROACH:** Full-scale marketing composition with backgrounds, imagery, text overlays, and complete design elements
 
 BUSINESS: ${bp.businessName || 'Professional Business'} (${bp.businessType})
 CONTENT: "${cleanedContent}"
@@ -360,12 +363,15 @@ ${bp.backgroundColor ? `- Background: ${bp.backgroundColor}` : ''}
 ${targetMarketInstructions}
 
 REQUIREMENTS:
-- High-quality, professional design
-- ${bp.visualStyle} aesthetic
-- Clean, modern layout
-- Perfect for ${bp.businessType} business
-- Brand colors prominently featured
-- Professional social media appearance`;
+- **FULL MARKETING DESIGN** - Complete layout with backgrounds, imagery, text, and visual elements
+- **NOT A LOGO** - Create a comprehensive marketing design, not just a logo or brand mark
+- High-quality, professional design composition
+- ${bp.visualStyle} aesthetic with complete visual hierarchy
+- Clean, modern layout with multiple design elements
+- Perfect for ${bp.businessType} business marketing
+- Brand colors prominently featured throughout the design
+- Professional social media marketing appearance
+- Include backgrounds, imagery, text layouts, and complete design composition`;
 
             // Intelligent design examples processing
             let designDNA = '';
@@ -437,7 +443,7 @@ ${designDNA}`;
                     promptParts.push({ media: { url: input.referenceAssetUrl!, contentType: getMimeTypeFromDataURI(input.referenceAssetUrl!) } });
                 }
 
-                onBrandPrompt += `\n- **Logo Placement:** ${bp.logoDataUrl ? 'The provided logo must be integrated naturally into the design (e.g., on a product, a sign, or as a subtle watermark)' : 'Include brand identity elements in the design'}.`;
+                onBrandPrompt += `\n- **Logo Integration:** ${bp.logoDataUrl ? 'If a logo is provided, integrate it subtly as a small brand element within the larger marketing design - the logo should be a minor element, not the main focus' : 'Include subtle brand identity elements in the design'}.`;
                 onBrandPrompt += `\n- **Critical Language Rule:** ALL text must be in clear, readable ENGLISH only. Never use foreign languages, corrupted text, or unreadable symbols.`;
 
                 if (bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
@@ -471,10 +477,10 @@ ${designDNA}`;
                 }
 
                 if (bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
-                    onBrandPrompt += `\n- **Logo Placement:** The provided logo must be integrated naturally into the design.`;
+                    onBrandPrompt += `\n- **Logo Integration:** If a logo is provided, integrate it as a small, subtle brand element within the complete marketing design - focus on the overall design composition, not the logo.`;
                     promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
                 } else if (bp.logoDataUrl && bp.logoDataUrl.includes('image/svg+xml')) {
-                    onBrandPrompt += `\n- **Brand Identity:** Create a design that represents the brand identity and style.`;
+                    onBrandPrompt += `\n- **Brand Identity:** Create a complete marketing design that represents the brand identity and style with full layout composition.`;
                 }
 
                 // Add selected design examples as reference

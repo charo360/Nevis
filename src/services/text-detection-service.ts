@@ -491,43 +491,81 @@ export class TextDetectionService {
    * Uses canvas-based text replacement with background color detection
    */
   private async applyTextOverlay(request: TextEditRequest): Promise<string> {
+    console.log('🎨 Starting text overlay processing...');
+    console.log('📝 Request:', request);
+
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
       const i = new Image();
       i.crossOrigin = 'anonymous';
-      i.onload = () => resolve(i);
-      i.onerror = reject;
+      i.onload = () => {
+        console.log(`✅ Image loaded: ${i.width}x${i.height}`);
+        resolve(i);
+      };
+      i.onerror = (error) => {
+        console.error('❌ Image load failed:', error);
+        reject(error);
+      };
       i.src = request.imageUrl;
     });
 
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Canvas not supported');
+    if (!ctx) {
+      console.error('❌ Canvas context not available');
+      throw new Error('Canvas not supported');
+    }
+    console.log('✅ Canvas context created');
 
     canvas.width = img.width;
     canvas.height = img.height;
     ctx.drawImage(img, 0, 0);
+    console.log(`✅ Image drawn to canvas: ${canvas.width}x${canvas.height}`);
 
     // Process each text edit: remove original text and add new text
-    request.textEdits.forEach(edit => {
+    console.log(`📝 Processing ${request.textEdits.length} text edits...`);
+
+    request.textEdits.forEach((edit, index) => {
       const { region, newText } = edit;
 
+      console.log(`🔄 Edit ${index + 1}/${request.textEdits.length}:`, {
+        original: region.text,
+        new: newText,
+        region: { x: region.x, y: region.y, width: region.width, height: region.height }
+      });
+
       // Skip if text hasn't changed
-      if (newText === region.text) return;
+      if (newText === region.text) {
+        console.log('⏭️ Skipping - text unchanged');
+        return;
+      }
 
       console.log(`🎨 Replacing "${region.text}" with "${newText}"`);
 
       // Step 1: Remove original text by painting over it with background color
+      console.log('🗑️ Removing original text...');
       this.removeOriginalText(ctx, region);
 
       // Step 2: Add new text in the same location
+      console.log('✏️ Adding replacement text...');
       this.addReplacementText(ctx, region, newText);
+
+      console.log('✅ Text replacement complete for this region');
     });
 
+    console.log('🔄 Converting canvas to blob...');
     return await new Promise<string>((resolve, reject) => {
       canvas.toBlob(blob => {
-        if (!blob) return reject(new Error('Failed to export edited image'));
-        resolve(URL.createObjectURL(blob));
-      }, 'image/png');
+        if (!blob) {
+          console.error('❌ Failed to create blob from canvas');
+          return reject(new Error('Failed to export edited image'));
+        }
+
+        const url = URL.createObjectURL(blob);
+        console.log(`✅ Blob created: ${blob.size} bytes`);
+        console.log(`✅ Blob URL: ${url.substring(0, 50)}...`);
+        console.log('🎉 Text overlay processing complete!');
+        resolve(url);
+      }, 'image/png', 1.0);
     });
   }
 
@@ -535,6 +573,8 @@ export class TextDetectionService {
    * Remove original text by painting over it with background color
    */
   private removeOriginalText(ctx: CanvasRenderingContext2D, region: any) {
+    console.log(`🗑️ Removing text in region: (${region.x}, ${region.y}) ${region.width}x${region.height}`);
+
     // Get surrounding pixels to determine background color
     const padding = 5;
     const sampleX = Math.max(0, region.x - padding);
@@ -542,30 +582,42 @@ export class TextDetectionService {
     const sampleWidth = Math.min(ctx.canvas.width - sampleX, region.width + padding * 2);
     const sampleHeight = Math.min(ctx.canvas.height - sampleY, region.height + padding * 2);
 
+    console.log(`🔍 Sampling background color from: (${sampleX}, ${sampleY}) ${sampleWidth}x${sampleHeight}`);
+
     const imageData = ctx.getImageData(sampleX, sampleY, sampleWidth, sampleHeight);
 
     // Get background color from border pixels
     const bgColor = this.detectBackgroundColor(imageData, region.width, region.height);
+    console.log(`🎨 Detected background color: rgb(${bgColor.r}, ${bgColor.g}, ${bgColor.b})`);
 
     // Paint over the text region with background color
     ctx.fillStyle = `rgb(${bgColor.r}, ${bgColor.g}, ${bgColor.b})`;
     ctx.fillRect(region.x, region.y, region.width, region.height);
+    console.log('✅ Painted over original text region');
 
     // Add slight blur to make it look more natural
     ctx.save();
     ctx.filter = 'blur(0.5px)';
     ctx.fillRect(region.x, region.y, region.width, region.height);
     ctx.restore();
+    console.log('✅ Applied blur for natural appearance');
   }
 
   /**
    * Add replacement text in the same location
    */
   private addReplacementText(ctx: CanvasRenderingContext2D, region: any, newText: string) {
+    console.log(`✏️ Adding replacement text: "${newText}"`);
+
     // Set text properties based on detected region
     const fontSize = Math.max(12, region.height * 0.8);
-    ctx.font = `${fontSize}px ${region.fontFamily || 'Arial'}`;
-    ctx.fillStyle = region.color || '#000000';
+    const fontFamily = region.fontFamily || 'Arial';
+    const color = region.color || '#000000';
+
+    console.log(`📝 Text styling: ${fontSize}px ${fontFamily}, color: ${color}`);
+
+    ctx.font = `${fontSize}px ${fontFamily}`;
+    ctx.fillStyle = color;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
 
@@ -576,7 +628,9 @@ export class TextDetectionService {
     ctx.shadowOffsetY = 0.5;
 
     // Draw the new text
+    console.log(`📍 Drawing text at position: (${region.x}, ${region.y})`);
     ctx.fillText(newText, region.x, region.y);
+    console.log('✅ Replacement text drawn');
 
     // Reset shadow
     ctx.shadowColor = 'transparent';
