@@ -41,13 +41,26 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     console.log('📝 API: Received POST request to save generated post');
-    const data = await request.json();
-    console.log('📝 API: Request data:', {
+
+    let data;
+    try {
+      data = await request.json();
+    } catch (jsonError) {
+      console.error('❌ API: Failed to parse JSON:', jsonError);
+      return NextResponse.json(
+        { error: 'Invalid JSON in request body' },
+        { status: 400 }
+      );
+    }
+    console.log('📝 API: Full request data:', JSON.stringify(data, null, 2));
+    console.log('📝 API: Request data summary:', {
       hasPost: !!data.post,
       userId: data.userId,
       brandProfileId: data.brandProfileId,
       postPlatform: data.post?.platform,
-      postContentLength: data.post?.content?.text?.length || 0
+      postContentLength: data.post?.content?.text?.length || 0,
+      postKeys: data.post ? Object.keys(data.post) : [],
+      dataKeys: Object.keys(data)
     });
 
     const { post, userId, brandProfileId } = data;
@@ -56,6 +69,14 @@ export async function POST(request: NextRequest) {
       console.error('❌ API: Missing required fields:', { userId: !!userId, brandProfileId: !!brandProfileId });
       return NextResponse.json(
         { error: 'User ID and brand profile ID are required' },
+        { status: 400 }
+      );
+    }
+
+    if (!post) {
+      console.error('❌ API: Missing post data');
+      return NextResponse.json(
+        { error: 'Post data is required' },
         { status: 400 }
       );
     }
