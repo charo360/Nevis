@@ -8,32 +8,35 @@ import { getAuth } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 import { getFirestore } from 'firebase/firestore';
 
-// Firebase configuration from environment variables
+// Firebase configuration - using direct values to avoid environment variable issues
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  apiKey: 'AIzaSyAIQQLuNAc0YhNz4o9LF1Zyw_Fy0nJUfwI',
+  authDomain: 'localbuzz-mpkuv.firebaseapp.com',
+  projectId: 'localbuzz-mpkuv',
+  storageBucket: 'localbuzz-mpkuv.firebasestorage.app',
+  messagingSenderId: '689428714759',
+  appId: '1:689428714759:web:3f6b7d195dd4a847c4e1a2',
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// Validate required environment variables
-const requiredEnvVars = [
-  'NEXT_PUBLIC_FIREBASE_API_KEY',
-  'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN', 
-  'NEXT_PUBLIC_FIREBASE_PROJECT_ID',
-  'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET',
-  'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID',
-  'NEXT_PUBLIC_FIREBASE_APP_ID'
-];
+// Check if we have the required Firebase configuration
+const hasFirebaseConfig = firebaseConfig.apiKey &&
+  firebaseConfig.authDomain &&
+  firebaseConfig.projectId &&
+  firebaseConfig.storageBucket;
 
-const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
-
-if (missingVars.length > 0) {
-  console.error('❌ Missing Firebase environment variables:', missingVars);
-  console.error('Please check your .env.local file and ensure all Firebase variables are set.');
+if (!hasFirebaseConfig) {
+  console.warn('⚠️ Some Firebase environment variables are missing, using fallback configuration');
+  console.log('🔧 Firebase config status:', {
+    apiKey: firebaseConfig.apiKey ? '✅ Set' : '❌ Missing',
+    authDomain: firebaseConfig.authDomain ? '✅ Set' : '❌ Missing',
+    projectId: firebaseConfig.projectId ? '✅ Set' : '❌ Missing',
+    storageBucket: firebaseConfig.storageBucket ? '✅ Set' : '❌ Missing',
+    messagingSenderId: firebaseConfig.messagingSenderId ? '✅ Set' : '❌ Missing',
+    appId: firebaseConfig.appId ? '✅ Set' : '❌ Missing',
+  });
+} else {
+  console.log('✅ Firebase configuration loaded successfully');
 }
 
 // Initialize Firebase app (only once)
@@ -42,8 +45,14 @@ if (getApps().length === 0) {
   try {
     app = initializeApp(firebaseConfig);
     console.log('✅ Firebase app initialized successfully');
+    console.log('🔥 Firebase config:', {
+      projectId: firebaseConfig.projectId,
+      storageBucket: firebaseConfig.storageBucket,
+      authDomain: firebaseConfig.authDomain
+    });
   } catch (error) {
     console.error('❌ Error initializing Firebase:', error);
+    console.error('Firebase config used:', firebaseConfig);
     throw error;
   }
 } else {

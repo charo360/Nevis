@@ -59,10 +59,13 @@ export function useAuth() {
           } else {
             console.warn('⚠️ Token verification failed, attempting refresh...');
             // Token is invalid, try to refresh
-            await refreshToken();
+            const refreshSuccess = await refreshToken();
+            if (!refreshSuccess) {
+              console.log('🔄 Refresh failed, continuing as anonymous user');
+            }
           }
         } else {
-          console.log('🚫 No stored auth data found');
+          console.log('📱 No stored auth data found, continuing as anonymous user');
           setAuthState({
             user: null,
             loading: false,
@@ -172,9 +175,10 @@ export function useAuth() {
         console.log('✅ Auth state updated after token refresh for user:', user.userId);
         return true;
       } else {
-        console.error('❌ Token refresh failed with status:', response.status);
+        console.warn('⚠️ Token refresh failed with status:', response.status);
         const errorData = await response.text();
-        console.error('❌ Token refresh error response:', errorData);
+        console.warn('⚠️ Token refresh error response:', errorData);
+        console.log('🔄 Clearing expired auth data and continuing as anonymous user...');
         clearAllUserData();
         setAuthState({
           user: null,
