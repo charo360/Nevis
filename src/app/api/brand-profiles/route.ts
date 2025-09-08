@@ -60,23 +60,22 @@ export async function POST(request: NextRequest) {
     const profile = await request.json();
     console.log('🔄 Creating brand profile for user:', user.userId);
 
-    // Create brand profile in Supabase
+    // Create brand profile in Supabase (matching the schema)
     const { data: newProfile, error } = await supabase
       .from('brands')
       .insert({
         user_id: user.userId,
         business_name: profile.businessName || profile.name,
-        business_type: profile.businessType,
+        business_type: profile.businessType || 'Other',
         description: profile.description,
         location: profile.location,
         target_audience: profile.targetAudience,
-        brand_colors: profile.brandColors,
+        brand_voice: profile.brandVoice,
         logo_url: profile.logoUrl,
+        primary_color: profile.primaryColor || profile.brandColors?.primary,
+        secondary_color: profile.secondaryColor || profile.brandColors?.secondary,
         website: profile.website,
-        social_media: profile.socialMedia,
-        is_active: profile.isActive !== false, // Default to true
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        social_media: profile.socialMedia || {}
       })
       .select()
       .single();
@@ -90,7 +89,10 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('✅ Brand profile created:', newProfile.id);
-    return NextResponse.json(newProfile);
+    return NextResponse.json({
+      id: newProfile.id,
+      profile: newProfile
+    });
   } catch (error) {
     console.error('❌ Error creating brand profile:', error);
     return NextResponse.json(

@@ -189,11 +189,15 @@ export function BrandProvider({ children }: BrandProviderProps) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save brand profile');
+        const errorText = await response.text();
+        console.error('❌ API error saving brand:', response.status, errorText);
+        throw new Error(`Failed to save brand profile: ${response.status} - ${errorText}`);
       }
 
       const result = await response.json();
       const profileId = result.id;
+
+      console.log('✅ Brand profile saved successfully:', profileId);
 
       // Refresh brands list and reset attempt flag so new brand appears
       setHasAttemptedLoad(false);
@@ -201,8 +205,9 @@ export function BrandProvider({ children }: BrandProviderProps) {
 
       return profileId;
     } catch (err) {
-      console.error('Error saving profile:', err);
-      setError('Failed to save brand profile');
+      console.error('❌ Error saving profile:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save brand profile';
+      setError(errorMessage);
       throw err;
     } finally {
       setSaving(false);
