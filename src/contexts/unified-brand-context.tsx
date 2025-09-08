@@ -54,6 +54,34 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
   } = useBrand();
 
   const [currentBrand, setCurrentBrand] = useState<CompleteBrandProfile | null>(null);
+
+  // Convert MongoDB brand profile to wizard format
+  const convertBrandProfile = (brand: any): CompleteBrandProfile => {
+    if (!brand) return brand;
+
+    // Convert logoUrl to logoDataUrl for compatibility with Creative Studio
+    return {
+      ...brand,
+      logoDataUrl: brand.logoUrl || brand.logoDataUrl || '',
+      // Ensure all required fields exist
+      primaryColor: brand.primaryColor || brand.brandColors?.primary || '#3B82F6',
+      accentColor: brand.accentColor || brand.brandColors?.secondary || '#10B981',
+      backgroundColor: brand.backgroundColor || brand.brandColors?.accent || '#F8FAFC',
+      contactPhone: brand.contactPhone || brand.contact?.phone || '',
+      contactEmail: brand.contactEmail || brand.contact?.email || '',
+      contactAddress: brand.contactAddress || brand.contact?.address || '',
+      facebookUrl: brand.facebookUrl || brand.socialMedia?.facebook || '',
+      instagramUrl: brand.instagramUrl || brand.socialMedia?.instagram || '',
+      twitterUrl: brand.twitterUrl || brand.socialMedia?.twitter || '',
+      linkedinUrl: brand.linkedinUrl || brand.socialMedia?.linkedin || '',
+      writingTone: brand.writingTone || brand.brandVoice || '',
+      location: typeof brand.location === 'object'
+        ? `${brand.location.city || ''}, ${brand.location.country || ''}`.replace(/^,\s*/, '').replace(/,\s*$/, '') || 'Location'
+        : brand.location || '',
+      services: brand.services || [],
+      designExamples: brand.designExamples || [],
+    };
+  };
   const [brandScopedServices, setBrandScopedServices] = useState<Map<string, any>>(new Map());
 
   // Use refs to store current values for event handlers
@@ -137,21 +165,24 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
   const selectBrand = useCallback((brand: CompleteBrandProfile | null) => {
     const brandName = brand?.businessName || brand?.name || 'null';
 
+    // Convert brand profile to ensure compatibility
+    const convertedBrand = brand ? convertBrandProfile(brand) : null;
+
     // Update both states immediately
-    setCurrentBrand(brand);
-    setCurrentProfile(brand);
+    setCurrentBrand(convertedBrand);
+    setCurrentProfile(convertedBrand);
 
     // Update all brand-scoped services
-    updateAllBrandScopedServices(brand);
+    updateAllBrandScopedServices(convertedBrand);
 
     // Force update color persistence immediately
-    if (brand) {
+    if (convertedBrand) {
       const colorData = {
-        primaryColor: brand.primaryColor,
-        accentColor: brand.accentColor,
-        backgroundColor: brand.backgroundColor,
-        brandId: brand.id,
-        brandName: brand.businessName || brand.name,
+        primaryColor: convertedBrand.primaryColor,
+        accentColor: convertedBrand.accentColor,
+        backgroundColor: convertedBrand.backgroundColor,
+        brandId: convertedBrand.id,
+        brandName: convertedBrand.businessName || convertedBrand.name,
         updatedAt: new Date().toISOString()
       };
       localStorage.setItem('brandColors', JSON.stringify(colorData));
@@ -225,8 +256,9 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
         // Only update if it's different from current brand
         const currentBrandValue = currentBrandRef.current;
         if (!currentBrandValue || currentBrandValue.id !== brand.id) {
-          setCurrentBrand(brand);
-          setCurrentProfileRef.current(brand);
+          const convertedBrand = convertBrandProfile(brand);
+          setCurrentBrand(convertedBrand);
+          setCurrentProfileRef.current(convertedBrand);
           if (updateAllBrandScopedServicesRef.current) {
             updateAllBrandScopedServicesRef.current(brand);
           }
@@ -238,7 +270,9 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
     // Listen for the original brand context changes
     const handleOriginalBrandChange = (event: any) => {
       if (event.detail && event.detail.brand) {
-        handleBrandChange(event);
+        const convertedBrand = convertBrandProfile(event.detail.brand);
+        setCurrentBrand(convertedBrand);
+        setCurrentProfileRef.current(convertedBrand);
       }
     };
 
