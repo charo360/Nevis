@@ -50,7 +50,21 @@ class SupabaseAuthService {
 
       if (error) {
         console.error('❌ Supabase signup error:', error.message);
-        throw new Error(error.message);
+
+        // Provide better error messages
+        let userFriendlyMessage = error.message;
+
+        if (error.message.includes('User already registered')) {
+          userFriendlyMessage = 'An account with this email already exists. Please sign in instead or use a different email.';
+        } else if (error.message.includes('Password should be at least')) {
+          userFriendlyMessage = 'Password must be at least 6 characters long. Please choose a stronger password.';
+        } else if (error.message.includes('Invalid email')) {
+          userFriendlyMessage = 'Please enter a valid email address.';
+        } else if (error.message.includes('signup_disabled')) {
+          userFriendlyMessage = 'Account registration is currently disabled. Please contact support.';
+        }
+
+        throw new Error(userFriendlyMessage);
       }
 
       if (!data.user) {
@@ -58,7 +72,7 @@ class SupabaseAuthService {
       }
 
       console.log('✅ User signed up successfully:', data.user.email);
-      
+
       // The user profile will be automatically created by the database trigger
       return {
         user: data.user,
@@ -85,7 +99,23 @@ class SupabaseAuthService {
 
       if (error) {
         console.error('❌ Supabase signin error:', error.message);
-        throw new Error(error.message);
+
+        // Provide better error messages
+        let userFriendlyMessage = error.message;
+
+        if (error.message === 'Invalid login credentials') {
+          userFriendlyMessage = 'The email or password you entered is incorrect. Please check your credentials and try again.';
+        } else if (error.message.includes('Email not confirmed')) {
+          userFriendlyMessage = 'Please check your email and click the confirmation link before signing in.';
+        } else if (error.message.includes('Too many requests')) {
+          userFriendlyMessage = 'Too many login attempts. Please wait a few minutes before trying again.';
+        } else if (error.message.includes('User not found')) {
+          userFriendlyMessage = 'No account found with this email address. Please sign up first or check your email.';
+        } else if (error.message.includes('signup_disabled')) {
+          userFriendlyMessage = 'Account registration is currently disabled. Please contact support.';
+        }
+
+        throw new Error(userFriendlyMessage);
       }
 
       if (!data.user || !data.session) {
@@ -93,7 +123,7 @@ class SupabaseAuthService {
       }
 
       console.log('✅ User signed in successfully:', data.user.email);
-      
+
       return {
         user: data.user,
         session: data.session
@@ -150,7 +180,7 @@ class SupabaseAuthService {
   async getCurrentUser(): Promise<AuthUser | null> {
     try {
       const session = await this.getCurrentSession();
-      
+
       if (!session?.user) {
         return null;
       }
@@ -190,7 +220,7 @@ class SupabaseAuthService {
   async updateProfile(updates: { fullName?: string; avatarUrl?: string }) {
     try {
       const session = await this.getCurrentSession();
-      
+
       if (!session?.user) {
         throw new Error('No authenticated user');
       }
