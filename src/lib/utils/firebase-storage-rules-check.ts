@@ -24,29 +24,29 @@ export interface StorageRulesCheckResult {
  */
 export async function checkFirebaseStorageRules(userId: string): Promise<StorageRulesCheckResult> {
   try {
-    
+
     // Create test data
     const testData = new Blob(['Firebase Storage Rules Test'], { type: 'text/plain' });
     const testFile = new File([testData], 'rules-test.txt', { type: 'text/plain' });
     const testPath = `generated-content/${userId}/rules-test-${Date.now()}.txt`;
-    
-    
+
+
     let canUpload = false;
     let canRead = false;
     let canDelete = false;
     let downloadUrl = '';
-    
+
     try {
       // Test upload
       const storageRef = ref(storage, testPath);
       const snapshot = await uploadBytes(storageRef, testFile);
       canUpload = true;
-      
+
       try {
         // Test read
         downloadUrl = await getDownloadURL(snapshot.ref);
         canRead = true;
-        
+
         try {
           // Test delete
           await deleteObject(snapshot.ref);
@@ -56,7 +56,7 @@ export async function checkFirebaseStorageRules(userId: string): Promise<Storage
       } catch (readError) {
       }
     } catch (uploadError) {
-      
+
       return {
         success: false,
         error: `Upload failed: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}`,
@@ -68,9 +68,9 @@ export async function checkFirebaseStorageRules(userId: string): Promise<Storage
         }
       };
     }
-    
+
     const allPermissionsWork = canUpload && canRead && canDelete;
-    
+
     return {
       success: allPermissionsWork,
       error: allPermissionsWork ? undefined : 'Some permissions are missing',
@@ -82,9 +82,9 @@ export async function checkFirebaseStorageRules(userId: string): Promise<Storage
         downloadUrl: downloadUrl.substring(0, 100) + '...'
       }
     };
-    
+
   } catch (error) {
-    
+
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -112,21 +112,24 @@ To deploy Firebase Storage rules:
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Users can upload and manage their own generated content
+    // Generated content - PUBLIC READ, authenticated write
+    // This allows images to be displayed after generation without auth issues
     match /generated-content/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if true; // Public read access for generated images
+      allow write, delete: if request.auth != null && request.auth.uid == userId;
     }
-    
+
     // Users can upload and manage their own artifacts
     match /artifacts/{userId}/{allPaths=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
-    
-    // Users can upload and manage their own brand assets
+
+    // Brand assets - PUBLIC READ for logos, authenticated write
     match /brand-assets/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if true; // Public read access for brand logos
+      allow write, delete: if request.auth != null && request.auth.uid == userId;
     }
-    
+
     // Temporary uploads (for processing)
     match /temp/{userId}/{allPaths=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;

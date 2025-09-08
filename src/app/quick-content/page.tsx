@@ -336,15 +336,34 @@ function QuickContentPage() {
       // Check if user is authenticated
       if (!user?.userId) {
         console.warn('⚠️ No user ID available for image processing');
+        toast({
+          title: "Authentication Required",
+          description: "Please sign in to save images permanently.",
+          variant: "destructive",
+        });
         return post; // Return original post with data URLs
       }
 
-      // Use MongoDB GridFS for image storage (no Firebase)
-      console.log('🔄 Processing post images with MongoDB GridFS...');
-      const { mongoImageStorage } = await import('@/lib/services/mongodb-image-storage');
-      const processedPost = await mongoImageStorage.processGeneratedPost(post, user.userId);
+      // Use Firebase Storage for image storage (with public read access)
+      console.log('🔄 Processing post images with Firebase Storage...');
+      const { firebaseImageStorage } = await import('@/lib/services/firebase-image-storage');
+      const processedPost = await firebaseImageStorage.processGeneratedPost(post, user.userId);
 
-      console.log('✅ Post images processed successfully with MongoDB');
+      if (processedPost.metadata?.uploadSuccess) {
+        toast({
+          title: "Images Saved Successfully",
+          description: "All images have been saved to Firebase Storage and are now publicly accessible.",
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "Partial Upload Success",
+          description: `${processedPost.metadata?.imagesUploaded || 0}/${processedPost.metadata?.totalImages || 0} images uploaded. Some images may still show as data URLs.`,
+          variant: "default",
+        });
+      }
+
+      console.log('✅ Post images processed successfully with Firebase Storage');
       return processedPost;
 
       /* UNCOMMENT THIS AFTER DEPLOYING FIREBASE STORAGE RULES:
@@ -386,7 +405,7 @@ function QuickContentPage() {
   const handlePostGenerated = async (post: GeneratedPost) => {
     console.log('🔄 Processing individual post:', post.id || 'no-id');
 
-    // Process images with MongoDB GridFS storage
+    // Process images with Firebase Storage (public read access)
     let processedPost = await processPostImages(post);
 
     // Add the processed post to the beginning of the array (no limit)
