@@ -140,67 +140,7 @@ export function useAuth() {
     console.log('✅ All user data cleared from localStorage');
   }, [clearAuthData]);
 
-  // Refresh access token
-  const refreshToken = useCallback(async (): Promise<boolean> => {
-    try {
-      console.log('🔄 Attempting to refresh access token...');
-      const storedRefreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
-      if (!storedRefreshToken) {
-        console.log('❌ No refresh token found in localStorage');
-        return false;
-      }
 
-      const response = await fetch('/api/auth/refresh', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ refreshToken: storedRefreshToken }),
-      });
-
-      if (response.ok) {
-        console.log('✅ Token refresh successful');
-        const data = await response.json();
-        const user: AuthUser = {
-          userId: data.user.userId,
-          email: data.user.email,
-          displayName: data.user.displayName,
-          photoURL: data.user.photoURL || '',
-          isAnonymous: data.user.isAnonymous || false,
-        };
-
-        storeAuthData(data.token, data.refreshToken, user);
-        setAuthState({
-          user,
-          loading: false,
-          error: null,
-        });
-        console.log('✅ Auth state updated after token refresh for user:', user.userId);
-        return true;
-      } else {
-        console.warn('⚠️ Token refresh failed with status:', response.status);
-        const errorData = await response.text();
-        console.warn('⚠️ Token refresh error response:', errorData);
-        console.log('🔄 Clearing expired auth data and continuing as anonymous user...');
-        clearAllUserData();
-        setAuthState({
-          user: null,
-          loading: false,
-          error: null,
-        });
-        return false;
-      }
-    } catch (error) {
-      console.error('❌ Token refresh error:', error);
-      clearAllUserData();
-      setAuthState({
-        user: null,
-        loading: false,
-        error: null,
-      });
-      return false;
-    }
-  }, [storeAuthData, clearAllUserData]);
 
   // Sign in with email and password
   const signIn = async (email: string, password: string): Promise<void> => {
@@ -299,53 +239,7 @@ export function useAuth() {
     }
   };
 
-  // Sign in anonymously (for demo users)
-  const signInAnonymous = async (): Promise<void> => {
-    try {
-      setAuthState(prev => ({ ...prev, loading: true, error: null }));
 
-      const response = await fetch('/api/auth/anonymous', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        const user: AuthUser = {
-          userId: data.user.userId,
-          email: data.user.email,
-          displayName: data.user.displayName,
-          photoURL: data.user.photoURL || '',
-          isAnonymous: true,
-        };
-
-        storeAuthData(data.token, data.refreshToken, user);
-        setAuthState({
-          user,
-          loading: false,
-          error: null,
-        });
-      } else {
-        setAuthState({
-          user: null,
-          loading: false,
-          error: data.error || 'Anonymous login failed',
-        });
-        throw new Error(data.error || 'Anonymous login failed');
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Anonymous login failed';
-      setAuthState(prev => ({
-        ...prev,
-        loading: false,
-        error: errorMessage,
-      }));
-      throw error;
-    }
-  };
 
   // Sign out
   const signOut = async (): Promise<void> => {
@@ -367,50 +261,7 @@ export function useAuth() {
     }
   };
 
-  // Update user profile
-  const updateUserProfile = async (updates: {
-    displayName?: string;
-    photoURL?: string;
-  }): Promise<void> => {
-    if (!authState.user) {
-      throw new Error('No user signed in');
-    }
 
-    try {
-      const token = localStorage.getItem(ACCESS_TOKEN_KEY);
-      const response = await fetch('/api/auth/update-profile', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(updates),
-      });
-
-      if (response.ok) {
-        const updatedUser = {
-          ...authState.user,
-          ...updates,
-        };
-
-        localStorage.setItem(USER_DATA_KEY, JSON.stringify(updatedUser));
-        setAuthState(prev => ({
-          ...prev,
-          user: updatedUser,
-        }));
-      } else {
-        throw new Error('Failed to update profile');
-      }
-    } catch (error) {
-      console.error('Update profile error:', error);
-      throw error;
-    }
-  };
-
-  // Get current access token
-  const getAccessToken = useCallback((): string | null => {
-    return localStorage.getItem(ACCESS_TOKEN_KEY);
-  }, []);
 
   return {
     ...authState,
