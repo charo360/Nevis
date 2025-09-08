@@ -1,30 +1,22 @@
 // API routes for brand profile management
 import { NextRequest, NextResponse } from 'next/server';
 import { brandProfileMongoService } from '@/lib/mongodb/services/brand-profile-service';
-import { verifyToken } from '@/lib/auth/jwt';
+import { getAuthenticatedUser } from '@/lib/auth/supabase-jwt';
 
 // GET /api/brand-profiles - Load user's brand profiles
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'Authorization token required' },
-        { status: 401 }
-      );
-    }
+    const user = await getAuthenticatedUser(authHeader);
 
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-    const decoded = verifyToken(token);
-
-    if (!decoded) {
+    if (!user) {
       return NextResponse.json(
         { error: 'Invalid or expired token' },
         { status: 401 }
       );
     }
 
-    const profiles = await brandProfileMongoService.loadBrandProfiles(decoded.userId);
+    const profiles = await brandProfileMongoService.loadBrandProfiles(user.userId);
     return NextResponse.json(profiles);
   } catch (error) {
     console.error('Error loading brand profiles:', error);
@@ -39,17 +31,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'Authorization token required' },
-        { status: 401 }
-      );
-    }
+    const user = await getAuthenticatedUser(authHeader);
 
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-    const decoded = verifyToken(token);
-
-    if (!decoded) {
+    if (!user) {
       return NextResponse.json(
         { error: 'Invalid or expired token' },
         { status: 401 }
@@ -61,7 +45,7 @@ export async function POST(request: NextRequest) {
     // Use authenticated user ID instead of trusting the request body
     const profileWithUserId = {
       ...profile,
-      userId: decoded.userId,
+      userId: user.userId,
     };
 
     const profileId = await brandProfileMongoService.saveBrandProfile(profileWithUserId);
