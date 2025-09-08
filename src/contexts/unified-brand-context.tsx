@@ -60,9 +60,12 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
     if (!brand) return brand;
 
     // Convert logoUrl to logoDataUrl for compatibility with Creative Studio
+    // IMPORTANT: Preserve logo data - never let it be lost during conversion
+    const logoData = brand.logoUrl || brand.logoDataUrl || '';
+
     return {
       ...brand,
-      logoDataUrl: brand.logoUrl || brand.logoDataUrl || '',
+      logoDataUrl: logoData,
       // Ensure all required fields exist
       primaryColor: brand.primaryColor || brand.brandColors?.primary || '#3B82F6',
       accentColor: brand.accentColor || brand.brandColors?.secondary || '#10B981',
@@ -81,6 +84,29 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
       services: brand.services || [],
       designExamples: brand.designExamples || [],
     };
+  };
+
+  // Safe update function that preserves logo data
+  const safeUpdateProfile = async (profileId: string, updates: Partial<CompleteBrandProfile>): Promise<void> => {
+    // Get current brand to preserve logo if not explicitly being updated
+    const currentBrandValue = currentBrandRef.current;
+
+    // If we're not explicitly updating the logo, preserve the existing one
+    if (currentBrandValue && !updates.logoDataUrl && !updates.logoUrl) {
+      // Preserve existing logo data
+      const existingLogo = currentBrandValue.logoDataUrl || currentBrandValue.logoUrl;
+      if (existingLogo) {
+        updates.logoUrl = existingLogo; // Save as logoUrl for MongoDB
+        console.log('🛡️ Preserving existing logo during update:', existingLogo.substring(0, 50) + '...');
+      }
+    } else if (updates.logoDataUrl) {
+      // Convert logoDataUrl to logoUrl for MongoDB storage
+      updates.logoUrl = updates.logoDataUrl;
+      console.log('💾 Saving new logo data:', updates.logoDataUrl.substring(0, 50) + '...');
+    }
+
+    // Call the original update function
+    await updateProfile(profileId, updates);
   };
   const [brandScopedServices, setBrandScopedServices] = useState<Map<string, any>>(new Map());
 
@@ -293,7 +319,7 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
     error,
     selectBrand,
     saveProfile,
-    updateProfile,
+    updateProfile: safeUpdateProfile, // Use safe update that preserves logos
     deleteProfile,
     refreshBrands,
     getBrandStorage,

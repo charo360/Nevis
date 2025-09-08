@@ -150,10 +150,17 @@ export function LogoUploadStep({
   };
 
   const removeLogo = () => {
+    // Explicitly remove logo - this is the ONLY way a logo should be removed
+    console.log('🗑️ Explicitly removing logo from brand profile');
     updateBrandProfile({ logoDataUrl: '' });
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+
+    toast({
+      title: "Logo Removed",
+      description: "Your logo has been removed from the brand profile.",
+    });
   };
 
   const handleSaveProfile = async () => {
