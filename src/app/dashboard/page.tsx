@@ -171,7 +171,10 @@ export default function DashboardPage() {
   const coreFeatures = features.filter(f => f.isCore);
   const additionalFeatures = features.filter(f => !f.isCore);
 
-  const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
+  const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY &&
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY !== 'pk_test_placeholder'
+    ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+    : null;
 
   const createCheckout = async (priceId: string) => {
     if (!user || !user.uid) {
@@ -191,6 +194,10 @@ export default function DashboardPage() {
       if (data.error) throw new Error(data.error)
 
       // Redirect to Stripe Checkout
+      if (!stripePromise) {
+        throw new Error('Stripe is not configured. Please contact support.');
+      }
+
       const stripe = await stripePromise
       if (!stripe) throw new Error('Stripe failed to load')
 
