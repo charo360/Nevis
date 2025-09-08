@@ -115,22 +115,43 @@ export function BrandProvider({ children }: BrandProviderProps) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to load brand profiles');
+        const errorText = await response.text();
+        console.error('❌ API error:', response.status, errorText);
+        throw new Error(`Failed to load brand profiles: ${response.status}`);
       }
+
       const userBrands = await response.json();
       console.log('✅ Brands loaded successfully:', userBrands.length, 'brands found');
-      console.log('📋 Brand names:', userBrands.map(b => b.businessName || b.name));
-      setBrands(userBrands);
+
+      if (userBrands.length > 0) {
+        console.log('📋 Brand names:', userBrands.map(b => b.business_name || b.businessName || b.name));
+      } else {
+        console.log('📋 No brands found for user - this is normal for new users');
+      }
+
+      setBrands(userBrands || []);
 
       // If no current brand is selected, select the first active one
       if (!currentBrand && userBrands.length > 0) {
-        const activeBrand = userBrands.find(b => b.isActive) || userBrands[0];
-        console.log('🎯 Auto-selecting brand:', activeBrand.businessName || activeBrand.name);
+        const activeBrand = userBrands.find(b => b.is_active || b.isActive) || userBrands[0];
+        console.log('🎯 Auto-selecting brand:', activeBrand.business_name || activeBrand.businessName || activeBrand.name);
         setCurrentBrand(activeBrand);
+      } else if (userBrands.length === 0) {
+        console.log('📝 No brands available - user should create their first brand');
+        setCurrentBrand(null);
       }
     } catch (err) {
       console.error('❌ Error loading brands:', err);
-      setError('Failed to load brand profiles');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load brand profiles';
+
+      // Don't show error for new users with no brands - this is expected
+      if (errorMessage.includes('404') || errorMessage.includes('No brands found')) {
+        console.log('📝 New user with no brands - this is expected');
+        setError(null);
+      } else {
+        setError(errorMessage);
+      }
+      setBrands([]);
     } finally {
       setLoading(false);
       console.log('✅ Brand loading completed');

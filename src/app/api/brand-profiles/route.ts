@@ -1,7 +1,7 @@
-// API routes for brand profile management
+// API routes for brand profile management (Supabase)
 import { NextRequest, NextResponse } from 'next/server';
-import { brandProfileMongoService } from '@/lib/mongodb/services/brand-profile-service';
 import { getAuthenticatedUser } from '@/lib/auth/supabase-jwt';
+import { supabase } from '@/lib/supabase/config';
 
 // GET /api/brand-profiles - Load user's brand profiles
 export async function GET(request: NextRequest) {
@@ -16,10 +16,27 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const profiles = await brandProfileMongoService.loadBrandProfiles(user.userId);
-    return NextResponse.json(profiles);
+    console.log('🔄 Loading brand profiles for user:', user.userId);
+
+    // Load brands from Supabase
+    const { data: profiles, error } = await supabase
+      .from('brands')
+      .select('*')
+      .eq('user_id', user.userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('❌ Supabase error loading brands:', error);
+      return NextResponse.json(
+        { error: 'Failed to load brand profiles' },
+        { status: 500 }
+      );
+    }
+
+    console.log('✅ Loaded', profiles?.length || 0, 'brand profiles');
+    return NextResponse.json(profiles || []);
   } catch (error) {
-    console.error('Error loading brand profiles:', error);
+    console.error('❌ Error loading brand profiles:', error);
     return NextResponse.json(
       { error: 'Failed to load brand profiles' },
       { status: 500 }
@@ -41,19 +58,43 @@ export async function POST(request: NextRequest) {
     }
 
     const profile = await request.json();
+    console.log('🔄 Creating brand profile for user:', user.userId);
 
-    // Use authenticated user ID instead of trusting the request body
-    const profileWithUserId = {
-      ...profile,
-      userId: user.userId,
-    };
+    // Create brand profile in Supabase
+    const { data: newProfile, error } = await supabase
+      .from('brands')
+      .insert({
+        user_id: user.userId,
+        business_name: profile.businessName || profile.name,
+        business_type: profile.businessType,
+        description: profile.description,
+        location: profile.location,
+        target_audience: profile.targetAudience,
+        brand_colors: profile.brandColors,
+        logo_url: profile.logoUrl,
+        website: profile.website,
+        social_media: profile.socialMedia,
+        is_active: profile.isActive !== false, // Default to true
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
 
-    const profileId = await brandProfileMongoService.saveBrandProfile(profileWithUserId);
-    return NextResponse.json({ id: profileId });
+    if (error) {
+      console.error('❌ Supabase error creating brand:', error);
+      return NextResponse.json(
+        { error: 'Failed to create brand profile' },
+        { status: 500 }
+      );
+    }
+
+    console.log('✅ Brand profile created:', newProfile.id);
+    return NextResponse.json(newProfile);
   } catch (error) {
-    console.error('Error saving brand profile:', error);
+    console.error('❌ Error creating brand profile:', error);
     return NextResponse.json(
-      { error: 'Failed to save brand profile' },
+      { error: 'Failed to create brand profile' },
       { status: 500 }
     );
   }
