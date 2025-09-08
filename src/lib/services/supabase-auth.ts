@@ -44,7 +44,8 @@ class SupabaseAuthService {
         options: {
           data: {
             full_name: fullName,
-          }
+          },
+          emailRedirectTo: undefined // Disable email confirmation
         }
       });
 
@@ -62,6 +63,8 @@ class SupabaseAuthService {
           userFriendlyMessage = 'Please enter a valid email address.';
         } else if (error.message.includes('signup_disabled')) {
           userFriendlyMessage = 'Account registration is currently disabled. Please contact support.';
+        } else if (error.message.includes('For security purposes, you can only request this after')) {
+          userFriendlyMessage = 'Please wait a moment before trying again. Too many requests were made recently.';
         }
 
         throw new Error(userFriendlyMessage);

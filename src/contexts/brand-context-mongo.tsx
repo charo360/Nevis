@@ -5,6 +5,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 // MongoDB services accessed via API routes only
 import type { CompleteBrandProfile } from '@/lib/mongodb/services/brand-profile-service';
+import { supabase } from '@/lib/supabase/config';
 
 interface BrandContextType {
   // Current brand state
@@ -35,13 +36,19 @@ interface BrandProviderProps {
 }
 
 export function BrandProvider({ children }: BrandProviderProps) {
-  const { user, getAccessToken } = useAuth();
+  const { user } = useAuth();
   const [currentBrand, setCurrentBrand] = useState<CompleteBrandProfile | null>(null);
   const [brands, setBrands] = useState<CompleteBrandProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
+
+  // Helper function to get Supabase session token
+  const getSupabaseToken = async (): Promise<string | null> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token || null;
+  };
 
   // Load brands when user changes
   useEffect(() => {
@@ -95,7 +102,7 @@ export function BrandProvider({ children }: BrandProviderProps) {
       setError(null);
       setHasAttemptedLoad(true); // Mark that we've attempted to load
 
-      const token = getAccessToken();
+      const token = await getSupabaseToken();
       if (!token) {
         throw new Error('No access token available');
       }
@@ -145,7 +152,7 @@ export function BrandProvider({ children }: BrandProviderProps) {
       setSaving(true);
       setError(null);
 
-      const token = getAccessToken();
+      const token = await getSupabaseToken();
       if (!token) {
         throw new Error('No access token available');
       }
@@ -187,7 +194,7 @@ export function BrandProvider({ children }: BrandProviderProps) {
       setSaving(true);
       setError(null);
 
-      const token = getAccessToken();
+      const token = await getSupabaseToken();
       if (!token) {
         throw new Error('No access token available');
       }
@@ -230,7 +237,7 @@ export function BrandProvider({ children }: BrandProviderProps) {
       setSaving(true);
       setError(null);
 
-      const token = getAccessToken();
+      const token = await getSupabaseToken();
       if (!token) {
         throw new Error('No access token available');
       }

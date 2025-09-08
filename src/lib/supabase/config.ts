@@ -20,14 +20,16 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true,
+    // Disable email confirmation for development
+    flowType: 'implicit'
   }
 });
 
 // Database table names
 export const TABLES = {
   USERS: 'users',
-  BRANDS: 'brands', 
+  BRANDS: 'brands',
   POSTS: 'posts',
   USER_PREFERENCES: 'user_preferences'
 } as const;
