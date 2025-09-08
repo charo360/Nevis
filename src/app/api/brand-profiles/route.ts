@@ -59,6 +59,41 @@ export async function POST(request: NextRequest) {
 
     const profile = await request.json();
     console.log('🔄 Creating brand profile for user:', user.userId);
+    console.log('📝 Profile data received:', JSON.stringify(profile, null, 2));
+
+    // First, ensure user exists in public.users table
+    const { data: existingUser, error: userCheckError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', user.userId)
+      .single();
+
+    if (userCheckError && userCheckError.code === 'PGRST116') {
+      // User doesn't exist in public.users, create them
+      console.log('👤 Creating user profile in public.users table');
+      const { error: userCreateError } = await supabase
+        .from('users')
+        .insert({
+          id: user.userId,
+          email: user.email,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+
+      if (userCreateError) {
+        console.error('❌ Failed to create user profile:', userCreateError);
+        return NextResponse.json(
+          { error: 'Failed to create user profile' },
+          { status: 500 }
+        );
+      }
+    } else if (userCheckError) {
+      console.error('❌ Error checking user existence:', userCheckError);
+      return NextResponse.json(
+        { error: 'Database error checking user' },
+        { status: 500 }
+      );
+    }
 
     // Create brand profile in Supabase (matching the schema)
     const { data: newProfile, error } = await supabase
@@ -82,8 +117,14 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('❌ Supabase error creating brand:', error);
+      console.error('❌ Error details:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      });
       return NextResponse.json(
-        { error: 'Failed to create brand profile' },
+        { error: `Failed to create brand profile: ${error.message}` },
         { status: 500 }
       );
     }
