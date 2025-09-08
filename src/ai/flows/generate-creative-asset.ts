@@ -244,11 +244,21 @@ Analyze the uploaded image, make intelligent creative decisions, and create a br
                 const bp = input.brandProfile;
                 let brandGuidelines = '\n\n**Brand Integration Guidelines:**';
 
-                if (bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
+                console.log('🎨 Creative Studio: Brand profile logo data:', {
+                    hasLogo: !!bp.logoDataUrl,
+                    logoLength: bp.logoDataUrl?.length || 0,
+                    logoType: bp.logoDataUrl?.includes('image/svg+xml') ? 'SVG' : 'Raster',
+                    businessName: bp.businessName
+                });
+
+                if (bp.logoDataUrl) {
+                    // Include ALL logo types - both SVG and raster images
                     promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
-                    brandGuidelines += ` Create a complete marketing design that uses the uploaded image as the main design element. If a brand logo is provided, integrate it as a small brand identifier within the larger marketing composition - focus on creating a full marketing design, not a logo-centric layout.`
-                } else if (bp.logoDataUrl && bp.logoDataUrl.includes('image/svg+xml')) {
+                    brandGuidelines += ` Create a complete marketing design that uses the uploaded image as the main design element. IMPORTANT: A brand logo has been provided - integrate it prominently as a key brand identifier within the marketing composition. The logo should be clearly visible and well-positioned in the design.`
+                    console.log('✅ Creative Studio: Logo added to generation prompt');
+                } else {
                     brandGuidelines += ` Create a comprehensive marketing design that represents the brand identity while prominently featuring the uploaded image as the main visual element.`
+                    console.log('⚠️ Creative Studio: No logo data available for brand');
                 }
 
                 brandGuidelines += `\n- Use brand colors: ${bp.primaryColor || 'brand-appropriate colors'}`;
@@ -456,12 +466,22 @@ ${designDNA}`;
                 }
 
                 onBrandPrompt += `\n- **MARKETING DESIGN FOCUS:** Create a complete, professional marketing design with full layout composition. This should be a comprehensive social media post design, NOT just a logo. Include backgrounds, graphics, text elements, and visual hierarchy.`;
-                onBrandPrompt += `\n- **Brand Integration:** ${bp.logoDataUrl ? 'If a logo is provided, integrate it as a small brand element within the complete marketing design - focus on creating a full marketing composition, not logo-centric design' : 'Create a complete marketing design that represents the brand identity'}.`;
+                onBrandPrompt += `\n- **Brand Integration:** ${bp.logoDataUrl ? 'IMPORTANT: A brand logo has been provided - integrate it prominently and clearly within the complete marketing design. The logo should be visible and well-positioned as a key brand identifier.' : 'Create a complete marketing design that represents the brand identity'}.`;
                 onBrandPrompt += `\n- **Design Completeness:** Generate a full marketing design with backgrounds, graphics, text layouts, and visual elements - NOT just a logo or simple graphic.`;
                 onBrandPrompt += `\n- **Critical Language Rule:** ALL text must be in clear, readable ENGLISH only. Never use foreign languages, corrupted text, or unreadable symbols.`;
 
-                if (bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
+                console.log('🎨 Creative Studio: Processing brand logo for generation:', {
+                    hasLogo: !!bp.logoDataUrl,
+                    logoLength: bp.logoDataUrl?.length || 0,
+                    businessName: bp.businessName
+                });
+
+                if (bp.logoDataUrl) {
+                    // Include ALL logo types - both SVG and raster images
                     promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
+                    console.log('✅ Creative Studio: Brand logo added to generation prompt');
+                } else {
+                    console.log('⚠️ Creative Studio: No logo data found in brand profile');
                 }
                 textPrompt = onBrandPrompt;
                 if (textPrompt) {
@@ -490,12 +510,14 @@ ${designDNA}`;
                     promptParts.push({ media: { url: input.referenceAssetUrl!, contentType: getMimeTypeFromDataURI(input.referenceAssetUrl!) } });
                 }
 
-                if (bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
+                if (bp.logoDataUrl) {
                     onBrandPrompt += `\n- **COMPLETE MARKETING DESIGN:** Create a full marketing video with comprehensive visual storytelling - NOT just logo animation. Include backgrounds, graphics, text elements, and complete scene composition.`;
-                    onBrandPrompt += `\n- **Brand Element Integration:** If a logo is provided, integrate it as a small brand element within the complete marketing video - focus on creating a full marketing story, not logo-centric content.`;
+                    onBrandPrompt += `\n- **Brand Element Integration:** IMPORTANT: A brand logo has been provided - integrate it prominently within the complete marketing video as a key brand identifier. The logo should be clearly visible throughout the video sequence.`;
                     promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
-                } else if (bp.logoDataUrl && bp.logoDataUrl.includes('image/svg+xml')) {
+                    console.log('✅ Creative Studio: Brand logo added to video generation prompt');
+                } else {
                     onBrandPrompt += `\n- **COMPREHENSIVE MARKETING VIDEO:** Create a complete marketing video that represents the brand identity with full scene composition, storytelling, and visual elements.`;
+                    console.log('⚠️ Creative Studio: No logo data found for video generation');
                 }
 
                 // Add selected design examples as reference

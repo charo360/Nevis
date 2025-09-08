@@ -108,6 +108,18 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
             let result;
             let aiResponse: Message;
 
+            // Debug brand profile data being passed to generation
+            console.log('🎨 Creative Studio: Generation request details:', {
+                selectedRevoModel,
+                outputType,
+                hasBrandProfile: !!brandProfile,
+                useBrandProfile,
+                brandName: brandProfile?.businessName,
+                hasLogo: !!brandProfile?.logoDataUrl,
+                logoLength: brandProfile?.logoDataUrl?.length || 0,
+                prompt: currentInput.substring(0, 100) + '...'
+            });
+
             if (selectedRevoModel === 'revo-2.0' && outputType === 'image' && brandProfile) {
                 // Use Creative Studio's advanced creative asset generation for Revo 2.0
                 // This provides unique Creative Studio features like inpainting, outpainting,
