@@ -333,27 +333,19 @@ function QuickContentPage() {
   // Process generated post with Firebase Storage upload and database fallback
   const processPostImages = async (post: GeneratedPost): Promise<GeneratedPost> => {
     try {
-      // Check if user is authenticated for Firebase Storage
-      if (!user) {
-        toast({
-          title: "Content Saved",
-          description: "Content saved to database. Sign in to save images permanently in the cloud.",
-          variant: "default",
-        });
+      // Check if user is authenticated
+      if (!user?.userId) {
+        console.warn('⚠️ No user ID available for image processing');
         return post; // Return original post with data URLs
       }
 
+      // Use MongoDB GridFS for image storage (no Firebase)
+      console.log('🔄 Processing post images with MongoDB GridFS...');
+      const { mongoImageStorage } = await import('@/lib/services/mongodb-image-storage');
+      const processedPost = await mongoImageStorage.processGeneratedPost(post, user.userId);
 
-      // TEMPORARY: Skip Firebase Storage upload until rules are deployed
-
-      // Save to database with data URLs (temporary solution)
-      toast({
-        title: "Content Saved to Database",
-        description: "Content saved successfully. Deploy Firebase Storage rules for permanent image URLs.",
-        variant: "default",
-      });
-
-      return post; // Return original post with data URLs
+      console.log('✅ Post images processed successfully with MongoDB');
+      return processedPost;
 
       /* UNCOMMENT THIS AFTER DEPLOYING FIREBASE STORAGE RULES:
       try {
@@ -394,7 +386,7 @@ function QuickContentPage() {
   const handlePostGenerated = async (post: GeneratedPost) => {
     console.log('🔄 Processing individual post:', post.id || 'no-id');
 
-    // Process images with Firebase Storage upload
+    // Process images with MongoDB GridFS storage
     let processedPost = await processPostImages(post);
 
     // Add the processed post to the beginning of the array (no limit)
