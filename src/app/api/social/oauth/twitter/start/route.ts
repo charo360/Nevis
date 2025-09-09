@@ -37,10 +37,10 @@ export async function GET(req: Request) {
   }
 
   try {
-  // Use NEXT_PUBLIC_APP_URL when available (build-time / production). Fall back to localhost for local dev.
-  const baseUrlRaw = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001';
-  const baseUrl = baseUrlRaw.replace(/\/$/, '');
-  const callbackUrl = `${baseUrl}/api/social/oauth/twitter/callback`;
+    // Use NEXT_PUBLIC_APP_URL when available (build-time / production). Fall back to localhost for local dev.
+    const baseUrlRaw = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const baseUrl = baseUrlRaw.replace(/\/$/, '');
+    const callbackUrl = `${baseUrl}/api/social/oauth/twitter/callback`;
 
     // Initialize Twitter client with OAuth 2.0
     const twitterClient = new TwitterApi({
@@ -56,15 +56,15 @@ export async function GET(req: Request) {
       }
     );
 
-  // Sanity-check the generated URL params to catch redirect_uri / client_id mismatches early
+    // Sanity-check the generated URL params to catch redirect_uri / client_id mismatches early
     try {
       const parsed = new URL(authUrl);
       const redirectParam = parsed.searchParams.get('redirect_uri');
 
-  // Log non-sensitive metadata to help debug 400 errors from X/Twitter
-  console.info('[twitter-oauth] generated authUrl callbackUrl=', callbackUrl);
+      // Log non-sensitive metadata to help debug 400 errors from X/Twitter
+      console.info('[twitter-oauth] generated authUrl callbackUrl=', callbackUrl);
 
-  if (redirectParam && redirectParam !== callbackUrl) {
+      if (redirectParam && redirectParam !== callbackUrl) {
         console.error('[twitter-oauth] redirect_uri mismatch', { redirectParam, callbackUrl });
         // Continue — still store state and redirect, but surface the mismatch in logs for diagnosis
       }
@@ -85,7 +85,7 @@ export async function GET(req: Request) {
     return NextResponse.redirect(authUrl);
   } catch (error) {
     console.error('Twitter OAuth initiation error:', error);
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     return NextResponse.redirect(`${baseUrl}/social-connect?error=twitter_oauth_failed`);
   }
 }

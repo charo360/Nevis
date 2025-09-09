@@ -24,7 +24,7 @@ export async function GET(req: Request) {
   const code = url.searchParams.get('code');
   const state = url.searchParams.get('state');
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
   if (!code || !state) {
     return NextResponse.redirect(`${baseUrl}/social-connect?error=invalid_request`);
@@ -47,10 +47,10 @@ export async function GET(req: Request) {
       clientSecret: process.env.TWITTER_CLIENT_SECRET || process.env.TWITTER_SECRET_KEY!,
     });
 
-  // Build deterministic callbackUrl from NEXT_PUBLIC_APP_URL or localhost
-  const baseUrlRaw = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001';
-  const baseUrlClean = baseUrlRaw.replace(/\/$/, '');
-  const callbackUrl = `${baseUrlClean}/api/social/oauth/twitter/callback`;
+    // Build deterministic callbackUrl from NEXT_PUBLIC_APP_URL or localhost
+    const baseUrlRaw = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const baseUrlClean = baseUrlRaw.replace(/\/$/, '');
+    const callbackUrl = `${baseUrlClean}/api/social/oauth/twitter/callback`;
 
     // Get access token
     const { client: loggedClient, accessToken, refreshToken } = await twitterClient.loginWithOAuth2({
@@ -88,10 +88,11 @@ export async function GET(req: Request) {
     await writeStates(states);
 
     // For development, redirect to localhost
-    const redirectUrl = `http://localhost:3001/social-connect?oauth_success=true&platform=twitter&username=${userObject.username}`;
+    const redirectUrl = `${baseUrlClean}/social-connect?oauth_success=true&platform=twitter&username=${userObject.username}`;
     return NextResponse.redirect(redirectUrl);
   } catch (error) {
     console.error('Twitter OAuth callback error:', error);
-    return NextResponse.redirect(`http://localhost:3001/social-connect?error=twitter_callback_failed`);
+    const errBase = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/$/, '');
+    return NextResponse.redirect(`${errBase}/social-connect?error=twitter_callback_failed`);
   }
 }
