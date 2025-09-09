@@ -11,8 +11,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "cleanup:posts": "node scripts/cleanup-posts.mjs",
-    "export:logo": "node scripts/export-logo.mjs"
+    "cleanup:posts": "node scripts/cleanup-posts.mjs"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.14.1",
