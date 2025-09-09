@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
 import { postTweetForUser } from '@/lib/social/twitter';
+import { postFacebookForUser } from '@/lib/social/facebook';
+import { postInstagramForUser } from '@/lib/social/instagram';
+import { postLinkedInForUser } from '@/lib/social/linkedin';
 
 const SCHEDULE_STORE = path.resolve(process.cwd(), 'tmp', 'scheduled-posts.json');
 
@@ -64,8 +67,49 @@ export async function POST(req: Request) {
             results.push({ id, ok: true, providerId: tweet?.id });
             break;
           }
+          case 'Facebook': {
+            const post = await postFacebookForUser(userId, text, imageUrl ?? undefined);
+            store[id] = {
+              ...item,
+              status: 'posted',
+              postedAt: new Date().toISOString(),
+              attempts,
+              provider: 'Facebook',
+              providerPostId: post?.id || null,
+              lastError: null,
+            };
+            results.push({ id, ok: true, providerId: post?.id });
+            break;
+          }
+          case 'Instagram': {
+            const post = await postInstagramForUser(userId, text, imageUrl ?? undefined);
+            store[id] = {
+              ...item,
+              status: 'posted',
+              postedAt: new Date().toISOString(),
+              attempts,
+              provider: 'Instagram',
+              providerPostId: post?.id || null,
+              lastError: null,
+            };
+            results.push({ id, ok: true, providerId: post?.id });
+            break;
+          }
+          case 'LinkedIn': {
+            const post = await postLinkedInForUser(userId, text, imageUrl ?? undefined);
+            store[id] = {
+              ...item,
+              status: 'posted',
+              postedAt: new Date().toISOString(),
+              attempts,
+              provider: 'LinkedIn',
+              providerPostId: post?.id || null,
+              lastError: null,
+            };
+            results.push({ id, ok: true, providerId: post?.id });
+            break;
+          }
           default: {
-            // Leave in scheduled state for other platforms (not yet implemented)
             store[id] = {
               ...item,
               attempts,

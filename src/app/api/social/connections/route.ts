@@ -53,14 +53,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-  const body = await req.json();
-  const { platform, socialId, accessToken, accessTokenSecret, refreshToken, expiresAt, profile } = body;
+    const body = await req.json();
+    const { platform, socialId, accessToken, accessTokenSecret, refreshToken, expiresAt, profile } = body;
 
     // Only allow platforms that are configured on the server (prevent fake/manual connects)
     const configuredProviders = {
-      facebook: !!(process.env.FACEBOOK_API_KEY || process.env.FACEBOOK_CLIENT_ID || process.env.NEXT_PUBLIC_FACEBOOK_API_KEY),
-      twitter: !!(process.env.TWITTER_API_KEY || process.env.TWITTER_CLIENT_ID || process.env.TWITTER_API_KEY),
-      // instagram/linkedin intentionally left out for now
+      facebook: !!(process.env.FACEBOOK_API_KEY || process.env.FACEBOOK_CLIENT_ID || process.env.NEXT_PUBLIC_FACEBOOK_API_KEY || process.env.FACEBOOK_APP_ID),
+      twitter: !!(process.env.TWITTER_API_KEY || process.env.TWITTER_CLIENT_ID || process.env.TWITTER_CLIENT_SECRET),
+      instagram: !!(process.env.INSTAGRAM_APP_ID || process.env.FACEBOOK_APP_ID),
+      linkedin: !!(process.env.LINKEDIN_CLIENT_ID || process.env.LINKEDIN_CLIENT_SECRET),
     };
 
     if (!platform || !socialId || !accessToken) {
