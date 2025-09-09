@@ -20,13 +20,15 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
+// import { useAuth } from '@/hooks/use-auth'; // MongoDB auth - commented out
+import { useSupabaseAuth } from '@/hooks/use-supabase-auth'; // Using Supabase auth
 import { useToast } from '@/hooks/use-toast';
 import { useBrandOperations } from '@/contexts/brand-context-mongo';
 
 export default function AuthPage() {
   const router = useRouter();
-  const { signIn, signUp, loading } = useAuth();
+  // const { signIn, signUp, loading } = useAuth(); // MongoDB auth - commented out
+  const { signIn, signUp, loading } = useSupabaseAuth(); // Using Supabase auth
   const { toast } = useToast();
   const { refreshBrands } = useBrandOperations();
 

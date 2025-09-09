@@ -577,6 +577,7 @@ export async function generateContentWithArtifactsAction(
     const enhancedPost: GeneratedPost = {
       ...basePost,
       id: Date.now().toString(),
+      imageUrl: enhancedResult.imageUrl, // Add main imageUrl for processing
       variants: [{
         platform: platform,
         imageUrl: enhancedResult.imageUrl

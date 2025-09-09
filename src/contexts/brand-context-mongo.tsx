@@ -1,4 +1,4 @@
-// MongoDB-based brand context (replaces Firebase brand context)
+// Supabase brand context (Mongo/Firebase deprecated)
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
@@ -122,14 +122,17 @@ export function BrandProvider({ children }: BrandProviderProps) {
 
       const userBrands = await response.json();
       console.log('✅ Brands loaded successfully:', userBrands.length, 'brands found');
+      console.log('🔍 Raw brand data:', userBrands);
 
       if (userBrands.length > 0) {
-        console.log('📋 Brand names:', userBrands.map(b => b.business_name || b.businessName || b.name));
+        console.log('📋 Brand names:', userBrands.map(b => b.businessName || b.business_name || b.name));
+        console.log('📋 First brand details:', userBrands[0]);
       } else {
         console.log('📋 No brands found for user - this is normal for new users');
       }
 
       setBrands(userBrands || []);
+      console.log('🔄 Brands state updated, triggering re-render');
 
       // If no current brand is selected, select the first active one
       if (!currentBrand && userBrands.length > 0) {

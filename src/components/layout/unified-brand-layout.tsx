@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { UnifiedBrandProvider, useUnifiedBrand, useBrandChangeListener } from '@/contexts/unified-brand-context';
 import type { CompleteBrandProfile } from '@/components/cbrand/cbrand-wizard';
 
@@ -14,13 +14,13 @@ function UnifiedBrandLayoutContent({ children }: UnifiedBrandLayoutProps) {
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Listen for brand changes and log them
-  useBrandChangeListener((brand) => {
+  useBrandChangeListener(useCallback((brand) => {
     
     // Mark as initialized once we have a brand or finished loading
     if (!isInitialized && (!loading || brand)) {
       setIsInitialized(true);
     }
-  });
+  }, [isInitialized, loading]));
 
   // Show loading state while initializing
   if (!isInitialized && loading) {

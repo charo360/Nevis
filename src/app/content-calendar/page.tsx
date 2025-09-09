@@ -16,8 +16,8 @@ import type { CompleteBrandProfile } from "@/components/cbrand/cbrand-wizard";
 import { useRouter } from "next/navigation";
 import { useBrand } from "@/contexts/brand-context-mongo";
 import { UnifiedBrandLayout, BrandContent, BrandSwitchingStatus } from "@/components/layout/unified-brand-layout";
-import { useUnifiedBrand, useBrandStorage, useBrandChangeListener } from "@/contexts/unified-brand-context";
-import { STORAGE_FEATURES } from "@/lib/services/brand-scoped-storage";
+import { useUnifiedBrand, useBrandChangeListener } from "@/contexts/unified-brand-context";
+import { STORAGE_FEATURES, BrandScopedStorage } from "@/lib/services/brand-scoped-storage";
 import { SidebarInset } from "@/components/ui/sidebar";
 
 interface ScheduledContent {
@@ -58,7 +58,6 @@ const SERVICE_COLORS = [
 
 function ContentCalendarPageContent() {
   const { currentBrand, brands, loading: brandLoading, selectBrand } = useUnifiedBrand();
-  const scheduleStorage = useBrandStorage(STORAGE_FEATURES.CONTENT_CALENDAR);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [scheduledContent, setScheduledContent] = useState<ScheduledContent[]>([]);
   const [services, setServices] = useState<Service[]>([]);
@@ -94,20 +93,19 @@ function ContentCalendarPageContent() {
       }
 
       // Load scheduled content from brand-scoped storage
-      if (scheduleStorage) {
-        const storedSchedule = scheduleStorage.getItem<ScheduledContent[]>() || [];
-        setScheduledContent(storedSchedule);
-      }
+      // Create storage instance directly to avoid circular dependency
+      const brandStorage = new BrandScopedStorage({ brandId: brand.id, feature: STORAGE_FEATURES.CONTENT_CALENDAR });
+      const storedSchedule = brandStorage.getItem<ScheduledContent[]>() || [];
+      setScheduledContent(storedSchedule);
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Failed to load data",
-        description: "Could not read your content calendar data.",
-      });
+      console.error('Failed to load content calendar data:', error);
+      // Use a simple error state instead of toast to avoid dependency issues
+      setScheduledContent([]);
+      setServices([]);
     } finally {
       setIsLoading(false);
     }
-  }, [scheduleStorage, toast]));
+  }, [])); // Remove dependencies to prevent infinite loop
 
   // Handle brand selection logic - only when truly needed
   useEffect(() => {
@@ -127,12 +125,13 @@ function ContentCalendarPageContent() {
 
   // Save scheduled content to brand-scoped storage
   const saveScheduledContent = (content: ScheduledContent[]) => {
-    if (!scheduleStorage) {
+    if (!currentBrand?.id) {
       return;
     }
 
     try {
-      scheduleStorage.setItem(content);
+      const brandStorage = new BrandScopedStorage({ brandId: currentBrand.id, feature: STORAGE_FEATURES.CONTENT_CALENDAR });
+      brandStorage.setItem(content);
       setScheduledContent(content);
     } catch (error) {
       toast({

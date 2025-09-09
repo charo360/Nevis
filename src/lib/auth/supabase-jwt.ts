@@ -3,10 +3,19 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseAnonKey;
 
 // Create Supabase client for server-side operations
-// Using anon key for now - in production you'd use service role key
-const supabaseAdmin = createClient(supabaseUrl, supabaseAnonKey, {
+// Use service role key for admin operations, anon key for user operations
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
+
+// Create client with anon key for user operations
+const supabaseUser = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false
@@ -26,7 +35,28 @@ export interface SupabaseUser {
  */
 export async function verifySupabaseToken(token: string): Promise<SupabaseUser | null> {
   try {
-    // Verify the JWT token with Supabase
+    // TEMPORARY FIX: If service role key is not properly set, use client-side verification
+    if (supabaseServiceKey === supabaseAnonKey) {
+      console.log('⚠️ Using temporary token verification (service role key not set)');
+
+      // Use the user client to verify the token
+      const { data: { user }, error } = await supabaseUser.auth.getUser(token);
+
+      if (error || !user) {
+        console.error('❌ Supabase token verification failed:', error?.message);
+        return null;
+      }
+
+      return {
+        userId: user.id,
+        email: user.email || '',
+        displayName: user.user_metadata?.full_name || '',
+        photoURL: user.user_metadata?.avatar_url || '',
+        isAnonymous: false
+      };
+    }
+
+    // Normal verification with service role key
     const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
 
     if (error || !user) {

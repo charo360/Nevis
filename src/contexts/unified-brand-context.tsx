@@ -126,12 +126,13 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
 
   // Sync current brand with the hook's current profile
   useEffect(() => {
+    const currentBrandValue = currentBrandRef.current;
 
     // Only sync if currentProfile exists and is different from currentBrand
-    if (currentProfile && currentProfile !== currentBrand) {
+    if (currentProfile && currentProfile !== currentBrandValue) {
       setCurrentBrand(currentProfile);
       updateAllBrandScopedServices(currentProfile);
-    } else if (!currentProfile && !currentBrand && brands.length > 0) {
+    } else if (!currentProfile && !currentBrandValue && brands.length > 0) {
       // Auto-select first brand only if no brand is selected at all and brands exist
       // This should only happen on initial load, not during navigation
       const savedBrandId = localStorage.getItem('selectedBrandId');
@@ -145,13 +146,13 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
         }
       }
 
-      if (!currentBrand) { // Only select if no brand is currently selected
+      if (!currentBrandValue) { // Only select if no brand is currently selected
         setCurrentBrand(brandToSelect);
         setCurrentProfile(brandToSelect);
         updateAllBrandScopedServices(brandToSelect);
       }
     }
-  }, [currentProfile, brands.length]); // Removed currentBrand and setCurrentProfile to prevent infinite loop
+  }, [currentProfile, brands.length]); // Use ref to avoid circular dependency
 
   // Update all brand-scoped services when brand changes
   const updateAllBrandScopedServices = useCallback((brand: CompleteBrandProfile | null) => {
@@ -224,7 +225,7 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
     });
     window.dispatchEvent(event);
 
-  }, [currentBrand, currentProfile, setCurrentProfile, updateAllBrandScopedServices]);
+  }, [setCurrentProfile, updateAllBrandScopedServices]); // Remove currentBrand and currentProfile from dependencies
 
   // localStorage restoration is now handled in the main sync effect above
 

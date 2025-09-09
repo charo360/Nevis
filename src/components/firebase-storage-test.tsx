@@ -22,6 +22,7 @@ interface TestResult {
 }
 
 export function FirebaseStorageTest() {
+  // Firebase removed; show deprecation notice
   const { user } = useFirebaseAuth();
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<TestResult | null>(null);
@@ -43,10 +44,15 @@ export function FirebaseStorageTest() {
     setTestImageUrl(null);
 
     try {
-      console.log('🧪 Starting Firebase Storage test...');
+      console.log('🧪 Firebase Storage disabled - skipping test');
       
       // Test connection and rules
-      const connectionTest = await firebaseImageStorage.testConnection(user.userId);
+      const connectionTest = {
+        success: false,
+        canUpload: false,
+        canRead: false,
+        error: 'Firebase Storage disabled (migrating to Supabase)'
+      } as TestResult;
       
       if (connectionTest.success && connectionTest.canUpload) {
         // Create a test image (1x1 pixel PNG)
@@ -121,7 +127,7 @@ export function FirebaseStorageTest() {
           🔥 Firebase Storage Test
         </CardTitle>
         <CardDescription>
-          Test Firebase Storage connection, upload functionality, and public image access
+          Firebase Storage is disabled. We are using Supabase going forward.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
