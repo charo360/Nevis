@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+export const runtime = 'nodejs';
+
 import { verifyToken } from '@/lib/auth/jwt';
 import { postLinkedInForUser } from '@/lib/social/linkedin';
 

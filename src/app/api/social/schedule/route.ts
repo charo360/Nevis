@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth/jwt';
 import fs from 'fs/promises';
 import path from 'path';
+export const runtime = 'nodejs';
+
 
 const SCHEDULE_STORE = path.resolve(process.cwd(), 'tmp', 'scheduled-posts.json');
 

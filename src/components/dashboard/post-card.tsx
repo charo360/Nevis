@@ -522,14 +522,14 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
               {/* Platform Icon Header - Left aligned */}
               <div className="flex items-center justify-start p-3 bg-muted/30 rounded-lg">
                 <div className="flex items-center gap-2">
-                  {platformIcons[safeVariants[0]?.platform || 'instagram']}
+                  {platformIcons[(safeVariants[0]?.platform || 'Instagram') as Platform]}
                 </div>
               </div>
 
               {/* Single Image Display - Platform-specific dimensions */}
               {(() => {
                 const variant = safeVariants[0];
-                const dimensions = getPlatformDimensions(variant?.platform || 'instagram');
+                const dimensions = getPlatformDimensions((variant?.platform || 'Instagram') as Platform);
 
                 return (
                   <div className={`relative ${dimensions.aspectClass} w-full overflow-hidden`}>
@@ -539,7 +539,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
                         <span className="sr-only">{isRegenerating ? 'Regenerating image...' : 'Generating video...'}</span>
                       </div>
                     )}
-                    <div ref={el => (downloadRefs.current[variant?.platform || 'instagram'] = el)} className={`relative ${dimensions.aspectClass} w-full overflow-hidden rounded-md border group`}>
+                    <div ref={el => (downloadRefs.current[(variant?.platform || 'Instagram') as Platform] = el)} className={`relative ${dimensions.aspectClass} w-full overflow-hidden rounded-md border group`}>
                       {variant?.imageUrl && isValidUrl(variant.imageUrl) ? (
                         <div
                           className="relative h-full w-full cursor-pointer"

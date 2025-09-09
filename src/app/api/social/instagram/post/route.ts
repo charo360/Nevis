@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+export const runtime = 'nodejs';
+
 import { verifyToken } from '@/lib/auth/jwt';
 import { postInstagramForUser } from '@/lib/social/instagram';
 

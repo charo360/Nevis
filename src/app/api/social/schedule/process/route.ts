@@ -6,6 +6,8 @@ import { postFacebookForUser } from '@/lib/social/facebook';
 import { postInstagramForUser } from '@/lib/social/instagram';
 import { postLinkedInForUser } from '@/lib/social/linkedin';
 
+export const runtime = 'nodejs';
+
 const SCHEDULE_STORE = path.resolve(process.cwd(), 'tmp', 'scheduled-posts.json');
 
 async function readStore(): Promise<Record<string, any>> {
