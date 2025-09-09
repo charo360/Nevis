@@ -3,7 +3,6 @@ import { ImageResponse } from 'next/og'
 export const runtime = 'edge'
 export const contentType = 'image/png'
 
-// Allowed sizes to keep things predictable
 const ALLOWED_SIZES = new Set([32, 64, 128, 256, 512, 1024])
 
 export async function GET(
@@ -14,26 +13,38 @@ export async function GET(
   const parsed = parseInt(raw, 10)
   const size = ALLOWED_SIZES.has(parsed) ? parsed : 256
 
-  // Render the same shape as public/favicon.svg, but rasterized to PNG at requested size
+  const bg = 'linear-gradient(135deg, #3B82F6 0%, #A855F7 100%)'
+  const starSize = Math.round(size * 0.55)
+
   return new ImageResponse(
     (
-      <svg
-        width={size}
-        height={size}
-        viewBox="0 0 32 32"
-        xmlns="http://www.w3.org/2000/svg"
+      <div
+        style= {{
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: bg,
+    borderRadius: Math.round(size * 0.25),
+  }}
       >
-        <rect width="32" height="32" rx="6" fill="#2563eb" />
-        <path
-          d="M8 24V8h4.5l6 12L24.5 8H29v16h-4v-9.5L19.5 24h-3L11 14.5V24H8z"
-          fill="white"
-        />
-      </svg>
+  <div
+          style={
+  {
+    color: '#ffffff',
+      fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif',
+        fontWeight: 700,
+          fontSize: starSize,
+            lineHeight: 1,
+              transform: 'translateY(2%)',
+          }
+}
+        >
+          ✦
+</div>
+  </div>
     ),
-    {
-      width: size,
-      height: size,
-    }
+{ width: size, height: size }
   )
 }
-
