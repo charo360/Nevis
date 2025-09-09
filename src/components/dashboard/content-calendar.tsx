@@ -38,47 +38,37 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Brand consistency preferences - default to consistent if design examples exist
-  const [brandConsistency, setBrandConsistency] = React.useState<BrandConsistencyPreferences>({
-    strictConsistency: !!(brandProfile.designExamples && brandProfile.designExamples.length > 0), // Auto-check if design examples exist
-    followBrandColors: true, // Always follow brand colors
-  });
-
-  // Revo model selection
-  const [selectedRevoModel, setSelectedRevoModel] = React.useState<RevoModel>('revo-1.5');
-
-  // Artifact selection for content generation
-  const [selectedArtifacts, setSelectedArtifacts] = React.useState<string[]>([]);
-
-  // Include people in designs toggle
-  const [includePeopleInDesigns, setIncludePeopleInDesigns] = React.useState<boolean>(true);
-
-  // Use local language toggle
-  const [useLocalLanguage, setUseLocalLanguage] = React.useState<boolean>(false);
-
-  // Save preferences to localStorage
-  React.useEffect(() => {
+  // Initialize state with proper defaults
+  const [brandConsistency, setBrandConsistency] = React.useState<BrandConsistencyPreferences>(() => {
+    // Try to load from localStorage first, fallback to defaults based on brand profile
     const savedPreferences = localStorage.getItem('brandConsistencyPreferences');
     if (savedPreferences) {
-      setBrandConsistency(JSON.parse(savedPreferences));
+      return JSON.parse(savedPreferences);
     }
+    return {
+      strictConsistency: !!(brandProfile.designExamples && brandProfile.designExamples.length > 0),
+      followBrandColors: true,
+    };
+  });
 
+  const [selectedRevoModel, setSelectedRevoModel] = React.useState<RevoModel>(() => {
     const savedRevoModel = localStorage.getItem('selectedRevoModel');
-    if (savedRevoModel) {
-      setSelectedRevoModel(savedRevoModel as RevoModel);
-    }
+    return (savedRevoModel as RevoModel) || 'revo-1.5';
+  });
 
+  const [selectedArtifacts, setSelectedArtifacts] = React.useState<string[]>([]);
+
+  const [includePeopleInDesigns, setIncludePeopleInDesigns] = React.useState<boolean>(() => {
     const savedIncludePeople = localStorage.getItem('includePeopleInDesigns');
-    if (savedIncludePeople !== null) {
-      setIncludePeopleInDesigns(JSON.parse(savedIncludePeople));
-    }
+    return savedIncludePeople !== null ? JSON.parse(savedIncludePeople) : true;
+  });
 
+  const [useLocalLanguage, setUseLocalLanguage] = React.useState<boolean>(() => {
     const savedUseLocalLanguage = localStorage.getItem('useLocalLanguage');
-    if (savedUseLocalLanguage !== null) {
-      setUseLocalLanguage(JSON.parse(savedUseLocalLanguage));
-    }
-  }, []);
+    return savedUseLocalLanguage !== null ? JSON.parse(savedUseLocalLanguage) : false;
+  });
 
+  // Save preferences to localStorage when they change
   React.useEffect(() => {
     localStorage.setItem('brandConsistencyPreferences', JSON.stringify(brandConsistency));
   }, [brandConsistency]);
@@ -105,6 +95,8 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
       const artifactsEnabled = selectedArtifacts.length > 0;
 
       const useEnhancedGeneration = artifactsEnabled || selectedRevoModel === 'revo-1.5' || selectedRevoModel === 'revo-2.0';
+
+      // Debug log removed: generation path details
 
       if (selectedRevoModel === 'revo-2.0') {
 
@@ -218,35 +210,43 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
                 <div className="flex items-center gap-2">
                   <Palette className="h-3 w-3 text-gray-500" />
                   <span className="text-xs text-gray-600">Strict</span>
-                  <Switch
+                  <input
+                    type="checkbox"
                     checked={brandConsistency.strictConsistency}
-                    onCheckedChange={(checked) =>
-                      setBrandConsistency(prev => ({ ...prev, strictConsistency: checked }))
+                    onChange={(e) =>
+                      setBrandConsistency(prev => ({ ...prev, strictConsistency: e.target.checked }))
                     }
+                    className="w-4 h-4"
                   />
                 </div>
                 <div className="flex items-center gap-2">
                   <Sparkles className="h-3 w-3 text-gray-500" />
                   <span className="text-xs text-gray-600">Colors</span>
-                  <Switch
+                  <input
+                    type="checkbox"
                     checked={brandConsistency.followBrandColors}
-                    onCheckedChange={(checked) =>
-                      setBrandConsistency(prev => ({ ...prev, followBrandColors: checked }))
+                    onChange={(e) =>
+                      setBrandConsistency(prev => ({ ...prev, followBrandColors: e.target.checked }))
                     }
+                    className="w-4 h-4"
                   />
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-gray-600">👥 People</span>
-                  <Switch
+                  <input
+                    type="checkbox"
                     checked={includePeopleInDesigns}
-                    onCheckedChange={setIncludePeopleInDesigns}
+                    onChange={(e) => setIncludePeopleInDesigns(e.target.checked)}
+                    className="w-4 h-4"
                   />
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-gray-600">🌍 Local</span>
-                  <Switch
+                  <input
+                    type="checkbox"
                     checked={useLocalLanguage}
-                    onCheckedChange={setUseLocalLanguage}
+                    onChange={(e) => setUseLocalLanguage(e.target.checked)}
+                    className="w-4 h-4"
                   />
                 </div>
                 <Separator orientation="vertical" className="h-4" />
@@ -276,30 +276,18 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
             </p>
           </div>
 
-          {/* Simple Artifacts Toggle */}
+          {/* Simple Artifacts Toggle - TEMPORARILY DISABLED TO FIX INFINITE LOOP */}
           <div className="mb-6">
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <Label className="text-sm font-medium">Use Artifacts</Label>
+                    <Label className="text-sm font-medium">Use Artifacts (Temporarily Disabled)</Label>
                     <p className="text-xs text-muted-foreground">
-                      Enable to use your uploaded reference materials and exact-use content
+                      Artifacts feature temporarily disabled while fixing UI issue
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Switch
-                      checked={selectedArtifacts.length > 0}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          // Enable artifacts - this will use active artifacts from the artifacts page
-                          setSelectedArtifacts(['active']);
-                        } else {
-                          // Disable artifacts
-                          setSelectedArtifacts([]);
-                        }
-                      }}
-                    />
                     <Button
                       variant="outline"
                       size="sm"
@@ -310,13 +298,6 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
                     </Button>
                   </div>
                 </div>
-                {selectedArtifacts.length > 0 && (
-                  <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-md">
-                    <p className="text-xs text-blue-700">
-                      ✓ Artifacts enabled - Content will use your reference materials and exact-use items from the Artifacts page
-                    </p>
-                  </div>
-                )}
               </CardContent>
             </Card>
           </div>

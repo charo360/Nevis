@@ -1,5 +1,5 @@
-// MongoDB database service layer
-import { Collection, Db, ObjectId, Filter, UpdateFilter, FindOptions } from 'mongodb';
+// MongoDB disabled service layer (stub)
+import type { Collection, Db, ObjectId, Filter, UpdateFilter, FindOptions } from 'mongodb';
 import { getDatabase } from './config';
 
 // Generic database service class
@@ -13,10 +13,8 @@ export class MongoDBService<T extends { _id?: ObjectId; userId: string }> {
 
   // Get database connection
   private async getDb(): Promise<Db> {
-    if (!this.db) {
-      this.db = await getDatabase();
-    }
-    return this.db;
+    // Stub throws to prevent usage
+    return await getDatabase();
   }
 
   // Get collection
@@ -27,128 +25,62 @@ export class MongoDBService<T extends { _id?: ObjectId; userId: string }> {
 
   // Create a new document
   async create(data: Omit<T, '_id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-    const collection = await this.getCollection();
-    const now = new Date();
-    
-    const docData = {
-      ...data,
-      createdAt: now,
-      updatedAt: now,
-    } as T;
-
-    const result = await collection.insertOne(docData);
-    return result.insertedId.toString();
+    throw new Error('MongoDB is disabled. Use Supabase services instead.');
   }
 
   // Create multiple documents
   async createMany(data: Array<Omit<T, '_id' | 'createdAt' | 'updatedAt'>>): Promise<string[]> {
-    const collection = await this.getCollection();
-    const now = new Date();
-    
-    const docsData = data.map(item => ({
-      ...item,
-      createdAt: now,
-      updatedAt: now,
-    })) as T[];
-
-    const result = await collection.insertMany(docsData);
-    return Object.values(result.insertedIds).map(id => id.toString());
+    throw new Error('MongoDB is disabled. Use Supabase services instead.');
   }
 
   // Get a document by ID
   async getById(id: string): Promise<T | null> {
-    const collection = await this.getCollection();
-    const objectId = new ObjectId(id);
-    
-    const document = await collection.findOne({ _id: objectId } as Filter<T>);
-    return document;
+    throw new Error('MongoDB is disabled. Use Supabase services instead.');
   }
 
   // Get documents by user ID
   async getByUserId(userId: string, options?: FindOptions<T>): Promise<T[]> {
-    const collection = await this.getCollection();
-    
-    const documents = await collection.find({ userId } as Filter<T>, options).toArray();
-    return documents;
+    throw new Error('MongoDB is disabled. Use Supabase services instead.');
   }
 
   // Get all documents with optional filter
   async getAll(filter: Filter<T> = {}, options?: FindOptions<T>): Promise<T[]> {
-    const collection = await this.getCollection();
-    
-    const documents = await collection.find(filter, options).toArray();
-    return documents;
+    throw new Error('MongoDB is disabled. Use Supabase services instead.');
   }
 
   // Update a document by ID
   async updateById(id: string, updates: Partial<Omit<T, '_id' | 'createdAt'>>): Promise<boolean> {
-    const collection = await this.getCollection();
-    const objectId = new ObjectId(id);
-    
-    const updateData = {
-      ...updates,
-      updatedAt: new Date(),
-    };
-
-    const result = await collection.updateOne(
-      { _id: objectId } as Filter<T>,
-      { $set: updateData } as UpdateFilter<T>
-    );
-
-    return result.modifiedCount > 0;
+    throw new Error('MongoDB is disabled. Use Supabase services instead.');
   }
 
   // Update documents by filter
   async updateMany(filter: Filter<T>, updates: Partial<Omit<T, '_id' | 'createdAt'>>): Promise<number> {
-    const collection = await this.getCollection();
-    
-    const updateData = {
-      ...updates,
-      updatedAt: new Date(),
-    };
-
-    const result = await collection.updateMany(
-      filter,
-      { $set: updateData } as UpdateFilter<T>
-    );
-
-    return result.modifiedCount;
+    throw new Error('MongoDB is disabled. Use Supabase services instead.');
   }
 
   // Delete a document by ID
   async deleteById(id: string): Promise<boolean> {
-    const collection = await this.getCollection();
-    const objectId = new ObjectId(id);
-    
-    const result = await collection.deleteOne({ _id: objectId } as Filter<T>);
-    return result.deletedCount > 0;
+    throw new Error('MongoDB is disabled. Use Supabase services instead.');
   }
 
   // Delete documents by filter
   async deleteMany(filter: Filter<T>): Promise<number> {
-    const collection = await this.getCollection();
-    
-    const result = await collection.deleteMany(filter);
-    return result.deletedCount;
+    throw new Error('MongoDB is disabled. Use Supabase services instead.');
   }
 
   // Count documents
   async count(filter: Filter<T> = {}): Promise<number> {
-    const collection = await this.getCollection();
-    return await collection.countDocuments(filter);
+    throw new Error('MongoDB is disabled. Use Supabase services instead.');
   }
 
   // Check if document exists
   async exists(filter: Filter<T>): Promise<boolean> {
-    const collection = await this.getCollection();
-    const count = await collection.countDocuments(filter, { limit: 1 });
-    return count > 0;
+    throw new Error('MongoDB is disabled. Use Supabase services instead.');
   }
 
   // Find one document
   async findOne(filter: Filter<T>, options?: FindOptions<T>): Promise<T | null> {
-    const collection = await this.getCollection();
-    return await collection.findOne(filter, options);
+    throw new Error('MongoDB is disabled. Use Supabase services instead.');
   }
 
   // Find documents with pagination
@@ -165,43 +97,17 @@ export class MongoDBService<T extends { _id?: ObjectId; userId: string }> {
     hasNextPage: boolean;
     hasPrevPage: boolean;
   }> {
-    const collection = await this.getCollection();
-    const skip = (page - 1) * limit;
-
-    const [documents, totalCount] = await Promise.all([
-      collection.find(filter)
-        .sort(sort || { createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .toArray(),
-      collection.countDocuments(filter)
-    ]);
-
-    const totalPages = Math.ceil(totalCount / limit);
-
-    return {
-      documents,
-      totalCount,
-      totalPages,
-      currentPage: page,
-      hasNextPage: page < totalPages,
-      hasPrevPage: page > 1,
-    };
+    throw new Error('MongoDB is disabled. Use Supabase services instead.');
   }
 
   // Aggregate query
   async aggregate<R = any>(pipeline: any[]): Promise<R[]> {
-    const collection = await this.getCollection();
-    return await collection.aggregate<R>(pipeline).toArray();
+    throw new Error('MongoDB is disabled. Use Supabase services instead.');
   }
 
   // Create indexes for better performance
   async createIndexes(indexes: Array<{ key: any; options?: any }>): Promise<void> {
-    const collection = await this.getCollection();
-    
-    for (const index of indexes) {
-      await collection.createIndex(index.key, index.options);
-    }
+    // no-op
   }
 }
 

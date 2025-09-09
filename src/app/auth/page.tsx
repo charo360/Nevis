@@ -20,13 +20,15 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
+// import { useAuth } from '@/hooks/use-auth'; // MongoDB auth - commented out
+import { useSupabaseAuth } from '@/hooks/use-supabase-auth'; // Using Supabase auth
 import { useToast } from '@/hooks/use-toast';
 import { useBrandOperations } from '@/contexts/brand-context-mongo';
 
 export default function AuthPage() {
   const router = useRouter();
-  const { signIn, signUp, loading } = useAuth();
+  // const { signIn, signUp, loading } = useAuth(); // MongoDB auth - commented out
+  const { signIn, signUp, loading } = useSupabaseAuth(); // Using Supabase auth
   const { toast } = useToast();
   const { refreshBrands } = useBrandOperations();
 
@@ -77,10 +79,28 @@ export default function AuthPage() {
 
     } catch (error) {
       console.error('❌ Login failed:', error);
+
+      const errorMessage = error instanceof Error ? error.message : "Please check your credentials and try again.";
+
+      // Provide helpful guidance for common scenarios
+      let title = "Sign in failed";
+      let description = errorMessage;
+
+      if (errorMessage.includes("email or password you entered is incorrect")) {
+        title = "Invalid credentials";
+        description = "The email or password is incorrect. Don't have an account yet? Try the Sign Up tab above.";
+      } else if (errorMessage.includes("check your email and click the confirmation")) {
+        title = "Email confirmation required";
+        description = errorMessage;
+      } else if (errorMessage.includes("Too many login attempts")) {
+        title = "Too many attempts";
+        description = errorMessage;
+      }
+
       toast({
         variant: "destructive",
-        title: "Sign in failed",
-        description: error instanceof Error ? error.message : "Please check your credentials and try again.",
+        title,
+        description,
       });
     }
   };
@@ -106,10 +126,27 @@ export default function AuthPage() {
       });
       router.push('/dashboard');
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Please try again.';
+
+      // Provide helpful guidance for signup errors
+      let title = "Sign up failed";
+      let description = errorMessage;
+
+      if (errorMessage.includes("account with this email already exists")) {
+        title = "Account already exists";
+        description = "An account with this email already exists. Try signing in instead using the Sign In tab above.";
+      } else if (errorMessage.includes("Password must be at least")) {
+        title = "Password too weak";
+        description = errorMessage;
+      } else if (errorMessage.includes("valid email address")) {
+        title = "Invalid email";
+        description = errorMessage;
+      }
+
       toast({
         variant: 'destructive',
-        title: 'Sign up failed',
-        description: error instanceof Error ? error.message : 'Please try again.'
+        title,
+        description
       });
     }
   };
@@ -205,6 +242,20 @@ export default function AuthPage() {
                       </>
                     )}
                   </Button>
+
+                  <div className="text-center text-sm text-muted-foreground">
+                    Don't have an account?{' '}
+                    <button
+                      type="button"
+                      className="text-primary hover:underline font-medium"
+                      onClick={() => {
+                        const signupTab = document.querySelector('[value="signup"]') as HTMLElement;
+                        signupTab?.click();
+                      }}
+                    >
+                      Create one here
+                    </button>
+                  </div>
                 </div>
               </TabsContent>
 
@@ -294,6 +345,20 @@ export default function AuthPage() {
                       </>
                     )}
                   </Button>
+
+                  <div className="text-center text-sm text-muted-foreground">
+                    Already have an account?{' '}
+                    <button
+                      type="button"
+                      className="text-primary hover:underline font-medium"
+                      onClick={() => {
+                        const signinTab = document.querySelector('[value="signin"]') as HTMLElement;
+                        signinTab?.click();
+                      }}
+                    >
+                      Sign in here
+                    </button>
+                  </div>
                 </div>
               </TabsContent>
             </Tabs>

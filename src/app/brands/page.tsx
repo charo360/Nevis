@@ -189,6 +189,7 @@ export default function BrandsPage() {
         {hasBrands ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {brands.map((brand: any) => {
+              console.log('🎨 Rendering brand card:', brand);
               const isActive = currentBrand && brand.id === (currentBrand as any).id;
               const brandInitials = getBrandInitials(brand);
 

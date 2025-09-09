@@ -22,6 +22,7 @@ import { UnifiedBrandLayout, BrandContent, BrandSwitchingStatus } from "@/compon
 import { STORAGE_FEATURES } from "@/lib/services/brand-scoped-storage";
 import { useCreativeStudioStorage } from "@/hooks/use-feature-storage";
 
+
 function CreativeStudioPageContent() {
   const { currentBrand } = useUnifiedBrand();
   const [editorImage, setEditorImage] = useState<string | null>(null);
@@ -77,7 +78,7 @@ function CreativeStudioPageContent() {
     primaryColor: currentBrand.primaryColor,
     accentColor: currentBrand.accentColor,
     backgroundColor: currentBrand.backgroundColor,
-    logoDataUrl: currentBrand.logoUrl,
+    logoDataUrl: currentBrand.logoDataUrl,
     websiteUrl: currentBrand.websiteUrl,
     socialMedia: {
       facebook: currentBrand.facebookUrl,

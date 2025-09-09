@@ -1,10 +1,11 @@
-// MongoDB-based brand context (replaces Firebase brand context)
+// Supabase brand context (Mongo/Firebase deprecated)
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 // MongoDB services accessed via API routes only
 import type { CompleteBrandProfile } from '@/lib/mongodb/services/brand-profile-service';
+import { supabase } from '@/lib/supabase/config';
 
 interface BrandContextType {
   // Current brand state
@@ -35,13 +36,19 @@ interface BrandProviderProps {
 }
 
 export function BrandProvider({ children }: BrandProviderProps) {
-  const { user, getAccessToken } = useAuth();
+  const { user } = useAuth();
   const [currentBrand, setCurrentBrand] = useState<CompleteBrandProfile | null>(null);
   const [brands, setBrands] = useState<CompleteBrandProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
+
+  // Helper function to get Supabase session token
+  const getSupabaseToken = async (): Promise<string | null> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token || null;
+  };
 
   // Load brands when user changes
   useEffect(() => {
@@ -95,7 +102,7 @@ export function BrandProvider({ children }: BrandProviderProps) {
       setError(null);
       setHasAttemptedLoad(true); // Mark that we've attempted to load
 
-      const token = getAccessToken();
+      const token = await getSupabaseToken();
       if (!token) {
         throw new Error('No access token available');
       }
@@ -108,22 +115,46 @@ export function BrandProvider({ children }: BrandProviderProps) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to load brand profiles');
+        const errorText = await response.text();
+        console.error('❌ API error:', response.status, errorText);
+        throw new Error(`Failed to load brand profiles: ${response.status}`);
       }
+
       const userBrands = await response.json();
       console.log('✅ Brands loaded successfully:', userBrands.length, 'brands found');
-      console.log('📋 Brand names:', userBrands.map(b => b.businessName || b.name));
-      setBrands(userBrands);
+      console.log('🔍 Raw brand data:', userBrands);
+
+      if (userBrands.length > 0) {
+        console.log('📋 Brand names:', userBrands.map(b => b.businessName || b.business_name || b.name));
+        console.log('📋 First brand details:', userBrands[0]);
+      } else {
+        console.log('📋 No brands found for user - this is normal for new users');
+      }
+
+      setBrands(userBrands || []);
+      console.log('🔄 Brands state updated, triggering re-render');
 
       // If no current brand is selected, select the first active one
       if (!currentBrand && userBrands.length > 0) {
-        const activeBrand = userBrands.find(b => b.isActive) || userBrands[0];
-        console.log('🎯 Auto-selecting brand:', activeBrand.businessName || activeBrand.name);
+        const activeBrand = userBrands.find(b => b.is_active || b.isActive) || userBrands[0];
+        console.log('🎯 Auto-selecting brand:', activeBrand.business_name || activeBrand.businessName || activeBrand.name);
         setCurrentBrand(activeBrand);
+      } else if (userBrands.length === 0) {
+        console.log('📝 No brands available - user should create their first brand');
+        setCurrentBrand(null);
       }
     } catch (err) {
       console.error('❌ Error loading brands:', err);
-      setError('Failed to load brand profiles');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load brand profiles';
+
+      // Don't show error for new users with no brands - this is expected
+      if (errorMessage.includes('404') || errorMessage.includes('No brands found')) {
+        console.log('📝 New user with no brands - this is expected');
+        setError(null);
+      } else {
+        setError(errorMessage);
+      }
+      setBrands([]);
     } finally {
       setLoading(false);
       console.log('✅ Brand loading completed');
@@ -145,7 +176,7 @@ export function BrandProvider({ children }: BrandProviderProps) {
       setSaving(true);
       setError(null);
 
-      const token = getAccessToken();
+      const token = await getSupabaseToken();
       if (!token) {
         throw new Error('No access token available');
       }
@@ -161,11 +192,15 @@ export function BrandProvider({ children }: BrandProviderProps) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save brand profile');
+        const errorText = await response.text();
+        console.error('❌ API error saving brand:', response.status, errorText);
+        throw new Error(`Failed to save brand profile: ${response.status} - ${errorText}`);
       }
 
       const result = await response.json();
       const profileId = result.id;
+
+      console.log('✅ Brand profile saved successfully:', profileId);
 
       // Refresh brands list and reset attempt flag so new brand appears
       setHasAttemptedLoad(false);
@@ -173,8 +208,9 @@ export function BrandProvider({ children }: BrandProviderProps) {
 
       return profileId;
     } catch (err) {
-      console.error('Error saving profile:', err);
-      setError('Failed to save brand profile');
+      console.error('❌ Error saving profile:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save brand profile';
+      setError(errorMessage);
       throw err;
     } finally {
       setSaving(false);
@@ -187,7 +223,7 @@ export function BrandProvider({ children }: BrandProviderProps) {
       setSaving(true);
       setError(null);
 
-      const token = getAccessToken();
+      const token = await getSupabaseToken();
       if (!token) {
         throw new Error('No access token available');
       }
@@ -230,7 +266,7 @@ export function BrandProvider({ children }: BrandProviderProps) {
       setSaving(true);
       setError(null);
 
-      const token = getAccessToken();
+      const token = await getSupabaseToken();
       if (!token) {
         throw new Error('No access token available');
       }

@@ -90,6 +90,7 @@ const analyzeBrandPrompt = ai.definePrompt({
   name: 'analyzeBrandPrompt',
   input: { schema: AnalyzeBrandInputSchema },
   output: { schema: AnalyzeBrandOutputSchema },
+  model: 'googleai/gemini-2.5-flash', // Use regular flash model that supports JSON mode
   prompt: `You are an expert brand strategist, business analyst, and design consultant with deep expertise in brand identity, visual design, and digital marketing. Your task is to perform an extremely comprehensive and detailed analysis of THIS SPECIFIC BUSINESS based on its website and design examples.
 
   **CRITICAL INSTRUCTION: BE COMPANY-SPECIFIC, NOT GENERIC**
@@ -219,12 +220,24 @@ async function scrapeWebsiteContent(url: string): Promise<string> {
     // Import cheerio for HTML parsing
     const cheerio = await import('cheerio');
 
-    // Use fetch to get the website content
+    // Use fetch to get the website content with timeout and better headers
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      }
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'DNT': '1',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+      },
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -328,6 +341,8 @@ async function scrapeWebsiteContent(url: string): Promise<string> {
     return structuredContent;
 
   } catch (error) {
+    console.error('Website scraping error:', error);
+    console.error('URL attempted:', url);
     throw new Error(`Failed to scrape website content: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

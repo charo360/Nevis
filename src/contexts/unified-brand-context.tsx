@@ -54,6 +54,60 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
   } = useBrand();
 
   const [currentBrand, setCurrentBrand] = useState<CompleteBrandProfile | null>(null);
+
+  // Convert MongoDB brand profile to wizard format
+  const convertBrandProfile = (brand: any): CompleteBrandProfile => {
+    if (!brand) return brand;
+
+    // Convert logoUrl to logoDataUrl for compatibility with Creative Studio
+    // IMPORTANT: Preserve logo data - never let it be lost during conversion
+    const logoData = brand.logoUrl || brand.logoDataUrl || '';
+
+    return {
+      ...brand,
+      logoDataUrl: logoData,
+      // Ensure all required fields exist
+      primaryColor: brand.primaryColor || brand.brandColors?.primary || '#3B82F6',
+      accentColor: brand.accentColor || brand.brandColors?.secondary || '#10B981',
+      backgroundColor: brand.backgroundColor || brand.brandColors?.accent || '#F8FAFC',
+      contactPhone: brand.contactPhone || brand.contact?.phone || '',
+      contactEmail: brand.contactEmail || brand.contact?.email || '',
+      contactAddress: brand.contactAddress || brand.contact?.address || '',
+      facebookUrl: brand.facebookUrl || brand.socialMedia?.facebook || '',
+      instagramUrl: brand.instagramUrl || brand.socialMedia?.instagram || '',
+      twitterUrl: brand.twitterUrl || brand.socialMedia?.twitter || '',
+      linkedinUrl: brand.linkedinUrl || brand.socialMedia?.linkedin || '',
+      writingTone: brand.writingTone || brand.brandVoice || '',
+      location: typeof brand.location === 'object'
+        ? `${brand.location.city || ''}, ${brand.location.country || ''}`.replace(/^,\s*/, '').replace(/,\s*$/, '') || 'Location'
+        : brand.location || '',
+      services: brand.services || [],
+      designExamples: brand.designExamples || [],
+    };
+  };
+
+  // Safe update function that preserves logo data
+  const safeUpdateProfile = async (profileId: string, updates: Partial<CompleteBrandProfile>): Promise<void> => {
+    // Get current brand to preserve logo if not explicitly being updated
+    const currentBrandValue = currentBrandRef.current;
+
+    // If we're not explicitly updating the logo, preserve the existing one
+    if (currentBrandValue && !updates.logoDataUrl && !updates.logoUrl) {
+      // Preserve existing logo data
+      const existingLogo = currentBrandValue.logoDataUrl || currentBrandValue.logoUrl;
+      if (existingLogo) {
+        updates.logoUrl = existingLogo; // Save as logoUrl for MongoDB
+        console.log('🛡️ Preserving existing logo during update:', existingLogo.substring(0, 50) + '...');
+      }
+    } else if (updates.logoDataUrl) {
+      // Convert logoDataUrl to logoUrl for MongoDB storage
+      updates.logoUrl = updates.logoDataUrl;
+      console.log('💾 Saving new logo data:', updates.logoDataUrl.substring(0, 50) + '...');
+    }
+
+    // Call the original update function
+    await updateProfile(profileId, updates);
+  };
   const [brandScopedServices, setBrandScopedServices] = useState<Map<string, any>>(new Map());
 
   // Use refs to store current values for event handlers
@@ -72,12 +126,13 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
 
   // Sync current brand with the hook's current profile
   useEffect(() => {
+    const currentBrandValue = currentBrandRef.current;
 
     // Only sync if currentProfile exists and is different from currentBrand
-    if (currentProfile && currentProfile !== currentBrand) {
+    if (currentProfile && currentProfile !== currentBrandValue) {
       setCurrentBrand(currentProfile);
       updateAllBrandScopedServices(currentProfile);
-    } else if (!currentProfile && !currentBrand && brands.length > 0) {
+    } else if (!currentProfile && !currentBrandValue && brands.length > 0) {
       // Auto-select first brand only if no brand is selected at all and brands exist
       // This should only happen on initial load, not during navigation
       const savedBrandId = localStorage.getItem('selectedBrandId');
@@ -91,13 +146,13 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
         }
       }
 
-      if (!currentBrand) { // Only select if no brand is currently selected
+      if (!currentBrandValue) { // Only select if no brand is currently selected
         setCurrentBrand(brandToSelect);
         setCurrentProfile(brandToSelect);
         updateAllBrandScopedServices(brandToSelect);
       }
     }
-  }, [currentProfile, brands.length]); // Removed currentBrand and setCurrentProfile to prevent infinite loop
+  }, [currentProfile, brands.length]); // Use ref to avoid circular dependency
 
   // Update all brand-scoped services when brand changes
   const updateAllBrandScopedServices = useCallback((brand: CompleteBrandProfile | null) => {
@@ -137,21 +192,24 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
   const selectBrand = useCallback((brand: CompleteBrandProfile | null) => {
     const brandName = brand?.businessName || brand?.name || 'null';
 
+    // Convert brand profile to ensure compatibility
+    const convertedBrand = brand ? convertBrandProfile(brand) : null;
+
     // Update both states immediately
-    setCurrentBrand(brand);
-    setCurrentProfile(brand);
+    setCurrentBrand(convertedBrand);
+    setCurrentProfile(convertedBrand);
 
     // Update all brand-scoped services
-    updateAllBrandScopedServices(brand);
+    updateAllBrandScopedServices(convertedBrand);
 
     // Force update color persistence immediately
-    if (brand) {
+    if (convertedBrand) {
       const colorData = {
-        primaryColor: brand.primaryColor,
-        accentColor: brand.accentColor,
-        backgroundColor: brand.backgroundColor,
-        brandId: brand.id,
-        brandName: brand.businessName || brand.name,
+        primaryColor: convertedBrand.primaryColor,
+        accentColor: convertedBrand.accentColor,
+        backgroundColor: convertedBrand.backgroundColor,
+        brandId: convertedBrand.id,
+        brandName: convertedBrand.businessName || convertedBrand.name,
         updatedAt: new Date().toISOString()
       };
       localStorage.setItem('brandColors', JSON.stringify(colorData));
@@ -167,7 +225,7 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
     });
     window.dispatchEvent(event);
 
-  }, [currentBrand, currentProfile, setCurrentProfile, updateAllBrandScopedServices]);
+  }, [setCurrentProfile, updateAllBrandScopedServices]); // Remove currentBrand and currentProfile from dependencies
 
   // localStorage restoration is now handled in the main sync effect above
 
@@ -225,8 +283,9 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
         // Only update if it's different from current brand
         const currentBrandValue = currentBrandRef.current;
         if (!currentBrandValue || currentBrandValue.id !== brand.id) {
-          setCurrentBrand(brand);
-          setCurrentProfileRef.current(brand);
+          const convertedBrand = convertBrandProfile(brand);
+          setCurrentBrand(convertedBrand);
+          setCurrentProfileRef.current(convertedBrand);
           if (updateAllBrandScopedServicesRef.current) {
             updateAllBrandScopedServicesRef.current(brand);
           }
@@ -238,7 +297,9 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
     // Listen for the original brand context changes
     const handleOriginalBrandChange = (event: any) => {
       if (event.detail && event.detail.brand) {
-        handleBrandChange(event);
+        const convertedBrand = convertBrandProfile(event.detail.brand);
+        setCurrentBrand(convertedBrand);
+        setCurrentProfileRef.current(convertedBrand);
       }
     };
 
@@ -259,7 +320,7 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
     error,
     selectBrand,
     saveProfile,
-    updateProfile,
+    updateProfile: safeUpdateProfile, // Use safe update that preserves logos
     deleteProfile,
     refreshBrands,
     getBrandStorage,

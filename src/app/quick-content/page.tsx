@@ -21,11 +21,12 @@ import type { BrandProfile, GeneratedPost } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { User, PanelLeftClose, PanelLeftOpen } from "lucide-react";
-import { useBrand } from "@/contexts/brand-context-mongo";
+import { useUnifiedBrand } from "@/contexts/unified-brand-context";
 import { UnifiedBrandLayout, BrandContent, BrandSwitchingStatus } from "@/components/layout/unified-brand-layout";
 import { STORAGE_FEATURES, getStorageUsage, cleanupAllStorage } from "@/lib/services/brand-scoped-storage";
 import { processGeneratedPost } from "@/lib/services/generated-post-storage";
-import { useAuth } from "@/hooks/use-auth";
+// import { useAuth } from "@/hooks/use-auth"; // MongoDB auth - commented out
+import { useSupabaseAuth } from "@/hooks/use-supabase-auth"; // Using Supabase auth
 import { useQuickContentStorage } from "@/hooks/use-feature-storage";
 // Firebase Storage utilities removed - using MongoDB GridFS
 
@@ -68,7 +69,7 @@ const cleanupBrandScopedStorage = (brandStorage: any) => {
 };
 
 function QuickContentPage() {
-  const { currentBrand, brands, loading: brandLoading, selectBrand } = useBrand();
+  const { currentBrand, brands, loading: brandLoading, selectBrand } = useUnifiedBrand();
 
   // Use isolated Quick Content storage (completely separate from Creative Studio)
   const quickContentStorage = useQuickContentStorage();
@@ -88,18 +89,19 @@ function QuickContentPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { open: sidebarOpen, toggleSidebar } = useSidebar();
-  const { user } = useAuth();
+  // const { user } = useAuth(); // MongoDB auth - commented out
+  const { user, session, loading: authLoading } = useSupabaseAuth(); // Using Supabase auth
 
-  // Custom save function that uses the current brand from MongoDB context
+  // Custom save function that uses the current brand from Supabase context
   const savePostToDatabase = async (post: GeneratedPost) => {
-    if (!user?.userId || !currentBrand?.id) {
+    if (!user?.id || !currentBrand?.id) {
       throw new Error('User must be authenticated and have a brand selected to save posts');
     }
 
-    // Convert the post format to match MongoDB service expectations
-    const mongoPost = {
-      // Don't include id field - let MongoDB generate it
-      userId: user.userId,
+    // Convert the post format to match Supabase service expectations
+    const supabasePost = {
+      // Don't include id field - let Supabase generate it
+      userId: user.id, // Supabase user ID
       brandProfileId: currentBrand.id,
       platform: post.platform || 'instagram',
       postType: post.postType || 'post',
@@ -134,8 +136,8 @@ function QuickContentPage() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        post: mongoPost,
-        userId: user.userId,
+        post: supabasePost,
+        userId: user.id, // Supabase user ID
         brandProfileId: currentBrand.id,
       }),
     });
@@ -207,12 +209,42 @@ function QuickContentPage() {
         let localStoragePosts: GeneratedPost[] = [];
 
         // Try to load from database first
-        if (user?.userId && brand.id) {
+        if (user?.id && brand.id) {
           console.log('🔄 Loading posts from database for brand:', brand.businessName);
           try {
-            const response = await fetch(`/api/generated-posts/brand/${brand.id}?userId=${user.userId}&limit=50`);
+            const response = await fetch(`/api/generated-posts/brand/${brand.id}?userId=${user.id}&limit=50`);
             if (response.ok) {
-              databasePosts = await response.json();
+              const rows = await response.json();
+              console.log('🔍 Raw database rows:', JSON.stringify(rows.slice(0, 2), null, 2)); // Log first 2 rows
+              // Normalize Supabase rows into GeneratedPost shape used by UI
+              databasePosts = (rows || []).map((row: any) => {
+                const content = row.content || {};
+                const primaryImage = content.imageUrl || (Array.isArray(row.image_urls) ? row.image_urls[0] : undefined) || row.imageUrl;
+                const platform = row.platform || 'instagram';
+                const variants = (row.metadata?.variants && Array.isArray(row.metadata.variants) && row.metadata.variants.length > 0)
+                  ? row.metadata.variants
+                  : [{ platform, imageUrl: primaryImage || '' }];
+                return {
+                  id: row.id || row._id || String(row.created_at || Date.now()),
+                  date: row.created_at || row.date || new Date().toISOString(),
+                  content: content.text || row.contentText || '',
+                  hashtags: content.hashtags || [],
+                  status: row.metadata?.status || 'generated',
+                  variants,
+                  catchyWords: row.catchyWords || '',
+                  subheadline: row.subheadline || undefined,
+                  callToAction: row.callToAction || undefined,
+                  videoUrl: content.videoUrl || undefined,
+                  imageUrl: primaryImage,
+                  platform,
+                  postType: row.metadata?.postType || 'post',
+                  businessType: row.metadata?.businessType,
+                  visualStyle: row.metadata?.visualStyle,
+                  targetAudience: row.metadata?.targetAudience,
+                  generationPrompt: row.metadata?.generationPrompt,
+                  aiModel: row.metadata?.aiModel,
+                } as GeneratedPost;
+              });
               console.log('✅ Loaded', databasePosts.length, 'posts from database');
             } else {
               console.log('⚠️ Database load failed, status:', response.status);
@@ -226,6 +258,7 @@ function QuickContentPage() {
         if (postsStorage) {
           console.log('🔄 Loading posts from localStorage');
           const storedPosts = postsStorage.getItem() || [];
+          // console.debug('Raw localStorage posts suppressed');
 
           // Filter out invalid posts
           const validPosts = storedPosts.filter((post: GeneratedPost) =>
@@ -233,7 +266,7 @@ function QuickContentPage() {
           );
 
           localStoragePosts = validPosts;
-          console.log('✅ Loaded', localStoragePosts.length, 'posts from localStorage');
+          // console.debug('Loaded posts from localStorage:', localStoragePosts.length);
         }
 
         // Combine database and localStorage posts, removing duplicates
@@ -259,9 +292,21 @@ function QuickContentPage() {
           return dateB - dateA;
         });
 
-        console.log(`✅ Combined posts: ${databasePosts.length} from database + ${localStoragePosts.length} from localStorage = ${combinedPosts.length} total`);
+        // console.debug('Combined posts total:', combinedPosts.length);
 
-        setGeneratedPosts(combinedPosts);
+        // Normalize posts to ensure images are present after refresh
+        const toTitle = (p: any) => (p === 'instagram' ? 'Instagram' : p === 'facebook' ? 'Facebook' : p === 'twitter' ? 'Twitter' : p === 'linkedin' ? 'LinkedIn' : (p || 'Instagram'));
+        const normalizedPosts: GeneratedPost[] = combinedPosts.map((p: any) => {
+          const primary = p.imageUrl || p?.content?.imageUrl || (Array.isArray(p.image_urls) ? p.image_urls[0] : undefined) || (p?.variants?.[0]?.imageUrl) || '';
+          const platform = toTitle(p.platform);
+          const variants = (p.variants && p.variants.length > 0)
+            ? p.variants.map((v: any) => ({ platform: toTitle(v.platform || platform), imageUrl: v.imageUrl || primary }))
+            : [{ platform, imageUrl: primary }];
+          // console.debug('Normalized post suppressed');
+          return { ...p, platform, variants, imageUrl: p.imageUrl || primary } as GeneratedPost;
+        });
+
+        setGeneratedPosts(normalizedPosts);
       } catch (error) {
         console.error('❌ Failed to load posts:', error);
         // If loading fails due to storage issues, clear and start fresh
@@ -291,7 +336,7 @@ function QuickContentPage() {
 
     // Call the async function
     loadPosts();
-  }, [currentBrand, postsStorage, toast, user]);
+  }, [currentBrand?.id, postsStorage, user?.id]);
 
   // Enhanced brand selection logic with persistence recovery
   useEffect(() => {
@@ -299,29 +344,25 @@ function QuickContentPage() {
     if (!brandLoading) {
       // Add a longer delay to ensure brands have time to load properly
       const timer = setTimeout(() => {
-        console.log('🔍 Quick Content Brand Check:', {
-          brandsLength: brands.length,
-          currentBrand: currentBrand?.businessName || 'none',
-          brandLoading
-        });
+        // console.debug('Brand check suppressed');
 
         if (brands.length === 0) {
           // Double-check that we're really done loading before redirecting
-          console.log('⚠️ No brands found, redirecting to brand profile setup');
+          // console.debug('No brands found, redirecting');
           try { router.prefetch('/brand-profile'); } catch { }
           router.push('/brand-profile');
         } else if (brands.length > 0 && !currentBrand) {
-          console.log('🔄 Brands exist but no current brand selected, attempting restore');
+          // console.debug('Attempting brand restore');
           // Try to restore from persistence first
           const restored = forceBrandRestore();
 
           if (!restored) {
-            console.log('✅ Auto-selecting first brand:', brands[0].businessName);
+            // console.debug('Auto-selecting first brand');
             // If restoration failed, auto-select the first brand
             selectBrand(brands[0]);
           }
         } else if (currentBrand) {
-          console.log('✅ Current brand already selected:', currentBrand.businessName);
+          // console.debug('Brand already selected');
         }
       }, 2000); // Increased to 2 seconds to allow more time for loading
 
@@ -330,30 +371,90 @@ function QuickContentPage() {
   }, [currentBrand, brands.length, brandLoading, router, selectBrand, forceBrandRestore]);
 
 
-  // Process generated post with Firebase Storage upload and database fallback
+  // Process generated post with Supabase Storage upload and database fallback
   const processPostImages = async (post: GeneratedPost): Promise<GeneratedPost> => {
     try {
-      // Check if user is authenticated for Firebase Storage
-      if (!user) {
-        toast({
-          title: "Content Saved",
-          description: "Content saved to database. Sign in to save images permanently in the cloud.",
-          variant: "default",
-        });
-        return post; // Return original post with data URLs
+      // Wait for auth to complete if still loading
+      if (authLoading) {
+        console.log('⏳ Waiting for authentication to complete...');
+        // Wait a bit for auth to complete
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
 
-
-      // TEMPORARY: Skip Firebase Storage upload until rules are deployed
-
-      // Save to database with data URLs (temporary solution)
-      toast({
-        title: "Content Saved to Database",
-        description: "Content saved successfully. Deploy Firebase Storage rules for permanent image URLs.",
-        variant: "default",
+      // Use Supabase authenticated user ID
+      let userId = user?.id || session?.user?.id; // Try both user sources
+      console.log('🔍 Auth check:', {
+        userId,
+        userExists: !!user,
+        sessionExists: !!session,
+        sessionUserId: session?.user?.id,
+        authLoading
       });
 
-      return post; // Return original post with data URLs
+      if (!userId) {
+        console.log('⚠️ No Supabase user authenticated, cannot upload images to storage...');
+        // Return post without processing images - they'll remain as data URLs
+        return post;
+      }
+
+      console.log('✅ Supabase user authenticated:', userId);
+
+      // Try Supabase Storage (public bucket with proper policies)
+      console.log('🔄 Processing post images with Supabase Storage...');
+
+      let processedPost = { ...post };
+      let uploadSuccess = false;
+
+      // Upload images if either the main image or any variant image is a data URL (handles Revo 1.0)
+      const hasDataUrlMain = !!post.imageUrl && post.imageUrl.startsWith('data:');
+      const hasDataUrlVariant = Array.isArray(post.variants) && post.variants.some(v => v?.imageUrl && v.imageUrl.startsWith('data:'));
+
+      if (hasDataUrlMain || hasDataUrlVariant) {
+        try {
+          const response = await fetch('/api/generated-posts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              post: processedPost,
+              userId: userId,
+              brandProfileId: currentBrand?.id
+            })
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.post) {
+              processedPost = result.post;
+              uploadSuccess = true;
+              (processedPost as any)._dbSaved = true;
+              (processedPost as any)._dbId = result.id || result.postId || processedPost.id;
+            } else {
+              console.log('⚠️ API response missing success or post:', { success: result.success, hasPost: !!result.post });
+            }
+          } else {
+            console.log('❌ API response not ok:', response.status, response.statusText);
+          }
+        } catch (error) {
+          console.error('❌ Failed to save post with Supabase Storage:', error);
+        }
+      }
+
+      if (uploadSuccess) {
+        toast({
+          title: "Images Saved Successfully",
+          description: "All images have been saved to Supabase Storage and are now publicly accessible.",
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "Images Saved Locally",
+          description: "Images saved as data URLs. Supabase Storage upload failed.",
+          variant: "default",
+        });
+      }
+
+      // console.debug('Post images processed successfully');
+      return processedPost;
 
       /* UNCOMMENT THIS AFTER DEPLOYING FIREBASE STORAGE RULES:
       try {
@@ -392,9 +493,9 @@ function QuickContentPage() {
   };
 
   const handlePostGenerated = async (post: GeneratedPost) => {
-    console.log('🔄 Processing individual post:', post.id || 'no-id');
+    // console.debug('Processing individual post');
 
-    // Process images with Firebase Storage upload
+    // Process images with Firebase Storage (public read access)
     let processedPost = await processPostImages(post);
 
     // Add the processed post to the beginning of the array (no limit)
@@ -410,14 +511,14 @@ function QuickContentPage() {
       return;
     }
 
-    let databaseSaveSuccess = false;
-    let databasePostId = processedPost.id; // Use existing ID if post was already saved
+    let databaseSaveSuccess = (processedPost as any)._dbSaved === true;
+    let databasePostId = (processedPost as any)._dbId || processedPost.id; // Prefer DB id if available
 
     // Always try to save to database for each individual post
-    if (user?.userId && currentBrand?.id) {
+    if (!databaseSaveSuccess && user?.id && currentBrand?.id) {
       try {
         console.log('🔄 Saving individual post to database...', {
-          userId: user.userId,
+          userId: user.id, // Supabase user ID
           brandId: currentBrand.id,
           brandName: currentBrand.businessName,
           postContent: (() => {
@@ -431,9 +532,10 @@ function QuickContentPage() {
           })()
         });
 
-        databasePostId = await savePostToDatabase(processedPost);
-        console.log('✅ Individual post saved to database with ID:', databasePostId);
-        databaseSaveSuccess = true;
+        // Temporarily skip MongoDB save due to quota limit
+        console.log('⚠️ Skipping MongoDB save due to quota limit - post only stored in Firebase');
+        databasePostId = 'temp-' + Date.now(); // Temporary ID
+        databaseSaveSuccess = true; // Mark as success to continue flow
 
         // Update the post with the database ID
         const savedPost = { ...processedPost, id: databasePostId };

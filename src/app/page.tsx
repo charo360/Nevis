@@ -35,7 +35,10 @@ export default function HomePage() {
   const { user, signOut } = useAuth();
   const [sessionActive, setSessionActive] = useState<boolean>(false);
   const { toast } = useToast();
-  const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
+  const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY &&
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY !== 'pk_test_placeholder'
+    ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+    : null;
 
   // Typewriter animation for "AI Designer"
   const [displayText, setDisplayText] = useState('');
@@ -233,6 +236,10 @@ export default function HomePage() {
 
       const data = await res.json();
       if (data.error) throw new Error(data.error);
+
+      if (!stripePromise) {
+        throw new Error('Stripe is not configured. Please contact support.');
+      }
 
       const stripe = await stripePromise;
       if (!stripe) throw new Error('Stripe failed to load');

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Upload, Image as ImageIcon, ArrowLeft, Save, CheckCircle } from 'lucide-react';
+import { Upload, Image as ImageIcon, ArrowLeft, Save, CheckCircle, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUnifiedBrand } from '@/contexts/unified-brand-context';
 import { useAuth } from '@/hooks/use-auth';
@@ -66,6 +66,20 @@ export function LogoUploadStepUnified({
       });
     };
     reader.readAsDataURL(file);
+  };
+
+  const removeLogo = () => {
+    // Explicitly remove logo - this is the ONLY way a logo should be removed
+    console.log('🗑️ Explicitly removing logo from brand profile');
+    updateBrandProfile({ logoDataUrl: '' });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+
+    toast({
+      title: "Logo Removed",
+      description: "Your logo has been removed from the brand profile.",
+    });
   };
 
   const handleSave = async () => {
@@ -197,14 +211,24 @@ export function LogoUploadStepUnified({
                     className="max-h-32 max-w-full object-contain"
                   />
                 </div>
-                <Button
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full"
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Change Logo
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex-1"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Change Logo
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={removeLogo}
+                    className="px-3"
+                    title="Remove Logo"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             ) : (
               <div

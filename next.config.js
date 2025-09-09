@@ -11,7 +11,7 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
-    domains: ['localhost', 'firebasestorage.googleapis.com', 'placehold.co'],
+    domains: ['localhost', 'firebasestorage.googleapis.com', 'placehold.co', (process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname : 'supabase.co')],
     remotePatterns: [
       {
         protocol: 'https',
@@ -22,6 +22,12 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'placehold.co',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname : '**.supabase.co',
         port: '',
         pathname: '/**',
       },

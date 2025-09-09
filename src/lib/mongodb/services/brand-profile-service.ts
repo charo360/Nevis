@@ -150,9 +150,18 @@ class BrandProfileMongoService {
     }
   }
 
-  // Update brand profile
+  // Update brand profile with logo protection
   async updateBrandProfile(profileId: string, updates: Partial<CompleteBrandProfile>): Promise<void> {
     try {
+      // Logo protection: If no logo is provided in updates, preserve existing logo
+      if (!updates.logoUrl && !updates.logoDataUrl) {
+        const existingProfile = await this.loadBrandProfile(profileId);
+        if (existingProfile?.logoUrl) {
+          updates.logoUrl = existingProfile.logoUrl;
+          console.log('🛡️ Preserving existing logo during profile update');
+        }
+      }
+
       const success = await brandProfileService.updateById(profileId, updates);
       if (!success) {
         throw new Error('Failed to update brand profile');

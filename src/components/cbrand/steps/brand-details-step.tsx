@@ -69,7 +69,7 @@ export function BrandDetailsStep({
           isRequiredFieldEmpty(brandProfile.location) ||
           isRequiredFieldEmpty(brandProfile.description);
       case 'services':
-        return brandProfile.services.length === 0 ||
+        return !brandProfile.services || brandProfile.services.length === 0 ||
           brandProfile.services.some(service => isRequiredFieldEmpty(service.name));
       default:
         return false;
@@ -263,10 +263,10 @@ export function BrandDetailsStep({
             <TabsContent value="services" className="w-full space-y-4 mt-6">
               <div>
                 <div className="mb-3">
-                  <Label className={brandProfile.services.length === 0 ? "text-red-600 font-medium" : ""}>
+                  <Label className={!brandProfile.services || brandProfile.services.length === 0 ? "text-red-600 font-medium" : ""}>
                     Services/Products Offered *
                   </Label>
-                  {brandProfile.services.length === 0 ? (
+                  {!brandProfile.services || brandProfile.services.length === 0 ? (
                     <p className="text-xs text-red-600 mt-1 font-medium">
                       ⚠️ At least one service/product is required
                     </p>
@@ -275,7 +275,7 @@ export function BrandDetailsStep({
                   )}
                 </div>
 
-                {brandProfile.services.length === 0 && (
+                {(!brandProfile.services || brandProfile.services.length === 0) && (
                   <div className="text-center py-8 border-2 border-dashed border-red-300 rounded-lg bg-red-50">
                     <p className="text-red-600 mb-3 font-medium">⚠️ No services added yet - This is required</p>
                     <Button
@@ -290,7 +290,7 @@ export function BrandDetailsStep({
                   </div>
                 )}
 
-                {brandProfile.services.length > 0 && (
+                {brandProfile.services && brandProfile.services.length > 0 && (
                   <div className="space-y-3">
                     {/* Column Headers */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 px-3">
@@ -321,7 +321,7 @@ export function BrandDetailsStep({
                               placeholder="Brief description..."
                             />
                           </div>
-                          {brandProfile.services.length > 1 && (
+                          {brandProfile.services && brandProfile.services.length > 1 && (
                             <Button
                               type="button"
                               variant="ghost"

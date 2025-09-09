@@ -4,7 +4,7 @@
  */
 
 import { useMemo, useCallback, useEffect, useState } from 'react';
-import { useBrand } from '@/contexts/brand-context-mongo';
+import { useUnifiedBrand } from '@/contexts/unified-brand-context';
 import {
   FeatureStorageService,
   createQuickContentStorage,
@@ -18,7 +18,7 @@ import {
  * Provides isolated storage that never conflicts with Creative Studio
  */
 export function useQuickContentStorage(subFeature?: string) {
-  const { currentBrand } = useBrand();
+  const { currentBrand } = useUnifiedBrand();
 
   const storage = useMemo(() => {
     const brandId = currentBrand?.id || 'default';
@@ -106,7 +106,7 @@ export function useQuickContentStorage(subFeature?: string) {
  * Provides isolated storage that never conflicts with Quick Content
  */
 export function useCreativeStudioStorage(subFeature?: string) {
-  const { currentBrand } = useBrand();
+  const { currentBrand } = useUnifiedBrand();
 
   const storage = useMemo(() => {
     const brandId = currentBrand?.id || 'default';
@@ -217,7 +217,7 @@ export function useCreativeStudioStorage(subFeature?: string) {
  * Hook for monitoring storage usage across both features
  */
 export function useStorageMonitor() {
-  const { currentBrand } = useBrand();
+  const { currentBrand } = useUnifiedBrand();
   const [storageStats, setStorageStats] = useState<{
     quickContent: ReturnType<FeatureStorageService['getStorageStats']>;
     creativeStudio: ReturnType<FeatureStorageService['getStorageStats']>;
