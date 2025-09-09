@@ -414,11 +414,25 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   // Posting helpers
   const activeVariant = safeVariants.find(v => v.platform === activeTab) || safeVariants[0];
 
+
+  // Current platform context
+  const currentPlatform: Platform = activeTab;
+  const platformSlug = React.useMemo(() => {
+    switch (currentPlatform) {
+      case 'Twitter': return 'twitter';
+      case 'Instagram': return 'instagram';
+      case 'Facebook': return 'facebook';
+      case 'LinkedIn': return 'linkedin';
+      default: return 'twitter';
+    }
+  }, [currentPlatform]);
+  const postNowLabel = React.useMemo(() => `Post Now (${currentPlatform})`, [currentPlatform]);
+
   async function doPostNow() {
     try {
       setIsPosting(true);
       const imageUrlToSend = includeImage ? activeVariant?.imageUrl : undefined;
-      const res = await fetch('/api/social/twitter/post', {
+      const res = await fetch(`/api/social/${platformSlug}/post`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -451,7 +465,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
           'Content-Type': 'application/json',
           'x-demo-user': brandProfile?.businessName || 'demo-user',
         },
-        body: JSON.stringify({ platform: 'Twitter', text: postText, imageUrl: imageUrlToSend, scheduledAt: scheduleAt }),
+        body: JSON.stringify({ platform: currentPlatform, text: postText, imageUrl: imageUrlToSend, scheduledAt: scheduleAt }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'Failed to schedule');
@@ -491,7 +505,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
                 Regenerate Image
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setShowPostDialog(true)}>
-                <Twitter className="mr-2 h-4 w-4" />
+                <span className="mr-2 inline-flex items-center">{platformIcons[activeTab]}</span>
                 Post
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleDownload}>
@@ -784,9 +798,9 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
       <Dialog open={showPostDialog} onOpenChange={setShowPostDialog}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Post to Social Media</DialogTitle>
+            <DialogTitle>Post to {currentPlatform}</DialogTitle>
             <DialogDescription>
-              Well include your image/design, caption and hashtags. You can post now or schedule it.
+              We’ll include your image/design, caption and hashtags. You can post now or schedule it.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -801,13 +815,14 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
             <div className="grid gap-2">
               <Label htmlFor="scheduleAt">Schedule (optional)</Label>
               <Input id="scheduleAt" type="datetime-local" value={scheduleAt} onChange={(e) => setScheduleAt(e.target.value)} />
+              <p className="text-xs text-muted-foreground">Platform: {currentPlatform}</p>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowPostDialog(false)}>Cancel</Button>
             <Button onClick={doPostNow} disabled={isPosting}>
               {isPosting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Post Now (Twitter)
+              {postNowLabel}
             </Button>
             <Button variant="secondary" onClick={doSchedule}>Schedule Auto-Post</Button>
           </DialogFooter>
