@@ -369,9 +369,9 @@ export default function AuthPage() {
         <div className="text-center mt-6 text-sm text-gray-500">
           <p>
             By signing up, you agree to our{' '}
-            <a href="#" className="text-blue-600 hover:underline">Terms of Service</a>
+            <a href="/terms" className="text-blue-600 hover:underline">Terms of Service</a>
             {' '}and{' '}
-            <a href="#" className="text-blue-600 hover:underline">Privacy Policy</a>
+            <a href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</a>
           </p>
         </div>
       </div>
