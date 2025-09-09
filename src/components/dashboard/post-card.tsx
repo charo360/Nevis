@@ -106,6 +106,19 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   const [showVideoDialog, setShowVideoDialog] = React.useState(false);
   const [showImagePreview, setShowImagePreview] = React.useState(false);
   const [previewImageUrl, setPreviewImageUrl] = React.useState<string>('');
+  // Posting dialog state
+  const [showPostDialog, setShowPostDialog] = React.useState(false);
+  const defaultCaption = React.useMemo(() => (typeof post.content === 'string' ? post.content : (post.content as any)?.text || ''), [post.content]);
+  const defaultHashtags = React.useMemo(() => {
+    let hashtags = post.hashtags;
+    if (!hashtags && typeof post.content === 'object' && (post.content as any)?.hashtags) hashtags = (post.content as any).hashtags;
+    const text = typeof hashtags === 'string' ? hashtags : Array.isArray(hashtags) ? hashtags.join(' ') : '';
+    return text;
+  }, [post.hashtags, post.content]);
+  const [includeImage, setIncludeImage] = React.useState(true);
+  const [postText, setPostText] = React.useState(`${defaultCaption}${defaultHashtags ? `\n\n${defaultHashtags}` : ''}`);
+  const [isPosting, setIsPosting] = React.useState(false);
+  const [scheduleAt, setScheduleAt] = React.useState<string>('');
   // Ensure variants array exists and has at least one item
   const safeVariants = (post.variants && post.variants.length > 0)
     ? post.variants
@@ -398,7 +411,57 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
     }
   };
 
+  // Posting helpers
   const activeVariant = safeVariants.find(v => v.platform === activeTab) || safeVariants[0];
+
+  async function doPostNow() {
+    try {
+      setIsPosting(true);
+      const imageUrlToSend = includeImage ? activeVariant?.imageUrl : undefined;
+      const res = await fetch('/api/social/twitter/post', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // In dev, allow demo header; production should attach Authorization bearer
+          'x-demo-user': brandProfile?.businessName || 'demo-user',
+        },
+        body: JSON.stringify({ text: postText, imageUrl: imageUrlToSend }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Failed to post');
+      toast({ title: 'Posted to Twitter', description: `Tweet ID: ${data?.tweet?.id || 'success'}` });
+      setShowPostDialog(false);
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Posting failed', description: (error as Error).message });
+    } finally {
+      setIsPosting(false);
+    }
+  }
+
+  async function doSchedule() {
+    try {
+      if (!scheduleAt) {
+        toast({ variant: 'destructive', title: 'Missing time', description: 'Please select a date & time to schedule.' });
+        return;
+      }
+      const imageUrlToSend = includeImage ? activeVariant?.imageUrl : undefined;
+      const res = await fetch('/api/social/schedule', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-demo-user': brandProfile?.businessName || 'demo-user',
+        },
+        body: JSON.stringify({ platform: 'Twitter', text: postText, imageUrl: imageUrlToSend, scheduledAt: scheduleAt }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Failed to schedule');
+      toast({ title: 'Auto-post scheduled', description: `Reference: ${data?.id}` });
+      setShowPostDialog(false);
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Scheduling failed', description: (error as Error).message });
+    }
+  }
+
 
   return (
     <>
@@ -427,13 +490,9 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
                 )}
                 Regenerate Image
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleGenerateVideo} disabled={isGeneratingVideo}>
-                {isGeneratingVideo ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Video className="mr-2 h-4 w-4" />
-                )}
-                Generate Video
+              <DropdownMenuItem onClick={() => setShowPostDialog(true)}>
+                <Twitter className="mr-2 h-4 w-4" />
+                Post
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleDownload}>
                 <Download className="mr-2 h-4 w-4" />
@@ -707,6 +766,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
             {previewImageUrl && (
               <img
                 src={previewImageUrl}
+
                 alt="Post image preview"
                 className="max-w-full max-h-full object-contain rounded-lg"
               />
@@ -719,6 +779,41 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Post Dialog */}
+      <Dialog open={showPostDialog} onOpenChange={setShowPostDialog}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Post to Social Media</DialogTitle>
+            <DialogDescription>
+              Well include your image/design, caption and hashtags. You can post now or schedule it.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="postText">Caption + Hashtags</Label>
+              <Textarea id="postText" className="h-32" value={postText} onChange={(e) => setPostText(e.target.value)} />
+            </div>
+            <div className="flex items-center gap-2">
+              <input id="includeImage" type="checkbox" checked={includeImage} onChange={(e) => setIncludeImage(e.target.checked)} />
+              <Label htmlFor="includeImage">Include image</Label>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="scheduleAt">Schedule (optional)</Label>
+              <Input id="scheduleAt" type="datetime-local" value={scheduleAt} onChange={(e) => setScheduleAt(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPostDialog(false)}>Cancel</Button>
+            <Button onClick={doPostNow} disabled={isPosting}>
+              {isPosting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Post Now (Twitter)
+            </Button>
+            <Button variant="secondary" onClick={doSchedule}>Schedule Auto-Post</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </>
   );
 }

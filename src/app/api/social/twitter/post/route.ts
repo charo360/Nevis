@@ -48,7 +48,7 @@ export async function POST(req: Request) {
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
-    const { text } = body as { text?: string };
+    const { text, imageUrl } = body as { text?: string; imageUrl?: string };
     if (!text || !text.trim()) return NextResponse.json({ error: 'Missing text' }, { status: 400 });
 
     // Load stored connection
@@ -62,11 +62,27 @@ export async function POST(req: Request) {
     let accessToken: string = conn.accessToken;
     let refreshToken: string | null = conn.accessTokenSecret || null; // stored as accessTokenSecret for historical reasons
 
+    async function postTweetWithClient(client: TwitterApi) {
+      if (imageUrl && imageUrl.trim()) {
+        // Fetch image and upload as media
+        const res = await fetch(imageUrl);
+        if (!res.ok) throw new Error(`Failed to fetch image: ${res.status}`);
+        const arrayBuf = await res.arrayBuffer();
+        const buffer = Buffer.from(arrayBuf);
+        const mediaId = await client.v1.uploadMedia(buffer, { mimeType: res.headers.get('content-type') || 'image/png' });
+        const result = await client.v2.tweet({ text: text.trim(), media: { media_ids: [mediaId] } as any });
+        return result.data;
+      } else {
+        const result = await client.v2.tweet(text.trim());
+        return result.data;
+      }
+    }
+
     // Try to post with current token
     let client = new TwitterApi(accessToken);
     try {
-      const result = await client.v2.tweet(text.trim());
-      return NextResponse.json({ success: true, tweet: result.data });
+      const data = await postTweetWithClient(client);
+      return NextResponse.json({ success: true, tweet: data });
     } catch (e: any) {
       // If unauthorized and we have a refresh token, try to refresh
       const isAuthError = e?.code === 401 || /Unauthorized|expired|invalid/i.test(String(e?.message || ''));
@@ -92,8 +108,8 @@ export async function POST(req: Request) {
       await writeLocalStore(local);
 
       // Post again
-      const postRes = await refreshedClient.v2.tweet(text.trim());
-      return NextResponse.json({ success: true, tweet: postRes.data, refreshed: true });
+      const postRes = await postTweetWithClient(refreshedClient);
+      return NextResponse.json({ success: true, tweet: postRes, refreshed: true });
     } catch (err) {
       console.error('Twitter refresh/post failed:', (err as any)?.message || err);
       return NextResponse.json({ error: 'Failed to post to Twitter (refresh failed)' }, { status: 500 });
