@@ -1,4 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
+import fs from 'node:fs';
+import path from 'node:path';
+import dotenv from 'dotenv';
+// Load env from .env.local (preferred) then .env if present
+try {
+  const root = process.cwd();
+  for (const fname of ['.env.local', '.env']) {
+    const p = path.join(root, fname);
+    if (fs.existsSync(p)) {
+      dotenv.config({ path: p });
+    }
+  }
+} catch { }
+
 
 // Cleanup script:
 // - Free users: delete posts older than 30 days
@@ -12,6 +26,8 @@ import { createClient } from '@supabase/supabase-js';
 // Optional flags:
 //   DRY_RUN=true      -> Do not delete, only log what would be deleted
 //   CONCURRENCY=5     -> How many users to process in parallel
+//   FREE_DAYS=30      -> Override free-plan cutoff in days
+//   PAID_DAYS=90      -> Override paid-plan cutoff in days
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -22,6 +38,8 @@ if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
 
 const DRY_RUN = String(process.env.DRY_RUN || 'false').toLowerCase() === 'true';
 const CONCURRENCY = Math.max(1, parseInt(process.env.CONCURRENCY || '5', 10));
+const FREE_DAYS = Math.max(1, parseInt(process.env.FREE_DAYS || '30', 10));
+const PAID_DAYS = Math.max(1, parseInt(process.env.PAID_DAYS || '90', 10));
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
@@ -152,7 +170,7 @@ async function deletePostsByIds(ids) {
 async function processUser(user) {
   try {
     const { paying } = await fetchUserPlan(user.id);
-    const days = paying ? 90 : 30;
+    const days = paying ? PAID_DAYS : FREE_DAYS;
     const cutoffIso = daysAgoDate(days);
 
     const deletable = await fetchDeletablePosts(user.id, cutoffIso);
