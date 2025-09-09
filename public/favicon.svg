@@ -6,9 +6,11 @@
     </linearGradient>
   </defs>
   <rect width="32" height="32" rx="8" fill="url(#g)"/>
-  <!-- Main sparkle -->
+  <!-- Main sparkle (star) -->
   <path d="M16 7c1.3 3.2 3.1 5 6.1 6.1C19 14.4 17.2 16.2 16 19.2 14.8 16.2 13 14.4 9.9 13.1 12.9 12 14.7 10.2 16 7z" fill="#fff"/>
-  <!-- Small sparkles -->
-  <circle cx="11" cy="22" r="1.2" fill="#fff"/>
-  <circle cx="23" cy="10" r="1" fill="#fff"/>
+  <!-- Bottom-left small dot very close to star -->
+  <circle cx="11.2" cy="22.0" r="1.2" fill="#fff"/>
+  <!-- Top-right plus very close to star -->
+  <rect x="22.2" y="8.4" width="3.2" height="1.2" rx="0.6" fill="#fff"/>
+  <rect x="23.2" y="7.4" width="1.2" height="3.2" rx="0.6" fill="#fff"/>
 </svg>
