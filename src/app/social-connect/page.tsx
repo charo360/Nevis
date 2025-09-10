@@ -35,6 +35,7 @@ interface SocialConnection {
   lastSync?: string;
   status: 'connected' | 'disconnected' | 'error' | 'connecting';
   oauthUrl?: string;
+  profile?: any;
   pageId?: string;
   pageName?: string;
   accountType?: 'personal' | 'business';
@@ -42,30 +43,40 @@ interface SocialConnection {
 
 function SocialConnectPage() {
   const { currentBrand, loading: brandLoading } = useUnifiedBrand();
-  const { user } = useAuth();
-  const brandLabel = currentBrand?.businessName ?? (currentBrand as unknown as { name?: string })?.name ?? 'Unnamed Brand';
+  const { user, loading } = useAuth();
   const socialStorage = useBrandStorage(STORAGE_FEATURES.SOCIAL_MEDIA);
+
+  // State management
   const [connections, setConnections] = useState<SocialConnection[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [facebookPages, setFacebookPages] = useState<any[]>([]);
-  const [selectedPage, setSelectedPage] = useState<string>('');
-  const [instagramAccounts, setInstagramAccounts] = useState<any[]>([]);
-  const [selectedInstagramAccount, setSelectedInstagramAccount] = useState<string>('');
 
-  // Default social platforms with OAuth URLs
+  // Create a demo brand for development if no brand is selected
+  const demoUser = { userId: 'demo' };
+  const demoBrand = {
+    id: 'demo-brand',
+    businessName: 'Demo Social Media Company',
+    businessType: 'Digital Marketing Agency'
+  };
+
+  // Use demo data in development mode when no real user/brand exists
+  const effectiveUser = user || demoUser;
+  const effectiveBrand = currentBrand || demoBrand;
+  const brandLabel = effectiveBrand?.businessName ?? (effectiveBrand as unknown as { name?: string })?.name ?? 'Demo Brand';
+
+  // Default connections
   const defaultConnections: SocialConnection[] = [
-    {
-      platform: 'Instagram',
-      connected: false,
-      status: 'disconnected',
-      oauthUrl: '/api/social/oauth/instagram',
-      accountType: 'business' // Default to business account
-    },
     {
       platform: 'Facebook',
       connected: false,
       status: 'disconnected',
       oauthUrl: '/api/social/oauth/facebook'
+    },
+    {
+      platform: 'Instagram',
+      connected: false,
+      status: 'disconnected',
+      oauthUrl: '/api/social/oauth/instagram',
+      accountType: 'business'
     },
     {
       platform: 'Twitter',
@@ -81,183 +92,157 @@ function SocialConnectPage() {
     },
   ];
 
-  // Load connections when brand changes using unified brand system
-  useBrandChangeListener(React.useCallback(async (brand) => {
-    const brandName = brand?.businessName ?? (brand as unknown as { name?: string })?.name ?? 'none';
+  // Load connections from API
+  const loadConnections = async () => {
+    console.log('🔄 loadConnections called');
+    console.log('🔍 User object:', user);
+    console.log('🔍 User userId:', user?.userId);
+    console.log('🔍 Auth loading state:', loading);
 
-    if (!brand || !user?.userId) {
+    // Wait for auth to finish loading
+    if (loading) {
+      console.log('⏳ Auth still loading, skipping connection load');
+      return;
+    }
+
+    // In development mode, use demo user if no real user
+    const userId = user?.userId || 'demo';
+    console.log('👤 Using userId:', userId);
+
+    if (!userId) {
+      console.log('❌ No userId, using default connections');
       setConnections(defaultConnections);
       setIsLoading(false);
       return;
     }
 
+    console.log('🚀 Making API call to /api/social/connections');
     setIsLoading(true);
-
     try {
-      // Load connections from API
-      const response = await fetch('/api/social/connections', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('nevis_access_token')}`,
-        },
-      });
+      const headers: Record<string, string> = {};
 
+      // For real authenticated users, get the Supabase session token
+      if (user?.userId && user.userId !== 'demo') {
+        try {
+          const { supabase } = await import('@/lib/supabase');
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.access_token) {
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+            console.log('🔑 Using Supabase session token for authenticated user');
+          }
+        } catch (error) {
+          console.error('❌ Failed to get Supabase session:', error);
+        }
+      } else {
+        // For demo mode, use the demo user header
+        headers['x-demo-user'] = userId;
+        console.log('🎭 Using demo mode for user:', userId);
+      }
+
+      console.log('📤 Request headers:', Object.keys(headers));
+
+      const response = await fetch('/api/social/connections', { headers });
+
+      console.log('📡 API response status:', response.status, response.ok);
       if (response.ok) {
         const data = await response.json();
+        console.log('📊 API response data:', data);
         const apiConnections = data.connections || [];
+        console.log('🔗 API connections:', apiConnections);
 
         // Map API connections to our interface
         const mappedConnections = defaultConnections.map(defaultConn => {
-          const apiConn = apiConnections.find((c: any) => c.platform.toLowerCase() === defaultConn.platform.toLowerCase());
+          const apiConn = apiConnections.find((c: any) =>
+            c.platform.toLowerCase() === defaultConn.platform.toLowerCase()
+          );
+
           if (apiConn) {
             return {
-              platform: defaultConn.platform,
+              ...defaultConn,
               connected: true,
               status: 'connected' as const,
-              username: apiConn.profile?.screen_name || apiConn.profile?.username,
-              lastSync: new Date().toISOString(),
+              username: apiConn.profile?.username || apiConn.profile?.screen_name,
+              lastSync: apiConn.updatedAt || new Date().toISOString(),
               profile: apiConn.profile,
-              accountType: apiConn.profile?.accountType || defaultConn.accountType,
-              pageId: apiConn.profile?.pageId,
-              pageName: apiConn.profile?.pageName
             };
           }
           return defaultConn;
         });
 
+        console.log('✅ Setting mapped connections:', mappedConnections);
         setConnections(mappedConnections);
-
-        // Check if we need to load Facebook pages for a connected account
-        const facebookConnection = mappedConnections.find(c => c.platform === 'Facebook' && c.connected);
-        if (facebookConnection) {
-          loadFacebookPages();
-        }
-
-        // Check if we need to load Instagram accounts
-        const instagramConnection = mappedConnections.find(c => c.platform === 'Instagram' && c.connected);
-        if (instagramConnection) {
-          loadInstagramAccounts();
-        }
       } else {
+        console.log('❌ API response not ok, using default connections');
         setConnections(defaultConnections);
       }
     } catch (error) {
+      console.error('❌ Failed to load connections:', error);
       setConnections(defaultConnections);
     } finally {
+      console.log('🏁 loadConnections finished');
       setIsLoading(false);
     }
-  }, [socialStorage]));
-
-  const saveConnections = (newConnections: SocialConnection[]) => {
-    if (!socialStorage) {
-      return;
-    }
-
-    try {
-      socialStorage.setItem(newConnections);
-      setConnections(newConnections);
-    } catch (error) {
-      console.error("Failed to save connections:", error);
-    }
   };
 
-  const loadFacebookPages = async () => {
-    try {
-      const response = await fetch('/api/social/facebook/pages', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('nevis_access_token')}`,
-        },
-      });
+  // Load connections on mount and when user changes
+  useEffect(() => {
+    loadConnections();
+  }, [user, loading]); // Depend on user and loading state
 
-      if (response.ok) {
-        const pages = await response.json();
-        setFacebookPages(pages);
-      }
-    } catch (error) {
-      console.error("Failed to load Facebook pages:", error);
-    }
-  };
-
-  const loadInstagramAccounts = async () => {
-    try {
-      const response = await fetch('/api/social/instagram/accounts', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('nevis_access_token')}`,
-        },
-      });
-
-      if (response.ok) {
-        const accounts = await response.json();
-        setInstagramAccounts(accounts);
-      }
-    } catch (error) {
-      console.error("Failed to load Instagram accounts:", error);
-    }
-  };
-
+  // Initiate OAuth flow for a platform
   const initiateOAuth = async (platform: string) => {
-    // For Facebook/Instagram, check if we need to select a page/account first
-    if (platform === 'Facebook' && facebookPages.length > 0 && !selectedPage) {
-      // We'll let the user select a page from the UI
+    const userId = effectiveUser?.userId;
+    if (!userId) {
+      alert('Please log in to connect social media accounts.');
       return;
-    }
-
-    if (platform === 'Instagram') {
-      // For Instagram Business accounts, we need a connected Facebook page
-      const instagramConnection = connections.find(c => c.platform === 'Instagram');
-      if (instagramConnection?.accountType === 'business' && !selectedPage) {
-        // Check if we have Facebook pages available
-        if (facebookPages.length > 0) {
-          // Need to select a Facebook page first
-          return;
-        }
-
-        // If no Facebook connection, we need to connect Facebook first
-        const facebookConnection = connections.find(c => c.platform === 'Facebook');
-        if (!facebookConnection?.connected) {
-          alert('To connect an Instagram Business account, you need to connect Facebook first.');
-          return;
-        }
-      }
     }
 
     // Update connection status to connecting
-    const updatedConnections = connections.map<SocialConnection>(conn =>
+    const updatedConnections = connections.map(conn =>
       conn.platform === platform
         ? { ...conn, status: 'connecting' as const }
         : conn
     );
-    saveConnections(updatedConnections);
+    setConnections(updatedConnections);
 
     try {
-      // Find the OAuth URL for the platform
       const platformConnection = updatedConnections.find(c => c.platform === platform);
       if (!platformConnection?.oauthUrl) {
         throw new Error(`No OAuth URL configured for ${platform}`);
       }
 
-      // Prepare request body
-      const body: any = {
-        brandId: currentBrand?.id,
-        callbackUrl: window.location.origin + '/api/social/oauth/callback'
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
       };
 
-      // Add page ID for Facebook/Instagram if selected
-      if ((platform === 'Facebook' || platform === 'Instagram') && selectedPage) {
-        body.pageId = selectedPage;
+      // For real authenticated users, get the Supabase session token
+      if (effectiveUser?.userId && effectiveUser.userId !== 'demo') {
+        try {
+          const { supabase } = await import('@/lib/supabase');
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.access_token) {
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+            console.log('🔑 Using Supabase session token for OAuth');
+          }
+        } catch (error) {
+          console.error('❌ Failed to get Supabase session for OAuth:', error);
+        }
+      } else {
+        // For demo mode, use the demo user header
+        headers['x-demo-user'] = userId;
+        console.log('🎭 Using demo mode for OAuth:', userId);
       }
 
-      // Add account type for Instagram
-      if (platform === 'Instagram') {
-        body.accountType = platformConnection.accountType;
-      }
+      console.log('🔗 Connect headers:', Object.keys(headers));
 
       // Call the backend to get the OAuth URL
       const response = await fetch(platformConnection.oauthUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body)
+        headers,
+        body: JSON.stringify({
+          brandId: effectiveBrand?.id,
+          callbackUrl: window.location.origin + '/api/social/oauth/callback'
+        })
       });
 
       if (!response.ok) {
@@ -272,66 +257,129 @@ function SocialConnectPage() {
       console.error(`OAuth initiation failed for ${platform}:`, error);
 
       // Reset connection status on error
-      const resetConnections = connections.map<SocialConnection>(conn =>
+      const resetConnections = connections.map(conn =>
         conn.platform === platform
           ? { ...conn, status: 'disconnected' as const }
           : conn
       );
-      saveConnections(resetConnections);
+      setConnections(resetConnections);
+
+      alert(`Failed to connect to ${platform}. Please try again.`);
     }
   };
 
+  // Disconnect a platform
   const disconnectPlatform = async (platform: string) => {
+    const userId = effectiveUser?.userId;
+    if (!userId) return;
+
     try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+
+      // For real authenticated users, get the Supabase session token
+      if (effectiveUser?.userId && effectiveUser.userId !== 'demo') {
+        try {
+          const { supabase } = await import('@/lib/supabase');
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.access_token) {
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+            console.log('🔑 Using Supabase session token for disconnect');
+          }
+        } catch (error) {
+          console.error('❌ Failed to get Supabase session for disconnect:', error);
+        }
+      } else {
+        // For demo mode, use the demo user header
+        headers['x-demo-user'] = userId;
+        console.log('🎭 Using demo mode for disconnect:', userId);
+      }
+
+      console.log('🗑️ Disconnect headers:', Object.keys(headers));
+
       // Call backend to revoke access
-      await fetch('/api/social/oauth/revoke', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          platform,
-          brandId: currentBrand?.id
-        })
+      await fetch(`/api/social/connections?platform=${platform.toLowerCase()}`, {
+        method: 'DELETE',
+        headers,
       });
     } catch (error) {
       console.error(`Failed to revoke ${platform} access:`, error);
     }
 
     // Update UI regardless of backend success
-    const updatedConnections = connections.map<SocialConnection>(conn =>
+    const updatedConnections = connections.map(conn =>
       conn.platform === platform
         ? {
           ...conn,
           connected: false,
           status: 'disconnected' as const,
           username: undefined,
-          pageId: undefined,
-          pageName: undefined,
-          lastSync: undefined
+          lastSync: undefined,
+          profile: undefined,
         }
         : conn
     );
-
-    saveConnections(updatedConnections);
-
-    // Clear data if disconnecting Facebook/Instagram
-    if (platform === 'Facebook') {
-      setFacebookPages([]);
-      setSelectedPage('');
-    } else if (platform === 'Instagram') {
-      setInstagramAccounts([]);
-      setSelectedInstagramAccount('');
-    }
+    setConnections(updatedConnections);
   };
 
+  // Handle OAuth callback results
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const oauthSuccess = urlParams.get('oauth_success');
+    const platform = urlParams.get('platform');
+    const username = urlParams.get('username');
+    const error = urlParams.get('error');
+
+    if (platform) {
+      const updatedConnections = connections.map(conn => {
+        if (conn.platform.toLowerCase() === platform.toLowerCase()) {
+          if (oauthSuccess === 'true') {
+            return {
+              ...conn,
+              connected: true,
+              status: 'connected' as const,
+              username: username || undefined,
+              lastSync: new Date().toISOString()
+            };
+          } else if (error) {
+            return {
+              ...conn,
+              connected: false,
+              status: 'error' as const
+            };
+          }
+        }
+        return conn;
+      });
+
+      if (oauthSuccess || error) {
+        setConnections(updatedConnections);
+
+        // Refresh connections from server to get the latest data
+        setTimeout(() => {
+          loadConnections();
+        }, 1000);
+
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, [connections]);
+
+  // Helper functions
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
-      case 'Instagram': return <Instagram className="h-6 w-6" />;
-      case 'Facebook': return <Facebook className="h-6 w-6" />;
-      case 'Twitter': return <Twitter className="h-6 w-6" />;
-      case 'LinkedIn': return <Linkedin className="h-6 w-6" />;
-      default: return <User className="h-6 w-6" />;
+      case 'Facebook':
+        return <Facebook className="w-6 h-6 text-blue-600" />;
+      case 'Instagram':
+        return <Instagram className="w-6 h-6 text-pink-600" />;
+      case 'Twitter':
+        return <Twitter className="w-6 h-6 text-blue-400" />;
+      case 'LinkedIn':
+        return <Linkedin className="w-6 h-6 text-blue-700" />;
+      default:
+        return <User className="w-6 h-6 text-gray-600" />;
     }
   };
 
@@ -339,10 +387,9 @@ function SocialConnectPage() {
     switch (connection.status) {
       case 'connected':
         return (
-          <Badge variant="default" className="bg-green-100 text-green-800">
+          <Badge className="bg-green-100 text-green-800">
             <CheckCircle className="w-3 h-3 mr-1" />
             Connected {connection.username && `as @${connection.username}`}
-            {connection.pageName && ` (${connection.pageName})`}
           </Badge>
         );
       case 'connecting':
@@ -361,7 +408,7 @@ function SocialConnectPage() {
         );
       default:
         return (
-          <Badge variant="secondary" className="bg-gray-100 text-gray-600">
+          <Badge variant="secondary">
             <AlertCircle className="w-3 h-3 mr-1" />
             Not Connected
           </Badge>
@@ -369,61 +416,11 @@ function SocialConnectPage() {
     }
   };
 
-  // Check if we're returning from an OAuth callback
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const oauthSuccess = urlParams.get('oauth_success');
-    const platform = urlParams.get('platform');
-    const username = urlParams.get('username');
-    const pageName = urlParams.get('page_name');
-    const pageId = urlParams.get('page_id');
-    const error = urlParams.get('error');
+  // In development mode, always show the interface with demo data
+  // In production, show fallback screen when no brand is selected
+  const showFallback = !currentBrand && process.env.NODE_ENV === 'production';
 
-    if (platform) {
-      const updatedConnections = connections.map<SocialConnection>(conn => {
-        if (conn.platform.toLowerCase() === platform.toLowerCase()) {
-          if (oauthSuccess === 'true') {
-            return {
-              ...conn,
-              connected: true,
-              status: 'connected' as const,
-              username: username || undefined,
-              pageName: pageName || undefined,
-              pageId: pageId || undefined,
-              lastSync: new Date().toISOString()
-            };
-          } else if (error) {
-            return {
-              ...conn,
-              connected: false,
-              status: 'error' as const
-            };
-          }
-        }
-        return conn;
-      });
-
-      if (oauthSuccess || error) {
-        saveConnections(updatedConnections);
-
-        // For Facebook, load pages after successful connection
-        if (platform === 'Facebook' && oauthSuccess === 'true') {
-          loadFacebookPages();
-        }
-
-        // For Instagram, load accounts after successful connection
-        if (platform === 'Instagram' && oauthSuccess === 'true') {
-          loadInstagramAccounts();
-        }
-
-        // Clean up URL
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
-    }
-  }, [connections]);
-
-  // when no brand is selected, show a fallback screen with SidebarInset for consistency
-  if (!currentBrand) {
+  if (showFallback) {
     return (
       <SidebarInset fullWidth>
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
@@ -439,9 +436,6 @@ function SocialConnectPage() {
     );
   }
 
-  const facebookConnection = connections.find(c => c.platform === 'Facebook');
-  const instagramConnection = connections.find(c => c.platform === 'Instagram');
-
   return (
     <SidebarInset fullWidth>
       <header className="flex h-14 items-center justify-end gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
@@ -456,218 +450,82 @@ function SocialConnectPage() {
                 />
                 <AvatarFallback><User /></AvatarFallback>
               </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
+              <span className="sr-only">Toggle user menu</span>
+            </Button>
+          </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
           </DropdownMenuContent>
         </DropdownMenu>
       </header>
       <main className="flex-1 overflow-auto">
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-          <div className="container mx-auto px-4 py-8">
-            <div className="max-w-7xl mx-auto">
-              <div className="mb-8 text-center">
-                <div className="flex items-center justify-center gap-2 mb-4">
-                  <h1 className="text-3xl font-bold font-headline">
-                    Connect Your Social Media
-                  </h1>
-                  <Badge variant="secondary" className="bg-green-100 text-green-800">
-                    🔥 Brand-Scoped
-                  </Badge>
+        <div className="container mx-auto px-4 py-8">
+          <h1 className="text-2xl font-bold mb-4">Social Connect</h1>
+          <p>Manage your social media connections for {brandLabel}.</p>
+
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Platform Connections</CardTitle>
+              <CardDescription>
+                Connect your social media accounts to enable content publishing.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600">Loading connections...</p>
                 </div>
-                <p className="text-muted-foreground">
-                  Connect social media accounts for <strong>{brandLabel}</strong> to allow the AI to learn your brand's unique
-                  voice and visual style from your past posts.
-                </p>
-              </div>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Platform Connections</CardTitle>
-                  <CardDescription>
-                    Manage your connected social media accounts for {brandLabel}.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {isLoading ? (
-                    <div className="text-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                      <p className="text-gray-600">Loading connections...</p>
-                    </div>
-                  ) : (
-                    connections.map((connection) => (
-                      <div key={connection.platform} className="flex items-center justify-between rounded-lg border p-4">
-                        <div className="flex items-center gap-4">
-                          {getPlatformIcon(connection.platform)}
-                          <div>
-                            <span className="font-medium">{connection.platform}</span>
-                            {connection.lastSync && (
-                              <p className="text-sm text-gray-500">
-                                Last sync: {new Date(connection.lastSync).toLocaleDateString()}
-                              </p>
-                            )}
-                            {connection.platform === 'Instagram' && (
-                              <p className="text-xs text-blue-600">
-                                {connection.accountType === 'business' ? 'Business Account' : 'Personal Account'}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          {getStatusBadge(connection)}
-                          {connection.connected ? (
-                            <Button
-                              variant="outline"
-                              onClick={() => disconnectPlatform(connection.platform)}
-                            >
-                              Disconnect
-                            </Button>
-                          ) : (
-                            <Button
-                              onClick={() => initiateOAuth(connection.platform)}
-                              disabled={connection.status === 'connecting'}
-                            >
-                              {connection.status === 'connecting' ? (
-                                <>
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  Connecting
-                                </>
-                              ) : (
-                                'Connect'
-                              )}
-                            </Button>
+              ) : (
+                <div className="space-y-4">
+                  {connections.map((connection) => (
+                    <div key={connection.platform} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-4">
+                        {getPlatformIcon(connection.platform)}
+                        <div>
+                          <span className="font-medium">{connection.platform}</span>
+                          {connection.username && (
+                            <p className="text-sm text-gray-500">@{connection.username}</p>
+                          )}
+                          {connection.lastSync && (
+                            <p className="text-xs text-gray-400">
+                              Last sync: {new Date(connection.lastSync).toLocaleDateString()}
+                            </p>
                           )}
                         </div>
                       </div>
-                    ))
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Instagram Configuration Card */}
-              <Card className="mt-6">
-                <CardHeader>
-                  <CardTitle>Instagram Configuration</CardTitle>
-                  <CardDescription>
-                    Important: Make sure your Facebook app is properly configured for Instagram API access.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="p-3 bg-blue-50 rounded-md border border-blue-200">
-                    <div className="flex items-start gap-2">
-                      <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <h4 className="font-medium mb-1">Instagram API Setup</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Instagram now uses the Facebook Graph API. You need to configure your Facebook app to support Instagram.
-                        </p>
+                      <div className="flex items-center gap-3">
+                        {getStatusBadge(connection)}
+                        {connection.connected ? (
+                          <Button
+                            variant="outline"
+                            onClick={() => disconnectPlatform(connection.platform)}
+                            disabled={connection.status === 'connecting'}
+                          >
+                            Disconnect
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={() => initiateOAuth(connection.platform)}
+                            disabled={connection.status === 'connecting'}
+                          >
+                            {connection.status === 'connecting' ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Connecting
+                              </>
+                            ) : (
+                              'Connect'
+                            )}
+                          </Button>
+                        )}
                       </div>
                     </div>
-                  </div>
-
-                  <div className="p-3 bg-gray-100 rounded-md">
-                    <h4 className="font-medium mb-2">Required Facebook App Settings:</h4>
-                    <ul className="text-sm space-y-1 list-disc pl-5">
-                      <li>Add Instagram Basic Display product to your Facebook app</li>
-                      <li>Add <code className="bg-gray-200 px-1 rounded">https://crevo.app/api/social/oauth/instagram/callback</code> to "Valid OAuth Redirect URIs"</li>
-                      <li>Add Instagram Graph API product to your Facebook app</li>
-                      <li>Add your app domain to "Allowed Domains for the JavaScript SDK"</li>
-                      <li>Submit for review with required permissions: <code>instagram_basic</code>, <code>pages_show_list</code>, <code>instagram_content_publish</code></li>
-                    </ul>
-                  </div>
-
-                  <div className="p-3 bg-blue-50 rounded-md border border-blue-200">
-                    <h4 className="font-medium mb-2 flex items-center">
-                      <ExternalLink className="w-4 h-4 mr-1" />
-                      Quick Access to Facebook Developer Settings
-                    </h4>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      You need to configure these settings in your Facebook Developer portal.
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open('https://developers.facebook.com/apps/', '_blank')}
-                    >
-                      Open Facebook Developer Portal
-                    </Button>
-                  </div>
-
-                  {instagramConnection && !instagramConnection.connected && (
-                    <div className="p-3 bg-amber-50 rounded-md border border-amber-200">
-                      <h4 className="font-medium mb-2">Instagram Account Type</h4>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        Select the type of Instagram account you want to connect:
-                      </p>
-                      <div className="flex gap-2 mb-3">
-                        <Button
-                          variant={instagramConnection.accountType === 'business' ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => {
-                            const updatedConnections = connections.map<SocialConnection>(conn =>
-                              conn.platform === 'Instagram'
-                                ? { ...conn, accountType: 'business' }
-                                : conn
-                            );
-                            saveConnections(updatedConnections);
-                          }}
-                        >
-                          Business Account
-                        </Button>
-                        <Button
-                          variant={instagramConnection.accountType === 'personal' ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => {
-                            const updatedConnections = connections.map<SocialConnection>(conn =>
-                              conn.platform === 'Instagram'
-                                ? { ...conn, accountType: 'personal' }
-                                : conn
-                            );
-                            saveConnections(updatedConnections);
-                          }}
-                        >
-                          Personal Account
-                        </Button>
-                      </div>
-                      {instagramConnection.accountType === 'business' && (
-                        <p className="text-xs text-amber-700">
-                          Note: Business accounts require a connected Facebook Page and additional permissions.
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  {instagramConnection?.accountType === 'business' && facebookPages.length > 0 && (
-                    <div className="p-3 bg-green-50 rounded-md border border-green-200">
-                      <h4 className="font-medium mb-2">Select Facebook Page</h4>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        Choose which Facebook page is connected to your Instagram Business account:
-                      </p>
-                      <select
-                        className="w-full p-2 border rounded-md"
-                        value={selectedPage}
-                        onChange={(e) => setSelectedPage(e.target.value)}
-                      >
-                        <option value="">Select a page</option>
-                        {facebookPages.map((page: any) => (
-                          <option key={page.id} value={page.id}>
-                            {page.name}
-                          </option>
-                        ))}
-                      </select>
-                      <Button
-                        className="mt-2"
-                        onClick={() => initiateOAuth('Instagram')}
-                        disabled={!selectedPage}
-                      >
-                        Connect Instagram Account
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </main>
     </SidebarInset>

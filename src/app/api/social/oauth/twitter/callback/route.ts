@@ -63,6 +63,7 @@ export async function GET(req: Request) {
     const { data: userObject } = await loggedClient.v2.me();
 
     // Store connection via connections API
+    console.log('[twitter-callback] storing connection with token length:', storedState.accessToken?.length);
     const connectionsResponse = await fetch(`${baseUrl}/api/social/connections`, {
       method: 'POST',
       headers: {

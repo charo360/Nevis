@@ -2,6 +2,27 @@
 
 "use client";
 
+import { Buffer as BufferPolyfill } from 'buffer';
+
+// Minimal Buffer polyfill for browser to satisfy libraries that expect Node's Buffer
+// Prefer real Buffer polyfill from 'buffer' when available.
+(() => {
+  if (typeof window !== 'undefined') {
+    // Ensure global alias exists for some libs
+    // @ts-ignore
+    window.global = window.global || window;
+    // Provide Buffer using the official polyfill if missing
+    // @ts-ignore
+    if (!window.Buffer) {
+      // @ts-ignore
+      window.Buffer = BufferPolyfill as any;
+    }
+    // Provide a very small process.env shim when needed
+    // @ts-ignore
+    if (!window.process) window.process = { env: {} } as any;
+  }
+})();
+
 import './globals.css';
 import type { Metadata } from 'next';
 import { Toaster } from "@/components/ui/toaster"

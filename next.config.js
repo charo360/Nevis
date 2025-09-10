@@ -46,14 +46,14 @@ const nextConfig = {
         http2: false,
         async_hooks: false,
         'fs/promises': false,
-        crypto: false,
-        stream: false,
-        util: false,
-        buffer: false,
-        events: false,
-        path: false,
-        os: false,
-        zlib: false,
+        crypto: require.resolve('crypto-browserify'),
+        stream: require.resolve('stream-browserify'),
+        util: require.resolve('util'),
+        buffer: require.resolve('buffer'),
+        events: require.resolve('events'),
+        path: require.resolve('path-browserify'),
+        os: require.resolve('os-browserify/browser'),
+        zlib: require.resolve('browserify-zlib'),
       };
 
       // More aggressive module exclusion for client bundles
@@ -92,15 +92,7 @@ const nextConfig = {
           'http2',
           'dns',
           'net',
-          'tls',
-          'crypto',
-          'stream',
-          'util',
-          'buffer',
-          'events',
-          'path',
-          'os',
-          'zlib'
+          'tls'
         );
       }
 

@@ -3,6 +3,15 @@
  * Replaces MongoDB for database operations and authentication
  */
 
+// Ensure Buffer polyfill is available before loading Supabase in the browser
+import { Buffer as BufferPolyfill } from 'buffer';
+// Attach to globalThis so dependencies can access it
+// Note: This runs in both server and browser; server already has Buffer.
+// In browser, Next 15 doesn't auto-polyfill Node core modules.
+if (typeof globalThis !== 'undefined' && (globalThis as any).Buffer === undefined) {
+  (globalThis as any).Buffer = BufferPolyfill as any;
+}
+
 import { createClient } from '@supabase/supabase-js';
 
 // Supabase configuration from environment variables

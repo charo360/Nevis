@@ -22,19 +22,34 @@ async function writeStates(data: any) {
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const authHeader = req.headers.get('authorization') || '';
+  const demoHeader = req.headers.get('x-demo-user') || '';
 
-  // Get user ID from Bearer token or query param
-  let userId: string | null = null;
+  // Determine user identity for storing connection
+  // Prefer explicit demo/user header or query param; avoid generating random user ids
+  const hintedUserId = (demoHeader || url.searchParams.get('userId') || '').trim();
+
+  let userId: string | null = hintedUserId || null;
   let accessToken: string | null = null;
 
   if (authHeader.startsWith('Bearer ')) {
-    accessToken = authHeader.split(' ')[1];
-    // For now, we'll use a simple userId from query or generate one
-    userId = url.searchParams.get('userId') || 'user_' + Date.now();
+    const candidate = authHeader.split(' ')[1];
+    // Only treat as token if it looks like a JWT (has 2 dots and reasonable length)
+    const looksJwt = candidate && candidate !== 'null' && candidate !== 'undefined' && candidate.split('.').length === 3 && candidate.length > 20;
+    if (looksJwt) {
+      accessToken = candidate;
+      console.log('[twitter-oauth] received JWT-like accessToken');
+    } else {
+      console.log('[twitter-oauth] ignoring non-JWT bearer token');
+    }
   } else {
-    // Fallback for demo/development
-    userId = url.searchParams.get('userId') || 'demo';
+    console.log('[twitter-oauth] no Bearer token found, authHeader:', authHeader);
   }
+
+  if (!userId) {
+    // Final fallback used across flow
+    userId = 'demo';
+  }
+  console.log('[twitter-oauth] using userId:', userId);
 
   try {
     // Use NEXT_PUBLIC_APP_URL when available (build-time / production). Fall back to localhost for local dev.

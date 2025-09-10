@@ -3,8 +3,18 @@ import { GET as startGET } from './start/route';
 
 export async function POST(req: Request) {
   try {
+    // Debug: log the incoming headers
+    console.log('[twitter-post] Authorization header:', req.headers.get('authorization'));
+
+    // Create a new Request object with GET method but preserve headers and URL
+    const url = new URL(req.url);
+    const getRequest = new Request(url.toString(), {
+      method: 'GET',
+      headers: req.headers,
+    });
+
     // Call the start GET handler to generate the OAuth redirect response
-    const startResponse: any = await startGET(req as any);
+    const startResponse: any = await startGET(getRequest);
 
     // The start handler issues a redirect; extract the Location header
     const location = startResponse?.headers?.get?.('location') || startResponse?.headers?.get('Location');
