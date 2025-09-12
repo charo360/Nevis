@@ -41,25 +41,38 @@ export function useAuth() {
           const userData = JSON.parse(storedUserData) as AuthUser;
 
           // Verify token is still valid
-          const response = await fetch('/api/auth/verify', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${storedToken}`,
-            },
-          });
+          try {
+            const response = await fetch('/api/auth/verify', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${storedToken}`,
+              },
+              // Add timeout to prevent hanging
+              signal: AbortSignal.timeout(5000), // 5 second timeout
+            });
 
-          if (response.ok) {
-            console.log('✅ Token verified successfully, user authenticated:', userData.userId);
+            if (response.ok) {
+              console.log('✅ Token verified successfully, user authenticated:', userData.userId);
+              setAuthState({
+                user: userData,
+                loading: false,
+                error: null,
+              });
+            } else {
+              console.warn('⚠️ Token verification failed, attempting refresh...');
+              // Token is invalid, try to refresh
+              await refreshToken();
+            }
+          } catch (fetchError) {
+            console.warn('🌐 Network error during token verification, using cached auth:', fetchError);
+            // If network fails, use cached auth data but mark as potentially stale
+            // This allows the app to work offline or when API routes are temporarily unavailable
             setAuthState({
               user: userData,
               loading: false,
               error: null,
             });
-          } else {
-            console.warn('⚠️ Token verification failed, attempting refresh...');
-            // Token is invalid, try to refresh
-            await refreshToken();
           }
         } else {
           console.log('🚫 No stored auth data found');
@@ -79,7 +92,12 @@ export function useAuth() {
       }
     };
 
-    loadStoredAuth();
+    // Add a small delay to allow server to fully start up
+    const timer = setTimeout(() => {
+      loadStoredAuth();
+    }, 1000); // 1 second delay
+
+    return () => clearTimeout(timer);
   }, []);
 
   // Store auth data in localStorage

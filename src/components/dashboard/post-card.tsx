@@ -56,10 +56,20 @@ const isValidUrl = (url: string): boolean => {
       return url.includes('base64,') || url.includes('charset=');
     }
 
+    // Check for relative API paths (MongoDB GridFS)
+    if (url.startsWith('/api/images/') || url.startsWith('/api/files/')) {
+      return true;
+    }
+
     // Check for HTTP/HTTPS URLs
     const parsedUrl = new URL(url);
     return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
   } catch (error) {
+    // Check if it's a relative path that might be valid
+    if (url.startsWith('/') && !url.includes('[') && !url.includes(']')) {
+      return true;
+    }
+
     // Don't log compression placeholders as errors
     if (!url.includes('[') || !url.includes(']')) {
     }

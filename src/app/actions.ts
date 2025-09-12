@@ -10,6 +10,7 @@ import { artifactsService } from "@/lib/services/artifacts-service";
 import type { Artifact } from "@/lib/types/artifacts";
 import { generateEnhancedDesign } from "@/ai/gemini-2.5-design";
 import { generateRevo2ContentAction, generateRevo2CreativeAssetAction } from "@/app/actions/revo-2-actions";
+import { supabaseService } from "@/lib/services/supabase-service";
 
 
 // --- AI Flow Actions ---
@@ -268,6 +269,42 @@ export async function generateCreativeAssetAction(
       aspectRatio,
       preferredModel,
     });
+
+    // Upload image to Supabase storage if it's a data URL
+    if (result.imageUrl && result.imageUrl.startsWith('data:image/')) {
+      try {
+        console.log('🔄 Uploading generated image to Supabase storage...');
+
+        // Convert data URL to buffer
+        const base64Data = result.imageUrl.split(',')[1];
+        const imageBuffer = Buffer.from(base64Data, 'base64');
+
+        // Generate unique filename
+        const timestamp = Date.now();
+        const brandId = brandProfile?.id || 'default';
+        const filename = `generated_${timestamp}.png`;
+        const storagePath = `creative-assets/${brandId}/${filename}`;
+
+        // Upload to Supabase
+        const uploadResult = await supabaseService.uploadImage(
+          imageBuffer,
+          storagePath,
+          'image/png'
+        );
+
+        if (uploadResult) {
+          console.log('✅ Image uploaded to Supabase:', uploadResult.url);
+          // Replace data URL with Supabase URL
+          result.imageUrl = uploadResult.url;
+        } else {
+          console.log('⚠️ Supabase upload failed, keeping data URL');
+        }
+      } catch (uploadError) {
+        console.log('⚠️ Image upload error, keeping data URL:', uploadError);
+        // Keep the original data URL if upload fails
+      }
+    }
+
     return result;
   } catch (error) {
     // Always pass the specific error message from the flow to the client.

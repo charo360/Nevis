@@ -27,7 +27,7 @@ import { STORAGE_FEATURES, getStorageUsage, cleanupAllStorage } from "@/lib/serv
 import { processGeneratedPost } from "@/lib/services/generated-post-storage";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuickContentStorage } from "@/hooks/use-feature-storage";
-// Firebase Storage utilities removed - using MongoDB GridFS
+// Using Supabase storage for images and content
 
 // No limit on posts - store all generated content
 const MAX_POSTS_TO_STORE = 100; // Increased from 5 to 100 posts
@@ -37,15 +37,25 @@ const cleanupBrandScopedStorage = (brandStorage: any) => {
   try {
     const posts = brandStorage.getItem() || [];
 
-    // Fix invalid dates in existing posts
-    const fixedPosts = posts.map((post: GeneratedPost) => {
+    // Fix invalid dates and ensure unique IDs in existing posts
+    const usedIds = new Set<string>();
+    const fixedPosts = posts.map((post: GeneratedPost, index: number) => {
+      let fixedPost = { ...post };
+
+      // Fix invalid dates
       if (!post.date || isNaN(new Date(post.date).getTime())) {
-        return {
-          ...post,
-          date: new Date().toISOString()
-        };
+        fixedPost.date = new Date().toISOString();
       }
-      return post;
+
+      // Ensure unique ID
+      if (!post.id || usedIds.has(post.id)) {
+        fixedPost.id = `post-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`;
+        console.log('🔧 Fixed duplicate/missing ID for post:', fixedPost.id);
+      } else {
+        usedIds.add(post.id);
+      }
+
+      return fixedPost;
     });
 
     // REMOVED THE 5-POST LIMIT - Now stores up to 100 posts
@@ -330,146 +340,92 @@ function QuickContentPage() {
   }, [currentBrand, brands.length, brandLoading, router, selectBrand, forceBrandRestore]);
 
 
-  // Process generated post with Firebase Storage upload and database fallback
+  // Process generated post with Supabase-only storage (no fallbacks)
   const processPostImages = async (post: GeneratedPost): Promise<GeneratedPost> => {
     try {
-      // Check if user is authenticated for Firebase Storage
+      // Check if user is authenticated
       if (!user) {
         toast({
-          title: "Content Saved",
-          description: "Content saved to database. Sign in to save images permanently in the cloud.",
-          variant: "default",
+          title: "Authentication Required",
+          description: "Please sign in to save content and images.",
+          variant: "destructive",
         });
         return post; // Return original post with data URLs
       }
 
+      console.log('🔄 Processing post with Supabase-only storage...');
 
-      // TEMPORARY: Skip Firebase Storage upload until rules are deployed
-
-      // Save to database with data URLs (temporary solution)
-      toast({
-        title: "Content Saved to Database",
-        description: "Content saved successfully. Deploy Firebase Storage rules for permanent image URLs.",
-        variant: "default",
+      // Use the API route to handle all image processing and storage
+      // This ensures consistency with the working TWITTER branch implementation
+      const response = await fetch('/api/generated-posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          post: post,
+          userId: user.userId,
+          brandProfileId: currentBrand?.id || 'default'
+        }),
       });
 
-      return post; // Return original post with data URLs
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status}`);
+      }
 
-      /* UNCOMMENT THIS AFTER DEPLOYING FIREBASE STORAGE RULES:
-      try {
-        // Try Firebase Storage first
-        const processedPost = await processGeneratedPost(post, user.uid);
-  
-  
-        // Show success message
+      const result = await response.json();
+
+      if (result.success) {
+        console.log('✅ Post processed successfully via API route');
+
+        // The API route has already uploaded images to Supabase and returned proper URLs
+        const processedPost = result.post || post;
+
         toast({
-          title: "Images Saved to Cloud",
-          description: "Images have been permanently saved to Firebase Storage.",
+          title: "Content Saved Successfully",
+          description: "Content and images saved to Supabase storage!",
           variant: "default",
         });
-  
+
         return processedPost;
-      } catch (storageError) {
-  
-        // Fallback: Save to database with data URLs (temporary)
-        toast({
-          title: "Content Saved to Database",
-          description: "Images stored temporarily. Please update Firebase Storage rules for permanent cloud storage.",
-          variant: "default",
-        });
-  
-        return post; // Return original post with data URLs
+      } else {
+        throw new Error(result.error || 'API processing failed');
       }
-      */
     } catch (error) {
+      console.error('❌ Post processing failed:', error);
+
       toast({
-        title: "Content Saved Locally",
-        description: "Content generated successfully but stored locally only.",
-        variant: "default",
+        title: "Save Failed",
+        description: "Failed to save content. Please try again.",
+        variant: "destructive",
       });
-      return post; // Return original post if all processing fails
+
+      return post; // Return original post on error
     }
   };
 
   const handlePostGenerated = async (post: GeneratedPost) => {
-    console.log('🔄 Processing individual post:', post.id || 'no-id');
+    console.log('🔄 Processing individual post with Supabase storage:', post.id || 'no-id');
 
-    // Process images with Firebase Storage upload
+    // Ensure the post has a unique ID
+    if (!post.id) {
+      post.id = `post-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      console.log('🔧 Generated new ID for post:', post.id);
+    }
+
+    // Process images and save everything to Supabase via API route
     let processedPost = await processPostImages(post);
 
-    // Add the processed post to the beginning of the array (no limit)
+    // Ensure processed post has the same ID
+    processedPost.id = post.id;
+
+    // Add the processed post to the beginning of the array
     const newPosts = [processedPost, ...generatedPosts];
     setGeneratedPosts(newPosts);
 
-    if (!postsStorage) {
-      toast({
-        title: "Storage Unavailable",
-        description: "Post generated but couldn't be saved. Please select a brand.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    let databaseSaveSuccess = false;
-    let databasePostId = processedPost.id; // Use existing ID if post was already saved
-
-    // Always try to save to database for each individual post
-    if (user?.userId && currentBrand?.id) {
-      try {
-        console.log('🔄 Saving individual post to database...', {
-          userId: user.userId,
-          brandId: currentBrand.id,
-          brandName: currentBrand.businessName,
-          postContent: (() => {
-            if (!processedPost.content) return 'No content';
-            if (typeof processedPost.content === 'string') {
-              return processedPost.content.substring(0, 50) + '...';
-            }
-            // Handle object content (database format)
-            const contentText = (processedPost.content as any)?.text || '';
-            return typeof contentText === 'string' ? contentText.substring(0, 50) + '...' : 'No content';
-          })()
-        });
-
-        databasePostId = await savePostToDatabase(processedPost);
-        console.log('✅ Individual post saved to database with ID:', databasePostId);
-        databaseSaveSuccess = true;
-
-        // Update the post with the database ID
-        const savedPost = { ...processedPost, id: databasePostId };
-        const updatedPosts = [savedPost, ...generatedPosts.filter(p => p.id !== processedPost.id)];
-        setGeneratedPosts(updatedPosts);
-
-      } catch (databaseError) {
-        console.error('❌ Individual post database save error:', databaseError);
-        databaseSaveSuccess = false;
-      }
-    }
-
-    // Save to localStorage as backup
-    let localStorageSuccess = false;
-    try {
-      const postsToSave = databasePostId
-        ? [{ ...processedPost, id: databasePostId }, ...generatedPosts.filter(p => p.id !== processedPost.id)]
-        : newPosts;
-      postsStorage.setItem(postsToSave);
-      localStorageSuccess = true;
-      console.log('✅ Individual post saved to localStorage');
-    } catch (storageError) {
-      console.log('⚠️ Individual post localStorage save failed:', storageError.message);
-      localStorageSuccess = false;
-    }
-
-    // Show success message for individual post
-    if (databaseSaveSuccess && localStorageSuccess) {
-      console.log(`✅ Post saved successfully to both database (${databasePostId}) and localStorage`);
-    } else if (databaseSaveSuccess && !localStorageSuccess) {
-      console.log(`✅ Post saved to database (${databasePostId}) but localStorage failed`);
-    } else if (!databaseSaveSuccess && localStorageSuccess) {
-      console.log(`⚠️ Post saved to localStorage only, database save failed`);
-    } else {
-      console.log(`❌ Post save failed for both database and localStorage`);
-    }
+    // The processPostImages function now handles everything via the API route
+    // No need for additional database saves or complex fallback logic
+    console.log('✅ Post processing complete - everything handled by MongoDB API route');
   };
 
   // Debug function to clear all posts for current brand
@@ -622,104 +578,58 @@ function QuickContentPage() {
       </header>
       <main className="flex-1 overflow-auto">
         <div className="min-h-full bg-gradient-to-br from-blue-50 to-indigo-100">
-          <div className="container mx-auto px-4 py-8">
-            <div className="max-w-7xl mx-auto">
-              {isLoading || brandLoading ? (
-                <div className="flex w-full min-h-[300px] items-center justify-center">
-                  <div className="w-full max-w-3xl text-center">
-                    <p>Loading Quick Content...</p>
-                  </div>
-                </div>
-              ) : !currentBrand ? (
-                <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
-                  <h2 className="text-xl font-semibold">Select a Brand</h2>
-                  <p className="text-muted-foreground text-center">
-                    Please select a brand to start generating content.
-                  </p>
-                  {brands.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {brands.map((brand) => (
-                        <Button
-                          key={brand.id}
-                          onClick={() => selectBrand(brand)}
-                          variant="outline"
-                        >
-                          {brand.businessName || brand.name}
-                        </Button>
-                      ))}
-                    </div>
-                  ) : (
-                    <Button onMouseEnter={() => router.prefetch('/brand-profile')} onFocus={() => router.prefetch('/brand-profile')} onClick={() => router.push('/brand-profile')}>
-                      Create Brand Profile
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {/* TODO: Re-enable Active Artifacts Indicator once component is set up */}
-                  {/* <ActiveArtifactsIndicator
-              onArtifactDeactivate={() => {
-                // Refresh content when artifacts are deactivated
-              }}
-              onManageArtifacts={() => {
-                // Navigate to artifacts page
-                window.open('/artifacts', '_blank');
-              }}
-            /> */}
-
-                  {/* Content Calendar */}
-                  {/* Map unified CompleteBrandProfile to the simplified BrandProfile expected by ContentCalendar */}
-                  {currentBrand && (
-                    <ContentCalendar
-                      brandProfile={{
-                        businessName: currentBrand.businessName,
-                        businessType: currentBrand.businessType || '',
-                        location: typeof currentBrand.location === 'string'
-                          ? currentBrand.location
-                          : currentBrand.location
-                            ? `${currentBrand.location.city || ''}, ${currentBrand.location.country || ''}`.replace(/^,\s*/, '').replace(/,\s*$/, '')
-                            : '',
-                        logoDataUrl: currentBrand.logoUrl || currentBrand.logoDataUrl || '',
-                        visualStyle: currentBrand.visualStyle || '',
-                        writingTone: currentBrand.writingTone || '',
-                        contentThemes: currentBrand.contentThemes || '',
-                        websiteUrl: currentBrand.websiteUrl || '',
-                        description: currentBrand.description || '',
-                        // Convert services array to newline-separated string to match BrandProfile.services
-                        services: Array.isArray((currentBrand as any).services)
-                          ? (currentBrand as any).services.map((s: any) => s.name).join('\n')
-                          : (currentBrand as any).services || '',
-                        targetAudience: currentBrand.targetAudience || '',
-                        keyFeatures: currentBrand.keyFeatures || '',
-                        competitiveAdvantages: currentBrand.competitiveAdvantages || '',
-                        contactInfo: {
-                          phone: currentBrand.contactPhone || '',
-                          email: currentBrand.contactEmail || '',
-                          address: currentBrand.contactAddress || '',
-                        },
-                        socialMedia: {
-                          facebook: currentBrand.facebookUrl || '',
-                          instagram: currentBrand.instagramUrl || '',
-                          twitter: currentBrand.twitterUrl || '',
-                          linkedin: currentBrand.linkedinUrl || '',
-                        },
-                        primaryColor: currentBrand.primaryColor || undefined,
-                        accentColor: currentBrand.accentColor || undefined,
-                        backgroundColor: currentBrand.backgroundColor || undefined,
-                        designExamples: currentBrand.designExamples || [],
-                      }}
-                      posts={generatedPosts}
-                      onPostGenerated={handlePostGenerated}
-                      onPostUpdated={handlePostUpdated}
-                    />
-                  )}
-                </div>
-              )}
+          <div className="container mx-auto px-4 py-8 max-w-full">
+            <div className="max-w-7xl mx-auto w-full">
+              <div className="space-y-4 w-full">
+                {currentBrand && (
+                  <ContentCalendar
+                    brandProfile={{
+                      businessName: currentBrand.businessName,
+                      businessType: currentBrand.businessType || '',
+                      location: typeof currentBrand.location === 'string'
+                        ? currentBrand.location
+                        : currentBrand.location
+                          ? `${currentBrand.location.city || ''}, ${currentBrand.location.country || ''}`.replace(/^,\s*/, '').replace(/,\s*$/, '')
+                          : '',
+                      logoDataUrl: currentBrand.logoUrl || currentBrand.logoDataUrl || '',
+                      visualStyle: currentBrand.visualStyle || '',
+                      writingTone: currentBrand.writingTone || '',
+                      contentThemes: currentBrand.contentThemes || '',
+                      websiteUrl: currentBrand.websiteUrl || '',
+                      description: currentBrand.description || '',
+                      services: Array.isArray((currentBrand as any).services)
+                        ? (currentBrand as any).services.map((s: any) => s.name).join('\n')
+                        : (currentBrand as any).services || '',
+                      targetAudience: currentBrand.targetAudience || '',
+                      keyFeatures: currentBrand.keyFeatures || '',
+                      competitiveAdvantages: currentBrand.competitiveAdvantages || '',
+                      contactInfo: {
+                        phone: currentBrand.contactPhone || '',
+                        email: currentBrand.contactEmail || '',
+                        address: currentBrand.contactAddress || '',
+                      },
+                      socialMedia: {
+                        facebook: currentBrand.facebookUrl || '',
+                        instagram: currentBrand.instagramUrl || '',
+                        twitter: currentBrand.twitterUrl || '',
+                        linkedin: currentBrand.linkedinUrl || '',
+                      },
+                      primaryColor: currentBrand.primaryColor || undefined,
+                      accentColor: currentBrand.accentColor || undefined,
+                      backgroundColor: currentBrand.backgroundColor || undefined,
+                      designExamples: currentBrand.designExamples || [],
+                    }}
+                    posts={generatedPosts}
+                    onPostGenerated={handlePostGenerated}
+                    onPostUpdated={handlePostUpdated}
+                  />
+                )}
+              </div>
             </div>
           </div>
         </div>
       </main>
-    </SidebarInset >
+    </SidebarInset>
   );
 }
 

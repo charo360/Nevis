@@ -63,7 +63,7 @@ class GridFSStorageService {
     options: UploadOptions
   ): Promise<UploadResult> {
     const bucket = await this.getBucket();
-    
+
     const uploadStream = bucket.openUploadStream(filename, {
       contentType: options.contentType,
       metadata: {
@@ -80,7 +80,7 @@ class GridFSStorageService {
         const result: UploadResult = {
           fileId: uploadStream.id.toString(),
           filename: uploadStream.filename,
-          url: `/api/files/${uploadStream.id}`,
+          url: `/api/images/${uploadStream.id}`,
           metadata: {
             size: buffer.length,
             contentType: options.contentType || 'application/octet-stream',
@@ -108,7 +108,7 @@ class GridFSStorageService {
   ): Promise<UploadResult> {
     const buffer = Buffer.from(await file.arrayBuffer());
     const filename = `${basePath}/${options.userId}/${Date.now()}-${file.name}`;
-    
+
     return this.uploadFromBuffer(buffer, filename, {
       ...options,
       contentType: file.type,
@@ -137,7 +137,7 @@ class GridFSStorageService {
     const buffer = Buffer.from(base64Data, 'base64');
 
     const fullFilename = `${STORAGE_PATHS.GENERATED_CONTENT}/${options.userId}/${Date.now()}-${filename}`;
-    
+
     return this.uploadFromBuffer(buffer, fullFilename, {
       ...options,
       contentType,
@@ -164,16 +164,16 @@ class GridFSStorageService {
 
     // Download file
     const downloadStream = bucket.openDownloadStream(objectId);
-    
+
     return new Promise((resolve, reject) => {
       const chunks: Buffer[] = [];
-      
+
       downloadStream.on('data', (chunk) => {
         chunks.push(chunk);
       });
-      
+
       downloadStream.on('error', reject);
-      
+
       downloadStream.on('end', () => {
         const buffer = Buffer.concat(chunks);
         resolve({ buffer, info: fileInfo });
@@ -195,7 +195,7 @@ class GridFSStorageService {
     try {
       const bucket = await this.getBucket();
       const objectId = new ObjectId(fileId);
-      
+
       await bucket.delete(objectId);
       return true;
     } catch (error) {
@@ -211,7 +211,7 @@ class GridFSStorageService {
     limit: number = 50
   ): Promise<FileInfo[]> {
     const bucket = await this.getBucket();
-    
+
     const filter: any = { 'metadata.userId': userId };
     if (category) {
       filter['metadata.category'] = category;
@@ -222,7 +222,7 @@ class GridFSStorageService {
 
   // Get file URL (for serving files)
   getFileUrl(fileId: string): string {
-    return `/api/files/${fileId}`;
+    return `/api/images/${fileId}`;
   }
 
   // Upload artifact file
