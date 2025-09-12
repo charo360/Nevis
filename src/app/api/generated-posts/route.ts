@@ -205,9 +205,10 @@ export async function POST(request: NextRequest) {
     console.log('💾 API: saving post to Supabase');
 
     // Convert to Supabase format
+    // For hybrid system: store MongoDB ObjectIds as strings in text fields
     const supabasePost = {
-      user_id: userId,
-      brand_id: brandProfileId,
+      user_id: userId, // MongoDB user ID as string
+      brand_profile_id: brandProfileId, // MongoDB brand profile ID as string
       platform: processedPost.platform || 'instagram',
       content: {
         text: processedPost.content?.text || processedPost.content || '',
@@ -234,8 +235,15 @@ export async function POST(request: NextRequest) {
 
     // Save to Supabase
     try {
-      const { data: savedPost, error } = await supabase
-        .from('posts')
+      // Use service role client to bypass RLS during hybrid migration
+      const { createClient } = require('@supabase/supabase-js');
+      const supabaseServiceRole = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+
+      const { data: savedPost, error } = await supabaseServiceRole
+        .from('generated_posts')
         .insert([supabasePost])
         .select()
         .single();
