@@ -1,23 +1,46 @@
 // API routes for generated posts management
 import { NextRequest, NextResponse } from 'next/server';
-import { generatedPostService } from '@/lib/mongodb/database';
-import type { GeneratedPost } from '@/lib/mongodb/services/generated-post-service';
-import { uploadDataUrlAsImage } from '@/lib/mongodb/storage';
+import { supabaseService } from '@/lib/services/supabase-service';
+import { createClient } from '@supabase/supabase-js';
 
-// Helper function to upload data URL to MongoDB GridFS
-async function uploadDataUrlToMongoDB(dataUrl: string, userId: string, fileName: string): Promise<{ success: boolean; url?: string; error?: string }> {
+// Server-side Supabase client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+// Helper function to upload data URL to Supabase Storage
+async function uploadDataUrlToSupabase(dataUrl: string, userId: string, fileName: string): Promise<{ success: boolean; url?: string; error?: string }> {
   try {
-    console.log('📤 Uploading image to MongoDB GridFS:', fileName);
+    console.log('📤 Uploading image to Supabase Storage:', fileName);
 
-    // Upload to MongoDB GridFS using the storage service
-    const result = await uploadDataUrlAsImage(dataUrl, fileName, userId, undefined, {
-      category: 'generated-content'
-    });
+    // Convert data URL to buffer
+    const base64Data = dataUrl.split(',')[1];
+    const buffer = Buffer.from(base64Data, 'base64');
 
-    console.log('✅ Image uploaded to MongoDB GridFS:', result.url);
-    return { success: true, url: result.url };
+    // Upload to Supabase Storage
+    const uploadPath = `generated-content/${userId}/${fileName}`;
+    const { data, error } = await supabase.storage
+      .from('nevis-storage')
+      .upload(uploadPath, buffer, {
+        contentType: 'image/png',
+        upsert: true
+      });
+
+    if (error) {
+      console.error('❌ Supabase Storage upload error:', error);
+      return { success: false, error: error.message };
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('nevis-storage')
+      .getPublicUrl(uploadPath);
+
+    console.log('✅ Image uploaded to Supabase Storage:', publicUrl);
+    return { success: true, url: publicUrl };
   } catch (error) {
-    console.error('❌ MongoDB GridFS upload error:', error);
+    console.error('❌ Supabase Storage upload error:', error);
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
@@ -115,11 +138,11 @@ export async function POST(request: NextRequest) {
 
     // console.debug('API: processing images');
 
-    // Process images with MongoDB GridFS if they exist
+    // Process images with Supabase Storage if they exist
     let processedPost = { ...post };
     if (post.imageUrl && post.imageUrl.startsWith('data:')) {
-      console.log('📤 Uploading main image to MongoDB GridFS');
-      const imageResult = await uploadDataUrlToMongoDB(
+      console.log('📤 Uploading main image to Supabase Storage');
+      const imageResult = await uploadDataUrlToSupabase(
         post.imageUrl,
         userId,
         `post-${post.id || Date.now()}-main.png`
@@ -127,7 +150,7 @@ export async function POST(request: NextRequest) {
 
       if (imageResult.success && imageResult.url) {
         processedPost.imageUrl = imageResult.url;
-        console.log('✅ Main image uploaded to MongoDB GridFS');
+        console.log('✅ Main image uploaded to Supabase Storage');
       } else {
         console.error('❌ Failed to upload main image:', imageResult.error);
       }
@@ -135,8 +158,8 @@ export async function POST(request: NextRequest) {
 
     // Process content image if it exists
     if (post.content?.imageUrl && post.content.imageUrl.startsWith('data:')) {
-      console.log('📤 Uploading content image to MongoDB GridFS');
-      const contentImageResult = await uploadDataUrlToMongoDB(
+      console.log('📤 Uploading content image to Supabase Storage');
+      const contentImageResult = await uploadDataUrlToSupabase(
         post.content.imageUrl,
         userId,
         `post-${post.id || Date.now()}-content.png`
@@ -147,7 +170,7 @@ export async function POST(request: NextRequest) {
           ...processedPost.content,
           imageUrl: contentImageResult.url
         };
-        console.log('✅ Content image uploaded to MongoDB GridFS');
+        console.log('✅ Content image uploaded to Supabase Storage');
       } else {
         console.error('❌ Failed to upload content image:', contentImageResult.error);
       }
@@ -158,7 +181,7 @@ export async function POST(request: NextRequest) {
       for (let i = 0; i < post.variants.length; i++) {
         const v: any = post.variants[i] || {};
         if (v.imageUrl && typeof v.imageUrl === 'string' && v.imageUrl.startsWith('data:')) {
-          const variantResult = await uploadDataUrlToMongoDB(
+          const variantResult = await uploadDataUrlToSupabase(
             v.imageUrl,
             userId,
             `post-${post.id || Date.now()}-variant-${i}-${(v.platform || 'instagram').toLowerCase()}.png`
@@ -179,42 +202,53 @@ export async function POST(request: NextRequest) {
     }
 
 
-    console.log('💾 API: saving post to MongoDB');
+    console.log('💾 API: saving post to Supabase');
 
-    // Convert to MongoDB format
-    const mongoPost: Partial<GeneratedPost> = {
-      userId,
-      brandProfileId,
+    // Convert to Supabase format
+    const supabasePost = {
+      user_id: userId,
+      brand_id: brandProfileId,
       platform: processedPost.platform || 'instagram',
-      postType: processedPost.postType || 'post',
       content: {
         text: processedPost.content?.text || processedPost.content || '',
         hashtags: processedPost.hashtags || processedPost.content?.hashtags || [],
         mentions: processedPost.content?.mentions || [],
-        imageUrl: processedPost.content?.imageUrl || processedPost.imageUrl
+        imageUrl: processedPost.content?.imageUrl || processedPost.imageUrl,
+        catchyWords: processedPost.catchyWords,
+        subheadline: processedPost.subheadline,
+        callToAction: processedPost.callToAction,
+        variants: processedPost.variants || []
       },
-      imageUrl: processedPost.imageUrl,
-      variants: processedPost.variants || [],
-      catchyWords: processedPost.catchyWords,
-      subheadline: processedPost.subheadline,
-      callToAction: processedPost.callToAction,
+      image_urls: processedPost.imageUrl ? [processedPost.imageUrl] : [],
       metadata: {
         businessType: processedPost.metadata?.businessType,
         visualStyle: processedPost.metadata?.visualStyle,
         targetAudience: processedPost.metadata?.targetAudience,
         generationPrompt: processedPost.metadata?.generationPrompt,
-        aiModel: processedPost.metadata?.aiModel || 'unknown'
-      },
-      analytics: processedPost.analytics,
-      status: processedPost.status || 'draft',
-      createdAt: new Date(),
-      updatedAt: new Date()
+        aiModel: processedPost.metadata?.aiModel || 'unknown',
+        postType: processedPost.postType || 'post',
+        analytics: processedPost.analytics,
+        status: processedPost.status || 'draft'
+      }
     };
 
-    // Save to MongoDB
+    // Save to Supabase
     try {
-      const savedPost = await generatedPostService.create(mongoPost);
-      console.log('✅ API: post saved to MongoDB:', savedPost.id);
+      const { data: savedPost, error } = await supabase
+        .from('posts')
+        .insert([supabasePost])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ API: Error saving to Supabase:', error);
+        return NextResponse.json(
+          { error: `Failed to save post: ${error.message}` },
+          { status: 500 }
+        );
+      }
+
+      console.log('✅ API: post saved to Supabase:', savedPost.id);
 
       return NextResponse.json({
         success: true,
@@ -224,10 +258,10 @@ export async function POST(request: NextRequest) {
           id: savedPost.id
         }
       });
-    } catch (mongoError) {
-      console.error('❌ API: Error saving to MongoDB:', mongoError);
+    } catch (supabaseError) {
+      console.error('❌ API: Error saving to Supabase:', supabaseError);
       return NextResponse.json(
-        { error: `Failed to save post: ${mongoError.message}` },
+        { error: `Failed to save post: ${supabaseError.message}` },
         { status: 500 }
       );
     }

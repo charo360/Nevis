@@ -6,7 +6,7 @@ import { WebsiteAnalysisStep } from './steps/website-analysis-step';
 import { BrandDetailsStep } from './steps/brand-details-step';
 import { LogoUploadStepUnified } from './steps/logo-upload-step-unified';
 import { useUnifiedBrand } from '@/contexts/unified-brand-context';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-supabase';
 import type { CompleteBrandProfile } from './cbrand-wizard';
 
 interface CbrandWizardUnifiedProps {
