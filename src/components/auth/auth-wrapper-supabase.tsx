@@ -4,7 +4,10 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth-supabase';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+// Simple loading spinner component
+const LoadingSpinner = () => (
+  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+);
 
 interface AuthWrapperProps {
   children: React.ReactNode;

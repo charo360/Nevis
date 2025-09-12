@@ -7,8 +7,8 @@ import type { Metadata } from 'next';
 import { Toaster } from "@/components/ui/toaster"
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/app-sidebar';
-import { AuthWrapper } from '@/components/auth/auth-wrapper-supabase';
-import { BrandProvider } from '@/contexts/brand-context-supabase';
+import { AuthWrapper } from '@/components/auth/auth-wrapper-mongo';
+import { BrandProvider } from '@/contexts/brand-context-mongo';
 import { UnifiedBrandProvider } from '@/contexts/unified-brand-context';
 import { BrandColorProvider } from '@/components/layout/brand-color-provider';
 import React, { Suspense, useEffect, useState } from 'react';

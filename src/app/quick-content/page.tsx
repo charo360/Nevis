@@ -21,11 +21,11 @@ import type { BrandProfile, GeneratedPost } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { User, PanelLeftClose, PanelLeftOpen } from "lucide-react";
-import { useBrand } from "@/contexts/brand-context-supabase";
+import { useBrand } from "@/contexts/brand-context-mongo";
 import { UnifiedBrandLayout, BrandContent, BrandSwitchingStatus } from "@/components/layout/unified-brand-layout";
 import { STORAGE_FEATURES, getStorageUsage, cleanupAllStorage } from "@/lib/services/brand-scoped-storage";
 import { processGeneratedPost } from "@/lib/services/generated-post-storage";
-import { useAuth } from "@/hooks/use-auth-supabase";
+import { useAuth } from "@/hooks/use-auth";
 import { useQuickContentStorage } from "@/hooks/use-feature-storage";
 // Using Supabase storage for images and content
 
