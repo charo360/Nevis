@@ -31,7 +31,7 @@ function getOpenAI(): OpenAI {
   return openai;
 }
 
-// Revo 2.0 uses Gemini 2.5 Flash Image Preview (same as Revo 1.0 but with enhanced prompting)
+// Revo 2.0 uses Gemini 2.5 Flash Image Preview (the only working image generation model)
 const REVO_2_0_MODEL = 'gemini-2.5-flash-image-preview';
 
 export interface Revo20GenerationOptions {
@@ -242,7 +242,7 @@ MOOD & EMOTIONS:
 BRAND INTEGRATION:
 - Colors: ${brandProfile.primaryColor ? `Primary: ${brandProfile.primaryColor}, Accent: ${brandProfile.accentColor}, Background: ${brandProfile.backgroundColor}` : concept.colorSuggestions.join(', ')}
 - Business name: ${brandProfile.businessName || businessType}
-- Logo: ${brandProfile.logoDataUrl ? 'Include provided brand logo prominently' : 'No logo provided'}
+- Logo: ${(brandProfile.logoDataUrl || brandProfile.logoUrl) ? 'Include provided brand logo prominently' : 'No logo provided'}
 - Professional, trustworthy appearance
 
 QUALITY STANDARDS:
@@ -285,25 +285,92 @@ async function generateImageWithGemini(prompt: string, options: Revo20Generation
       ];
 
       // If logo is provided, include it in the generation
-      if (options.brandProfile.logoDataUrl) {
-
-        // Extract the base64 data and mime type from the data URL
-        const logoMatch = options.brandProfile.logoDataUrl.match(/^data:([^;]+);base64,(.+)$/);
-        if (logoMatch) {
-          const [, mimeType, base64Data] = logoMatch;
-
+      // Check both logoDataUrl (base64) and logoUrl (Supabase storage URL)
+      const logoDataUrl = options.brandProfile.logoDataUrl;
+      const logoStorageUrl = options.brandProfile.logoUrl;
+      const logoUrl = logoDataUrl || logoStorageUrl;
+      
+      console.log('🔍 Logo availability check:', {
+        businessName: options.brandProfile.businessName,
+        hasLogoDataUrl: !!logoDataUrl,
+        hasLogoStorageUrl: !!logoStorageUrl,
+        logoDataUrlLength: logoDataUrl?.length || 0,
+        logoStorageUrlLength: logoStorageUrl?.length || 0,
+        finalLogoUrl: logoUrl ? logoUrl.substring(0, 100) + '...' : 'None'
+      });
+      
+      if (logoUrl) {
+        console.log('🎨 Processing brand logo for generation using:', logoDataUrl ? 'base64 data' : 'storage URL');
+        
+        let logoBase64Data = '';
+        let logoMimeType = 'image/png';
+        
+        if (logoUrl.startsWith('data:')) {
+          // Handle data URL (base64 format)
+          const logoMatch = logoUrl.match(/^data:([^;]+);base64,(.+)$/);
+          if (logoMatch) {
+            [, logoMimeType, logoBase64Data] = logoMatch;
+            console.log('✅ Using base64 logo data directly');
+          }
+        } else if (logoUrl.startsWith('http')) {
+          // Handle storage URL - fetch and convert to base64
+          console.log('📡 Fetching logo from storage URL...');
+          try {
+            const response = await fetch(logoUrl);
+            if (response.ok) {
+              const buffer = await response.arrayBuffer();
+              logoBase64Data = Buffer.from(buffer).toString('base64');
+              logoMimeType = response.headers.get('content-type') || 'image/png';
+              console.log(`✅ Logo fetched and converted to base64 (${buffer.byteLength} bytes)`);
+            } else {
+              console.warn(`⚠️  Failed to fetch logo from URL: ${response.status} ${response.statusText}`);
+            }
+          } catch (fetchError) {
+            console.error('❌ Error fetching logo from storage:', fetchError);
+          }
+        }
+        
+        // Add logo to generation if we have valid base64 data
+        if (logoBase64Data) {
           generationParts.push({
             inlineData: {
-              data: base64Data,
-              mimeType: mimeType
+              data: logoBase64Data,
+              mimeType: logoMimeType
             }
           });
 
-          // Update the prompt to reference the provided logo
-          const logoPrompt = `\n\nIMPORTANT: Use the provided logo image above in your design. Integrate it naturally into the layout - do not create a new logo. The logo should be prominently displayed but not overwhelming the design.`;
+          // Update the prompt to reference the provided logo with VERY STRONG instructions
+          const logoPrompt = `\n\n🎯 CRITICAL LOGO REQUIREMENT - THIS IS MANDATORY:
+You MUST include the exact brand logo image that was provided above in your design. This is not optional.
+
+LOGO INTEGRATION RULES:
+✅ REQUIRED: Place the provided logo prominently in the design (top corner, header, or center)
+✅ REQUIRED: Use the EXACT logo image provided - do not modify, recreate, or stylize it
+✅ REQUIRED: Make the logo clearly visible and readable
+✅ REQUIRED: Size the logo appropriately (not too small, not too large)
+✅ REQUIRED: Ensure good contrast against the background
+
+❌ FORBIDDEN: Do NOT create a new logo
+❌ FORBIDDEN: Do NOT ignore the provided logo
+❌ FORBIDDEN: Do NOT make the logo too small to see
+❌ FORBIDDEN: Do NOT place logo where it can't be seen
+
+The client specifically requested their brand logo to be included. FAILURE TO INCLUDE THE LOGO IS UNACCEPTABLE.`;
           generationParts[1] = prompt + logoPrompt;
+          console.log('✅ STRONG logo integration prompt added');
         } else {
+          console.error('❌ Logo processing failed:', {
+            originalUrl: logoUrl.substring(0, 100),
+            hasLogoDataUrl: !!logoDataUrl,
+            hasLogoStorageUrl: !!logoStorageUrl,
+            urlType: logoUrl.startsWith('data:') ? 'base64' : logoUrl.startsWith('http') ? 'storage' : 'unknown'
+          });
         }
+      } else {
+        console.log('ℹ️  No logo provided for generation:', {
+          businessName: options.brandProfile.businessName,
+          brandProfileKeys: Object.keys(options.brandProfile).filter(key => key.includes('logo'))
+        });
       }
 
       const result = await model.generateContent(generationParts);

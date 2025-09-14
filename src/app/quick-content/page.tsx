@@ -21,7 +21,7 @@ import type { BrandProfile, GeneratedPost } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { User, PanelLeftClose, PanelLeftOpen } from "lucide-react";
-import { useBrand } from "@/contexts/brand-context-mongo";
+import { useUnifiedBrand } from '@/contexts/unified-brand-context';
 import { UnifiedBrandLayout, BrandContent, BrandSwitchingStatus } from "@/components/layout/unified-brand-layout";
 import { STORAGE_FEATURES, getStorageUsage, cleanupAllStorage } from "@/lib/services/brand-scoped-storage";
 import { processGeneratedPost } from "@/lib/services/generated-post-storage";
@@ -78,7 +78,7 @@ const cleanupBrandScopedStorage = (brandStorage: any) => {
 };
 
 function QuickContentPage() {
-  const { currentBrand, brands, loading: brandLoading, selectBrand } = useBrand();
+  const { currentBrand, brands, loading: brandsLoading, refreshBrands, selectBrand } = useUnifiedBrand();
 
   // Use isolated Quick Content storage (completely separate from Creative Studio)
   const quickContentStorage = useQuickContentStorage();
@@ -138,14 +138,20 @@ function QuickContentPage() {
       updatedAt: new Date(),
     };
 
+    const token = localStorage.getItem('nevis_access_token');
+    if (!token) {
+      console.error('❌ No auth token found');
+      return;
+    }
+
     const response = await fetch('/api/generated-posts', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify({
         post: mongoPost,
-        userId: user.userId,
         brandProfileId: currentBrand.id,
       }),
     });
@@ -220,7 +226,17 @@ function QuickContentPage() {
         if (user?.userId && brand.id) {
           console.log('🔄 Loading posts from database for brand:', brand.businessName);
           try {
-            const response = await fetch(`/api/generated-posts/brand/${brand.id}?userId=${user.userId}&limit=50`);
+            const token = localStorage.getItem('nevis_access_token');
+            if (!token) {
+              console.log('⚠️ No auth token found');
+              return;
+            }
+
+            const response = await fetch(`/api/generated-posts/brand/${brand.id}?limit=50`, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+              },
+            });
             if (response.ok) {
               databasePosts = await response.json();
               console.log('✅ Loaded', databasePosts.length, 'posts from database');
@@ -306,13 +322,13 @@ function QuickContentPage() {
   // Enhanced brand selection logic with persistence recovery
   useEffect(() => {
     // Only proceed if brands have finished loading
-    if (!brandLoading) {
+    if (!brandsLoading) {
       // Add a longer delay to ensure brands have time to load properly
       const timer = setTimeout(() => {
         console.log('🔍 Quick Content Brand Check:', {
           brandsLength: brands.length,
           currentBrand: currentBrand?.businessName || 'none',
-          brandLoading
+          brandsLoading
         });
 
         if (brands.length === 0) {
@@ -337,7 +353,7 @@ function QuickContentPage() {
 
       return () => clearTimeout(timer);
     }
-  }, [currentBrand, brands.length, brandLoading, router, selectBrand, forceBrandRestore]);
+  }, [currentBrand, brands.length, brandsLoading, router, selectBrand, forceBrandRestore]);
 
 
   // Process generated post with Supabase-only storage (no fallbacks)
@@ -357,14 +373,20 @@ function QuickContentPage() {
 
       // Use the API route to handle all image processing and storage
       // This ensures consistency with the working TWITTER branch implementation
+      const token = localStorage.getItem('nevis_access_token');
+      if (!token) {
+        console.error('❌ No auth token found');
+        return;
+      }
+
       const response = await fetch('/api/generated-posts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           post: post,
-          userId: user.userId,
           brandProfileId: currentBrand?.id || 'default'
         }),
       });
@@ -591,7 +613,8 @@ function QuickContentPage() {
                         : currentBrand.location
                           ? `${currentBrand.location.city || ''}, ${currentBrand.location.country || ''}`.replace(/^,\s*/, '').replace(/,\s*$/, '')
                           : '',
-                      logoDataUrl: currentBrand.logoUrl || currentBrand.logoDataUrl || '',
+                      logoUrl: currentBrand.logoUrl || '',
+                      logoDataUrl: currentBrand.logoDataUrl || '',
                       visualStyle: currentBrand.visualStyle || '',
                       writingTone: currentBrand.writingTone || '',
                       contentThemes: currentBrand.contentThemes || '',

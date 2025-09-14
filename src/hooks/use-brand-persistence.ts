@@ -108,7 +108,8 @@ export function useBrandPersistence(options: BrandPersistenceOptions = {}) {
         primaryColor: brand.primaryColor,
         accentColor: brand.accentColor,
         backgroundColor: brand.backgroundColor,
-        logoDataUrl: brand.logoDataUrl,
+        logoUrl: brand.logoUrl, // Supabase storage URL
+        logoDataUrl: brand.logoDataUrl, // Base64 data URL
         services: brand.services,
         // Add timestamp for cache invalidation
         persistedAt: new Date().toISOString()

@@ -9,7 +9,8 @@ export type BrandProfile = {
   businessName: string;
   businessType: string;
   location: string;
-  logoDataUrl: string;
+  logoUrl?: string; // Supabase storage URL
+  logoDataUrl?: string; // Base64 data URL (legacy)
   visualStyle: string;
   writingTone: string;
   contentThemes: string;

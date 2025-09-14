@@ -20,8 +20,9 @@ import {
   Settings,
   Sparkles
 } from 'lucide-react';
-import { useBrand } from '@/contexts/brand-context-mongo';
+import { useUnifiedBrand } from '@/contexts/unified-brand-context';
 import { useRouter } from 'next/navigation';
+import { getBestLogoSource } from '@/components/ui/brand-logo-display';
 import type { CompleteBrandProfile } from '@/components/cbrand/cbrand-wizard';
 
 export function UnifiedBrandSelector() {
@@ -31,12 +32,12 @@ export function UnifiedBrandSelector() {
     brands,
     loading,
     selectBrand,
-  } = useBrand();
+  } = useUnifiedBrand();
 
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleBrandSelect = (brand: CompleteBrandProfile) => {
-    selectBrand(brand);
+  const handleBrandSelect = (brand: any) => {
+    selectBrand(brand); // Pass the full brand object, not just ID
     setIsOpen(false);
   };
 
@@ -51,8 +52,8 @@ export function UnifiedBrandSelector() {
   };
 
   // Get brand initials for avatar
-  const getBrandInitials = (brand: CompleteBrandProfile): string => {
-    const name = brand.businessName || brand.name || 'Brand';
+  const getBrandInitials = (brand: any): string => {
+    const name = brand.businessName || brand.business_name || brand.name || 'Brand';
     return name
       .split(' ')
       .map(word => word.charAt(0))
@@ -62,13 +63,13 @@ export function UnifiedBrandSelector() {
   };
 
   // Get brand display name
-  const getBrandDisplayName = (brand: CompleteBrandProfile): string => {
-    return brand.businessName || brand.name || 'Unnamed Brand';
+  const getBrandDisplayName = (brand: any): string => {
+    return brand.businessName || brand.business_name || brand.name || 'Unnamed Brand';
   };
 
   // Get brand type/category
-  const getBrandType = (brand: CompleteBrandProfile): string => {
-    return brand.businessType || 'Business';
+  const getBrandType = (brand: any): string => {
+    return brand.businessType || brand.business_type || 'Business';
   };
 
   // Loading state
@@ -121,8 +122,8 @@ export function UnifiedBrandSelector() {
                 className="flex items-center gap-3 p-3 cursor-pointer"
               >
                 <Avatar className="w-8 h-8">
-                  {brand.logoDataUrl ? (
-                    <AvatarImage src={brand.logoDataUrl} alt={getBrandDisplayName(brand)} />
+                  {getBestLogoSource(brand.logoUrl, brand.logoDataUrl) ? (
+                    <AvatarImage src={getBestLogoSource(brand.logoUrl, brand.logoDataUrl)!} alt={getBrandDisplayName(brand)} />
                   ) : (
                     <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs">
                       {getBrandInitials(brand)}
@@ -163,8 +164,8 @@ export function UnifiedBrandSelector() {
         >
           <div className="flex items-center gap-2 flex-1">
             <Avatar className="w-6 h-6">
-              {currentBrand.logoDataUrl ? (
-                <AvatarImage src={currentBrand.logoDataUrl} alt={getBrandDisplayName(currentBrand)} />
+              {getBestLogoSource((currentBrand as any).logoUrl, currentBrand.logoDataUrl) ? (
+                <AvatarImage src={getBestLogoSource((currentBrand as any).logoUrl, currentBrand.logoDataUrl)!} alt={getBrandDisplayName(currentBrand)} />
               ) : (
                 <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs">
                   {getBrandInitials(currentBrand)}
@@ -202,8 +203,8 @@ export function UnifiedBrandSelector() {
                 className="flex items-center gap-3 p-3 cursor-pointer"
               >
                 <Avatar className="w-8 h-8">
-                  {brand.logoDataUrl ? (
-                    <AvatarImage src={brand.logoDataUrl} alt={getBrandDisplayName(brand)} />
+                  {getBestLogoSource(brand.logoUrl, brand.logoDataUrl) ? (
+                    <AvatarImage src={getBestLogoSource(brand.logoUrl, brand.logoDataUrl)!} alt={getBrandDisplayName(brand)} />
                   ) : (
                     <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs">
                       {getBrandInitials(brand)}

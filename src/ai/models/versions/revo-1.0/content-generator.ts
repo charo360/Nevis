@@ -73,6 +73,7 @@ export class Revo10ContentGenerator implements IContentGenerator {
         imageText: structuredImageText,
         designDescription: `Professional ${generationParams.businessType} content with structured headline, subheadline, and CTA for ${generationParams.variants[0]?.platform || 'instagram'}`,
         logoDataUrl: generationParams.logoDataUrl,
+        logoUrl: (generationParams as any).logoUrl, // Pass logoUrl to image generation
         location: generationParams.location,
         headline: postDetails.catchyWords,
         subheadline: postDetails.subheadline,
@@ -198,6 +199,7 @@ export class Revo10ContentGenerator implements IContentGenerator {
       contentThemes: Array.isArray(profile.contentThemes) ? profile.contentThemes : [],
       visualStyle: profile.visualStyle,
       logoDataUrl: profile.logoDataUrl,
+      logoUrl: (profile as any).logoUrl, // Support Supabase storage URLs
       designExamples: brandConsistency?.strictConsistency ? (profile.designExamples || []) : [],
       primaryColor: profile.primaryColor,
       accentColor: profile.accentColor,

@@ -8,7 +8,7 @@ import type { ModelConfig } from '../../types/model-types';
 // Revo 1.0 specific configuration
 export const revo10Config: ModelConfig = {
   aiService: 'gemini-2.5-flash-image-preview',
-  fallbackServices: ['gemini-2.5', 'openai'],
+  fallbackServices: ['gemini-2.0-flash', 'gemini-1.5-flash', 'openai'],
   maxRetries: 3,
   timeout: 45000, // 45 seconds (increased for better quality)
   qualitySettings: {

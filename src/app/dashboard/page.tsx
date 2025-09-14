@@ -33,7 +33,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { SidebarInset } from '@/components/ui/sidebar';
-import { useBrand } from '@/contexts/brand-context-mongo';
+import { useUnifiedBrand } from '@/contexts/unified-brand-context';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -47,7 +47,7 @@ export default function DashboardPage() {
       }
     }
   }, [authLoading, user, router]);
-  const { currentBrand, brands } = useBrand();
+  const { currentBrand, brands } = useUnifiedBrand();
   const brandLabel = currentBrand?.businessName ?? (currentBrand as unknown as { name?: string })?.name ?? 'Unnamed Brand';
   const hasBrands = brands.length > 0;
   const brandCount = brands.length;

@@ -98,13 +98,38 @@ export async function generateGeminiHDEnhancedDesign(
     const promptParts: any[] = [{ text: enhancedPrompt }];
 
     // Add logo if available
-    if (input.brandProfile.logoDataUrl) {
-      promptParts.push({
-        media: {
-          url: input.brandProfile.logoDataUrl,
-          contentType: getMimeTypeFromDataURI(input.brandProfile.logoDataUrl)
+    const logoUrl = input.brandProfile.logoDataUrl || input.brandProfile.logoUrl;
+    if (logoUrl) {
+      if (logoUrl.startsWith('data:')) {
+        promptParts.push({
+          media: {
+            url: logoUrl,
+            contentType: getMimeTypeFromDataURI(logoUrl)
+          }
+        });
+      } else if (logoUrl.startsWith('http')) {
+        // For HTTP URLs (like Supabase storage), we need to fetch and convert to data URL
+        try {
+          const response = await fetch(logoUrl);
+          if (response.ok) {
+            const buffer = await response.arrayBuffer();
+            const base64Data = Buffer.from(buffer).toString('base64');
+            const contentType = response.headers.get('content-type') || 'image/png';
+            const dataUrl = `data:${contentType};base64,${base64Data}`;
+            promptParts.push({
+              media: {
+                url: dataUrl,
+                contentType
+              }
+            });
+            console.log('✅ Logo fetched from storage for Gemini HD generation');
+          } else {
+            console.warn(`⚠️  Failed to fetch logo from storage for Gemini HD: ${response.status}`);
+          }
+        } catch (fetchError) {
+          console.error('❌ Error fetching logo from storage for Gemini HD:', fetchError);
         }
-      });
+      }
     }
 
     // Add design examples if available and strict consistency is enabled

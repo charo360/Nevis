@@ -12,6 +12,42 @@ import { generateEnhancedDesign } from "@/ai/gemini-2.5-design";
 import { generateRevo2ContentAction, generateRevo2CreativeAssetAction } from "@/app/actions/revo-2-actions";
 import { supabaseService } from "@/lib/services/supabase-service";
 
+// Helper function to convert logo URL to base64 data URL for AI models
+async function convertLogoToDataUrl(logoUrl?: string): Promise<string | undefined> {
+  if (!logoUrl) return undefined;
+  
+  // If it's already a data URL, return as is
+  if (logoUrl.startsWith('data:')) {
+    return logoUrl;
+  }
+  
+  // If it's a Supabase Storage URL, fetch and convert to base64
+  if (logoUrl.startsWith('http')) {
+    try {
+      console.log('🔄 Converting logo URL to base64 for AI generation:', logoUrl.substring(0, 50) + '...');
+      
+      const response = await fetch(logoUrl);
+      if (!response.ok) {
+        console.warn('⚠️ Failed to fetch logo from URL:', response.status);
+        return undefined;
+      }
+      
+      const buffer = await response.arrayBuffer();
+      const base64 = Buffer.from(buffer).toString('base64');
+      const mimeType = response.headers.get('content-type') || 'image/png';
+      const dataUrl = `data:${mimeType};base64,${base64}`;
+      
+      console.log('✅ Logo converted to base64 successfully (' + buffer.byteLength + ' bytes)');
+      return dataUrl;
+    } catch (error) {
+      console.error('❌ Error converting logo URL to base64:', error);
+      return undefined;
+    }
+  }
+  
+  return undefined;
+}
+
 
 // --- AI Flow Actions ---
 
@@ -64,23 +100,31 @@ export async function analyzeBrandAction(
       data: result
     };
   } catch (error) {
+    console.error('❌ Brand analysis error:', error);
 
     // Return structured error response instead of throwing
     const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
 
-    if (errorMessage.includes('fetch') || errorMessage.includes('403') || errorMessage.includes('blocked')) {
+    // Check for AI/API-specific errors first
+    if (errorMessage.includes('GoogleGenerativeAI') || errorMessage.includes('generativelanguage.googleapis.com') || errorMessage.includes('API key')) {
       return {
         success: false,
-        error: "Website blocks automated access. This is common for security reasons.",
+        error: "AI analysis service is temporarily unavailable. This might be due to API limits or configuration issues. Please try again later or proceed manually.",
+        errorType: 'error'
+      };
+    } else if (errorMessage.includes('blocked:')) {
+      return {
+        success: false,
+        error: errorMessage.replace('blocked: ', ''),
         errorType: 'blocked'
       };
-    } else if (errorMessage.includes('timeout')) {
+    } else if (errorMessage.includes('timeout:')) {
       return {
         success: false,
-        error: "Website analysis timed out. Please try again or check if the website is accessible.",
+        error: errorMessage.replace('timeout: ', ''),
         errorType: 'timeout'
       };
-    } else if (errorMessage.includes('CORS')) {
+    } else if (errorMessage.includes('fetch') || errorMessage.includes('403') || errorMessage.includes('CORS')) {
       return {
         success: false,
         error: "Website blocks automated access. This is common for security reasons.",
@@ -185,7 +229,8 @@ export async function generateContentAction(
       primaryColor: enhancedProfile.primaryColor || '#3B82F6',
       accentColor: enhancedProfile.accentColor || '#10B981',
       backgroundColor: enhancedProfile.backgroundColor || '#F8FAFC',
-      logoDataUrl: (enhancedProfile as any).logoUrl || enhancedProfile.logoDataUrl,
+      logoDataUrl: await convertLogoToDataUrl((enhancedProfile as any).logoUrl || enhancedProfile.logoDataUrl || (enhancedProfile as any).logo_url),
+      logoUrl: (enhancedProfile as any).logoUrl || (enhancedProfile as any).logo_url, // Pass original URL for Revo 1.0
       designExamples: effectiveDesignExamples,
       dayOfWeek: dayOfWeek,
       currentDate: currentDate,

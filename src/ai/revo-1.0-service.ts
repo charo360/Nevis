@@ -1461,8 +1461,8 @@ if (!apiKey) {
 // Initialize Google GenAI client with Revo 1.0 configuration
 const ai = new GoogleGenerativeAI(apiKey);
 
-// Revo 1.0 uses Gemini 2.5 Flash Image Preview
-const REVO_1_0_MODEL = 'gemini-2.5-flash-image-preview';
+// Revo 1.0 uses the configured Gemini model
+const REVO_1_0_MODEL = revo10Config.aiService;
 
 /**
  * Get platform-specific aspect ratio - ALL PLATFORMS USE 1:1 FOR HIGHEST QUALITY
@@ -1986,25 +1986,92 @@ TECHNICAL REQUIREMENTS:
     ];
 
     // If logo is provided, include it in the generation
-    if (input.logoDataUrl) {
-
-      // Extract the base64 data and mime type from the data URL
-      const logoMatch = input.logoDataUrl.match(/^data:([^;]+);base64,(.+)$/);
-      if (logoMatch) {
-        const [, mimeType, base64Data] = logoMatch;
-
+    // Check both logoDataUrl (base64) and logoUrl (Supabase storage URL) - same logic as Revo 2.0
+    const logoDataUrl = input.logoDataUrl;
+    const logoStorageUrl = (input as any).logoUrl || (input as any).logo_url;
+    const logoUrl = logoDataUrl || logoStorageUrl;
+    
+    console.log('🔍 Revo 1.0 Logo availability check:', {
+      businessName: input.businessName,
+      hasLogoDataUrl: !!logoDataUrl,
+      hasLogoStorageUrl: !!logoStorageUrl,
+      logoDataUrlLength: logoDataUrl?.length || 0,
+      logoStorageUrlLength: logoStorageUrl?.length || 0,
+      finalLogoUrl: logoUrl ? logoUrl.substring(0, 100) + '...' : 'None'
+    });
+    
+    if (logoUrl) {
+      console.log('🎨 Revo 1.0: Processing brand logo for generation using:', logoDataUrl ? 'base64 data' : 'storage URL');
+      
+      let logoBase64Data = '';
+      let logoMimeType = 'image/png';
+      
+      if (logoUrl.startsWith('data:')) {
+        // Handle data URL (base64 format)
+        const logoMatch = logoUrl.match(/^data:([^;]+);base64,(.+)$/);
+        if (logoMatch) {
+          [, logoMimeType, logoBase64Data] = logoMatch;
+          console.log('✅ Revo 1.0: Using base64 logo data directly');
+        }
+      } else if (logoUrl.startsWith('http')) {
+        // Handle storage URL - fetch and convert to base64 (same as Revo 2.0)
+        console.log('📡 Revo 1.0: Fetching logo from storage URL...');
+        try {
+          const response = await fetch(logoUrl);
+          if (response.ok) {
+            const buffer = await response.arrayBuffer();
+            logoBase64Data = Buffer.from(buffer).toString('base64');
+            logoMimeType = response.headers.get('content-type') || 'image/png';
+            console.log(`✅ Revo 1.0: Logo fetched and converted to base64 (${buffer.byteLength} bytes)`);
+          } else {
+            console.warn(`⚠️  Revo 1.0: Failed to fetch logo from URL: ${response.status} ${response.statusText}`);
+          }
+        } catch (fetchError) {
+          console.error('❌ Revo 1.0: Error fetching logo from storage:', fetchError);
+        }
+      }
+      
+      // Add logo to generation if we have valid base64 data
+      if (logoBase64Data) {
         generationParts.push({
           inlineData: {
-            data: base64Data,
-            mimeType: mimeType
+            data: logoBase64Data,
+            mimeType: logoMimeType
           }
         });
 
-        // Update the prompt to reference the provided logo
-        const logoPrompt = `\n\nIMPORTANT: Use the provided logo image above in your design. Integrate it naturally into the layout - do not create a new logo. The logo should be prominently displayed but not overwhelming the design.`;
+        // Update the prompt to reference the provided logo with VERY STRONG instructions
+        const logoPrompt = `\n\n🎯 CRITICAL LOGO REQUIREMENT - THIS IS MANDATORY:
+You MUST include the exact brand logo image that was provided above in your design. This is not optional.
+
+LOGO INTEGRATION RULES:
+✅ REQUIRED: Place the provided logo prominently in the design (top corner, header, or center)
+✅ REQUIRED: Use the EXACT logo image provided - do not modify, recreate, or stylize it
+✅ REQUIRED: Make the logo clearly visible and readable
+✅ REQUIRED: Size the logo appropriately (not too small, not too large)
+✅ REQUIRED: Ensure good contrast against the background
+
+❌ FORBIDDEN: Do NOT create a new logo
+❌ FORBIDDEN: Do NOT ignore the provided logo
+❌ FORBIDDEN: Do NOT make the logo too small to see
+❌ FORBIDDEN: Do NOT place logo where it can't be seen
+
+The client specifically requested their brand logo to be included. FAILURE TO INCLUDE THE LOGO IS UNACCEPTABLE.`;
         generationParts[1] = imagePrompt + logoPrompt;
+        console.log('✅ Revo 1.0: STRONG logo integration prompt added');
       } else {
+        console.error('❌ Revo 1.0: Logo processing failed:', {
+          originalUrl: logoUrl.substring(0, 100),
+          hasLogoDataUrl: !!logoDataUrl,
+          hasLogoStorageUrl: !!logoStorageUrl,
+          urlType: logoUrl.startsWith('data:') ? 'base64' : logoUrl.startsWith('http') ? 'storage' : 'unknown'
+        });
       }
+    } else {
+      console.log('ℹ️  Revo 1.0: No logo provided for generation:', {
+        businessName: input.businessName,
+        availableInputKeys: Object.keys(input).filter(key => key.toLowerCase().includes('logo'))
+      });
     }
 
     const result = await model.generateContent(generationParts);
@@ -2015,19 +2082,35 @@ TECHNICAL REQUIREMENTS:
     const parts = response.candidates?.[0]?.content?.parts || [];
     let imageUrl = '';
 
+    console.log('🔍 Revo 1.0: Analyzing Gemini response:', {
+      hasCandidates: !!response.candidates,
+      candidatesLength: response.candidates?.length || 0,
+      firstCandidateHasContent: !!response.candidates?.[0]?.content,
+      partsLength: parts.length,
+      partsTypes: parts.map(p => Object.keys(p))
+    });
+
     for (const part of parts) {
+      console.log('🔍 Revo 1.0: Checking part:', Object.keys(part));
       if (part.inlineData) {
         const imageData = part.inlineData.data;
         const mimeType = part.inlineData.mimeType;
         imageUrl = `data:${mimeType};base64,${imageData}`;
+        console.log(`✅ Revo 1.0: Found image data (${imageData.length} chars, ${mimeType})`);
         break;
       }
     }
 
     if (!imageUrl) {
-      // Fallback: try to get text response if no image data
-      const textResponse = response.text();
-      throw new Error('No image data generated by Gemini 2.5 Flash Image Preview');
+      // Try to get text response for debugging
+      let textResponse = '';
+      try {
+        textResponse = response.text();
+        console.log('🔍 Revo 1.0: Text response:', textResponse.substring(0, 200));
+      } catch (e) {
+        console.log('🔍 Revo 1.0: No text response available');
+      }
+      throw new Error(`No image data generated by ${REVO_1_0_MODEL}. Response had ${parts.length} parts.`);
     }
 
 
@@ -2078,7 +2161,7 @@ export function getRevo10ServiceInfo() {
     model: REVO_1_0_MODEL,
     version: '1.0.0',
     status: 'enhanced',
-    aiService: 'gemini-2.5-flash-image-preview',
+    aiService: revo10Config.aiService,
     capabilities: [
       'Enhanced content generation',
       'High-resolution image support (2048x2048)',

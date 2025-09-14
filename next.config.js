@@ -11,7 +11,7 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
-    domains: ['localhost', 'firebasestorage.googleapis.com', 'placehold.co'],
+    domains: ['localhost', 'firebasestorage.googleapis.com', 'placehold.co', 'nrfceylvtiwpqsoxurrv.supabase.co'],
     remotePatterns: [
       {
         protocol: 'https',
@@ -22,6 +22,12 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'placehold.co',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'nrfceylvtiwpqsoxurrv.supabase.co',
         port: '',
         pathname: '/**',
       },

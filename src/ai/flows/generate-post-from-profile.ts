@@ -331,7 +331,36 @@ async function generateWithRetry(request: GenerateRequest, retries = 3, delay = 
 
 const getMimeTypeFromDataURI = (dataURI: string): string => {
   const match = dataURI.match(/^data:(.*?);/);
-  return match ? match[1] : 'application/octet-stream'; // Default if no match
+  if (match) {
+    return match[1];
+  }
+  
+  // If no MIME type found, try to detect from data URI content
+  if (dataURI.startsWith('data:')) {
+    // Check if it looks like a PNG (starts with iVBORw0KGgo)
+    if (dataURI.includes('iVBORw0KGgo')) {
+      return 'image/png';
+    }
+    // Check if it looks like a JPEG (starts with /9j/)
+    if (dataURI.includes('/9j/')) {
+      return 'image/jpeg';
+    }
+    // Check if it looks like a WebP (starts with UklGR)
+    if (dataURI.includes('UklGR')) {
+      return 'image/webp';
+    }
+    // Check if it looks like a GIF (starts with R0lGOD)
+    if (dataURI.includes('R0lGOD')) {
+      return 'image/gif';
+    }
+    // Check if it looks like an SVG (starts with PHN2Zy)
+    if (dataURI.includes('PHN2Zy')) {
+      return 'image/svg+xml';
+    }
+  }
+  
+  // Default to PNG for image data URIs (most common and widely supported)
+  return 'image/png';
 };
 
 // Helper function to generate an image for a single variant with ENHANCED design principles

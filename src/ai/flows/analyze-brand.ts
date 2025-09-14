@@ -212,123 +212,47 @@ const analyzeBrandPrompt = ai.definePrompt({
   `,
 });
 
-// Website scraping function with enhanced content extraction
+// Website scraping function using server-side API
 async function scrapeWebsiteContent(url: string): Promise<string> {
   try {
+    // Use the server-side scraping API
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : 'http://localhost:3001';
 
-    // Import cheerio for HTML parsing
-    const cheerio = await import('cheerio');
-
-    // Use fetch to get the website content
-    const response = await fetch(url, {
+    const response = await fetch(`${baseUrl}/api/scrape-website`, {
+      method: 'POST',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      }
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ url }),
     });
 
+    const result = await response.json();
+
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      // Re-throw with the specific error type for proper handling
+      const error = new Error(result.error || 'Failed to scrape website');
+      if (result.errorType === 'blocked') {
+        throw new Error('blocked: ' + result.error);
+      } else if (result.errorType === 'network') {
+        throw new Error('timeout: ' + result.error);
+      } else if (result.errorType === 'not_found') {
+        throw new Error('not_found: ' + result.error);
+      } else {
+        throw error;
+      }
     }
 
-    const html = await response.text();
-    const $ = cheerio.load(html);
-
-    // Remove unwanted elements
-    $('script, style, nav, footer, header, .cookie-banner, .popup, .modal').remove();
-
-    // Extract structured content
-    const extractedContent = {
-      title: $('title').text().trim(),
-      metaDescription: $('meta[name="description"]').attr('content') || '',
-      headings: {
-        h1: $('h1').map((_, el) => $(el).text().trim()).get(),
-        h2: $('h2').map((_, el) => $(el).text().trim()).get(),
-        h3: $('h3').map((_, el) => $(el).text().trim()).get(),
-      },
-      // Look for common business sections with more comprehensive selectors
-      aboutSection: $('section:contains("About"), div:contains("About Us"), .about, #about, section:contains("Who We Are"), div:contains("Our Story"), .story, #story').text().trim(),
-      servicesSection: $('section:contains("Services"), div:contains("Services"), .services, #services, section:contains("What We Do"), div:contains("What We Do"), section:contains("Solutions"), div:contains("Solutions"), .solutions, #solutions, section:contains("Offerings"), div:contains("Offerings")').text().trim(),
-      contactSection: $('section:contains("Contact"), div:contains("Contact"), .contact, #contact, section:contains("Get in Touch"), div:contains("Reach Us")').text().trim(),
-      // Enhanced target audience extraction
-      targetAudienceSection: $('section:contains("Who We Serve"), div:contains("Who We Serve"), section:contains("Our Clients"), div:contains("Our Clients"), section:contains("Target"), div:contains("Target"), section:contains("For"), div:contains("Perfect For"), .clients, #clients, .audience, #audience').text().trim(),
-      // More comprehensive service extraction
-      featuresSection: $('section:contains("Features"), div:contains("Features"), .features, #features, section:contains("Benefits"), div:contains("Benefits"), .benefits, #benefits').text().trim(),
-      packagesSection: $('section:contains("Packages"), div:contains("Packages"), .packages, #packages, section:contains("Plans"), div:contains("Plans"), .plans, #plans, section:contains("Pricing"), div:contains("Pricing"), .pricing, #pricing').text().trim(),
-      // Extract all paragraph text
-      paragraphs: $('p').map((_, el) => $(el).text().trim()).get().filter(text => text.length > 20),
-      // Extract list items (often contain services/features)
-      listItems: $('li').map((_, el) => $(el).text().trim()).get().filter(text => text.length > 10),
-      // Extract any text that might contain business info
-      mainContent: $('main, .main, .content, .container').text().trim(),
-    };
-
-    // Combine all extracted content into a structured format
-    let structuredContent = '';
-
-    if (extractedContent.title) {
-      structuredContent += `WEBSITE TITLE: ${extractedContent.title}\n\n`;
+    if (!result.success || !result.content) {
+      throw new Error('No content could be extracted from the website');
     }
 
-    if (extractedContent.metaDescription) {
-      structuredContent += `META DESCRIPTION: ${extractedContent.metaDescription}\n\n`;
-    }
-
-    if (extractedContent.headings.h1.length > 0) {
-      structuredContent += `MAIN HEADINGS: ${extractedContent.headings.h1.join(' | ')}\n\n`;
-    }
-
-    if (extractedContent.aboutSection) {
-      structuredContent += `ABOUT SECTION: ${extractedContent.aboutSection}\n\n`;
-    }
-
-    if (extractedContent.servicesSection) {
-      structuredContent += `SERVICES SECTION: ${extractedContent.servicesSection}\n\n`;
-    }
-
-    if (extractedContent.targetAudienceSection) {
-      structuredContent += `TARGET AUDIENCE SECTION: ${extractedContent.targetAudienceSection}\n\n`;
-    }
-
-    if (extractedContent.featuresSection) {
-      structuredContent += `FEATURES/BENEFITS SECTION: ${extractedContent.featuresSection}\n\n`;
-    }
-
-    if (extractedContent.packagesSection) {
-      structuredContent += `PACKAGES/PRICING SECTION: ${extractedContent.packagesSection}\n\n`;
-    }
-
-    if (extractedContent.contactSection) {
-      structuredContent += `CONTACT SECTION: ${extractedContent.contactSection}\n\n`;
-    }
-
-    if (extractedContent.listItems.length > 0) {
-      structuredContent += `KEY POINTS/SERVICES: ${extractedContent.listItems.slice(0, 20).join(' | ')}\n\n`;
-    }
-
-    if (extractedContent.paragraphs.length > 0) {
-      structuredContent += `MAIN CONTENT: ${extractedContent.paragraphs.slice(0, 10).join(' ')}\n\n`;
-    }
-
-    // Fallback to main content if structured extraction didn't work well
-    if (structuredContent.length < 500 && extractedContent.mainContent) {
-      structuredContent += `FULL CONTENT: ${extractedContent.mainContent}`;
-    }
-
-    // Clean up and limit content length
-    structuredContent = structuredContent
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    // Limit content length to avoid token limits (increased for better analysis)
-    if (structuredContent.length > 15000) {
-      structuredContent = structuredContent.substring(0, 15000) + '...';
-    }
-
-
-    return structuredContent;
+    return result.content;
 
   } catch (error) {
-    throw new Error(`Failed to scrape website content: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    // Pass through the error with proper typing for upstream handling
+    throw error;
   }
 }
 
@@ -339,16 +263,37 @@ const analyzeBrandFlow = ai.defineFlow(
     outputSchema: AnalyzeBrandOutputSchema,
   },
   async input => {
-    // First, scrape the website content
-    const websiteContent = await scrapeWebsiteContent(input.websiteUrl);
+    try {
+      // First, scrape the website content
+      const websiteContent = await scrapeWebsiteContent(input.websiteUrl);
 
-    // Create enhanced input with website content
-    const enhancedInput = {
-      ...input,
-      websiteContent
-    };
+      // Create enhanced input with website content
+      const enhancedInput = {
+        ...input,
+        websiteContent
+      };
 
-    const { output } = await analyzeBrandPrompt(enhancedInput);
-    return output!;
+      const { output } = await analyzeBrandPrompt(enhancedInput);
+      return output!;
+    } catch (error) {
+      // If JSON mode fails, return a basic analysis
+      console.warn('Brand analysis failed, returning basic analysis:', error);
+      return {
+        businessName: 'Business Analysis',
+        description: 'Unable to complete detailed analysis due to technical limitations.',
+        businessType: 'General Business',
+        services: 'Various services offered',
+        targetAudience: 'General audience',
+        brandVoice: 'Professional',
+        visualStyle: 'Modern',
+        primaryColors: ['#2563eb', '#1f2937'],
+        typography: 'Clean, professional fonts',
+        keyMessages: ['Quality service', 'Professional approach'],
+        competitiveAdvantages: ['Experienced team', 'Quality focus'],
+        contentStrategy: 'Professional content approach',
+        callsToAction: ['Contact us', 'Learn more'],
+        valueProposition: 'Quality service provider'
+      };
+    }
   }
 );

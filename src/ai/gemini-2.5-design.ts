@@ -770,7 +770,7 @@ CREATIVE DESIGN VARIETY:
   * Layered depth with foreground/background elements
 
 LOGO INTEGRATION REQUIREMENTS:
-${brandProfile.logoDataUrl ? `🚨 CRITICAL: A brand logo has been provided and MUST be used in the design.
+${(brandProfile.logoDataUrl || brandProfile.logoUrl) ? `🚨 CRITICAL: A brand logo has been provided and MUST be used in the design.
 - Use ONLY the provided logo image - never create or generate a new logo
 - The uploaded logo is the official brand logo and must be used exactly as provided
 - Integrate the provided logo naturally and prominently into the design

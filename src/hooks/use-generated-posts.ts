@@ -1,9 +1,32 @@
 // Hook for managing generated posts with MongoDB
 import { useState, useEffect, useCallback } from 'react';
 // MongoDB services accessed via API routes only
-import { useAuth } from './use-auth';
+import { useAuth } from './use-auth-supabase';
 import { useCurrentBrandProfile } from './use-brand-profiles';
 import type { GeneratedPost, Platform } from '@/lib/types';
+
+
+
+// Get Supabase access token for API calls
+const getSupabaseAccessToken = async () => {
+  if (typeof window !== 'undefined') {
+    const { supabase } = await import('@/lib/supabase');
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token || null;
+  }
+  return null;
+};
+
+// Create headers with Supabase auth token
+const getAuthHeaders = async () => {
+  const token = await getSupabaseAccessToken();
+  return token ? {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  } : {
+    'Content-Type': 'application/json'
+  };
+};
 
 export interface GeneratedPostsState {
   posts: GeneratedPost[];
@@ -34,7 +57,10 @@ export function useGeneratedPosts(limit: number = 10) {
       setState(prev => ({ ...prev, loading: true, error: null }));
 
       // Load posts via API route
-      const response = await fetch(`/api/generated-posts?userId=${userId}&limit=${limit}`);
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/generated-posts?userId=${userId}&limit=${limit}`, {
+        headers
+      });
       if (!response.ok) {
         throw new Error('Failed to load posts');
       }
@@ -64,11 +90,10 @@ export function useGeneratedPosts(limit: number = 10) {
       setState(prev => ({ ...prev, saving: true, error: null }));
 
       // Save post via API route
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/generated-posts', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           post,
           userId,
@@ -116,11 +141,10 @@ export function useGeneratedPosts(limit: number = 10) {
   ): Promise<void> => {
     try {
       // Update analytics via API route
+      const headers = await getAuthHeaders();
       const response = await fetch(`/api/generated-posts/${postId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           type: 'analytics',
           ...analytics,
@@ -155,11 +179,10 @@ export function useGeneratedPosts(limit: number = 10) {
       const publishedAt = status === 'posted' ? new Date() : undefined;
 
       // Update status via API route
+      const headers = await getAuthHeaders();
       const response = await fetch(`/api/generated-posts/${postId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           type: 'status',
           status: firestoreStatus,
@@ -189,8 +212,10 @@ export function useGeneratedPosts(limit: number = 10) {
   const deletePost = useCallback(async (postId: string): Promise<void> => {
     try {
       // Delete post via API route
+      const headers = await getAuthHeaders();
       const response = await fetch(`/api/generated-posts/${postId}`, {
         method: 'DELETE',
+        headers
       });
 
       if (!response.ok) {
@@ -213,7 +238,10 @@ export function useGeneratedPosts(limit: number = 10) {
 
     try {
       // Get posts by platform via API route
-      const response = await fetch(`/api/generated-posts?userId=${userId}&platform=${platform}&limit=${limit}`);
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/generated-posts?userId=${userId}&platform=${platform}&limit=${limit}`, {
+        headers
+      });
       if (response.ok) {
         return await response.json();
       }
@@ -230,7 +258,10 @@ export function useGeneratedPosts(limit: number = 10) {
     try {
       const firestoreStatus = status === 'posted' ? 'published' : 'draft';
       // Get posts by status via API route
-      const response = await fetch(`/api/generated-posts?userId=${userId}&status=${firestoreStatus}`);
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/generated-posts?userId=${userId}&status=${firestoreStatus}`, {
+        headers
+      });
       if (response.ok) {
         return await response.json();
       }
@@ -262,7 +293,8 @@ export function useGeneratedPosts(limit: number = 10) {
 
 // Hook for getting posts for a specific brand profile
 export function useGeneratedPostsForBrand(brandProfileId: string, limit: number = 10) {
-  const userId = useUserId();
+  const { user } = useAuth();
+  const userId = user?.userId;
   const [posts, setPosts] = useState<GeneratedPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -279,7 +311,10 @@ export function useGeneratedPostsForBrand(brandProfileId: string, limit: number 
       setError(null);
 
       // Get brand posts via API route
-      const response = await fetch(`/api/generated-posts/brand/${brandProfileId}?userId=${userId}&limit=${limit}`);
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/generated-posts/brand/${brandProfileId}?userId=${userId}&limit=${limit}`, {
+        headers
+      });
       if (!response.ok) {
         throw new Error('Failed to load brand posts');
       }

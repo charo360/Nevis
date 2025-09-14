@@ -187,7 +187,7 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
     }
 
     // Navigate to quick content to test the content generation fixes
-    router.push('/quick-content-mongo');
+    router.push('/quick-content');
   };
 
   const calculateProgress = () => {

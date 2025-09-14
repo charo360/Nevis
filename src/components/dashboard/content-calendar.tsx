@@ -6,6 +6,7 @@ import { Loader2, Facebook, Instagram, Linkedin, Twitter, Settings, Palette, Spa
 import { Button } from "@/components/ui/button";
 import { PostCard } from "@/components/dashboard/post-card";
 import { generateContentAction, generateEnhancedDesignAction, generateContentWithArtifactsAction } from "@/app/actions";
+import { generateRevo15ContentAction } from "@/app/actions/revo-1.5-actions";
 
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -155,6 +156,20 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
             enhancementsApplied: revo20Result.enhancementsApplied || []
           }
         };
+      } else if (selectedRevoModel === 'revo-1.5') {
+        // Use Revo 1.5 directly with logo support
+        newPost = await generateRevo15ContentAction(
+          brandProfile,
+          platform,
+          brandConsistency,
+          `${brandProfile.businessName || brandProfile.businessType} - Premium Content`,
+          {
+            aspectRatio: '1:1',
+            visualStyle: brandProfile.visualStyle || 'modern',
+            includePeopleInDesigns,
+            useLocalLanguage
+          }
+        );
       } else if (useEnhancedGeneration) {
         // Use artifact-enhanced generation - will automatically use active artifacts from artifacts page
         newPost = await generateContentWithArtifactsAction(

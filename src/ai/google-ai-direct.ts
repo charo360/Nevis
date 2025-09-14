@@ -18,7 +18,7 @@ export const GEMINI_2_5_MODELS = {
   FLASH: 'gemini-2.5-flash',
   PRO: 'gemini-2.5-pro',
   FLASH_LITE: 'gemini-2.5-flash-lite',
-  FLASH_IMAGE_PREVIEW: 'gemini-2.5-flash-image-preview'
+  FLASH_IMAGE_PREVIEW: 'gemini-2.0-flash-exp-image-generation'
 } as const;
 
 export type Gemini25Model = typeof GEMINI_2_5_MODELS[keyof typeof GEMINI_2_5_MODELS];

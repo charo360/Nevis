@@ -1,8 +1,13 @@
-// JWT authentication utilities
+// JWT authentication utilities with Supabase backend
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { userService } from '../mongodb/database';
-import type { UserDocument } from '../mongodb/schemas';
+import { createClient } from '@supabase/supabase-js';
+
+// Server-side Supabase client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 // JWT configuration
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
@@ -15,6 +20,24 @@ export interface JWTPayload {
   email: string;
   displayName?: string;
   isAnonymous?: boolean;
+}
+
+// User document type (matching Supabase users table)
+export interface UserDocument {
+  id: string;
+  user_id: string;
+  email: string;
+  display_name?: string;
+  photo_url?: string;
+  theme?: string;
+  notifications?: boolean;
+  auto_save?: boolean;
+  subscription_plan?: string;
+  subscription_status?: string;
+  subscription_expires_at?: string;
+  created_at: string;
+  updated_at: string;
+  hashed_password?: string; // Added for auth
 }
 
 // Authentication result
@@ -100,8 +123,15 @@ export async function registerUser(
   displayName?: string
 ): Promise<AuthResult> {
   try {
+    console.log('🔐 Registering new user with Supabase:', email);
+
     // Check if user already exists
-    const existingUser = await userService.findOne({ email });
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('user_id')
+      .eq('email', email)
+      .single();
+
     if (existingUser) {
       return {
         success: false,
@@ -116,24 +146,29 @@ export async function registerUser(
     const userId = generateUserId();
 
     // Create user document
-    const userData = {
-      userId,
-      email,
-      displayName: displayName || '',
-      photoURL: '',
-      hashedPassword,
-      preferences: {
-        theme: 'system' as const,
+    const { data, error } = await supabase
+      .from('users')
+      .insert({
+        user_id: userId,
+        email,
+        display_name: displayName || '',
+        photo_url: '',
+        theme: 'system',
         notifications: true,
-        autoSave: true,
-      },
-      subscription: {
-        plan: 'free' as const,
-        status: 'active' as const,
-      },
-    };
+        auto_save: true,
+        subscription_plan: 'free',
+        subscription_status: 'active',
+        hashed_password: hashedPassword,
+      })
+      .select()
+      .single();
 
-    await userService.create(userData);
+    if (error) {
+      console.error('❌ Supabase user creation error:', error);
+      throw error;
+    }
+
+    console.log('✅ User created successfully in Supabase');
 
     // Generate tokens
     const payload: JWTPayload = {
@@ -153,7 +188,7 @@ export async function registerUser(
       refreshToken,
     };
   } catch (error) {
-    console.error('Registration error:', error);
+    console.error('❌ Registration error:', error);
     return {
       success: false,
       error: 'Registration failed. Please try again.',
@@ -164,9 +199,17 @@ export async function registerUser(
 // Login user
 export async function loginUser(email: string, password: string): Promise<AuthResult> {
   try {
+    console.log('🔐 Logging in user with Supabase:', email);
+
     // Find user by email
-    const user = await userService.findOne({ email });
-    if (!user) {
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+    if (error || !user) {
+      console.log('❌ User not found:', email);
       return {
         success: false,
         error: 'Invalid email or password',
@@ -174,19 +217,30 @@ export async function loginUser(email: string, password: string): Promise<AuthRe
     }
 
     // Verify password
-    const isValidPassword = await verifyPassword(password, (user as any).hashedPassword);
-    if (!isValidPassword) {
+    if (!user.hashed_password) {
+      console.log('❌ No password hash found for user');
       return {
         success: false,
         error: 'Invalid email or password',
       };
     }
 
+    const isValidPassword = await verifyPassword(password, user.hashed_password);
+    if (!isValidPassword) {
+      console.log('❌ Invalid password for user');
+      return {
+        success: false,
+        error: 'Invalid email or password',
+      };
+    }
+
+    console.log('✅ User login successful');
+
     // Generate tokens
     const payload: JWTPayload = {
-      userId: user.userId,
+      userId: user.user_id,
       email: user.email,
-      displayName: user.displayName,
+      displayName: user.display_name,
       isAnonymous: false,
     };
 
@@ -200,7 +254,7 @@ export async function loginUser(email: string, password: string): Promise<AuthRe
       refreshToken,
     };
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('❌ Login error:', error);
     return {
       success: false,
       error: 'Login failed. Please try again.',
@@ -211,33 +265,40 @@ export async function loginUser(email: string, password: string): Promise<AuthRe
 // Create anonymous user
 export async function createAnonymousUser(): Promise<AuthResult> {
   try {
+    console.log('🔐 Creating anonymous user with Supabase');
+
     // Generate anonymous user ID
     const userId = generateAnonymousUserId();
 
     // Create anonymous user document
-    const userData = {
-      userId,
-      email: `${userId}@anonymous.local`,
-      displayName: 'Anonymous User',
-      photoURL: '',
-      preferences: {
-        theme: 'system' as const,
+    const { data, error } = await supabase
+      .from('users')
+      .insert({
+        user_id: userId,
+        email: `${userId}@anonymous.local`,
+        display_name: 'Anonymous User',
+        photo_url: '',
+        theme: 'system',
         notifications: true,
-        autoSave: true,
-      },
-      subscription: {
-        plan: 'free' as const,
-        status: 'active' as const,
-      },
-    };
+        auto_save: true,
+        subscription_plan: 'free',
+        subscription_status: 'active',
+      })
+      .select()
+      .single();
 
-    await userService.create(userData);
+    if (error) {
+      console.error('❌ Supabase anonymous user creation error:', error);
+      throw error;
+    }
+
+    console.log('✅ Anonymous user created successfully');
 
     // Generate tokens
     const payload: JWTPayload = {
       userId,
-      email: userData.email,
-      displayName: userData.displayName,
+      email: `${userId}@anonymous.local`,
+      displayName: 'Anonymous User',
       isAnonymous: true,
     };
 
@@ -251,7 +312,7 @@ export async function createAnonymousUser(): Promise<AuthResult> {
       refreshToken,
     };
   } catch (error) {
-    console.error('Anonymous user creation error:', error);
+    console.error('❌ Anonymous user creation error:', error);
     return {
       success: false,
       error: 'Failed to create anonymous user',
@@ -262,6 +323,8 @@ export async function createAnonymousUser(): Promise<AuthResult> {
 // Refresh access token
 export async function refreshAccessToken(refreshToken: string): Promise<AuthResult> {
   try {
+    console.log('🔐 Refreshing access token with Supabase');
+
     // Verify refresh token
     const payload = verifyRefreshToken(refreshToken);
     if (!payload) {
@@ -272,19 +335,27 @@ export async function refreshAccessToken(refreshToken: string): Promise<AuthResu
     }
 
     // Verify user still exists
-    const user = await userService.findOne({ userId: payload.userId });
-    if (!user) {
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('user_id', payload.userId)
+      .single();
+
+    if (error || !user) {
+      console.log('❌ User not found during token refresh:', payload.userId);
       return {
         success: false,
         error: 'User not found',
       };
     }
 
+    console.log('✅ Token refresh successful');
+
     // Generate new access token
     const newPayload: JWTPayload = {
-      userId: user.userId,
+      userId: user.user_id,
       email: user.email,
-      displayName: user.displayName,
+      displayName: user.display_name,
       isAnonymous: payload.isAnonymous,
     };
 
@@ -297,7 +368,7 @@ export async function refreshAccessToken(refreshToken: string): Promise<AuthResu
       refreshToken, // Keep the same refresh token
     };
   } catch (error) {
-    console.error('Token refresh error:', error);
+    console.error('❌ Token refresh error:', error);
     return {
       success: false,
       error: 'Failed to refresh token',
@@ -313,10 +384,20 @@ export async function getUserFromToken(token: string): Promise<UserDocument | nu
       return null;
     }
 
-    const user = await userService.findOne({ userId: payload.userId });
-    return user;
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('user_id', payload.userId)
+      .single();
+
+    if (error || !user) {
+      console.log('❌ User not found from token:', payload.userId);
+      return null;
+    }
+
+    return user as UserDocument;
   } catch (error) {
-    console.error('Get user from token error:', error);
+    console.error('❌ Get user from token error:', error);
     return null;
   }
 }

@@ -28,7 +28,7 @@ export class Revo15ContentGenerator implements IContentGenerator {
       }
 
       // Prepare enhanced generation parameters
-      const generationParams = this.prepareEnhancedGenerationParams(request);
+      const generationParams = await this.prepareEnhancedGenerationParams(request);
 
       // Generate content with enhanced features
       const postDetails = await generatePostFromProfile(generationParams);
@@ -122,11 +122,54 @@ export class Revo15ContentGenerator implements IContentGenerator {
   }
 
   /**
+   * Fetch logo from storage URL and convert to base64
+   */
+  private async fetchAndConvertLogo(logoUrl: string): Promise<string> {
+    try {
+      console.log('🖼️  [Revo 1.5 Content] Fetching logo from storage:', logoUrl.substring(0, 100) + '...');
+      const response = await fetch(logoUrl);
+      
+      if (!response.ok) {
+        console.warn('⚠️  [Revo 1.5 Content] Logo fetch failed:', response.status, response.statusText);
+        return '';
+      }
+      
+      const arrayBuffer = await response.arrayBuffer();
+      const base64String = Buffer.from(arrayBuffer).toString('base64');
+      
+      // Determine content type
+      const contentType = response.headers.get('content-type') || 'image/png';
+      const logoDataUrl = `data:${contentType};base64,${base64String}`;
+      
+      console.log('✅ [Revo 1.5 Content] Logo converted to base64:', logoDataUrl.length, 'characters');
+      return logoDataUrl;
+    } catch (error) {
+      console.error('❌ [Revo 1.5 Content] Error fetching logo:', error);
+      return '';
+    }
+  }
+
+  /**
    * Prepare enhanced generation parameters for Revo 1.5
    */
-  private prepareEnhancedGenerationParams(request: ContentGenerationRequest) {
+  private async prepareEnhancedGenerationParams(request: ContentGenerationRequest) {
     const { profile, platform, brandConsistency } = request;
     const today = new Date();
+
+    // Handle logo conversion from storage URL to data URL
+    let processedLogoDataUrl = profile.logoDataUrl || '';
+    const logoUrl = profile.logoUrl;
+    
+    if (logoUrl && !processedLogoDataUrl) {
+      console.log('🔄 [Revo 1.5 Content] Converting logo from storage URL to base64...');
+      processedLogoDataUrl = await this.fetchAndConvertLogo(logoUrl);
+    }
+    
+    if (processedLogoDataUrl) {
+      console.log('🖼️  [Revo 1.5 Content] Logo available for content generation:', processedLogoDataUrl.length, 'characters');
+    } else {
+      console.log('⚠️  [Revo 1.5 Content] No logo available for content generation');
+    }
 
     // Enhanced parameter preparation with more sophisticated processing
     const keyFeaturesString = Array.isArray(profile.keyFeatures)
@@ -151,7 +194,8 @@ export class Revo15ContentGenerator implements IContentGenerator {
       writingTone: profile.writingTone,
       contentThemes: profile.contentThemes,
       visualStyle: profile.visualStyle,
-      logoDataUrl: profile.logoDataUrl,
+      logoDataUrl: processedLogoDataUrl, // Use the processed logo data URL
+      logoUrl: profile.logoUrl,
       designExamples: brandConsistency?.strictConsistency ? (profile.designExamples || []) : [],
       primaryColor: profile.primaryColor,
       accentColor: profile.accentColor,

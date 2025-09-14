@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useBrand } from '@/contexts/brand-context-mongo';
+import { useUnifiedBrand } from '@/contexts/unified-brand-context';
 import {
   Building2,
   Users,
@@ -36,7 +36,7 @@ export function BrandDetailsStep({
   onPrevious
 }: BrandDetailsStepProps) {
   const [activeTab, setActiveTab] = useState('basic');
-  const { currentBrand, updateProfile, selectBrand } = useBrand();
+  const { currentBrand, updateProfile, selectBrand } = useUnifiedBrand();
 
   // Helper function to check if a required field is empty
   const isRequiredFieldEmpty = (fieldValue: string | undefined | null): boolean => {

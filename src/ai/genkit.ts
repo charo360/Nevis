@@ -9,5 +9,5 @@ if (!apiKey) {
 
 export const ai = genkit({
   plugins: [googleAI({ apiKey })],
-  model: 'googleai/gemini-2.5-flash-image-preview', // Using Gemini 2.5 Flash Image Preview
+  model: 'googleai/gemini-2.5-flash', // Using Gemini 2.5 Flash (supports JSON mode)
 });

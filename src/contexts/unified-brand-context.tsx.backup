@@ -1,0 +1,394 @@
+'use client';
+
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { useBrand } from '@/contexts/brand-context-mongo';
+import { brandScopedArtifactsService } from '@/lib/services/brand-scoped-artifacts-service';
+import { BrandScopedStorage, STORAGE_FEATURES, migrateAllGlobalStorage } from '@/lib/services/brand-scoped-storage';
+import type { CompleteBrandProfile } from '@/components/cbrand/cbrand-wizard';
+
+interface UnifiedBrandContextType {
+  // Current brand state
+  currentBrand: CompleteBrandProfile | null;
+
+  // All brands
+  brands: CompleteBrandProfile[];
+
+  // Loading states
+  loading: boolean;
+  saving: boolean;
+
+  // Actions
+  selectBrand: (brand: CompleteBrandProfile | null) => void;
+  saveProfile: (profile: CompleteBrandProfile) => Promise<string>;
+  updateProfile: (profileId: string, updates: Partial<CompleteBrandProfile>) => Promise<void>;
+  deleteProfile: (profileId: string) => Promise<void>;
+  refreshBrands: () => Promise<void>;
+
+  // Brand-scoped storage helpers
+  getBrandStorage: (feature: string) => BrandScopedStorage | null;
+  clearBrandData: (brandId: string) => void;
+  migrateBrandData: (brandId: string) => void;
+
+  // Error handling
+  error: string | null;
+}
+
+const UnifiedBrandContext = createContext<UnifiedBrandContextType | undefined>(undefined);
+
+interface UnifiedBrandProviderProps {
+  children: React.ReactNode;
+}
+
+export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
+  const {
+    brands,
+    currentBrand: currentProfile,
+    loading,
+    saving,
+    error,
+    saveProfile,
+    updateProfile,
+    deleteProfile,
+    selectBrand: setCurrentProfile,
+    refreshBrands,
+  } = useBrand();
+
+  // Initialize currentBrand from localStorage immediately to prevent flash of missing logo
+  const [currentBrand, setCurrentBrand] = useState<CompleteBrandProfile | null>(() => {
+    try {
+      const savedBrandData = localStorage.getItem('currentBrandData');
+      if (savedBrandData) {
+        const parsed = JSON.parse(savedBrandData);
+        console.log('🔄 Immediately restoring brand from localStorage on init:', {
+          businessName: parsed.businessName || parsed.name,
+          hasLogoUrl: !!parsed.logoUrl,
+          hasLogoDataUrl: !!parsed.logoDataUrl
+        });
+        return parsed as CompleteBrandProfile;
+      }
+    } catch (error) {
+      console.error('Failed to restore brand from localStorage on init:', error);
+    }
+    return null;
+  });
+  const [brandScopedServices, setBrandScopedServices] = useState<Map<string, any>>(new Map());
+
+  // Use refs to store current values for event handlers
+  const currentBrandRef = useRef<CompleteBrandProfile | null>(null);
+  const setCurrentProfileRef = useRef(setCurrentProfile);
+  const updateAllBrandScopedServicesRef = useRef<(brand: CompleteBrandProfile | null) => void>();
+
+  // Update refs when values change
+  useEffect(() => {
+    currentBrandRef.current = currentBrand;
+  }, [currentBrand]);
+
+  useEffect(() => {
+    setCurrentProfileRef.current = setCurrentProfile;
+  }, [setCurrentProfile]);
+
+  // Sync current brand with the hook's current profile
+  useEffect(() => {
+    // Only sync if currentProfile exists and is different from currentBrand
+    if (currentProfile && currentProfile !== currentBrand) {
+      console.log('🔄 Syncing current profile with brand context:', {
+        profileName: currentProfile.businessName || currentProfile.name,
+        hasProfileLogoUrl: !!currentProfile.logoUrl,
+        hasProfileLogoDataUrl: !!currentProfile.logoDataUrl,
+        currentBrandName: currentBrand?.businessName || currentBrand?.name,
+        hasCurrentLogoUrl: !!currentBrand?.logoUrl,
+        hasCurrentLogoDataUrl: !!currentBrand?.logoDataUrl
+      });
+      
+      // Merge the current brand with new profile data to preserve any cached info
+      const mergedBrand = {
+        ...currentProfile,
+        // Preserve logoUrl and logoDataUrl from both sources
+        logoUrl: currentProfile.logoUrl || currentBrand?.logoUrl,
+        logoDataUrl: currentProfile.logoDataUrl || currentBrand?.logoDataUrl,
+      };
+      
+      setCurrentBrand(mergedBrand);
+      updateAllBrandScopedServices(mergedBrand);
+    } else if (!currentProfile && !currentBrand && brands.length > 0) {
+      // Auto-select first brand only if no brand is selected at all and brands exist
+      // This should only happen on initial load, not during navigation
+      const savedBrandId = localStorage.getItem('selectedBrandId');
+      let brandToSelect = brands[0]; // Default to first brand
+
+      // Try to restore previously selected brand
+      if (savedBrandId) {
+        const savedBrand = brands.find(b => b.id === savedBrandId);
+        if (savedBrand) {
+          brandToSelect = savedBrand;
+          console.log('🎯 Restored saved brand from brands list:', {
+            businessName: savedBrand.businessName || savedBrand.name,
+            hasLogoUrl: !!savedBrand.logoUrl,
+            hasLogoDataUrl: !!savedBrand.logoDataUrl
+          });
+        }
+      }
+
+      if (!currentBrand) { // Only select if no brand is currently selected
+        setCurrentBrand(brandToSelect);
+        setCurrentProfile(brandToSelect);
+        updateAllBrandScopedServices(brandToSelect);
+      }
+    } else if (currentBrand && brands.length > 0) {
+      // Update current brand with fresh data from brands list if available
+      const freshBrand = brands.find(b => b.id === currentBrand.id);
+      if (freshBrand && (freshBrand.logoUrl !== currentBrand.logoUrl || freshBrand.logoDataUrl !== currentBrand.logoDataUrl)) {
+        console.log('🔄 Updating current brand with fresh logo data from MongoDB:', {
+          businessName: freshBrand.businessName || freshBrand.name,
+          oldLogoUrl: currentBrand.logoUrl,
+          newLogoUrl: freshBrand.logoUrl,
+          oldLogoDataUrl: !!currentBrand.logoDataUrl,
+          newLogoDataUrl: !!freshBrand.logoDataUrl
+        });
+        
+        const updatedBrand = {
+          ...currentBrand,
+          ...freshBrand,
+          // Ensure we keep both logo formats if available
+          logoUrl: freshBrand.logoUrl || currentBrand.logoUrl,
+          logoDataUrl: freshBrand.logoDataUrl || currentBrand.logoDataUrl,
+        };
+        
+        setCurrentBrand(updatedBrand);
+      }
+    }
+  }, [currentProfile, brands.length, brands]); // Added brands to dependencies to catch logo updates
+
+  // Update all brand-scoped services when brand changes
+  const updateAllBrandScopedServices = useCallback((brand: CompleteBrandProfile | null) => {
+    const brandId = brand?.id || null;
+    const brandName = brand?.businessName || brand?.name || 'none';
+
+
+    try {
+      // Update artifacts service
+      brandScopedArtifactsService.setBrand(brandId);
+
+      // TODO: Update other brand-scoped services here
+      // - Social media service
+      // - Content calendar service
+      // - Creative studio service
+      // - Quick content service
+      // - etc.
+
+      // Store the current brand ID for other services to use
+      if (brandId) {
+        localStorage.setItem('currentBrandId', brandId);
+        localStorage.setItem('currentBrandName', brandName);
+      } else {
+        localStorage.removeItem('currentBrandId');
+        localStorage.removeItem('currentBrandName');
+      }
+
+    } catch (error) {
+    }
+  }, []);
+
+  // Update the ref when the function changes
+  useEffect(() => {
+    updateAllBrandScopedServicesRef.current = updateAllBrandScopedServices;
+  }, [updateAllBrandScopedServices]);
+
+  const selectBrand = useCallback((brand: CompleteBrandProfile | null) => {
+    const brandName = brand?.businessName || brand?.name || 'null';
+
+    // Update both states immediately
+    setCurrentBrand(brand);
+    setCurrentProfile(brand);
+
+    // Update all brand-scoped services
+    updateAllBrandScopedServices(brand);
+
+    // Force update color persistence immediately
+    if (brand) {
+      const colorData = {
+        primaryColor: brand.primaryColor,
+        accentColor: brand.accentColor,
+        backgroundColor: brand.backgroundColor,
+        brandId: brand.id,
+        brandName: brand.businessName || brand.name,
+        updatedAt: new Date().toISOString()
+      };
+      localStorage.setItem('brandColors', JSON.stringify(colorData));
+    }
+
+    // Trigger a custom event for other components to listen to
+    const event = new CustomEvent('brandChanged', {
+      detail: {
+        brand,
+        brandId: brand?.id || null,
+        brandName: brandName
+      }
+    });
+    window.dispatchEvent(event);
+
+  }, [currentBrand, currentProfile, setCurrentProfile, updateAllBrandScopedServices]);
+
+  // localStorage restoration is now handled in the main sync effect above
+
+  // Enhanced brand persistence - save both ID and full data
+  useEffect(() => {
+    if (currentBrand?.id) {
+      localStorage.setItem('selectedBrandId', currentBrand.id);
+      // Also save the full brand data for immediate restoration
+      // Store both logoUrl and logoDataUrl to handle both scenarios
+      localStorage.setItem('currentBrandData', JSON.stringify({
+        id: currentBrand.id,
+        businessName: currentBrand.businessName,
+        name: currentBrand.name,
+        primaryColor: currentBrand.primaryColor,
+        accentColor: currentBrand.accentColor,
+        backgroundColor: currentBrand.backgroundColor,
+        logoUrl: currentBrand.logoUrl, // Supabase storage URL
+        logoDataUrl: currentBrand.logoDataUrl, // Base64 data URL
+        // Store essential data for immediate UI restoration
+        businessType: currentBrand.businessType,
+        location: currentBrand.location,
+        description: currentBrand.description
+      }));
+    } else {
+      localStorage.removeItem('selectedBrandId');
+      localStorage.removeItem('currentBrandData');
+    }
+  }, [currentBrand]);
+
+  // Helper function to get brand-scoped storage for any feature
+  const getBrandStorage = useCallback((feature: string): BrandScopedStorage | null => {
+    if (!currentBrand?.id) {
+      return null;
+    }
+
+    return new BrandScopedStorage({ brandId: currentBrand.id, feature });
+  }, [currentBrand]);
+
+  // Helper function to clear all data for a specific brand
+  const clearBrandData = useCallback((brandId: string) => {
+    BrandScopedStorage.clearBrandData(brandId);
+  }, []);
+
+  // Helper function to migrate global data to brand-scoped storage
+  const migrateBrandData = useCallback((brandId: string) => {
+    const features = Object.values(STORAGE_FEATURES);
+    migrateAllGlobalStorage(brandId, features);
+  }, []);
+
+  // Listen for brand changes from other contexts (backward compatibility)
+  useEffect(() => {
+    const handleBrandChange = (event: any) => {
+      if (event.detail && event.detail.brand) {
+        const brand = event.detail.brand;
+        const brandName = brand.businessName || brand.name;
+
+        // Only update if it's different from current brand
+        const currentBrandValue = currentBrandRef.current;
+        if (!currentBrandValue || currentBrandValue.id !== brand.id) {
+          setCurrentBrand(brand);
+          setCurrentProfileRef.current(brand);
+          if (updateAllBrandScopedServicesRef.current) {
+            updateAllBrandScopedServicesRef.current(brand);
+          }
+        } else {
+        }
+      }
+    };
+
+    // Listen for the original brand context changes
+    const handleOriginalBrandChange = (event: any) => {
+      if (event.detail && event.detail.brand) {
+        handleBrandChange(event);
+      }
+    };
+
+    window.addEventListener('brandChanged', handleBrandChange);
+    window.addEventListener('originalBrandChanged', handleOriginalBrandChange);
+
+    return () => {
+      window.removeEventListener('brandChanged', handleBrandChange);
+      window.removeEventListener('originalBrandChanged', handleOriginalBrandChange);
+    };
+  }, []); // Empty dependencies to prevent re-registering listeners
+
+  const contextValue: UnifiedBrandContextType = {
+    currentBrand,
+    brands,
+    loading,
+    saving,
+    error,
+    selectBrand,
+    saveProfile,
+    updateProfile,
+    deleteProfile,
+    refreshBrands,
+    getBrandStorage,
+    clearBrandData,
+    migrateBrandData,
+  };
+
+  return (
+    <UnifiedBrandContext.Provider value={contextValue}>
+      {children}
+    </UnifiedBrandContext.Provider>
+  );
+}
+
+export function useUnifiedBrand() {
+  const context = useContext(UnifiedBrandContext);
+  if (context === undefined) {
+    throw new Error('useUnifiedBrand must be used within a UnifiedBrandProvider');
+  }
+  return context;
+}
+
+// Convenience hooks
+export function useCurrentBrand(): CompleteBrandProfile | null {
+  const { currentBrand } = useUnifiedBrand();
+  return currentBrand;
+}
+
+export function useBrands(): CompleteBrandProfile[] {
+  const { brands } = useUnifiedBrand();
+  return brands;
+}
+
+export function useBrandActions() {
+  const { selectBrand, saveProfile, updateProfile, deleteProfile, refreshBrands } = useUnifiedBrand();
+  return { selectBrand, saveProfile, updateProfile, deleteProfile, refreshBrands };
+}
+
+export function useBrandStorage(feature: string): BrandScopedStorage | null {
+  const { getBrandStorage } = useUnifiedBrand();
+  return getBrandStorage(feature);
+}
+
+// Hook to listen for brand changes
+export function useBrandChangeListener(callback: (brand: CompleteBrandProfile | null) => void) {
+  const { currentBrand } = useUnifiedBrand();
+  const callbackRef = useRef(callback);
+
+  // Update callback ref when callback changes
+  useEffect(() => {
+    callbackRef.current = callback;
+  }, [callback]);
+
+  // Call callback when brand changes (no callback in dependencies to prevent infinite loop)
+  useEffect(() => {
+    callbackRef.current(currentBrand);
+  }, [currentBrand]);
+
+  // Listen for brand change events (no callback in dependencies)
+  useEffect(() => {
+    const handleBrandChange = (event: any) => {
+      if (event.detail && event.detail.brand) {
+        callbackRef.current(event.detail.brand);
+      }
+    };
+
+    window.addEventListener('brandChanged', handleBrandChange);
+    return () => window.removeEventListener('brandChanged', handleBrandChange);
+  }, []); // Empty dependencies to prevent re-registration
+}

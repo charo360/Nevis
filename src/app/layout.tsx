@@ -7,8 +7,9 @@ import type { Metadata } from 'next';
 import { Toaster } from "@/components/ui/toaster"
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/app-sidebar';
-import { AuthWrapper } from '@/components/auth/auth-wrapper-mongo';
-import { BrandProvider } from '@/contexts/brand-context-mongo';
+import { AuthWrapper } from '@/components/auth/auth-wrapper-supabase';
+// MongoDB BrandProvider removed - using UnifiedBrandProvider below
+// Old providers removed - using UnifiedBrandProvider only
 import { UnifiedBrandProvider } from '@/contexts/unified-brand-context';
 import { BrandColorProvider } from '@/components/layout/brand-color-provider';
 import React, { Suspense, useEffect, useState } from 'react';
@@ -75,14 +76,12 @@ export default function RootLayout({
         <meta name="description" content="Transform your ideas into professional social media content with AI. Generate posts, designs, and campaigns that engage your audience and grow your brand." />
       </head>
       <body className="font-body antialiased overflow-x-hidden" suppressHydrationWarning>
-        <AuthWrapper requireAuth={false}>
-          <BrandProvider>
-            <UnifiedBrandProvider>
-              <ConditionalLayout useAppRoute={true}>
-                {children}
-              </ConditionalLayout>
-            </UnifiedBrandProvider>
-          </BrandProvider>
+        <AuthWrapper>
+          <UnifiedBrandProvider>
+            <ConditionalLayout useAppRoute={true}>
+              {children}
+            </ConditionalLayout>
+          </UnifiedBrandProvider>
         </AuthWrapper>
         <Toaster />
       </body>

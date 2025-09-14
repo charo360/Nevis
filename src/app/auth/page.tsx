@@ -22,13 +22,13 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { useBrandOperations } from '@/contexts/brand-context-mongo';
+import { useBrandActions } from '@/contexts/unified-brand-context';
 
 export default function AuthPage() {
   const router = useRouter();
   const { signIn, signUp, loading } = useAuth();
   const { toast } = useToast();
-  const { refreshBrands } = useBrandOperations();
+  const { refreshBrands } = useBrandActions();
 
   const [signInData, setSignInData] = useState({
     email: '',
