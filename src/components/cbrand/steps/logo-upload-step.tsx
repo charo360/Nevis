@@ -16,7 +16,7 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { CompleteBrandProfile } from '../cbrand-wizard';
 import { useBrand } from '@/contexts/brand-context-mongo';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-supabase';
 
 interface LogoUploadStepProps {
   brandProfile: CompleteBrandProfile;

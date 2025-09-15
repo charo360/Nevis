@@ -26,15 +26,20 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
   useEffect(() => {
     if (!loading && mounted) {
       // Public routes that don't require authentication
-      const publicRoutes = ['/', '/auth/login', '/auth/register', '/auth/forgot-password'];
+      const publicRoutes = ['/', '/auth', '/auth/forgot-password'];
       const isPublicRoute = publicRoutes.includes(pathname);
 
       if (!user && !isPublicRoute) {
         console.log('🔒 User not authenticated, redirecting to login');
-        router.push('/auth/login');
-      } else if (user && (pathname === '/auth/login' || pathname === '/auth/register')) {
-        console.log('✅ User authenticated, redirecting to dashboard');
-        router.push('/brand-profile');
+        router.push('/auth');
+      } else if (user && pathname === '/auth') {
+        // Add a small delay to prevent immediate redirect when users want to logout/switch accounts
+        const timeoutId = setTimeout(() => {
+          console.log('✅ User authenticated, redirecting to brand profile');
+          router.push('/brand-profile');
+        }, 500); // 500ms delay
+
+        return () => clearTimeout(timeoutId);
       }
     }
   }, [user, loading, pathname, router, mounted]);
@@ -66,7 +71,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
           <h2 className="text-xl font-semibold text-red-600 mb-2">Authentication Error</h2>
           <p className="text-gray-600 mb-4">{error}</p>
           <button
-            onClick={() => router.push('/auth/login')}
+            onClick={() => router.push('/auth')}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
             Go to Login
@@ -77,7 +82,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
   }
 
   // Public routes - render without auth check
-  const publicRoutes = ['/', '/auth/login', '/auth/register', '/auth/forgot-password'];
+  const publicRoutes = ['/', '/auth', '/auth/forgot-password'];
   const isPublicRoute = publicRoutes.includes(pathname);
 
   if (isPublicRoute) {

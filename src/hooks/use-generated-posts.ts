@@ -1,7 +1,7 @@
 // Hook for managing generated posts with MongoDB
 import { useState, useEffect, useCallback } from 'react';
 // MongoDB services accessed via API routes only
-import { useAuth } from './use-auth-supabase';
+import { useAuth } from '@/hooks/use-auth-supabase';
 import { useCurrentBrandProfile } from './use-brand-profiles';
 import type { GeneratedPost, Platform } from '@/lib/types';
 

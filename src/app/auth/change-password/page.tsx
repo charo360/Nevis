@@ -33,7 +33,7 @@ export default function ChangePasswordPage() {
         localStorage.removeItem('reset_email')
         localStorage.removeItem('reset_code_verified')
         toast({ title: 'Password changed', description: 'Please login with your new password.' })
-        router.push('/auth/login')
+        router.push('/auth')
       } else {
         const msg = body.error || 'Failed to change password'
         toast({ variant: 'destructive', title: 'Error', description: msg })

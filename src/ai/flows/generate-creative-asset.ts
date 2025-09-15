@@ -168,6 +168,27 @@ const getMimeTypeFromDataURI = (dataURI: string): string => {
 /**
  * The core Genkit flow for generating a creative asset.
  */
+// Simple SVG fallback generator to guarantee an image if models fail
+function createBrandFallbackSVG({ size = 1080, primary = '#3B82F6', accent = '#10B981', background = '#F8FAFC', title = 'Creative Asset', subtitle = '' }: { size?: number; primary?: string; accent?: string; background?: string; title?: string; subtitle?: string; }) {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="${background}"/>
+      <stop offset="100%" stop-color="${primary}"/>
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#g)"/>
+  <circle cx="${size/2}" cy="${size/2}" r="${size/3}" fill="${accent}" fill-opacity="0.15" />
+  <text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="${Math.floor(size/14)}" fill="#0f172a" font-weight="700">${escapeXml(title)}</text>
+  <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="${Math.floor(size/28)}" fill="#1f2937" opacity="0.9">${escapeXml(subtitle)}</text>
+</svg>`;
+}
+
+function escapeXml(s: string) {
+  return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 const generateCreativeAssetFlow = ai.defineFlow(
     {
         name: 'generateCreativeAssetFlow',
@@ -632,18 +653,59 @@ Ensure the text is readable and well-composed.`
                         modelToUse = modelMapping[input.preferredModel] || modelToUse;
                     }
 
-                    const { media } = await generateWithRetry({
-                        model: modelToUse,
-                        prompt: promptParts,
-                        config: {
-                            responseModalities: ['TEXT', 'IMAGE'],
-                        },
-                    });
+                    let imageUrl: string | null = null;
 
-                    let imageUrl = media?.url ?? null;
+                    try {
+                      const { media } = await generateWithRetry({
+                          model: modelToUse,
+                          prompt: promptParts,
+                          config: {
+                              responseModalities: ['TEXT', 'IMAGE'],
+                          },
+                      });
+
+                      imageUrl = media?.url ?? null;
+                    } catch (err: any) {
+                      const msg = (err?.message || '').toLowerCase();
+                      const isInternalError = msg.includes('500') || msg.includes('internal error');
+
+                      // Fallback 1: try an alternative Google image model once
+                      if (isInternalError) {
+                        try {
+                          const altModel = 'googleai/gemini-2.0-flash-exp-image-generation';
+                          const { media: altMedia } = await generateWithRetry({
+                            model: altModel,
+                            prompt: promptParts,
+                            config: { responseModalities: ['TEXT', 'IMAGE'] },
+                          });
+                          imageUrl = altMedia?.url ?? null;
+                          modelToUse = altModel; // note which model succeeded
+                        } catch (altErr: any) {
+                          // Defer to final fallback below if this also fails
+                          imageUrl = null;
+                        }
+                      } else {
+                        // Non-internal error: rethrow to surface a clear message
+                        throw err;
+                      }
+                    }
+
                     if (!imageUrl) {
                         if (attempts === maxAttempts) {
-                            throw new Error('Failed to generate image');
+                            // Final Fallback 2: generate a brand-colored SVG so the user still gets an asset
+                            try {
+                              const fallbackSvg = createBrandFallbackSVG({
+                                size: 1080,
+                                primary: input.brandProfile?.primaryColor || '#3B82F6',
+                                accent: input.brandProfile?.accentColor || '#10B981',
+                                background: input.brandProfile?.backgroundColor || '#F8FAFC',
+                                title: imageText || (input.brandProfile?.businessName || 'Creative Asset'),
+                                subtitle: remainingPrompt?.slice(0, 120) || '',
+                              });
+                              imageUrl = `data:image/svg+xml;base64,${Buffer.from(fallbackSvg, 'utf-8').toString('base64')}`;
+                            } catch {
+                              throw new Error('Failed to generate image');
+                            }
                         }
                         continue;
                     }
@@ -754,6 +816,10 @@ Ensure the text is readable and well-composed.`
         } catch (e: any) {
             // Ensure a user-friendly error is thrown
             const message = e.message || "An unknown error occurred during asset generation.";
+            // Make the internal error more actionable for users
+            if (message.toLowerCase().includes('internal error')) {
+              throw new Error('The image model is temporarily unavailable. I tried a fallback automatically; please try again if quality looks off.');
+            }
             throw new Error(message);
         }
     }

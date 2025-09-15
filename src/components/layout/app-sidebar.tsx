@@ -17,11 +17,13 @@ import {
   Building2,
   Palette,
   Coins,
+  LogOut,
+  User,
 } from "lucide-react";
 import { UnifiedBrandSelector } from '@/components/brand/unified-brand-selector';
 import { usePathname } from "next/navigation";
 import { CreditsIndicator } from "@/components/pricing/CreditsDisplay";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/use-auth-supabase";
 import {
   Sidebar,
   SidebarHeader,
@@ -34,7 +36,16 @@ import {
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { user, signOut } = useAuth();
   const isActive = (path: string) => pathname.startsWith(path);
+  
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   return (
     <Sidebar>
@@ -163,6 +174,25 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <div className="px-3 py-2 text-sm text-muted-foreground">
+              {user?.email && (
+                <div className="flex items-center gap-2 mb-2">
+                  <User className="w-4 h-4" />
+                  <span className="truncate">{user.email}</span>
+                </div>
+              )}
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 text-red-600 hover:text-red-800 transition-colors w-full"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Sign Out</span>
+              </button>
+            </div>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
   );

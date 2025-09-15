@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { WebsiteAnalysisStep } from './steps/website-analysis-step';
 import { BrandDetailsStep } from './steps/brand-details-step';
 import { LogoUploadStepUnified } from './steps/logo-upload-step-unified';
 import { useUnifiedBrand } from '@/contexts/unified-brand-context';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-supabase';
 import type { CompleteBrandProfile } from './cbrand-wizard';
 
 interface CbrandWizardUnifiedProps {
@@ -45,13 +45,56 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
   });
 
   const { currentBrand, selectBrand, brands, saveProfile, updateProfile, refreshBrands } = useUnifiedBrand();
+  const hasInitializedRef = useRef(false);
+  const [isDirty, setIsDirty] = useState(false);
+
+  // Draft persistence per brand (survives refresh and step changes)
+  const draftKey = useMemo(() => {
+    return `BRAND_DRAFT_${brandId || currentBrand?.id || 'new'}`;
+  }, [brandId, currentBrand?.id]);
+
+  const saveDraft = (profile: CompleteBrandProfile) => {
+    try {
+      const payload = { ts: Date.now(), profile };
+      localStorage.setItem(draftKey, JSON.stringify(payload));
+    } catch {}
+  };
+
+  const loadDraft = (): CompleteBrandProfile | null => {
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.profile) return parsed.profile as CompleteBrandProfile;
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
+  const clearDraft = (key?: string) => {
+    try {
+      localStorage.removeItem(key || draftKey);
+    } catch {}
+  };
   const { user } = useAuth();
   const router = useRouter();
 
-  // Load existing profile on component mount
+  // Load existing profile on component mount (only once, unless not initialized and not dirty)
   useEffect(() => {
+    if (hasInitializedRef.current || isDirty) {
+      return;
+    }
     const loadExistingProfile = async () => {
       try {
+        // 1) Prefer draft if present (user edits not yet saved to DB)
+        const draft = loadDraft();
+        if (draft) {
+          console.log('📝 Loaded draft brand profile from local storage');
+          setBrandProfile(draft);
+          hasInitializedRef.current = true;
+          return;
+        }
         console.log('🔄 Loading brand profile (Unified). Mode:', mode, 'BrandId:', brandId, 'CurrentBrand:', currentBrand?.businessName);
 
         // If we're in edit mode with a specific brandId, load that brand
@@ -61,6 +104,8 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
           if (currentBrand && currentBrand.id === brandId) {
             console.log('✅ Using current brand from context for edit');
             setBrandProfile(currentBrand);
+            saveDraft(currentBrand);
+            hasInitializedRef.current = true;
             return;
           }
         }
@@ -69,6 +114,8 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
         if (currentBrand && mode !== 'create') {
           console.log('✅ Using current brand from unified context:', currentBrand.businessName);
           setBrandProfile(currentBrand);
+          saveDraft(currentBrand);
+          hasInitializedRef.current = true;
           return;
         }
 
@@ -76,6 +123,7 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
         if (mode === 'create') {
           console.log('📝 Create mode: Starting with empty profile');
           // Keep the default empty profile that was set in useState
+          hasInitializedRef.current = true;
           return;
         }
 
@@ -85,7 +133,9 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
           const firstBrand = brands[0];
           if (firstBrand) {
             setBrandProfile(firstBrand);
-            console.log('✅ Loaded existing profile from MongoDB:', firstBrand.businessName);
+            saveDraft(firstBrand);
+            hasInitializedRef.current = true;
+            console.log('✅ Loaded existing profile from Supabase:', firstBrand.businessName);
             return;
           }
         }
@@ -97,13 +147,19 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
     };
 
     loadExistingProfile();
-  }, [mode, brandId, currentBrand, user?.userId]);
+  }, [mode, brandId, currentBrand, user?.userId, isDirty]);
 
   const updateBrandProfile = async (updates: Partial<CompleteBrandProfile>) => {
     console.log('🔧 UNIFIED WIZARD updateBrandProfile called with updates:', updates);
 
     // Update local state immediately
-    setBrandProfile(prev => ({ ...prev, ...updates }));
+    setIsDirty(true);
+    setBrandProfile(prev => {
+      const merged = { ...prev, ...updates } as CompleteBrandProfile;
+      // Persist draft on every change so fields survive refresh/navigation
+      saveDraft(merged);
+      return merged;
+    });
 
     // If this is a color update and we have a current brand with an ID, save to MongoDB immediately
     const isColorUpdate = updates.primaryColor || updates.accentColor || updates.backgroundColor;
@@ -159,7 +215,11 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
       });
       selectBrand(immediateProfile);
 
-      // Then refresh brands from MongoDB to ensure consistency
+      // Clear drafts (both new and specific profile) after successful save
+      clearDraft(`BRAND_DRAFT_new`);
+      clearDraft(`BRAND_DRAFT_${profileId}`);
+
+      // Then refresh brands from Supabase to ensure consistency
       console.log('🔄 Refreshing brands from unified context for consistency...');
       await refreshBrands();
 

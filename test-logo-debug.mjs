@@ -52,3 +52,4 @@ function testLogoProcessing() {
 
 // Run the test
 testLogoProcessing();
+

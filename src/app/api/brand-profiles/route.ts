@@ -1,14 +1,41 @@
 // API routes for brand profile management
 import { NextRequest, NextResponse } from 'next/server';
 import { brandProfileSupabaseService } from '@/lib/supabase/services/brand-profile-service';
-import { verifyToken } from '@/lib/auth/jwt';
 import { createClient } from '@supabase/supabase-js';
 
-// Server-side Supabase client for logo uploads
-const supabase = createClient(
+// Server-side Supabase clients
+// Use service-role client for storage/DB operations
+const supabaseService = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
+// Use anon client for verifying user JWTs
+const supabaseAuth = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+// Helper function to verify Supabase auth token and get user
+async function verifySupabaseAuth(authHeader: string | null) {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return { error: 'Authorization token required', status: 401 };
+  }
+
+  const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+  
+  try {
+    // Verify the token using Supabase
+    const { data: { user }, error } = await supabaseAuth.auth.getUser(token);
+    
+    if (error || !user) {
+      return { error: 'Invalid or expired token', status: 401 };
+    }
+    
+    return { user, userId: user.id };
+  } catch (error) {
+    return { error: 'Token verification failed', status: 401 };
+  }
+}
 
 // Helper function to upload logo data URL to Supabase Storage
 async function uploadLogoToSupabase(logoDataUrl: string, userId: string, brandName: string): Promise<{ success: boolean; url?: string; error?: string }> {
@@ -30,7 +57,7 @@ async function uploadLogoToSupabase(logoDataUrl: string, userId: string, brandNa
     const uploadPath = `brands/${userId}/logos/${safeBrandName}-${timestamp}.png`;
     console.log(`🎯 Logo upload path: ${uploadPath}`);
     
-    const { data, error } = await supabase.storage
+    const { data, error } = await supabaseService.storage
       .from('nevis-storage')
       .upload(uploadPath, buffer, {
         contentType: 'image/png',
@@ -45,7 +72,7 @@ async function uploadLogoToSupabase(logoDataUrl: string, userId: string, brandNa
     console.log('✅ Logo upload successful:', data);
 
     // Get public URL
-    const { data: { publicUrl } } = supabase.storage
+    const { data: { publicUrl } } = supabaseService.storage
       .from('nevis-storage')
       .getPublicUrl(uploadPath);
 
@@ -60,25 +87,17 @@ async function uploadLogoToSupabase(logoDataUrl: string, userId: string, brandNa
 // GET /api/brand-profiles - Load user's brand profiles
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const authResult = await verifySupabaseAuth(request.headers.get('authorization'));
+    
+    if (authResult.error) {
       return NextResponse.json(
-        { error: 'Authorization token required' },
-        { status: 401 }
+        { error: authResult.error },
+        { status: authResult.status }
       );
     }
 
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-    const decoded = verifyToken(token);
-
-    if (!decoded) {
-      return NextResponse.json(
-        { error: 'Invalid or expired token' },
-        { status: 401 }
-      );
-    }
-
-    const profiles = await brandProfileSupabaseService.loadBrandProfiles(decoded.userId);
+    const profiles = await brandProfileSupabaseService.loadBrandProfiles(authResult.userId!);
+    console.log(`✅ Loaded ${profiles.length} brand profiles for user:`, authResult.userId);
     return NextResponse.json(profiles);
   } catch (error) {
     console.error('Error loading brand profiles:', error);
@@ -92,21 +111,12 @@ export async function GET(request: NextRequest) {
 // POST /api/brand-profiles - Create new brand profile
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const authResult = await verifySupabaseAuth(request.headers.get('authorization'));
+    
+    if (authResult.error) {
       return NextResponse.json(
-        { error: 'Authorization token required' },
-        { status: 401 }
-      );
-    }
-
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-    const decoded = verifyToken(token);
-
-    if (!decoded) {
-      return NextResponse.json(
-        { error: 'Invalid or expired token' },
-        { status: 401 }
+        { error: authResult.error },
+        { status: authResult.status }
       );
     }
 
@@ -125,7 +135,7 @@ export async function POST(request: NextRequest) {
     
     const logoResult = await uploadLogoToSupabase(
       profile.logoDataUrl,
-      decoded.userId,
+      authResult.userId!,
       profile.businessName || 'brand'
     );
     
@@ -145,7 +155,7 @@ export async function POST(request: NextRequest) {
   // Use authenticated user ID instead of trusting the request body
   const profileWithUserId = {
     ...processedProfile,
-    userId: decoded.userId,
+    userId: authResult.userId!,
   };
 
   console.log('💾 Saving brand profile to MongoDB:', {

@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Upload, Image as ImageIcon, ArrowLeft, Save, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUnifiedBrand } from '@/contexts/unified-brand-context';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-supabase';
 import type { CompleteBrandProfile } from '../cbrand-wizard';
 
 interface LogoUploadStepUnifiedProps {
@@ -103,7 +103,7 @@ export function LogoUploadStepUnified({
       let profileId: string;
 
       if (mode === 'edit' && profileToSave.id) {
-        // Edit mode: Update existing profile
+        // Edit mode: Update existing profile only (do not create new)
         console.log('✏️ Edit mode: Updating existing profile with ID:', profileToSave.id);
         console.log('💾 Updating profile via unified context with logo data:', {
           businessName: profileToSave.businessName,
@@ -120,10 +120,14 @@ export function LogoUploadStepUnified({
         profileId = profileToSave.id;
         console.log('✅ Profile updated via unified context successfully:', profileId);
       } else {
-        // Create mode: Create new profile
+        // Create mode: Create new profile if no ID is present
         if (profileToSave.id) {
-          delete profileToSave.id;
-          console.log('🆕 Create mode: Removed existing ID to create new profile');
+          // Safety: if an ID is present in create mode, treat it as edit to avoid duplicate creation
+          console.log('ℹ️ Create mode received an ID; converting to update to avoid duplicate creation');
+          await updateProfile(profileToSave.id, profileToSave);
+          onSaveComplete?.(profileToSave.id);
+          setIsSaving(false);
+          return;
         }
 
         console.log('💾 Creating new profile via unified context with logo data:', {

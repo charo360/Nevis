@@ -1,7 +1,7 @@
 // Hook for managing brand profiles with MongoDB
 import { useState, useEffect, useCallback } from 'react';
 // MongoDB services accessed via API routes only
-import { useAuth } from './use-auth';
+import { useAuth } from '@/hooks/use-auth-supabase';
 import type { CompleteBrandProfile } from '@/components/cbrand/cbrand-wizard';
 
 export interface BrandProfilesState {
@@ -13,7 +13,7 @@ export interface BrandProfilesState {
 }
 
 export function useBrandProfiles() {
-  const { user } = useAuth();
+  const { user, getAccessToken } = useAuth();
   const userId = user?.userId;
   const [state, setState] = useState<BrandProfilesState>({
     profiles: [],
@@ -37,12 +37,12 @@ export function useBrandProfiles() {
       let profiles: CompleteBrandProfile[] = [];
       try {
         // Get authentication token
-        const token = localStorage.getItem('nevis_access_token');
+        const token = await getAccessToken();
         if (!token) {
           console.warn('⚠️ No authentication token found, cannot load profiles');
           profiles = [];
         } else {
-          console.log('🔍 Loading brand profiles from MongoDB via API...');
+          console.log('🔍 Loading brand profiles from Supabase via API...');
 
           // Use API route to load profiles with authentication
           const response = await fetch(`/api/brand-profiles?userId=${userId}`, {
@@ -97,7 +97,7 @@ export function useBrandProfiles() {
       setState(prev => ({ ...prev, saving: true, error: null }));
 
       // Get authentication token
-      const token = localStorage.getItem('nevis_access_token');
+      const token = await getAccessToken();
       if (!token) {
         throw new Error('Authentication token not found');
       }
@@ -154,7 +154,7 @@ export function useBrandProfiles() {
       setState(prev => ({ ...prev, saving: true, error: null }));
 
       // Get authentication token
-      const token = localStorage.getItem('nevis_access_token');
+      const token = await getAccessToken();
       if (!token) {
         throw new Error('Authentication token not found');
       }

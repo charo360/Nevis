@@ -20,15 +20,23 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-supabase';
 import { useToast } from '@/hooks/use-toast';
 import { useBrandActions } from '@/contexts/unified-brand-context';
+import { useEffect } from 'react';
 
 export default function AuthPage() {
   const router = useRouter();
-  const { signIn, signUp, loading } = useAuth();
+  const { signIn, signUp, signOut, loading, user } = useAuth();
   const { toast } = useToast();
   const { refreshBrands } = useBrandActions();
+  
+  // Check if there's an existing session when component mounts
+  useEffect(() => {
+    if (user) {
+      console.log('👤 Existing user detected on auth page:', user.email);
+    }
+  }, [user]);
 
   const [signInData, setSignInData] = useState({
     email: '',
@@ -71,8 +79,8 @@ export default function AuthPage() {
 
       // Small delay to ensure auth state is fully settled before navigation
       setTimeout(() => {
-        console.log('🚀 Navigating to dashboard...');
-        router.push('/dashboard');
+        console.log('🚀 Navigating to brand profile...');
+        router.push('/brand-profile');
       }, 100);
 
     } catch (error) {
@@ -104,7 +112,7 @@ export default function AuthPage() {
         title: 'Account created!',
         description: 'Welcome — your account is ready.'
       });
-      router.push('/dashboard');
+      router.push('/brand-profile');
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -127,6 +135,34 @@ export default function AuthPage() {
         <ArrowLeft className="w-4 h-4 mr-2" />
         Back to Home
       </Button>
+      
+      {/* Switch Account Button - only show if user is logged in */}
+      {user && (
+        <div className="absolute top-6 right-6">
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 shadow-sm border">
+            <div className="text-xs text-gray-600 mb-2">Currently logged in as:</div>
+            <div className="text-sm font-medium mb-2">{user.email}</div>
+            <Button
+              onClick={async () => {
+                try {
+                  await signOut();
+                  toast({
+                    title: "Signed out",
+                    description: "You can now sign in with a different account.",
+                  });
+                } catch (error) {
+                  console.error('Logout error:', error);
+                }
+              }}
+              variant="outline"
+              size="sm"
+              className="w-full text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
+            >
+              Switch Account
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="w-full max-w-md">
         <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">

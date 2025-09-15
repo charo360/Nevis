@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Database, RefreshCw, User, FileText, Image, BarChart3 } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-supabase';
 import { useBrandProfiles } from '@/hooks/use-brand-profiles';
 import { useGeneratedPosts } from '@/hooks/use-generated-posts';
 

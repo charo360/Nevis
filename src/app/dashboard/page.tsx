@@ -20,7 +20,7 @@ import {
   Clock,
   Plus
 } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-supabase';
 import { useToast } from '@/hooks/use-toast';
 import { loadStripe } from '@stripe/stripe-js'
 import {

@@ -26,7 +26,7 @@ import { Facebook, Instagram, Linkedin, Twitter, User, CheckCircle, AlertCircle,
 import { useUnifiedBrand, useBrandStorage, useBrandChangeListener } from "@/contexts/unified-brand-context";
 import { UnifiedBrandLayout, BrandContent, BrandSwitchingStatus } from "@/components/layout/unified-brand-layout";
 import { STORAGE_FEATURES } from "@/lib/services/brand-scoped-storage";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth-supabase";
 
 interface SocialConnection {
   platform: string;
@@ -42,7 +42,7 @@ interface SocialConnection {
 
 function SocialConnectPage() {
   const { currentBrand, loading: brandLoading } = useUnifiedBrand();
-  const { user } = useAuth();
+  const { user, getAccessToken } = useAuth();
   const brandLabel = currentBrand?.businessName ?? (currentBrand as unknown as { name?: string })?.name ?? 'Unnamed Brand';
   const socialStorage = useBrandStorage(STORAGE_FEATURES.SOCIAL_MEDIA);
   const [connections, setConnections] = useState<SocialConnection[]>([]);
@@ -95,9 +95,15 @@ function SocialConnectPage() {
 
     try {
       // Load connections from API
+      const token = await getAccessToken();
+      if (!token) {
+        setConnections(defaultConnections);
+        setIsLoading(false);
+        return;
+      }
       const response = await fetch('/api/social/connections', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('nevis_access_token')}`,
+          'Authorization': `Bearer ${token}`,
         },
       });
 
@@ -162,9 +168,11 @@ function SocialConnectPage() {
 
   const loadFacebookPages = async () => {
     try {
+      const token = await getAccessToken();
+      if (!token) return;
       const response = await fetch('/api/social/facebook/pages', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('nevis_access_token')}`,
+          'Authorization': `Bearer ${token}`,
         },
       });
 
@@ -179,9 +187,11 @@ function SocialConnectPage() {
 
   const loadInstagramAccounts = async () => {
     try {
+      const token = await getAccessToken();
+      if (!token) return;
       const response = await fetch('/api/social/instagram/accounts', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('nevis_access_token')}`,
+          'Authorization': `Bearer ${token}`,
         },
       });
 

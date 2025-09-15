@@ -98,14 +98,23 @@ export function useAuth() {
     };
   }, [convertUser]);
 
-  // Clear all user-related data from localStorage
+  // Clear all user-related data from localStorage and sessionStorage
   const clearAllUserData = useCallback(() => {
-    console.log('🧹 Clearing all user-related data from localStorage...');
+    console.log('🧹 Clearing all user-related data from browser storage...');
 
-    // Clear brand-related data
-    localStorage.removeItem('selectedBrandId');
-    localStorage.removeItem('currentBrandData');
-    localStorage.removeItem('brandColors');
+    // Clear specific known keys
+    const knownKeys = [
+      'selectedBrandId',
+      'currentBrandData', 
+      'brandColors',
+      'supabase.auth.token',
+      'sb-nrfceylvtiwpqsoxurrv-auth-token', // Supabase session key
+    ];
+    
+    knownKeys.forEach(key => {
+      localStorage.removeItem(key);
+      sessionStorage.removeItem(key);
+    });
 
     // Clear all brand-scoped storage (artifacts, posts, etc.)
     const keysToRemove: string[] = [];
@@ -119,7 +128,9 @@ export function useAuth() {
         key.includes('qc-') ||
         key.includes('cs-') ||
         key.endsWith('_posts') ||
-        key.startsWith('cbrand_')
+        key.startsWith('cbrand_') ||
+        key.includes('supabase') ||
+        key.includes('sb-')
       )) {
         keysToRemove.push(key);
       }
@@ -127,28 +138,58 @@ export function useAuth() {
 
     keysToRemove.forEach(key => {
       localStorage.removeItem(key);
-      console.log('🗑️ Removed localStorage key:', key);
+      sessionStorage.removeItem(key);
+      console.log('🗑️ Removed storage key:', key);
     });
 
-    console.log('✅ All user data cleared from localStorage');
+    // Also clear sessionStorage brand-related items
+    const sessionKeysToRemove: string[] = [];
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      if (key && (
+        key.includes('_brand_') ||
+        key.includes('supabase') ||
+        key.includes('sb-')
+      )) {
+        sessionKeysToRemove.push(key);
+      }
+    }
+    
+    sessionKeysToRemove.forEach(key => {
+      sessionStorage.removeItem(key);
+    });
+
+    console.log('✅ All user data cleared from browser storage');
   }, []);
 
   // Sign in with email and password
   const signIn = async (email: string, password: string): Promise<void> => {
     try {
       console.log('🔐 SignIn: Starting authentication for:', email);
+      console.log('🔐 SignIn: Email length:', email.length);
+      console.log('🔐 SignIn: Password length:', password.length);
       
       // Clear any existing user data to prevent cross-contamination between accounts
       clearAllUserData();
       
       setAuthState(prev => ({ ...prev, loading: true, error: null }));
 
+      console.log('🔐 SignIn: Making Supabase auth request...');
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
 
+      console.log('🔐 SignIn: Supabase response received');
+      console.log('🔐 SignIn: Error?', error ? 'YES' : 'NO');
+      console.log('🔐 SignIn: User?', data?.user ? 'YES' : 'NO');
+
       if (error) {
+        console.log('❌ SignIn: Error details:');
+        console.log('   - Message:', error.message);
+        console.log('   - Status:', error.status);
+        console.log('   - Full error:', JSON.stringify(error, null, 2));
+        
         setAuthState({
           user: null,
           loading: false,
@@ -159,14 +200,22 @@ export function useAuth() {
 
       if (data.user) {
         console.log('✅ SignIn: Authentication successful for user:', data.user.id);
+        console.log('✅ SignIn: User email:', data.user.email);
+        console.log('✅ SignIn: User confirmed:', data.user.email_confirmed_at ? 'YES' : 'NO');
+        console.log('✅ SignIn: Session?', data.session ? 'YES' : 'NO');
+        
         const user = convertUser(data.user);
         setAuthState({
           user,
           loading: false,
           error: null,
         });
+      } else {
+        console.log('⚠️ SignIn: No error but no user either');
+        throw new Error('Authentication failed - no user returned');
       }
     } catch (error) {
+      console.log('❌ SignIn: Caught exception:', error);
       const errorMessage = error instanceof Error ? error.message : 'Login failed';
       setAuthState(prev => ({
         ...prev,
@@ -264,24 +313,41 @@ export function useAuth() {
   // Sign out
   const signOut = async (): Promise<void> => {
     try {
-      console.log('🚪 Signing out user...');
+      console.log('🚺 Signing out user...');
+      
+      // Clear local data first
       clearAllUserData();
       
+      // Sign out from Supabase (this clears server-side session)
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('Sign out error:', error);
-        throw error;
+        // Don't throw - still update local state
       }
       
+      // Force clear the auth state
       setAuthState({
         user: null,
         loading: false,
         error: null,
       });
+      
       console.log('✅ User signed out successfully');
+      
+      // Force a page reload to ensure clean state
+      setTimeout(() => {
+        window.location.href = '/auth';
+      }, 100);
+      
     } catch (error) {
       console.error('❌ Sign out error:', error);
-      throw error;
+      // Still clear local state even if sign out fails
+      setAuthState({
+        user: null,
+        loading: false,
+        error: null,
+      });
+      window.location.href = '/auth';
     }
   };
 

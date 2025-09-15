@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-supabase';
 import { brandScopedArtifactsService } from '@/lib/services/brand-scoped-artifacts-service';
 import { BrandScopedStorage, STORAGE_FEATURES, migrateAllGlobalStorage } from '@/lib/services/brand-scoped-storage';
 import type { CompleteBrandProfile } from '@/components/cbrand/cbrand-wizard';
@@ -125,7 +125,7 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
       setError(null);
       setHasAttemptedLoad(true);
 
-      const token = getAccessToken();
+      const token = await getAccessToken();
       if (!token) {
         throw new Error('No access token available');
       }
@@ -303,7 +303,7 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
       setSaving(true);
       setError(null);
 
-      const token = getAccessToken();
+      const token = await getAccessToken();
       if (!token) {
         throw new Error('No access token available');
       }
@@ -345,7 +345,7 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
       setSaving(true);
       setError(null);
 
-      const token = getAccessToken();
+      const token = await getAccessToken();
       if (!token) {
         throw new Error('No access token available');
       }
@@ -389,7 +389,7 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
       setSaving(true);
       setError(null);
 
-      const token = getAccessToken();
+      const token = await getAccessToken();
       if (!token) {
         throw new Error('No access token available');
       }

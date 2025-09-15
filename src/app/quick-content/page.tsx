@@ -25,7 +25,7 @@ import { useUnifiedBrand } from '@/contexts/unified-brand-context';
 import { UnifiedBrandLayout, BrandContent, BrandSwitchingStatus } from "@/components/layout/unified-brand-layout";
 import { STORAGE_FEATURES, getStorageUsage, cleanupAllStorage } from "@/lib/services/brand-scoped-storage";
 import { processGeneratedPost } from "@/lib/services/generated-post-storage";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from '@/hooks/use-auth-supabase';
 import { useQuickContentStorage } from "@/hooks/use-feature-storage";
 // Using Supabase storage for images and content
 
@@ -98,7 +98,7 @@ function QuickContentPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { open: sidebarOpen, toggleSidebar } = useSidebar();
-  const { user } = useAuth();
+  const { user, getAccessToken } = useAuth();
 
   // Custom save function that uses the current brand from MongoDB context
   const savePostToDatabase = async (post: GeneratedPost) => {
@@ -138,10 +138,10 @@ function QuickContentPage() {
       updatedAt: new Date(),
     };
 
-    const token = localStorage.getItem('nevis_access_token');
+    const token = await getAccessToken();
     if (!token) {
       console.error('❌ No auth token found');
-      return;
+      throw new Error('No auth token');
     }
 
     const response = await fetch('/api/generated-posts', {
@@ -226,7 +226,7 @@ function QuickContentPage() {
         if (user?.userId && brand.id) {
           console.log('🔄 Loading posts from database for brand:', brand.businessName);
           try {
-            const token = localStorage.getItem('nevis_access_token');
+            const token = await getAccessToken();
             if (!token) {
               console.log('⚠️ No auth token found');
               return;
@@ -288,6 +288,13 @@ function QuickContentPage() {
         console.log(`✅ Combined posts: ${databasePosts.length} from database + ${localStoragePosts.length} from localStorage = ${combinedPosts.length} total`);
 
         setGeneratedPosts(combinedPosts);
+        
+        // Persist combined posts locally for resilience across refresh
+        try {
+          postsStorage?.setItem(combinedPosts);
+        } catch (e) {
+          console.warn('⚠️ Failed to persist combined posts:', e);
+        }
       } catch (error) {
         console.error('❌ Failed to load posts:', error);
         // If loading fails due to storage issues, clear and start fresh
@@ -373,10 +380,10 @@ function QuickContentPage() {
 
       // Use the API route to handle all image processing and storage
       // This ensures consistency with the working TWITTER branch implementation
-      const token = localStorage.getItem('nevis_access_token');
+      const token = await getAccessToken();
       if (!token) {
         console.error('❌ No auth token found');
-        return;
+        return post;
       }
 
       const response = await fetch('/api/generated-posts', {
@@ -439,11 +446,19 @@ function QuickContentPage() {
     let processedPost = await processPostImages(post);
 
     // Ensure processed post has the same ID
+    processedPost = processedPost || post;
     processedPost.id = post.id;
 
     // Add the processed post to the beginning of the array
     const newPosts = [processedPost, ...generatedPosts];
     setGeneratedPosts(newPosts);
+    
+    // Persist to brand-scoped Quick Content storage so posts survive refresh
+    try {
+      postsStorage?.setItem(newPosts);
+    } catch (e) {
+      console.warn('⚠️ Failed to persist posts to storage:', e);
+    }
 
     // The processPostImages function now handles everything via the API route
     // No need for additional database saves or complex fallback logic

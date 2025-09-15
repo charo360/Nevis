@@ -71,25 +71,50 @@ class BrandProfileSupabaseService {
       
       // Logo fields
       logoUrl: row.logo_url,
-      logoDataUrl: row.logo_data_url,
+      logoDataUrl: row.logo_data_url || row.logo_url, // Use logo_url as fallback for logoDataUrl
       
       designExamples: row.design_examples || [],
       targetAudience: row.target_audience || '',
       brandVoice: row.brand_voice || '',
       
-      // Services: normalize to an array of strings
-      services: Array.isArray(row.services)
-        ? row.services
-            .map((s: any) => (typeof s === 'string' ? s : (s && s.name) || ''))
-            .filter((s: string) => !!s)
-        : [],
+      // Services: normalize to an array of objects with name/description
+      services: (() => {
+        // Handle different data types more robustly
+        let servicesArray = [];
+        if (Array.isArray(row.services)) {
+          servicesArray = row.services;
+        } else if (row.services && typeof row.services === 'object') {
+          // If it's an object, try to convert to array
+          servicesArray = Object.values(row.services);
+        } else if (typeof row.services === 'string') {
+          // If it's a string, try to parse it
+          try {
+            servicesArray = JSON.parse(row.services);
+          } catch (e) {
+            console.log('🔍 DEBUG: Failed to parse services string:', e);
+            servicesArray = [];
+          }
+        }
+        
+        if (!Array.isArray(servicesArray)) {
+          return [];
+        }
+        
+        return servicesArray
+          .map((s: any) => {
+            if (!s) return null;
+            if (typeof s === 'string') return { name: s, description: '' };
+            return { name: s.name || '', description: s.description || '' };
+          })
+          .filter((s: any) => s && s.name);
+      })(),
       keyFeatures: '', // Not stored in DB, keep empty for compatibility
       competitiveAdvantages: '', // Not stored in DB, keep empty for compatibility
       
-      // Visual style fields (defaults for compatibility)
-      visualStyle: '',
-      writingTone: '',
-      contentThemes: [],
+      // Visual style fields - extract from brand_voice JSON
+      visualStyle: row.brand_voice?.visualStyle || '',
+      writingTone: row.brand_voice?.writingTone || '',
+      contentThemes: row.brand_voice?.contentThemes || [],
       
       isActive: row.is_active,
       createdAt: new Date(row.created_at),
@@ -159,19 +184,22 @@ class BrandProfileSupabaseService {
       target_audience: profile.targetAudience || '',
       brand_voice: profile.brandVoice || '',
       
-      // Services: accept string[] or comma-separated string, normalize to array of objects
+      // Services: accept array of objects or strings and normalize to array of objects
       services:
         Array.isArray((profile as any).services)
           ? (profile as any).services
-              .map((s: any) => (typeof s === 'string' ? s.trim() : s))
-              .filter((s: any) => typeof s === 'string' && s.length > 0)
-              .map((s: string) => ({ name: s }))
+              .map((s: any) => {
+                if (!s) return null;
+                if (typeof s === 'string') return { name: s.trim(), description: '' };
+                return { name: (s.name || '').toString().trim(), description: (s.description || '').toString() };
+              })
+              .filter((s: any) => s && s.name)
           : (typeof (profile as any).services === 'string' && (profile as any).services.length > 0)
             ? (profile as any).services
                 .split(',')
                 .map((s: string) => s.trim())
                 .filter((s: string) => s.length > 0)
-                .map((s: string) => ({ name: s }))
+                .map((s: string) => ({ name: s, description: '' }))
             : [],
       
       is_active: profile.isActive ?? true,
@@ -316,24 +344,79 @@ class BrandProfileSupabaseService {
     try {
       console.log('🔄 Updating brand profile:', profileId, Object.keys(updates));
 
-      // Convert partial updates to row format
+      // Convert partial updates to row format - only include fields that exist in the database
       const rowUpdates: any = {};
 
+      // Basic fields that exist in the database
       if (updates.businessName !== undefined) rowUpdates.business_name = updates.businessName;
       if (updates.businessType !== undefined) rowUpdates.business_type = updates.businessType;
       if (updates.description !== undefined) rowUpdates.description = updates.description;
       if (updates.logoUrl !== undefined) rowUpdates.logo_url = updates.logoUrl;
       if (updates.logoDataUrl !== undefined) rowUpdates.logo_data_url = updates.logoDataUrl;
       if (updates.isActive !== undefined) rowUpdates.is_active = updates.isActive;
-      
-      // Handle nested object updates
+
+      // Handle nested object updates: colors
       if (updates.primaryColor !== undefined || updates.accentColor !== undefined || updates.backgroundColor !== undefined) {
         rowUpdates.brand_colors = {
-          primary: updates.primaryColor || '',
-          accent: updates.accentColor || '',
-          secondary: updates.backgroundColor || ''
+          primary: updates.primaryColor ?? (undefined as any),
+          accent: updates.accentColor ?? (undefined as any),
+          secondary: updates.backgroundColor ?? (undefined as any)
         };
       }
+
+      // Handle location string (store as {country,city,address} minimal)
+      if (updates.location !== undefined || updates.city !== undefined || updates.contactAddress !== undefined) {
+        const country = (updates.location as any) || undefined;
+        rowUpdates.location = {
+          country: country ?? undefined,
+          city: updates.city ?? undefined,
+          address: updates.contactAddress ?? undefined
+        };
+      }
+
+      // Handle contact (including website URL)
+      if (updates.contactEmail !== undefined || updates.contactPhone !== undefined || updates.contactAddress !== undefined || updates.websiteUrl !== undefined) {
+        rowUpdates.contact = {
+          ...(rowUpdates.contact || {}),
+          email: updates.contactEmail ?? undefined,
+          phone: updates.contactPhone ?? undefined,
+          address: updates.contactAddress ?? undefined,
+          website: updates.websiteUrl ?? undefined
+        };
+      }
+
+      // Handle social media
+      if (updates.facebookUrl !== undefined || updates.instagramUrl !== undefined || updates.twitterUrl !== undefined || updates.linkedinUrl !== undefined) {
+        rowUpdates.social_media = {
+          facebook: updates.facebookUrl ?? undefined,
+          instagram: updates.instagramUrl ?? undefined,
+          twitter: updates.twitterUrl ?? undefined,
+          linkedin: updates.linkedinUrl ?? undefined,
+        };
+      }
+
+      // Handle services array
+      if (updates.services !== undefined) {
+        rowUpdates.services = Array.isArray(updates.services)
+          ? updates.services.map((s: any) => {
+              if (!s) return null;
+              if (typeof s === 'string') return { name: s, description: '' };
+              return { name: s.name || '', description: s.description || '' };
+            }).filter((s: any) => s && s.name)
+          : [];
+      }
+
+      // Handle design examples array
+      if (updates.designExamples !== undefined) {
+        rowUpdates.design_examples = Array.isArray(updates.designExamples) ? updates.designExamples : [];
+      }
+
+      // Handle identity and other fields - only update fields that exist in the database
+      if (updates.visualStyle !== undefined) rowUpdates.brand_voice = { ...(rowUpdates.brand_voice || {}), visualStyle: updates.visualStyle };
+      if (updates.writingTone !== undefined) rowUpdates.brand_voice = { ...(rowUpdates.brand_voice || {}), writingTone: updates.writingTone };
+      if (updates.contentThemes !== undefined) rowUpdates.brand_voice = { ...(rowUpdates.brand_voice || {}), contentThemes: updates.contentThemes };
+      if (updates.targetAudience !== undefined) rowUpdates.target_audience = updates.targetAudience;
+      // Note: keyFeatures and competitiveAdvantages fields removed as they don't exist in the database schema
 
       const { error } = await supabase
         .from('brand_profiles')

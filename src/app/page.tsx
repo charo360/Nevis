@@ -23,7 +23,7 @@ import {
   X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-supabase';
 import { useToast } from '@/hooks/use-toast';
 import { loadStripe } from '@stripe/stripe-js';
 import { Card, CardContent } from '@/components/ui/card';
@@ -101,112 +101,14 @@ export default function HomePage() {
     let mounted = true;
     let interval: any = null;
 
-    async function getIdTokenSafe() {
-      try {
-        if (!auth || !auth.currentUser) return null;
-        return await auth.currentUser.getIdToken();
-      } catch (e) {
-        return null;
-      }
-    }
-
-    async function sendHeartbeat() {
-      if (!user || !user.uid) return;
-      try {
-        const idToken = await getIdTokenSafe();
-        const headers: any = { 'Content-Type': 'application/json' };
-        if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
-
-        await fetch('/api/auth/heartbeat', { method: 'POST', headers });
-      } catch (e) {
-        // ignore
-      }
-    }
-
-    async function checkSession() {
-      if (!user || !user.uid) return;
-      try {
-        const idToken = await getIdTokenSafe();
-        const headers: any = { 'Content-Type': 'application/json' };
-        if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
-
-        const res = await fetch('/api/auth/check-session', { method: 'POST', headers });
-        const json = await res.json();
-        if (!json.ok) {
-          // If session inactive or expired, sign user out on client
-          if (json.reason === 'inactive' || json.reason === 'expired') {
-            try {
-              await signOut();
-              // reload to reflect logged-out state
-              window.location.reload();
-            } catch (e) {
-              window.location.href = '/auth';
-            }
-          }
-        }
-      } catch (e) {
-        // ignore network errors
-      }
-    }
-
-    // Start initial check and heartbeat
-    if (user && user.uid) {
-      sendHeartbeat();
-      checkSession();
-      interval = setInterval(() => {
-        sendHeartbeat();
-        checkSession();
-      }, 5 * 60 * 1000); // every 5 minutes
-    }
-
-    // Also run a one-off session check to update UI (dashboard link)
-    (async () => {
-      if (!user || !user.uid) {
-        setSessionActive(false);
-        return;
-      }
-
-      // Optimistically show dashboard while we verify session with server
+    // Simplified session management for Supabase auth
+    // Supabase handles session management automatically
+    if (user && user.userId) {
       setSessionActive(true);
+    } else {
+      setSessionActive(false);
+    }
 
-      try {
-        const idToken = await getIdTokenSafe();
-        const headers: any = { 'Content-Type': 'application/json' };
-        if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
-
-        const res = await fetch('/api/auth/check-session', { method: 'POST', headers });
-        const json = await res.json();
-
-        if (json.ok) {
-          setSessionActive(true);
-          return;
-        }
-
-        // Server explicitly invalidated session -> sign out
-        if (json.reason === 'inactive' || json.reason === 'expired') {
-          try {
-            await signOut();
-          } catch (e) {
-            // ignore
-          }
-          setSessionActive(false);
-          // reload to update UI
-          window.location.reload();
-          return;
-        }
-
-        // If server can't verify due to permission issues, keep showing dashboard but warn in console
-        if (json.reason === 'permission_denied') {
-          setSessionActive(true);
-          return;
-        }
-
-        // Default: keep dashboard visible
-        setSessionActive(true);
-      } catch (e) {
-        setSessionActive(true);
-      }
-    })();
 
     return () => { mounted = false; if (interval) clearInterval(interval); };
   }, [user, signOut]);

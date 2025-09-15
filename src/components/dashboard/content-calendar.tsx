@@ -9,7 +9,7 @@ import { generateContentAction, generateEnhancedDesignAction, generateContentWit
 import { generateRevo15ContentAction } from "@/app/actions/revo-1.5-actions";
 
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth-supabase";
 import type { BrandProfile, GeneratedPost, Platform, BrandConsistencyPreferences } from "@/lib/types";
 
 type RevoModel = 'revo-1.0' | 'revo-1.5';
