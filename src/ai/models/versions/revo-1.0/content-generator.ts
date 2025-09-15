@@ -34,7 +34,7 @@ export class Revo10ContentGenerator implements IContentGenerator {
       const postDetails = await generateRevo10Content({
         businessType: generationParams.businessType,
         businessName: generationParams.businessName || 'Business',
-        location: generationParams.location || 'Location',
+        location: generationParams.location || '',
         platform: generationParams.variants[0]?.platform || 'instagram',
         writingTone: generationParams.writingTone || 'professional',
         contentThemes: generationParams.contentThemes || [],
