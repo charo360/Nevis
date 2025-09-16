@@ -6,15 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { 
-  Database, 
-  TestTube, 
-  CheckCircle, 
+import {
+  Database,
+  TestTube,
+  CheckCircle,
   XCircle,
   Zap,
   Shield
 } from "lucide-react";
-import { useBrand } from "@/contexts/brand-context-mongo";
+import { useBrand } from "@/contexts/brand-context-supabase";
 import { useQuickContentStorage, useCreativeStudioStorage, useStorageMonitor } from "@/hooks/use-feature-storage";
 import { UnifiedBrandLayout, BrandContent } from "@/components/layout/unified-brand-layout";
 
@@ -37,7 +37,7 @@ export default function StorageTestPage() {
   // Run isolation test
   const runIsolationTest = () => {
     console.log('🧪 Running storage isolation test...');
-    
+
     // Test data
     const qcData = { type: 'quick-content', data: qcTestData || 'QC Test Data', timestamp: Date.now() };
     const csData = { type: 'creative-studio', data: csTestData || 'CS Test Data', timestamp: Date.now() };
@@ -98,7 +98,7 @@ export default function StorageTestPage() {
                 Test that Quick Content and Creative Studio storage are completely isolated
               </p>
             </div>
-            
+
             <Badge variant="outline" className="flex items-center gap-1">
               <Shield className="h-3 w-3" />
               Brand: {currentBrand?.businessName || 'Default'}
@@ -123,7 +123,7 @@ export default function StorageTestPage() {
                     onChange={(e) => setQcTestData(e.target.value)}
                   />
                 </div>
-                
+
                 <div>
                   <label className="text-sm font-medium">Creative Studio Test Data</label>
                   <Input
@@ -166,7 +166,7 @@ export default function StorageTestPage() {
                         <XCircle className="h-5 w-5 text-red-600" />
                       )}
                     </div>
-                    
+
                     <div className="flex items-center justify-between">
                       <span className="text-sm">Quick Content Save</span>
                       {testResults.qcSave ? (
@@ -175,7 +175,7 @@ export default function StorageTestPage() {
                         <XCircle className="h-5 w-5 text-red-600" />
                       )}
                     </div>
-                    
+
                     <div className="flex items-center justify-between">
                       <span className="text-sm">Creative Studio Save</span>
                       {testResults.csSave ? (
@@ -184,7 +184,7 @@ export default function StorageTestPage() {
                         <XCircle className="h-5 w-5 text-red-600" />
                       )}
                     </div>
-                    
+
                     <div className="flex items-center justify-between">
                       <span className="text-sm">Quick Content Load</span>
                       {testResults.qcLoad ? (
@@ -193,7 +193,7 @@ export default function StorageTestPage() {
                         <XCircle className="h-5 w-5 text-red-600" />
                       )}
                     </div>
-                    
+
                     <div className="flex items-center justify-between">
                       <span className="text-sm">Creative Studio Load</span>
                       {testResults.csLoad ? (
@@ -252,7 +252,7 @@ export default function StorageTestPage() {
                       ))}
                     </div>
                   </div>
-                  
+
                   <div className="text-center p-4 border rounded">
                     <h3 className="font-medium text-purple-600">Creative Studio</h3>
                     <p className="text-2xl font-bold">{storageMonitor.storageStats.creativeStudio.totalKeys}</p>
@@ -267,7 +267,7 @@ export default function StorageTestPage() {
                       ))}
                     </div>
                   </div>
-                  
+
                   <div className="text-center p-4 border rounded">
                     <h3 className="font-medium text-green-600">Total</h3>
                     <p className="text-2xl font-bold">{storageMonitor.storageStats.total.keys}</p>

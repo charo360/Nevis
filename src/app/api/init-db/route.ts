@@ -1,20 +1,12 @@
-// Initialize MongoDB database and indexes
+// Database initialization - using Supabase instead of MongoDB
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeIndexes } from '@/lib/mongodb/database';
-import { connectToDatabase } from '@/lib/mongodb/config';
 
 export async function POST(request: NextRequest) {
   try {
-    // Test MongoDB connection
-    const { db } = await connectToDatabase();
-    await db.admin().ping();
-    
-    // Initialize indexes
-    await initializeIndexes();
-    
+    // This endpoint is disabled - using Supabase instead
     return NextResponse.json({
       success: true,
-      message: 'MongoDB database initialized successfully',
+      message: 'Using Supabase - MongoDB initialization not needed',
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
@@ -22,23 +14,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: 'Failed to initialize database',
-        details: error instanceof Error ? error.message : 'Unknown error',
+        error: 'Endpoint disabled - using Supabase',
+        details: 'MongoDB not used in this application',
       },
-      { status: 500 }
+      { status: 503 }
     );
   }
 }
 
 export async function GET(request: NextRequest) {
   try {
-    // Health check for MongoDB
-    const { db } = await connectToDatabase();
-    await db.admin().ping();
-    
+    // Health check - using Supabase instead
     return NextResponse.json({
       success: true,
-      message: 'MongoDB connection is healthy',
+      message: 'Using Supabase - database connection is healthy',
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
@@ -46,10 +35,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: 'Database connection failed',
-        details: error instanceof Error ? error.message : 'Unknown error',
+        error: 'Endpoint disabled - using Supabase',
+        details: 'MongoDB not used in this application',
       },
-      { status: 500 }
+      { status: 503 }
     );
   }
 }

@@ -1,6 +1,5 @@
-// File serving API route for GridFS files
+// File serving API route - using Supabase instead of GridFS
 import { NextRequest, NextResponse } from 'next/server';
-import { storageService } from '@/lib/mongodb/storage';
 
 export async function GET(
   request: NextRequest,
@@ -16,37 +15,16 @@ export async function GET(
       );
     }
 
-    // Download file from GridFS
-    const { buffer, info } = await storageService.downloadFile(fileId);
-
-    // Set appropriate headers
-    const headers = new Headers();
-    headers.set('Content-Type', info.contentType || 'application/octet-stream');
-    headers.set('Content-Length', buffer.length.toString());
-    headers.set('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
-    
-    // Set filename for download
-    if (info.filename) {
-      headers.set('Content-Disposition', `inline; filename="${info.filename}"`);
-    }
-
-    return new NextResponse(buffer, {
-      status: 200,
-      headers,
-    });
+    // This endpoint is disabled - using Supabase storage instead
+    return NextResponse.json(
+      { error: 'This endpoint is disabled - using Supabase storage instead of GridFS' },
+      { status: 503 }
+    );
   } catch (error) {
     console.error('File serving error:', error);
-    
-    if (error instanceof Error && error.message === 'File not found') {
-      return NextResponse.json(
-        { error: 'File not found' },
-        { status: 404 }
-      );
-    }
-
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: 'Endpoint disabled - using Supabase storage' },
+      { status: 503 }
     );
   }
 }

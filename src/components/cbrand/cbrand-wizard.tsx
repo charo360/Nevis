@@ -13,6 +13,7 @@ import { validateBrandProfile } from './form-validation';
 
 // Import step components (will create these next)
 import { WebsiteAnalysisStep } from './steps/website-analysis-step';
+import { BrandArchetypeStep } from './steps/brand-archetype-step';
 import { BrandDetailsStep } from './steps/brand-details-step';
 import { LogoUploadStep } from './steps/logo-upload-step';
 
@@ -46,6 +47,11 @@ export interface CompleteBrandProfile {
   writingTone: string;
   contentThemes: string;
 
+  // Brand Archetype (added for enhanced onboarding)
+  brandArchetype?: string;
+  brandVoice?: string;
+  brandPersonality?: string;
+
   // Brand Colors
   primaryColor: string;
   accentColor: string;
@@ -73,11 +79,16 @@ const STEPS = [
   },
   {
     id: 2,
+    title: 'Brand Archetype',
+    description: 'Define your brand personality',
+  },
+  {
+    id: 3,
     title: 'Brand Details',
     description: 'Comprehensive brand information',
   },
   {
-    id: 3,
+    id: 4,
     title: 'Logo Upload',
     description: 'Upload your brand logo',
   },
@@ -274,6 +285,15 @@ export function CbrandWizard({ mode, brandId }: CbrandWizardProps = {}) {
         );
       case 2:
         return (
+          <BrandArchetypeStep
+            brandProfile={brandProfile}
+            onUpdate={updateBrandProfile}
+            onNext={handleNext}
+            onPrevious={handlePrevious}
+          />
+        );
+      case 3:
+        return (
           <BrandDetailsStep
             brandProfile={brandProfile}
             updateBrandProfile={updateBrandProfile}
@@ -281,7 +301,7 @@ export function CbrandWizard({ mode, brandId }: CbrandWizardProps = {}) {
             onPrevious={handlePrevious}
           />
         );
-      case 3:
+      case 4:
         return (
           <LogoUploadStep
             brandProfile={brandProfile}

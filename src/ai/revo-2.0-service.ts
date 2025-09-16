@@ -6,6 +6,71 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import OpenAI from 'openai';
 import type { BrandProfile, Platform } from '@/lib/types';
+import { resolveLocationFromProfile } from '@/ai/tools/local-data';
+
+/**
+ * Generate diverse, context-aware African content based on business type and target audience
+ * Provides a balanced mix of traditional and modern African contexts
+ */
+function generateAfricanContentVariety(businessType: string, brandProfile: BrandProfile, locationLower: string): string {
+  const businessTypeLower = businessType.toLowerCase();
+  const targetAudience = brandProfile.targetAudience?.toLowerCase() || '';
+  
+  // Create a diverse mix of African contexts - both traditional and modern
+  const allAfricanContexts = [
+    // Modern Professional Contexts
+    'Show African professionals in modern office environments, corporate meetings, or business centers',
+    'Depict African entrepreneurs in contemporary business settings, tech hubs, or innovation centers',
+    'Include African businesspeople using modern technology, digital tools, or professional equipment',
+    'Show African professionals in modern workspaces, co-working environments, or startup incubators',
+    
+    // Traditional Market & Community Contexts
+    'Show African people in vibrant local markets, community gatherings, or traditional business settings',
+    'Depict African families and individuals in authentic local environments, cultural celebrations, or community events',
+    'Include African people in traditional marketplaces, local shops, or community-based business activities',
+    'Show African individuals in cultural settings, traditional ceremonies, or local community interactions',
+    
+    // Urban & Modern Lifestyle Contexts
+    'Show African people in modern urban settings, shopping centers, or contemporary lifestyle environments',
+    'Depict African individuals in modern cafes, restaurants, or contemporary social settings',
+    'Include African people in modern transportation, urban mobility, or city life scenarios',
+    'Show African individuals in modern entertainment venues, cultural centers, or contemporary social spaces',
+    
+    // Educational & Learning Contexts
+    'Show African students and professionals in educational settings, libraries, or learning environments',
+    'Depict African people in training sessions, workshops, or skill development programs',
+    'Include African individuals in modern learning centers, educational institutions, or knowledge-sharing spaces',
+    
+    // Healthcare & Wellness Contexts
+    'Show African people in healthcare settings, wellness centers, or medical facilities',
+    'Depict African individuals in fitness centers, wellness programs, or health-focused environments',
+    'Include African people in community health settings, wellness activities, or healthcare access scenarios',
+    
+    // Technology & Digital Contexts
+    'Show African people using modern technology, mobile devices, or digital platforms',
+    'Depict African individuals in tech-enabled environments, digital workspaces, or innovation hubs',
+    'Include African people in modern communication settings, digital interactions, or technology adoption scenarios'
+  ];
+  
+  // Business-specific context enhancement
+  let businessContext = '';
+  if (businessTypeLower.includes('fintech') || businessTypeLower.includes('banking') || businessTypeLower.includes('finance')) {
+    businessContext = ' Focus on financial services, digital banking, payment systems, or financial technology usage.';
+  } else if (businessTypeLower.includes('health') || businessTypeLower.includes('medical')) {
+    businessContext = ' Focus on healthcare services, medical facilities, wellness programs, or health technology.';
+  } else if (businessTypeLower.includes('education') || businessTypeLower.includes('training')) {
+    businessContext = ' Focus on educational services, learning environments, skill development, or knowledge sharing.';
+  } else if (businessTypeLower.includes('technology') || businessTypeLower.includes('software')) {
+    businessContext = ' Focus on technology usage, digital innovation, software development, or tech-enabled services.';
+  } else if (businessTypeLower.includes('retail') || businessTypeLower.includes('ecommerce')) {
+    businessContext = ' Focus on retail services, shopping experiences, product sales, or customer interactions.';
+  }
+  
+  // Randomly select a context to ensure variety
+  const selectedContext = allAfricanContexts[Math.floor(Math.random() * allAfricanContexts.length)];
+  
+  return `CONTENT VARIETY: ${selectedContext}${businessContext} Ensure authentic representation of diverse African backgrounds, communities, and contexts.`;
+}
 
 // Initialize AI clients lazily to avoid build-time issues
 let ai: GoogleGenerativeAI | null = null;
@@ -51,8 +116,18 @@ export interface Revo20GenerationResult {
   qualityScore: number;
   processingTime: number;
   enhancementsApplied: string[];
+  headline: string;
+  subheadline: string;
   caption: string;
+  captionVariations?: string[];
+  cta: string;
   hashtags: string[];
+  businessIntelligence: {
+    strategy: string;
+    targetAudience: string;
+    keyMessage: string;
+    competitiveAdvantage: string;
+  };
 }
 
 /**
@@ -172,23 +247,35 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
   const startTime = Date.now();
 
   try {
+    // Resolve global location context once
+    const resolved = resolveLocationFromProfile(options.brandProfile);
+    if (resolved?.currency && options.brandProfile) {
+      // Light augmentation so prompts can reference currency if needed
+      (options as any).__resolvedCurrency = resolved.currency;
+      (options as any).__resolvedRegion = resolved.region;
+    }
     // Auto-detect platform-specific aspect ratio if not provided
     const aspectRatio = options.aspectRatio || getPlatformAspectRatio(options.platform);
     const enhancedOptions = { ...options, aspectRatio };
 
     console.log(`🎯 Revo 2.0: Using ${aspectRatio} aspect ratio for ${options.platform}`);
+    console.log('🌍 Revo 2.0 Brand Profile Location:', {
+      location: options.brandProfile?.location,
+      hasLocation: !!options.brandProfile?.location,
+      locationType: typeof options.brandProfile?.location
+    });
 
     // Step 1: Generate creative concept
     const concept = await generateCreativeConcept(enhancedOptions);
 
-    // Step 2: Build enhanced prompt
-    const enhancedPrompt = buildEnhancedPrompt(enhancedOptions, concept);
+    // Step 2: Generate structured content first (needed for prompt)
+    const contentResult = await generateStructuredContent(enhancedOptions, concept);
+    
+    // Step 3: Build enhanced prompt with structured content
+    const enhancedPrompt = buildEnhancedPromptWithStructuredContent(enhancedOptions, concept, contentResult);
 
-    // Step 3: Generate image with Gemini 2.5 Flash Image Preview
+    // Step 4: Generate image with Gemini 2.5 Flash Image Preview (with embedded text)
     const imageResult = await generateImageWithGemini(enhancedPrompt, enhancedOptions);
-
-    // Step 4: Generate caption and hashtags
-    const contentResult = await generateCaptionAndHashtags(enhancedOptions, concept);
 
     const processingTime = Date.now() - startTime;
 
@@ -204,8 +291,13 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
         'Platform-specific formatting',
         'Cultural relevance integration'
       ],
+      headline: contentResult.headline,
+      subheadline: contentResult.subheadline,
       caption: contentResult.caption,
-      hashtags: contentResult.hashtags
+      captionVariations: contentResult.captionVariations,
+      cta: contentResult.cta,
+      hashtags: contentResult.hashtags,
+      businessIntelligence: contentResult.businessIntelligence
     };
 
   } catch (error) {
@@ -214,10 +306,196 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
 }
 
 /**
- * Build enhanced prompt for Revo 2.0
+ * Build enhanced prompt with structured content integrated into the design
+ */
+function buildEnhancedPromptWithStructuredContent(
+  options: Revo20GenerationOptions, 
+  concept: any, 
+  structuredContent: {
+    headline: string;
+    subheadline: string;
+    cta: string;
+  }
+): string {
+  const { businessType, platform, brandProfile, aspectRatio = '1:1', visualStyle = 'modern' } = options;
+  // Check if location implies a region where local representation is important (for guidance only)
+  const locationAutoPeople = !!(options.brandProfile?.location && /(africa|nigeria|kenya|ethiopia|ghana|uganda|tanzania|south\s*africa|rwanda|zambia|zimbabwe|botswana|cameroon|ivory\s*coast|senegal|somalia|sudan|angola|mali|burkina\s*faso|niger|chad|central\s*african\s*republic|congo|democratic\s*republic\s*of\s*congo|gabon|equatorial\s*guinea|sao\s*tome|madagascar|mauritius|seychelles|comoros|malawi|mozambique|lesotho|swaziland|namibia|liberia|sierra\s*leone|guinea|guinea-bissau|cape\s*verde|gambia|benin|togo|burundi|djibouti|eritrea|asia|latin|middle\s*east|europe|usa|united\s*states|canada|australia|new\s*zealand)/i.test(options.brandProfile.location));
+  // Respect user's people setting - only include people if explicitly enabled
+  const includePeople = options.includePeopleInDesigns === true;
+  
+  console.log('👥 People in Designs Check:', {
+    includePeopleInDesigns: options.includePeopleInDesigns,
+    locationAutoPeople: locationAutoPeople,
+    finalIncludePeople: includePeople
+  });
+
+  // Determine simple regional guidance based on location
+  const location = (brandProfile.location || brandProfile.city || '').trim();
+  const locationLower = location.toLowerCase();
+  let regionalPeopleInstruction = '';
+  
+  console.log('🌍 Revo 2.0 Location Detection:', {
+    location: location,
+    locationLower: locationLower,
+    includePeople: includePeople,
+    locationAutoPeople: locationAutoPeople,
+    brandProfileLocation: brandProfile.location,
+    brandProfileCity: brandProfile.city
+  });
+  
+  if (includePeople && location) {
+    if (/(africa|nigeria|kenya|nairobi|mombasa|kisumu|ethiopia|ghana|uganda|tanzania|south\s*africa|rwanda|zambia|zimbabwe|botswana|cameroon|ivory\s*coast|senegal|somalia|sudan|angola|mali|burkina\s*faso|niger|chad|central\s*african\s*republic|congo|democratic\s*republic\s*of\s*congo|gabon|equatorial\s*guinea|sao\s*tome|madagascar|mauritius|seychelles|comoros|malawi|mozambique|lesotho|swaziland|namibia|liberia|sierra\s*leone|guinea|guinea-bissau|cape\s*verde|gambia|benin|togo|burundi|djibouti|eritrea)/i.test(locationLower)) {
+      // Generate diverse, context-aware African content based on business type and target audience
+      const africanContentVariety = generateAfricanContentVariety(businessType, brandProfile, locationLower);
+      regionalPeopleInstruction = `CRITICAL: Include people in the scene. MUST depict Black African people with authentic African features, skin tones, and natural styling that represents the local region. Do NOT portray non-African, light-skinned, or non-representative models as the primary subjects. Ensure respectful, realistic representation of African people (no stereotypes). This is mandatory for African locations. ${africanContentVariety}`;
+      console.log('✅ African location detected - Black people instruction with content variety added');
+    } else if (/(asia|india|china|japan|korea|philippines|vietnam|thailand|indonesia|malaysia|pakistan|bangladesh|sri\s*lanka|nepal)/i.test(locationLower)) {
+      regionalPeopleInstruction = 'Include people in the scene. Depict Asian people reflecting the local region with authentic features and styling. Ensure respectful, realistic representation (no stereotypes).';
+    } else if (/(latin|mexico|brazil|colombia|argentina|peru|chile|ecuador|bolivia|paraguay|uruguay|venezuela)/i.test(locationLower)) {
+      regionalPeopleInstruction = 'Include people in the scene. Depict Latin American people with authentic local features and styling. Ensure respectful, realistic representation (no stereotypes).';
+    } else if (/(middle\s*east|saudi|uae|emirates|qatar|oman|bahrain|kuwait|jordan|lebanon|turkey|israel|egypt|morocco|tunisia|algeria)/i.test(locationLower)) {
+      regionalPeopleInstruction = 'Include people in the scene. Depict people representative of the Middle East region with authentic features and context-appropriate styling. Ensure respectful, realistic representation (no stereotypes).';
+    } else if (/(europe|france|germany|italy|spain|uk|united\s*kingdom|ireland|poland|netherlands|belgium|sweden|norway|finland|denmark|switzerland|austria|portugal|greece)/i.test(locationLower)) {
+      regionalPeopleInstruction = 'Include people in the scene. Depict people representative of the local European region. Ensure respectful, realistic representation (no stereotypes).';
+    } else if (/(usa|united\s*states|canada|australia|new\s*zealand)/i.test(locationLower)) {
+      regionalPeopleInstruction = 'Include people in the scene. Depict people representative of the local community and its diversity in this region. Ensure respectful, realistic representation (no stereotypes).';
+    }
+  } else if (!includePeople) {
+    regionalPeopleInstruction = 'DO NOT include any people, faces, or human figures in the design. Focus on objects, products, abstract elements, or architectural elements only.';
+    console.log('🚫 People disabled - no people instruction added');
+  }
+
+  // Currency/localization guidance
+  let currencyInstruction = '';
+  const resolvedCurrency = (options as any).__resolvedCurrency as { code: string; symbol: string } | undefined;
+  if (resolvedCurrency) {
+    currencyInstruction = `Use ${resolvedCurrency.code} (${resolvedCurrency.symbol}) for any pricing visuals. Avoid incorrect foreign symbols.`;
+  } else if (/(kenya|nairobi|mombasa|kisumu)/i.test(locationLower)) {
+    currencyInstruction = 'Use Kenyan Shilling (KES, KSh) for any pricing visuals. Avoid using €, £, or $ symbols.';
+  }
+
+  const finalPrompt = `Create a high-quality, professional ${businessType} design for ${platform} with integrated text elements.
+
+STRUCTURED TEXT TO INTEGRATE INTO DESIGN:
+"${structuredContent.headline} | ${structuredContent.subheadline} | ${structuredContent.cta}"
+
+TEXT INTEGRATION REQUIREMENTS:
+- Headline: "${structuredContent.headline}" (prominent, eye-catching, largest text)
+- Subheadline: "${structuredContent.subheadline}" (supporting text, medium size, readable)
+- Call-to-Action: "${structuredContent.cta}" (clear, actionable, button or highlighted text)
+
+CREATIVE CONCEPT: ${concept.concept}
+
+VISUAL DIRECTION: ${concept.visualDirection}
+
+DESIGN REQUIREMENTS:
+- Style: ${visualStyle}, premium quality
+- Aspect Ratio: ${aspectRatio} (${getPlatformDimensionsText(aspectRatio)})
+- Platform: ${platform} optimized for ${getPlatformDescription(platform)}
+- Business: ${brandProfile.businessName || businessType}
+- Location: ${brandProfile.location || 'Professional setting'}
+${regionalPeopleInstruction ? `- People: ${regionalPeopleInstruction}` : ''}
+${currencyInstruction ? `- Currency: ${currencyInstruction}` : ''}
+
+DESIGN ELEMENTS:
+${concept.designElements.map((element: string) => `- ${element}`).join('\n')}
+
+MOOD & EMOTIONS:
+- Target emotions: ${concept.targetEmotions.join(', ')}
+- Mood keywords: ${concept.moodKeywords.join(', ')}
+
+BRAND INTEGRATION:
+- Colors: ${brandProfile.primaryColor ? `Primary: ${brandProfile.primaryColor}, Accent: ${brandProfile.accentColor}, Background: ${brandProfile.backgroundColor}` : concept.colorSuggestions.join(', ')}
+- Business name: ${brandProfile.businessName || businessType}
+- Logo: ${(brandProfile.logoDataUrl || brandProfile.logoUrl) ? 'Include provided brand logo prominently' : 'No logo provided'}
+- Services: ${brandProfile.services || 'Business services'}
+- Target Audience: ${brandProfile.targetAudience || 'General audience'}
+- Key Features: ${brandProfile.keyFeatures || 'Key business features'}
+- Visual Style: ${brandProfile.visualStyle || 'Modern'}
+- Professional, trustworthy appearance
+
+QUALITY STANDARDS:
+- Ultra-high resolution and clarity
+- Professional composition with integrated text elements
+- Perfect typography and text rendering for headline, subheadline, and CTA
+- MAXIMUM 3 COLORS ONLY (use brand colors if provided)
+- NO LINES: no decorative lines, borders, dividers, or linear elements
+- Platform-optimized dimensions
+- Brand consistency throughout
+- Clean, minimalist design with 50%+ white space
+- Text should be part of the design composition, not overlaid
+
+Create a stunning, professional design that integrates the structured text elements seamlessly into the visual composition.`;
+
+  console.log('📝 Final Prompt with People Instruction:', {
+    hasRegionalPeopleInstruction: !!regionalPeopleInstruction,
+    regionalPeopleInstruction: regionalPeopleInstruction,
+    promptLength: finalPrompt.length
+  });
+
+  return finalPrompt;
+}
+
+/**
+ * Build enhanced prompt for Revo 2.0 (legacy function - kept for compatibility)
  */
 function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: any): string {
   const { businessType, platform, brandProfile, aspectRatio = '1:1', visualStyle = 'modern' } = options;
+  // Check if location implies a region where local representation is important (for guidance only)
+  const locationAutoPeople = !!(options.brandProfile?.location && /(africa|nigeria|kenya|ethiopia|ghana|uganda|tanzania|south\s*africa|rwanda|zambia|zimbabwe|botswana|cameroon|ivory\s*coast|senegal|somalia|sudan|angola|mali|burkina\s*faso|niger|chad|central\s*african\s*republic|congo|democratic\s*republic\s*of\s*congo|gabon|equatorial\s*guinea|sao\s*tome|madagascar|mauritius|seychelles|comoros|malawi|mozambique|lesotho|swaziland|namibia|liberia|sierra\s*leone|guinea|guinea-bissau|cape\s*verde|gambia|benin|togo|burundi|djibouti|eritrea|asia|latin|middle\s*east|europe|usa|united\s*states|canada|australia|new\s*zealand)/i.test(options.brandProfile.location));
+  // Respect user's people setting - only include people if explicitly enabled
+  const includePeople = options.includePeopleInDesigns === true;
+  
+  console.log('👥 People in Designs Check:', {
+    includePeopleInDesigns: options.includePeopleInDesigns,
+    locationAutoPeople: locationAutoPeople,
+    finalIncludePeople: includePeople
+  });
+
+  // Determine simple regional guidance based on location
+  const location = (brandProfile.location || brandProfile.city || '').trim();
+  const locationLower = location.toLowerCase();
+  let regionalPeopleInstruction = '';
+  
+  console.log('🌍 Revo 2.0 Location Detection:', {
+    location: location,
+    locationLower: locationLower,
+    includePeople: includePeople,
+    locationAutoPeople: locationAutoPeople,
+    brandProfileLocation: brandProfile.location,
+    brandProfileCity: brandProfile.city
+  });
+  
+  if (includePeople && location) {
+    if (/(africa|nigeria|kenya|nairobi|mombasa|kisumu|ethiopia|ghana|uganda|tanzania|south\s*africa|rwanda|zambia|zimbabwe|botswana|cameroon|ivory\s*coast|senegal|somalia|sudan|angola|mali|burkina\s*faso|niger|chad|central\s*african\s*republic|congo|democratic\s*republic\s*of\s*congo|gabon|equatorial\s*guinea|sao\s*tome|madagascar|mauritius|seychelles|comoros|malawi|mozambique|lesotho|swaziland|namibia|liberia|sierra\s*leone|guinea|guinea-bissau|cape\s*verde|gambia|benin|togo|burundi|djibouti|eritrea)/i.test(locationLower)) {
+      // Generate diverse, context-aware African content based on business type and target audience
+      const africanContentVariety = generateAfricanContentVariety(businessType, brandProfile, locationLower);
+      regionalPeopleInstruction = `CRITICAL: Include people in the scene. MUST depict Black African people with authentic African features, skin tones, and natural styling that represents the local region. Do NOT portray non-African, light-skinned, or non-representative models as the primary subjects. Ensure respectful, realistic representation of African people (no stereotypes). This is mandatory for African locations. ${africanContentVariety}`;
+      console.log('✅ African location detected - Black people instruction with content variety added');
+    } else if (/(asia|india|china|japan|korea|philippines|vietnam|thailand|indonesia|malaysia|pakistan|bangladesh|sri\s*lanka|nepal)/i.test(locationLower)) {
+      regionalPeopleInstruction = 'Include people in the scene. Depict Asian people reflecting the local region with authentic features and styling. Ensure respectful, realistic representation (no stereotypes).';
+    } else if (/(latin|mexico|brazil|colombia|argentina|peru|chile|ecuador|bolivia|paraguay|uruguay|venezuela)/i.test(locationLower)) {
+      regionalPeopleInstruction = 'Include people in the scene. Depict Latin American people with authentic local features and styling. Ensure respectful, realistic representation (no stereotypes).';
+    } else if (/(middle\s*east|saudi|uae|emirates|qatar|oman|bahrain|kuwait|jordan|lebanon|turkey|israel|egypt|morocco|tunisia|algeria)/i.test(locationLower)) {
+      regionalPeopleInstruction = 'Include people in the scene. Depict people representative of the Middle East region with authentic features and context-appropriate styling. Ensure respectful, realistic representation (no stereotypes).';
+    } else if (/(europe|france|germany|italy|spain|uk|united\s*kingdom|ireland|poland|netherlands|belgium|sweden|norway|finland|denmark|switzerland|austria|portugal|greece)/i.test(locationLower)) {
+      regionalPeopleInstruction = 'Include people in the scene. Depict people representative of the local European region. Ensure respectful, realistic representation (no stereotypes).';
+    } else if (/(usa|united\s*states|canada|australia|new\s*zealand)/i.test(locationLower)) {
+      regionalPeopleInstruction = 'Include people in the scene. Depict people representative of the local community and its diversity in this region. Ensure respectful, realistic representation (no stereotypes).';
+    }
+  } else if (!includePeople) {
+    regionalPeopleInstruction = 'DO NOT include any people, faces, or human figures in the design. Focus on objects, products, abstract elements, or architectural elements only.';
+    console.log('🚫 People disabled - no people instruction added');
+  }
+
+  // Currency/localization guidance
+  let currencyInstruction = '';
+  const resolvedCurrency = (options as any).__resolvedCurrency as { code: string; symbol: string } | undefined;
+  if (resolvedCurrency) {
+    currencyInstruction = `Use ${resolvedCurrency.code} (${resolvedCurrency.symbol}) for any pricing visuals. Avoid incorrect foreign symbols.`;
+  } else if (/(kenya|nairobi|mombasa|kisumu)/i.test(locationLower)) {
+    currencyInstruction = 'Use Kenyan Shilling (KES, KSh) for any pricing visuals. Avoid using €, £, or $ symbols.';
+  }
 
   return `Create a high-quality, professional ${businessType} design for ${platform}.
 
@@ -231,6 +509,8 @@ DESIGN REQUIREMENTS:
 - Platform: ${platform} optimized for ${getPlatformDescription(platform)}
 - Business: ${brandProfile.businessName || businessType}
 - Location: ${brandProfile.location || 'Professional setting'}
+${regionalPeopleInstruction ? `- People: ${regionalPeopleInstruction}` : ''}
+${currencyInstruction ? `- Currency: ${currencyInstruction}` : ''}
 
 DESIGN ELEMENTS:
 ${concept.designElements.map((element: string) => `- ${element}`).join('\n')}
@@ -243,6 +523,10 @@ BRAND INTEGRATION:
 - Colors: ${brandProfile.primaryColor ? `Primary: ${brandProfile.primaryColor}, Accent: ${brandProfile.accentColor}, Background: ${brandProfile.backgroundColor}` : concept.colorSuggestions.join(', ')}
 - Business name: ${brandProfile.businessName || businessType}
 - Logo: ${(brandProfile.logoDataUrl || brandProfile.logoUrl) ? 'Include provided brand logo prominently' : 'No logo provided'}
+- Services: ${brandProfile.services || 'Business services'}
+- Target Audience: ${brandProfile.targetAudience || 'General audience'}
+- Key Features: ${brandProfile.keyFeatures || 'Key business features'}
+- Visual Style: ${brandProfile.visualStyle || 'Modern'}
 - Professional, trustworthy appearance
 
 QUALITY STANDARDS:
@@ -256,6 +540,11 @@ QUALITY STANDARDS:
 - Clean, minimalist design with 50%+ white space
 
 Create a stunning, professional design that captures the essence of this ${businessType} business.`;
+
+  console.log('📝 Legacy Prompt with People Instruction:', {
+    hasRegionalPeopleInstruction: !!regionalPeopleInstruction,
+    regionalPeopleInstruction: regionalPeopleInstruction
+  });
 }
 
 /**
@@ -412,35 +701,72 @@ The client specifically requested their brand logo to be included. FAILURE TO IN
 }
 
 /**
- * Generate caption and hashtags with AI-powered contextual generation
+ * Generate structured content including headlines, subheadlines, CTAs, captions, hashtags, and business intelligence
  */
-async function generateCaptionAndHashtags(options: Revo20GenerationOptions, concept: any): Promise<{ caption: string; hashtags: string[] }> {
+async function generateStructuredContent(options: Revo20GenerationOptions, concept: any): Promise<{
+  headline: string;
+  subheadline: string;
+  caption: string;
+  captionVariations?: string[];
+  cta: string;
+  hashtags: string[];
+  businessIntelligence: {
+    strategy: string;
+    targetAudience: string;
+    keyMessage: string;
+    competitiveAdvantage: string;
+  };
+}> {
   const { businessType, platform, brandProfile } = options;
 
-  const prompt = `Create engaging ${platform} content for a ${businessType} business.
+  const prompt = `Create comprehensive ${platform} content for a ${businessType} business with structured marketing elements.
 
 Business Details:
 - Name: ${brandProfile.businessName || businessType}
 - Type: ${businessType}
 - Location: ${brandProfile.location || 'Local area'}
+- Description: ${brandProfile.description || 'Professional business'}
+- Services: ${brandProfile.services || 'Business services'}
+- Target Audience: ${brandProfile.targetAudience || 'General audience'}
+- Key Features: ${brandProfile.keyFeatures || 'Key business features'}
+- Competitive Advantages: ${brandProfile.competitiveAdvantages || 'Business advantages'}
+- Visual Style: ${brandProfile.visualStyle || 'Modern'}
+- Writing Tone: ${brandProfile.writingTone || 'Professional'}
+- Content Themes: ${brandProfile.contentThemes || 'Business themes'}
+- Website: ${brandProfile.websiteUrl || 'Not specified'}
 - Concept: ${concept.concept}
 - Catchwords: ${concept.catchwords.join(', ')}
 
-Create:
-1. A catchy, engaging caption (2-3 sentences max) that incorporates the concept and catchwords naturally
-2. 10 highly relevant, specific hashtags that are:
-   - Specific to this business and location
-   - Mix of business-specific, location-based, industry-relevant, and platform-optimized
-   - Avoid generic hashtags like #business, #professional, #quality, #local
-   - Discoverable and relevant to the target audience
-   - Appropriate for ${platform}
+Create structured content with these components:
 
-Make the content authentic, locally relevant, and engaging for ${platform}.
+1. **HEADLINE** (5-8 words): Eye-catching, benefit-focused main message
+2. **SUBHEADLINE** (8-12 words): Supporting detail that reinforces the headline
+3. **CAPTION** (2-3 sentences): Engaging social media caption for ${platform}
+4. **CTA** (3-5 words): Clear, actionable call-to-action
+5. **HASHTAGS** (10 hashtags): Mix of business-specific, location-based, and platform-optimized
+6. **BUSINESS INTELLIGENCE**: Strategic analysis
+
+Requirements:
+- Make content authentic and locally relevant
+- Use varied vocabulary (no repetitive words)
+- Professional yet engaging tone
+- Platform-optimized for ${platform}
+- Include 5 different caption variations for Instagram
 
 Format as JSON:
 {
-  "caption": "Your engaging caption here",
-  "hashtags": ["#SpecificHashtag1", "#LocationBasedHashtag", "#IndustryRelevant", ...]
+  "headline": "Compelling 5-8 word headline",
+  "subheadline": "Supporting 8-12 word subheadline",
+  "caption": "Engaging social media caption",
+  "captionVariations": ["Caption 1", "Caption 2", "Caption 3", "Caption 4", "Caption 5"],
+  "cta": "Clear call-to-action",
+  "hashtags": ["#SpecificHashtag1", "#LocationBased", "#IndustryRelevant", ...],
+  "businessIntelligence": {
+    "strategy": "Marketing strategy insight",
+    "targetAudience": "Primary audience description",
+    "keyMessage": "Core value proposition",
+    "competitiveAdvantage": "What sets this business apart"
+  }
 }`;
 
   const response = await getOpenAI().chat.completions.create({
@@ -459,34 +785,60 @@ Format as JSON:
     const result = JSON.parse(responseContent);
 
     // Validate the response
-    if (result.caption && Array.isArray(result.hashtags) && result.hashtags.length > 0) {
+    if (result.headline && result.subheadline && result.caption && result.cta && Array.isArray(result.hashtags)) {
       return {
-        caption: result.caption,
-        hashtags: result.hashtags.slice(0, 10) // Ensure max 10 hashtags
+        headline: result.headline,
+        subheadline: result.subheadline,
+        caption: result.captionVariations && result.captionVariations.length > 0 ? result.captionVariations[0] : result.caption,
+        captionVariations: result.captionVariations || [result.caption],
+        cta: result.cta,
+        hashtags: result.hashtags.slice(0, 10),
+        businessIntelligence: result.businessIntelligence || {
+          strategy: 'Professional content strategy',
+          targetAudience: 'Local customers and prospects',
+          keyMessage: 'Quality service and expertise',
+          competitiveAdvantage: 'Trusted local business'
+        }
       };
     }
   } catch (error) {
-    console.warn('Failed to parse AI content response:', error);
+    console.warn('Failed to parse AI structured content response:', error);
   }
 
   // Fallback with contextual generation (no hardcoded placeholders)
-  return generateContextualFallback(businessType, brandProfile, platform, concept);
+  return generateStructuredFallback(businessType, brandProfile, platform, concept);
 }
 
 /**
- * Generate contextual fallback content without hardcoded placeholders
+ * Generate structured fallback content without hardcoded placeholders
  */
-function generateContextualFallback(
+function generateStructuredFallback(
   businessType: string,
   brandProfile: BrandProfile,
   platform: string,
   concept: any
-): { caption: string; hashtags: string[] } {
+): {
+  headline: string;
+  subheadline: string;
+  caption: string;
+  captionVariations?: string[];
+  cta: string;
+  hashtags: string[];
+  businessIntelligence: {
+    strategy: string;
+    targetAudience: string;
+    keyMessage: string;
+    competitiveAdvantage: string;
+  };
+} {
   const businessName = brandProfile.businessName || businessType;
   const location = brandProfile.location || 'your area';
 
-  // Generate contextual caption
+  // Generate structured content
+  const headline = `${concept.catchwords[0] || 'Discover'} ${businessName}`;
+  const subheadline = `Experience excellence in ${location}`;
   const caption = `${concept.catchwords[0] || 'Discover'} what makes ${businessName} special in ${location}! ${concept.concept || 'Experience the difference with our exceptional service.'}`;
+  const cta = `Visit ${businessName} Today!`;
 
   // Generate contextual hashtags
   const hashtags: string[] = [];
@@ -519,9 +871,28 @@ function generateContextualFallback(
   const dayName = today.toLocaleDateString('en-US', { weekday: 'long' });
   hashtags.push(`#${dayName}Vibes`);
 
-  return {
+  // Generate 5 caption variations for Instagram
+  const captionVariations = platform.toLowerCase() === 'instagram' ? [
     caption,
-    hashtags: [...new Set(hashtags)].slice(0, 10) // Remove duplicates and limit to 10
+    `${concept.catchwords[1] || 'Experience'} the difference at ${businessName}! ${concept.concept || 'Quality service you can trust.'} #${businessName.replace(/\s+/g, '')}`,
+    `Ready for something amazing? ${businessName} in ${location} delivers excellence every time! 🎆`,
+    `👋 Hey ${location}! Looking for quality ${businessType.toLowerCase()} services? ${businessName} has you covered!`,
+    `✨ ${businessName} - where ${concept.catchwords[0]?.toLowerCase() || 'quality'} meets excellence in ${location}! Come see what makes us special.`
+  ] : [caption];
+
+  return {
+    headline,
+    subheadline,
+    caption,
+    captionVariations,
+    cta,
+    hashtags: [...new Set(hashtags)].slice(0, 10),
+    businessIntelligence: {
+      strategy: `Professional ${businessType} marketing focused on local engagement`,
+      targetAudience: `Local customers in ${location} seeking ${businessType} services`,
+      keyMessage: `Quality ${businessType} services with personalized attention`,
+      competitiveAdvantage: `Trusted local ${businessType} business with proven expertise`
+    }
   };
 }
 

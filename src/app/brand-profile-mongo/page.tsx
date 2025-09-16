@@ -1,7 +1,7 @@
-// MongoDB-based brand profile page
+// Supabase-based brand profile page (redirected from MongoDB)
 'use client';
 
-import { CbrandWizardMongo } from '@/components/cbrand/cbrand-wizard-mongo';
+import { CbrandWizardUnified } from '@/components/cbrand/cbrand-wizard-unified';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -10,7 +10,7 @@ function BrandProfileMongoContent() {
   const mode = searchParams.get('mode');
   const brandId = searchParams.get('id');
 
-  return <CbrandWizardMongo mode={mode} brandId={brandId} />;
+  return <CbrandWizardUnified mode={mode} brandId={brandId} />;
 }
 
 export default function BrandProfileMongoPage() {

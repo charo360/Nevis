@@ -13,7 +13,6 @@
 import { ai } from '@/ai/genkit';
 import { GenerateRequest } from 'genkit/generate';
 import { z } from 'zod';
-import { getWeatherTool, getEventsTool } from '@/ai/tools/local-data';
 import { getEnhancedEventsTool, getEnhancedWeatherTool } from '@/ai/tools/enhanced-local-data';
 import { ENHANCED_CAPTION_PROMPT, PLATFORM_SPECIFIC_OPTIMIZATIONS } from '@/ai/prompts/enhanced-caption-prompt';
 import { ADVANCED_AI_PROMPT } from '@/ai/prompts/advanced-ai-prompt';
@@ -299,7 +298,7 @@ const enhancedTextGenPrompt = ai.definePrompt({
       })).describe('2-3 alternative caption variants for A/B testing.'),
     })
   },
-  tools: [getWeatherTool, getEventsTool, getEnhancedWeatherTool, getEnhancedEventsTool],
+  tools: [getEnhancedWeatherTool, getEnhancedEventsTool],
   prompt: ADVANCED_AI_PROMPT,
 });
 

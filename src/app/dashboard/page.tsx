@@ -34,6 +34,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { SidebarInset } from '@/components/ui/sidebar';
 import { useUnifiedBrand } from '@/contexts/unified-brand-context';
+import { AILearningWidget } from '@/components/ui/ai-learning-display';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -86,6 +87,16 @@ export default function DashboardPage() {
       isCore: true
     },
     {
+      id: 'smart-calendar',
+      title: 'Smart Calendar',
+      description: 'AI-powered 30-day content automation',
+      icon: Calendar,
+      color: 'bg-emerald-500',
+      status: currentBrand ? 'available' : 'requires-setup',
+      route: '/dashboard/smart-calendar',
+      isCore: false
+    },
+    {
       id: 'enhanced-design',
       title: 'Enhanced Design Studio',
       description: 'Create stunning visuals with advanced AI design tools',
@@ -111,8 +122,8 @@ export default function DashboardPage() {
       description: 'Track performance and engagement metrics',
       icon: BarChart3,
       color: 'bg-indigo-500',
-      status: 'coming-soon',
-      route: '#',
+      status: 'available',
+      route: '/dashboard/competitor-analysis',
       isCore: false
     },
     {
@@ -379,6 +390,14 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* AI Learning Progress */}
+        {currentBrand && (
+          <AILearningWidget
+            brandId={(currentBrand as any)?.id}
+            userId={user?.userId}
+          />
         )}
 
         {/* Core Features */}

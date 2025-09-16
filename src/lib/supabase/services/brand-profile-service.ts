@@ -48,10 +48,16 @@ class BrandProfileSupabaseService {
       businessType: row.business_type,
       description: row.description,
       
-      // Extract location fields
-      location: row.location?.country || '',
-      city: row.location?.city || '',
-      contactAddress: row.location?.address || '',
+      // Extract location fields - handle both object and string formats
+      location: typeof row.location === 'string' ? 
+        (JSON.parse(row.location)?.country || '') : 
+        (row.location?.country || ''),
+      city: typeof row.location === 'string' ? 
+        (JSON.parse(row.location)?.city || '') : 
+        (row.location?.city || ''),
+      contactAddress: typeof row.location === 'string' ? 
+        (JSON.parse(row.location)?.address || '') : 
+        (row.location?.address || ''),
       
       // Extract contact fields
       contactEmail: row.contact?.email || '',

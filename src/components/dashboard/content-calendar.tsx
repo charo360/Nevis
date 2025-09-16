@@ -3,6 +3,7 @@
 
 import React from "react";
 import { Loader2, Facebook, Instagram, Linkedin, Twitter, Settings, Palette, Sparkles } from "lucide-react";
+import { TrendingHashtagsService } from '@/services/trending-hashtags-service';
 import { Button } from "@/components/ui/button";
 import { PostCard } from "@/components/dashboard/post-card";
 import { generateContentAction, generateEnhancedDesignAction, generateContentWithArtifactsAction } from "@/app/actions";
@@ -57,6 +58,8 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
   // Use local language toggle
   const [useLocalLanguage, setUseLocalLanguage] = React.useState<boolean>(false);
 
+
+
   // Save preferences to localStorage
   React.useEffect(() => {
     const savedPreferences = localStorage.getItem('brandConsistencyPreferences');
@@ -96,11 +99,27 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
     localStorage.setItem('useLocalLanguage', JSON.stringify(useLocalLanguage));
   }, [useLocalLanguage]);
 
+
+
   const handleGenerateClick = async (platform: Platform) => {
     setIsGenerating(platform);
     try {
 
       let newPost;
+      let revo20Result: any = null; // Declare in proper scope
+
+      // Get trending hashtags for this business type
+      const trendingHashtags = await TrendingHashtagsService.getTrendingHashtags(
+        brandProfile.businessType || 'business',
+        brandProfile.location as string,
+        8 // Get up to 8 trending hashtags
+      );
+
+      // Optimize hashtags for the specific platform
+      const platformHashtags = TrendingHashtagsService.getplatformOptimizedHashtags(
+        trendingHashtags,
+        platform
+      );
 
       // Check if artifacts are enabled (simple toggle approach)
       const artifactsEnabled = selectedArtifacts.length > 0;
@@ -110,6 +129,11 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
       if (selectedRevoModel === 'revo-2.0') {
 
         // Use server action to avoid client-side imports
+        const trendingContext = {
+          trendingHashtags: platformHashtags,
+          businessType: brandProfile.businessType || 'business'
+        };
+
         const response = await fetch('/api/generate-revo-2.0', {
           method: 'POST',
           headers: {
@@ -123,7 +147,8 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
             brandProfile,
             aspectRatio: '1:1',
             includePeopleInDesigns,
-            useLocalLanguage
+            useLocalLanguage,
+            trendingContext: trendingContext
           })
         });
 
@@ -131,15 +156,30 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
           throw new Error(`Revo 2.0 generation failed: ${response.statusText}`);
         }
 
-        const revo20Result = await response.json();
+        revo20Result = await response.json();
+
+        // Combine AI-generated hashtags with trending hashtags
+        const combinedHashtags = [
+          ...(revo20Result.hashtags || ['#NextGen', '#AI', '#Innovation']),
+          ...platformHashtags // Add platform-optimized trending hashtags
+        ]
+        // Remove duplicates and limit based on platform
+        .filter((tag, index, arr) => arr.indexOf(tag) === index)
+        .slice(0, platform === 'Twitter' ? 5 : platform === 'LinkedIn' ? 8 : 10);
 
         newPost = {
           id: `revo-2.0-${Date.now()}`,
           content: revo20Result.caption || `🚀 Generated with Revo 2.0 (Gemini 2.5 Flash Image)\n\n${brandProfile.businessName || brandProfile.businessType} - Premium Content`,
-          hashtags: revo20Result.hashtags || ['#NextGen', '#AI', '#Innovation'],
+          hashtags: combinedHashtags,
           imageUrl: revo20Result.imageUrl,
           platform: platform,
           date: new Date().toISOString(),
+          // Store additional structured content for reference
+          headline: revo20Result.headline,
+          subheadline: revo20Result.subheadline,
+          cta: revo20Result.cta,
+          captionVariations: revo20Result.captionVariations || [revo20Result.caption],
+          businessIntelligence: revo20Result.businessIntelligence,
           analytics: {
             views: 0,
             likes: 0,
@@ -153,7 +193,13 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
             aiModel: revo20Result.model || 'Revo 2.0',
             generationPrompt: 'Revo 2.0 Native Generation',
             processingTime: revo20Result.processingTime || 0,
-            enhancementsApplied: revo20Result.enhancementsApplied || []
+            enhancementsApplied: revo20Result.enhancementsApplied || [],
+            structuredContent: {
+              headline: revo20Result.headline,
+              subheadline: revo20Result.subheadline,
+              cta: revo20Result.cta,
+              businessIntelligence: revo20Result.businessIntelligence
+            }
           }
         };
       } else if (selectedRevoModel === 'revo-1.5') {
@@ -193,8 +239,20 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
       // Dynamic toast message based on generation type
       let title = "Content Generated!";
       let description = `A new ${platform} post has been saved to your database.`;
+      
+      // Special message for Instagram with multiple captions
+      if (platform === 'Instagram' && selectedRevoModel === 'revo-2.0' && revo20Result?.captionVariations?.length > 1) {
+        title = "Instagram Content with 5 Captions Generated! 📸";
+        description = `Generated ${revo20Result.captionVariations.length} caption variations for Instagram engagement optimization.`;
+      }
 
-      if (selectedArtifacts.length > 0) {
+      if (platformHashtags.length > 0 && selectedArtifacts.length > 0) {
+        title = "Trending Content Generated! 🔥📎";
+        description = `A new ${platform} post with ${platformHashtags.length} trending hashtags and ${selectedArtifacts.length} reference${selectedArtifacts.length !== 1 ? 's' : ''} has been saved.`;
+      } else if (platformHashtags.length > 0) {
+        title = "Trending Content Generated! 🔥";
+        description = `A new ${platform} post with ${platformHashtags.length} trending hashtags has been saved.`;
+      } else if (selectedArtifacts.length > 0) {
         title = "Content Generated with References! 📎";
         description = `A new ${platform} post using ${selectedArtifacts.length} reference${selectedArtifacts.length !== 1 ? 's' : ''} has been saved.`;
       } else if (selectedRevoModel === 'revo-1.5') {
@@ -204,6 +262,8 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
         title = "Content Generated! 🚀";
         description = `A new ${platform} post with ${selectedRevoModel} has been saved.`;
       }
+
+
 
       toast({ title, description });
     } catch (error) {

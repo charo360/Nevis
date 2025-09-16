@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { WebsiteAnalysisStep } from './steps/website-analysis-step';
+import { BrandArchetypeStep } from './steps/brand-archetype-step';
 import { BrandDetailsStep } from './steps/brand-details-step';
 import { LogoUploadStepUnified } from './steps/logo-upload-step-unified';
 import { useUnifiedBrand } from '@/contexts/unified-brand-context';
@@ -190,7 +191,7 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
   };
 
   const handleNext = () => {
-    if (currentStep < 3) {
+    if (currentStep < 4) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -258,7 +259,12 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
       progress += 20;
     }
 
-    // Brand Details (Step 2) - 50%
+    // Brand Archetype (Step 2) - 20%
+    if (brandProfile.brandArchetype) {
+      progress += 20;
+    }
+
+    // Brand Details (Step 3) - 40%
     const requiredFields = [
       'businessName',
       'businessType',
@@ -276,11 +282,11 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
       );
     });
 
-    progress += (completedFields.length / requiredFields.length) * 50;
+    progress += (completedFields.length / requiredFields.length) * 40;
 
-    // Logo Upload (Step 3) - 30%
+    // Logo Upload (Step 4) - 20%
     if (brandProfile.logoDataUrl) {
-      progress += 30;
+      progress += 20;
     }
 
     return Math.round(progress);
@@ -298,6 +304,15 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
         );
       case 2:
         return (
+          <BrandArchetypeStep
+            brandProfile={brandProfile}
+            onUpdate={updateBrandProfile}
+            onNext={handleNext}
+            onPrevious={handlePrevious}
+          />
+        );
+      case 3:
+        return (
           <BrandDetailsStep
             brandProfile={brandProfile}
             updateBrandProfile={updateBrandProfile}
@@ -305,7 +320,7 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
             onPrevious={handlePrevious}
           />
         );
-      case 3:
+      case 4:
         return (
           <LogoUploadStepUnified
             brandProfile={brandProfile}
@@ -339,7 +354,7 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
       {/* Step Navigation */}
       <div className="flex items-center justify-center mb-8">
         <div className="flex items-center space-x-4">
-          {[1, 2, 3].map((step) => (
+          {[1, 2, 3, 4].map((step) => (
             <div key={step} className="flex items-center">
               <div className={`
                 w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium
@@ -352,7 +367,7 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
               `}>
                 {step}
               </div>
-              {step < 3 && (
+              {step < 4 && (
                 <div className={`
                   w-16 h-1 mx-2
                   ${currentStep > step ? 'bg-green-600' : 'bg-gray-300'}

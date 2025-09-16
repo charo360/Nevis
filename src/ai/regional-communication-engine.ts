@@ -352,6 +352,242 @@ export class RegionalCommunicationEngine {
       }
     });
 
+    // GHANA - Accra and surrounding areas
+    this.regionalProfiles.set('ghana', {
+      region: 'Ghana',
+      country: 'Ghana',
+      communicationStyle: {
+        directness: 'direct',
+        formality: 'casual',
+        emotionalExpression: 'high',
+        humorStyle: ['friendly', 'warm', 'storytelling', 'community-based'],
+        persuasionTactics: ['community benefit', 'family value', 'quality emphasis', 'hospitality'],
+        attentionGrabbers: ['Akwaaba!', 'Chale!', 'Omo!', 'Eii!']
+      },
+      advertisingPatterns: [
+        {
+          type: 'Hospitality-Centered',
+          approach: 'Emphasize warm welcome and family-like service',
+          examples: [
+            'Akwaaba to authentic Ghanaian hospitality',
+            'Where every customer is family',
+            'Bringing you the best of Ghana'
+          ],
+          effectiveness: 'high',
+          platforms: ['facebook', 'whatsapp', 'instagram']
+        }
+      ],
+      localSlang: {
+        greetings: ['Akwaaba!', 'Eti sen?', 'Chale!', 'Omo!'],
+        excitement: ['Eii!', 'Chale!', 'Omo yie!', 'Asem ooo!'],
+        approval: ['Perfect!', 'Yie!', 'Nice!', 'Good job!'],
+        emphasis: ['ooo', 'chale', 'omo', 'serious'],
+        callToAction: ['Come try!', 'Akwaaba!', 'Join us!', 'Let\'s go!'],
+        endingPhrases: ['Medaase!', 'See you!', 'Akwaaba!']
+      },
+      culturalNuances: [
+        {
+          aspect: 'Hospitality Culture',
+          importance: 'critical',
+          description: 'Ghanaians value warm, welcoming business interactions',
+          doAndDonts: {
+            do: ['Emphasize welcome', 'Show warmth', 'Reference community'],
+            dont: ['Be cold', 'Rush interactions', 'Ignore cultural values']
+          }
+        }
+      ],
+      businessCommunication: {
+        trustBuilders: ['family business', 'local community', 'authentic service'],
+        valuePropositions: ['quality you can trust', 'service with a smile', 'authentic experience'],
+        communityConnection: ['serving our community', 'your neighborhood choice', 'Ghana proud'],
+        localReferences: ['Accra', 'Ghana', 'West Africa', 'Golden Coast']
+      },
+      socialMediaBehavior: {
+        preferredPlatforms: ['facebook', 'whatsapp', 'instagram'],
+        contentPreferences: ['family stories', 'community events', 'local pride', 'success stories'],
+        engagementStyle: 'warm and conversational',
+        hashtagUsage: 'Mix of English and local terms',
+        visualPreferences: ['bright colors', 'family scenes', 'local settings', 'traditional elements']
+      }
+    });
+
+    // USA - Various regions
+    this.regionalProfiles.set('usa', {
+      region: 'United States',
+      country: 'USA',
+      communicationStyle: {
+        directness: 'direct',
+        formality: 'casual',
+        emotionalExpression: 'medium',
+        humorStyle: ['confident', 'bold', 'achievement-focused', 'competitive'],
+        persuasionTactics: ['value emphasis', 'competitive advantage', 'results focus', 'innovation'],
+        attentionGrabbers: ['Game changer!', 'Level up!', 'This is huge!', 'Don\'t miss out!']
+      },
+      advertisingPatterns: [
+        {
+          type: 'Results-Driven',
+          approach: 'Emphasize outcomes, results, and competitive advantages',
+          examples: [
+            'Get results that matter',
+            'The competitive edge you need',
+            'Game-changing solutions for American businesses'
+          ],
+          effectiveness: 'high',
+          platforms: ['linkedin', 'facebook', 'instagram']
+        }
+      ],
+      localSlang: {
+        greetings: ['Hey there!', 'What\'s up!', 'Ready to rock?'],
+        excitement: ['Awesome!', 'Amazing!', 'Let\'s go!', 'This is it!'],
+        approval: ['Perfect!', 'Exactly!', 'You got it!', 'Spot on!'],
+        emphasis: ['totally', 'absolutely', 'definitely', 'for sure'],
+        callToAction: ['Let\'s do this!', 'Get started now!', 'Ready to level up?'],
+        endingPhrases: ['Let\'s make it happen!', 'Ready when you are!', 'Game on!']
+      },
+      culturalNuances: [
+        {
+          aspect: 'Achievement Culture',
+          importance: 'important',
+          description: 'Americans value success, efficiency, and competitive advantage',
+          doAndDonts: {
+            do: ['Emphasize results', 'Show competitive edge', 'Highlight efficiency'],
+            dont: ['Undersell capabilities', 'Be too modest', 'Avoid direct benefits']
+          }
+        }
+      ],
+      businessCommunication: {
+        trustBuilders: ['proven results', 'industry expertise', 'customer success'],
+        valuePropositions: ['competitive advantage', 'superior quality', 'measurable results'],
+        communityConnection: ['serving America', 'local business', 'community investment'],
+        localReferences: ['USA', 'America', 'local community', 'home grown']
+      },
+      socialMediaBehavior: {
+        preferredPlatforms: ['linkedin', 'facebook', 'instagram', 'twitter'],
+        contentPreferences: ['success stories', 'behind scenes', 'results focus', 'innovation'],
+        engagementStyle: 'confident and results-oriented',
+        hashtagUsage: 'Professional and achievement-focused',
+        visualPreferences: ['professional', 'results-oriented', 'modern', 'success imagery']
+      }
+    });
+
+    // CANADA - Various provinces
+    this.regionalProfiles.set('canada', {
+      region: 'Canada',
+      country: 'Canada',
+      communicationStyle: {
+        directness: 'indirect',
+        formality: 'casual',
+        emotionalExpression: 'medium',
+        humorStyle: ['self-deprecating', 'friendly', 'inclusive', 'polite'],
+        persuasionTactics: ['community benefit', 'inclusive value', 'quality emphasis', 'politeness'],
+        attentionGrabbers: ['Hey there, eh!', 'Beauty opportunity!', 'Right on!', 'Perfect, eh?']
+      },
+      advertisingPatterns: [
+        {
+          type: 'Inclusive-Friendly',
+          approach: 'Emphasize inclusivity, community, and friendly service',
+          examples: [
+            'Serving all Canadians with pride',
+            'Your friendly neighborhood business',
+            'Quality service, Canadian hospitality'
+          ],
+          effectiveness: 'high',
+          platforms: ['facebook', 'instagram', 'linkedin']
+        }
+      ],
+      localSlang: {
+        greetings: ['Hey there!', 'How\'s it going, eh?', 'Beauty day!'],
+        excitement: ['Beauty!', 'Right on!', 'Fantastic!', 'Eh, that\'s great!'],
+        approval: ['Perfect!', 'Beauty!', 'Right on!', 'Good stuff!'],
+        emphasis: ['eh', 'beauty', 'right on', 'for sure'],
+        callToAction: ['Give us a shout!', 'Come on by!', 'Let\'s chat, eh?'],
+        endingPhrases: ['Take care!', 'See you soon!', 'Thanks, eh!']
+      },
+      culturalNuances: [
+        {
+          aspect: 'Politeness Culture',
+          importance: 'critical',
+          description: 'Canadians value politeness, inclusivity, and community spirit',
+          doAndDonts: {
+            do: ['Be polite', 'Include everyone', 'Show community spirit'],
+            dont: ['Be pushy', 'Exclude anyone', 'Be overly aggressive']
+          }
+        }
+      ],
+      businessCommunication: {
+        trustBuilders: ['community service', 'inclusive approach', 'quality with care'],
+        valuePropositions: ['friendly service', 'community-focused', 'quality you can trust'],
+        communityConnection: ['serving Canadians', 'local community', 'coast to coast'],
+        localReferences: ['Canada', 'local community', 'home grown', 'eh']
+      },
+      socialMediaBehavior: {
+        preferredPlatforms: ['facebook', 'instagram', 'linkedin'],
+        contentPreferences: ['community stories', 'inclusive content', 'friendly interactions'],
+        engagementStyle: 'polite and inclusive',
+        hashtagUsage: 'Community-focused and friendly',
+        visualPreferences: ['natural', 'inclusive', 'community-focused', 'friendly']
+      }
+    });
+
+    // INDIA - Various regions with multilingual approach
+    this.regionalProfiles.set('india', {
+      region: 'India',
+      country: 'India',
+      communicationStyle: {
+        directness: 'indirect',
+        formality: 'formal',
+        emotionalExpression: 'high',
+        humorStyle: ['family-centered', 'respectful', 'clever', 'cultural'],
+        persuasionTactics: ['family benefit', 'value emphasis', 'tradition respect', 'community trust'],
+        attentionGrabbers: ['Namaste!', 'Areh yaar!', 'Suniye!', 'Dekho!']
+      },
+      advertisingPatterns: [
+        {
+          type: 'Family-Value-Centered',
+          approach: 'Emphasize family benefits, value, and traditional trust',
+          examples: [
+            'For your family\'s happiness and prosperity',
+            'Trusted by Indian families nationwide',
+            'Value that makes your family proud'
+          ],
+          effectiveness: 'high',
+          platforms: ['facebook', 'whatsapp', 'instagram']
+        }
+      ],
+      localSlang: {
+        greetings: ['Namaste!', 'Kaise ho?', 'Areh yaar!', 'Kya haal hai?'],
+        excitement: ['Zabardast!', 'Bahut accha!', 'Mast!', 'Kamaal!'],
+        approval: ['Accha!', 'Sahi hai!', 'Perfect!', 'Bilkul!'],
+        emphasis: ['bilkul', 'sach mein', 'yaar', 'accha'],
+        callToAction: ['Aaiye!', 'Call karo!', 'Join karo!', 'Dekho!'],
+        endingPhrases: ['Dhanyawad!', 'Milte hain!', 'Jai Hind!']
+      },
+      culturalNuances: [
+        {
+          aspect: 'Family First Culture',
+          importance: 'critical',
+          description: 'Indians prioritize family benefits and collective value',
+          doAndDonts: {
+            do: ['Emphasize family benefits', 'Show respect', 'Build trust'],
+            dont: ['Ignore family values', 'Be too direct', 'Rush decisions']
+          }
+        }
+      ],
+      businessCommunication: {
+        trustBuilders: ['family tradition', 'community trust', 'proven quality'],
+        valuePropositions: ['value for money', 'family benefit', 'trusted quality'],
+        communityConnection: ['serving Indian families', 'community first', 'local trust'],
+        localReferences: ['India', 'Bharat', 'local community', 'traditional values']
+      },
+      socialMediaBehavior: {
+        preferredPlatforms: ['whatsapp', 'facebook', 'instagram'],
+        contentPreferences: ['family stories', 'value emphasis', 'cultural respect', 'community'],
+        engagementStyle: 'respectful and family-oriented',
+        hashtagUsage: 'Mix of English and Hindi terms',
+        visualPreferences: ['family scenes', 'traditional elements', 'bright colors', 'cultural symbols']
+      }
+    });
+
     // Add more regions as needed...
   }
 
@@ -377,6 +613,32 @@ export class RegionalCommunicationEngine {
     if (locationLower.includes('south africa') || locationLower.includes('johannesburg') ||
       locationLower.includes('cape town') || locationLower.includes('durban')) {
       return this.regionalProfiles.get('south_africa');
+    }
+
+    // Ghana detection
+    if (locationLower.includes('ghana') || locationLower.includes('accra') ||
+      locationLower.includes('kumasi') || locationLower.includes('tamale')) {
+      return this.regionalProfiles.get('ghana');
+    }
+
+    // USA detection
+    if (locationLower.includes('usa') || locationLower.includes('united states') ||
+      locationLower.includes('america') || locationLower.includes('new york') ||
+      locationLower.includes('california') || locationLower.includes('texas')) {
+      return this.regionalProfiles.get('usa');
+    }
+
+    // Canada detection
+    if (locationLower.includes('canada') || locationLower.includes('toronto') ||
+      locationLower.includes('vancouver') || locationLower.includes('montreal')) {
+      return this.regionalProfiles.get('canada');
+    }
+
+    // India detection
+    if (locationLower.includes('india') || locationLower.includes('mumbai') ||
+      locationLower.includes('delhi') || locationLower.includes('bangalore') ||
+      locationLower.includes('chennai') || locationLower.includes('kolkata')) {
+      return this.regionalProfiles.get('india');
     }
 
     return null;

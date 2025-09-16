@@ -76,6 +76,16 @@ export function BrandDetailsStep({
     }
   };
 
+  // Check if all required fields are completed
+  const canProceedToNextStep = (): boolean => {
+    return !isRequiredFieldEmpty(brandProfile.businessName) &&
+           !isRequiredFieldEmpty(brandProfile.businessType) &&
+           !isRequiredFieldEmpty(brandProfile.location) &&
+           !isRequiredFieldEmpty(brandProfile.description) &&
+           brandProfile.services.length > 0 &&
+           !brandProfile.services.some(service => isRequiredFieldEmpty(service.name));
+  };
+
   const handleInputChange = async (field: keyof CompleteBrandProfile, value: string) => {
 
     // Update local state immediately
@@ -616,16 +626,38 @@ export function BrandDetailsStep({
       </Card>
 
       {/* Navigation */}
-      <div className="flex justify-between pt-4 px-8">
-        <Button variant="outline" onClick={onPrevious}>
-          <ChevronLeft className="mr-2 h-4 w-4" />
-          Previous Step
-        </Button>
+      <div className="pt-4 px-8">
+        {!canProceedToNextStep() && (
+          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <p className="text-sm text-amber-800 font-medium mb-2">
+              ⚠️ Please complete the following required fields to continue:
+            </p>
+            <ul className="text-xs text-amber-700 space-y-1">
+              {isRequiredFieldEmpty(brandProfile.businessName) && <li>• Business Name (Basic Info tab)</li>}
+              {isRequiredFieldEmpty(brandProfile.businessType) && <li>• Business Type (Basic Info tab)</li>}
+              {isRequiredFieldEmpty(brandProfile.location) && <li>• Location (Basic Info tab)</li>}
+              {isRequiredFieldEmpty(brandProfile.description) && <li>• Business Description (Basic Info tab)</li>}
+              {brandProfile.services.length === 0 && <li>• At least one service/product (Services tab)</li>}
+              {brandProfile.services.some(service => isRequiredFieldEmpty(service.name)) && <li>• Complete all service names (Services tab)</li>}
+            </ul>
+          </div>
+        )}
+        
+        <div className="flex justify-between">
+          <Button variant="outline" onClick={onPrevious}>
+            <ChevronLeft className="mr-2 h-4 w-4" />
+            Previous Step
+          </Button>
 
-        <Button onClick={onNext}>
-          Continue to Logo Upload
-          <ChevronRight className="ml-2 h-4 w-4" />
-        </Button>
+          <Button 
+            onClick={onNext}
+            disabled={!canProceedToNextStep()}
+            className={!canProceedToNextStep() ? 'opacity-50 cursor-not-allowed' : ''}
+          >
+            Continue to Logo Upload
+            <ChevronRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </div>
   );

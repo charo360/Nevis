@@ -35,6 +35,13 @@ export async function POST(request: NextRequest) {
       visualStyle: visualStyle || 'modern',
       aspectRatio: aspectRatio || '1:1'
     });
+    
+    console.log('🌍 Brand Profile Location Check:', {
+      location: brandProfile?.location,
+      hasLocation: !!brandProfile?.location,
+      locationType: typeof brandProfile?.location,
+      brandProfileKeys: Object.keys(brandProfile || {})
+    });
 
     // Generate content with Revo 2.0 Enhanced
     const result = await generateWithRevo20({
@@ -59,6 +66,7 @@ export async function POST(request: NextRequest) {
       headline: result.headline,
       subheadline: result.subheadline,
       caption: result.caption,
+      captionVariations: result.captionVariations,
       cta: result.cta,
       hashtags: result.hashtags,
       businessIntelligence: result.businessIntelligence,

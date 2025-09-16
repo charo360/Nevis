@@ -1,35 +1,30 @@
-// Test database connection endpoint
+// Test database connection endpoint - using Supabase
 import { NextRequest, NextResponse } from 'next/server';
-import { connectToDatabase } from '@/lib/mongodb/config';
 
 export async function GET(request: NextRequest) {
   try {
     console.log('🔄 Testing database connection...');
-    
-    // Test MongoDB connection
-    const { db } = await connectToDatabase();
-    console.log('✅ Database connected successfully');
-    
-    // Test a simple query
-    const collections = await db.listCollections().toArray();
-    console.log('📊 Available collections:', collections.map(c => c.name));
-    
+
+    // This endpoint is disabled - using Supabase instead
+    console.log('✅ Using Supabase - no MongoDB connection needed');
+
     return NextResponse.json({
-      status: 'success',
-      message: 'Database connection successful',
-      collections: collections.map(c => c.name),
-      timestamp: new Date().toISOString()
+      success: true,
+      message: 'Using Supabase - database connection test not applicable',
+      database: 'supabase',
+      timestamp: new Date().toISOString(),
     });
+
   } catch (error) {
-    console.error('❌ Database connection failed:', error);
+    console.error('❌ Database test error:', error);
     return NextResponse.json(
-      { 
-        status: 'error',
-        message: 'Database connection failed',
-        error: error.message,
+      {
+        success: false,
+        message: 'Endpoint disabled - using Supabase',
+        error: 'MongoDB not used in this application',
         timestamp: new Date().toISOString()
       },
-      { status: 500 }
+      { status: 503 }
     );
   }
 }

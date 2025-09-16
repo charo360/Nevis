@@ -5,6 +5,9 @@ import * as React from 'react';
 import Image from "next/image";
 import { Facebook, Instagram, Linkedin, MoreVertical, Pen, RefreshCw, Twitter, CalendarIcon, Download, Loader2, Video, ChevronLeft, ChevronRight, ImageOff, Copy, Eye } from "lucide-react";
 import { toPng } from 'html-to-image';
+import { PerformanceBadgeCompact } from '@/components/ui/performance-badge';
+import { PerformancePredictionService } from '@/services/performance-prediction-service';
+import type { PerformancePrediction } from '@/services/performance-prediction-service';
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -116,6 +119,10 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   const [showVideoDialog, setShowVideoDialog] = React.useState(false);
   const [showImagePreview, setShowImagePreview] = React.useState(false);
   const [previewImageUrl, setPreviewImageUrl] = React.useState<string>('');
+  
+  // Performance prediction state
+  const [performancePrediction, setPerformancePrediction] = React.useState<PerformancePrediction | null>(null);
+  const [isPredictionLoading, setIsPredictionLoading] = React.useState(true);
   // Ensure variants array exists and has at least one item
   const safeVariants = post.variants && post.variants.length > 0 ? post.variants : [{
     platform: (post.platform || 'instagram') as Platform,
@@ -142,6 +149,36 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
     }
   }, [post.date]);
   const { toast } = useToast();
+
+  // Load performance prediction on mount
+  React.useEffect(() => {
+    let mounted = true;
+    
+    const loadPrediction = async () => {
+      try {
+        setIsPredictionLoading(true);
+        const prediction = await PerformancePredictionService.predictPerformance(post, brandProfile);
+        if (mounted) {
+          setPerformancePrediction(prediction);
+        }
+      } catch (error) {
+        console.warn('Performance prediction failed:', error);
+        if (mounted) {
+          setPerformancePrediction(null);
+        }
+      } finally {
+        if (mounted) {
+          setIsPredictionLoading(false);
+        }
+      }
+    };
+
+    loadPrediction();
+    
+    return () => {
+      mounted = false;
+    };
+  }, [post, brandProfile]);
 
   // Platform-specific dimensions - ALL PLATFORMS USE 1:1 FOR HIGHEST QUALITY
   const getPlatformDimensions = React.useCallback((platform: Platform) => {
@@ -412,9 +449,16 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
     <>
       <Card className="flex flex-col w-full">
         <CardHeader className="flex-row items-center justify-between gap-4 p-4">
-          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-            <CalendarIcon className="h-4 w-4" />
-            <span>{formattedDate}</span>
+          <div className="flex items-center gap-3 text-sm font-medium text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <CalendarIcon className="h-4 w-4" />
+              <span>{formattedDate}</span>
+            </div>
+            {/* Performance Prediction Badge */}
+            <PerformanceBadgeCompact 
+              prediction={performancePrediction} 
+              loading={isPredictionLoading}
+            />
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
