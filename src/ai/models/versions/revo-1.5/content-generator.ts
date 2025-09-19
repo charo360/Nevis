@@ -211,6 +211,10 @@ export class Revo15ContentGenerator implements IContentGenerator {
       keyFeatures: keyFeaturesString,
       competitiveAdvantages: competitiveAdvantagesString,
       brandConsistency: brandConsistency || { strictConsistency: false, followBrandColors: true },
+      // Contact information for brand consistency
+      includeContacts: (request as any).includeContacts || false,
+      contactInfo: (request as any).contactInfo || profile.contactInfo || {},
+      websiteUrl: (request as any).websiteUrl || profile.websiteUrl || '',
       // Revo 1.5 enhanced features
       modelConstraints: {
         maxComplexity: 'enhanced',

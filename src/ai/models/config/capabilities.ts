@@ -157,36 +157,36 @@ export const platformCapabilities = {
   },
   Facebook: {
     'revo-1.0': {
-      aspectRatios: ['16:9'],
+      aspectRatios: ['1:1'],
       maxQuality: 7,
       features: ['basic-design', 'page-posts']
     },
     'revo-1.5': {
-      aspectRatios: ['16:9', '1:1'],
+      aspectRatios: ['1:1'],
       maxQuality: 8,
       features: ['enhanced-design', 'page-posts', 'stories']
     }
   },
   Twitter: {
     'revo-1.0': {
-      aspectRatios: ['16:9'],
+      aspectRatios: ['1:1'],
       maxQuality: 7,
       features: ['basic-design', 'tweets']
     },
     'revo-1.5': {
-      aspectRatios: ['16:9', '1:1'],
+      aspectRatios: ['1:1'],
       maxQuality: 8,
       features: ['enhanced-design', 'tweets', 'threads']
     }
   },
   LinkedIn: {
     'revo-1.0': {
-      aspectRatios: ['16:9'],
+      aspectRatios: ['1:1'],
       maxQuality: 7,
       features: ['basic-design', 'professional-posts']
     },
     'revo-1.5': {
-      aspectRatios: ['16:9', '1:1'],
+      aspectRatios: ['1:1'],
       maxQuality: 8,
       features: ['enhanced-design', 'professional-posts', 'articles']
     }

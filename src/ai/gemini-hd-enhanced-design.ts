@@ -16,6 +16,8 @@ import {
   QUALITY_ENHANCEMENT_INSTRUCTIONS
 } from './prompts/advanced-design-prompts';
 
+import { ensureExactDimensions } from './utils/image-dimensions';
+
 /**
  * Helper function to get MIME type from data URI
  */
@@ -43,6 +45,18 @@ export interface GeminiHDEnhancedDesignResult {
   qualityScore: number;
   enhancementsApplied: string[];
   processingTime: number;
+}
+
+
+// Top-level exported wrapper to ensure module-scope export
+export async function generateGeminiHDEnhancedDesignWithFallback(
+  input: GeminiHDEnhancedDesignInput
+): Promise<GeminiHDEnhancedDesignResult> {
+  try {
+    return await generateGeminiHDEnhancedDesign(input);
+  } catch (error) {
+    return await _internalGeminiHDEnhancedFallback(input);
+  }
 }
 
 /**
@@ -97,166 +111,223 @@ export async function generateGeminiHDEnhancedDesign(
     // Build prompt parts array with media inputs like standard generation
     const promptParts: any[] = [{ text: enhancedPrompt }];
 
-    // Add logo if available
+    // Add normalized logo if available to prevent dimension influence
     const logoUrl = input.brandProfile.logoDataUrl || input.brandProfile.logoUrl;
     if (logoUrl) {
-      if (logoUrl.startsWith('data:')) {
-        promptParts.push({
-          media: {
-            url: logoUrl,
-            contentType: getMimeTypeFromDataURI(logoUrl)
+      try {
+        // Import logo normalization service
+        const { LogoNormalizationService } = await import('@/lib/services/logo-normalization-service');
+
+        let normalizedLogo;
+        if (logoUrl.startsWith('data:')) {
+          // Normalize data URL logo
+          normalizedLogo = await LogoNormalizationService.normalizeLogo(
+            logoUrl,
+            { standardSize: 200, format: 'png', quality: 0.9 }
+          );
+        } else if (logoUrl.startsWith('http')) {
+          // Normalize storage URL logo
+          normalizedLogo = await LogoNormalizationService.normalizeLogoFromUrl(
+            logoUrl,
+            { standardSize: 200, format: 'png', quality: 0.9 }
+          );
+        }
+
+        if (normalizedLogo) {
+          promptParts.push({
+            media: {
+              url: normalizedLogo.dataUrl,
+              contentType: 'image/png'
+            }
+          });
+
+          // Add logo normalization instructions to the prompt
+          const logoInstructions = LogoNormalizationService.getLogoPromptInstructions(normalizedLogo);
+          promptParts[0].text += `\n\n${logoInstructions}`;
+          console.log('✅ [Gemini HD] NORMALIZED logo added to generation');
+        }
+      } catch (normalizationError) {
+        console.warn('⚠️ [Gemini HD] Logo normalization failed, using original:', normalizationError);
+        // Fallback to original logo processing
+        if (logoUrl.startsWith('data:')) {
+          promptParts.push({
+            media: {
+              url: logoUrl,
+              contentType: getMimeTypeFromDataURI(logoUrl)
+            }
+          });
+        } else if (logoUrl.startsWith('http')) {
+          // For HTTP URLs (like Supabase storage), we need to fetch and convert to data URL
+          try {
+            const response = await fetch(logoUrl);
+            if (response.ok) {
+              const buffer = await response.arrayBuffer();
+              const base64Data = Buffer.from(buffer).toString('base64');
+              const contentType = response.headers.get('content-type') || 'image/png';
+              const dataUrl = `data:${contentType};base64,${base64Data}`;
+              promptParts.push({
+                media: {
+                  url: dataUrl,
+                  contentType
+                }
+              });
+              console.log('✅ Logo fetched from storage for Gemini HD generation');
+            } else {
+              console.warn(`⚠️  Failed to fetch logo from storage for Gemini HD: ${response.status}`);
+            }
+          } catch (fetchError) {
+            console.error('❌ Error fetching logo from storage for Gemini HD:', fetchError);
           }
-        });
-      } else if (logoUrl.startsWith('http')) {
-        // For HTTP URLs (like Supabase storage), we need to fetch and convert to data URL
-        try {
-          const response = await fetch(logoUrl);
-          if (response.ok) {
-            const buffer = await response.arrayBuffer();
-            const base64Data = Buffer.from(buffer).toString('base64');
-            const contentType = response.headers.get('content-type') || 'image/png';
-            const dataUrl = `data:${contentType};base64,${base64Data}`;
-            promptParts.push({
-              media: {
-                url: dataUrl,
-                contentType
-              }
-            });
-            console.log('✅ Logo fetched from storage for Gemini HD generation');
-          } else {
-            console.warn(`⚠️  Failed to fetch logo from storage for Gemini HD: ${response.status}`);
-          }
-        } catch (fetchError) {
-          console.error('❌ Error fetching logo from storage for Gemini HD:', fetchError);
         }
       }
-    }
 
-    // Add design examples if available and strict consistency is enabled
-    if (input.brandConsistency?.strictConsistency && input.brandProfile.designExamples) {
-      input.brandProfile.designExamples.slice(0, 3).forEach(example => {
-        promptParts.push({
-          media: {
-            url: example,
-            contentType: getMimeTypeFromDataURI(example)
-          }
+      // Add design examples if available and strict consistency is enabled
+      if (input.brandConsistency?.strictConsistency && input.brandProfile.designExamples) {
+        input.brandProfile.designExamples.slice(0, 3).forEach(example => {
+          promptParts.push({
+            media: {
+              url: example,
+              contentType: getMimeTypeFromDataURI(example)
+            }
+          });
         });
+      }
+
+      // Generate image with Gemini 2.5 Flash Image Preview with HD quality settings and platform-specific aspect ratio
+      const { media } = await generateWithRetry({
+        model: 'googleai/gemini-2.5-flash-image-preview',
+        prompt: promptParts,
+        config: {
+          responseModalities: ['TEXT', 'IMAGE'],
+          // Note: Gemini 2.5 Flash Image Preview handles aspect ratio through prompt instructions
+          // The aspect ratio is specified in the prompt itself for better control
+        },
       });
+
+      const imageUrl = media?.url;
+      if (!imageUrl) {
+        throw new Error('No image URL returned from Gemini');
+      }
+
+      enhancementsApplied.push(
+        'Gemini 2.5 Flash Image Preview Generation',
+        'Ultra-High Quality Settings',
+        'Perfect Text Rendering',
+        'Professional Face Generation',
+        'Brand Color Compliance',
+        'Platform Optimization',
+        'HD Quality Assurance'
+      );
+
+      if (input.brandConsistency?.strictConsistency) {
+        enhancementsApplied.push('Strict Design Consistency');
+      }
+      if (input.brandConsistency?.followBrandColors) {
+        enhancementsApplied.push('Brand Color Enforcement');
+      }
+
+
+      // Dimension enforcement (log-only here): ensure 992x1056 exactly
+      {
+        const expectedW = 992, expectedH = 1056;
+        const check = await ensureExactDimensions(imageUrl, expectedW, expectedH);
+        if (!check.ok) {
+          console.warn(`\u26a0\ufe0f [Gemini HD] Generated image dimensions ${check.width}x${check.height} != ${expectedW}x${expectedH}.`);
+        }
+      }
+
+
+      return {
+        imageUrl,
+        qualityScore: 9.7, // Gemini 2.5 Flash Image Preview - Excellent quality
+        enhancementsApplied,
+        processingTime: Date.now() - startTime,
+      };
+    } catch (error) {
+      throw new Error(`Gemini HD generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-
-    // Generate image with Gemini 2.5 Flash Image Preview with HD quality settings and platform-specific aspect ratio
-    const { media } = await generateWithRetry({
-      model: 'googleai/gemini-2.5-flash-image-preview',
-      prompt: promptParts,
-      config: {
-        responseModalities: ['TEXT', 'IMAGE'],
-        // Note: Gemini 2.5 Flash Image Preview handles aspect ratio through prompt instructions
-        // The aspect ratio is specified in the prompt itself for better control
-      },
-    });
-
-    const imageUrl = media?.url;
-    if (!imageUrl) {
-      throw new Error('No image URL returned from Gemini');
-    }
-
-    enhancementsApplied.push(
-      'Gemini 2.5 Flash Image Preview Generation',
-      'Ultra-High Quality Settings',
-      'Perfect Text Rendering',
-      'Professional Face Generation',
-      'Brand Color Compliance',
-      'Platform Optimization',
-      'HD Quality Assurance'
-    );
-
-    if (input.brandConsistency?.strictConsistency) {
-      enhancementsApplied.push('Strict Design Consistency');
-    }
-    if (input.brandConsistency?.followBrandColors) {
-      enhancementsApplied.push('Brand Color Enforcement');
-    }
-
-
-    return {
-      imageUrl,
-      qualityScore: 9.7, // Gemini 2.5 Flash Image Preview - Excellent quality
-      enhancementsApplied,
-      processingTime: Date.now() - startTime,
-    };
-  } catch (error) {
-    throw new Error(`Gemini HD generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
-}
+
 
 /**
- * Build optimized prompt for Gemini 2.5 Flash Image Preview generation
- * Enhanced with best practices for maximum quality and accuracy
- */
-function buildGeminiHDPrompt(input: GeminiHDEnhancedDesignInput, aspectRatio: string): string {
-  const { businessType, platform, visualStyle, imageText, brandProfile, brandConsistency, artifactInstructions } = input;
+   * Build optimized prompt for Gemini 2.5 Flash Image Preview generation
+   * Enhanced with best practices for maximum quality and accuracy
+   */
+  function buildGeminiHDPrompt(input: GeminiHDEnhancedDesignInput, aspectRatio: string): string {
+    const { businessType, platform, visualStyle, imageText, brandProfile, brandConsistency, artifactInstructions } = input;
 
-  // Generate unique variation elements for each request
-  const generationId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  const variationSeed = Math.floor(Math.random() * 1000);
+    // Generate unique variation elements for each request
+    const generationId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const variationSeed = Math.floor(Math.random() * 1000);
 
-  // Random layout variations
-  const layoutVariations = [
-    'asymmetrical composition with dynamic balance',
-    'grid-based layout with clean alignment',
-    'centered composition with radial elements',
-    'diagonal flow with leading lines',
-    'layered depth with foreground/background separation'
-  ];
-  const selectedLayout = layoutVariations[Math.floor(Math.random() * layoutVariations.length)];
+    // Contact information prompt section based on toggle
+    const includeContacts = (brandConsistency as any)?.includeContacts === true;
+    const phone = brandProfile?.contactInfo?.phone;
+    const email = brandProfile?.contactInfo?.email;
+    const address = brandProfile?.contactInfo?.address;
+    const website = (brandProfile as any)?.websiteUrl || '';
+    const hasAnyContact = (!!phone || !!email || !!website);
+    const contactInstructions = includeContacts && hasAnyContact
+      ? `\n**CONTACT INFORMATION INTEGRATION (WHEN AVAILABLE):**\n- Integrate contact details as part of the composition (not plain overlay).\n${phone ? `  - Phone: ${phone}\n` : ''}${email ? `  - Email: ${email}\n` : ''}${website ? `  - Website: www.${(website || '').replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '')}\n` : ''}- Use a small footer bar, corner block, or aligned contact strip.\n- Ensure high readability and balance with headline/subheadline.\n- Prefer concise combos like "Phone  b7 Website" or "Email  b7 Website".\n`
+      : `\n**CONTACT INFORMATION RULE:**\n- Do NOT include phone, email, or website in the image.\n`;
 
-  // Random style modifiers
-  const styleModifiers = [
-    'with subtle gradient overlays',
-    'with bold geometric accents',
-    'with organic flowing elements',
-    'with modern minimalist approach',
-    'with dynamic energy and movement'
-  ];
-  const selectedModifier = styleModifiers[Math.floor(Math.random() * styleModifiers.length)];
+    // Random layout variations
+    const layoutVariations = [
+      'asymmetrical composition with dynamic balance',
+      'grid-based layout with clean alignment',
+      'centered composition with radial elements',
+      'diagonal flow with leading lines',
+      'layered depth with foreground/background separation'
+    ];
+    const selectedLayout = layoutVariations[Math.floor(Math.random() * layoutVariations.length)];
 
-  // Enhanced color instructions optimized for Gemini's color accuracy
-  const colorInstructions = brandProfile.primaryColor && brandProfile.accentColor
-    ? `Primary brand color: ${brandProfile.primaryColor}, Secondary brand color: ${brandProfile.accentColor}. Use these colors prominently and consistently throughout the design.`
-    : 'Use a cohesive, professional color palette with high contrast and modern appeal.';
+    // Random style modifiers
+    const styleModifiers = [
+      'with subtle gradient overlays',
+      'with bold geometric accents',
+      'with organic flowing elements',
+      'with modern minimalist approach',
+      'with dynamic energy and movement'
+    ];
+    const selectedModifier = styleModifiers[Math.floor(Math.random() * styleModifiers.length)];
 
-  // Advanced people inclusion logic for better engagement with HD face rendering
-  const shouldIncludePeople = shouldIncludePeopleInDesign(businessType, imageText, visualStyle);
-  const peopleInstructions = shouldIncludePeople
-    ? 'Include diverse, authentic people (various ethnicities, ages) with PERFECT FACIAL FEATURES - complete faces, symmetrical features, natural expressions, professional poses. Ensure faces are fully visible, well-lit, and anatomically correct with no deformations or missing features.'
-    : 'Focus on clean, minimalist design without people, emphasizing the product/service/message with ultra-sharp details.';
+    // Enhanced color instructions optimized for Gemini's color accuracy
+    const colorInstructions = brandProfile.primaryColor && brandProfile.accentColor
+      ? `Primary brand color: ${brandProfile.primaryColor}, Secondary brand color: ${brandProfile.accentColor}. Use these colors prominently and consistently throughout the design.`
+      : 'Use a cohesive, professional color palette with high contrast and modern appeal.';
 
-  // Enhanced platform-specific optimization
-  const platformSpecs = getPlatformSpecifications(platform);
+    // Advanced people inclusion logic for better engagement with HD face rendering
+    const shouldIncludePeople = shouldIncludePeopleInDesign(businessType, imageText, visualStyle);
+    const peopleInstructions = shouldIncludePeople
+      ? 'Include diverse, authentic people (various ethnicities, ages) with PERFECT FACIAL FEATURES - complete faces, symmetrical features, natural expressions, professional poses. Ensure faces are fully visible, well-lit, and anatomically correct with no deformations or missing features.'
+      : 'Focus on clean, minimalist design without people, emphasizing the product/service/message with ultra-sharp details.';
 
-  // Get platform-specific guidelines
-  const platformGuidelines = PLATFORM_SPECIFIC_GUIDELINES[platform.toLowerCase() as keyof typeof PLATFORM_SPECIFIC_GUIDELINES] || PLATFORM_SPECIFIC_GUIDELINES.instagram;
+    // Enhanced platform-specific optimization
+    const platformSpecs = getPlatformSpecifications(platform);
 
-  // Get business-specific design DNA
-  const businessDNA = BUSINESS_TYPE_DESIGN_DNA[businessType.toLowerCase() as keyof typeof BUSINESS_TYPE_DESIGN_DNA] || BUSINESS_TYPE_DESIGN_DNA.default;
+    // Get platform-specific guidelines
+    const platformGuidelines = PLATFORM_SPECIFIC_GUIDELINES[platform.toLowerCase() as keyof typeof PLATFORM_SPECIFIC_GUIDELINES] || PLATFORM_SPECIFIC_GUIDELINES.instagram;
 
-  // Build rich, diverse design prompt like standard generation
-  const prompt = `You are a world-class creative director and visual designer with expertise in social media marketing, brand design, and visual psychology.
+    // Get business-specific design DNA
+    const businessDNA = BUSINESS_TYPE_DESIGN_DNA[businessType.toLowerCase() as keyof typeof BUSINESS_TYPE_DESIGN_DNA] || BUSINESS_TYPE_DESIGN_DNA.default;
+
+    // Build rich, diverse design prompt like standard generation
+    const prompt = `You are a world-class creative director and visual designer with expertise in social media marketing, brand design, and visual psychology.
 
 **DESIGN BRIEF:**
 Create a professional, high-impact social media design for a ${businessType} business.
 
 🎯 CRITICAL PLATFORM-SPECIFIC DIMENSIONS:
 - Platform: ${platform}
-- REQUIRED ASPECT RATIO: ${aspectRatio}
-- MUST generate image in EXACT ${aspectRatio} aspect ratio for ${platform}
-- Instagram: 1:1 square (1080x1080px) - Perfect for feed posts
-- Facebook: 16:9 landscape (1200x630px) - Optimized for news feed
-- LinkedIn: 16:9 landscape (1200x627px) - Professional networking format
-- Twitter: 16:9 landscape (1200x675px) - Timeline optimization
-- DO NOT generate wrong aspect ratios - this is CRITICAL for platform compatibility
-- ENSURE the generated image matches the platform's native ${aspectRatio} format
-- The image MUST be ${aspectRatio} aspect ratio - this is NON-NEGOTIABLE
+- REQUIRED DIMENSIONS: 992x1056px - ALL PLATFORMS USE THIS EXACT SIZE FOR MAXIMUM QUALITY
+- MUST generate image in EXACT 992x1056px dimensions for ALL platforms
+- Instagram: 992x1056px - Perfect for feed posts
+- Facebook: 992x1056px - Maximum quality, mobile-optimized
+- LinkedIn: 992x1056px - Professional format
+- Twitter: 992x1056px - Timeline optimization
+- DO NOT generate other dimensions - ALL PLATFORMS USE 992x1056px
+- ENSURE the generated image is ALWAYS 992x1056px dimensions
+- The image MUST be 992x1056px - this is NON-NEGOTIABLE
 
 Visual Style: ${visualStyle} | Location: ${brandProfile.location || 'Global'}
 
@@ -273,6 +344,7 @@ ${businessDNA}
 **BRAND GUIDELINES:**
 ${colorInstructions}
 ${peopleInstructions}
+${contactInstructions}
 
 **CREATIVE VARIATION REQUIREMENTS:**
 - Layout Style: Use ${selectedLayout}
@@ -407,179 +479,217 @@ ${artifactInstructions}
 - CRITICAL: ONLY use the exact text: "${imageText}"
 - NOTHING ELSE IS ALLOWED`;
 
-  return prompt;
-}
-
-/**
- * Validate and clean text input for better Gemini 2.5 Flash Image Preview results
- * MINIMAL cleaning to preserve text accuracy
- */
-function validateAndCleanText(text: string): string {
-  if (!text || text.trim().length === 0) {
-    return 'Professional Business Content';
+    return prompt;
   }
 
-  let cleanedText = text.trim();
-
-  // Only remove truly problematic characters, preserve all letters and numbers
-  cleanedText = cleanedText
-    .replace(/[^\w\s\-.,!?'"()&%$#@]/g, '') // Keep more characters, only remove truly problematic ones
-    .replace(/\s+/g, ' ') // Normalize whitespace only
-    .replace(/(.)\1{4,}/g, '$1$1$1') // Only reduce excessive repetition (4+ chars -> 3)
-    .trim();
-
-  // Be more lenient with length - only trim if extremely long
-  if (cleanedText.length > 100) {
-    const words = cleanedText.split(' ');
-    if (words.length > 15) {
-      cleanedText = words.slice(0, 15).join(' ');
+  /**
+   * Validate and clean text input for better Gemini 2.5 Flash Image Preview results
+   * MINIMAL cleaning to preserve text accuracy
+   */
+  function validateAndCleanText(text: string): string {
+    if (!text || text.trim().length === 0) {
+      return 'Professional Business Content';
     }
-  }
 
-  // Only fallback if completely empty
-  if (cleanedText.length === 0) {
-    return 'Professional Business Content';
-  }
+    let cleanedText = text.trim();
 
-  return cleanedText;
-}
+    // Only remove truly problematic characters, preserve all letters and numbers
+    cleanedText = cleanedText
+      .replace(/[^\w\s\-.,!?'"()&%$#@]/g, '') // Keep more characters, only remove truly problematic ones
+      .replace(/\s+/g, ' ') // Normalize whitespace only
+      .replace(/(.)\1{4,}/g, '$1$1$1') // Only reduce excessive repetition (4+ chars -> 3)
+      .trim();
 
-/**
- * Get appropriate aspect ratio for platform (Gemini 2.5 Flash Image Preview)
- * STANDARDIZED: ALL platforms use 1:1 for maximum quality (no stories/reels)
- */
-function getPlatformAspectRatio(platform: string): string {
-  // ALL PLATFORMS - Square format (1:1 aspect ratio) for maximum quality
-  // LinkedIn, Facebook, Twitter, YouTube, Instagram, TikTok, etc.
-  return '1:1'; // 1080x1080 (maximum quality, no cropping needed)
-}
-
-/**
- * Enhanced platform specifications for Gemini 2.5 Flash Image Preview
- */
-function getPlatformSpecifications(platform: string): string {
-  const platformLower = platform.toLowerCase();
-
-  const specs = {
-    'instagram': 'Instagram-optimized design with mobile-first approach, vibrant colors, and engaging visual hierarchy. Perfect for feed posts with high engagement potential.',
-    'linkedin': 'LinkedIn professional design with corporate aesthetics, clean typography, and business-appropriate color schemes. Optimized for B2B engagement.',
-    'facebook': 'Facebook-optimized design with broad audience appeal, news feed optimization, and social sharing considerations.',
-    'twitter': 'Twitter/X-optimized design with concise visual messaging, trending relevance, and platform-specific dimensions.',
-    'youtube': 'YouTube thumbnail design with high contrast, bold text, and click-worthy visual appeal.',
-    'tiktok': 'TikTok-optimized vertical design with Gen Z appeal, trending aesthetics, and mobile-first approach.',
-    'story': 'Story format design with vertical orientation, engaging visual elements, and swipe-friendly layout.',
-    'reel': 'Reel format design with dynamic visual elements, mobile optimization, and short-form content appeal.'
-  };
-
-  for (const [key, spec] of Object.entries(specs)) {
-    if (platformLower.includes(key)) {
-      return spec;
+    // Be more lenient with length - only trim if extremely long
+    if (cleanedText.length > 100) {
+      const words = cleanedText.split(' ');
+      if (words.length > 15) {
+        cleanedText = words.slice(0, 15).join(' ');
+      }
     }
+
+    // Only fallback if completely empty
+    if (cleanedText.length === 0) {
+      return 'Professional Business Content';
+    }
+
+    return cleanedText;
   }
 
-  return 'Professional social media design optimized for maximum engagement and brand consistency.';
-}
+  /**
+   * Get appropriate aspect ratio for platform (Gemini 2.5 Flash Image Preview)
+   * STANDARDIZED: ALL platforms use 1:1 for maximum quality (no stories/reels)
+   */
+  function getPlatformAspectRatio(platform: string): string {
+    // ALL PLATFORMS - Square format (1:1 aspect ratio) for maximum quality
+    // LinkedIn, Facebook, Twitter, YouTube, Instagram, TikTok, etc.
+    return '1:1'; // 992x1056 (maximum quality, no cropping needed)
+  }
 
-/**
- * Determine if people should be included in the design for better engagement
- */
-function shouldIncludePeopleInDesign(businessType: string, imageText: string, visualStyle: string): boolean {
-  const businessLower = businessType.toLowerCase();
-  const textLower = imageText.toLowerCase();
-  const styleLower = visualStyle.toLowerCase();
+  /**
+   * Enhanced platform specifications for Gemini 2.5 Flash Image Preview
+   */
+  function getPlatformSpecifications(platform: string): string {
+    const platformLower = platform.toLowerCase();
 
-  // Business types that typically benefit from human presence
-  const peopleBusinessTypes = [
-    'restaurant', 'cafe', 'fitness', 'gym', 'salon', 'spa', 'healthcare',
-    'dental', 'medical', 'education', 'training', 'consulting', 'coaching',
-    'real estate', 'hospitality', 'hotel', 'travel', 'photography',
-    'wedding', 'event', 'catering', 'childcare', 'elderly care'
-  ];
+    const specs = {
+      'instagram': 'Instagram-optimized design with mobile-first approach, vibrant colors, and engaging visual hierarchy. Perfect for feed posts with high engagement potential.',
+      'linkedin': 'LinkedIn professional design with corporate aesthetics, clean typography, and business-appropriate color schemes. Optimized for B2B engagement.',
+      'facebook': 'Facebook-optimized design with broad audience appeal, news feed optimization, and social sharing considerations.',
+      'twitter': 'Twitter/X-optimized design with concise visual messaging, trending relevance, and platform-specific dimensions.',
+      'youtube': 'YouTube thumbnail design with high contrast, bold text, and click-worthy visual appeal.',
+      'tiktok': 'TikTok-optimized vertical design with Gen Z appeal, trending aesthetics, and mobile-first approach.',
+      'story': 'Story format design with vertical orientation, engaging visual elements, and swipe-friendly layout.',
+      'reel': 'Reel format design with dynamic visual elements, mobile optimization, and short-form content appeal.'
+    };
 
-  // Text content that suggests human interaction
-  const peopleKeywords = [
-    'team', 'staff', 'customer', 'client', 'service', 'experience',
-    'community', 'family', 'people', 'together', 'join', 'meet'
-  ];
+    for (const [key, spec] of Object.entries(specs)) {
+      if (platformLower.includes(key)) {
+        return spec;
+      }
+    }
 
-  // Visual styles that work well with people
-  const peopleStyles = ['lifestyle', 'authentic', 'candid', 'warm', 'friendly'];
+    return 'Professional social media design optimized for maximum engagement and brand consistency.';
+  }
 
-  const includeForBusiness = peopleBusinessTypes.some(type => businessLower.includes(type));
-  const includeForText = peopleKeywords.some(keyword => textLower.includes(keyword));
-  const includeForStyle = peopleStyles.some(style => styleLower.includes(style));
+  /**
+   * Determine if people should be included in the design for better engagement
+   */
+  function shouldIncludePeopleInDesign(businessType: string, imageText: string, visualStyle: string): boolean {
+    const businessLower = businessType.toLowerCase();
+    const textLower = imageText.toLowerCase();
+    const styleLower = visualStyle.toLowerCase();
 
-  return includeForBusiness || includeForText || includeForStyle;
-}
+    // Business types that typically benefit from human presence
+    const peopleBusinessTypes = [
+      'restaurant', 'cafe', 'fitness', 'gym', 'salon', 'spa', 'healthcare',
+      'dental', 'medical', 'education', 'training', 'consulting', 'coaching',
+      'real estate', 'hospitality', 'hotel', 'travel', 'photography',
+      'wedding', 'event', 'catering', 'childcare', 'elderly care'
+    ];
 
-/**
- * Generate enhanced design with Gemini HD and fallback support
- * This function provides automatic fallback to standard Gemini if HD generation fails
- */
-export async function generateGeminiHDEnhancedDesignWithFallback(
-  input: GeminiHDEnhancedDesignInput
-): Promise<GeminiHDEnhancedDesignResult> {
-  try {
-    // First attempt: Gemini 2.5 Flash Image Preview generation
-    return await generateGeminiHDEnhancedDesign(input);
-  } catch (error) {
+    // Text content that suggests human interaction
+    const peopleKeywords = [
+      'team', 'staff', 'customer', 'client', 'service', 'experience',
+      'community', 'family', 'people', 'together', 'join', 'meet'
+    ];
 
+    // Visual styles that work well with people
+    const peopleStyles = ['lifestyle', 'authentic', 'candid', 'warm', 'friendly'];
+
+    const includeForBusiness = peopleBusinessTypes.some(type => businessLower.includes(type));
+    const includeForText = peopleKeywords.some(keyword => textLower.includes(keyword));
+    const includeForStyle = peopleStyles.some(style => styleLower.includes(style));
+
+    return includeForBusiness || includeForText || includeForStyle;
+  }
+
+  /**
+   * Generate enhanced design with Gemini HD and fallback support
+   * This function provides automatic fallback to standard Gemini if HD generation fails
+   */
+  async function _internalGeminiHDEnhancedFallback(
+    input: GeminiHDEnhancedDesignInput
+  ): Promise<GeminiHDEnhancedDesignResult> {
     try {
-      // Fallback: Standard Gemini generation with enhanced prompting
-      const startTime = Date.now();
-      // Get platform-specific aspect ratio for fallback generation
-      const aspectRatio = getPlatformAspectRatio(input.platform);
+      // First attempt: Gemini 2.5 Flash Image Preview generation
+      return await generateGeminiHDEnhancedDesign(input);
+    } catch (error) {
 
-      const enhancedPrompt = buildGeminiHDPrompt(input, aspectRatio);
+      try {
+        // Fallback: Standard Gemini generation with enhanced prompting
+        const startTime = Date.now();
+        // Get platform-specific aspect ratio for fallback generation
+        const aspectRatio = getPlatformAspectRatio(input.platform);
 
-      // Build prompt parts array with media inputs
-      const promptParts: any[] = [{ text: enhancedPrompt }];
+        const enhancedPrompt = buildGeminiHDPrompt(input, aspectRatio);
 
-      // Add logo if available
-      if (input.brandProfile.logoDataUrl) {
-        promptParts.push({
-          media: {
-            url: input.brandProfile.logoDataUrl,
-            contentType: getMimeTypeFromDataURI(input.brandProfile.logoDataUrl)
+        // Build prompt parts array with media inputs
+        const promptParts: any[] = [{ text: enhancedPrompt }];
+
+        // Add normalized logo if available to prevent dimension influence
+        if (input.brandProfile.logoDataUrl) {
+          try {
+            // Import logo normalization service
+            const { LogoNormalizationService } = await import('@/lib/services/logo-normalization-service');
+
+            // Normalize logo to prevent it from affecting design dimensions
+            const normalizedLogo = await LogoNormalizationService.normalizeLogo(
+              input.brandProfile.logoDataUrl,
+              { standardSize: 200, format: 'png', quality: 0.9 }
+            );
+
+            promptParts.push({
+              media: {
+                url: normalizedLogo.dataUrl,
+                contentType: 'image/png'
+              }
+            });
+
+            // Add logo normalization instructions to the prompt
+            const logoInstructions = LogoNormalizationService.getLogoPromptInstructions(normalizedLogo);
+            promptParts[0].text += `\n\n${logoInstructions}`;
+            console.log('✅ [Gemini HD Fallback] NORMALIZED logo added to generation');
+          } catch (normalizationError) {
+            console.warn('⚠️ [Gemini HD Fallback] Logo normalization failed, using original:', normalizationError);
+            // Fallback to original logo processing
+            promptParts.push({
+              media: {
+                url: input.brandProfile.logoDataUrl,
+                contentType: getMimeTypeFromDataURI(input.brandProfile.logoDataUrl)
+              }
+            });
           }
-        });
-      }
+        }
 
-      // Add design examples if available
-      if (input.brandConsistency?.strictConsistency && input.brandProfile.designExamples) {
-        input.brandProfile.designExamples.slice(0, 3).forEach(example => {
-          promptParts.push({
-            media: {
-              url: example,
-              contentType: getMimeTypeFromDataURI(example)
-            }
+        // Add design examples if available
+        if (input.brandConsistency?.strictConsistency && input.brandProfile.designExamples) {
+          input.brandProfile.designExamples.slice(0, 3).forEach(example => {
+            promptParts.push({
+              media: {
+                url: example,
+                contentType: getMimeTypeFromDataURI(example)
+              }
+            });
           });
+        }
+
+        const { media } = await generateWithRetry({
+          model: 'googleai/gemini-2.5-flash-image-preview',
+          prompt: promptParts,
+          config: {
+            responseModalities: ['TEXT', 'IMAGE'],
+            // Note: Gemini 2.5 Flash Image Preview handles aspect ratio through prompt instructions
+            // The aspect ratio is specified in the prompt itself for better control
+          },
         });
+
+        const imageUrl = media?.url;
+        if (!imageUrl) {
+          throw new Error('No image URL returned from Gemini fallback');
+        }
+
+        // Dimension enforcement (log-only here): ensure 992x1056 exactly
+        {
+          const expectedW = 992, expectedH = 1056;
+          const check = await ensureExactDimensions(imageUrl, expectedW, expectedH);
+          if (!check.ok) {
+            console.warn(`\u26a0\ufe0f [Gemini HD Fallback] Generated image dimensions ${check.width}x${check.height} != ${expectedW}x${expectedH}.`);
+          }
+        }
+
+
+        return {
+          imageUrl,
+          qualityScore: 8.5, // Lower score for fallback but still high quality
+          enhancementsApplied: ['Gemini 2.5 Flash Image Preview Fallback', 'Enhanced Prompting', 'Brand Integration'],
+          processingTime: Date.now() - startTime,
+        };
+      } catch (fallbackError) {
+        throw new Error(`Gemini generation completely failed: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}`);
       }
-
-      const { media } = await generateWithRetry({
-        model: 'googleai/gemini-2.5-flash-image-preview',
-        prompt: promptParts,
-        config: {
-          responseModalities: ['TEXT', 'IMAGE'],
-          // Note: Gemini 2.5 Flash Image Preview handles aspect ratio through prompt instructions
-          // The aspect ratio is specified in the prompt itself for better control
-        },
-      });
-
-      const imageUrl = media?.url;
-      if (!imageUrl) {
-        throw new Error('No image URL returned from Gemini fallback');
-      }
-
-      return {
-        imageUrl,
-        qualityScore: 8.5, // Lower score for fallback but still high quality
-        enhancementsApplied: ['Gemini 2.5 Flash Image Preview Fallback', 'Enhanced Prompting', 'Brand Integration'],
-        processingTime: Date.now() - startTime,
-      };
-    } catch (fallbackError) {
-      throw new Error(`Gemini generation completely failed: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}`);
     }
   }
-}
+
+
+

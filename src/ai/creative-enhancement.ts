@@ -2554,7 +2554,14 @@ export async function generateBusinessSpecificCaption(
   platform: string,
   contentGoal: 'awareness' | 'consideration' | 'conversion' | 'retention' = 'awareness',
   trendingData?: any,
-  businessIntelligence?: any
+  businessIntelligence?: any,
+  contactInfo?: {
+    includeContacts?: boolean;
+    phone?: string;
+    email?: string;
+    address?: string;
+    websiteUrl?: string;
+  }
 ): Promise<{ caption: string; engagementHooks: string[]; callToAction: string }> {
 
   // Use the unified system but return only caption components
@@ -2562,9 +2569,29 @@ export async function generateBusinessSpecificCaption(
     businessType, businessName, location, businessDetails, platform, contentGoal, trendingData, businessIntelligence
   );
 
+  // If contact information should be included, modify the caption and call to action
+  let finalCaption = unifiedContent.caption;
+  let finalCallToAction = unifiedContent.callToAction;
+
+  if (contactInfo?.includeContacts) {
+    // Add contact information to the caption if it makes sense
+    if (contactInfo.phone && !finalCaption.includes(contactInfo.phone)) {
+      finalCallToAction = `Call us at ${contactInfo.phone} or ${finalCallToAction}`;
+    }
+    if (contactInfo.email && !finalCaption.includes(contactInfo.email)) {
+      finalCallToAction = `Email us at ${contactInfo.email} or ${finalCallToAction}`;
+    }
+    if (contactInfo.websiteUrl && !finalCaption.includes(contactInfo.websiteUrl)) {
+      finalCallToAction = `Visit ${contactInfo.websiteUrl} or ${finalCallToAction}`;
+    }
+    if (contactInfo.address && !finalCaption.includes(contactInfo.address)) {
+      finalCaption += `\n\n📍 Located at ${contactInfo.address}`;
+    }
+  }
+
   return {
-    caption: unifiedContent.caption,
+    caption: finalCaption,
     engagementHooks: unifiedContent.engagementHooks,
-    callToAction: unifiedContent.callToAction
+    callToAction: finalCallToAction
   };
 }

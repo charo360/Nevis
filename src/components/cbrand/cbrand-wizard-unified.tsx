@@ -15,8 +15,11 @@ interface CbrandWizardUnifiedProps {
   brandId?: string | null;
 }
 
-export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps) {
-  console.log('🚀 CbrandWizardUnified component rendered');
+export function CbrandWizardUnified({ mode: modeProp, brandId }: CbrandWizardUnifiedProps) {
+  // Default to 'create' mode if no mode is specified
+  const mode = modeProp || 'create';
+
+  console.log('🚀 CbrandWizardUnified component rendered:', { mode, brandId });
   const [currentStep, setCurrentStep] = useState(1);
   const [brandProfile, setBrandProfile] = useState<CompleteBrandProfile>({
     businessName: '',
@@ -49,16 +52,26 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
   const hasInitializedRef = useRef(false);
   const [isDirty, setIsDirty] = useState(false);
 
+  // Generate unique session ID for create mode (persists across re-renders)
+  const sessionIdRef = useRef<string>();
+  if (!sessionIdRef.current) {
+    sessionIdRef.current = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  }
+
   // Draft persistence per brand (survives refresh and step changes)
   const draftKey = useMemo(() => {
+    // In create mode, use unique session ID to avoid loading other brand drafts
+    if (mode === 'create') {
+      return `BRAND_DRAFT_new_${sessionIdRef.current}`;
+    }
     return `BRAND_DRAFT_${brandId || currentBrand?.id || 'new'}`;
-  }, [brandId, currentBrand?.id]);
+  }, [brandId, currentBrand?.id, mode]);
 
   const saveDraft = (profile: CompleteBrandProfile) => {
     try {
       const payload = { ts: Date.now(), profile };
       localStorage.setItem(draftKey, JSON.stringify(payload));
-    } catch {}
+    } catch { }
   };
 
   const loadDraft = (): CompleteBrandProfile | null => {
@@ -76,7 +89,7 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
   const clearDraft = (key?: string) => {
     try {
       localStorage.removeItem(key || draftKey);
-    } catch {}
+    } catch { }
   };
   const { user } = useAuth();
   const router = useRouter();
@@ -91,8 +104,24 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
         // 1) Prefer draft if present (user edits not yet saved to DB)
         const draft = loadDraft();
         if (draft) {
-          console.log('📝 Loaded draft brand profile from local storage');
-          setBrandProfile(draft);
+          console.log('📝 Loaded draft brand profile from local storage:', {
+            businessName: draft.businessName,
+            hasId: !!draft.id,
+            id: draft.id,
+            mode
+          });
+
+          // In create mode, ensure we remove any ID from the draft to prevent updates
+          if (mode === 'create') {
+            const cleanDraft = { ...draft };
+            delete cleanDraft.id;
+            console.log('🧹 Cleaned ID from draft in create mode');
+            setBrandProfile(cleanDraft);
+          } else {
+            console.log('✅ Preserving ID in edit mode:', draft.id);
+            setBrandProfile(draft);
+          }
+
           hasInitializedRef.current = true;
           return;
         }
@@ -103,11 +132,21 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
           console.log('🔄 Loading brand for edit mode:', brandId);
           // For now, we'll use the current brand from context if it matches
           if (currentBrand && currentBrand.id === brandId) {
-            console.log('✅ Using current brand from context for edit');
+            console.log('✅ Using current brand from context for edit:', {
+              businessName: currentBrand.businessName,
+              id: currentBrand.id,
+              hasId: !!currentBrand.id
+            });
             setBrandProfile(currentBrand);
             saveDraft(currentBrand);
             hasInitializedRef.current = true;
             return;
+          } else {
+            console.warn('⚠️ Edit mode but current brand ID does not match:', {
+              requestedBrandId: brandId,
+              currentBrandId: currentBrand?.id,
+              currentBrandName: currentBrand?.businessName
+            });
           }
         }
 
@@ -162,12 +201,14 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
       return merged;
     });
 
-    // If this is a color update and we have a current brand with an ID, save to MongoDB immediately
+    // If this is a color update, only auto-save when editing an existing brand (NEVER in create mode)
     const isColorUpdate = updates.primaryColor || updates.accentColor || updates.backgroundColor;
-    if (isColorUpdate && currentBrand?.id) {
+    const isCreateMode = (mode === 'create');
+    const targetBrandId = brandId || currentBrand?.id;
+    if (isColorUpdate && !isCreateMode && targetBrandId) {
       try {
-        console.log('🎨 Color update detected, saving to MongoDB:', {
-          brandId: currentBrand.id,
+        console.log('🎨 Color update detected in EDIT mode, saving to DB:', {
+          brandId: targetBrandId,
           updates: {
             primaryColor: updates.primaryColor,
             accentColor: updates.accentColor,
@@ -175,18 +216,23 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
           }
         });
 
-        // Save color changes to MongoDB immediately
-        await updateProfile(currentBrand.id, updates);
+        // Save color changes to DB immediately for the brand being edited
+        await updateProfile(targetBrandId, updates);
 
-        // Update the current brand in the unified context with new colors
-        const updatedBrand = { ...currentBrand, ...updates };
-        selectBrand(updatedBrand);
+        // Update the current brand in the unified context if it matches the edited brand
+        if (currentBrand?.id === targetBrandId) {
+          const updatedBrand = { ...currentBrand, ...updates };
+          selectBrand(updatedBrand);
+        }
 
-        console.log('✅ Color changes saved to MongoDB and context updated');
+        console.log('✅ Color changes saved (edit mode)');
       } catch (error) {
-        console.error('❌ Failed to save color changes to MongoDB:', error);
+        console.error('❌ Failed to save color changes (edit mode):', error);
         // Don't throw error to avoid disrupting user experience
       }
+    } else if (isColorUpdate && isCreateMode) {
+      // In create mode, DO NOT save to DB or touch the active brand; keep it local to the wizard draft
+      console.log('ℹ️ Skipping DB color auto-save because we are in CREATE mode. No mutation to active brand.');
     }
   };
 
@@ -216,7 +262,9 @@ export function CbrandWizardUnified({ mode, brandId }: CbrandWizardUnifiedProps)
       });
       selectBrand(immediateProfile);
 
-      // Clear drafts (both new and specific profile) after successful save
+      // Clear current draft after successful save
+      clearDraft(draftKey);
+      // Also clear any old generic drafts that might exist
       clearDraft(`BRAND_DRAFT_new`);
       clearDraft(`BRAND_DRAFT_${profileId}`);
 

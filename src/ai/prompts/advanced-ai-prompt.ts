@@ -308,6 +308,24 @@ WEBSITE REFERENCE GUIDELINES:
 - No website URL provided - focus on other CTAs (DM, call, visit location)
 {{/if}}
 
+CONTACT INFORMATION INTEGRATION:
+{{#if includeContacts}}
+{{#if contactInfo}}
+- Contact information available for inclusion in designs:
+{{#if contactInfo.phone}}- Phone: {{{contactInfo.phone}}}{{/if}}
+{{#if contactInfo.email}}- Email: {{{contactInfo.email}}}{{/if}}
+{{#if contactInfo.address}}- Address: {{{contactInfo.address}}}{{/if}}
+- Include contact information naturally in the design when it enhances the message
+- Use contact info in call-to-actions when appropriate (e.g., "Call us at [phone]", "Email us at [email]")
+- Don't force contact info into every post - use contextually when it makes sense
+- Examples: "Call [phone] for more info", "Email [email] to book", "Visit us at [address]"
+{{else}}
+- No contact information provided - focus on other CTAs
+{{/if}}
+{{else}}
+- Contact information toggle is disabled - do not include phone, email, or address in designs
+{{/if}}
+
 LANGUAGE REQUIREMENTS:
 🌍 TEXT CLARITY: Generate clear, readable text
 {{#if useLocalLanguage}}

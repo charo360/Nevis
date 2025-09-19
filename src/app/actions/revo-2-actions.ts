@@ -30,11 +30,12 @@ export async function generateRevo2ContentAction(
       businessType: brandProfile.businessType || 'Business',
       platform,
       visualStyle: options?.visualStyle || 'modern',
-      imageText: prompt || `${brandProfile.businessName || brandProfile.businessType} - Premium Content`,
+      imageText: prompt || '',
       brandProfile,
       aspectRatio: options?.aspectRatio || '1:1',
       includePeopleInDesigns: options?.includePeopleInDesigns || false,
-      useLocalLanguage: options?.useLocalLanguage || false
+      useLocalLanguage: options?.useLocalLanguage || false,
+      includeContacts: !!brandConsistency?.includeContacts
     };
 
     // Generate with Revo 2.0
@@ -78,6 +79,7 @@ export async function generateRevo2CreativeAssetAction(
   brandProfile: BrandProfile,
   platform: Platform,
   prompt: string,
+  brandConsistency: BrandConsistencyPreferences,
   options?: {
     aspectRatio?: '1:1' | '16:9' | '9:16' | '21:9' | '4:5';
     visualStyle?: 'modern' | 'minimalist' | 'bold' | 'elegant' | 'playful' | 'professional';
@@ -102,7 +104,8 @@ export async function generateRevo2CreativeAssetAction(
       brandProfile,
       aspectRatio: options?.aspectRatio || '1:1',
       includePeopleInDesigns: options?.includePeopleInDesigns || false,
-      useLocalLanguage: false
+      useLocalLanguage: false,
+      includeContacts: !!brandConsistency?.includeContacts
     };
 
     const result = await generateWithRevo20(revo2Options);
@@ -171,12 +174,12 @@ export async function testRevo2AvailabilityAction(): Promise<{
 }> {
   try {
     const isAvailable = await testRevo20Availability();
-    
+
     return {
       available: isAvailable,
       model: 'Revo 2.0 (Gemini 2.5 Flash Image Preview)',
-      message: isAvailable 
-        ? 'Revo 2.0 is available and ready!' 
+      message: isAvailable
+        ? 'Revo 2.0 is available and ready!'
         : 'Revo 2.0 is not available. Check API key and model access.'
     };
   } catch (error) {

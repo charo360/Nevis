@@ -167,7 +167,7 @@ function buildDALLE3Prompt(input: OpenAIEnhancedDesignInput): string {
 
 **DESIGN BRIEF:**
 Create a professional, high-impact social media design for a ${businessType} business.
-Target Platform: ${platform} | Aspect Ratio: 1:1 (1080x1080px)
+Target Platform: ${platform} | Dimensions: 992x1056px
 Visual Style: ${visualStyle} | Location: ${brandProfile.location || 'Global'}
 
 **TEXT CONTENT TO INCLUDE:**

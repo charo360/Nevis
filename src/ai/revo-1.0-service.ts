@@ -28,6 +28,8 @@ import {
 // Advanced features integration (simplified for now)
 // TODO: Import advanced features from Revo 1.5 when available
 
+import { ensureExactDimensions } from './utils/image-dimensions';
+
 // Helper functions for advanced design generation
 function getBusinessDesignDNA(businessType: string): string {
   const designDNA: Record<string, string> = {
@@ -1475,16 +1477,16 @@ function getPlatformAspectRatio(platform: string): '1:1' | '16:9' | '9:16' | '21
 
 /**
  * Get platform-specific dimension text for prompts
- * MOBILE-FIRST: Optimized for 1080x1080px square format
+ * MOBILE-FIRST: Optimized for 992x1056px format
  */
 function getPlatformDimensionsText(aspectRatio: string): string {
   switch (aspectRatio) {
-    case '1:1': return 'Square format - 1080x1080px HD (Mobile-optimized)';
-    case '16:9': return 'Square format - 1080x1080px HD (Mobile-optimized)';
+    case '1:1': return '992x1056px HD (Mobile-optimized)';
+    case '16:9': return '992x1056px HD (Mobile-optimized)';
     case '9:16': return 'Portrait format - 1080x1920px (Stories/Reels)';
-    case '4:5': return 'Square format - 1080x1080px HD (Mobile-optimized)';
-    case '21:9': return 'Square format - 1080x1080px HD (Mobile-optimized)';
-    default: return 'Square format - 1080x1080px HD (Mobile-optimized)';
+    case '4:5': return '992x1056px HD (Mobile-optimized)';
+    case '21:9': return '992x1056px HD (Mobile-optimized)';
+    default: return '992x1056px HD (Mobile-optimized)';
   }
 }
 
@@ -1506,6 +1508,13 @@ export async function generateRevo10Content(input: {
   currentDate: string;
   primaryColor?: string;
   visualStyle?: string;
+  includeContacts?: boolean;
+  contactInfo?: {
+    phone?: string;
+    email?: string;
+    address?: string;
+  };
+  websiteUrl?: string;
 }) {
   try {
     // Auto-detect platform-specific aspect ratio
@@ -1560,6 +1569,16 @@ export async function generateRevo10Content(input: {
       },
     });
 
+    // Debug logging for contact information
+    console.log('🔍 [Revo 1.0] Contact Information Debug:', {
+      includeContacts: input.includeContacts,
+      contactInfo: input.contactInfo,
+      websiteUrl: input.websiteUrl,
+      hasPhone: !!input.contactInfo?.phone,
+      hasEmail: !!input.contactInfo?.email,
+      hasAddress: !!input.contactInfo?.address
+    });
+
     // Build the content generation prompt with enhanced brand context
     const contentPrompt = revo10Prompts.CONTENT_USER_PROMPT_TEMPLATE
       .replace('{businessName}', input.businessName)
@@ -1573,7 +1592,25 @@ export async function generateRevo10Content(input: {
       .replace('{services}', input.services || '')
       .replace('{keyFeatures}', input.keyFeatures || '')
       .replace('{competitiveAdvantages}', input.competitiveAdvantages || '')
-      .replace('{contentThemes}', Array.isArray(input.contentThemes) ? input.contentThemes.join(', ') : 'general business content');
+      .replace('{contentThemes}', Array.isArray(input.contentThemes) ? input.contentThemes.join(', ') : 'general business content')
+      .replace('{includeContacts}', input.includeContacts ? 'true' : 'false')
+      .replace('{contactPhone}', input.contactInfo?.phone || '')
+      .replace('{contactEmail}', input.contactInfo?.email || '')
+      .replace('{contactAddress}', input.contactInfo?.address || '')
+      .replace('{websiteUrl}', input.websiteUrl || '');
+
+    // Debug logging for the final prompt
+    console.log('🔍 [Revo 1.0] Final Prompt Contact Section:', {
+      includeContactsInPrompt: contentPrompt.includes('Include Contacts: true'),
+      contactPhoneInPrompt: contentPrompt.includes(input.contactInfo?.phone || ''),
+      contactEmailInPrompt: contentPrompt.includes(input.contactInfo?.email || ''),
+      contactAddressInPrompt: contentPrompt.includes(input.contactInfo?.address || ''),
+      websiteUrlInPrompt: contentPrompt.includes(input.websiteUrl || '')
+    });
+
+    // Show the actual contact section of the prompt
+    const contactSection = contentPrompt.split('Contact Information:')[1]?.split('Requirements:')[0] || 'NOT FOUND';
+    console.log('🔍 [Revo 1.0] Contact Section of Prompt:', contactSection);
 
 
     // 🎨 CREATIVE CAPTION GENERATION: Apply creative enhancement system
@@ -1640,7 +1677,14 @@ export async function generateRevo10Content(input: {
       input.platform,
       'awareness',
       trendingEnhancement,
-      advancedContent
+      advancedContent,
+      {
+        includeContacts: input.includeContacts,
+        phone: input.contactInfo?.phone,
+        email: input.contactInfo?.email,
+        address: input.contactInfo?.address,
+        websiteUrl: input.websiteUrl
+      }
     );
 
 
@@ -1773,6 +1817,17 @@ Remember: You're a creative human designer, not an AI. Think with imagination an
   }
 }
 
+
+// Ensure website URL is displayed as www.example.com (strip protocol, add www., no trailing slash)
+function ensureWwwWebsiteUrl(url?: string): string {
+  if (!url) return '';
+  const base = url
+    .replace(/^https?:\/\//, '')
+    .replace(/^www\./, '')
+    .replace(/\/$/, '');
+  return base ? `www.${base}` : '';
+}
+
 /**
  * Generate image using Revo 1.0 with Gemini 2.5 Flash Image Preview
  */
@@ -1793,6 +1848,12 @@ export async function generateRevo10Image(input: {
   callToAction?: string;
   realTimeContext?: any;
   creativeContext?: any; // Add creative context from content generation
+  includeContacts?: boolean;
+  contactInfo?: {
+    phone?: string;
+    email?: string;
+  };
+  websiteUrl?: string;
 }) {
   try {
 
@@ -1959,8 +2020,8 @@ WHAT TO INCLUDE:
 - **Style-appropriate typography** and layout
 
 TECHNICAL REQUIREMENTS:
-- Resolution: 1080x1080 pixels HD (Mobile-optimized)
-- Format: Square (1:1) - Perfect for all mobile devices
+- Resolution: 992x1056 pixels HD (Mobile-optimized)
+- Format: 992x1056px - Perfect for all mobile devices
 - Text must be readable on mobile screens
 - Logo integration should look natural
 - Optimized for Instagram, Facebook, Twitter, LinkedIn mobile viewing
@@ -1979,6 +2040,24 @@ TECHNICAL REQUIREMENTS:
     if (input.creativeContext) {
     }
 
+
+    // Contact information integration based on toggle (phone, email, website only)
+    try {
+      const includeContacts = input.includeContacts === true;
+      const phone = input.contactInfo?.phone;
+      const email = input.contactInfo?.email;
+      const website = input.websiteUrl || '';
+      const hasAnyContact = (!!phone || !!email || !!website);
+
+      const contactInstructions = includeContacts && hasAnyContact
+        ? `\n\nCONTACT INFORMATION INTEGRATION (WHEN AVAILABLE):\n- Integrate contact details as part of the composition (not plain overlay).\n${phone ? `  - Phone: ${phone}\n` : ''}${email ? `  - Email: ${email}\n` : ''}${website ? `  - Website: ${ensureWwwWebsiteUrl(website)}\n` : ''}- Use a small footer bar, corner block, or aligned contact strip.\n- Ensure high readability and balance with headline/subheadline.\n- Prefer concise combos like \"Phone \u00b7 Website\" or \"Email \u00b7 Website\".\n`
+        : `\n\nCONTACT INFORMATION RULE:\n- Do NOT include phone, email, or website in the image.\n`;
+
+      imagePrompt += contactInstructions;
+    } catch (e) {
+      console.warn('Revo 1.0: Contact info prompt augmentation skipped:', e);
+    }
+
     // Prepare the generation request with logo if available
     const generationParts = [
       'You are a skilled graphic designer who creates visually appealing social media designs. Focus on creating designs that people actually want to engage with - clean, modern, and appealing. Keep it simple and focus on visual impact.',
@@ -1990,7 +2069,7 @@ TECHNICAL REQUIREMENTS:
     const logoDataUrl = input.logoDataUrl;
     const logoStorageUrl = (input as any).logoUrl || (input as any).logo_url;
     const logoUrl = logoDataUrl || logoStorageUrl;
-    
+
     console.log('🔍 Revo 1.0 Logo availability check:', {
       businessName: input.businessName,
       hasLogoDataUrl: !!logoDataUrl,
@@ -1999,13 +2078,13 @@ TECHNICAL REQUIREMENTS:
       logoStorageUrlLength: logoStorageUrl?.length || 0,
       finalLogoUrl: logoUrl ? logoUrl.substring(0, 100) + '...' : 'None'
     });
-    
+
     if (logoUrl) {
       console.log('🎨 Revo 1.0: Processing brand logo for generation using:', logoDataUrl ? 'base64 data' : 'storage URL');
-      
+
       let logoBase64Data = '';
       let logoMimeType = 'image/png';
-      
+
       if (logoUrl.startsWith('data:')) {
         // Handle data URL (base64 format)
         const logoMatch = logoUrl.match(/^data:([^;]+);base64,(.+)$/);
@@ -2030,35 +2109,71 @@ TECHNICAL REQUIREMENTS:
           console.error('❌ Revo 1.0: Error fetching logo from storage:', fetchError);
         }
       }
-      
-      // Add logo to generation if we have valid base64 data
-      if (logoBase64Data) {
-        generationParts.push({
-          inlineData: {
-            data: logoBase64Data,
-            mimeType: logoMimeType
-          }
-        });
 
-        // Update the prompt to reference the provided logo with VERY STRONG instructions
-        const logoPrompt = `\n\n🎯 CRITICAL LOGO REQUIREMENT - THIS IS MANDATORY:
+      // Normalize logo before adding to generation to prevent dimension influence
+      if (logoBase64Data) {
+        try {
+          // Import logo normalization service
+          const { LogoNormalizationService } = await import('@/lib/services/logo-normalization-service');
+
+          // Normalize logo to prevent it from affecting design dimensions
+          const normalizedLogo = await LogoNormalizationService.normalizeLogo(
+            `data:${logoMimeType};base64,${logoBase64Data}`,
+            { standardSize: 200, format: 'png', quality: 0.9 }
+          );
+
+          // Extract normalized base64 data
+          const normalizedBase64 = normalizedLogo.dataUrl.split(',')[1];
+
+          generationParts.push({
+            inlineData: {
+              data: normalizedBase64,
+              mimeType: 'image/png'
+            }
+          });
+
+          // Get AI prompt instructions for normalized logo
+          const logoInstructions = LogoNormalizationService.getLogoPromptInstructions(normalizedLogo);
+
+          // Update the prompt with normalized logo instructions
+          const logoPrompt = `\n\n🎯 CRITICAL LOGO REQUIREMENT - THIS IS MANDATORY:
 You MUST include the exact brand logo image that was provided above in your design. This is not optional.
+
+${logoInstructions}
 
 LOGO INTEGRATION RULES:
 ✅ REQUIRED: Place the provided logo prominently in the design (top corner, header, or center)
 ✅ REQUIRED: Use the EXACT logo image provided - do not modify, recreate, or stylize it
 ✅ REQUIRED: Make the logo clearly visible and readable
-✅ REQUIRED: Size the logo appropriately (not too small, not too large)
+✅ REQUIRED: Size the logo appropriately - not too small, not too large
 ✅ REQUIRED: Ensure good contrast against the background
+✅ CRITICAL: Design dimensions must remain exactly 992x1056px regardless of logo size
 
 ❌ FORBIDDEN: Do NOT create a new logo
 ❌ FORBIDDEN: Do NOT ignore the provided logo
 ❌ FORBIDDEN: Do NOT make the logo too small to see
 ❌ FORBIDDEN: Do NOT place logo where it can't be seen
+❌ FORBIDDEN: Do NOT let logo size influence overall design dimensions
 
 The client specifically requested their brand logo to be included. FAILURE TO INCLUDE THE LOGO IS UNACCEPTABLE.`;
-        generationParts[1] = imagePrompt + logoPrompt;
-        console.log('✅ Revo 1.0: STRONG logo integration prompt added');
+          generationParts[1] = imagePrompt + logoPrompt;
+          console.log('✅ Revo 1.0: NORMALIZED logo integration prompt added');
+        } catch (normalizationError) {
+          console.warn('⚠️ Logo normalization failed, using original:', normalizationError);
+          // Fallback to original logo processing
+          generationParts.push({
+            inlineData: {
+              data: logoBase64Data,
+              mimeType: logoMimeType
+            }
+          });
+
+          const logoPrompt = `\n\n🎯 CRITICAL LOGO REQUIREMENT - THIS IS MANDATORY:
+You MUST include the exact brand logo image that was provided above in your design. This is not optional.
+✅ CRITICAL: Design dimensions must remain exactly 992x1056px regardless of logo size.`;
+          generationParts[1] = imagePrompt + logoPrompt;
+          console.log('✅ Revo 1.0: FALLBACK logo integration prompt added');
+        }
       } else {
         console.error('❌ Revo 1.0: Logo processing failed:', {
           originalUrl: logoUrl.substring(0, 100),
@@ -2074,9 +2189,41 @@ The client specifically requested their brand logo to be included. FAILURE TO IN
       });
     }
 
-    const result = await model.generateContent(generationParts);
+    // Retry logic for 503 errors
+    const maxRetries = 3;
+    let lastError: any;
+    let result: any;
+    let response: any;
 
-    const response = await result.response;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        result = await model.generateContent(generationParts);
+        response = await result.response;
+        break; // Success, exit retry loop
+      } catch (error: any) {
+        lastError = error;
+        console.error(`❌ [Revo 1.0] Attempt ${attempt} failed:`, error.message);
+
+        // Check if it's a 503 error and we have retries left
+        if (error.message && error.message.includes('503') && attempt < maxRetries) {
+          const waitTime = Math.pow(2, attempt) * 1000; // Exponential backoff
+          console.log(`⏳ [Revo 1.0] Waiting ${waitTime}ms before retry ${attempt + 1}...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          continue;
+        }
+
+        // If it's the last attempt or not a 503 error, throw
+        if (attempt === maxRetries) {
+          if (error.message && error.message.includes('503')) {
+            throw new Error('Revo 1.0 is super busy right now! 🚀 Try Revo 2.0 instead - it\'s working perfectly and ready to create amazing content!');
+          }
+          if (error.message && error.message.includes('500')) {
+            throw new Error('Revo 1.0 needs a quick tech break! 🔧 Switch to Revo 2.0 for fantastic results while we wait.');
+          }
+          throw new Error('Revo 1.0 is taking a breather! 😴 Good news: Revo 2.0 is wide awake and ready to help you create stunning designs!');
+        }
+      }
+    }
 
     // Extract image data from Gemini response
     const parts = response.candidates?.[0]?.content?.parts || [];
@@ -2113,13 +2260,52 @@ The client specifically requested their brand logo to be included. FAILURE TO IN
       throw new Error(`No image data generated by ${REVO_1_0_MODEL}. Response had ${parts.length} parts.`);
     }
 
+    // Dimension enforcement: ensure 992x1056 exactly; attempt one strict regeneration if mismatch
+    {
+      const expectedW = 992, expectedH = 1056;
+      const check = await ensureExactDimensions(imageUrl, expectedW, expectedH);
+      if (!check.ok) {
+        console.warn(`\u26a0\ufe0f Revo 1.0: Generated image dimensions ${check.width}x${check.height} != ${expectedW}x${expectedH}. Attempting strict regeneration once...`);
+        try {
+          const strictParts = [...generationParts];
+          strictParts[1] = (strictParts[1] || '') + `\nSTRICT DIMENSION ENFORCEMENT: Output must be exactly ${expectedW}x${expectedH} pixels. Do not adjust canvas based on logo.`;
+          const strictResult = await model.generateContent(strictParts);
+          const strictResponse = await strictResult.response;
+          const strictPartsOut = strictResponse.candidates?.[0]?.content?.parts || [];
+          let strictImageUrl = '';
+          for (const part of strictPartsOut) {
+            if ((part as any).inlineData) {
+              const imageData = (part as any).inlineData.data;
+              const mimeType = (part as any).inlineData.mimeType;
+              strictImageUrl = `data:${mimeType};base64,${imageData}`;
+              break;
+            }
+          }
+          if (strictImageUrl) {
+            const check2 = await ensureExactDimensions(strictImageUrl, expectedW, expectedH);
+            if (check2.ok) {
+              imageUrl = strictImageUrl;
+              console.log('✅ Revo 1.0: Strict regeneration produced correct dimensions.');
+            } else {
+              console.warn(`\u26a0\ufe0f Revo 1.0: Strict regeneration still mismatched (${check2.width}x${check2.height}). Using first image.`);
+            }
+          } else {
+            console.warn('\u26a0\ufe0f Revo 1.0: Strict regeneration returned no image data.');
+          }
+        } catch (strictErr) {
+          console.warn('\u26a0\ufe0f Revo 1.0: Strict regeneration failed:', strictErr);
+        }
+      }
+    }
+
+
 
     const aspectRatio = getPlatformAspectRatio(input.platform);
 
     return {
       imageUrl: imageUrl,
-      aspectRatio: '1:1', // Force square format for mobile optimization
-      resolution: '1080x1080',
+      aspectRatio: '1:1', // Custom format for mobile optimization
+      resolution: '992x1056',
       quality: 'enhanced'
     };
 
@@ -2164,7 +2350,7 @@ export function getRevo10ServiceInfo() {
     aiService: revo10Config.aiService,
     capabilities: [
       'Enhanced content generation',
-      'High-resolution image support (2048x2048)',
+      'High-resolution image support (992x1056)',
       'Perfect text rendering',
       'Advanced AI capabilities',
       'Enhanced brand consistency'

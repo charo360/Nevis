@@ -18,7 +18,8 @@ export async function POST(request: NextRequest) {
       imageText,
       aspectRatio,
       includePeopleInDesigns,
-      useLocalLanguage
+      useLocalLanguage,
+      includeContacts
     } = body;
 
     // Validate required fields
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
       visualStyle: visualStyle || 'modern',
       aspectRatio: aspectRatio || '1:1'
     });
-    
+
     console.log('🌍 Brand Profile Location Check:', {
       location: brandProfile?.location,
       hasLocation: !!brandProfile?.location,
@@ -48,11 +49,12 @@ export async function POST(request: NextRequest) {
       businessType,
       platform,
       visualStyle: visualStyle || 'modern',
-      imageText: imageText || `${brandProfile.businessName || businessType} - Premium Content`,
+      imageText: imageText || '',
       brandProfile,
       aspectRatio,
       includePeopleInDesigns,
-      useLocalLanguage
+      useLocalLanguage,
+      includeContacts: !!includeContacts
     });
 
 

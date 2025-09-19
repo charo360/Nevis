@@ -12,7 +12,7 @@ export const revo10Config: ModelConfig = {
   maxRetries: 3,
   timeout: 45000, // 45 seconds (increased for better quality)
   qualitySettings: {
-    imageResolution: '2048x2048', // Ultra HD resolution for premium quality
+    imageResolution: '992x1056', // Custom resolution for premium quality
     compressionLevel: 95, // Maximum quality
     enhancementLevel: 7 // Reduced for cleaner designs (was 10)
   },
@@ -44,7 +44,7 @@ export const revo10Constants = {
   // Resource limits
   MAX_CONTENT_LENGTH: 2000,
   MAX_HASHTAGS: 15,
-  MAX_IMAGE_SIZE: 2048, // Upgraded from 1024
+  MAX_IMAGE_SIZE: 1056, // Custom size for 992x1056 format
 
   // Feature flags
   FEATURES: {
@@ -105,6 +105,13 @@ Brand Information:
 - Competitive Advantages: {competitiveAdvantages}
 - Content Themes: {contentThemes}
 
+Contact Information:
+- Include Contacts: {includeContacts}
+- Phone: {contactPhone}
+- Email: {contactEmail}
+- Address: {contactAddress}
+- Website: {websiteUrl}
+
 Requirements:
 - Create engaging, professional content that reflects the business's unique value proposition
 - Incorporate services and key features naturally into the content
@@ -116,7 +123,9 @@ Requirements:
 - Use only clean, readable text (no special characters, symbols, or garbled text)
 - Generate content in proper English with correct spelling and grammar
 - Avoid any corrupted or unreadable character sequences
-- Make the content location-specific and culturally relevant when appropriate`,
+- Make the content location-specific and culturally relevant when appropriate
+- When includeContacts is true, naturally incorporate contact information (phone, email, address, website) into the content when it enhances the message and call-to-action
+- Don't force contact information into every post - use contextually when it makes sense for the specific content`,
 
   // Design generation prompts
   DESIGN_SYSTEM_PROMPT: `You are a world-class graphic designer who creates 7 completely different types of social media designs, each with their own unique visual language and style. You have deep expertise in multiple industries and understand how to create designs that rival the best brands in the world.

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,6 +34,7 @@ export function WebsiteAnalysisStep({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [websiteUrl, setWebsiteUrl] = useState(brandProfile.websiteUrl || '');
   const [designImages, setDesignImages] = useState<File[]>([]);
+  const [existingDesignExamples, setExistingDesignExamples] = useState<string[]>(brandProfile.designExamples || []);
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState('');
   const [analysisError, setAnalysisError] = useState('');
@@ -42,6 +43,20 @@ export function WebsiteAnalysisStep({
   const [showAnalysisDialog, setShowAnalysisDialog] = useState(false);
   const [dialogType, setDialogType] = useState<'blocked' | 'timeout' | 'error'>('error');
   const [dialogMessage, setDialogMessage] = useState('');
+
+  // Update website URL when brand profile changes (for edit mode)
+  useEffect(() => {
+    if (brandProfile.websiteUrl && brandProfile.websiteUrl !== websiteUrl) {
+      setWebsiteUrl(brandProfile.websiteUrl);
+    }
+  }, [brandProfile.websiteUrl]);
+
+  // Update existing design examples when brand profile changes (for edit mode)
+  useEffect(() => {
+    if (brandProfile.designExamples && brandProfile.designExamples.length > 0) {
+      setExistingDesignExamples(brandProfile.designExamples);
+    }
+  }, [brandProfile.designExamples]);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
@@ -68,19 +83,39 @@ export function WebsiteAnalysisStep({
       return;
     }
 
-    // Limit to 3 design examples to prevent storage overflow
-    setDesignImages(prev => [...prev, ...imageFiles].slice(0, 3)); // Max 3 images for storage optimization
+    // Limit to 5 total design examples (existing + new) to prevent storage overflow
+    const totalExistingCount = existingDesignExamples.length;
+    const currentNewCount = designImages.length;
+    const availableSlots = Math.max(0, 5 - totalExistingCount - currentNewCount);
+    const filesToAdd = imageFiles.slice(0, availableSlots);
 
-    if (imageFiles.length > 0) {
+    setDesignImages(prev => [...prev, ...filesToAdd]);
+
+    if (filesToAdd.length > 0) {
       toast({
         title: "Design Examples Added",
-        description: `${imageFiles.length} design example(s) uploaded successfully.`,
+        description: `${filesToAdd.length} design example(s) uploaded successfully.`,
+      });
+    } else if (imageFiles.length > filesToAdd.length) {
+      toast({
+        variant: "destructive",
+        title: "Upload Limit Reached",
+        description: `Maximum 5 design examples allowed. ${imageFiles.length - filesToAdd.length} file(s) were not added.`,
       });
     }
   };
 
   const removeImage = (index: number) => {
     setDesignImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removeExistingDesignExample = (index: number) => {
+    setExistingDesignExamples(prev => {
+      const updated = prev.filter((_, i) => i !== index);
+      // Update the brand profile immediately to persist the change
+      updateBrandProfile({ designExamples: updated });
+      return updated;
+    });
   };
 
   const handleAnalyze = async () => {
@@ -241,8 +276,8 @@ export function WebsiteAnalysisStep({
         twitterUrl: result.socialMedia?.twitter || '',
         linkedinUrl: result.socialMedia?.linkedin || '',
 
-        // Store design examples for future AI reference
-        designExamples: designImageUris,
+        // Store design examples for future AI reference (combine existing + new)
+        designExamples: [...existingDesignExamples, ...designImageUris],
       });
 
       setAnalysisProgress('Analysis complete! Extracted comprehensive brand information.');
@@ -286,8 +321,23 @@ export function WebsiteAnalysisStep({
     }
   };
 
-  const handleSkipAnalysis = () => {
-    updateBrandProfile({ websiteUrl });
+  const handleSkipAnalysis = async () => {
+    // Convert new design images to data URLs if any were uploaded
+    const newDesignImageUris: string[] = [];
+    for (const file of designImages) {
+      const dataUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target?.result as string);
+        reader.readAsDataURL(file);
+      });
+      newDesignImageUris.push(dataUrl);
+    }
+
+    updateBrandProfile({
+      websiteUrl,
+      // Combine existing design examples with any new uploads
+      designExamples: [...existingDesignExamples, ...newDesignImageUris]
+    });
     onNext();
   };
 
@@ -363,62 +413,83 @@ export function WebsiteAnalysisStep({
                 onChange={handleImageUpload}
                 className="hidden"
                 id="design-upload"
-                disabled={designImages.length >= 5}
+                disabled={existingDesignExamples.length + designImages.length >= 5}
               />
               <label
                 htmlFor="design-upload"
-                className={`flex flex-col items-center justify-center cursor-pointer ${designImages.length >= 5 ? 'opacity-50 cursor-not-allowed' : ''
+                className={`flex flex-col items-center justify-center cursor-pointer ${existingDesignExamples.length + designImages.length >= 5 ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
               >
                 <Upload className="h-8 w-8 text-gray-400 mb-2" />
                 <span className="text-sm text-gray-600 text-center">
-                  {designImages.length >= 5
+                  {existingDesignExamples.length + designImages.length >= 5
                     ? 'Maximum 5 images reached'
                     : 'Upload social posts, marketing materials, ads (PNG, JPG, SVG)'
                   }
                 </span>
                 <span className="text-xs text-gray-500 mt-1">
-                  {designImages.length}/5 uploaded
+                  {existingDesignExamples.length + designImages.length}/5 uploaded
                 </span>
               </label>
             </div>
 
-            {/* Uploaded Images Preview */}
-            {designImages.length > 0 && (
+            {/* Design Examples Preview */}
+            {(existingDesignExamples.length > 0 || designImages.length > 0) && (
               <div className="mt-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-gray-700">
-                    Uploaded Design Examples ({designImages.length}/5)
+                    Design Examples ({existingDesignExamples.length + designImages.length}/5)
                   </span>
-                  {designImages.length >= 3 && (
+                  {existingDesignExamples.length + designImages.length >= 3 && (
                     <span className="text-xs text-green-600 font-medium">
                       ✓ Great! This should help AI understand your style
                     </span>
                   )}
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  {/* Existing Design Examples */}
+                  {existingDesignExamples.map((dataUrl, index) => (
+                    <div key={`existing-${index}`} className="relative group">
+                      <img
+                        src={dataUrl}
+                        alt={`Existing Design ${index + 1}`}
+                        className="w-full h-24 object-cover rounded-lg border-2 border-green-200 group-hover:border-green-300 transition-colors"
+                      />
+                      <button
+                        onClick={() => removeExistingDesignExample(index)}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-sm"
+                        title="Remove existing design example"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                      <div className="absolute bottom-1 left-1 bg-green-600 bg-opacity-75 text-white text-xs px-1 rounded">
+                        Saved
+                      </div>
+                    </div>
+                  ))}
+                  {/* New Design Images */}
                   {designImages.map((file, index) => (
-                    <div key={index} className="relative group">
+                    <div key={`new-${index}`} className="relative group">
                       <img
                         src={URL.createObjectURL(file)}
-                        alt={`Design ${index + 1}`}
-                        className="w-full h-24 object-cover rounded-lg border-2 border-gray-200 group-hover:border-blue-300 transition-colors"
+                        alt={`New Design ${index + 1}`}
+                        className="w-full h-24 object-cover rounded-lg border-2 border-blue-200 group-hover:border-blue-300 transition-colors"
                       />
                       <button
                         onClick={() => removeImage(index)}
                         className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-sm"
-                        title="Remove image"
+                        title="Remove new design example"
                       >
                         <X className="h-3 w-3" />
                       </button>
-                      <div className="absolute bottom-1 left-1 bg-black bg-opacity-50 text-white text-xs px-1 rounded">
-                        {index + 1}
+                      <div className="absolute bottom-1 left-1 bg-blue-600 bg-opacity-75 text-white text-xs px-1 rounded">
+                        New
                       </div>
                     </div>
                   ))}
                 </div>
 
-                {designImages.length < 3 && (
+                {existingDesignExamples.length + designImages.length < 3 && (
                   <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-700">
                     💡 <strong>Tip:</strong> Upload at least 3 examples for better AI understanding of your brand style
                   </div>
@@ -802,7 +873,7 @@ export function WebsiteAnalysisStep({
               {dialogMessage}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          
+
           <div className="space-y-3 px-6">
             {dialogType === 'blocked' && (
               <div className="bg-blue-50 p-3 rounded-lg">

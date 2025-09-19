@@ -134,7 +134,13 @@ export class Revo10DesignGenerator implements IDesignGenerator {
         visualStyle: generationParams.visualStyle || 'modern',
         primaryColor: generationParams.primaryColor || '#3B82F6',
         imageText: imageText || 'Your Text Here',
-        designDescription: designResult.design
+        designDescription: designResult.design,
+        includeContacts: !!request.brandConsistency?.includeContacts,
+        contactInfo: {
+          phone: request.brandProfile?.contactInfo?.phone,
+          email: request.brandProfile?.contactInfo?.email
+        },
+        websiteUrl: request.brandProfile?.websiteUrl || ''
       });
 
       // Return the complete result with actual image URL

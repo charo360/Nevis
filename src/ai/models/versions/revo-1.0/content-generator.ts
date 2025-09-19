@@ -174,6 +174,15 @@ export class Revo10ContentGenerator implements IContentGenerator {
     const { profile, platform, brandConsistency } = request;
     const today = new Date();
 
+    // Debug logging for contact information
+    console.log('🔍 [Revo 1.0 Content Generator] Contact Information Debug:', {
+      includeContacts: (request as any).includeContacts,
+      contactInfo: (request as any).contactInfo,
+      websiteUrl: (request as any).websiteUrl,
+      profileContactInfo: profile.contactInfo,
+      profileWebsiteUrl: profile.websiteUrl
+    });
+
     // Convert arrays to strings for AI processing
     const keyFeaturesString = Array.isArray(profile.keyFeatures)
       ? profile.keyFeatures.join('\n')
@@ -215,6 +224,10 @@ export class Revo10ContentGenerator implements IContentGenerator {
       keyFeatures: keyFeaturesString,
       competitiveAdvantages: competitiveAdvantagesString,
       brandConsistency: brandConsistency || { strictConsistency: false, followBrandColors: true },
+      // Contact information for brand consistency
+      includeContacts: (request as any).includeContacts || false,
+      contactInfo: (request as any).contactInfo || profile.contactInfo || {},
+      websiteUrl: (request as any).websiteUrl || profile.websiteUrl || '',
       // Revo 1.0 specific constraints (updated to match config)
       modelConstraints: {
         maxComplexity: 'enhanced', // Upgraded from basic

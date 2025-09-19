@@ -117,30 +117,32 @@ export function LogoUploadStep({
       const img = new Image();
 
       img.onload = () => {
-        // Calculate new dimensions (max 400x400 for logos)
-        const maxSize = 400;
-        let { width, height } = img;
+        // STANDARDIZED LOGO PROCESSING: Always normalize to 200x200px
+        // This ensures logos don't influence the AI's design dimensions
+        const standardSize = 200;
+        const { width: originalWidth, height: originalHeight } = img;
 
-        if (width > height) {
-          if (width > maxSize) {
-            height = (height * maxSize) / width;
-            width = maxSize;
-          }
-        } else {
-          if (height > maxSize) {
-            width = (width * maxSize) / height;
-            height = maxSize;
-          }
-        }
+        // Always create a 200x200px canvas for consistent logo size
+        canvas.width = standardSize;
+        canvas.height = standardSize;
 
-        canvas.width = width;
-        canvas.height = height;
+        // Calculate scaling to fit logo within 200x200 while maintaining aspect ratio
+        const scale = Math.min(standardSize / originalWidth, standardSize / originalHeight);
+        const scaledWidth = originalWidth * scale;
+        const scaledHeight = originalHeight * scale;
 
-        // Draw and compress
-        ctx?.drawImage(img, 0, 0, width, height);
+        // Center the logo in the 200x200 canvas
+        const x = (standardSize - scaledWidth) / 2;
+        const y = (standardSize - scaledHeight) / 2;
 
-        // Convert to compressed data URL (JPEG with 0.8 quality)
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        // Fill with transparent background
+        ctx?.clearRect(0, 0, standardSize, standardSize);
+
+        // Draw logo centered and scaled
+        ctx?.drawImage(img, x, y, scaledWidth, scaledHeight);
+
+        // Convert to compressed data URL (PNG to preserve transparency)
+        const compressedDataUrl = canvas.toDataURL('image/png', 0.9);
         resolve(compressedDataUrl);
       };
 

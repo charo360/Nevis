@@ -252,21 +252,12 @@ export class Revo15DesignGenerator implements IDesignGenerator {
   }
 
   /**
-   * Get optimal aspect ratio for platform (Revo 1.5 supports multiple)
+   * Get optimal aspect ratio for platform - ALL PLATFORMS USE 1:1 FOR HIGHEST QUALITY
    */
   private getOptimalAspectRatio(platform: string): string {
-    switch (platform) {
-      case 'Instagram':
-        return '1:1'; // Can also support 9:16 for stories
-      case 'Facebook':
-        return '16:9';
-      case 'Twitter':
-        return '16:9';
-      case 'LinkedIn':
-        return '16:9';
-      default:
-        return '1:1';
-    }
+    // ALL PLATFORMS USE 1:1 SQUARE FOR MAXIMUM QUALITY
+    // No cropping = No quality loss from Gemini's native 1024x1024
+    return '1:1';
   }
 
   /**

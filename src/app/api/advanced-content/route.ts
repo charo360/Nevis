@@ -27,8 +27,21 @@ export async function POST(request: NextRequest) {
       currentDate: new Date().toLocaleDateString(),
       primaryColor: body.primaryColor || '#D97706',
       visualStyle: body.visualStyle || 'warm and inviting',
+      includeContacts: body.includeContacts !== undefined ? body.includeContacts : true, // Default to true for testing
+      contactInfo: body.contactInfo || {
+        phone: '+1 (555) 123-4567',
+        email: 'info@bellavista.com',
+        address: '123 Main Street, New York, NY 10001'
+      },
+      websiteUrl: body.websiteUrl || 'www.bellavista.com',
       ...body
     };
+
+    console.log('🧪 [Advanced Content API] Test Data with Contacts:', {
+      includeContacts: testData.includeContacts,
+      contactInfo: testData.contactInfo,
+      websiteUrl: testData.websiteUrl
+    });
 
 
     // Generate advanced content

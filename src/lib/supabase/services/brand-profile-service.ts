@@ -47,42 +47,42 @@ class BrandProfileSupabaseService {
       businessName: row.business_name,
       businessType: row.business_type,
       description: row.description,
-      
+
       // Extract location fields - handle both object and string formats
-      location: typeof row.location === 'string' ? 
-        (JSON.parse(row.location)?.country || '') : 
+      location: typeof row.location === 'string' ?
+        (JSON.parse(row.location)?.country || '') :
         (row.location?.country || ''),
-      city: typeof row.location === 'string' ? 
-        (JSON.parse(row.location)?.city || '') : 
+      city: typeof row.location === 'string' ?
+        (JSON.parse(row.location)?.city || '') :
         (row.location?.city || ''),
-      contactAddress: typeof row.location === 'string' ? 
-        (JSON.parse(row.location)?.address || '') : 
+      contactAddress: typeof row.location === 'string' ?
+        (JSON.parse(row.location)?.address || '') :
         (row.location?.address || ''),
-      
+
       // Extract contact fields
       contactEmail: row.contact?.email || '',
       contactPhone: row.contact?.phone || '',
       websiteUrl: row.contact?.website || '',
-      
+
       // Extract social media fields
       facebookUrl: row.social_media?.facebook || '',
       instagramUrl: row.social_media?.instagram || '',
       twitterUrl: row.social_media?.twitter || '',
       linkedinUrl: row.social_media?.linkedin || '',
-      
+
       // Extract brand colors
       primaryColor: row.brand_colors?.primary || '',
       accentColor: row.brand_colors?.accent || '',
       backgroundColor: row.brand_colors?.secondary || '',
-      
+
       // Logo fields
       logoUrl: row.logo_url,
       logoDataUrl: row.logo_data_url || row.logo_url, // Use logo_url as fallback for logoDataUrl
-      
+
       designExamples: row.design_examples || [],
       targetAudience: row.target_audience || '',
       brandVoice: row.brand_voice || '',
-      
+
       // Services: normalize to an array of objects with name/description
       services: (() => {
         // Handle different data types more robustly
@@ -101,11 +101,11 @@ class BrandProfileSupabaseService {
             servicesArray = [];
           }
         }
-        
+
         if (!Array.isArray(servicesArray)) {
           return [];
         }
-        
+
         return servicesArray
           .map((s: any) => {
             if (!s) return null;
@@ -116,12 +116,12 @@ class BrandProfileSupabaseService {
       })(),
       keyFeatures: '', // Not stored in DB, keep empty for compatibility
       competitiveAdvantages: '', // Not stored in DB, keep empty for compatibility
-      
+
       // Visual style fields - extract from brand_voice JSON
       visualStyle: row.brand_voice?.visualStyle || '',
       writingTone: row.brand_voice?.writingTone || '',
       contentThemes: row.brand_voice?.contentThemes || [],
-      
+
       isActive: row.is_active,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
@@ -152,21 +152,21 @@ class BrandProfileSupabaseService {
       business_name: profile.businessName,
       business_type: profile.businessType,
       description: profile.description,
-      
+
       // Combine location fields
       location: {
         country: profile.location || '',
         city: profile.city || '',
         address: profile.contactAddress || ''
       },
-      
+
       // Combine contact fields
       contact: {
         email: profile.contactEmail || '',
         phone: profile.contactPhone || '',
         website: profile.websiteUrl || ''
       },
-      
+
       // Combine social media fields
       social_media: {
         facebook: profile.facebookUrl || '',
@@ -174,40 +174,40 @@ class BrandProfileSupabaseService {
         twitter: profile.twitterUrl || '',
         linkedin: profile.linkedinUrl || ''
       },
-      
+
       // Combine brand colors
       brand_colors: {
         primary: profile.primaryColor || '',
         accent: profile.accentColor || '',
         secondary: profile.backgroundColor || ''
       },
-      
+
       // Logo fields
       logo_url: profile.logoUrl || '',
       logo_data_url: profile.logoDataUrl || '',
-      
+
       design_examples: profile.designExamples || [],
       target_audience: profile.targetAudience || '',
       brand_voice: profile.brandVoice || '',
-      
+
       // Services: accept array of objects or strings and normalize to array of objects
       services:
         Array.isArray((profile as any).services)
           ? (profile as any).services
-              .map((s: any) => {
-                if (!s) return null;
-                if (typeof s === 'string') return { name: s.trim(), description: '' };
-                return { name: (s.name || '').toString().trim(), description: (s.description || '').toString() };
-              })
-              .filter((s: any) => s && s.name)
+            .map((s: any) => {
+              if (!s) return null;
+              if (typeof s === 'string') return { name: s.trim(), description: '' };
+              return { name: (s.name || '').toString().trim(), description: (s.description || '').toString() };
+            })
+            .filter((s: any) => s && s.name)
           : (typeof (profile as any).services === 'string' && (profile as any).services.length > 0)
             ? (profile as any).services
-                .split(',')
-                .map((s: string) => s.trim())
-                .filter((s: string) => s.length > 0)
-                .map((s: string) => ({ name: s, description: '' }))
+              .split(',')
+              .map((s: string) => s.trim())
+              .filter((s: string) => s.length > 0)
+              .map((s: string) => ({ name: s, description: '' }))
             : [],
-      
+
       is_active: profile.isActive ?? true,
     };
 
@@ -233,7 +233,21 @@ class BrandProfileSupabaseService {
       });
 
       if (profile.id) {
-        // Update existing profile
+        // Update existing profile - but first verify it exists
+        const { data: existingProfile } = await supabase
+          .from('brand_profiles')
+          .select('id')
+          .eq('id', profile.id)
+          .single();
+
+        if (!existingProfile) {
+          console.warn('⚠️ Profile ID provided but profile does not exist, creating new profile instead');
+          // Remove the invalid ID and create new profile
+          const profileWithoutId = { ...profile };
+          delete profileWithoutId.id;
+          return this.saveBrandProfile(profileWithoutId);
+        }
+
         const { error } = await supabase
           .from('brand_profiles')
           .update(this.profileToRow(profile))
@@ -405,10 +419,10 @@ class BrandProfileSupabaseService {
       if (updates.services !== undefined) {
         rowUpdates.services = Array.isArray(updates.services)
           ? updates.services.map((s: any) => {
-              if (!s) return null;
-              if (typeof s === 'string') return { name: s, description: '' };
-              return { name: s.name || '', description: s.description || '' };
-            }).filter((s: any) => s && s.name)
+            if (!s) return null;
+            if (typeof s === 'string') return { name: s, description: '' };
+            return { name: s.name || '', description: s.description || '' };
+          }).filter((s: any) => s && s.name)
           : [];
       }
 

@@ -11,28 +11,28 @@ import type { BrandProfile, Platform, BrandConsistencyPreferences, GeneratedPost
 // Helper function to convert logo URL to base64 data URL for AI models (matching Revo 1.0)
 async function convertLogoToDataUrl(logoUrl?: string): Promise<string | undefined> {
   if (!logoUrl) return undefined;
-  
+
   // If it's already a data URL, return as is
   if (logoUrl.startsWith('data:')) {
     return logoUrl;
   }
-  
+
   // If it's a Supabase Storage URL, fetch and convert to base64
   if (logoUrl.startsWith('http')) {
     try {
       console.log('🔄 [Revo 1.5 Actions] Converting logo URL to base64 for AI generation:', logoUrl.substring(0, 50) + '...');
-      
+
       const response = await fetch(logoUrl);
       if (!response.ok) {
         console.warn('⚠️ [Revo 1.5 Actions] Failed to fetch logo from URL:', response.status);
         return undefined;
       }
-      
+
       const buffer = await response.arrayBuffer();
       const base64 = Buffer.from(buffer).toString('base64');
       const mimeType = response.headers.get('content-type') || 'image/png';
       const dataUrl = `data:${mimeType};base64,${base64}`;
-      
+
       console.log('✅ [Revo 1.5 Actions] Logo converted to base64 successfully (' + buffer.byteLength + ' bytes)');
       return dataUrl;
     } catch (error) {
@@ -40,7 +40,7 @@ async function convertLogoToDataUrl(logoUrl?: string): Promise<string | undefine
       return undefined;
     }
   }
-  
+
   return undefined;
 }
 
@@ -71,17 +71,18 @@ export async function generateRevo15ContentAction(
 
     // Convert logo URL to base64 data URL (matching Revo 1.0 approach)
     const convertedLogoDataUrl = await convertLogoToDataUrl(brandProfile.logoUrl || brandProfile.logoDataUrl);
-    
+
     // Generate with Revo 1.5
     const result = await generateRevo15EnhancedDesign({
       businessType: brandProfile.businessType || 'Business',
       platform,
       visualStyle: options?.visualStyle || 'modern',
-      imageText: prompt || `${brandProfile.businessName || brandProfile.businessType} - Premium Content`,
+      imageText: prompt || '',
       brandProfile: {
         ...brandProfile,
         logoDataUrl: convertedLogoDataUrl || brandProfile.logoDataUrl
       },
+      brandConsistency, // pass through to enable includeContacts handling
       aspectRatio: options?.aspectRatio || '1:1',
       includePeopleInDesigns: options?.includePeopleInDesigns || false,
       useLocalLanguage: options?.useLocalLanguage || false,
@@ -128,7 +129,17 @@ export async function generateRevo15ContentAction(
 
   } catch (error) {
     console.error('❌ Revo 1.5 content generation failed:', error);
-    throw new Error(`Revo 1.5 content generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+
+    // Extract user-friendly message if it exists
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    // If it's already a user-friendly message, use it directly
+    if (errorMessage.includes('😅') || errorMessage.includes('🤖') || errorMessage.includes('😔')) {
+      throw new Error(errorMessage);
+    }
+
+    // Otherwise, make it friendly
+    throw new Error('Revo 1.5 is having some trouble right now! 😅 Try switching to Revo 2.0 for great results while we get things sorted out.');
   }
 }
 
@@ -144,7 +155,7 @@ export async function testRevo15LogoIntegrationAction(brandProfile: BrandProfile
 }> {
   try {
     console.log('🧪 Testing Revo 1.5 logo integration...');
-    
+
     let logoProcessed = false;
     let logoSource: 'dataUrl' | 'storageUrl' | 'none' = 'none';
     let logoSize = 0;
@@ -160,7 +171,7 @@ export async function testRevo15LogoIntegrationAction(brandProfile: BrandProfile
       logoSize = brandProfile.logoUrl.length;
     }
 
-    const message = logoProcessed 
+    const message = logoProcessed
       ? `Logo ready for Revo 1.5 integration from ${logoSource} (${logoSize} chars)`
       : 'No logo found for Revo 1.5 integration';
 
@@ -201,7 +212,7 @@ export async function getRevo15CapabilitiesAction(): Promise<{
     features: [
       'Two-step design process with planning and generation',
       'Enhanced creativity frameworks',
-      'Business intelligence integration', 
+      'Business intelligence integration',
       'Logo integration from storage URLs and base64',
       'Cultural context awareness',
       'Premium visual quality (9.8/10)',
@@ -210,7 +221,7 @@ export async function getRevo15CapabilitiesAction(): Promise<{
     ],
     supportedPlatforms: [
       'Instagram',
-      'Facebook', 
+      'Facebook',
       'Twitter',
       'LinkedIn'
     ],

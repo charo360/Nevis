@@ -15,28 +15,28 @@ import { supabaseService } from "@/lib/services/supabase-service";
 // Helper function to convert logo URL to base64 data URL for AI models
 async function convertLogoToDataUrl(logoUrl?: string): Promise<string | undefined> {
   if (!logoUrl) return undefined;
-  
+
   // If it's already a data URL, return as is
   if (logoUrl.startsWith('data:')) {
     return logoUrl;
   }
-  
+
   // If it's a Supabase Storage URL, fetch and convert to base64
   if (logoUrl.startsWith('http')) {
     try {
       console.log('🔄 Converting logo URL to base64 for AI generation:', logoUrl.substring(0, 50) + '...');
-      
+
       const response = await fetch(logoUrl);
       if (!response.ok) {
         console.warn('⚠️ Failed to fetch logo from URL:', response.status);
         return undefined;
       }
-      
+
       const buffer = await response.arrayBuffer();
       const base64 = Buffer.from(buffer).toString('base64');
       const mimeType = response.headers.get('content-type') || 'image/png';
       const dataUrl = `data:${mimeType};base64,${base64}`;
-      
+
       console.log('✅ Logo converted to base64 successfully (' + buffer.byteLength + ' bytes)');
       return dataUrl;
     } catch (error) {
@@ -44,7 +44,7 @@ async function convertLogoToDataUrl(logoUrl?: string): Promise<string | undefine
       return undefined;
     }
   }
-  
+
   return undefined;
 }
 
@@ -149,7 +149,7 @@ const getAspectRatioForPlatform = (platform: Platform): string => {
 export async function generateContentAction(
   profile: BrandProfile,
   platform: Platform,
-  brandConsistency?: { strictConsistency: boolean; followBrandColors: boolean },
+  brandConsistency?: { strictConsistency: boolean; followBrandColors: boolean; includeContacts: boolean },
   useLocalLanguage: boolean = false
 ): Promise<GeneratedPost> {
   try {
@@ -176,9 +176,23 @@ export async function generateContentAction(
           ? profile.services.map(s => typeof s === 'string' ? s : s.name || s.description || '')
           : [],
       // Extract contact information for brand context
-      contactInfo: profile.contactInfo || {},
+      contactInfo: profile.contactInfo || {
+        phone: (profile as any).contactPhone || '',
+        email: (profile as any).contactEmail || '',
+        address: (profile as any).contactAddress || ''
+      },
       socialMedia: profile.socialMedia || {},
     };
+
+    // Debug logging for contact information
+    console.log('🔍 [Actions] Contact Information Debug:', {
+      profileContactInfo: profile.contactInfo,
+      profileContactPhone: (profile as any).contactPhone,
+      profileContactEmail: (profile as any).contactEmail,
+      profileContactAddress: (profile as any).contactAddress,
+      enhancedContactInfo: enhancedProfile.contactInfo,
+      includeContacts: brandConsistency?.includeContacts
+    });
 
     // Convert arrays to newline-separated strings for AI processing
     const keyFeaturesString = Array.isArray(profile.keyFeatures)
@@ -217,7 +231,7 @@ export async function generateContentAction(
       modelId: 'revo-1.0',
       profile: enhancedProfile,
       platform: platform,
-      brandConsistency: brandConsistency || { strictConsistency: false, followBrandColors: true },
+      brandConsistency: brandConsistency || { strictConsistency: false, followBrandColors: true, includeContacts: false },
       artifactIds: [], // Revo 1.0 doesn't support artifacts
       contentThemes: enhancedProfile.contentThemes || [],
       writingTone: enhancedProfile.writingTone || 'professional',
@@ -234,6 +248,10 @@ export async function generateContentAction(
       designExamples: effectiveDesignExamples,
       dayOfWeek: dayOfWeek,
       currentDate: currentDate,
+      // Contact information for brand consistency
+      includeContacts: brandConsistency?.includeContacts || false,
+      contactInfo: enhancedProfile.contactInfo || {},
+      websiteUrl: enhancedProfile.websiteUrl,
       variants: [{
         platform: platform,
         aspectRatio: getAspectRatioForPlatform(platform),
@@ -268,7 +286,17 @@ export async function generateContentAction(
     return newPost;
   } catch (error) {
     console.error('❌ Content generation error:', error);
-    throw new Error(`Failed to generate content: ${error instanceof Error ? error.message : 'Unknown error'}`);
+
+    // Extract user-friendly message if it exists
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    // If it's already a user-friendly message, use it directly
+    if (errorMessage.includes('🚀') || errorMessage.includes('🔧') || errorMessage.includes('😴')) {
+      throw new Error(errorMessage);
+    }
+
+    // Otherwise, make it friendly
+    throw new Error('Revo 1.0 is taking a quick break! 😴 Try Revo 2.0 for amazing results while we wait for it to come back online.');
   }
 }
 
@@ -519,7 +547,7 @@ export async function generateGeminiHDDesignAction(
 export async function generateContentWithArtifactsAction(
   profile: BrandProfile,
   platform: Platform,
-  brandConsistency?: { strictConsistency: boolean; followBrandColors: boolean },
+  brandConsistency?: { strictConsistency: boolean; followBrandColors: boolean; includeContacts: boolean },
   artifactIds: string[] = [],
   useEnhancedDesign: boolean = true,
   includePeopleInDesigns: boolean = true,

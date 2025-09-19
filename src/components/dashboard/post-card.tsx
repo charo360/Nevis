@@ -119,7 +119,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   const [showVideoDialog, setShowVideoDialog] = React.useState(false);
   const [showImagePreview, setShowImagePreview] = React.useState(false);
   const [previewImageUrl, setPreviewImageUrl] = React.useState<string>('');
-  
+
   // Performance prediction state
   const [performancePrediction, setPerformancePrediction] = React.useState<PerformancePrediction | null>(null);
   const [isPredictionLoading, setIsPredictionLoading] = React.useState(true);
@@ -153,7 +153,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   // Load performance prediction on mount
   React.useEffect(() => {
     let mounted = true;
-    
+
     const loadPrediction = async () => {
       try {
         setIsPredictionLoading(true);
@@ -174,17 +174,17 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
     };
 
     loadPrediction();
-    
+
     return () => {
       mounted = false;
     };
   }, [post, brandProfile]);
 
-  // Platform-specific dimensions - ALL PLATFORMS USE 1:1 FOR HIGHEST QUALITY
+  // Platform-specific dimensions - ALL PLATFORMS USE 992x1056px FOR HIGHEST QUALITY
   const getPlatformDimensions = React.useCallback((platform: Platform) => {
-    // ALL PLATFORMS USE 1:1 SQUARE FOR MAXIMUM QUALITY
-    // No cropping = No quality loss from Gemini's native 1024x1024
-    return { width: 1080, height: 1080, aspectClass: 'aspect-square' };
+    // ALL PLATFORMS USE 992x1056px FOR MAXIMUM QUALITY
+    // No cropping = No quality loss from Gemini's native generation
+    return { width: 992, height: 1056, aspectClass: 'aspect-[992/1056]' };
   }, []);
 
   // Copy functionality
@@ -455,8 +455,8 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
               <span>{formattedDate}</span>
             </div>
             {/* Performance Prediction Badge */}
-            <PerformanceBadgeCompact 
-              prediction={performancePrediction} 
+            <PerformanceBadgeCompact
+              prediction={performancePrediction}
               loading={isPredictionLoading}
             />
           </div>

@@ -19,7 +19,7 @@ export interface PlatformDimensions {
 
 /**
  * Get target dimensions for each platform
- * MOBILE-FIRST: All platforms now use 1080x1080px square format for optimal mobile viewing
+ * MOBILE-FIRST: All platforms now use 992x1056px format for optimal mobile viewing
  */
 export function getPlatformDimensions(platform: string): PlatformDimensions {
   const platformLower = platform.toLowerCase();
@@ -34,11 +34,11 @@ export function getPlatformDimensions(platform: string): PlatformDimensions {
     };
   }
 
-  // DEFAULT: Square format (1:1) - 1080x1080px HD for all platforms
+  // DEFAULT: Custom format - 992x1056px HD for all platforms
   // Perfect for Instagram, Facebook, Twitter, LinkedIn on mobile
   return {
-    width: 1080,
-    height: 1080,
+    width: 992,
+    height: 1056,
     aspectRatio: '1:1'
   };
 }

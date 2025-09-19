@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useUnifiedBrand } from '@/contexts/unified-brand-context';
 import { useAuth } from '@/hooks/use-auth-supabase';
 import type { CompleteBrandProfile } from '../cbrand-wizard';
+import { LogoNormalizationService } from '@/lib/services/logo-normalization-service';
 
 interface LogoUploadStepUnifiedProps {
   brandProfile: CompleteBrandProfile;
@@ -57,13 +58,27 @@ export function LogoUploadStepUnified({
     }
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const dataUrl = e.target?.result as string;
-      updateBrandProfile({ logoDataUrl: dataUrl });
-      toast({
-        title: "Logo Uploaded",
-        description: "Your logo has been uploaded successfully",
-      });
+      try {
+        // Normalize to 200x200 transparent PNG to prevent design dimension influence
+        const normalized = await LogoNormalizationService.normalizeLogo(
+          dataUrl,
+          { standardSize: 200, format: 'png', quality: 0.9 }
+        );
+        updateBrandProfile({ logoDataUrl: normalized.dataUrl });
+        toast({
+          title: "Logo Uploaded",
+          description: "Your logo was normalized to 200x200 and uploaded successfully",
+        });
+      } catch (err) {
+        console.warn('Logo normalization failed, using original:', err);
+        updateBrandProfile({ logoDataUrl: dataUrl });
+        toast({
+          title: "Logo Uploaded",
+          description: "Logo uploaded (normalization failed, used original)",
+        });
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -102,8 +117,27 @@ export function LogoUploadStepUnified({
 
       let profileId: string;
 
-      if (mode === 'edit' && profileToSave.id) {
-        // Edit mode: Update existing profile only (do not create new)
+      // Debug logging for edit mode
+      console.log('🔍 Save mode debug:', {
+        mode,
+        hasProfileId: !!profileToSave.id,
+        profileId: profileToSave.id,
+        brandProfileId: brandProfile.id
+      });
+
+      if (mode === 'edit') {
+        // Edit mode: Always update, never create new
+        if (!profileToSave.id) {
+          console.error('❌ Edit mode but no profile ID found! This will cause a new brand to be created.');
+          console.error('🔍 Profile data:', {
+            businessName: profileToSave.businessName,
+            hasId: !!profileToSave.id,
+            brandProfileHasId: !!brandProfile.id
+          });
+          // Use brandProfile.id as fallback if profileToSave.id is missing
+          profileToSave.id = brandProfile.id;
+        }
+
         console.log('✏️ Edit mode: Updating existing profile with ID:', profileToSave.id);
         console.log('💾 Updating profile via unified context with logo data:', {
           businessName: profileToSave.businessName,
@@ -119,15 +153,11 @@ export function LogoUploadStepUnified({
         await updateProfile(profileToSave.id, profileToSave);
         profileId = profileToSave.id;
         console.log('✅ Profile updated via unified context successfully:', profileId);
-      } else {
-        // Create mode: Create new profile if no ID is present
+      } else if (mode === 'create') {
+        // Create mode: Always create new profile, remove any ID that might be present
         if (profileToSave.id) {
-          // Safety: if an ID is present in create mode, treat it as edit to avoid duplicate creation
-          console.log('ℹ️ Create mode received an ID; converting to update to avoid duplicate creation');
-          await updateProfile(profileToSave.id, profileToSave);
-          onSaveComplete?.(profileToSave.id);
-          setIsSaving(false);
-          return;
+          console.log('🧹 Create mode: Removing ID to ensure new profile creation');
+          delete profileToSave.id;
         }
 
         console.log('💾 Creating new profile via unified context with logo data:', {
@@ -143,6 +173,18 @@ export function LogoUploadStepUnified({
 
         profileId = await saveProfile(profileToSave);
         console.log('✅ Profile created via unified context successfully:', profileId);
+      } else {
+        // Unknown mode - this should never happen, but handle gracefully
+        console.error('❌ Unknown mode:', mode, 'Defaulting to create mode');
+
+        // Default to create mode as fallback
+        if (profileToSave.id) {
+          console.log('🧹 Unknown mode: Removing ID to ensure new profile creation');
+          delete profileToSave.id;
+        }
+
+        profileId = await saveProfile(profileToSave);
+        console.log('✅ Profile created via unified context (fallback mode):', profileId);
       }
 
       toast({
@@ -173,7 +215,8 @@ export function LogoUploadStepUnified({
     brandProfile.businessType &&
     brandProfile.location &&
     brandProfile.description &&
-    brandProfile.services?.length > 0;
+    brandProfile.services?.length > 0 &&
+    brandProfile.logoDataUrl; // Logo is required
 
   return (
     <div className="w-full space-y-4">
@@ -351,7 +394,10 @@ export function LogoUploadStepUnified({
       {!isProfileComplete && (
         <div className="text-center">
           <p className="text-sm text-red-600">
-            Please complete all required fields in the previous steps before saving.
+            {!brandProfile.logoDataUrl
+              ? "Please upload a logo to complete your brand profile."
+              : "Please complete all required fields in the previous steps before saving."
+            }
           </p>
         </div>
       )}

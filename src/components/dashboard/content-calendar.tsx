@@ -2,7 +2,7 @@
 "use client";
 
 import React from "react";
-import { Loader2, Facebook, Instagram, Linkedin, Twitter, Settings, Palette, Sparkles } from "lucide-react";
+import { Loader2, Facebook, Instagram, Linkedin, Twitter, Settings, Palette, Sparkles, Phone } from "lucide-react";
 import { TrendingHashtagsService } from '@/services/trending-hashtags-service';
 import { Button } from "@/components/ui/button";
 import { PostCard } from "@/components/dashboard/post-card";
@@ -44,6 +44,7 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
   const [brandConsistency, setBrandConsistency] = React.useState<BrandConsistencyPreferences>({
     strictConsistency: !!(brandProfile.designExamples && brandProfile.designExamples.length > 0), // Auto-check if design examples exist
     followBrandColors: true, // Always follow brand colors
+    includeContacts: false, // Default to not including contacts
   });
 
   // Revo model selection
@@ -143,7 +144,7 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
             businessType: brandProfile.businessType || 'Business',
             platform: platform.toLowerCase(),
             visualStyle: brandProfile.visualStyle || 'modern',
-            imageText: `${brandProfile.businessName || brandProfile.businessType} - Premium Content`,
+            imageText: '',
             brandProfile,
             aspectRatio: '1:1',
             includePeopleInDesigns,
@@ -169,7 +170,7 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
 
         newPost = {
           id: `revo-2.0-${Date.now()}`,
-          content: revo20Result.caption || `🚀 Generated with Revo 2.0 (Gemini 2.5 Flash Image)\n\n${brandProfile.businessName || brandProfile.businessType} - Premium Content`,
+          content: revo20Result.caption || `🚀 Generated with Revo 2.0 (Gemini 2.5 Flash Image)`,
           hashtags: combinedHashtags,
           imageUrl: revo20Result.imageUrl,
           platform: platform,
@@ -208,7 +209,7 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
           brandProfile,
           platform,
           brandConsistency,
-          `${brandProfile.businessName || brandProfile.businessType} - Premium Content`,
+          '',
           {
             aspectRatio: '1:1',
             visualStyle: brandProfile.visualStyle || 'modern',
@@ -307,6 +308,16 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
                     checked={brandConsistency.followBrandColors}
                     onCheckedChange={(checked) =>
                       setBrandConsistency(prev => ({ ...prev, followBrandColors: checked }))
+                    }
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Phone className="h-3 w-3 text-gray-500" />
+                  <span className="text-xs text-gray-600">Contacts</span>
+                  <Switch
+                    checked={brandConsistency.includeContacts}
+                    onCheckedChange={(checked) =>
+                      setBrandConsistency(prev => ({ ...prev, includeContacts: checked }))
                     }
                   />
                 </div>

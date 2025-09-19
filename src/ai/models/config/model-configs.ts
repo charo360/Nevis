@@ -15,7 +15,7 @@ const baseConfigs = {
     maxRetries: 2,
     timeout: 45000,
     qualitySettings: {
-      imageResolution: '1024x1024',
+      imageResolution: '992x1056',
       compressionLevel: 90,
       enhancementLevel: 7
     },
@@ -32,7 +32,7 @@ const baseConfigs = {
     maxRetries: 3,
     timeout: 35000,
     qualitySettings: {
-      imageResolution: '1024x1024',
+      imageResolution: '992x1056',
       compressionLevel: 88,
       enhancementLevel: 6
     },
@@ -48,7 +48,7 @@ const baseConfigs = {
     maxRetries: 3,
     timeout: 45000,
     qualitySettings: {
-      imageResolution: '2048x2048',     // Ultra HD resolution
+      imageResolution: '992x1056',      // Custom resolution for optimal quality
       compressionLevel: 95,             // Maximum quality
       enhancementLevel: 8               // Reduced for cleaner designs (was 10)
     },

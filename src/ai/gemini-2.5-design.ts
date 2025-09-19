@@ -857,13 +857,13 @@ function buildLayoutGuidance(platform: string, businessType: string): string {
 
 /**
  * Get platform-specific specifications for image generation
- * STANDARDIZED: ALL platforms use 1:1 square format for maximum quality
+ * STANDARDIZED: ALL platforms use 992x1056px format for maximum quality
  */
 function getPlatformSpecifications(platform: string) {
-  // ALL platforms use the same square format for maximum quality
+  // ALL platforms use the same 992x1056px format for maximum quality
   return {
     name: platform,
-    dimensions: '1080x1080px (square)',
+    dimensions: '992x1056px',
     description: `${platform} post optimized for maximum quality and mobile viewing`
   };
 }

@@ -387,14 +387,10 @@ async function generateVariantDesign(request: EnhancedDesignRequest, variant: De
 }
 
 /**
- * Helper function to get aspect ratio for platform
+ * Helper function to get aspect ratio for platform - ALL PLATFORMS USE 1:1 FOR HIGHEST QUALITY
  */
 function getAspectRatioForPlatform(platform: string): string {
-  const ratios: Record<string, string> = {
-    instagram: '1:1',
-    facebook: '16:9',
-    twitter: '16:9',
-    linkedin: '16:9' // Changed from 1.91:1 to 16:9 for consistency with Gemini generation
-  };
-  return ratios[platform] || '1:1';
+  // ALL PLATFORMS USE 1:1 SQUARE FOR MAXIMUM QUALITY
+  // No cropping = No quality loss from Gemini's native 1024x1024
+  return '1:1';
 }

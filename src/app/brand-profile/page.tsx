@@ -1,13 +1,37 @@
 'use client';
 
 import { CbrandWizardUnified } from '@/components/cbrand/cbrand-wizard-unified';
-import { useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { Suspense, useEffect } from 'react';
+import { useUnifiedBrand } from '@/contexts/unified-brand-context';
 
 function BrandProfileContent() {
   const searchParams = useSearchParams();
-  const mode = searchParams.get('mode');
+  const router = useRouter();
+  const { currentBrand } = useUnifiedBrand();
+  const modeParam = searchParams.get('mode');
   const brandId = searchParams.get('id');
+
+  // Auto-redirect to edit mode if no mode specified but there's an active brand
+  useEffect(() => {
+    if (!modeParam && currentBrand?.id) {
+      console.log('🔄 Auto-redirecting to edit mode for active brand:', currentBrand.businessName);
+      router.replace(`/brand-profile?mode=edit&id=${currentBrand.id}`);
+      return;
+    }
+  }, [modeParam, currentBrand, router]);
+
+  // Update URL when brand changes (for brand selector switching)
+  useEffect(() => {
+    if (modeParam === 'edit' && currentBrand?.id && brandId !== currentBrand.id) {
+      console.log('🔄 Brand changed via selector, updating URL to new brand:', currentBrand.businessName);
+      router.replace(`/brand-profile?mode=edit&id=${currentBrand.id}`);
+      return;
+    }
+  }, [currentBrand, modeParam, brandId, router]);
+
+  // Default to 'create' mode if no mode is specified
+  const mode = modeParam || 'create';
 
   const isCreateMode = mode === 'create';
   const isEditMode = mode === 'edit' && brandId;

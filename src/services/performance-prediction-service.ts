@@ -193,6 +193,20 @@ export class PerformancePredictionService {
       score += 10;
     }
     
+    // Contact information consistency (if contacts are enabled)
+    const contactInfo = brandProfile.contactInfo;
+    if (contactInfo) {
+      // Check if contact info is present when it should be
+      const hasPhone = contactInfo.phone && content.includes(contactInfo.phone);
+      const hasEmail = contactInfo.email && content.includes(contactInfo.email);
+      const hasAddress = contactInfo.address && content.includes(contactInfo.address);
+      
+      // Award points for contact information inclusion
+      if (hasPhone) score += 5;
+      if (hasEmail) score += 5;
+      if (hasAddress) score += 5;
+    }
+    
     return Math.min(score, 100);
   }
 
