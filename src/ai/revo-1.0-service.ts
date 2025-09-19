@@ -1579,25 +1579,37 @@ export async function generateRevo10Content(input: {
       hasAddress: !!input.contactInfo?.address
     });
 
-    // Build the content generation prompt with enhanced brand context
+    // Store original contact info for image generation, but remove from content generation
+    const originalContactInfo = input.contactInfo;
+    const originalWebsiteUrl = input.websiteUrl;
+    const originalIncludeContacts = input.includeContacts;
+
+    // Temporarily remove contact info during content generation to prevent AI from accessing it
+    const contentGenerationInput = {
+      ...input,
+      contactInfo: undefined,
+      websiteUrl: undefined,
+      includeContacts: false
+    };
+
+    // Build the content generation prompt with enhanced brand context (using contact-free input)
     const contentPrompt = revo10Prompts.CONTENT_USER_PROMPT_TEMPLATE
-      .replace('{businessName}', input.businessName)
-      .replace('{businessType}', input.businessType)
-      .replace('{platform}', input.platform)
-      .replace('{writingTone}', input.writingTone)
-      .replace('{location}', input.location)
-      .replace('{primaryColor}', input.primaryColor || '#3B82F6')
-      .replace('{visualStyle}', input.visualStyle || 'modern')
-      .replace('{targetAudience}', input.targetAudience)
-      .replace('{services}', input.services || '')
-      .replace('{keyFeatures}', input.keyFeatures || '')
-      .replace('{competitiveAdvantages}', input.competitiveAdvantages || '')
-      .replace('{contentThemes}', Array.isArray(input.contentThemes) ? input.contentThemes.join(', ') : 'general business content')
-      .replace('{includeContacts}', input.includeContacts ? 'true' : 'false')
-      .replace('{contactPhone}', input.contactInfo?.phone || '')
-      .replace('{contactEmail}', input.contactInfo?.email || '')
-      .replace('{contactAddress}', input.contactInfo?.address || '')
-      .replace('{websiteUrl}', input.websiteUrl || '');
+      .replace('{businessName}', contentGenerationInput.businessName)
+      .replace('{businessType}', contentGenerationInput.businessType)
+      .replace('{platform}', contentGenerationInput.platform)
+      .replace('{writingTone}', contentGenerationInput.writingTone)
+      .replace('{location}', contentGenerationInput.location)
+      .replace('{primaryColor}', contentGenerationInput.primaryColor || '#3B82F6')
+      .replace('{visualStyle}', contentGenerationInput.visualStyle || 'modern')
+      .replace('{targetAudience}', contentGenerationInput.targetAudience)
+      .replace('{services}', contentGenerationInput.services || '')
+      .replace('{keyFeatures}', contentGenerationInput.keyFeatures || '')
+      .replace('{competitiveAdvantages}', contentGenerationInput.competitiveAdvantages || '')
+      .replace('{contentThemes}', Array.isArray(contentGenerationInput.contentThemes) ? contentGenerationInput.contentThemes.join(', ') : 'general business content')
+      .replace('{contactPhone}', '') // Contact details will be added during image generation
+      .replace('{contactEmail}', '') // Contact details will be added during image generation
+      .replace('{contactAddress}', '') // Contact details will be added during image generation
+      .replace('{websiteUrl}', ''); // Contact details will be added during image generation
 
     // Debug logging for the final prompt
     console.log('🔍 [Revo 1.0] Final Prompt Contact Section:', {
@@ -1645,20 +1657,20 @@ export async function generateRevo10Content(input: {
     // 🎨 NEW: Generate business-specific headlines and subheadlines with AI
 
     const businessHeadline = await generateBusinessSpecificHeadline(
-      input.businessType,
-      input.businessName,
-      input.location,
+      contentGenerationInput.businessType,
+      contentGenerationInput.businessName,
+      contentGenerationInput.location,
       businessDetails,
-      input.platform,
+      contentGenerationInput.platform,
       'awareness',
       trendingEnhancement,
       advancedContent
     );
 
     const businessSubheadline = await generateBusinessSpecificSubheadline(
-      input.businessType,
-      input.businessName,
-      input.location,
+      contentGenerationInput.businessType,
+      contentGenerationInput.businessName,
+      contentGenerationInput.location,
       businessDetails,
       businessHeadline.headline,
       'awareness',
@@ -1670,20 +1682,20 @@ export async function generateRevo10Content(input: {
     // 📝 NEW: Generate AI-powered business-specific caption
 
     const businessCaption = await generateBusinessSpecificCaption(
-      input.businessType,
-      input.businessName,
-      input.location,
+      contentGenerationInput.businessType,
+      contentGenerationInput.businessName,
+      contentGenerationInput.location,
       businessDetails,
-      input.platform,
+      contentGenerationInput.platform,
       'awareness',
       trendingEnhancement,
       advancedContent,
       {
-        includeContacts: input.includeContacts,
-        phone: input.contactInfo?.phone,
-        email: input.contactInfo?.email,
-        address: input.contactInfo?.address,
-        websiteUrl: input.websiteUrl
+        includeContacts: false, // Always false for content generation
+        phone: undefined, // No contact info in content generation
+        email: undefined, // No contact info in content generation
+        address: undefined, // No contact info in content generation
+        websiteUrl: undefined // No contact info in content generation
       }
     );
 
@@ -2041,22 +2053,7 @@ TECHNICAL REQUIREMENTS:
     }
 
 
-    // Contact information integration based on toggle (phone, email, website only)
-    try {
-      const includeContacts = input.includeContacts === true;
-      const phone = input.contactInfo?.phone;
-      const email = input.contactInfo?.email;
-      const website = input.websiteUrl || '';
-      const hasAnyContact = (!!phone || !!email || !!website);
-
-      const contactInstructions = includeContacts && hasAnyContact
-        ? `\n\nCONTACT INFORMATION INTEGRATION (WHEN AVAILABLE):\n- Integrate contact details as part of the composition (not plain overlay).\n${phone ? `  - Phone: ${phone}\n` : ''}${email ? `  - Email: ${email}\n` : ''}${website ? `  - Website: ${ensureWwwWebsiteUrl(website)}\n` : ''}- Use a small footer bar, corner block, or aligned contact strip.\n- Ensure high readability and balance with headline/subheadline.\n- Prefer concise combos like \"Phone \u00b7 Website\" or \"Email \u00b7 Website\".\n`
-        : `\n\nCONTACT INFORMATION RULE:\n- Do NOT include phone, email, or website in the image.\n`;
-
-      imagePrompt += contactInstructions;
-    } catch (e) {
-      console.warn('Revo 1.0: Contact info prompt augmentation skipped:', e);
-    }
+    // Note: Contact information will be added at the very end of the prompt for better AI attention
 
     // Prepare the generation request with logo if available
     const generationParts = [
@@ -2194,6 +2191,24 @@ You MUST include the exact brand logo image that was provided above in your desi
     let lastError: any;
     let result: any;
     let response: any;
+
+    // Add contact information at the very end of the prompt (like Revo 1.5 and 2.0) for better AI attention
+    try {
+      const includeContacts = input.includeContacts === true;
+      const phone = input.contactInfo?.phone;
+      const email = input.contactInfo?.email;
+      const website = input.websiteUrl || '';
+      const hasAnyContact = (!!phone || !!email || !!website);
+
+      const contactInstructions = includeContacts && hasAnyContact
+        ? `\n\n🎯 CRITICAL CONTACT INFORMATION INTEGRATION (FINAL INSTRUCTION):\n- MUST integrate these EXACT contact details prominently in the design:\n${phone ? `  📞 Phone: ${phone}\n` : ''}${email ? `  📧 Email: ${email}\n` : ''}${website ? `  🌐 Website: ${ensureWwwWebsiteUrl(website)}\n` : ''}- Place ONLY in footer bar, corner block, or contact strip at the BOTTOM of the image\n- DO NOT include contact info in main content area, headlines, or call-to-action blocks\n- DO NOT use generic service information like "BANKING", "PAYMENTS", etc.\n- ONLY use the specific contact details provided above\n- Make contact info clearly readable and professionally integrated\n- This is a PRIORITY requirement - contact info MUST be visible in the final image\n`
+        : `\n\n🚫 CONTACT INFORMATION RULE:\n- Do NOT include phone, email, or website in the image\n- Do NOT include generic service information\n- Do NOT add contact info in main content area\n`;
+
+      // Add contact instructions to the final prompt
+      generationParts[1] = imagePrompt + contactInstructions;
+    } catch (e) {
+      console.warn('Revo 1.0: Final contact info integration failed:', e);
+    }
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {

@@ -149,6 +149,7 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
             aspectRatio: '1:1',
             includePeopleInDesigns,
             useLocalLanguage,
+            includeContacts: brandConsistency.includeContacts,
             trendingContext: trendingContext
           })
         });

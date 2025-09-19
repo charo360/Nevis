@@ -744,8 +744,8 @@ export async function generateFinalImage(
     const hasAnyContact = (!!phone || !!email || !!website);
 
     const contactInstructions = includeContacts && hasAnyContact
-      ? `\n\nCONTACT INFORMATION INTEGRATION (WHEN AVAILABLE):\n- Integrate the brand's contact info naturally as part of the composition (not plain overlay text):\n${phone ? `  - Phone: ${phone}\n` : ''}${email ? `  - Email: ${email}\n` : ''}${website ? `  - Website: ${ensureWwwWebsiteUrl(website)}\n` : ''}- Use a small footer bar, corner block, or neatly aligned contact strip.\n- Ensure readability with proper contrast, spacing, and alignment.\n- Do not overpower the main headline/subheadline; keep it supportive and elegant.\n- Prefer concise combinations like "Phone · Website" or "Email · Website" when multiple items exist.\n`
-      : `\n\nCONTACT INFORMATION RULE:\n- Do NOT include phone, email, or website text in the image.\n`;
+      ? `\n\n🎯 CRITICAL CONTACT INFORMATION INTEGRATION (FINAL INSTRUCTION):\n- MUST integrate these EXACT contact details prominently in the design:\n${phone ? `  📞 Phone: ${phone}\n` : ''}${email ? `  📧 Email: ${email}\n` : ''}${website ? `  🌐 Website: ${ensureWwwWebsiteUrl(website)}\n` : ''}- Place ONLY in footer bar, corner block, or contact strip at the BOTTOM of the image\n- DO NOT include contact info in main content area, headlines, or call-to-action blocks\n- DO NOT use generic service information like "BANKING", "PAYMENTS", etc.\n- ONLY use the specific contact details provided above\n- Make contact info clearly readable and professionally integrated\n- This is a PRIORITY requirement - contact info MUST be visible in the final image\n`
+      : `\n\n🚫 CONTACT INFORMATION RULE:\n- Do NOT include phone, email, or website in the image\n- Do NOT include generic service information\n- Do NOT add contact info in main content area\n`;
 
     imagePrompt += contactInstructions;
   } catch (e) {

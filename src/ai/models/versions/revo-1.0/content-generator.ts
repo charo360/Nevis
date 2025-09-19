@@ -45,7 +45,11 @@ export class Revo10ContentGenerator implements IContentGenerator {
         dayOfWeek: generationParams.dayOfWeek || 'Monday',
         currentDate: generationParams.currentDate || new Date().toLocaleDateString(),
         primaryColor: generationParams.primaryColor,
-        visualStyle: generationParams.visualStyle
+        visualStyle: generationParams.visualStyle,
+        // Contact information for brand consistency
+        includeContacts: generationParams.includeContacts || false,
+        contactInfo: generationParams.contactInfo || {},
+        websiteUrl: generationParams.websiteUrl || ''
       });
 
       // Generate image using the catchy words and brand profile data
@@ -79,7 +83,11 @@ export class Revo10ContentGenerator implements IContentGenerator {
         subheadline: postDetails.subheadline,
         callToAction: postDetails.callToAction,
         realTimeContext: realTimeContext,
-        creativeContext: (postDetails as any).creativeContext // 🎨 Pass creative context to image generation
+        creativeContext: (postDetails as any).creativeContext, // 🎨 Pass creative context to image generation
+        // Contact information for brand consistency
+        includeContacts: generationParams.includeContacts || false,
+        contactInfo: generationParams.contactInfo || {},
+        websiteUrl: generationParams.websiteUrl || ''
       });
 
       // Update variants with the generated image

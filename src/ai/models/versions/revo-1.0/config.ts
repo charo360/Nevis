@@ -105,13 +105,6 @@ Brand Information:
 - Competitive Advantages: {competitiveAdvantages}
 - Content Themes: {contentThemes}
 
-Contact Information:
-- Include Contacts: {includeContacts}
-- Phone: {contactPhone}
-- Email: {contactEmail}
-- Address: {contactAddress}
-- Website: {websiteUrl}
-
 Requirements:
 - Create engaging, professional content that reflects the business's unique value proposition
 - Incorporate services and key features naturally into the content
@@ -124,8 +117,9 @@ Requirements:
 - Generate content in proper English with correct spelling and grammar
 - Avoid any corrupted or unreadable character sequences
 - Make the content location-specific and culturally relevant when appropriate
-- When includeContacts is true, naturally incorporate contact information (phone, email, address, website) into the content when it enhances the message and call-to-action
-- Don't force contact information into every post - use contextually when it makes sense for the specific content`,
+- CRITICAL: DO NOT include any phone numbers, email addresses, or website URLs in the content, subheadlines, or call-to-action
+- Call-to-action should be generic action phrases like "Get Started Today!", "Learn More!", "Join Us!", "Transform Your Business!"
+- Contact information will be handled separately during image generation for optimal placement`,
 
   // Design generation prompts
   DESIGN_SYSTEM_PROMPT: `You are a world-class graphic designer who creates 7 completely different types of social media designs, each with their own unique visual language and style. You have deep expertise in multiple industries and understand how to create designs that rival the best brands in the world.
