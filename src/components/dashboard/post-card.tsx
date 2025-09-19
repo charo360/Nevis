@@ -395,6 +395,8 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
     setIsRegenerating(true);
     try {
       const platform = safeVariants[0].platform;
+      // TODO: Pass useLocalLanguage parameter from parent component
+      // Currently defaults to false - regenerated posts will be in English only
       const newPost = await generateContentAction(brandProfile, platform);
       onPostUpdated({ ...newPost, id: post.id }); // Keep old id for replacement
       toast({

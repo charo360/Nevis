@@ -396,11 +396,19 @@ export class AdvancedContentGenerator {
       tiktok: 'trendy, fun, challenge-oriented',
     };
 
-    const captionElements = [
+    // Strategic location mention - only 30% of the time for captions
+    const shouldMentionLocation = Math.random() < 0.30; // 30% chance
+
+    const captionElements = shouldMentionLocation ? [
       `At ${profile.businessName}, we believe ${this.getRandomElement(businessIntelligence.valuePropositions)}.`,
       `Our ${this.getRandomElement(businessIntelligence.businessStrengths)} brings ${this.getRandomElement(businessIntelligence.targetEmotions)} to ${profile.location}.`,
       `${this.getRandomElement(culturalContext.localPhrases)}! ${this.getRandomElement(trendingInsights.currentTrends)} meets ${this.getRandomElement(businessIntelligence.industryKeywords)}.`,
       `Join our ${profile.location} community for ${this.getRandomElement(businessIntelligence.localRelevance)}.`,
+    ] : [
+      `At ${profile.businessName}, we believe ${this.getRandomElement(businessIntelligence.valuePropositions)}.`,
+      `Our ${this.getRandomElement(businessIntelligence.businessStrengths)} brings ${this.getRandomElement(businessIntelligence.targetEmotions)} to every customer.`,
+      `${this.getRandomElement(culturalContext.localPhrases)}! ${this.getRandomElement(trendingInsights.currentTrends)} meets ${this.getRandomElement(businessIntelligence.industryKeywords)}.`,
+      `Join our community for ${this.getRandomElement(businessIntelligence.localRelevance)}.`,
     ];
 
     return captionElements.slice(0, 2).join(' ');

@@ -83,6 +83,7 @@ export interface ContentGenerationRequest {
   artifactIds?: string[];
   customInstructions?: string;
   modelId: RevoModelId;
+  useLocalLanguage?: boolean; // Control whether to use local language in content generation
 }
 
 // Design generation request interface

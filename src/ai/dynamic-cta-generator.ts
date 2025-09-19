@@ -112,6 +112,9 @@ export class DynamicCTAGenerator {
     const timestamp = Date.now();
     const variation = timestamp % 4; // 4 variations per style
 
+    // Strategic location mention - only 20% of the time for CTAs
+    const shouldMentionLocation = Math.random() < 0.20; // 20% chance for CTAs
+
     const ctaTemplates: Record<string, string[]> = {
       URGENCY: [
         `Book now - limited spots!`,
@@ -138,22 +141,27 @@ export class DynamicCTAGenerator {
         `Feel the difference immediately!`
       ],
       COMMUNITY: [
-        `Join the ${location} family!`,
+        `Join our family!`,
         `Be part of something special!`,
         `Connect with your neighbors!`,
         `Share the love with friends!`
       ],
       CURIOSITY: [
         `Discover what makes us different!`,
-        `Find out why locals choose us!`,
+        `Find out why customers choose us!`,
         `See what the buzz is about!`,
-        `Uncover ${location}'s best kept secret!`
+        `Uncover our best kept secret!`
       ],
-      LOCAL_REFERENCE: [
+      LOCAL_REFERENCE: shouldMentionLocation ? [
         `${location}'s favorite spot awaits!`,
         `Proudly serving ${location} families!`,
         `Your neighborhood ${businessType}!`,
         `Where ${location} locals go!`
+      ] : [
+        `Your favorite spot awaits!`,
+        `Proudly serving families!`,
+        `Your neighborhood ${businessType}!`,
+        `Where locals go!`
       ],
       SENSORY: [
         `Taste the difference today!`,
@@ -178,7 +186,7 @@ export class DynamicCTAGenerator {
     const templates = ctaTemplates[style] || ctaTemplates.DIRECT_ACTION;
     let cta = templates[variation];
 
-    // Personalize with business name or location when appropriate
+    // Personalize with business name when appropriate (avoid location mentions unless specifically enabled)
     if (Math.random() > 0.5 && !cta.includes(businessName) && !cta.includes(location)) {
       const personalizations = [
         `at ${businessName}`,

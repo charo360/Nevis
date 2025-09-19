@@ -231,7 +231,7 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
         );
       } else {
         // Use standard content generation
-        newPost = await generateContentAction(brandProfile, platform, brandConsistency);
+        newPost = await generateContentAction(brandProfile, platform, brandConsistency, useLocalLanguage);
       }
 
 

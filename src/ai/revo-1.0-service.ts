@@ -1515,6 +1515,7 @@ export async function generateRevo10Content(input: {
     address?: string;
   };
   websiteUrl?: string;
+  useLocalLanguage?: boolean; // When true, mix local language with English; when false, use 100% English
 }) {
   try {
     // Auto-detect platform-specific aspect ratio
@@ -1664,7 +1665,9 @@ export async function generateRevo10Content(input: {
       contentGenerationInput.platform,
       'awareness',
       trendingEnhancement,
-      advancedContent
+      advancedContent,
+      input.useLocalLanguage || false,
+      realTimeContext.localLanguage
     );
 
     const businessSubheadline = await generateBusinessSpecificSubheadline(
@@ -1675,11 +1678,28 @@ export async function generateRevo10Content(input: {
       businessHeadline.headline,
       'awareness',
       trendingEnhancement,
-      advancedContent
+      advancedContent,
+      input.useLocalLanguage || false,
+      realTimeContext.localLanguage
     );
 
 
     // 📝 NEW: Generate AI-powered business-specific caption
+
+    // 🔍 DEBUG: Local language parameter tracing
+    console.log('🌍 [Revo 1.0] Local Language Debug:', {
+      useLocalLanguage: input.useLocalLanguage || false,
+      location: contentGenerationInput.location,
+      hasLocalLanguageContext: !!realTimeContext.localLanguage,
+      localLanguageContext: realTimeContext.localLanguage
+    });
+
+    // 🚨 ALERT: Make this debug message very visible
+    if (input.useLocalLanguage) {
+      console.log('🚨🌍 REVO 1.0 LOCAL LANGUAGE IS ENABLED! Should generate local language content for:', contentGenerationInput.location);
+    } else {
+      console.log('❌🌍 REVO 1.0 LOCAL LANGUAGE IS DISABLED - English only');
+    }
 
     const businessCaption = await generateBusinessSpecificCaption(
       contentGenerationInput.businessType,
@@ -1696,7 +1716,9 @@ export async function generateRevo10Content(input: {
         email: undefined, // No contact info in content generation
         address: undefined, // No contact info in content generation
         websiteUrl: undefined // No contact info in content generation
-      }
+      },
+      input.useLocalLanguage || false,
+      realTimeContext.localLanguage
     );
 
 
@@ -1947,8 +1969,16 @@ ANTI-GENERIC REQUIREMENTS:
     const platformOptimization = getPlatformOptimization(input.platform);
     const shouldIncludePeople = shouldIncludePeopleInDesign(input.businessType, input.location || 'Global', input.visualStyle);
     const peopleInstructions = shouldIncludePeople ? getAdvancedPeopleInstructions(input.businessType, input.location || 'Global') : '';
-    const culturalContext = getLocalCulturalContext(input.location || 'Global');
+    // Strategic location mention - only 20% of the time for designs
+    const shouldMentionLocationInDesign = Math.random() < 0.20; // 20% chance to mention location
+    const locationTextForDesign = shouldMentionLocationInDesign && input.location
+      ? `- Location: ${input.location}`
+      : '';
 
+    // Strategic cultural context - only include when location is mentioned
+    const culturalContext = shouldMentionLocationInDesign 
+      ? getLocalCulturalContext(input.location || 'Global')
+      : 'Focus on universal design elements that appeal to a broad audience';
 
     // Generate human-like design variation for authentic, creative designs
     const designRandomSeed = Math.floor(Math.random() * 10000) + Date.now();
@@ -1959,14 +1989,13 @@ ANTI-GENERIC REQUIREMENTS:
     const industryIntel = getIndustryDesignIntelligence(input.businessType);
     const creativityFramework = getEnhancedCreativityFramework(input.businessType, designVariations.style, designSeed);
 
-
     let imagePrompt = `🎨 Create a ${designVariations.style.toLowerCase()} social media design for ${input.businessName} that looks completely different from typical business posts and feels genuinely human-made.
 
 BUSINESS CONTEXT:
 - Business: ${input.businessName} (${input.businessType})
 - Platform: ${input.platform}
 - Message: ${input.imageText}
-- Location: ${input.location || 'Global'}
+${locationTextForDesign}
 
 ${ctaInstructions}
 
@@ -1988,12 +2017,25 @@ VISUAL STYLE:
 - Use colors and elements that match this specific style
 - Typography should match the style's mood and approach
 
-🌍 CULTURAL REPRESENTATION & LOCAL TOUCH:
+🎨 BRAND COLORS (MANDATORY):
+- ${colorScheme}
+- CRITICAL: Use these exact brand colors throughout the design
+- Primary color should dominate (60% of color usage)
+- Accent color for highlights and emphasis (30% of color usage)
+- Background color for base/neutral areas (10% of color usage)
+- DO NOT use random colors - stick to the brand color palette
+
+${shouldMentionLocationInDesign ? `🌍 CULTURAL REPRESENTATION & LOCAL TOUCH:
 - ${culturalContext}
 - **Keep cultural elements subtle and natural - don't force them**
 - Use local colors and textures naturally, not as obvious cultural markers
 - Make it feel authentic to the location without being stereotypical
-- Focus on the design style first, local elements second
+- Focus on the design style first, local elements second` : `🎨 UNIVERSAL DESIGN APPROACH:
+- ${culturalContext}
+- Focus on clean, modern design elements that appeal to a broad audience
+- Use professional color schemes and typography
+- Emphasize business value and quality over location-specific elements
+- Create designs that work well across different markets and cultures`}
 
 ${peopleInstructions ? `
 👥 PEOPLE REPRESENTATION:

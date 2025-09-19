@@ -287,6 +287,21 @@ async function generateCaptionAndHashtags(
       useLocalLanguage
     );
 
+    // 🔍 DEBUG: Local language parameter tracing for Revo 1.5
+    console.log('🌍 [Revo 1.5] Local Language Debug:', {
+      useLocalLanguage: useLocalLanguage,
+      location: brandProfile.location,
+      businessType: businessType,
+      platform: platform
+    });
+
+    // 🚨 ALERT: Make this debug message very visible
+    if (useLocalLanguage) {
+      console.log('🚨🌍 REVO 1.5 LOCAL LANGUAGE IS ENABLED! Should generate local language content for:', brandProfile.location);
+    } else {
+      console.log('❌🌍 REVO 1.5 LOCAL LANGUAGE IS DISABLED - English only');
+    }
+
     const languageInstruction = useLocalLanguage
       ? `- LANGUAGE: Use English with natural local language elements appropriate for ${brandProfile.location || 'the location'} (mix English with local language for authentic feel)`
       : `- LANGUAGE: Use English only, do not use local language`;
@@ -351,7 +366,7 @@ Create:
    - Builds on the headline's excitement with specific benefits or results
    - Uses emotional language that connects with the target audience
    - Creates desire by highlighting what they'll gain or achieve
-   - Uses power words like "discover", "unlock", "transform", "achieve", "dominate"
+   - Uses power words like "discover", "achieve", "transform", "master", "dominate"
    - Avoids generic phrases - be specific and compelling
    - Makes a promise or shows a clear benefit
    - Examples: "Join thousands who've already transformed their lives", "Discover the secret that's changing everything", "Get results in 30 days or less"
@@ -428,10 +443,10 @@ HEADLINE & SUBHEADLINE EXAMPLES BY BUSINESS TYPE:
 - RESTAURANT: "Taste the Difference!" + "Where every bite tells a story of passion and flavor"
 - FITNESS: "Transform Your Body in 30 Days!" + "Join 5,000+ people who've already changed their lives"
 - TECH: "The Future is Here!" + "Discover the technology that's revolutionizing everything"
-- BEAUTY: "Unlock Your True Beauty!" + "Professional results that make you feel confident every day"
+- BEAUTY: "Reveal Your True Beauty!" + "Professional results that make you feel confident every day"
 - FINANCE: "Your Money, Your Future!" + "Smart banking solutions that put you in control"
 - HEALTHCARE: "Your Health, Our Priority!" + "Expert care that puts your wellbeing first"
-- EDUCATION: "Unlock Your Potential!" + "Learn from the best and achieve your dreams"
+- EDUCATION: "Reveal Your Potential!" + "Learn from the best and achieve your dreams"
 - REAL ESTATE: "Find Your Dream Home!" + "Where every property tells a story of new beginnings"
 
 ${useLocalLanguage ? `

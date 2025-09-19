@@ -51,6 +51,44 @@ function cleanBusinessNamePattern(text: string): string {
   return cleaned;
 }
 
+// Dynamic Alternatives Generator - Creates 30+ unique variations to prevent repetition
+function getDynamicAlternatives(businessType: string): string[] {
+  const actionWords = [
+    'Revolutionary', 'Transform', 'Discover', 'Achieve', 'Experience', 'Master', 'Elevate',
+    'Breakthrough', 'Redefine', 'Optimize', 'Amplify', 'Streamline', 'Enhance', 'Accelerate',
+    'Maximize', 'Upgrade', 'Refine', 'Boost', 'Advance', 'Perfect', 'Strengthen', 'Improve',
+    'Develop', 'Build', 'Create', 'Establish', 'Generate', 'Produce', 'Deliver', 'Provide',
+    'Unlock', 'Reveal', 'Unleash', 'Activate', 'Ignite', 'Catalyze', 'Empower', 'Inspire',
+    'Motivate', 'Drive', 'Fuel', 'Spark', 'Trigger', 'Launch', 'Initiate', 'Commence'
+  ];
+
+  const outcomeWords = [
+    'solution', 'experience', 'future', 'excellence', 'innovation', 'success', 'game',
+    'technology', 'standards', 'journey', 'performance', 'operations', 'capabilities',
+    'growth', 'potential', 'approach', 'strategies', 'efficiency', 'solutions', 'process',
+    'foundations', 'outcomes', 'expertise', 'mastery', 'leadership', 'results', 'value',
+    'breakthrough', 'transformation', 'revolution', 'evolution', 'advancement', 'progress',
+    'improvement', 'enhancement', 'optimization', 'maximization', 'realization', 'achievement'
+  ];
+
+  const alternatives: string[] = [];
+  
+  // Generate 30+ unique combinations
+  for (let i = 0; i < 35; i++) {
+    const actionIndex = i % actionWords.length;
+    const outcomeIndex = (i + Math.floor(i / actionWords.length)) % outcomeWords.length;
+    
+    const alternative = `${actionWords[actionIndex]} ${businessType} ${outcomeWords[outcomeIndex]}`;
+    
+    // Avoid duplicates
+    if (!alternatives.includes(alternative)) {
+      alternatives.push(alternative);
+    }
+  }
+
+  return alternatives;
+}
+
 // Enhanced subheadline quality improvement function
 function enhanceSubheadlineQuality(subheadline: string, businessType: string, location: string): string {
   // Remove extra punctuation and clean up
@@ -104,18 +142,27 @@ function initializeAI() {
 
 // Dynamic approach instructions to force variety
 function getApproachInstructions(approach: string, businessName: string, location: string, creativityBoost: number): string {
+  // Strategic location mention - only 20% of the time for approach instructions
+  const shouldMentionLocation = (creativityBoost % 10) < 2; // 20% chance
+
   switch (approach) {
     case 'DIRECT_BENEFIT':
-      return `HEADLINES: Lead with specific benefit. Example: "8g Protein Per Cookie" SUBHEADLINES: Expand with business details. Example: "Finally snacks that fuel kids properly - made fresh daily in ${location}" CAPTIONS: Full benefit story with RSS/business data.`;
+      return shouldMentionLocation
+        ? `HEADLINES: Lead with specific benefit. Example: "8g Protein Per Cookie" SUBHEADLINES: Expand with business details. Example: "Finally snacks that fuel kids properly - made fresh daily in ${location}" CAPTIONS: Full benefit story with RSS/business data.`
+        : `HEADLINES: Lead with specific benefit. Example: "8g Protein Per Cookie" SUBHEADLINES: Expand with business details. Example: "Finally snacks that fuel kids properly - made fresh daily" CAPTIONS: Full benefit story with RSS/business data.`;
 
     case 'SOCIAL_PROOF':
-      return `HEADLINES: Reference community adoption. Example: "200+ ${location} Families Agree" SUBHEADLINES: Add business specifics. Example: "Our protein cookies beat sugar crashes every time" CAPTIONS: Full social proof story with testimonials and business intelligence.`;
+      return shouldMentionLocation
+        ? `HEADLINES: Reference community adoption. Example: "200+ ${location} Families Agree" SUBHEADLINES: Add business specifics. Example: "Our protein cookies beat sugar crashes every time" CAPTIONS: Full social proof story with testimonials and business intelligence.`
+        : `HEADLINES: Reference community adoption. Example: "200+ Families Agree" SUBHEADLINES: Add business specifics. Example: "Our protein cookies beat sugar crashes every time" CAPTIONS: Full social proof story with testimonials and business intelligence.`;
 
     case 'PROBLEM_SOLUTION':
       return `HEADLINES: State the problem. Example: "Sugar Crashes Ruining Snacktime" SUBHEADLINES: Present solution. Example: "${businessName}'s protein cookies keep energy steady for hours" CAPTIONS: Full problem-solution narrative with business details.`;
 
     case 'LOCAL_INSIDER':
-      return `HEADLINES: Use local insider knowledge. Example: "${location} Parents Secret Weapon" SUBHEADLINES: Add business insider details. Example: "What 500+ local families know about our cookies" CAPTIONS: Full insider story with local references and business intelligence.`;
+      return shouldMentionLocation
+        ? `HEADLINES: Use insider knowledge. Example: "${location} Parents Secret Weapon" SUBHEADLINES: Add business insider details. Example: "What 500+ families know about our cookies" CAPTIONS: Full insider story with local references and business intelligence.`
+        : `HEADLINES: Use insider knowledge. Example: "Parents Secret Weapon" SUBHEADLINES: Add business insider details. Example: "What 500+ families know about our cookies" CAPTIONS: Full insider story with customer references and business intelligence.`;
 
     case 'URGENCY_SCARCITY':
       return `HEADLINES: Create real urgency. Example: "Only 50 Packs Left" SUBHEADLINES: Add business context. Example: "This week's batch selling faster than expected" CAPTIONS: Full urgency story with business details and RSS trends.`;
@@ -127,16 +174,22 @@ function getApproachInstructions(approach: string, businessName: string, locatio
       return `HEADLINES: Lead with business statistic. Example: "95% Same-Day Fix Rate" SUBHEADLINES: Add context. Example: "Our certified technicians solve most issues within hours" CAPTIONS: Full statistic story with business details and proof.`;
 
     case 'STORY_ANGLE':
-      return `HEADLINES: Start story hook. Example: "Local Baker's Secret Recipe" SUBHEADLINES: Continue story. Example: "Three generations of ${location} families can't be wrong" CAPTIONS: Full story with business history and customer experiences.`;
+      return shouldMentionLocation
+        ? `HEADLINES: Start story hook. Example: "Local Baker's Secret Recipe" SUBHEADLINES: Continue story. Example: "Three generations of ${location} families can't be wrong" CAPTIONS: Full story with business history and customer experiences.`
+        : `HEADLINES: Start story hook. Example: "Baker's Secret Recipe" SUBHEADLINES: Continue story. Example: "Three generations of families can't be wrong" CAPTIONS: Full story with business history and customer experiences.`;
 
     case 'COMPARISON':
-      return `HEADLINES: Set up comparison. Example: "Better Than Downtown Options" SUBHEADLINES: Specify difference. Example: "Same quality, half the price, right in ${location}" CAPTIONS: Full comparison with business advantages and local benefits.`;
+      return shouldMentionLocation
+        ? `HEADLINES: Set up comparison. Example: "Better Than Downtown Options" SUBHEADLINES: Specify difference. Example: "Same quality, half the price, right in ${location}" CAPTIONS: Full comparison with business advantages and local benefits.`
+        : `HEADLINES: Set up comparison. Example: "Better Than Downtown Options" SUBHEADLINES: Specify difference. Example: "Same quality, half the price, convenient location" CAPTIONS: Full comparison with business advantages and customer benefits.`;
 
     case 'NEWS_TREND':
       return `HEADLINES: Connect to current news/trends. Example: "Holiday Rush Solution Found" SUBHEADLINES: Add business connection. Example: "${businessName} handles your busiest season stress-free" CAPTIONS: Full trend connection with RSS data and business solutions.`;
 
     default:
-      return `Create unique content that could only apply to ${businessName} in ${location}. Be specific and authentic.`;
+      return shouldMentionLocation
+        ? `Create unique content that could only apply to ${businessName} in ${location}. Be specific and authentic.`
+        : `Create unique content that could only apply to ${businessName}. Be specific and authentic about the business value.`;
   }
 }
 
@@ -420,7 +473,9 @@ export async function generateBusinessSpecificHeadline(
   platform: string,
   contentGoal: 'awareness' | 'consideration' | 'conversion' | 'retention' = 'awareness',
   trendingData?: any,
-  businessIntelligence?: any
+  businessIntelligence?: any,
+  useLocalLanguage: boolean = false,
+  localLanguageContext?: any
 ): Promise<{ headline: string; approach: string; emotionalImpact: string }> {
 
   const contentPlan = StrategicContentPlanner.generateBusinessSpecificContent(
@@ -464,7 +519,23 @@ export async function generateBusinessSpecificHeadline(
 
   const contextualData = await getContextualData();
 
-  const prompt = `You are a brilliant local marketing expert who deeply understands ${location} culture, language, and market dynamics. You stay updated with current trends and know exactly how businesses in ${location} market themselves successfully.
+  // Strategic location mention - only 25% of the time for headlines
+  const shouldMentionLocation = Math.random() < 0.25; // 25% chance for headlines
+
+  const locationContext = shouldMentionLocation
+    ? `You understand ${location} culture, language, and market dynamics. You know how businesses in ${location} market themselves successfully.`
+    : `You are a brilliant marketing expert who understands diverse markets and customer psychology. You create compelling headlines that focus on business value.`;
+
+  const businessLocationInfo = shouldMentionLocation
+    ? `- Location: ${location}
+- Regional Marketing Style: ${marketingStyle}
+- Local Language Tone: ${regionalLanguage}
+- How locals talk about ${businessType}: ${getLocalBusinessLanguage(location, businessType)}`
+    : `- Focus: Business value and customer benefits
+- Marketing Style: Professional and engaging
+- Tone: Clear and compelling`;
+
+  const prompt = `${locationContext}
 
 REAL-TIME CONTEXTUAL DATA (Analyze and use what's relevant):
 - Current News: ${contextualData.news}
@@ -476,53 +547,103 @@ REAL-TIME CONTEXTUAL DATA (Analyze and use what's relevant):
 
 BUSINESS INTELLIGENCE:
 - Business: ${businessName} (${businessType})
-- Location: ${location}
 - Experience: ${businessDetails.experience || 'established business'}
 - Specialties: ${businessDetails.expertise || businessDetails.services || 'professional services'}
-- Target Market: ${businessDetails.targetAudience || 'local community'}
+- Target Market: ${businessDetails.targetAudience || 'customers seeking quality services'}
 - Marketing Goal: ${contentGoal}
 
 CURRENT TRENDING CONTEXT (Use these insights to make content relevant):
-- Trending Keywords: ${trendingKeywords.join(', ') || 'quality, authentic, local, fresh, community'}
-- Popular Hashtags: ${trendingHashtags.join(', ') || '#local #authentic #quality'}
-- Regional Marketing Style: ${marketingStyle}
-- Local Language Tone: ${regionalLanguage}
+- Trending Keywords: ${trendingKeywords.join(', ') || 'quality, authentic, professional, reliable, trusted'}
+- Popular Hashtags: ${trendingHashtags.join(', ') || '#quality #professional #trusted'}
+${businessLocationInfo}
 
-LOCAL MARKET INTELLIGENCE:
+MARKET INTELLIGENCE:
 - Industry Trends: ${industry.trends.slice(0, 3).join(', ')}
 - Competitive Advantages: ${industry.uniqueValue.slice(0, 2).join(', ')}
 - Market Opportunities: ${industry.opportunities.slice(0, 2).join(', ')}
-- How locals in ${location} talk about ${businessType}: ${getLocalBusinessLanguage(location, businessType)}
 
 INTELLIGENT RELEVANCE FILTERING:
-- ANALYZE the real-time data above and ONLY use information that's directly relevant to ${businessType} customers in ${location}
+- ANALYZE the real-time data above and ONLY use information that's directly relevant to ${businessType} customers
 - IGNORE irrelevant data - don't force connections that don't make sense
 - CONNECT your business ONLY to trending conversations, events, or cultural moments that actually relate to ${businessType}
-- CONSIDER what ${businessType} customers are actually talking about and caring about in this location
-- USE psychological triggers that resonate with current local sentiment and needs SPECIFIC TO ${businessType}
+- CONSIDER what ${businessType} customers are actually talking about and caring about
+- USE psychological triggers that resonate with current sentiment and needs SPECIFIC TO ${businessType}
 - CREATE headlines that feel like they were written by someone who truly understands this moment AND this business
 - ENSURE content reflects what's actually happening in the world that's RELEVANT to your business
-- FOCUS on timely relevance and authentic local connection SPECIFIC TO ${businessType}
+- FOCUS on timely relevance and authentic connection SPECIFIC TO ${businessType}
 - MAKE people think "This business really gets what's happening right now AND understands my needs"
 
 RELEVANCE CRITERIA:
-- News must relate to ${businessType}, local economy, or customer needs
-- Social trends must be relevant to ${businessType} customers or local community
-- Events must be related to ${businessType}, local business, or customer interests
+- News must relate to ${businessType}, economy, or customer needs
+- Social trends must be relevant to ${businessType} customers or community
+- Events must be related to ${businessType}, business sector, or customer interests
 - Weather must impact ${businessType} services or customer behavior
-- Cultural moments must be relevant to ${businessType} customers or local traditions
-- Market insights must be specific to ${businessType} industry or local market
+- Cultural moments must be relevant to ${businessType} customers or traditions
+- Market insights must be specific to ${businessType} industry or market
 
-REGIONAL MARKETING STRATEGY:
-You understand that in ${location}, people respond to ${marketingStyle} marketing. Use the trending keywords naturally and speak like locals do. Create content that feels authentic to ${location} culture and current market trends.
+MARKETING STRATEGY:
+${shouldMentionLocation
+      ? `You understand that in ${location}, people respond to ${marketingStyle} marketing. Use the trending keywords naturally and speak like locals do. Create content that feels authentic to ${location} culture and current market trends.`
+      : `Focus on universal business value and customer benefits. Use trending keywords naturally and create content that resonates with ${businessType} customers. Emphasize quality, reliability, and customer satisfaction.`}
+
+${useLocalLanguage ? `
+LANGUAGE REQUIREMENTS:
+- Use English as the primary language (70%)
+- Include natural local language elements (30%) - words, phrases, expressions that locals would use
+- Mix English with local language for an authentic, natural feel
+- Make it sound natural and culturally appropriate for ${location}
+- Examples: "Welcome to [Business Name]" + local greeting, or "Best [Service]" + local term
+- Avoid 100% local language - aim for natural mixing
+
+${localLanguageContext ? `
+SPECIFIC LOCAL LANGUAGE CONTEXT FOR ${location.toUpperCase()}:
+- Primary Language: ${localLanguageContext.primaryLanguage || 'English'}
+- Common Phrases: ${localLanguageContext.commonPhrases?.join(', ') || 'N/A'}
+- Business Terms: ${localLanguageContext.businessTerms?.join(', ') || 'N/A'}
+- Cultural Nuances: ${localLanguageContext.culturalNuances || 'N/A'}
+- Marketing Style: ${localLanguageContext.marketingStyle || 'N/A'}
+- Local Expressions: ${localLanguageContext.localExpressions?.join(', ') || 'N/A'}
+
+USE THESE SPECIFIC TERMS:
+- Incorporate the common phrases naturally: ${localLanguageContext.commonPhrases?.slice(0, 3).join(', ') || 'N/A'}
+- Use business terms when relevant: ${localLanguageContext.businessTerms?.slice(0, 2).join(', ') || 'N/A'}
+- Apply the cultural nuances: ${localLanguageContext.culturalNuances || 'N/A'}
+- Follow the marketing style: ${localLanguageContext.marketingStyle || 'N/A'}
+- Include local expressions: ${localLanguageContext.localExpressions?.slice(0, 2).join(', ') || 'N/A'}` : ''}
+
+HEADLINE LOCAL LANGUAGE GUIDANCE:
+- Add contextually appropriate local greetings to headlines based on business type
+- Use local expressions in headlines that relate to the specific business industry
+- Include relevant local terms that match the business offerings and target audience
+- Mix naturally: Don't force local language - only add when it makes sense and flows well
+- Keep it relevant: Use local language that relates to the specific business context and audience
+- Maintain engagement: Ensure the local language enhances rather than distracts from the message
+- Be dynamic: Generate unique local language for each business, avoid repetitive patterns
+- Think creatively: Use different local greetings, expressions, and terms for each business type
+
+DYNAMIC LOCAL LANGUAGE GENERATION:
+- For RESTAURANTS: Use food-related local terms, hospitality greetings, taste expressions
+- For FITNESS: Use energy/motivation local terms, health expressions, action words
+- For TECH: Use innovation local terms, future expressions, digital concepts
+- For BEAUTY: Use beauty-related local terms, confidence expressions, aesthetic words
+- For FINANCE: Use money/security local terms, trust expressions, financial concepts
+- For HEALTHCARE: Use health/wellness local terms, care expressions, medical concepts
+- For EDUCATION: Use learning local terms, growth expressions, knowledge concepts
+- For REAL ESTATE: Use home/property local terms, dream expressions, space concepts
+- VARY the local language: Don't use the same phrases for every business
+- BE CONTEXTUAL: Match local language to the specific business industry and services` : `
+LANGUAGE REQUIREMENTS:
+- Use English only, do not use local language
+- Keep content in English for universal accessibility
+- Focus on local cultural understanding in English rather than local language mixing`}
 
 CONVERSION PSYCHOLOGY REQUIREMENTS:
 - Maximum 5 words that trigger immediate desire to try/buy
 - Use psychological triggers: scarcity, exclusivity, curiosity, FOMO
 - Create urgency and desire - make people think "I NEED this NOW"
-- Sound like a successful local marketer who knows conversion psychology
+- Sound like a successful marketer who knows conversion psychology
 - Incorporate trending elements naturally (don't force them)
-- Use language patterns that drive action in ${location}
+- Use language patterns that drive action and engagement
 - Focus on what makes people instantly want to experience the service/product
 - Create curiosity gaps that make people want to know more
 - CRITICAL: NEVER start with business name + colon pattern (e.g., "${businessName}: DESCRIPTION")
@@ -607,16 +728,7 @@ Make it so specific to the service/product in ${location} that it could never be
 
       if (isRepetitive) {
         // Generate a more dynamic alternative
-        const dynamicAlternatives = [
-          `Revolutionary ${businessType} solution`,
-          `Transform your ${businessType} experience`,
-          `Discover the future of ${businessType}`,
-          `Unlock ${businessType} excellence`,
-          `Experience ${businessType} innovation`,
-          `Master ${businessType} success`,
-          `Elevate your ${businessType} game`,
-          `Breakthrough ${businessType} technology`
-        ];
+        const dynamicAlternatives = getDynamicAlternatives(businessType);
 
         return dynamicAlternatives[Math.floor(Math.random() * dynamicAlternatives.length)];
       }
@@ -632,18 +744,7 @@ Make it so specific to the service/product in ${location} that it could never be
 
     // Dynamic headline enhancement - if headline is too short after cleaning, enhance it
     if (headline.length < 10) {
-      const dynamicEnhancements = [
-        `Revolutionary ${businessType} solution`,
-        `Transform your ${businessType} experience`,
-        `Discover the future of ${businessType}`,
-        `Unlock ${businessType} excellence`,
-        `Experience ${businessType} innovation`,
-        `Master ${businessType} success`,
-        `Elevate your ${businessType} game`,
-        `Breakthrough ${businessType} technology`,
-        `Next-level ${businessType} service`,
-        `Premium ${businessType} experience`
-      ];
+      const dynamicEnhancements = getDynamicAlternatives(businessType);
 
       const randomEnhancement = dynamicEnhancements[Math.floor(Math.random() * dynamicEnhancements.length)];
       headline = randomEnhancement;
@@ -763,13 +864,7 @@ Generate ONE unique headline that makes people instantly want to try the service
           const isRepetitive = repetitivePatterns.some(pattern => pattern.test(text));
 
           if (isRepetitive) {
-            const dynamicAlternatives = [
-              `Revolutionary ${businessType} solution`,
-              `Transform your ${businessType} experience`,
-              `Discover the future of ${businessType}`,
-              `Unlock ${businessType} excellence`,
-              `Experience ${businessType} innovation`
-            ];
+            const dynamicAlternatives = getDynamicAlternatives(businessType);
             return dynamicAlternatives[Math.floor(Math.random() * dynamicAlternatives.length)];
           }
 
@@ -781,13 +876,7 @@ Generate ONE unique headline that makes people instantly want to try the service
         return dynamicHeadline;
       } catch (error) {
         // Fallback to a simple dynamic approach if AI fails
-        const fallbackApproaches = [
-          `Revolutionary ${businessType} solution`,
-          `Transform your ${businessType} experience`,
-          `Discover the future of ${businessType}`,
-          `Unlock ${businessType} excellence`,
-          `Experience ${businessType} innovation`
-        ];
+        const fallbackApproaches = getDynamicAlternatives(businessType);
         return fallbackApproaches[Math.floor(Math.random() * fallbackApproaches.length)];
       }
     };
@@ -870,13 +959,7 @@ CRITICAL ANTI-REPETITION RULES:
         const timestamp = Date.now();
         const uniqueId = timestamp % 1000;
 
-        const emergencyHeadlines = [
-          `${businessName} ${location} Experience`,
-          `Exclusive ${businessType} ${location}`,
-          `${location}'s Premium ${businessType}`,
-          `Limited ${businessName} Access`,
-          `Secret ${businessType} Discovery`
-        ];
+        const emergencyHeadlines = getDynamicAlternatives(businessType);
 
         return {
           headline: emergencyHeadlines[uniqueId % emergencyHeadlines.length] + ` #${uniqueId}`,
@@ -897,7 +980,9 @@ export async function generateBusinessSpecificSubheadline(
   headline: string,
   contentGoal: 'awareness' | 'consideration' | 'conversion' | 'retention' = 'awareness',
   trendingData?: any,
-  businessIntelligence?: any
+  businessIntelligence?: any,
+  useLocalLanguage: boolean = false,
+  localLanguageContext?: any
 ): Promise<{ subheadline: string; framework: string; benefit: string }> {
 
   const industry = BUSINESS_INTELLIGENCE_SYSTEM.industryInsights[businessType.toLowerCase()] ||
@@ -911,29 +996,102 @@ export async function generateBusinessSpecificSubheadline(
   const regionalLanguage = getRegionalLanguageStyle(location);
   const marketingStyle = getRegionalMarketingStyle(location);
 
-  const prompt = `You are a skilled local marketer creating a subheadline for ${businessName} that will make people in ${location} want to visit immediately. You understand current trends and local marketing patterns.
+  // Strategic location mention - only 30% of the time for subheadlines
+  const shouldMentionLocation = Math.random() < 0.30; // 30% chance for subheadlines
+
+  const marketingContext = shouldMentionLocation
+    ? `You are a skilled local marketer creating a subheadline for ${businessName} that will make people in ${location} want to visit immediately. You understand current trends and local marketing patterns.`
+    : `You are a skilled marketer creating a compelling subheadline for ${businessName} that will make customers want to visit immediately. You understand current trends and customer psychology.`;
+
+  const targetMarketInfo = shouldMentionLocation
+    ? `- Target Market: Local ${location} residents and visitors`
+    : `- Target Market: Customers seeking quality ${businessType} services`;
+
+  const marketingIntelligence = shouldMentionLocation
+    ? `CURRENT TRENDING INTELLIGENCE:
+- Trending Keywords: ${trendingKeywords.join(', ') || 'authentic, quality, local, fresh, community'}
+- Regional Marketing Style: ${marketingStyle}
+- Local Language Patterns: ${regionalLanguage}
+- How locals talk about ${businessType}: ${getLocalBusinessLanguage(location, businessType)}`
+    : `CURRENT TRENDING INTELLIGENCE:
+- Trending Keywords: ${trendingKeywords.join(', ') || 'authentic, quality, professional, reliable, trusted'}
+- Marketing Style: Professional and engaging
+- Customer Language: Clear, benefit-focused communication`;
+
+  const marketingStrategy = shouldMentionLocation
+    ? `Create a subheadline that makes locals think "I need to try this place!" Use trending keywords naturally and speak like successful marketers in ${location} do. Focus on what makes ${businessName} irresistible to people in ${location}.`
+    : `Create a subheadline that makes customers think "I need to try this business!" Use trending keywords naturally and focus on clear value propositions. Emphasize what makes ${businessName} the best choice for ${businessType} services.`;
+
+  const prompt = `${marketingContext}
 
 MARKETING CONTEXT:
 - Main Headline: "${headline}"
 - Business: ${businessName} (${businessType})
-- Location: ${location}
+${shouldMentionLocation ? `- Location: ${location}` : ''}
 - Services/Products: ${businessDetails.services || businessDetails.expertise || 'quality offerings'}
-- Target Market: Local ${location} residents and visitors
+${targetMarketInfo}
 - Marketing Goal: ${contentGoal}
 
-CURRENT TRENDING INTELLIGENCE:
-- Trending Keywords: ${trendingKeywords.join(', ') || 'authentic, quality, local, fresh, community'}
-- Regional Marketing Style: ${marketingStyle}
-- Local Language Patterns: ${regionalLanguage}
-- How locals talk about ${businessType}: ${getLocalBusinessLanguage(location, businessType)}
+${marketingIntelligence}
 
-LOCAL MARKET INTELLIGENCE:
-- What locals value: ${industry.uniqueValue.slice(0, 2).join(', ')}
+MARKET INTELLIGENCE:
+- What customers value: ${industry.uniqueValue.slice(0, 2).join(', ')}
 - Market opportunities: ${industry.opportunities.slice(0, 2).join(', ')}
 - Industry trends: ${industry.trends.slice(0, 2).join(', ')}
 
-REGIONAL MARKETING STRATEGY:
-Create a subheadline that makes locals think "I need to try this place!" Use trending keywords naturally and speak like successful marketers in ${location} do. Focus on what makes ${businessName} irresistible to people in ${location}.
+MARKETING STRATEGY:
+${marketingStrategy}
+
+${useLocalLanguage ? `
+LANGUAGE REQUIREMENTS:
+- Use English as the primary language (70%)
+- Include natural local language elements (30%) - words, phrases, expressions that locals would use
+- Mix English with local language for an authentic, natural feel
+- Make it sound natural and culturally appropriate for ${location}
+- Examples: "Welcome to [Business Name]" + local greeting, or "Best [Service]" + local term
+- Avoid 100% local language - aim for natural mixing
+
+${localLanguageContext ? `
+SPECIFIC LOCAL LANGUAGE CONTEXT FOR ${location.toUpperCase()}:
+- Primary Language: ${localLanguageContext.primaryLanguage || 'English'}
+- Common Phrases: ${localLanguageContext.commonPhrases?.join(', ') || 'N/A'}
+- Business Terms: ${localLanguageContext.businessTerms?.join(', ') || 'N/A'}
+- Cultural Nuances: ${localLanguageContext.culturalNuances || 'N/A'}
+- Marketing Style: ${localLanguageContext.marketingStyle || 'N/A'}
+- Local Expressions: ${localLanguageContext.localExpressions?.join(', ') || 'N/A'}
+
+USE THESE SPECIFIC TERMS:
+- Incorporate the common phrases naturally: ${localLanguageContext.commonPhrases?.slice(0, 3).join(', ') || 'N/A'}
+- Use business terms when relevant: ${localLanguageContext.businessTerms?.slice(0, 2).join(', ') || 'N/A'}
+- Apply the cultural nuances: ${localLanguageContext.culturalNuances || 'N/A'}
+- Follow the marketing style: ${localLanguageContext.marketingStyle || 'N/A'}
+- Include local expressions: ${localLanguageContext.localExpressions?.slice(0, 2).join(', ') || 'N/A'}` : ''}
+
+SUBHEADLINE LOCAL LANGUAGE GUIDANCE:
+- Add contextually appropriate local greetings to subheadlines based on business type
+- Use local expressions in subheadlines that relate to the specific business industry
+- Include relevant local terms that match the business offerings and target audience
+- Mix naturally: Don't force local language - only add when it makes sense and flows well
+- Keep it relevant: Use local language that relates to the specific business context and audience
+- Maintain engagement: Ensure the local language enhances rather than distracts from the message
+- Be dynamic: Generate unique local language for each business, avoid repetitive patterns
+- Think creatively: Use different local greetings, expressions, and terms for each business type
+
+DYNAMIC LOCAL LANGUAGE GENERATION:
+- For RESTAURANTS: Use food-related local terms, hospitality greetings, taste expressions
+- For FITNESS: Use energy/motivation local terms, health expressions, action words
+- For TECH: Use innovation local terms, future expressions, digital concepts
+- For BEAUTY: Use beauty-related local terms, confidence expressions, aesthetic words
+- For FINANCE: Use money/security local terms, trust expressions, financial concepts
+- For HEALTHCARE: Use health/wellness local terms, care expressions, medical concepts
+- For EDUCATION: Use learning local terms, growth expressions, knowledge concepts
+- For REAL ESTATE: Use home/property local terms, dream expressions, space concepts
+- VARY the local language: Don't use the same phrases for every business
+- BE CONTEXTUAL: Match local language to the specific business industry and services` : `
+LANGUAGE REQUIREMENTS:
+- Use English only, do not use local language
+- Keep content in English for universal accessibility
+- Focus on local cultural understanding in English rather than local language mixing`}
 
 REVO 1.5 PREMIUM SUBHEADLINE REQUIREMENTS:
 - Maximum 8-12 words for maximum impact and readability
@@ -942,14 +1100,15 @@ REVO 1.5 PREMIUM SUBHEADLINE REQUIREMENTS:
 - Include specific benefits that answer "What's in it for me?"
 - Use action-oriented language that drives immediate response
 - Build on the headline's promise with compelling reasons to act NOW
-- Sound like a successful conversion-focused marketer in ${location}
+- Sound like a successful conversion-focused marketer who understands the target audience
 - Should make the offer irresistible and create urgency to visit/buy
 - Maintain consistent tone and flow across all subheadlines
-- Use local language naturally (Swahili for Kenya, etc.) without forcing it
+- Use local language naturally when appropriate, without forcing it
 - Keep it concise but impactful - every word must earn its place
 - Ensure smooth readability and natural rhythm
+- Focus on business value and benefits rather than location references
 
-Examples of effective ${location} subheadlines (DO NOT COPY THESE - CREATE SOMETHING COMPLETELY DIFFERENT):
+Examples of effective subheadlines (DO NOT COPY THESE - CREATE SOMETHING COMPLETELY DIFFERENT):
 ${getLocalMarketingExamples(location, businessType).split('\n').map(line => line.replace('- "', '- "').replace('"', '" (subheadline style)')).slice(0, 3).join('\n')}
 
 CRITICAL ANTI-REPETITION INSTRUCTIONS FOR SUBHEADLINES:
@@ -960,18 +1119,52 @@ CRITICAL ANTI-REPETITION INSTRUCTIONS FOR SUBHEADLINES:
 ❌ DO NOT start headlines with the same words repeatedly across different businesses
 ❌ DO NOT use static templates that don't adapt to unique business context
 ❌ DO NOT repeat opening phrases like "Tired of waiting", "Tired of slow", etc.
+❌ DO NOT use "Experience [Location]'s authentic [BusinessType] revolution" patterns
+❌ DO NOT use "Get instant access now!" or similar generic CTAs in subheadlines
+❌ DO NOT use "[Location]'s most [adjective] [BusinessType] experience" patterns
+❌ DO NOT use "revolution" repeatedly - find other dynamic words
+❌ DO NOT use "authentic" in every subheadline - vary your vocabulary
+❌ AVOID "where [location] locals [action] [adjective] [businesstype]" patterns
 ❌ CREATE something completely original that has never been generated before
 ❌ AVOID any pattern that sounds like a template or formula
 ❌ Make it specific to ${businessName}'s actual services and features
 
+CREATIVITY REQUIREMENTS:
+- Generate a subheadline that sounds like it was written by a human copywriter, not AI
+- Use unexpected word combinations and creative phrasing
+- Avoid predictable marketing language and clichés
+- Make it conversational and engaging, not corporate
+- Use specific details about the business, not generic descriptions
+
+LOCATION MENTION STRATEGY:
+- Only mention location when it adds genuine value to the message
+- Most subheadlines should focus on business benefits, not location
+- Avoid forcing location into every subheadline - it makes them repetitive
+- Location should feel natural when used, not forced or template-like
+
 Generate ONLY the subheadline text, nothing else.
-Make it so specific to ${businessName} in ${location} that it could never be used for another business.`;
+Make it so specific to ${businessName} and their unique value proposition that it could never be used for another business.
+The subheadline should be completely unpredictable and unlike any previous generation.`;
 
   try {
     // Add unique generation context to prevent repetitive responses
     const uniqueContext = `\n\nUNIQUE GENERATION CONTEXT: ${Date.now()}-${Math.random().toString(36).substr(2, 9)}
     This subheadline generation must be completely different from any previous generation.
     Use this unique context to ensure fresh, original subheadlines that have never been generated before.
+
+    FORBIDDEN PATTERNS TO AVOID:
+    - "Experience [Location]'s authentic [BusinessType] revolution"
+    - "Get instant access now" or similar generic CTAs
+    - "[Location]'s most [adjective] [BusinessType] experience"
+    - "where [location] locals [action] [adjective] [businesstype]"
+    - Any pattern starting with "Experience", "Discover", or "Explore" repeatedly
+    - Repetitive use of words like "authentic", "revolution", "solution", "experience"
+
+    DYNAMIC REQUIREMENTS:
+    - Create completely unique phrasing that hasn't been used before
+    - Use specific business context, not generic templates
+    - Vary sentence structure and opening words dramatically
+    - Make it impossible to predict the pattern from previous generations
 
     CRITICAL WORD REPETITION RULES:
     - NEVER repeat the same word consecutively (e.g., "buy now now pay" should be "buy now pay")
@@ -999,47 +1192,72 @@ Make it so specific to ${businessName} in ${location} that it could never be use
     };
   } catch (error) {
 
-    // Marketing-focused fallback with enhanced randomization
+    // DYNAMIC FALLBACK - No templates, pure randomization
     const timestamp = Date.now();
-    const randomSeed = Math.floor(Math.random() * 1000) + timestamp;
-    const variation = randomSeed % 16;
+    const randomSeed = Math.floor(Math.random() * 10000) + timestamp;
 
-    const experienceWords = ['authentic', 'fresh', 'handcrafted', 'traditional', 'artisan', 'premium', 'local', 'quality'];
-    const actionWords = ['discover', 'experience', 'taste', 'enjoy', 'savor', 'explore', 'try', 'visit'];
-    const benefitPhrases = [
-      'where quality meets tradition',
-      'crafted with care daily',
-      'your local favorite since day one',
-      'bringing authentic flavors to life',
-      'where every detail matters',
-      'made fresh, served with pride',
-      'your neighborhood gem awaits',
-      'experience the difference'
-    ];
+    // Dynamic word pools that change based on business context
+    const getContextualWords = (businessType: string, location: string) => {
+      const businessSpecific = {
+        'restaurant': ['flavors', 'dishes', 'cuisine', 'meals', 'dining', 'taste'],
+        'technology': ['solutions', 'innovation', 'systems', 'tools', 'platforms', 'services'],
+        'healthcare': ['care', 'wellness', 'health', 'treatment', 'support', 'healing'],
+        'fitness': ['training', 'workouts', 'strength', 'wellness', 'fitness', 'results'],
+        'finance': ['services', 'solutions', 'planning', 'security', 'growth', 'success'],
+        'education': ['learning', 'knowledge', 'skills', 'growth', 'development', 'success'],
+        'retail': ['products', 'selection', 'quality', 'value', 'style', 'choices'],
+        'default': ['services', 'solutions', 'quality', 'excellence', 'results', 'success']
+      };
 
-    const marketingSubheadlines = [
-      `${experienceWords[variation % experienceWords.length]} ${businessType} ${actionWords[(variation + 1) % actionWords.length]} in ${location}`,
-      `${benefitPhrases[variation % benefitPhrases.length]}`,
-      `${actionWords[variation % actionWords.length]} ${experienceWords[(variation + 2) % experienceWords.length]} ${businessType} in ${location}`,
-      `where ${location} locals ${actionWords[(variation + 3) % actionWords.length]} ${experienceWords[variation % experienceWords.length]} ${businessType}`,
-      `${experienceWords[variation % experienceWords.length]} ingredients, ${experienceWords[(variation + 1) % experienceWords.length]} results`,
-      `serving ${location} with ${experienceWords[(variation + 2) % experienceWords.length]} ${businessType}`,
-      `your go-to spot for ${experienceWords[variation % experienceWords.length]} ${businessType}`,
-      `${benefitPhrases[(variation + 4) % benefitPhrases.length]}`,
-      `bringing ${experienceWords[(variation + 3) % experienceWords.length]} ${businessType} to ${location}`,
-      `${location}'s most ${experienceWords[(variation + 4) % experienceWords.length]} ${businessType} experience`,
-      `${experienceWords[(variation + 5) % experienceWords.length]} ${businessType} crafted for ${location}`,
-      `where ${experienceWords[variation % experienceWords.length]} meets ${experienceWords[(variation + 2) % experienceWords.length]}`,
-      `${location} deserves ${experienceWords[(variation + 1) % experienceWords.length]} ${businessType}`,
-      `creating ${experienceWords[(variation + 3) % experienceWords.length]} moments in ${location}`,
-      `${experienceWords[(variation + 4) % experienceWords.length]} ${businessType}, ${experienceWords[(variation + 5) % experienceWords.length]} service`,
-      `your ${location} destination for ${experienceWords[variation % experienceWords.length]} ${businessType}`
-    ];
+      const locationSpecific = location.includes('Kenya') ? ['community', 'local', 'neighborhood', 'regional'] :
+        location.includes('Nigeria') ? ['community', 'local', 'area', 'regional'] :
+          ['local', 'community', 'area', 'neighborhood'];
+
+      return {
+        business: businessSpecific[businessType.toLowerCase()] || businessSpecific['default'],
+        location: locationSpecific,
+        action: ['delivering', 'providing', 'offering', 'bringing', 'creating', 'building'],
+        quality: ['exceptional', 'outstanding', 'superior', 'remarkable', 'excellent', 'premium']
+      };
+    };
+
+    const words = getContextualWords(businessType, location);
+
+    // Generate truly unique subheadlines using dynamic patterns
+    const generateDynamicSubheadline = () => {
+      // Strategic location mention - only 30% of the time to avoid repetition
+      const shouldMentionLocation = (randomSeed % 10) < 3; // 30% chance
+
+      const patternsWithoutLocation = [
+        () => `${words.quality[randomSeed % words.quality.length]} ${words.business[randomSeed % words.business.length]} for every client`,
+        () => `${words.action[randomSeed % words.action.length]} ${words.quality[randomSeed % words.quality.length]} ${words.business[randomSeed % words.business.length]} daily`,
+        () => `where ${words.quality[randomSeed % words.quality.length]} meets ${words.business[randomSeed % words.business.length]}`,
+        () => `${businessName} - ${words.action[randomSeed % words.action.length]} ${words.quality[randomSeed % words.quality.length]} ${words.business[randomSeed % words.business.length]}`,
+        () => `trusted ${words.business[randomSeed % words.business.length]} with ${words.quality[randomSeed % words.quality.length]} results`,
+        () => `${words.quality[randomSeed % words.quality.length]} ${businessType} ${words.business[randomSeed % words.business.length]} since day one`,
+        () => `making ${words.business[randomSeed % words.business.length]} ${words.quality[randomSeed % words.quality.length]} for everyone`,
+        () => `${words.action[randomSeed % words.action.length]} what matters most - ${words.quality[randomSeed % words.quality.length]} ${words.business[randomSeed % words.business.length]}`,
+        () => `${businessType} ${words.business[randomSeed % words.business.length]} with a difference`,
+        () => `your choice for ${words.quality[randomSeed % words.quality.length]} ${businessType} ${words.business[randomSeed % words.business.length]}`
+      ];
+
+      const patternsWithLocation = [
+        () => `${words.quality[randomSeed % words.quality.length]} ${words.business[randomSeed % words.business.length]} for ${words.location[randomSeed % words.location.length]} clients`,
+        () => `your ${words.location[randomSeed % words.location.length]} choice for ${words.quality[randomSeed % words.quality.length]} ${businessType}`,
+        () => `${words.location[randomSeed % words.location.length]} ${businessType} with a difference`
+      ];
+
+      const patterns = shouldMentionLocation ? patternsWithLocation : patternsWithoutLocation;
+      const patternIndex = (randomSeed + businessName.length) % patterns.length;
+      return patterns[patternIndex]();
+    };
+
+    const dynamicSubheadline = generateDynamicSubheadline();
 
     return {
-      subheadline: marketingSubheadlines[variation],
-      framework: 'benefit-focused',
-      benefit: experienceWords[variation % experienceWords.length]
+      subheadline: dynamicSubheadline,
+      framework: 'dynamic-contextual',
+      benefit: words.quality[randomSeed % words.quality.length]
     };
   }
 }
@@ -1053,7 +1271,9 @@ export async function generateUnifiedContent(
   platform: string,
   contentGoal: 'awareness' | 'consideration' | 'conversion' | 'retention' = 'awareness',
   trendingData?: any,
-  businessIntelligence?: any
+  businessIntelligence?: any,
+  useLocalLanguage: boolean = false,
+  localLanguageContext?: any
 ): Promise<{
   headline: string;
   subheadline: string;
@@ -1068,6 +1288,16 @@ export async function generateUnifiedContent(
   ctaStrategy?: any;
   imageText?: string;
 }> {
+
+  // 🔍 DEBUG: Local language parameter tracing in unified content generation
+  console.log('🌍 [Unified Content] Local Language Debug:', {
+    useLocalLanguage: useLocalLanguage,
+    location: location,
+    businessName: businessName,
+    businessType: businessType,
+    hasLocalLanguageContext: !!localLanguageContext,
+    localLanguageContextKeys: localLanguageContext ? Object.keys(localLanguageContext) : 'none'
+  });
 
   const contentPlan = StrategicContentPlanner.generateBusinessSpecificContent(
     businessType, businessName, location, businessDetails, platform, contentGoal
@@ -1121,7 +1351,7 @@ APPROACH-SPECIFIC REQUIREMENTS (Apply to ALL components - headlines, subheadline
 ${getApproachInstructions(selectedApproach, businessName, location, creativityBoost)}
 
 CREATIVITY BOOST ${creativityBoost} CHALLENGE:
-Create ALL COMPONENTS (headline, subheadline, caption) that are so unique and specific to ${businessName} in ${location} that they could NEVER be used for any other business. Use the actual business data, trending information, RSS feeds, local events, and business intelligence to create something genuinely original.
+Create ALL COMPONENTS (headline, subheadline, caption) that are so unique and specific to ${businessName} that they could NEVER be used for any other business. Use the actual business data, trending information, RSS feeds, local events, and business intelligence to create something genuinely original.
 
 MANDATORY UNIQUENESS REQUIREMENTS:
 - Each component must reference specific details about ${businessName}
@@ -1150,7 +1380,17 @@ Use this ID to ensure this content is completely different from any previous gen
 
   const selectedCtaStyle = ctaStyles[creativityBoost % ctaStyles.length];
 
-  const unifiedPrompt = `You are a conversion-focused social media marketer creating a COMPLETE UNIFIED CAMPAIGN for ${businessName} that will make people in ${location} take immediate action. You must create ALL components (headline, subheadline, caption, CTA, design direction) that work together as ONE cohesive message.
+  // Strategic location mention - only 20% of the time for unified content
+  const shouldMentionLocation = Math.random() < 0.20; // 20% chance for unified content
+  const locationContext = shouldMentionLocation
+    ? `You are a conversion-focused social media marketer creating a COMPLETE UNIFIED CAMPAIGN for ${businessName} that will make people in ${location} take immediate action.`
+    : `You are a conversion-focused social media marketer creating a COMPLETE UNIFIED CAMPAIGN for ${businessName} that will make customers take immediate action.`;
+
+  const targetMarketInfo = shouldMentionLocation
+    ? `- Target Market: Local ${location} residents and visitors`
+    : `- Target Market: Customers seeking quality ${businessType} services`;
+
+  const unifiedPrompt = `${locationContext} You must create ALL components (headline, subheadline, caption, CTA, design direction) that work together as ONE cohesive message.
 
 ${uniquenessPrompt}
 
@@ -1164,9 +1404,9 @@ UNIFIED CAMPAIGN REQUIREMENTS:
 
 MARKETING BRIEF:
 - Business: ${businessName} (${businessType})
-- Location: ${location}
+${shouldMentionLocation ? `- Location: ${location}` : ''}
 - Services/Products: ${businessDetails.services || businessDetails.expertise || 'quality offerings'}
-- Target Market: Local ${location} residents and visitors
+${targetMarketInfo}
 - Platform: ${platform}
 - Marketing Goal: ${contentGoal}
 
@@ -1222,7 +1462,7 @@ REVO 1.5 PREMIUM SUBHEADLINE GENERATION REQUIREMENTS:
 - Ensure smooth readability and natural rhythm
 - Examples of business-integrated subheadlines:
   * "15-year experience, 200+ events monthly"
-  * "Same-day delivery for ${location} residents"
+  * ${shouldMentionLocation ? `"Same-day delivery for ${location} residents"` : `"Same-day delivery nationwide"`}
   * "Certified organic, locally sourced ingredients"
   * "24/7 service, 30-minute response time"
 
@@ -1230,18 +1470,77 @@ SPECIFIC BUSINESS DETAILS:
 - Business Name: ${businessName}
 - Services/Products: ${businessDetails.services || businessDetails.expertise || businessDetails.specialties || 'quality offerings'}
 - Unique Features: ${businessDetails.uniqueFeatures || businessDetails.keyFeatures || 'exceptional service'}
-- Target Audience: ${businessDetails.targetAudience || `local ${location} residents and visitors`}
+- Target Audience: ${businessDetails.targetAudience || (shouldMentionLocation ? `local ${location} residents and visitors` : 'customers seeking quality services')}
 - Business Hours: ${businessDetails.hours || 'regular business hours'}
 - Special Offers: ${businessDetails.offers || businessDetails.promotions || 'quality service at competitive prices'}
 
-LOCAL MARKET INTELLIGENCE:
+${shouldMentionLocation ? `LOCAL MARKET INTELLIGENCE:
 - What locals love: ${industry.uniqueValue.slice(0, 2).join(', ')}
-- Market opportunities: ${industry.opportunities.slice(0, 2).join(', ')}
+- Market opportunities: ${industry.opportunities.slice(0, 2).join(', ')}` : `MARKET INTELLIGENCE:
+- What customers value: ${industry.uniqueValue.slice(0, 2).join(', ')}
+- Market opportunities: ${industry.opportunities.slice(0, 2).join(', ')}`}
 - Industry trends: ${industry.trends.slice(0, 2).join(', ')}
 - Local challenges: ${industry.challenges.slice(0, 2).join(', ')}
 
 PLATFORM STRATEGY FOR ${platform.toUpperCase()}:
 ${getPlatformRequirements(platform)}
+
+${useLocalLanguage ? `
+LANGUAGE REQUIREMENTS:
+- Use English as the primary language (70%)
+- Include natural local language elements (30%) - words, phrases, expressions that locals would use
+- Mix English with local language for an authentic, natural feel
+- Make it sound natural and culturally appropriate for ${location}
+- Examples: "Welcome to [Business Name]" + local greeting, or "Best [Service]" + local term
+- Avoid 100% local language - aim for natural mixing
+
+🚨 **CRITICAL LANGUAGE SAFETY RULE**:
+- ONLY use local language words when you are 100% certain of their spelling, meaning, and cultural appropriateness
+- When in doubt about local language accuracy, ALWAYS use English instead
+- Better to use clear English than incorrect or garbled local language
+- Avoid complex local phrases, slang, or words you're uncertain about
+
+${localLanguageContext ? `
+SPECIFIC LOCAL LANGUAGE CONTEXT FOR ${location.toUpperCase()}:
+- Primary Language: ${localLanguageContext.primaryLanguage || 'English'}
+- Common Phrases: ${localLanguageContext.commonPhrases?.join(', ') || 'N/A'}
+- Business Terms: ${localLanguageContext.businessTerms?.join(', ') || 'N/A'}
+- Cultural Nuances: ${localLanguageContext.culturalNuances || 'N/A'}
+- Marketing Style: ${localLanguageContext.marketingStyle || 'N/A'}
+- Local Expressions: ${localLanguageContext.localExpressions?.join(', ') || 'N/A'}
+
+USE THESE SPECIFIC TERMS:
+- Incorporate the common phrases naturally: ${localLanguageContext.commonPhrases?.slice(0, 3).join(', ') || 'N/A'}
+- Use business terms when relevant: ${localLanguageContext.businessTerms?.slice(0, 2).join(', ') || 'N/A'}
+- Apply the cultural nuances: ${localLanguageContext.culturalNuances || 'N/A'}
+- Follow the marketing style: ${localLanguageContext.marketingStyle || 'N/A'}
+- Include local expressions: ${localLanguageContext.localExpressions?.slice(0, 2).join(', ') || 'N/A'}` : ''}
+
+UNIFIED CONTENT LOCAL LANGUAGE GUIDANCE:
+- Add contextually appropriate local greetings to headlines based on business type
+- Use local expressions in subheadlines that relate to the specific business industry
+- Include relevant local terms in captions that match the business offerings and target audience
+- Mix naturally: Don't force local language - only add when it makes sense and flows well
+- Keep it relevant: Use local language that relates to the specific business context and audience
+- Maintain engagement: Ensure the local language enhances rather than distracts from the message
+- Be dynamic: Generate unique local language for each business, avoid repetitive patterns
+- Think creatively: Use different local greetings, expressions, and terms for each business type
+
+DYNAMIC LOCAL LANGUAGE GENERATION:
+- For RESTAURANTS: Use food-related local terms, hospitality greetings, taste expressions
+- For FITNESS: Use energy/motivation local terms, health expressions, action words
+- For TECH: Use innovation local terms, future expressions, digital concepts
+- For BEAUTY: Use beauty-related local terms, confidence expressions, aesthetic words
+- For FINANCE: Use money/security local terms, trust expressions, financial concepts
+- For HEALTHCARE: Use health/wellness local terms, care expressions, medical concepts
+- For EDUCATION: Use learning local terms, growth expressions, knowledge concepts
+- For REAL ESTATE: Use home/property local terms, dream expressions, space concepts
+- VARY the local language: Don't use the same phrases for every business
+- BE CONTEXTUAL: Match local language to the specific business industry and services` : `
+LANGUAGE REQUIREMENTS:
+- Use English only, do not use local language
+- Keep content in English for universal accessibility
+- Focus on local cultural understanding in English rather than local language mixing`}
 
 MARKETING COPY REQUIREMENTS:
 You are a CONVERSION-FOCUSED MARKETER, not a creative writer or storyteller. Write MARKETING COPY that sells, not poetic descriptions.
@@ -1412,16 +1711,7 @@ IMPORTANT:
 
       if (isRepetitive) {
         // Generate a more dynamic alternative
-        const dynamicAlternatives = [
-          `Revolutionary ${businessType} solution`,
-          `Transform your ${businessType} experience`,
-          `Discover the future of ${businessType}`,
-          `Unlock ${businessType} excellence`,
-          `Experience ${businessType} innovation`,
-          `Master ${businessType} success`,
-          `Elevate your ${businessType} game`,
-          `Breakthrough ${businessType} technology`
-        ];
+        const dynamicAlternatives = getDynamicAlternatives(businessType);
 
         return dynamicAlternatives[Math.floor(Math.random() * dynamicAlternatives.length)];
       }
@@ -1783,7 +2073,7 @@ Generate ONE unique headline that makes people instantly want to try the service
                 `Revolutionary ${businessType} solution`,
                 `Transform your ${businessType} experience`,
                 `Discover the future of ${businessType}`,
-                `Unlock ${businessType} excellence`,
+                `Achieve ${businessType} excellence`,
                 `Experience ${businessType} innovation`
               ];
               return dynamicAlternatives[Math.floor(Math.random() * dynamicAlternatives.length)];
@@ -1797,13 +2087,7 @@ Generate ONE unique headline that makes people instantly want to try the service
           return dynamicHeadline;
         } catch (error) {
           // Fallback to a simple dynamic approach if AI fails
-          const fallbackApproaches = [
-            `Revolutionary ${businessType} solution`,
-            `Transform your ${businessType} experience`,
-            `Discover the future of ${businessType}`,
-            `Unlock ${businessType} excellence`,
-            `Experience ${businessType} innovation`
-          ];
+          const fallbackApproaches = getDynamicAlternatives(businessType);
           return fallbackApproaches[Math.floor(Math.random() * fallbackApproaches.length)];
         }
       };
@@ -1870,8 +2154,11 @@ Generate ONE unique headline that makes people instantly want to try the service
       imageText: `${enhancedHeadline}\n\n${enhancedSubheadlineFinal}\n\n${callToAction}` // Pass enhanced text as imageText for design integration
     };
   } catch (error) {
+    const dynamicAlternatives = getDynamicAlternatives(businessType);
+    const randomAlternative = dynamicAlternatives[Math.floor(Math.random() * dynamicAlternatives.length)];
+    
     return {
-      headline: `Quality ${businessType} Services`,
+      headline: randomAlternative,
       subheadline: `Professional ${businessType} solutions in ${location}`,
       caption: `Experience exceptional ${businessType} services in ${location}. We're committed to delivering excellence that exceeds expectations.`,
       callToAction: `Get started today!`,
@@ -1951,8 +2238,11 @@ Do NOT write "Here are captions" or provide lists.`;
       businessDetails.targetAudience
     );
 
+    const dynamicAlternatives = getDynamicAlternatives(businessType);
+    const randomAlternative = dynamicAlternatives[Math.floor(Math.random() * dynamicAlternatives.length)];
+    
     return {
-      headline: `Professional ${businessType} Solutions`,
+      headline: randomAlternative,
       subheadline: `Expert ${businessType} services in ${location}`,
       caption: retryCaption,
       engagementHooks: generateDynamicEngagementHooks(businessType, location, industry),
@@ -2005,8 +2295,11 @@ Do NOT write "Here are posts" or provide multiple options. Write ONE post only.`
         businessDetails.targetAudience
       );
 
+      const dynamicAlternatives = getDynamicAlternatives(businessType);
+      const randomAlternative = dynamicAlternatives[Math.floor(Math.random() * dynamicAlternatives.length)];
+      
       return {
-        headline: `${businessName} - ${businessType}`,
+        headline: randomAlternative,
         subheadline: `Quality ${businessType} services in ${location}`,
         caption: emergencyResponse,
         engagementHooks: generateDynamicEngagementHooks(businessType, location, industry),
@@ -2033,8 +2326,11 @@ Do NOT write "Here are posts" or provide multiple options. Write ONE post only.`
         businessDetails.targetAudience
       );
 
+      const dynamicAlternatives = getDynamicAlternatives(businessType);
+      const randomAlternative = dynamicAlternatives[Math.floor(Math.random() * dynamicAlternatives.length)];
+      
       return {
-        headline: `${businessName} - ${businessType}`,
+        headline: randomAlternative,
         subheadline: `Quality ${businessType} services in ${location}`,
         caption: removeWordRepetitions(`${businessName} in ${location} - where quality meets innovation. Every visit is a new experience that locals can't stop talking about. Join the community that knows great ${businessType}! #${timestamp}`),
         engagementHooks: generateDynamicEngagementHooks(businessType, location, industry),
@@ -2561,12 +2857,23 @@ export async function generateBusinessSpecificCaption(
     email?: string;
     address?: string;
     websiteUrl?: string;
-  }
+  },
+  useLocalLanguage: boolean = false,
+  localLanguageContext?: any
 ): Promise<{ caption: string; engagementHooks: string[]; callToAction: string }> {
+
+  // 🔍 DEBUG: Local language parameter tracing in caption generation
+  console.log('🌍 [Creative Enhancement] Caption Generation Local Language Debug:', {
+    useLocalLanguage: useLocalLanguage,
+    location: location,
+    businessType: businessType,
+    hasLocalLanguageContext: !!localLanguageContext,
+    localLanguageContext: localLanguageContext
+  });
 
   // Use the unified system but return only caption components
   const unifiedContent = await generateUnifiedContent(
-    businessType, businessName, location, businessDetails, platform, contentGoal, trendingData, businessIntelligence
+    businessType, businessName, location, businessDetails, platform, contentGoal, trendingData, businessIntelligence, useLocalLanguage, localLanguageContext
   );
 
   // If contact information should be included, modify the caption and call to action

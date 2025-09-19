@@ -913,17 +913,25 @@ Return ONLY a JSON array of hashtags (including the # symbol):
       }
     });
 
-    // Add contextual hashtags based on location (more specific than hardcoded)
-    if (location.toLowerCase().includes('nairobi')) {
-      hashtags.push('#NairobiEats', '#KenyanCuisine', '#254Business');
-    } else if (location.toLowerCase().includes('lagos')) {
-      hashtags.push('#LagosEats', '#NaijaFlavors', '#LagosBusiness');
-    } else if (location.toLowerCase().includes('johannesburg')) {
-      hashtags.push('#JoziEats', '#SouthAfricanTaste', '#JHBBusiness');
+    // Strategic location hashtags - only 40% of the time
+    const shouldIncludeLocationHashtags = Math.random() < 0.40; // 40% chance
+
+    if (shouldIncludeLocationHashtags) {
+      // Add contextual hashtags based on location (more specific than hardcoded)
+      if (location.toLowerCase().includes('nairobi')) {
+        hashtags.push('#NairobiEats', '#KenyanCuisine', '#254Business');
+      } else if (location.toLowerCase().includes('lagos')) {
+        hashtags.push('#LagosEats', '#NaijaFlavors', '#LagosBusiness');
+      } else if (location.toLowerCase().includes('johannesburg')) {
+        hashtags.push('#JoziEats', '#SouthAfricanTaste', '#JHBBusiness');
+      } else {
+        // For other locations, create dynamic hashtags
+        const cityName = locationParts[0]?.replace(/\s+/g, '') || 'Local';
+        hashtags.push(`#${cityName}Eats`, `#${cityName}Business`);
+      }
     } else {
-      // For other locations, create dynamic hashtags
-      const cityName = locationParts[0]?.replace(/\s+/g, '') || 'Local';
-      hashtags.push(`#${cityName}Eats`, `#${cityName}Business`);
+      // Focus on business-value hashtags instead of location
+      hashtags.push('#QualityFood', '#FreshDaily', '#LocalBusiness', '#TrustedService');
     }
 
     return [...new Set(hashtags)].slice(0, 8); // Remove duplicates and limit to 8

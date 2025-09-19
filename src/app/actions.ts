@@ -252,6 +252,8 @@ export async function generateContentAction(
       includeContacts: brandConsistency?.includeContacts || false,
       contactInfo: enhancedProfile.contactInfo || {},
       websiteUrl: enhancedProfile.websiteUrl,
+      // Local language control
+      useLocalLanguage: useLocalLanguage,
       variants: [{
         platform: platform,
         aspectRatio: getAspectRatioForPlatform(platform),
@@ -585,7 +587,7 @@ export async function generateContentWithArtifactsAction(
 
 
     // Generate base content first
-    const basePost = await generateContentAction(profile, platform, brandConsistency);
+    const basePost = await generateContentAction(profile, platform, brandConsistency, useLocalLanguage);
 
     // If enhanced design is disabled, return base content
     if (!useEnhancedDesign) {

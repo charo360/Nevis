@@ -49,7 +49,9 @@ export class Revo10ContentGenerator implements IContentGenerator {
         // Contact information for brand consistency
         includeContacts: generationParams.includeContacts || false,
         contactInfo: generationParams.contactInfo || {},
-        websiteUrl: generationParams.websiteUrl || ''
+        websiteUrl: generationParams.websiteUrl || '',
+        // Local language control (standardized parameter name)
+        useLocalLanguage: request.useLocalLanguage || false
       });
 
       // Generate image using the catchy words and brand profile data

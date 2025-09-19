@@ -807,6 +807,21 @@ async function generateStructuredContent(options: Revo20GenerationOptions, conce
     website: website
   });
 
+  // 🔍 DEBUG: Local language parameter tracing
+  console.log('🌍 [Revo 2.0] Local Language Debug:', {
+    useLocalLanguage: options.useLocalLanguage || false,
+    location: brandProfile?.location,
+    businessType: businessType,
+    platform: platform
+  });
+
+  // 🚨 ALERT: Make this debug message very visible
+  if (options.useLocalLanguage) {
+    console.log('🚨🌍 REVO 2.0 LOCAL LANGUAGE IS ENABLED! Should generate local language content for:', brandProfile?.location);
+  } else {
+    console.log('❌🌍 REVO 2.0 LOCAL LANGUAGE IS DISABLED - English only');
+  }
+
   const prompt = `Create comprehensive ${platform} content for a ${businessType} business with structured marketing elements.
 
 Business Details:
@@ -850,6 +865,25 @@ Requirements:
 - Professional yet engaging tone
 - Platform-optimized for ${platform}
 - Include 5 different caption variations for Instagram
+
+${options.useLocalLanguage ? `
+LANGUAGE REQUIREMENTS:
+- Use English as the primary language (70%)
+- Include natural local language elements (30%) - words, phrases, expressions that locals would use
+- Mix English with local language for an authentic, natural feel
+- Make it sound natural and culturally appropriate for ${brandProfile.location || 'the location'}
+- Examples: "Welcome to [Business Name]" + local greeting, or "Best [Service]" + local term
+- Avoid 100% local language - aim for natural mixing
+
+🚨 **CRITICAL LANGUAGE SAFETY RULE**:
+- ONLY use local language words when you are 100% certain of their spelling, meaning, and cultural appropriateness
+- When in doubt about local language accuracy, ALWAYS use English instead
+- Better to use clear English than incorrect or garbled local language
+- Avoid complex local phrases, slang, or words you're uncertain about` : `
+LANGUAGE REQUIREMENTS:
+- Use English only, do not use local language
+- Keep content in English for universal accessibility
+- Focus on local cultural understanding in English rather than local language mixing`}
 
 Format as JSON:
 {
