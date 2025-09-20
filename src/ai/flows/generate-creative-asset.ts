@@ -223,61 +223,69 @@ Recreate the content within the black-masked region based on this instruction, e
 - DO NOT generate logo designs, brand marks, or simple graphic symbols
 - DO NOT create minimalist logo-style graphics
 - DO NOT focus primarily on logo creation or branding elements
-- CREATE COMPLETE MARKETING DESIGNS with full layouts, backgrounds, and compositions
 
-✅ **CREATE COMPLETE MARKETING DESIGNS** ✅
-- Generate comprehensive social media post designs
-- Include backgrounds, graphics, text layouts, and visual hierarchy
-- Create full marketing compositions with multiple design elements
-- Focus on complete visual storytelling and marketing impact
+🚫 **CRITICAL: DO NOT GENERATE ADDITIONAL IMAGES** 🚫
+- DO NOT create any new images, graphics, or visual elements
+- DO NOT generate backgrounds, objects, people, or scenes
+- DO NOT add illustrations, icons, or decorative elements
+- DO NOT create competing visual content
+- USE ONLY the uploaded image as the primary visual element
 
-🎯 **INTELLIGENT IMAGE INTEGRATION MISSION:**
-Analyze the uploaded image deeply and make intelligent creative decisions about how to best incorporate it into a stunning design.
+✅ **UPLOADED IMAGE FOCUSED DESIGN** ✅
+- Use ONLY the uploaded image as the main visual element
+- Enhance the uploaded image with text overlays and design treatments
+- Apply professional styling, effects, and composition to the uploaded image
+- Create layouts that showcase the uploaded image prominently
+- Add text, color treatments, and design elements around the uploaded image
 
-**STEP 1: SMART IMAGE ANALYSIS**
-First, analyze the uploaded image to understand:
+🎯 **UPLOADED IMAGE INTEGRATION MISSION:**
+Transform the uploaded image into a professional marketing design by enhancing it with text, styling, and layout - WITHOUT generating any additional images.
+
+**STEP 1: UPLOADED IMAGE ANALYSIS**
+Analyze the uploaded image to understand:
 - Content type (product, person, landscape, object, logo, artwork, etc.)
 - Image quality, lighting conditions, and photographic style
 - Dominant colors, textures, and visual elements
 - Emotional tone and aesthetic appeal
-- Best potential use case for maximum visual impact
+- How to enhance it with text and design treatments
 
-**STEP 2: INTELLIGENT INTEGRATION STRATEGY**
-Based on your analysis, intelligently choose the OPTIMAL approach:
+**STEP 2: ENHANCEMENT STRATEGY**
+Based on your analysis, choose the OPTIMAL enhancement approach:
 
 🏆 **HERO SHOWCASE:** If it's a product, service, or key object:
-   - Make it the star with professional product photography styling
-   - Create compelling compositions highlighting its best features
-   - Use dramatic lighting, shadows, and backgrounds for maximum appeal
-   - Position as primary focal point with supporting design elements
+   - Make the uploaded image the star with professional styling
+   - Add compelling text overlays and call-to-action elements
+   - Apply dramatic lighting effects and color treatments
+   - Position as primary focal point with supporting text elements
 
-🎨 **ARTISTIC BACKGROUND:** If it works as a scene or backdrop:
-   - Transform into sophisticated background with professional effects
-   - Apply tasteful overlays, gradients, or color grading for impact
+🎨 **ENHANCED BACKGROUND:** If it works as a scene or backdrop:
+   - Use the uploaded image as the background
+   - Apply tasteful overlays, gradients, or color grading
    - Ensure perfect text readability with smart contrast enhancements
-   - Create depth and visual interest while maintaining focus
+   - Add text elements that complement the image
 
-🖼️ **DYNAMIC COMPOSITION:** For lifestyle, people, or complex scenes:
-   - Create magazine-quality layouts with creative positioning
-   - Combine with complementary graphics and typography
-   - Use advanced composition techniques (rule of thirds, golden ratio)
-   - Build visual narratives that tell compelling stories
+🖼️ **TEXT-ENHANCED COMPOSITION:** For lifestyle, people, or complex scenes:
+   - Use the uploaded image as the base
+   - Add magazine-quality text layouts and typography
+   - Apply professional text treatments and positioning
+   - Create compelling text overlays that tell a story
 
-✨ **SEAMLESS INTEGRATION:** For logos, graphics, or decorative elements:
-   - Blend naturally using professional design techniques
-   - Apply appropriate effects, shadows, and styling for cohesion
-   - Maintain perfect visual hierarchy and balance
-   - Create harmony between all design components
+✨ **STYLIZED INTEGRATION:** For logos, graphics, or decorative elements:
+   - Use the uploaded image as the main element
+   - Apply professional effects, shadows, and styling
+   - Add complementary text and design treatments
+   - Create harmony between the image and text elements
 
 **STEP 3: PROFESSIONAL EXECUTION**
-- Ensure integration looks expertly crafted, never amateur
-- Maintain consistent lighting, color harmony, and visual style
-- The uploaded image should enhance overall design impact
-- Create natural visual flow guiding the viewer's eye
+- Use ONLY the uploaded image - do not generate any new images
+- Enhance with text overlays, color treatments, and styling
+- Maintain consistent visual style and professional appearance
+- The uploaded image should be the primary visual element
+- Add text and design elements that complement the uploaded image
 
 **USER'S CREATIVE VISION:** "${remainingPrompt}"
 
-Analyze the uploaded image, make intelligent creative decisions, and create a breathtaking professional design that showcases the image in the most impactful way while perfectly fulfilling the user's vision.`;
+Transform the uploaded image into a professional marketing design by enhancing it with text, styling, and layout treatments. DO NOT generate any additional images - use only the uploaded image as the visual foundation.`;
 
             if (imageText) {
                 referencePrompt += `\n\n**Text Overlay Integration:** The user has provided specific text in quotes: "${imageText}". You MUST overlay this text on the design in a way that complements both the uploaded image and the overall composition. Ensure the text is readable and professionally integrated.`
@@ -492,22 +500,22 @@ ${designDNA}`;
                   * Ensure text is the primary focal point of the design` : 'No text should be added to the asset.'}`;
                 // Handle uploaded image integration with AI intelligence
                 if (hasUploadedImage) {
-                    onBrandPrompt += `\n- **🎯 INTELLIGENT UPLOADED IMAGE INTEGRATION:** A user has uploaded an image that must be INTELLIGENTLY ANALYZED and INTEGRATED as a key design element.`;
-                    onBrandPrompt += `\n  * **AI Analysis Required:** First analyze the uploaded image to understand its content, style, quality, and best integration approach`;
-                    onBrandPrompt += `\n  * **Smart Integration Decision:** Based on your analysis, intelligently choose the optimal integration method:`;
-                    onBrandPrompt += `\n    - If it's a product/object: Make it the hero element with professional product styling`;
-                    onBrandPrompt += `\n    - If it's a scene/background: Use as sophisticated backdrop with professional effects`;
-                    onBrandPrompt += `\n    - If it's a person/lifestyle: Create dynamic, magazine-style compositions`;
-                    onBrandPrompt += `\n    - If it's a logo/graphic: Blend seamlessly with other design elements`;
-                    onBrandPrompt += `\n  * **Professional Execution:** Ensure expert-level integration with consistent lighting, color harmony, and visual flow`;
-                    onBrandPrompt += `\n  * **Brand Synergy:** Coordinate the uploaded image with brand colors, logo, and overall brand aesthetic`;
-                    onBrandPrompt += `\n  * **Creative Excellence:** The uploaded image should enhance and elevate the overall design impact`;
+                    onBrandPrompt += `\n- **🎯 UPLOADED IMAGE FOCUSED DESIGN:** A user has uploaded an image that must be the PRIMARY visual element. DO NOT generate any additional images.`;
+                    onBrandPrompt += `\n  * **AI Analysis Required:** First analyze the uploaded image to understand its content, style, quality, and best enhancement approach`;
+                    onBrandPrompt += `\n  * **Enhancement Strategy:** Based on your analysis, choose the optimal enhancement method:`;
+                    onBrandPrompt += `\n    - If it's a product/object: Make it the hero element with professional styling and text overlays`;
+                    onBrandPrompt += `\n    - If it's a scene/background: Use as backdrop with professional text treatments and overlays`;
+                    onBrandPrompt += `\n    - If it's a person/lifestyle: Add dynamic text layouts and professional treatments`;
+                    onBrandPrompt += `\n    - If it's a logo/graphic: Enhance with complementary text and design treatments`;
+                    onBrandPrompt += `\n  * **Professional Execution:** Use ONLY the uploaded image - enhance with text, color treatments, and styling`;
+                    onBrandPrompt += `\n  * **Brand Synergy:** Coordinate text and design treatments with brand colors and aesthetic`;
+                    onBrandPrompt += `\n  * **Creative Excellence:** The uploaded image should be the main visual element enhanced with professional text and design treatments`;
                     promptParts.push({ media: { url: input.referenceAssetUrl!, contentType: getMimeTypeFromDataURI(input.referenceAssetUrl!) } });
                 }
 
-                onBrandPrompt += `\n- **MARKETING DESIGN FOCUS:** Create a complete, professional marketing design with full layout composition. This should be a comprehensive social media post design, NOT just a logo. Include backgrounds, graphics, text elements, and visual hierarchy.`;
-                onBrandPrompt += `\n- **Brand Integration:** ${bp.logoDataUrl ? 'If a logo is provided, integrate it as a small brand element within the complete marketing design - focus on creating a full marketing composition, not logo-centric design' : 'Create a complete marketing design that represents the brand identity'}.`;
-                onBrandPrompt += `\n- **Design Completeness:** Generate a full marketing design with backgrounds, graphics, text layouts, and visual elements - NOT just a logo or simple graphic.`;
+                onBrandPrompt += `\n- **UPLOADED IMAGE FOCUSED DESIGN:** ${hasUploadedImage ? 'Create a professional marketing design using ONLY the uploaded image as the visual foundation. Enhance it with text overlays, color treatments, and design elements. DO NOT generate any additional images.' : 'Create a complete, professional marketing design with full layout composition. This should be a comprehensive social media post design, NOT just a logo. Include backgrounds, graphics, text elements, and visual hierarchy.'}`;
+                onBrandPrompt += `\n- **Brand Integration:** ${bp.logoDataUrl ? 'If a logo is provided, integrate it as a small brand element within the design - focus on enhancing the uploaded image with brand elements' : 'Create a design that represents the brand identity while focusing on the uploaded image'}.`;
+                onBrandPrompt += `\n- **Design Completeness:** ${hasUploadedImage ? 'Enhance the uploaded image with professional text layouts, color treatments, and design elements - use ONLY the uploaded image as the visual foundation' : 'Generate a full marketing design with backgrounds, graphics, text layouts, and visual elements - NOT just a logo or simple graphic.'}`;
                 onBrandPrompt += `\n- **Critical Language Rule:** ALL text must be in clear, readable ENGLISH only. Never use foreign languages, corrupted text, or unreadable symbols.`;
 
                 if (bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
@@ -528,15 +536,15 @@ ${designDNA}`;
 
                 // Handle uploaded image integration for video with AI intelligence
                 if (hasUploadedImage) {
-                    onBrandPrompt += `\n- **🎯 INTELLIGENT VIDEO IMAGE INTEGRATION:** A user has uploaded an image that must be INTELLIGENTLY ANALYZED and INTEGRATED throughout the video sequence.`;
-                    onBrandPrompt += `\n  * **Smart Video Analysis:** Analyze the uploaded image to determine the best video integration approach:`;
-                    onBrandPrompt += `\n    - Product/Object: Feature as hero element with dynamic camera movements and transitions`;
-                    onBrandPrompt += `\n    - Scene/Background: Use as cinematic backdrop with professional video effects`;
-                    onBrandPrompt += `\n    - Person/Lifestyle: Create engaging narrative sequences showcasing the subject`;
-                    onBrandPrompt += `\n    - Logo/Graphic: Integrate as animated brand element throughout the video`;
-                    onBrandPrompt += `\n  * **Cinematic Quality:** Ensure professional video production quality with smooth transitions and visual flow`;
-                    onBrandPrompt += `\n  * **Brand Storytelling:** Weave the uploaded image into a compelling brand narrative that engages viewers`;
-                    onBrandPrompt += `\n  * **Visual Continuity:** Maintain consistent style, lighting, and mood throughout the video sequence`;
+                    onBrandPrompt += `\n- **🎯 UPLOADED IMAGE FOCUSED VIDEO:** A user has uploaded an image that must be the PRIMARY visual element throughout the video. DO NOT generate any additional images.`;
+                    onBrandPrompt += `\n  * **Video Analysis:** Analyze the uploaded image to determine the best video enhancement approach:`;
+                    onBrandPrompt += `\n    - Product/Object: Feature as hero element with dynamic camera movements and text overlays`;
+                    onBrandPrompt += `\n    - Scene/Background: Use as cinematic backdrop with professional text treatments and effects`;
+                    onBrandPrompt += `\n    - Person/Lifestyle: Create engaging sequences showcasing the subject with text overlays`;
+                    onBrandPrompt += `\n    - Logo/Graphic: Enhance with animated text and design treatments`;
+                    onBrandPrompt += `\n  * **Cinematic Quality:** Use ONLY the uploaded image - enhance with professional video effects, text overlays, and treatments`;
+                    onBrandPrompt += `\n  * **Brand Storytelling:** Weave the uploaded image into a compelling brand narrative with text and design elements`;
+                    onBrandPrompt += `\n  * **Visual Continuity:** Maintain consistent style and mood using the uploaded image as the foundation`;
                     promptParts.push({ media: { url: input.referenceAssetUrl!, contentType: getMimeTypeFromDataURI(input.referenceAssetUrl!) } });
                 }
 

@@ -85,7 +85,7 @@ export function ChatInput({
   }
 
   return (
-    <div className="relative mt-auto w-full border-t">
+    <div className="relative w-full border-t">
       <form onSubmit={handleSubmit} className="p-4 space-y-4">
         <div className="relative">
           {imagePreview && (
@@ -158,73 +158,75 @@ export function ChatInput({
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="brand-profile-switch"
-              checked={useBrandProfile}
-              onCheckedChange={setUseBrandProfile}
-              disabled={!isBrandProfileAvailable}
-            />
-            <Label htmlFor="brand-profile-switch">Apply Brand Profile</Label>
-            {!isBrandProfileAvailable && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="text-xs text-muted-foreground">(No profile found)</span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Go to Brand Profile to set one up.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="brand-profile-switch"
+                checked={useBrandProfile}
+                onCheckedChange={setUseBrandProfile}
+                disabled={!isBrandProfileAvailable}
+              />
+              <Label htmlFor="brand-profile-switch">Apply Brand Profile</Label>
+              {!isBrandProfileAvailable && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="text-xs text-muted-foreground">(No profile found)</span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Go to Brand Profile to set one up.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Label>AI Model:</Label>
+              <RevoModelSelector
+                selectedModel={selectedRevoModel}
+                onModelChange={setSelectedRevoModel}
+                disabled={!isBrandProfileAvailable || outputType !== 'image'}
+                showCredits={true}
+                userCredits={userCredits}
+              />
+            </div>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Label>AI Model:</Label>
-            <RevoModelSelector
-              selectedModel={selectedRevoModel}
-              onModelChange={setSelectedRevoModel}
-              disabled={!isBrandProfileAvailable || outputType !== 'image'}
-              showCredits={true}
-              userCredits={userCredits}
-            />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center space-x-4">
+              <Label>Output Type:</Label>
+              <RadioGroup value={outputType} onValueChange={(v) => setOutputType(v as 'image' | 'video')} className="flex items-center space-x-4" disabled={isLoading}>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="image" id="r-image" />
+                  <Label htmlFor="r-image" className="flex items-center gap-2"><ImageIcon className="h-4 w-4" /> Image</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="video" id="r-video" disabled />
+                  <Label htmlFor="r-video" className="flex items-center gap-2 text-muted-foreground"><Video className="h-4 w-4" /> Video (Coming Soon)</Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            <div className={cn("flex items-center space-x-4", outputType === 'video' ? 'opacity-100' : 'opacity-0')}>
+              <Label>Aspect Ratio:</Label>
+              <RadioGroup value={aspectRatio} onValueChange={(v) => setAspectRatio(v as '16:9' | '9:16')} className="flex items-center space-x-4" disabled={isLoading || outputType !== 'video'}>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="16:9" id="r-16-9" />
+                  <Label htmlFor="r-16-9" className="flex items-center gap-2">16:9 (Sound)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="9:16" id="r-9-16" />
+                  <Label htmlFor="r-9-16" className="flex items-center gap-2">9:16 (No Sound)</Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            <Button type="submit" className="w-full sm:w-auto sm:min-w-[120px]" disabled={isLoading || !input || outputType === 'video'}>
+              {isLoading ? 'Generating...' : outputType === 'video' ? 'Coming Soon' : <><Wand className="mr-2 h-4 w-4" /> Generate</>}
+            </Button>
           </div>
-
-          <Separator orientation="vertical" className="h-6 hidden sm:block" />
-
-          <div className="flex items-center space-x-4">
-            <Label>Output Type:</Label>
-            <RadioGroup value={outputType} onValueChange={(v) => setOutputType(v as 'image' | 'video')} className="flex items-center space-x-4" disabled={isLoading}>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="image" id="r-image" />
-                <Label htmlFor="r-image" className="flex items-center gap-2"><ImageIcon className="h-4 w-4" /> Image</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="video" id="r-video" />
-                <Label htmlFor="r-video" className="flex items-center gap-2"><Video className="h-4 w-4" /> Video</Label>
-              </div>
-            </RadioGroup>
-          </div>
-
-          <div className={cn("flex items-center space-x-4", outputType === 'video' ? 'opacity-100' : 'opacity-0')}>
-            <Label>Aspect Ratio:</Label>
-            <RadioGroup value={aspectRatio} onValueChange={(v) => setAspectRatio(v as '16:9' | '9:16')} className="flex items-center space-x-4" disabled={isLoading || outputType !== 'video'}>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="16:9" id="r-16-9" />
-                <Label htmlFor="r-16-9" className="flex items-center gap-2">16:9 (Sound)</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="9:16" id="r-9-16" />
-                <Label htmlFor="r-9-16" className="flex items-center gap-2">9:16 (No Sound)</Label>
-              </div>
-            </RadioGroup>
-          </div>
-
-          <Button type="submit" className="w-full sm:w-auto" disabled={isLoading || !input}>
-            {isLoading ? 'Generating...' : <><Wand className="mr-2 h-4 w-4" /> Generate</>}
-          </Button>
         </div>
       </form>
     </div>

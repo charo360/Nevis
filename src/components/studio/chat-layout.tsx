@@ -78,6 +78,18 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        
+        // Check if video generation is selected
+        if (outputType === 'video') {
+            const comingSoonMessage: Message = {
+                id: Date.now().toString(),
+                role: 'assistant',
+                content: `🎬 Video generation is coming soon! For now, please select "Image" to create stunning visual content. We're working hard to bring you video generation capabilities in a future update.`,
+            };
+            setMessages(prevMessages => [...prevMessages, comingSoonMessage]);
+            return;
+        }
+        
         if (!input.trim()) {
             toast({
                 variant: 'destructive',
@@ -215,9 +227,9 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
     };
 
     return (
-        <div className="relative flex h-full flex-col">
+        <div className="relative flex h-full flex-col max-h-screen">
             {/* Prompt Builder Section */}
-            <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex-shrink-0">
                 <div className="p-4">
                     <Button
                         type="button"
@@ -241,7 +253,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     </Button>
 
                     {isPromptBuilderOpen && (
-                        <div className="mt-4 max-h-[60vh] overflow-y-auto">
+                        <div className="mt-4 max-h-[40vh] overflow-y-auto">
                             <PromptBuilder
                                 brandProfile={brandProfile}
                                 onPromptGenerated={handlePromptGenerated}
@@ -251,7 +263,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto min-h-0 max-h-[calc(100vh-200px)]">
                 {messages.length === 0 && !isLoading ? (
                     <div className="flex h-full flex-col items-center justify-center text-center p-4">
                         <Card className="max-w-2xl w-full">
@@ -276,26 +288,28 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 )}
             </div>
 
-            <ChatInput
-                input={input}
-                setInput={setInput}
-                handleSubmit={handleSubmit}
-                isLoading={isLoading}
-                imagePreview={imagePreview}
-                setImagePreview={setImagePreview}
-                setImageDataUrl={setImageDataUrl}
-                useBrandProfile={useBrandProfile}
-                setUseBrandProfile={setUseBrandProfile}
-                outputType={outputType}
-                setOutputType={setOutputType}
-                handleImageUpload={handleImageUpload}
-                isBrandProfileAvailable={!!brandProfile}
-                onEditImage={onEditImage}
-                aspectRatio={aspectRatio}
-                setAspectRatio={setAspectRatio}
-                selectedRevoModel={selectedRevoModel}
-                setSelectedRevoModel={setSelectedRevoModel}
-            />
+            <div className="flex-shrink-0 border-t bg-background">
+                <ChatInput
+                    input={input}
+                    setInput={setInput}
+                    handleSubmit={handleSubmit}
+                    isLoading={isLoading}
+                    imagePreview={imagePreview}
+                    setImagePreview={setImagePreview}
+                    setImageDataUrl={setImageDataUrl}
+                    useBrandProfile={useBrandProfile}
+                    setUseBrandProfile={setUseBrandProfile}
+                    outputType={outputType}
+                    setOutputType={setOutputType}
+                    handleImageUpload={handleImageUpload}
+                    isBrandProfileAvailable={!!brandProfile}
+                    onEditImage={onEditImage}
+                    aspectRatio={aspectRatio}
+                    setAspectRatio={setAspectRatio}
+                    selectedRevoModel={selectedRevoModel}
+                    setSelectedRevoModel={setSelectedRevoModel}
+                />
+            </div>
         </div>
     );
 }
