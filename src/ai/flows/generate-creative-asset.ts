@@ -41,6 +41,11 @@ const CreativeAssetInputSchema = z.object({
     maskDataUrl: z.string().nullable().optional().describe('An optional mask image for inpainting as a data URI.'),
     aspectRatio: z.enum(['16:9', '9:16']).optional().describe('The aspect ratio for video generation.'),
     preferredModel: z.string().optional().describe('Preferred model for generation (e.g., gemini-2.5-flash-image-preview).'),
+    designColors: z.object({
+        primaryColor: z.string().optional(),
+        accentColor: z.string().optional(),
+        backgroundColor: z.string().optional(),
+    }).optional().describe('Design-specific colors that override brand colors for this generation.'),
 });
 export type CreativeAssetInput = z.infer<typeof CreativeAssetInputSchema>;
 
@@ -309,9 +314,26 @@ Transform the uploaded image into a professional marketing design by enhancing i
                     brandGuidelines += ` Create a comprehensive marketing design that represents the brand identity while prominently featuring the uploaded image as the main visual element.`
                 }
 
-                brandGuidelines += `\n- Use brand colors: ${bp.primaryColor || 'brand-appropriate colors'}`;
+                // Use design-specific colors if provided, otherwise fall back to brand colors
+                const primaryColor = input.designColors?.primaryColor || bp.primaryColor;
+                const accentColor = input.designColors?.accentColor || bp.accentColor;
+                const backgroundColor = input.designColors?.backgroundColor || bp.backgroundColor;
+
+                brandGuidelines += `\n- Use design colors: Primary ${primaryColor || 'brand-appropriate colors'}, Accent ${accentColor || 'complementary colors'}, Background ${backgroundColor || 'neutral background'}`;
                 brandGuidelines += `\n- Match brand style: ${bp.visualStyle || 'professional'}`;
                 brandGuidelines += `\n- Target audience: ${bp.targetAudience || 'general audience'}`;
+                brandGuidelines += `\n- Business name: ${bp.businessName}`;
+                brandGuidelines += `\n- Business type: ${bp.businessType}`;
+                brandGuidelines += `\n- Location: ${bp.location}`;
+                if (bp.websiteUrl) {
+                    brandGuidelines += `\n- Website: ${bp.websiteUrl}`;
+                }
+                if (bp.contactInfo?.phone) {
+                    brandGuidelines += `\n- Phone: ${bp.contactInfo.phone}`;
+                }
+                if (bp.contactInfo?.email) {
+                    brandGuidelines += `\n- Email: ${bp.contactInfo.email}`;
+                }
 
                 referencePrompt += brandGuidelines;
             }
@@ -415,6 +437,14 @@ Transform the uploaded image into a professional marketing design by enhancing i
             const cleanedContent = cleanBusinessNamePattern(remainingPrompt);
 
             let onBrandPrompt = `Create a stunning, professional FULL MARKETING DESIGN (NOT just a logo) for social media ${input.outputType} for ${bp.businessName || 'this business'}.
+
+**BRAND INFORMATION:**
+- Business Name: ${bp.businessName}
+- Business Type: ${bp.businessType}
+- Location: ${bp.location}
+${bp.websiteUrl ? `- Website: ${bp.websiteUrl}` : ''}
+${bp.contactInfo?.phone ? `- Phone: ${bp.contactInfo.phone}` : ''}
+${bp.contactInfo?.email ? `- Email: ${bp.contactInfo.email}` : ''}
 
 🎯 **DESIGN TYPE:** Complete marketing design with layout, imagery, text, and visual elements - NOT a standalone logo
 🎨 **VISUAL APPROACH:** Full-scale marketing composition with backgrounds, imagery, text overlays, and complete design elements

@@ -12,6 +12,8 @@ import { generateCreativeAssetAction, generateEnhancedDesignAction } from '@/app
 import { generateRevo2CreativeAssetAction } from '@/app/actions/revo-2-actions';
 import { useToast } from '@/hooks/use-toast';
 import { type RevoModel } from '@/components/ui/revo-model-selector';
+import { useDesignColors } from '@/contexts/design-color-context';
+import { DesignColorPicker } from './design-color-picker';
 
 
 interface ChatLayoutProps {
@@ -31,6 +33,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
     const [selectedRevoModel, setSelectedRevoModel] = React.useState<RevoModel>('revo-1.5');
     const [isPromptBuilderOpen, setIsPromptBuilderOpen] = React.useState(false);
     const { toast } = useToast();
+    const { designColors, updateDesignColors } = useDesignColors();
 
 
 
@@ -132,7 +135,8 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     brandProfile,
                     null, // maskDataUrl - Creative Studio can handle inpainting
                     outputType === 'video' ? aspectRatio : undefined,
-                    'gemini-2.5-flash-image-preview' // Use Revo 2.0 model specifically
+                    'gemini-2.5-flash-image-preview', // Use Revo 2.0 model specifically
+                    designColors // Pass design-specific colors
                 );
 
                 aiResponse = {
@@ -154,7 +158,8 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     brandProfile,
                     null, // maskDataUrl - Creative Studio can handle inpainting
                     outputType === 'video' ? aspectRatio : undefined,
-                    'gemini-2.5-flash-image-preview' // Use Revo 1.5 model specifically
+                    'gemini-2.5-flash-image-preview', // Use Revo 1.5 model specifically
+                    designColors // Pass design-specific colors
                 );
 
                 aiResponse = {
@@ -253,11 +258,12 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     </Button>
 
                     {isPromptBuilderOpen && (
-                        <div className="mt-4 max-h-[40vh] overflow-y-auto">
+                        <div className="mt-4 max-h-[40vh] overflow-y-auto space-y-4">
                             <PromptBuilder
                                 brandProfile={brandProfile}
                                 onPromptGenerated={handlePromptGenerated}
                             />
+                            <DesignColorPicker />
                         </div>
                     )}
                 </div>

@@ -141,15 +141,9 @@ export function BrandColorProvider({ children }: BrandColorProviderProps) {
     } else {
     }
 
-    // Apply background color
-    if (backgroundColor) {
-      const hslBackground = hexToHsl(backgroundColor);
-      if (hslBackground) {
-        (newStyle as any)['--background-hsl'] = hslBackground;
-        (newStyle as any)['--background'] = hslBackground;
-      }
-    } else {
-    }
+    // Apply background color - REMOVED to prevent platform UI color bleeding
+    // Background colors should only be used for design generation, not platform UI
+    // Platform background should remain consistent using globals.css defaults
 
     setStyle(newStyle);
   }, [currentBrand, loading]);

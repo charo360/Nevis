@@ -331,7 +331,12 @@ export async function generateCreativeAssetAction(
   brandProfile: BrandProfile | null,
   maskDataUrl: string | null | undefined,
   aspectRatio: '16:9' | '9:16' | undefined,
-  preferredModel?: string
+  preferredModel?: string,
+  designColors?: {
+    primaryColor?: string;
+    accentColor?: string;
+    backgroundColor?: string;
+  }
 ): Promise<CreativeAsset> {
   try {
     const result = await generateCreativeAssetFlow({
@@ -343,6 +348,7 @@ export async function generateCreativeAssetAction(
       maskDataUrl,
       aspectRatio,
       preferredModel,
+      designColors,
     });
 
     // Upload image to Supabase storage if it's a data URL

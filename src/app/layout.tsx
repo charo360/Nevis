@@ -12,6 +12,7 @@ import { AuthWrapper } from '@/components/auth/auth-wrapper-supabase';
 // Old providers removed - using UnifiedBrandProvider only
 import { UnifiedBrandProvider } from '@/contexts/unified-brand-context';
 import { BrandColorProvider } from '@/components/layout/brand-color-provider';
+import { DesignColorProvider } from '@/contexts/design-color-context';
 import React, { Suspense, useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 
@@ -54,9 +55,11 @@ function ConditionalLayout({ children, useAppRoute }: { children: React.ReactNod
     <SidebarProvider>
       <AppSidebar />
       <BrandColorProvider>
-        <Suspense fallback={<div className="p-6">Loading...</div>}>
-          <AppRouteClient />
-        </Suspense>
+        <DesignColorProvider>
+          <Suspense fallback={<div className="p-6">Loading...</div>}>
+            <AppRouteClient />
+          </Suspense>
+        </DesignColorProvider>
       </BrandColorProvider>
     </SidebarProvider>
   );
