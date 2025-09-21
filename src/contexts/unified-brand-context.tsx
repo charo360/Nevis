@@ -182,19 +182,34 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
           const savedBrandId = localStorage.getItem('selectedBrandId');
           if (savedBrandId) {
             restoredBrand = userBrands.find(b => b.id === savedBrandId) || null;
-            console.log('🔄 Found saved brand ID, attempting to restore:', savedBrandId);
+            console.log('🔄 Found saved brand ID, attempting to restore:', savedBrandId, 'Found:', !!restoredBrand);
           }
         } catch (error) {
           console.error('Error restoring from localStorage:', error);
         }
         
-        // If restoration failed, auto-select the first active brand
+        // If restoration failed, try to restore from full brand data
+        if (!restoredBrand) {
+          try {
+            const savedBrandData = localStorage.getItem('currentBrandData');
+            if (savedBrandData) {
+              const parsedData = JSON.parse(savedBrandData);
+              restoredBrand = userBrands.find(b => b.id === parsedData.id) || null;
+              console.log('🔄 Attempting restoration from full brand data:', parsedData.businessName || parsedData.name, 'Found:', !!restoredBrand);
+            }
+          } catch (error) {
+            console.error('Error restoring from full brand data:', error);
+          }
+        }
+        
+        // If restoration still failed, select the first active brand or first brand
         const brandToSelect = restoredBrand || userBrands.find(b => b.isActive) || userBrands[0];
         
         console.log('🎯 Selecting brand:', {
           restored: !!restoredBrand,
           businessName: brandToSelect.businessName || brandToSelect.name,
-          brandId: brandToSelect.id
+          brandId: brandToSelect.id,
+          isFirstBrand: brandToSelect === userBrands[0]
         });
         
         setCurrentBrand(brandToSelect);
@@ -235,7 +250,7 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
   const selectBrand = useCallback((brand: CompleteBrandProfile | null) => {
     const brandName = brand?.businessName || brand?.name || 'null';
 
-    console.log('🎯 Selecting brand:', brandName);
+    console.log('🎯 Selecting brand:', brandName, 'ID:', brand?.id);
 
     // Update state
     setCurrentBrand(brand);
@@ -243,8 +258,30 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
     // Update all brand-scoped services
     updateAllBrandScopedServices(brand);
 
-    // Force update color persistence immediately
+    // Enhanced brand persistence - save both ID and full data immediately
     if (brand) {
+      // Save brand ID for quick restoration
+      localStorage.setItem('selectedBrandId', brand.id);
+      
+      // Save full brand data for complete restoration
+      const brandData = {
+        id: brand.id,
+        businessName: brand.businessName,
+        name: brand.name,
+        primaryColor: brand.primaryColor,
+        accentColor: brand.accentColor,
+        backgroundColor: brand.backgroundColor,
+        logoUrl: brand.logoUrl,
+        logoDataUrl: brand.logoDataUrl,
+        businessType: brand.businessType,
+        location: brand.location,
+        description: brand.description,
+        services: brand.services,
+        selectedAt: new Date().toISOString()
+      };
+      localStorage.setItem('currentBrandData', JSON.stringify(brandData));
+      
+      // Save colors separately for quick access
       const colorData = {
         primaryColor: brand.primaryColor,
         accentColor: brand.accentColor,
@@ -254,6 +291,14 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
         updatedAt: new Date().toISOString()
       };
       localStorage.setItem('brandColors', JSON.stringify(colorData));
+      
+      console.log('💾 Brand selection persisted to localStorage:', brandName);
+    } else {
+      // Clear localStorage when no brand is selected
+      localStorage.removeItem('selectedBrandId');
+      localStorage.removeItem('currentBrandData');
+      localStorage.removeItem('brandColors');
+      console.log('🧹 Cleared brand data from localStorage');
     }
 
     // Trigger a custom event for other components to listen to
@@ -267,31 +312,8 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
     window.dispatchEvent(event);
   }, [updateAllBrandScopedServices]);
 
-  // Enhanced brand persistence - save both ID and full data
-  useEffect(() => {
-    if (currentBrand?.id) {
-      localStorage.setItem('selectedBrandId', currentBrand.id);
-      // Also save the full brand data for immediate restoration
-      // Store both logoUrl and logoDataUrl to handle both scenarios
-      localStorage.setItem('currentBrandData', JSON.stringify({
-        id: currentBrand.id,
-        businessName: currentBrand.businessName,
-        name: currentBrand.name,
-        primaryColor: currentBrand.primaryColor,
-        accentColor: currentBrand.accentColor,
-        backgroundColor: currentBrand.backgroundColor,
-        logoUrl: currentBrand.logoUrl, // Supabase storage URL
-        logoDataUrl: currentBrand.logoDataUrl, // Base64 data URL
-        // Store essential data for immediate UI restoration
-        businessType: currentBrand.businessType,
-        location: currentBrand.location,
-        description: currentBrand.description
-      }));
-    } else {
-      localStorage.removeItem('selectedBrandId');
-      localStorage.removeItem('currentBrandData');
-    }
-  }, [currentBrand]);
+  // Note: Brand persistence is now handled directly in selectBrand function
+  // to ensure immediate saving when brand is selected
 
   // Save a brand profile (using Supabase via API)
   const saveProfile = async (profile: CompleteBrandProfile): Promise<string> => {
@@ -436,7 +458,7 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
     }
 
     return new BrandScopedStorage({ brandId: currentBrand.id, feature });
-  }, [currentBrand]);
+  }, [currentBrand?.id]); // Only depend on ID to prevent stale storage instances
 
   // Helper function to clear all data for a specific brand
   const clearBrandData = useCallback((brandId: string) => {

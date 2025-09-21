@@ -100,14 +100,20 @@ Brand Information:
 - Primary Color: {primaryColor}
 - Visual Style: {visualStyle}
 - Target Audience: {targetAudience}
-- Services: {services}
+- 🎯 PRIMARY FOCUS - Services: {services}
 - Key Features: {keyFeatures}
 - Competitive Advantages: {competitiveAdvantages}
 - Content Themes: {contentThemes}
 
+🚨 CRITICAL INSTRUCTIONS:
+- Focus EXCLUSIVELY on the services provided, NOT the business type
+- Generate content specifically for the services listed above
+- Ignore the business type when it conflicts with the services
+- All content, messaging, and imagery must relate to the specific services
+
 Requirements:
 - Create engaging, professional content that reflects the business's unique value proposition
-- Incorporate services and key features naturally into the content
+- 🎯 MANDATORY: Incorporate the specific services listed above naturally into the content
 - Highlight competitive advantages when relevant
 - Include relevant hashtags (5-15) that align with content themes
 - Generate catchy words for the image that capture the brand essence
@@ -169,6 +175,13 @@ BUSINESS CONTEXT:
 - Industry: {businessType}
 - Platform: {platform}
 - Target Message: {imageText}
+- 🎯 PRIMARY FOCUS - Services: {services}
+
+🚨 CRITICAL DESIGN INSTRUCTIONS:
+- Focus EXCLUSIVELY on the services provided, NOT the business type
+- Create designs specifically for the services listed above
+- Ignore the business type when it conflicts with the services
+- All visual elements, imagery, and messaging must relate to the specific services
 
 DESIGN REQUIREMENTS:
 - Create a design that's VISUALLY APPEALING and engaging
@@ -186,12 +199,12 @@ KEY DESIGN PRINCIPLES:
 5. **BUSINESS APPROPRIATENESS** - Keep it professional while being creative
 6. **INDUSTRY EXCELLENCE** - Match the quality of world-class brands in the industry
 
-INDUSTRY INTELLIGENCE INTEGRATION:
-- Study and understand the {businessType} industry context
-- Learn from world-class brands in the same industry
-- Incorporate industry-specific design trends and best practices
-- Create designs that feel authentic to the industry while being creative
-- Match the quality and sophistication of industry leaders
+SERVICES-FOCUSED DESIGN INTEGRATION:
+- Study and understand the specific services provided
+- Create designs that showcase the services, not the business type
+- Incorporate service-specific visual elements and messaging
+- Focus on how the services solve customer problems
+- Match the quality and sophistication of industry leaders in the service area
 
 WHAT TO AVOID:
 - Overly perfect, symmetrical, AI-generated looking designs

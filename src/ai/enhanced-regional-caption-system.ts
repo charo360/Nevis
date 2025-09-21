@@ -62,9 +62,16 @@ export class EnhancedRegionalCaptionSystem {
       // Get regional trend data
       const regionalData = await this.getRegionalTrendData(context.location, context.businessType);
       
-      // Get trending hashtags
+      // Get trending hashtags - use services from brand profile if available
+      const trendingContext = context.brandProfile.services || context.businessType;
+      console.log('🔍 [Enhanced Regional] Using trending context:', {
+        services: context.brandProfile.services,
+        businessType: context.businessType,
+        finalContext: trendingContext
+      });
+      
       const trendingHashtags = await TrendingHashtagsService.getTrendingHashtags(
-        context.businessType,
+        trendingContext,
         context.location,
         12
       );

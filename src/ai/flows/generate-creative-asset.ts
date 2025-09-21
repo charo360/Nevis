@@ -350,8 +350,45 @@ Transform the uploaded image into a professional marketing design by enhancing i
             const bp = input.brandProfile;
             const hasUploadedImage = !!input.referenceAssetUrl;
 
-            // Get business-specific design DNA
-            const businessDNA = BUSINESS_TYPE_DESIGN_DNA[bp.businessType as keyof typeof BUSINESS_TYPE_DESIGN_DNA] || BUSINESS_TYPE_DESIGN_DNA.default;
+            // Extract services from brand profile for DNA selection
+            const servicesText = typeof bp.services === 'string' 
+              ? bp.services 
+              : Array.isArray(bp.services) 
+                ? bp.services.map(s => typeof s === 'object' ? s.name : s).join(', ')
+                : '';
+
+            // Debug logging for services
+            console.log('🔍 [AI Generation] Services Debug:', {
+              services: bp.services,
+              servicesText,
+              businessType: bp.businessType,
+              businessName: bp.businessName
+            });
+
+            // Get business-specific design DNA - prioritize services over business type
+            let businessDNA = BUSINESS_TYPE_DESIGN_DNA.default;
+            
+            if (servicesText) {
+                // Try to match services to specific design DNA
+                const servicesLower = servicesText.toLowerCase();
+                if (servicesLower.includes('buy now pay later') || servicesLower.includes('financing') || servicesLower.includes('credit')) {
+                    businessDNA = BUSINESS_TYPE_DESIGN_DNA.finance || BUSINESS_TYPE_DESIGN_DNA.default;
+                } else if (servicesLower.includes('banking') || servicesLower.includes('loan') || servicesLower.includes('investment')) {
+                    businessDNA = BUSINESS_TYPE_DESIGN_DNA.finance || BUSINESS_TYPE_DESIGN_DNA.default;
+                } else if (servicesLower.includes('food') || servicesLower.includes('restaurant') || servicesLower.includes('cafe')) {
+                    businessDNA = BUSINESS_TYPE_DESIGN_DNA.restaurant || BUSINESS_TYPE_DESIGN_DNA.default;
+                } else if (servicesLower.includes('fitness') || servicesLower.includes('gym') || servicesLower.includes('health')) {
+                    businessDNA = BUSINESS_TYPE_DESIGN_DNA.fitness || BUSINESS_TYPE_DESIGN_DNA.default;
+                } else if (servicesLower.includes('beauty') || servicesLower.includes('salon') || servicesLower.includes('spa')) {
+                    businessDNA = BUSINESS_TYPE_DESIGN_DNA.beauty || BUSINESS_TYPE_DESIGN_DNA.default;
+                } else {
+                    // Fall back to business type if no service match
+                    businessDNA = BUSINESS_TYPE_DESIGN_DNA[bp.businessType as keyof typeof BUSINESS_TYPE_DESIGN_DNA] || BUSINESS_TYPE_DESIGN_DNA.default;
+                }
+            } else {
+                // Use business type if no services available
+                businessDNA = BUSINESS_TYPE_DESIGN_DNA[bp.businessType as keyof typeof BUSINESS_TYPE_DESIGN_DNA] || BUSINESS_TYPE_DESIGN_DNA.default;
+            }
 
             // Enhanced target market representation for all locations
             const getTargetMarketInstructions = (location: string, businessType: string, targetAudience: string) => {
@@ -445,11 +482,14 @@ Transform the uploaded image into a professional marketing design by enhancing i
 ${bp.websiteUrl ? `- Website: ${bp.websiteUrl}` : ''}
 ${bp.contactInfo?.phone ? `- Phone: ${bp.contactInfo.phone}` : ''}
 ${bp.contactInfo?.email ? `- Email: ${bp.contactInfo.email}` : ''}
+${servicesText ? `- Services: ${servicesText}` : ''}
 
 🎯 **DESIGN TYPE:** Complete marketing design with layout, imagery, text, and visual elements - NOT a standalone logo
 🎨 **VISUAL APPROACH:** Full-scale marketing composition with backgrounds, imagery, text overlays, and complete design elements
 
 BUSINESS: ${bp.businessName || 'Professional Business'} (${bp.businessType})
+${servicesText ? `🎯 PRIMARY FOCUS - SERVICES: ${servicesText}` : ''}
+${servicesText ? `🚨 CRITICAL: Generate content specifically for these services, NOT the business type` : ''}
 CONTENT: "${cleanedContent}"
 STYLE: ${bp.visualStyle}, modern, clean, professional
 
@@ -468,7 +508,8 @@ REQUIREMENTS:
 - High-quality, professional design composition
 - ${bp.visualStyle} aesthetic with complete visual hierarchy
 - Clean, modern layout with multiple design elements
-- Perfect for ${bp.businessType} business marketing
+- ${servicesText ? `🎯 CRITICAL: Focus EXCLUSIVELY on ${servicesText} services - ignore business type` : `Perfect for ${bp.businessType} business marketing`}
+- ${servicesText ? `🚨 MANDATORY: All content, imagery, and messaging must relate to ${servicesText}` : ''}
 - Brand colors prominently featured throughout the design
 - Professional social media marketing appearance
 - Include backgrounds, imagery, text layouts, and complete design composition`;

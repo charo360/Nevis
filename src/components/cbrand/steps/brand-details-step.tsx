@@ -17,10 +17,14 @@ import {
   Share2,
   ChevronLeft,
   ChevronRight,
-  Plus,
-  Trash2
+  Plus, // Still needed for Services section
+  // Trash2, // COMMENTED OUT - Products functionality not working yet
+  // Upload, // COMMENTED OUT - Products functionality not working yet
+  // Brain, // COMMENTED OUT - Products functionality not working yet
+  // Loader2 // COMMENTED OUT - Products functionality not working yet
 } from 'lucide-react';
 import { CompleteBrandProfile } from '../cbrand-wizard';
+// import { ProductImageAnalysisService } from '@/lib/services/product-image-analysis-service'; // COMMENTED OUT - Products functionality not working yet
 
 interface BrandDetailsStepProps {
   brandProfile: CompleteBrandProfile;
@@ -36,6 +40,10 @@ export function BrandDetailsStep({
   onPrevious
 }: BrandDetailsStepProps) {
   const [activeTab, setActiveTab] = useState('basic');
+  // COMMENTED OUT - Products functionality not working yet
+  // const [isDragging, setIsDragging] = useState(false);
+  // const [isTraining, setIsTraining] = useState(false);
+  // const [trainedDescriptions, setTrainedDescriptions] = useState<{[key: string]: string}>({});
   const { currentBrand, updateProfile, selectBrand } = useUnifiedBrand();
 
   // Helper function to check if a required field is empty
@@ -129,12 +137,118 @@ export function BrandDetailsStep({
     updateBrandProfile({ services: updatedServices });
   };
 
+  // Product image handlers
+  // COMMENTED OUT - Products functionality not working yet
+  /*
+  const handleFileSelect = (files: FileList | null) => {
+    if (!files) return;
+
+    const newProducts: Array<{
+      id: string;
+      name: string;
+      file: File;
+      preview: string;
+    }> = [];
+    
+    Array.from(files).forEach((file) => {
+      if (file.type.startsWith('image/')) {
+        const id = Math.random().toString(36).substr(2, 9);
+        const product = {
+          id,
+          file,
+          preview: URL.createObjectURL(file),
+          name: file.name.replace(/\.[^/.]+$/, '') // Remove extension
+        };
+        newProducts.push(product);
+      }
+    });
+
+    if (newProducts.length > 0) {
+      const updatedProducts = [...(brandProfile.productImages || []), ...newProducts];
+      updateBrandProfile({ productImages: updatedProducts });
+    }
+  };
+  */
+
+  /*
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    handleFileSelect(e.dataTransfer.files);
+  };
+
+  const openFileDialog = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.accept = 'image/*';
+    input.onchange = (e) => handleFileSelect((e.target as HTMLInputElement).files);
+    input.click();
+  };
+
+  const removeProduct = (index: number) => {
+    const updatedProducts = brandProfile.productImages?.filter((_, i) => i !== index) || [];
+    updateBrandProfile({ productImages: updatedProducts });
+  };
+
+  const trainProductImages = async () => {
+    if (!brandProfile.productImages || brandProfile.productImages.length === 0) {
+      alert('📸 Hey there! Please upload some product images first before I can train the AI.\n\nJust drag and drop your product photos above, then I\'ll teach the AI all about them! 🍪✨');
+      return;
+    }
+
+    setIsTraining(true);
+
+    try {
+      // Use the ProductImageAnalysisService to analyze all products
+      const descriptions = await ProductImageAnalysisService.analyzeMultipleProducts(
+        brandProfile.productImages.map(p => ({
+          id: p.id,
+          name: p.name,
+          preview: p.preview
+        }))
+      );
+
+      // Validate that we got descriptions back
+      if (!descriptions || Object.keys(descriptions).length === 0) {
+        throw new Error('No descriptions were generated');
+      }
+
+      setTrainedDescriptions(descriptions);
+      
+      // Update the brand profile with the trained descriptions
+      updateBrandProfile({ 
+        productImageDescriptions: descriptions 
+      });
+
+      // Show success message
+      alert(`🎉 Awesome! I've successfully trained the AI on ${Object.keys(descriptions).length} product image${Object.keys(descriptions).length !== 1 ? 's' : ''}!\n\n✨ The AI now understands the shapes, colors, and visual characteristics of your products and will use this information when generating content for Quick Content.\n\n🍪 Your products will now be perfectly matched in designs - no more round images for square products!`);
+    } catch (error) {
+      console.error('Error training product images:', error);
+      alert(`😅 Oops! Something went wrong while training the AI.\n\n${error.message || 'Please try again in a moment.'}\n\nIf the problem persists, try refreshing the page.`);
+    } finally {
+      setIsTraining(false);
+    }
+  };
+  */
+
   const sections = [
     { id: 'basic', label: 'Basic Info', icon: Building2 },
     { id: 'services', label: 'Services', icon: Users },
     { id: 'contact', label: 'Contact', icon: Phone },
     { id: 'identity', label: 'Brand Identity', icon: Palette },
     { id: 'colors', label: 'Colors', icon: Hash },
+    // { id: 'products', label: 'Products', icon: Upload }, // COMMENTED OUT - Not working properly yet
     { id: 'social', label: 'Social (Optional)', icon: Share2 },
   ];
 
@@ -559,7 +673,146 @@ export function BrandDetailsStep({
               </div>
             </TabsContent>
 
-            {/* Section 6: Social Media */}
+            {/* Section 6: Products - COMMENTED OUT - Not working properly yet */}
+            {/* 
+            <TabsContent value="products" className="w-full space-y-4 mt-6">
+              <div className="mb-4">
+                <p className="text-sm text-gray-600">
+                  Upload images of your products so AI can understand their shapes, colors, and visual characteristics for accurate design generation. You can upload multiple products from different categories.
+                  <span className="text-gray-500 italic"> Optional - Skip if you don't have product images.</span>
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  💡 <strong>Pro tip:</strong> Name your products descriptively (e.g., "Square Chocolate Cookies", "Round Sugar Cookies", "Blue Cotton T-Shirt", "Wireless Headphones") to help AI understand the product type and shape better.
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  🎯 <strong>Supported categories:</strong> Food & Beverages, Fashion & Clothing, Electronics & Tech, Home & Decor, Beauty & Personal Care, and more!
+                </p>
+              </div>
+
+              <div 
+                className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors cursor-pointer ${
+                  isDragging 
+                    ? 'border-blue-400 bg-blue-50' 
+                    : 'border-gray-300 hover:border-gray-400'
+                }`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={openFileDialog}
+              >
+                <div className="space-y-3">
+                  <div className="mx-auto w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                    <Upload className="w-4 h-4 text-gray-600" />
+                  </div>
+                  <div>
+                    <p className="text-base font-medium text-gray-900">
+                      {isDragging ? 'Drop your product images here' : 'Upload Product Images'}
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      Drag and drop images or click to browse
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Supports JPG, PNG, WebP (max 10MB each)
+                    </p>
+                  </div>
+                  <Button variant="outline" size="sm" type="button" className="text-xs">
+                    <Plus className="w-3 h-3 mr-1" />
+                    Choose Images
+                  </Button>
+                </div>
+              </div>
+
+              {brandProfile.productImages && brandProfile.productImages.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold">Your Products ({brandProfile.productImages.length})</h3>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        type="button" 
+                        onClick={openFileDialog}
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add More
+                      </Button>
+                      <Button 
+                        onClick={trainProductImages}
+                        disabled={isTraining}
+                        className="bg-purple-600 hover:bg-purple-700 text-white"
+                      >
+                        {isTraining ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Training...
+                          </>
+                        ) : (
+                          <>
+                            <Brain className="w-4 h-4 mr-2" />
+                            Train AI
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {brandProfile.productImages.map((product, index) => (
+                      <div key={index} className="group relative overflow-hidden border rounded-lg">
+                        <div className="aspect-square relative">
+                          <img
+                            src={product.preview}
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => removeProduct(index)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="p-2">
+                          <p className="text-xs font-medium truncate">{product.name}</p>
+                          <p className="text-xs text-gray-500">
+                            {(product.file.size / 1024 / 1024).toFixed(1)}MB
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {Object.keys(trainedDescriptions).length > 0 && (
+                    <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                      <h4 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
+                        <Brain className="w-4 h-4" />
+                        AI Training Complete
+                      </h4>
+                      <div className="space-y-3">
+                        {Object.entries(trainedDescriptions).map(([productId, description]) => {
+                          const product = brandProfile.productImages?.find(p => p.id === productId);
+                          return (
+                            <div key={productId} className="text-sm p-3 bg-white rounded border">
+                              <div className="font-medium text-green-700 mb-1">{product?.name}</div>
+                              <div className="text-green-600 text-xs leading-relaxed">{description}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <p className="text-xs text-green-600 mt-2">
+                        The AI will now use these descriptions when generating content for Quick Content.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </TabsContent>
+            */}
+
+            {/* Section 7: Social Media */}
             <TabsContent value="social" className="w-full space-y-4 mt-6">
               <div className="mb-4">
                 <p className="text-sm text-gray-600">

@@ -100,7 +100,7 @@ BUSINESS CONTEXT:
 ${locationTextForAnalysis}
 - Target Audience: ${brandProfile.targetAudience || 'General audience'}
 - Platform: ${platform}
-- Services: ${brandProfile.services?.join(', ') || 'Business services'}
+- Services: ${brandProfile.services || 'Business services'}
 - Use Local Language: ${useLocalLanguage ? 'Yes - mix English with local language elements' : 'No - English only'}
 
 CURRENT TRENDS & EVENTS:
@@ -174,7 +174,7 @@ Format as JSON:
       console.warn('⚠️ [Revo 1.5] Failed to parse business analysis, using fallback');
       return {
         contentApproach: 'benefit-driven',
-        keyMessages: [`${businessName} delivers exceptional ${businessType} services`],
+        keyMessages: [`${businessName} delivers exceptional services`],
         targetPainPoints: ['Finding reliable service providers'],
         uniqueValueProps: ['Quality service', 'Local expertise'],
         emotionalTriggers: ['trust', 'confidence'],
@@ -187,7 +187,7 @@ Format as JSON:
     console.warn('⚠️ [Revo 1.5] Business analysis failed, using fallback:', error);
     return {
       contentApproach: 'benefit-driven',
-      keyMessages: [`${businessName} delivers exceptional ${businessType} services`],
+      keyMessages: [`${businessName} delivers exceptional services`],
       targetPainPoints: ['Finding reliable service providers'],
       uniqueValueProps: ['Quality service', 'Local expertise'],
       emotionalTriggers: ['trust', 'confidence'],
@@ -271,8 +271,16 @@ async function generateCaptionAndHashtags(
     });
 
     // Fetch trending data for current, relevant content
-    const trendingData = await fetchTrendingData(
+    // Use services from brand profile if available, otherwise fall back to business type
+    const trendingContext = brandProfile.services || businessType;
+    console.log('🔍 [Revo 1.5] Using trending context:', {
+      services: brandProfile.services,
       businessType,
+      finalContext: trendingContext
+    });
+    
+    const trendingData = await fetchTrendingData(
+      trendingContext,
       brandProfile.location || 'Local area',
       platform
     );
@@ -1071,7 +1079,7 @@ ${languageInstruction}
       return `
 **CRITICAL TARGET MARKET REPRESENTATION FOR ${location.toUpperCase()}:**
 - MANDATORY: Include authentic Black/African people who represent the target market
-- Show people who would actually use ${businessType} services: ${targetMarket}
+- Show people who would actually use the services: ${targetMarket}
 - Display local African people in settings relevant to ${businessType} business
 - Ensure faces are fully visible, well-lit, and anatomically correct with no deformations
 - Emphasize cultural authenticity and local representation
@@ -1097,7 +1105,7 @@ ${languageInstruction}
       return `
 **TARGET MARKET REPRESENTATION FOR ${location.toUpperCase()}:**
 - Include people who represent the target market: ${targetMarket}
-- Show people who would actually use ${businessType} services
+- Show people who would actually use the services
 - Display people in settings relevant to ${businessType} business
 - Ensure faces are fully visible, well-lit, and anatomically correct
 - Context: Show people in ${businessType}-relevant settings, not generic offices

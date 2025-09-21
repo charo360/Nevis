@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { type RevoModel } from '@/components/ui/revo-model-selector';
 import { useDesignColors } from '@/contexts/design-color-context';
 import { DesignColorPicker } from './design-color-picker';
+import ProductImageSelector from './product-image-selector';
 
 
 interface ChatLayoutProps {
@@ -32,6 +33,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
     const [aspectRatio, setAspectRatio] = React.useState<'16:9' | '9:16'>('16:9');
     const [selectedRevoModel, setSelectedRevoModel] = React.useState<RevoModel>('revo-1.5');
     const [isPromptBuilderOpen, setIsPromptBuilderOpen] = React.useState(false);
+    const [selectedProductId, setSelectedProductId] = React.useState<string | null>(null);
     const { toast } = useToast();
     const { designColors, updateDesignColors } = useDesignColors();
 
@@ -77,6 +79,26 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
             title: 'Prompt Added to Chat',
             description: 'Your design brief has been added to the chat input. Ready to generate! The form stays populated so you can easily create variations by reopening the builder.',
         });
+    };
+
+    const handleProductSelect = (productId: string | null) => {
+        setSelectedProductId(productId);
+        if (productId && brandProfile?.productImages) {
+            const product = brandProfile.productImages.find(p => p.id === productId);
+            if (product) {
+                setImagePreview(product.preview);
+                setImageDataUrl(product.preview);
+            }
+        } else {
+            setImagePreview(null);
+            setImageDataUrl(null);
+        }
+    };
+
+    const handleClearProductSelection = () => {
+        setSelectedProductId(null);
+        setImagePreview(null);
+        setImageDataUrl(null);
     };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -264,6 +286,14 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                                 onPromptGenerated={handlePromptGenerated}
                             />
                             <DesignColorPicker />
+                            {brandProfile?.productImages && brandProfile.productImages.length > 0 && (
+                                <ProductImageSelector
+                                    productImages={brandProfile.productImages}
+                                    selectedProductId={selectedProductId}
+                                    onSelectProduct={handleProductSelect}
+                                    onClearSelection={handleClearProductSelection}
+                                />
+                            )}
                         </div>
                     )}
                 </div>

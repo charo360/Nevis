@@ -109,9 +109,17 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
       let newPost;
       let revo20Result: any = null; // Declare in proper scope
 
-      // Get trending hashtags for this business type
+      // Debug logging for services
+      console.log('🔍 ContentCalendar Services Debug:', {
+        brandProfileServices: brandProfile.services,
+        businessType: brandProfile.businessType,
+        businessName: brandProfile.businessName
+      });
+
+      // Get trending hashtags for this business type or services
+      const businessContext = brandProfile.services || brandProfile.businessType || 'business';
       const trendingHashtags = await TrendingHashtagsService.getTrendingHashtags(
-        brandProfile.businessType || 'business',
+        businessContext,
         brandProfile.location as string,
         8 // Get up to 8 trending hashtags
       );

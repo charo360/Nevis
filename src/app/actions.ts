@@ -254,6 +254,8 @@ export async function generateContentAction(
       websiteUrl: enhancedProfile.websiteUrl,
       // Local language control
       useLocalLanguage: useLocalLanguage,
+      // Product image descriptions for AI context
+      productImageDescriptions: profile.productImageDescriptions || {},
       variants: [{
         platform: platform,
         aspectRatio: getAspectRatioForPlatform(platform),
@@ -624,6 +626,16 @@ export async function generateContentWithArtifactsAction(
       .map(a => `- ${a.name}: ${a.instructions}`)
       .join('\n');
 
+    // Collect product image descriptions for AI context
+    const productDescriptions = profile.productImageDescriptions 
+      ? Object.entries(profile.productImageDescriptions)
+          .map(([productId, description]) => {
+            const product = profile.productImages?.find(p => p.id === productId);
+            return `- ${product?.name || 'Product'}: ${description}`;
+          })
+          .join('\n')
+      : '';
+
     // Collect text overlay instructions from text artifacts
     const textOverlayInstructions = exactUseArtifacts
       .filter(a => a.textOverlay?.instructions && a.textOverlay.instructions.trim())
@@ -667,7 +679,7 @@ export async function generateContentWithArtifactsAction(
     }
 
     // Combine all instructions
-    const allInstructions = [artifactInstructions, textOverlayInstructions]
+    const allInstructions = [artifactInstructions, textOverlayInstructions, productDescriptions]
       .filter(Boolean)
       .join('\n');
 

@@ -57,57 +57,273 @@ const SERVICE_COLORS = [
 ];
 
 function ContentCalendarPageContent() {
-  const { currentBrand, brands, loading: brandLoading, selectBrand } = useUnifiedBrand();
-  const scheduleStorage = useBrandStorage(STORAGE_FEATURES.CONTENT_CALENDAR);
+  const { currentBrand, brands, loading: brandLoading, selectBrand, getBrandStorage } = useUnifiedBrand();
+  // Don't memoize storage - get fresh instance each time to prevent caching issues
+  const getScheduleStorage = () => getBrandStorage(STORAGE_FEATURES.CONTENT_CALENDAR);
+  
+  // Ref to track the current brand ID to prevent stale closures
+  const currentBrandIdRef = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    currentBrandIdRef.current = currentBrand?.id || null;
+  }, [currentBrand?.id]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [scheduledContent, setScheduledContent] = useState<ScheduledContent[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>('');
+  const [selectedService, setSelectedService] = useState<string>('');
+  const [selectedContentType, setSelectedContentType] = useState<'post' | 'story' | 'reel' | 'ad'>('post');
+  const [selectedPlatform, setSelectedPlatform] = useState<'All' | 'Facebook' | 'Instagram' | 'LinkedIn' | 'Twitter'>('All');
+  const [selectedNotes, setSelectedNotes] = useState<string>('');
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
+  const [reassignDialogOpen, setReassignDialogOpen] = useState(false);
+  const [reassignDay, setReassignDay] = useState<string>('');
+  const [reassignService, setReassignService] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
 
-  // Load CBrand profile and services
+  // Auto-distribute services across calendar with AI-like prioritization
+  const autoDistributeServices = React.useCallback((services: Service[]) => {
+    if (services.length === 0) return [];
+
+    const distributedContent: ScheduledContent[] = [];
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    
+    // Get all days in the current month
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    
+    // Better randomization: Each service gets equal distribution
+    const servicePriorities = services.map((service, index) => ({
+      service,
+      priority: Math.random(), // True random priority 0-1
+      frequency: Math.floor(daysInMonth / services.length) + Math.floor(Math.random() * 2) // Equal base + random 0-1 extra
+    })).sort((a, b) => a.priority - b.priority); // Random order, not by priority
+    
+    // If only one service, distribute it across the entire month with better coverage
+    if (services.length === 1) {
+      const service = services[0];
+      const frequency = Math.floor(daysInMonth / 2); // Every 2nd day for better coverage
+      
+      for (let i = 0; i < frequency; i++) {
+        const dayOfMonth = Math.floor((i * daysInMonth) / frequency) + 1;
+        const scheduledDate = new Date(currentYear, currentMonth, dayOfMonth);
+        const dateString = scheduledDate.toISOString().split('T')[0];
+        
+        // Create multiple content pieces for the single service
+        const platforms: ('Facebook' | 'Instagram' | 'LinkedIn' | 'Twitter')[] = ['Facebook', 'Instagram', 'LinkedIn'];
+        const contentTypes: ('post' | 'story' | 'reel' | 'ad')[] = ['post', 'story', 'reel'];
+        
+        platforms.forEach((platform, platformIndex) => {
+          const contentType = contentTypes[platformIndex % contentTypes.length];
+          
+          distributedContent.push({
+            id: `auto-${service.id}-${platform}-${dateString}-${i}`,
+            date: dateString,
+            serviceId: service.id,
+            serviceName: service.name,
+            contentType: contentType,
+            platform: platform,
+            notes: `Auto-scheduled for ${service.name} (${i + 1}/${frequency})`,
+            status: 'scheduled'
+          });
+        });
+      }
+    } else {
+      // Multiple services: Much better randomization with equal distribution
+      const allDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+      
+      // Shuffle all days randomly
+      for (let i = allDays.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [allDays[i], allDays[j]] = [allDays[j], allDays[i]];
+      }
+      
+      // Calculate equal distribution for each service
+      const daysPerService = Math.floor(daysInMonth / services.length);
+      const extraDays = daysInMonth % services.length;
+      
+      let dayIndex = 0;
+      
+      servicePriorities.forEach(({ service }, serviceIndex) => {
+        // Each service gets equal days + some get 1 extra day
+        const serviceDays = daysPerService + (serviceIndex < extraDays ? 1 : 0);
+        
+        // Get random days for this service
+        const serviceDayNumbers = allDays.slice(dayIndex, dayIndex + serviceDays);
+        dayIndex += serviceDays;
+        
+        serviceDayNumbers.forEach((dayOfMonth, dayIndex) => {
+          const scheduledDate = new Date(currentYear, currentMonth, dayOfMonth);
+          const dateString = scheduledDate.toISOString().split('T')[0];
+          
+          // Create content for different platforms
+          const platforms: ('Facebook' | 'Instagram' | 'LinkedIn' | 'Twitter')[] = ['Facebook', 'Instagram', 'LinkedIn'];
+          const contentTypes: ('post' | 'story' | 'reel' | 'ad')[] = ['post', 'story', 'reel'];
+          
+          platforms.forEach((platform, platformIndex) => {
+            const contentType = contentTypes[platformIndex % contentTypes.length];
+            
+            distributedContent.push({
+              id: `auto-${service.id}-${platform}-${dateString}-${dayIndex}`,
+              date: dateString,
+              serviceId: service.id,
+              serviceName: service.name,
+              contentType: contentType,
+              platform: platform,
+              notes: `Auto-scheduled for ${service.name} (Day ${dayIndex + 1}/${serviceDays})`,
+              status: 'scheduled'
+            });
+          });
+        });
+      });
+    }
+    
+    return distributedContent;
+  }, []); // No dependencies since it only uses parameters
+
   // Load content when brand changes using unified brand system
   useBrandChangeListener(React.useCallback((brand) => {
     const brandName = brand?.businessName || brand?.name || 'none';
+    const brandId = brand?.id || 'default';
+
+    console.log('🔄 Loading calendar data for brand:', brandId, brandName);
+
+    // Always clear state first when brand changes
+    setScheduledContent([]);
+    setServices([]);
+    setIsLoading(true);
 
     if (!brand) {
-      setScheduledContent([]);
-      setServices([]);
       setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
-
-    try {
-      // CBrand services are already in the correct format: Array<{name: string, description: string}>
-      if (brand.services && Array.isArray(brand.services)) {
-        const serviceObjects = brand.services.map((service: any, index: number) => ({
-          id: `service-${index}`,
-          name: service.name || service,
-          description: service.description || ''
-        }));
-        setServices(serviceObjects);
-      }
-
-      // Load scheduled content from brand-scoped storage
-      if (scheduleStorage) {
-        const storedSchedule = scheduleStorage.getItem<ScheduledContent[]>() || [];
-        setScheduledContent(storedSchedule);
-      }
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Failed to load data",
-        description: "Could not read your content calendar data.",
-      });
-    } finally {
-      setIsLoading(false);
+    // Clear storage for brand isolation FIRST
+    const currentStorage = getScheduleStorage();
+    if (currentStorage) {
+      console.log('🧹 Clearing storage for brand switch');
+      currentStorage.removeItem();
     }
-  }, [scheduleStorage, toast]));
+    
+    // Clear any old brand data from localStorage
+    const allKeys = Object.keys(localStorage);
+    allKeys.forEach(key => {
+      if (key.startsWith('content-calendar_') && !key.includes(brandId)) {
+        console.log('🗑️ Removing old brand calendar data:', key);
+        localStorage.removeItem(key);
+      }
+    });
+
+    // Use setTimeout to ensure storage clearing is complete before loading
+    setTimeout(() => {
+      try {
+        // CBrand services are already in the correct format
+        if (brand.services && Array.isArray(brand.services)) {
+          const serviceObjects = brand.services.map((service: any, index: number) => ({
+            id: `${brandId}-service-${index}`,
+            name: service.name || service,
+            description: service.description || ''
+          }));
+          
+          console.log('📋 Setting services for brand:', serviceObjects.length, 'services');
+          console.log('📋 Service objects:', serviceObjects);
+          setServices(serviceObjects);
+          
+          // Get fresh storage instance for current brand after clearing
+          const freshStorage = getScheduleStorage();
+          
+          // Load existing scheduled content from brand-scoped storage
+          let existingSchedule: ScheduledContent[] = [];
+          if (freshStorage) {
+            existingSchedule = freshStorage.getItem<ScheduledContent[]>() || [];
+            console.log('📅 Loaded existing schedule:', existingSchedule.length, 'items');
+          }
+          
+          // Double-check: Filter to ensure only current brand's content
+          const brandSpecificSchedule = existingSchedule.filter(item => 
+            item.serviceId.startsWith(`${brandId}-`)
+          );
+          
+          // If no existing schedule, auto-distribute services
+          if (brandSpecificSchedule.length === 0) {
+            console.log('🎯 Auto-distributing services for new brand');
+            const autoScheduled = autoDistributeServices(serviceObjects);
+            setScheduledContent(autoScheduled);
+            
+            // Save auto-distributed schedule
+            if (freshStorage) {
+              freshStorage.setItem(autoScheduled);
+            }
+          } else {
+            console.log('📅 Using existing schedule for brand');
+            setScheduledContent(brandSpecificSchedule);
+          }
+        } else {
+          console.log('❌ No services found for brand');
+          setServices([]);
+          setScheduledContent([]);
+        }
+      } catch (error) {
+        console.error('❌ Error loading calendar data:', error);
+        toast({
+          variant: "destructive",
+          title: "Failed to load data",
+          description: "Could not read your content calendar data.",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }, 150); // Increased delay to ensure storage clearing is complete
+    
+  }, [toast, autoDistributeServices, getBrandStorage]));
+
+  // Service reassignment functions
+  const handleReassignService = () => {
+    if (!reassignDay || !reassignService) return;
+
+    const selectedServiceObj = services.find(s => s.id === reassignService);
+    if (!selectedServiceObj) return;
+
+    // Remove existing content for this day
+    const updatedContent = scheduledContent.filter(item => item.date !== reassignDay);
+    
+    // Create new content for the selected service
+    const platforms: ('Facebook' | 'Instagram' | 'LinkedIn' | 'Twitter')[] = ['Facebook', 'Instagram', 'LinkedIn'];
+    const contentTypes: ('post' | 'story' | 'reel' | 'ad')[] = ['post', 'story', 'reel'];
+    
+    const newContent: ScheduledContent[] = platforms.map((platform, index) => {
+      const contentType = contentTypes[index % contentTypes.length];
+      return {
+        id: `reassigned-${selectedServiceObj.id}-${platform}-${reassignDay}-${Date.now()}`,
+        date: reassignDay,
+        serviceId: selectedServiceObj.id,
+        serviceName: selectedServiceObj.name,
+        contentType: contentType,
+        platform: platform,
+        notes: `Reassigned to ${selectedServiceObj.name}`,
+        status: 'scheduled'
+      };
+    });
+
+    const finalContent = [...updatedContent, ...newContent];
+    saveScheduledContent(finalContent); // Use the improved save function
+
+    setReassignDialogOpen(false);
+    setReassignDay('');
+    setReassignService('');
+    
+    toast({
+      title: "Service Reassigned",
+      description: `Day ${reassignDay} now features ${selectedServiceObj.name} content.`,
+    });
+  };
+
+  const openReassignDialog = (day: string) => {
+    setReassignDay(day);
+    setReassignDialogOpen(true);
+  };
 
   // Handle brand selection logic - only when truly needed
   useEffect(() => {
@@ -127,14 +343,25 @@ function ContentCalendarPageContent() {
 
   // Save scheduled content to brand-scoped storage
   const saveScheduledContent = (content: ScheduledContent[]) => {
-    if (!scheduleStorage) {
+    const currentBrandId = currentBrandIdRef.current;
+    if (!currentBrandId) {
+      console.warn('⚠️ No current brand ID available for saving');
+      return;
+    }
+
+    // Get fresh storage instance to ensure we're using the correct brand
+    const currentStorage = getScheduleStorage();
+    if (!currentStorage) {
+      console.warn('⚠️ No storage available for current brand');
       return;
     }
 
     try {
-      scheduleStorage.setItem(content);
+      console.log('💾 Saving calendar content for brand:', currentBrandId, content.length, 'items');
+      currentStorage.setItem(content);
       setScheduledContent(content);
     } catch (error) {
+      console.error('❌ Failed to save calendar content:', error);
       toast({
         variant: "destructive",
         title: "Save Failed",
@@ -230,9 +457,12 @@ function ContentCalendarPageContent() {
     );
   }
 
+  const brandKey = currentBrand?.id || currentBrand?.businessName || 'no-brand';
+  const calendarKey = `calendar-${brandKey}`; // Stable key per brand
+  
   return (
-    <SidebarInset fullWidth>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <SidebarInset fullWidth key={calendarKey}>
+      <div className="h-screen overflow-y-auto bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-7xl mx-auto">
             {/* Compact Header */}
@@ -240,10 +470,125 @@ function ContentCalendarPageContent() {
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Content Calendar</h1>
                 <p className="text-xs sm:text-sm text-muted-foreground">
-                  Schedule services for content generation
+                  Schedule services for content generation - Click services to edit, use Generate Content to create posts
                 </p>
+                {currentBrand && (
+                  <div className="bg-blue-100 border border-blue-300 rounded-lg p-2 mt-2">
+                    <p className="text-sm text-blue-800 font-semibold">
+                      Current Brand: {currentBrand.businessName || currentBrand.name}
+                    </p>
+                    <p className="text-xs text-blue-600">
+                      ID: {currentBrand.id || 'no-id'}
+                    </p>
+                    <p className="text-xs text-blue-500">
+                      Storage Key: content-calendar_{currentBrand.id}
+                    </p>
+                    <p className="text-xs text-blue-500">
+                      Services: {services.length} | Content: {scheduledContent.length}
+                    </p>
+                    <p className="text-xs text-blue-400">
+                      Storage Available: {getScheduleStorage() ? '✓' : '✗'} | Loading: {isLoading ? '✓' : '✗'}
+                    </p>
+                  </div>
+                )}
               </div>
               <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    // Force refresh with cache busting
+                    setScheduledContent([]);
+                    setServices([]);
+                    setIsLoading(true);
+                    
+                    // Clear all cached storage
+                    const storage = getScheduleStorage();
+                    if (storage) {
+                      storage.removeItem();
+                    }
+                    
+                    // Force re-trigger brand change listener
+                    if (currentBrand) {
+                      const event = new CustomEvent('brandChanged', {
+                        detail: { brand: currentBrand }
+                      });
+                      window.dispatchEvent(event);
+                    }
+                  }}
+                  className="text-xs"
+                >
+                  Refresh
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    // Clear ONLY current brand's calendar data
+                    const currentBrandId = currentBrand?.id;
+                    const currentBrandName = currentBrand?.businessName || currentBrand?.name;
+                    
+                    console.log('🧹 Clearing calendar data for current brand only:', currentBrandId, currentBrandName);
+                    
+                    // Clear only current brand's calendar data
+                    if (currentBrandId) {
+                      const currentBrandKey = `content-calendar_${currentBrandId}`;
+                      localStorage.removeItem(currentBrandKey);
+                      console.log('🗑️ Cleared current brand calendar data:', currentBrandKey);
+                    }
+                    
+                    // Clear state
+                    setScheduledContent([]);
+                    setServices([]);
+                    setIsLoading(true);
+                    
+                    toast({
+                      title: "Current Brand Cleared",
+                      description: `Calendar data cleared for ${currentBrandName || 'current brand'}.`,
+                    });
+                  }}
+                  className="text-xs"
+                >
+                  Clear Current
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  onClick={() => {
+                    // Clear ALL calendar data, preserve current brand
+                    const currentBrandId = currentBrand?.id;
+                    const currentBrandName = currentBrand?.businessName || currentBrand?.name;
+                    
+                    console.log('🧹 Force clearing ALL calendar data for brand:', currentBrandId, currentBrandName);
+                    
+                    // Clear calendar data for all brands
+                    const allKeys = Object.keys(localStorage);
+                    allKeys.forEach(key => {
+                      if (key.startsWith('content-calendar_')) {
+                        localStorage.removeItem(key);
+                      }
+                    });
+                    
+                    // Clear state
+                    setScheduledContent([]);
+                    setServices([]);
+                    setIsLoading(true);
+                    
+                    // Preserve current brand selection
+                    if (currentBrand) {
+                      localStorage.setItem('currentBrandData', JSON.stringify(currentBrand));
+                      console.log('💾 Preserved current brand selection:', currentBrandName);
+                    }
+                    
+                    toast({
+                      title: "All Calendar Data Cleared",
+                      description: `All calendar data cleared. Staying on ${currentBrandName || 'current brand'}.`,
+                    });
+                  }}
+                  className="text-xs"
+                >
+                  Clear All
+                </Button>
                 <Button variant="outline" size="sm" onClick={() => navigateMonth('prev')}>
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
@@ -260,7 +605,7 @@ function ContentCalendarPageContent() {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  Available Services
+                  Your Services (Auto-distributed)
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <div className="w-2 h-2 bg-blue-200 rounded-full"></div>
                     <div className="w-2 h-2 bg-green-200 rounded-full"></div>
@@ -269,7 +614,7 @@ function ContentCalendarPageContent() {
                   </div>
                 </CardTitle>
                 <CardDescription className="text-sm">
-                  Each service has a unique color. Drag services to calendar days or click days to schedule
+                  Services from your brand profile are automatically distributed across the calendar for content generation. Click to edit or add more.
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-0">
@@ -360,7 +705,7 @@ function ContentCalendarPageContent() {
                         )}
                       </div>
 
-                      {/* Color-Coded Scheduled Content */}
+                      {/* Color-Coded Scheduled Content - Interactive */}
                       <div className="space-y-0.5">
                         {day.content.slice(0, 3).map((content) => {
                           // Find the service index to get its color
@@ -372,28 +717,62 @@ function ContentCalendarPageContent() {
                           return (
                             <div
                               key={content.id}
-                              className="text-xs px-2 py-1 rounded-md flex items-center justify-between group shadow-sm"
+                              className="text-xs px-2 py-1 rounded-md flex items-center justify-between group shadow-sm cursor-pointer hover:shadow-md transition-all duration-200"
                               style={{
                                 backgroundColor: serviceColor.bg,
                                 color: serviceColor.text
                               }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // Open edit dialog for this content
+                                setSelectedDate(day.date);
+                                setSelectedService(content.serviceId);
+                                setSelectedContentType(content.contentType);
+                                setSelectedPlatform(content.platform);
+                                setSelectedNotes(content.notes || '');
+                                setIsScheduleDialogOpen(true);
+                              }}
                             >
                               <div className="flex-1 min-w-0">
                                 <div className="font-medium truncate">{content.serviceName}</div>
-                                <div className="text-xs opacity-80">{content.platform}</div>
+                                <div className="text-xs opacity-80 flex items-center gap-1">
+                                  <span>{content.platform}</span>
+                                  <span>•</span>
+                                  <span className="capitalize">{content.contentType}</span>
+                                </div>
                               </div>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 ml-1"
-                                style={{ color: serviceColor.text }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  removeScheduledContent(content.id);
-                                }}
-                              >
-                                <Trash2 className="h-2 w-2" />
-                              </Button>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100"
+                                  style={{ color: serviceColor.text }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    // Open edit dialog
+                                    setSelectedDate(day.date);
+                                    setSelectedService(content.serviceId);
+                                    setSelectedContentType(content.contentType);
+                                    setSelectedPlatform(content.platform);
+                                    setSelectedNotes(content.notes || '');
+                                    setIsScheduleDialogOpen(true);
+                                  }}
+                                >
+                                  <Edit3 className="h-2 w-2" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100"
+                                  style={{ color: serviceColor.text }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    removeScheduledContent(content.id);
+                                  }}
+                                >
+                                  <Trash2 className="h-2 w-2" />
+                                </Button>
+                              </div>
                             </div>
                           );
                         })}
@@ -402,6 +781,63 @@ function ContentCalendarPageContent() {
                             +{day.content.length - 3} more
                           </div>
                         )}
+                        
+                        {/* Action Buttons for this day */}
+                        <div className="flex gap-1 mt-1">
+                          {day.content.length > 0 ? (
+                            <>
+                              <Button
+                                size="sm"
+                                className="flex-1 text-xs h-6 bg-blue-600 hover:bg-blue-700 text-white"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // Navigate to Quick Content with pre-selected services and current brand
+                                  const serviceIds = day.content.map(c => c.serviceId);
+                                  const serviceNames = day.content.map(c => c.serviceName);
+                                  const brandId = currentBrand?.id || '';
+                                  const brandName = currentBrand?.businessName || currentBrand?.name || '';
+                                  
+                                  console.log('🚀 Calendar Generate Click:', {
+                                    brandId,
+                                    brandName,
+                                    serviceIds,
+                                    serviceNames,
+                                    dayDate: day.date,
+                                    dayContent: day.content,
+                                    dayContentLength: day.content.length,
+                                    servicesFromContent: day.content.map(c => ({ serviceId: c.serviceId, serviceName: c.serviceName }))
+                                  });
+                                  
+                                  router.push(`/quick-content?services=${serviceIds.join(',')}&date=${day.date}&serviceNames=${serviceNames.join(',')}&brandId=${brandId}&brandName=${encodeURIComponent(brandName)}`);
+                                }}
+                              >
+                                Generate
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-xs h-6 px-2"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openReassignDialog(day.date);
+                                }}
+                              >
+                                Change
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              size="sm"
+                              className="w-full text-xs h-6 bg-green-600 hover:bg-green-700 text-white"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openReassignDialog(day.date);
+                              }}
+                            >
+                              Add Service
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -417,6 +853,55 @@ function ContentCalendarPageContent() {
               services={services}
               onSchedule={scheduleContent}
             />
+
+            {/* Service Reassignment Dialog */}
+            <Dialog open={reassignDialogOpen} onOpenChange={setReassignDialogOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Change Service for Day {reassignDay}</DialogTitle>
+                  <DialogDescription>
+                    Select a different service to schedule for this day. This will replace all existing content.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4">
+                  <div>
+                    <Label>Select Service</Label>
+                    <Select value={reassignService} onValueChange={setReassignService}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a service..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {services.map((service) => (
+                          <SelectItem key={service.id} value={service.id}>
+                            {service.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setReassignDialogOpen(false);
+                        setReassignDay('');
+                        setReassignService('');
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleReassignService}
+                      disabled={!reassignService}
+                    >
+                      Change Service
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </div>

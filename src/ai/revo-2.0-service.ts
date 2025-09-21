@@ -1008,7 +1008,7 @@ function generateStructuredFallback(
     caption,
     `${concept.catchwords[1] || 'Experience'} the difference at ${businessName}! ${concept.concept || 'Quality service you can trust.'} #${businessName.replace(/\s+/g, '')}`,
     `Ready for something amazing? ${businessName} in ${location} delivers excellence every time! 🎆`,
-    `👋 Hey ${location}! Looking for quality ${businessType.toLowerCase()} services? ${businessName} has you covered!`,
+    `👋 Hey ${location}! Looking for quality services? ${businessName} has you covered!`,
     `✨ ${businessName} - where ${concept.catchwords[0]?.toLowerCase() || 'quality'} meets excellence in ${location}! Come see what makes us special.`
   ] : [caption];
 
@@ -1021,8 +1021,8 @@ function generateStructuredFallback(
     hashtags: [...new Set(hashtags)].slice(0, 10),
     businessIntelligence: {
       strategy: `Professional ${businessType} marketing focused on local engagement`,
-      targetAudience: `Local customers in ${location} seeking ${businessType} services`,
-      keyMessage: `Quality ${businessType} services with personalized attention`,
+      targetAudience: `Local customers in ${location} seeking quality services`,
+      keyMessage: `Quality services with personalized attention`,
       competitiveAdvantage: `Trusted local ${businessType} business with proven expertise`
     }
   };

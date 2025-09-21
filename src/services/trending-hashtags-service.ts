@@ -25,6 +25,37 @@ interface IndustryHashtagData {
 export class TrendingHashtagsService {
   
   /**
+   * Check if the context is a service rather than a business type
+   */
+  private static isServiceContext(context: string): boolean {
+    const serviceKeywords = [
+      'buy now pay later',
+      'financing',
+      'credit',
+      'loan',
+      'payment',
+      'installment',
+      'deferred payment',
+      'flexible payment',
+      'payment plan',
+      'financial assistance',
+      'funding',
+      'investment',
+      'banking',
+      'financial services',
+      'money management',
+      'budgeting',
+      'savings',
+      'insurance',
+      'mortgage',
+      'refinancing'
+    ];
+    
+    const contextLower = context.toLowerCase();
+    return serviceKeywords.some(keyword => contextLower.includes(keyword));
+  }
+  
+  /**
    * Get trending hashtags for a specific industry
    */
   static async getTrendingHashtags(
@@ -33,6 +64,12 @@ export class TrendingHashtagsService {
     limit: number = 15
   ): Promise<string[]> {
     try {
+      // Check if this is a service (contains specific service keywords) or business type
+      const isService = this.isServiceContext(businessType);
+      const contextType = isService ? 'service' : 'business type';
+      
+      console.log(`🔍 Analyzing ${contextType}: ${businessType}`);
+      
       // First try to get real trending data from your RSS system
       const realTrendingHashtags = await this.fetchRealTrendingHashtags(businessType, location);
       
@@ -42,7 +79,9 @@ export class TrendingHashtagsService {
       }
       
       // Fallback to curated industry data when real data unavailable
-      const industryData = await this.getIndustryHashtagData(businessType, location);
+      const industryData = isService 
+        ? await this.getServiceHashtagData(businessType, location)
+        : await this.getIndustryHashtagData(businessType, location);
       
       // Combine and sort hashtags by relevance and trend score
       const allHashtags = [
@@ -305,6 +344,88 @@ export class TrendingHashtagsService {
 
     const season = isWinter ? 'winter' : isSpring ? 'spring' : isSummer ? 'summer' : 'fall';
     return seasonalSets[industry]?.[season] || [];
+  }
+
+  /**
+   * Get service-specific hashtag data
+   */
+  private static async getServiceHashtagData(
+    service: string,
+    location?: string
+  ): Promise<IndustryHashtagData> {
+    const serviceLower = service.toLowerCase();
+    
+    // Service-specific hashtags
+    const serviceHashtags: Record<string, IndustryHashtagData> = {
+      'buy now pay later': {
+        core: [
+          { tag: '#BuyNowPayLater', trendScore: 88, momentum: 'rising', engagementRate: 4.5, postCount: 25000, relevanceScore: 95 },
+          { tag: '#FlexiblePayment', trendScore: 85, momentum: 'rising', engagementRate: 4.2, postCount: 18000, relevanceScore: 92 },
+          { tag: '#NoInterest', trendScore: 82, momentum: 'stable', engagementRate: 3.9, postCount: 15000, relevanceScore: 90 },
+          { tag: '#EasyPayment', trendScore: 80, momentum: 'stable', engagementRate: 3.7, postCount: 12000, relevanceScore: 88 },
+        ],
+        trending: [
+          { tag: '#PaymentPlans', trendScore: 92, momentum: 'rising', engagementRate: 5.1, postCount: 8000, relevanceScore: 94 },
+          { tag: '#DeferredPayment', trendScore: 89, momentum: 'rising', engagementRate: 4.8, postCount: 6500, relevanceScore: 91 },
+          { tag: '#InstallmentPlans', trendScore: 87, momentum: 'rising', engagementRate: 4.6, postCount: 7200, relevanceScore: 89 },
+          { tag: '#FlexibleFinancing', trendScore: 85, momentum: 'rising', engagementRate: 4.4, postCount: 5800, relevanceScore: 87 },
+        ],
+        seasonal: this.getSeasonalHashtags('financial'),
+      },
+      'financing': {
+        core: [
+          { tag: '#Financing', trendScore: 86, momentum: 'stable', engagementRate: 4.1, postCount: 32000, relevanceScore: 93 },
+          { tag: '#BusinessLoan', trendScore: 84, momentum: 'stable', engagementRate: 3.9, postCount: 28000, relevanceScore: 91 },
+          { tag: '#QuickApproval', trendScore: 82, momentum: 'rising', engagementRate: 4.3, postCount: 15000, relevanceScore: 89 },
+          { tag: '#LowInterest', trendScore: 80, momentum: 'stable', engagementRate: 3.8, postCount: 22000, relevanceScore: 87 },
+        ],
+        trending: [
+          { tag: '#FastFunding', trendScore: 90, momentum: 'rising', engagementRate: 4.9, postCount: 12000, relevanceScore: 92 },
+          { tag: '#BusinessGrowth', trendScore: 88, momentum: 'rising', engagementRate: 4.7, postCount: 18000, relevanceScore: 90 },
+          { tag: '#WorkingCapital', trendScore: 86, momentum: 'rising', engagementRate: 4.5, postCount: 9500, relevanceScore: 88 },
+        ],
+        seasonal: this.getSeasonalHashtags('financial'),
+      },
+      'credit': {
+        core: [
+          { tag: '#Credit', trendScore: 87, momentum: 'stable', engagementRate: 4.2, postCount: 45000, relevanceScore: 94 },
+          { tag: '#CreditScore', trendScore: 85, momentum: 'stable', engagementRate: 4.0, postCount: 38000, relevanceScore: 92 },
+          { tag: '#CreditRepair', trendScore: 83, momentum: 'rising', engagementRate: 4.4, postCount: 15000, relevanceScore: 90 },
+          { tag: '#CreditBuilding', trendScore: 81, momentum: 'rising', engagementRate: 4.1, postCount: 12000, relevanceScore: 88 },
+        ],
+        trending: [
+          { tag: '#CreditEducation', trendScore: 91, momentum: 'rising', engagementRate: 5.0, postCount: 8000, relevanceScore: 93 },
+          { tag: '#CreditTips', trendScore: 89, momentum: 'rising', engagementRate: 4.8, postCount: 11000, relevanceScore: 91 },
+          { tag: '#FinancialLiteracy', trendScore: 87, momentum: 'rising', engagementRate: 4.6, postCount: 14000, relevanceScore: 89 },
+        ],
+        seasonal: this.getSeasonalHashtags('financial'),
+      },
+    };
+
+    // Find matching service or use generic financial service data
+    const matchingService = Object.keys(serviceHashtags).find(key => 
+      serviceLower.includes(key.toLowerCase())
+    );
+
+    if (matchingService) {
+      return serviceHashtags[matchingService];
+    }
+
+    // Default to generic financial service data
+    return {
+      core: [
+        { tag: '#FinancialServices', trendScore: 85, momentum: 'stable', engagementRate: 4.0, postCount: 35000, relevanceScore: 90 },
+        { tag: '#MoneyManagement', trendScore: 83, momentum: 'stable', engagementRate: 3.8, postCount: 28000, relevanceScore: 88 },
+        { tag: '#FinancialSolutions', trendScore: 81, momentum: 'rising', engagementRate: 4.2, postCount: 18000, relevanceScore: 86 },
+        { tag: '#FinancialAdvice', trendScore: 79, momentum: 'stable', engagementRate: 3.6, postCount: 22000, relevanceScore: 84 },
+      ],
+      trending: [
+        { tag: '#FinancialFreedom', trendScore: 89, momentum: 'rising', engagementRate: 4.7, postCount: 15000, relevanceScore: 91 },
+        { tag: '#SmartMoney', trendScore: 87, momentum: 'rising', engagementRate: 4.5, postCount: 12000, relevanceScore: 89 },
+        { tag: '#FinancialPlanning', trendScore: 85, momentum: 'rising', engagementRate: 4.3, postCount: 16000, relevanceScore: 87 },
+      ],
+      seasonal: this.getSeasonalHashtags('financial'),
+    };
   }
 
   /**

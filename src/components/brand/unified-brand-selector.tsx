@@ -175,9 +175,9 @@ export function UnifiedBrandSelector() {
             <div className="flex-1 text-left">
               <div className="font-medium text-sm">{getBrandDisplayName(currentBrand)}</div>
               <div className="flex items-center gap-1 text-xs text-gray-500">
-                <span>{brands.length} brands</span>
+                <span>{brands.length} brands total</span>
                 <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs px-1 py-0">
-                  Active
+                  Selected
                 </Badge>
               </div>
             </div>

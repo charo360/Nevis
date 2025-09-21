@@ -42,6 +42,17 @@ export type BrandProfile = {
 
   // Design Examples (for AI reference)
   designExamples?: string[]; // Array of data URIs from uploaded design samples
+
+  // Product Images (for AI to use in designs)
+  productImages?: Array<{
+    id: string;
+    name: string;
+    file: File;
+    preview: string;
+  }>;
+
+  // AI-trained descriptions of product images
+  productImageDescriptions?: {[key: string]: string};
 };
 
 export type ContentVariant = {

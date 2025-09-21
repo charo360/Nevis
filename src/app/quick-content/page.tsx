@@ -18,7 +18,7 @@ import { ContentCalendar } from "@/components/dashboard/content-calendar";
 // TODO: Re-enable once ActiveArtifactsIndicator is properly set up
 // import { ActiveArtifactsIndicator } from "@/components/artifacts/active-artifacts-indicator";
 import type { BrandProfile, GeneratedPost } from "@/lib/types";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { User, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useUnifiedBrand } from '@/contexts/unified-brand-context';
@@ -79,6 +79,7 @@ const cleanupBrandScopedStorage = (brandStorage: any) => {
 
 function QuickContentPage() {
   const { currentBrand, brands, loading: brandsLoading, refreshBrands, selectBrand } = useUnifiedBrand();
+  const searchParams = useSearchParams();
 
   // Use isolated Quick Content storage (completely separate from Creative Studio)
   const quickContentStorage = useQuickContentStorage();
@@ -95,6 +96,8 @@ function QuickContentPage() {
   // This will never conflict with Creative Studio data
   const [generatedPosts, setGeneratedPosts] = useState<GeneratedPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [urlBrandSwitchPending, setUrlBrandSwitchPending] = useState(false);
+  const [calendarServices, setCalendarServices] = useState<string[]>([]);
   const router = useRouter();
   const { toast } = useToast();
   const { open: sidebarOpen, toggleSidebar } = useSidebar();
@@ -202,10 +205,70 @@ function QuickContentPage() {
     }
   }, [brands, selectBrand]);
 
+  // Handle URL parameters for brand switching from calendar - HIGH PRIORITY
+  React.useEffect(() => {
+    const brandId = searchParams.get('brandId');
+    const brandName = searchParams.get('brandName');
+    const services = searchParams.get('services');
+    const serviceNames = searchParams.get('serviceNames');
+    
+    console.log('🔍 URL Parameters:', { brandId, brandName, services, serviceNames });
+    console.log('🔍 Current Brand:', currentBrand?.id, currentBrand?.businessName);
+    console.log('🔍 Available Brands:', brands.map(b => ({ id: b.id, name: b.businessName })));
+    console.log('🔍 Full URL:', window.location.href);
+    console.log('🔍 Search Params:', Object.fromEntries(searchParams.entries()));
+    
+    // Extract calendar services from URL parameters
+    if (serviceNames) {
+      const servicesArray = serviceNames.split(',').filter(s => s.trim());
+      setCalendarServices(servicesArray);
+      console.log('📋 Calendar services extracted from serviceNames:', servicesArray);
+    } else if (services) {
+      const servicesArray = services.split(',').filter(s => s.trim());
+      setCalendarServices(servicesArray);
+      console.log('📋 Calendar services extracted from services:', servicesArray);
+    } else {
+      setCalendarServices([]);
+      console.log('📋 No calendar services found in URL parameters');
+    }
+    
+    if (brandId && brands.length > 0) {
+      // Find the brand by ID
+      const targetBrand = brands.find(brand => brand.id === brandId);
+      console.log('🔍 Target Brand Found:', targetBrand ? { id: targetBrand.id, name: targetBrand.businessName } : 'NOT FOUND');
+      
+      if (targetBrand) {
+        // Always switch if we have a target brand from URL, regardless of current brand
+        console.log('🔄 Switching to brand from calendar:', brandName, brandId);
+        setUrlBrandSwitchPending(true);
+        // Use setTimeout to ensure this happens after other effects
+        setTimeout(() => {
+          selectBrand(targetBrand);
+          setUrlBrandSwitchPending(false);
+        }, 100);
+      } else {
+        console.log('❌ Brand not found in available brands:', brandId);
+      }
+    }
+  }, [searchParams, brands, selectBrand]); // Removed currentBrand?.id to prevent race conditions
+
+  // Clear calendar services when brand changes (unless coming from calendar)
+  React.useEffect(() => {
+    if (currentBrand && !urlBrandSwitchPending) {
+      setCalendarServices([]);
+    }
+  }, [currentBrand?.id, urlBrandSwitchPending]);
+
   // Load posts when brand changes
   React.useEffect(() => {
     const brand = currentBrand;
     const brandName = brand?.businessName || brand?.name || 'none';
+
+    // Skip if we have a URL-based brand switch pending
+    if (urlBrandSwitchPending) {
+      console.log('⏳ Skipping brand change effect - URL switch pending');
+      return;
+    }
 
     if (!brand) {
       setGeneratedPosts([]);
@@ -324,7 +387,7 @@ function QuickContentPage() {
 
     // Call the async function
     loadPosts();
-  }, [currentBrand, postsStorage, toast, user]);
+  }, [currentBrand, postsStorage, toast, user, urlBrandSwitchPending]);
 
   // Enhanced brand selection logic with persistence recovery
   useEffect(() => {
@@ -619,7 +682,31 @@ function QuickContentPage() {
             <div className="max-w-7xl mx-auto w-full">
               <div className="space-y-4 w-full">
                 {currentBrand && (
-                  <ContentCalendar
+                  <>
+                    {calendarServices.length > 0 && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            <span className="text-sm font-medium text-blue-900">
+                              Using Calendar Services
+                            </span>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCalendarServices([])}
+                            className="text-xs h-6"
+                          >
+                            Use Brand Services
+                          </Button>
+                        </div>
+                        <p className="text-xs text-blue-700 mt-1">
+                          Content will be generated for: {calendarServices.join(', ')}
+                        </p>
+                      </div>
+                    )}
+                    <ContentCalendar
                     brandProfile={{
                       businessName: currentBrand.businessName,
                       businessType: currentBrand.businessType || '',
@@ -635,9 +722,20 @@ function QuickContentPage() {
                       contentThemes: currentBrand.contentThemes || '',
                       websiteUrl: currentBrand.websiteUrl || '',
                       description: currentBrand.description || '',
-                      services: Array.isArray((currentBrand as any).services)
-                        ? (currentBrand as any).services.map((s: any) => s.name).join('\n')
-                        : (currentBrand as any).services || '',
+                      services: (() => {
+                        const finalServices = calendarServices.length > 0 
+                          ? calendarServices.join('\n')
+                          : Array.isArray((currentBrand as any).services)
+                            ? (currentBrand as any).services.map((s: any) => s.name).join('\n')
+                            : (currentBrand as any).services || '';
+                        console.log('🔍 Services being passed to AI:', {
+                          calendarServices,
+                          calendarServicesLength: calendarServices.length,
+                          currentBrandServices: (currentBrand as any).services,
+                          finalServices
+                        });
+                        return finalServices;
+                      })(),
                       targetAudience: currentBrand.targetAudience || '',
                       keyFeatures: currentBrand.keyFeatures || '',
                       competitiveAdvantages: currentBrand.competitiveAdvantages || '',
@@ -661,6 +759,7 @@ function QuickContentPage() {
                     onPostGenerated={handlePostGenerated}
                     onPostUpdated={handlePostUpdated}
                   />
+                  </>
                 )}
               </div>
             </div>
