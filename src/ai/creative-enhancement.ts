@@ -72,14 +72,14 @@ function getDynamicAlternatives(businessType: string): string[] {
   ];
 
   const alternatives: string[] = [];
-  
+
   // Generate 30+ unique combinations
   for (let i = 0; i < 35; i++) {
     const actionIndex = i % actionWords.length;
     const outcomeIndex = (i + Math.floor(i / actionWords.length)) % outcomeWords.length;
-    
+
     const alternative = `${actionWords[actionIndex]} ${businessType} ${outcomeWords[outcomeIndex]}`;
-    
+
     // Avoid duplicates
     if (!alternatives.includes(alternative)) {
       alternatives.push(alternative);
@@ -475,7 +475,8 @@ export async function generateBusinessSpecificHeadline(
   trendingData?: any,
   businessIntelligence?: any,
   useLocalLanguage: boolean = false,
-  localLanguageContext?: any
+  localLanguageContext?: any,
+  realTimeContext?: any // NEW: Enhanced real-time context with RSS data
 ): Promise<{ headline: string; approach: string; emotionalImpact: string }> {
 
   const contentPlan = StrategicContentPlanner.generateBusinessSpecificContent(
@@ -982,7 +983,8 @@ export async function generateBusinessSpecificSubheadline(
   trendingData?: any,
   businessIntelligence?: any,
   useLocalLanguage: boolean = false,
-  localLanguageContext?: any
+  localLanguageContext?: any,
+  realTimeContext?: any // NEW: Enhanced real-time context with RSS data
 ): Promise<{ subheadline: string; framework: string; benefit: string }> {
 
   const industry = BUSINESS_INTELLIGENCE_SYSTEM.industryInsights[businessType.toLowerCase()] ||
@@ -1723,13 +1725,13 @@ IMPORTANT:
 
     // Enhanced subheadline quality improvement
     const enhancedSubheadline = enhanceSubheadlineQuality(cleanedSubheadline, businessType, location);
-    
+
     // Storytelling and local language enhancement
     const enhanceWithStorytellingAndLocalLanguage = (text: string, businessType: string, location: string) => {
       // Local language integration based on location
       const getLocalLanguageEnhancement = (location: string, businessType: string) => {
         const locationLower = location.toLowerCase();
-        
+
         if (locationLower.includes('kenya')) {
           const swahiliPhrases = {
             'restaurant': ['Chakula bora', 'Tamu sana', 'Karibu'],
@@ -1741,7 +1743,7 @@ IMPORTANT:
           const phrases = swahiliPhrases[businessType] || swahiliPhrases.default;
           return phrases[Math.floor(Math.random() * phrases.length)];
         }
-        
+
         if (locationLower.includes('nigeria')) {
           const pidginPhrases = {
             'restaurant': ['Food sweet', 'Chop well', 'Tasty'],
@@ -1753,7 +1755,7 @@ IMPORTANT:
           const phrases = pidginPhrases[businessType] || pidginPhrases.default;
           return phrases[Math.floor(Math.random() * phrases.length)];
         }
-        
+
         if (locationLower.includes('south africa')) {
           const afrikaansPhrases = {
             'restaurant': ['Lekker kos', 'Heerlik', 'Smakelijk'],
@@ -1765,10 +1767,10 @@ IMPORTANT:
           const phrases = afrikaansPhrases[businessType] || afrikaansPhrases.default;
           return phrases[Math.floor(Math.random() * phrases.length)];
         }
-        
+
         return null; // No local language enhancement for other locations
       };
-      
+
       // Comprehensive Marketing Message Frameworks
       const getMarketingEnhancement = (businessType: string) => {
         const marketingFrameworks = {
@@ -1933,33 +1935,33 @@ IMPORTANT:
             ]
           }
         };
-        
+
         const frameworks = marketingFrameworks[businessType] || marketingFrameworks.default;
         const frameworkTypes = Object.keys(frameworks);
         const randomType = frameworkTypes[Math.floor(Math.random() * frameworkTypes.length)];
         const randomFramework = frameworks[randomType][Math.floor(Math.random() * frameworks[randomType].length)];
-        
+
         return {
           text: randomFramework,
           type: randomType
         };
       };
-      
+
       // Only enhance if text is short and could benefit from marketing frameworks
       if (text.length < 20) {
         const localEnhancement = getLocalLanguageEnhancement(location, businessType);
         const marketingEnhancement = getMarketingEnhancement(businessType);
-        
+
         // 30% chance to add local language (not forced)
         if (localEnhancement && Math.random() < 0.3) {
           text = `${localEnhancement} - ${text}`;
         }
-        
+
         // 50% chance to add marketing framework element
         if (Math.random() < 0.5) {
           const enhancement = marketingEnhancement.text;
           const type = marketingEnhancement.type;
-          
+
           // Different formatting based on framework type
           if (type === 'storytelling') {
             text = `${enhancement}: ${text}`;
@@ -1974,7 +1976,7 @@ IMPORTANT:
           }
         }
       }
-      
+
       return text;
     };
 
@@ -2156,7 +2158,7 @@ Generate ONE unique headline that makes people instantly want to try the service
   } catch (error) {
     const dynamicAlternatives = getDynamicAlternatives(businessType);
     const randomAlternative = dynamicAlternatives[Math.floor(Math.random() * dynamicAlternatives.length)];
-    
+
     return {
       headline: randomAlternative,
       subheadline: `Professional ${businessType} solutions in ${location}`,
@@ -2240,7 +2242,7 @@ Do NOT write "Here are captions" or provide lists.`;
 
     const dynamicAlternatives = getDynamicAlternatives(businessType);
     const randomAlternative = dynamicAlternatives[Math.floor(Math.random() * dynamicAlternatives.length)];
-    
+
     return {
       headline: randomAlternative,
       subheadline: `Expert ${businessType} services in ${location}`,
@@ -2297,7 +2299,7 @@ Do NOT write "Here are posts" or provide multiple options. Write ONE post only.`
 
       const dynamicAlternatives = getDynamicAlternatives(businessType);
       const randomAlternative = dynamicAlternatives[Math.floor(Math.random() * dynamicAlternatives.length)];
-      
+
       return {
         headline: randomAlternative,
         subheadline: `Quality ${businessType} services in ${location}`,
@@ -2328,7 +2330,7 @@ Do NOT write "Here are posts" or provide multiple options. Write ONE post only.`
 
       const dynamicAlternatives = getDynamicAlternatives(businessType);
       const randomAlternative = dynamicAlternatives[Math.floor(Math.random() * dynamicAlternatives.length)];
-      
+
       return {
         headline: randomAlternative,
         subheadline: `Quality ${businessType} services in ${location}`,
@@ -2859,21 +2861,61 @@ export async function generateBusinessSpecificCaption(
     websiteUrl?: string;
   },
   useLocalLanguage: boolean = false,
-  localLanguageContext?: any
+  localLanguageContext?: any,
+  realTimeContext?: any // NEW: Enhanced real-time context with RSS data and relevance insights
 ): Promise<{ caption: string; engagementHooks: string[]; callToAction: string }> {
 
-  // 🔍 DEBUG: Local language parameter tracing in caption generation
-  console.log('🌍 [Creative Enhancement] Caption Generation Local Language Debug:', {
+  // 🔍 DEBUG: Enhanced caption generation with RSS data and relevance insights
+  console.log('🌍 [Creative Enhancement] Enhanced Caption Generation Debug:', {
     useLocalLanguage: useLocalLanguage,
     location: location,
     businessType: businessType,
     hasLocalLanguageContext: !!localLanguageContext,
-    localLanguageContext: localLanguageContext
+    hasRealTimeContext: !!realTimeContext,
+    hasRSSData: !!(realTimeContext?.rssData?.articles?.length > 0),
+    rssArticlesCount: realTimeContext?.rssData?.articles?.length || 0,
+    hasRelevanceInsights: !!(realTimeContext?.relevanceInsights?.length > 0),
+    highRelevanceDataCount: realTimeContext?.highRelevanceData?.length || 0
   });
 
-  // Use the unified system but return only caption components
+  // 🔥 ENHANCED: Prepare enhanced context for content generation
+  let enhancedTrendingData = trendingData || {};
+  let enhancedBusinessIntelligence = businessIntelligence || {};
+
+  // Integrate RSS data insights into trending data
+  if (realTimeContext?.rssData) {
+    enhancedTrendingData = {
+      ...enhancedTrendingData,
+      rssInsights: realTimeContext.rssData.insights,
+      currentTrends: [...(enhancedTrendingData.currentTrends || []), ...realTimeContext.rssData.trends.slice(0, 3)],
+      relevantNews: realTimeContext.rssData.articles.slice(0, 2).map((article: any) => article.title),
+      localNews: realTimeContext.rssData.localNews.slice(0, 2).map((article: any) => article.title),
+      industryNews: realTimeContext.rssData.industryNews.slice(0, 2).map((article: any) => article.title)
+    };
+  }
+
+  // Integrate relevance insights into business intelligence
+  if (realTimeContext?.relevanceInsights) {
+    enhancedBusinessIntelligence = {
+      ...enhancedBusinessIntelligence,
+      relevanceInsights: realTimeContext.relevanceInsights,
+      contextualOpportunities: realTimeContext.highRelevanceData?.map((item: any) => {
+        if (item.type === 'scheduled_service') {
+          return `Focus on scheduled service: ${item.content.serviceName}`;
+        } else if (item.type === 'rss' || item.type === 'news') {
+          return `Leverage current news: ${item.content.title}`;
+        } else if (item.type === 'weather') {
+          return `Weather opportunity: ${item.content.business_impact}`;
+        }
+        return `Contextual opportunity: ${item.type}`;
+      }) || []
+    };
+  }
+
+  // Use the enhanced unified system
   const unifiedContent = await generateUnifiedContent(
-    businessType, businessName, location, businessDetails, platform, contentGoal, trendingData, businessIntelligence, useLocalLanguage, localLanguageContext
+    businessType, businessName, location, businessDetails, platform, contentGoal,
+    enhancedTrendingData, enhancedBusinessIntelligence, useLocalLanguage, localLanguageContext
   );
 
   // If contact information should be included, modify the caption and call to action

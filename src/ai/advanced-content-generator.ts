@@ -475,7 +475,9 @@ export class AdvancedContentGenerator {
       // Use AI to generate contextual hashtags
       const aiHashtags = await this.generateAIHashtags(profile, platform);
       if (aiHashtags.length > 0) {
-        return aiHashtags;
+        // Apply platform-specific limits to AI-generated hashtags
+        const hashtagLimit = platform.toLowerCase() === 'instagram' ? 5 : 3;
+        return aiHashtags.slice(0, hashtagLimit);
       }
     } catch (error) {
       console.warn('AI hashtag generation failed, using fallback:', error);
@@ -490,7 +492,9 @@ export class AdvancedContentGenerator {
       );
 
       if (regionalHashtags.length > 0) {
-        return regionalHashtags.slice(0, 10);
+        // Apply platform-specific limits to regional hashtags
+        const hashtagLimit = platform.toLowerCase() === 'instagram' ? 5 : 3;
+        return regionalHashtags.slice(0, hashtagLimit);
       }
     } catch (error) {
       console.warn('Regional hashtag generation failed:', error);
@@ -508,7 +512,10 @@ export class AdvancedContentGenerator {
     const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
     const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-    const prompt = `Generate 10 highly relevant, engaging hashtags for a ${profile.businessType} business on ${platform}.
+    // Platform-specific hashtag count
+    const hashtagCount = platform.toLowerCase() === 'instagram' ? 5 : 3;
+
+    const prompt = `Generate ${hashtagCount} highly relevant, engaging hashtags for a ${profile.businessType} business on ${platform}.
 
 Business Details:
 - Name: ${profile.businessName}
@@ -535,11 +542,14 @@ Return ONLY a JSON array of hashtags (including the # symbol):
       // Remove markdown code blocks if present
       response = response.replace(/```json\s*|\s*```/g, '').trim();
 
+      // Platform-specific hashtag limits
+      const hashtagLimit = platform.toLowerCase() === 'instagram' ? 5 : 3;
+
       // Try to parse as complete JSON first
       try {
         const parsed = JSON.parse(response);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.slice(0, 10);
+          return parsed.slice(0, hashtagLimit);
         }
       } catch {
         // Fallback: extract JSON array from response
@@ -547,7 +557,7 @@ Return ONLY a JSON array of hashtags (including the # symbol):
         if (hashtagsMatch) {
           const hashtags = JSON.parse(hashtagsMatch[0]);
           if (Array.isArray(hashtags) && hashtags.length > 0) {
-            return hashtags.slice(0, 10);
+            return hashtags.slice(0, hashtagLimit);
           }
         }
       }
@@ -605,7 +615,9 @@ Return ONLY a JSON array of hashtags (including the # symbol):
     const industryHashtags = this.getVariedIndustryHashtags(profile.businessType);
     hashtags.push(...industryHashtags);
 
-    return [...new Set(hashtags)].slice(0, 10); // Remove duplicates and limit to 10
+    // Platform-specific hashtag limits: 5 for Instagram, 3 for others
+    const hashtagLimit = platform.toLowerCase() === 'instagram' ? 5 : 3;
+    return [...new Set(hashtags)].slice(0, hashtagLimit); // Remove duplicates and apply platform-specific limit
   }
 
   /**

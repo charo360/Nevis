@@ -657,7 +657,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
 
           </div>
         </CardContent>
-        <CardFooter className="p-4 pt-0">
+        <CardFooter className="px-4 pb-4 pt-2">
           <div className="flex items-start justify-between gap-2">
             <div className="flex flex-wrap gap-1 flex-1">
               {(() => {

@@ -229,15 +229,24 @@ function getPlatformOptimization(platform: string): string {
 }
 
 // Advanced real-time context gathering for Revo 1.0 (enhanced version)
-async function gatherRealTimeContext(businessType: string, location: string, platform: string) {
+async function gatherRealTimeContext(
+  businessType: string,
+  location: string,
+  platform: string,
+  brandId?: string,
+  scheduledServices?: any[]
+) {
   const context: any = {
     trends: [],
     weather: null,
     events: [],
     news: [],
+    rssData: null,
+    scheduledServices: [],
     localLanguage: {},
     climateInsights: {},
     trendingTopics: [],
+    relevanceInsights: [],
     timeContext: {
       dayOfWeek: new Date().toLocaleDateString('en-US', { weekday: 'long' }),
       month: new Date().toLocaleDateString('en-US', { month: 'long' }),
@@ -247,30 +256,178 @@ async function gatherRealTimeContext(businessType: string, location: string, pla
   };
 
   try {
-    // Generate contextual trends based on business type and location
-    context.trends = generateContextualTrends(businessType, location);
+    // Import enhanced data integration utilities
+    const { fetchBusinessRelevantRSSData } = await import('@/ai/utils/enhanced-rss-integration');
+    const { filterContextualData } = await import('@/ai/utils/data-relevance-filter');
+    const { CalendarService } = await import('@/services/calendar-service');
+    const { getWeather } = await import('@/services/weather');
+    const { getEvents } = await import('@/services/events');
 
-    // Generate weather-appropriate content suggestions
-    context.weather = generateWeatherContext(location);
+    // Collect all contextual data
+    const contextualData: any[] = [];
 
-    // Generate local business opportunities
-    context.events = generateLocalOpportunities(businessType, location);
+    // 1. SCHEDULED SERVICES INTEGRATION (Highest Priority)
+    if (brandId) {
+      try {
+        const todaysServices = await CalendarService.getTodaysScheduledServices(brandId);
+        const upcomingServices = await CalendarService.getUpcomingScheduledServices(brandId);
 
-    // NEW: Enhanced local language and cultural context
+        context.scheduledServices = [...todaysServices, ...upcomingServices];
+
+        // Add to contextual data for relevance filtering
+        [...todaysServices, ...upcomingServices].forEach(service => {
+          contextualData.push({
+            type: 'scheduled_service',
+            content: service,
+            source: 'calendar',
+            timestamp: new Date()
+          });
+        });
+
+        console.log('📅 [Revo 1.0] Scheduled Services:', {
+          todaysCount: todaysServices.length,
+          upcomingCount: upcomingServices.length,
+          services: context.scheduledServices.map(s => s.serviceName)
+        });
+      } catch (error) {
+        console.warn('Failed to fetch scheduled services:', error);
+      }
+    }
+
+    // 2. RSS DATA INTEGRATION
+    try {
+      const rssData = await fetchBusinessRelevantRSSData(businessType, location);
+      context.rssData = rssData;
+
+      // Add RSS articles to contextual data
+      rssData.articles.forEach(article => {
+        contextualData.push({
+          type: 'rss',
+          content: article,
+          source: 'rss_feeds',
+          timestamp: new Date()
+        });
+      });
+
+      console.log('📰 [Revo 1.0] RSS Data:', {
+        articlesCount: rssData.articles.length,
+        trendsCount: rssData.trends.length,
+        localNewsCount: rssData.localNews.length,
+        industryNewsCount: rssData.industryNews.length
+      });
+    } catch (error) {
+      console.warn('Failed to fetch RSS data:', error);
+
+      // Fallback: Provide basic RSS structure with empty data
+      context.rssData = {
+        articles: [],
+        trends: [],
+        localNews: [],
+        industryNews: [],
+        insights: [`RSS data temporarily unavailable for ${businessType} in ${location}`],
+        relevanceScore: 0.1
+      };
+    }
+
+    // 3. WEATHER DATA INTEGRATION
+    try {
+      const weatherData = await getWeather(location);
+      if (weatherData && !weatherData.includes('Could not retrieve')) {
+        context.weather = {
+          condition: weatherData,
+          business_impact: generateBusinessWeatherImpact(weatherData, businessType),
+          content_opportunities: generateWeatherContentOpportunities(weatherData, businessType)
+        };
+
+        contextualData.push({
+          type: 'weather',
+          content: context.weather,
+          source: 'weather_api',
+          timestamp: new Date()
+        });
+      } else {
+        // Fallback to simulated weather context
+        context.weather = generateWeatherContext(location);
+      }
+    } catch (error) {
+      console.warn('Failed to fetch weather data:', error);
+      context.weather = generateWeatherContext(location);
+    }
+
+    // 4. LOCAL EVENTS INTEGRATION
+    try {
+      const eventsData = await getEvents(location, new Date());
+      if (eventsData && !eventsData.includes('Could not retrieve')) {
+        context.events = eventsData;
+
+        contextualData.push({
+          type: 'event',
+          content: { description: eventsData, location },
+          source: 'events_api',
+          timestamp: new Date()
+        });
+      } else {
+        // Fallback to simulated events
+        context.events = generateLocalOpportunities(businessType, location);
+      }
+    } catch (error) {
+      console.warn('Failed to fetch events data:', error);
+      context.events = generateLocalOpportunities(businessType, location);
+    }
+
+    // 5. ENHANCED LOCAL LANGUAGE AND CULTURAL CONTEXT
     context.localLanguage = generateLocalLanguageContext(location);
 
-    // NEW: Advanced climate insights for business relevance
+    // 5.1. ENHANCED CULTURAL INTELLIGENCE
+    try {
+      const { getEnhancedCulturalContext } = await import('@/ai/utils/enhanced-cultural-intelligence');
+      const enhancedCulturalContext = getEnhancedCulturalContext(location);
+      if (enhancedCulturalContext) {
+        context.enhancedCulturalContext = enhancedCulturalContext;
+        console.log('🌍 [Revo 1.0] Enhanced Cultural Context:', {
+          location: enhancedCulturalContext.location,
+          primaryLanguages: enhancedCulturalContext.primaryLanguages,
+          culturalValues: enhancedCulturalContext.culturalValues.slice(0, 3),
+          communicationStyle: enhancedCulturalContext.communicationStyle
+        });
+      }
+    } catch (error) {
+      console.warn('Failed to load enhanced cultural intelligence:', error);
+    }
+
+    // 6. ADVANCED CLIMATE INSIGHTS FOR BUSINESS RELEVANCE
     context.climateInsights = generateClimateInsights(location, businessType);
 
-    // NEW: Real-time trending topics (simulated for now, can be enhanced with actual APIs)
+    // 7. REAL-TIME TRENDING TOPICS
     context.trendingTopics = generateTrendingTopics(businessType, location, platform);
 
-    // NEW: Local news and market insights
-    context.news = generateLocalNewsContext(businessType, location);
+    // 8. DATA RELEVANCE FILTERING
+    if (contextualData.length > 0) {
+      const filteredContext = filterContextualData(
+        contextualData,
+        businessType,
+        location,
+        platform,
+        context.scheduledServices
+      );
+
+      context.highRelevanceData = filteredContext.highRelevance;
+      context.mediumRelevanceData = filteredContext.mediumRelevance;
+      context.relevanceInsights = filteredContext.insights;
+      context.relevanceSummary = filteredContext.summary;
+
+      console.log('🎯 [Revo 1.0] Relevance Filtering:', {
+        totalData: contextualData.length,
+        highRelevance: filteredContext.highRelevance.length,
+        mediumRelevance: filteredContext.mediumRelevance.length,
+        insights: filteredContext.insights
+      });
+    }
 
     return context;
 
   } catch (error) {
+    console.error('Error in gatherRealTimeContext:', error);
     return context; // Return partial context
   }
 }
@@ -1440,6 +1597,100 @@ function generateWeatherContext(location: string): any {
   };
 }
 
+// NEW: Generate business-specific weather impact analysis
+function generateBusinessWeatherImpact(weatherCondition: string, businessType: string): string {
+  const condition = weatherCondition.toLowerCase();
+
+  const businessWeatherImpacts: Record<string, Record<string, string>> = {
+    'restaurant': {
+      'rain': 'Customers prefer indoor dining, delivery orders may increase',
+      'sunny': 'Perfect for outdoor seating and patio dining',
+      'cold': 'Hot food and warm beverages are more appealing',
+      'hot': 'Cold drinks, ice cream, and light meals are in demand',
+      'default': 'Weather affects dining preferences and customer comfort'
+    },
+    'fitness': {
+      'rain': 'Indoor workouts become more popular, gym attendance may increase',
+      'sunny': 'Outdoor fitness activities and sports are favored',
+      'cold': 'Indoor heating and warm-up activities are important',
+      'hot': 'Hydration and cooling become critical for workouts',
+      'default': 'Weather impacts exercise preferences and safety considerations'
+    },
+    'retail': {
+      'rain': 'Customers may prefer online shopping or covered shopping areas',
+      'sunny': 'Great weather for shopping trips and outdoor displays',
+      'cold': 'Winter clothing and heating products are in demand',
+      'hot': 'Summer clothing and cooling products are popular',
+      'default': 'Weather influences shopping behavior and product demand'
+    },
+    'beauty': {
+      'rain': 'Hair protection and skincare for humidity are important',
+      'sunny': 'Sun protection and summer beauty routines are needed',
+      'cold': 'Moisturizing and winter skincare become priorities',
+      'hot': 'Lightweight products and sweat-proof makeup are preferred',
+      'default': 'Weather affects beauty routines and product needs'
+    }
+  };
+
+  const businessImpacts = businessWeatherImpacts[businessType.toLowerCase()] || businessWeatherImpacts['retail'];
+
+  // Find the most relevant weather condition
+  for (const [weatherKey, impact] of Object.entries(businessImpacts)) {
+    if (weatherKey !== 'default' && condition.includes(weatherKey)) {
+      return impact;
+    }
+  }
+
+  return businessImpacts['default'];
+}
+
+// NEW: Generate weather-based content opportunities
+function generateWeatherContentOpportunities(weatherCondition: string, businessType: string): string {
+  const condition = weatherCondition.toLowerCase();
+
+  const contentOpportunities: Record<string, Record<string, string>> = {
+    'restaurant': {
+      'rain': 'Cozy indoor dining promotions, comfort food specials, delivery deals',
+      'sunny': 'Outdoor seating highlights, fresh salads, cold beverages',
+      'cold': 'Hot soup specials, warm drink promotions, hearty meal deals',
+      'hot': 'Cold appetizers, frozen treats, refreshing drink specials',
+      'default': 'Seasonal menu highlights and weather-appropriate dining experiences'
+    },
+    'fitness': {
+      'rain': 'Indoor workout challenges, gym membership promotions, home fitness tips',
+      'sunny': 'Outdoor fitness classes, running groups, sports activities',
+      'cold': 'Winter fitness motivation, indoor training programs, warm-up routines',
+      'hot': 'Hydration tips, early morning workouts, cooling strategies',
+      'default': 'Weather-appropriate fitness motivation and safety tips'
+    },
+    'retail': {
+      'rain': 'Indoor shopping comfort, umbrella promotions, cozy product highlights',
+      'sunny': 'Outdoor lifestyle products, summer collections, sun protection items',
+      'cold': 'Winter clothing sales, heating products, warm accessories',
+      'hot': 'Summer sales, cooling products, lightweight clothing',
+      'default': 'Seasonal product promotions and weather-appropriate shopping experiences'
+    },
+    'beauty': {
+      'rain': 'Humidity-proof beauty tips, hair protection products, waterproof makeup',
+      'sunny': 'Sun protection skincare, summer beauty routines, SPF products',
+      'cold': 'Winter skincare tips, moisturizing products, lip protection',
+      'hot': 'Sweat-proof makeup, cooling skincare, lightweight summer products',
+      'default': 'Weather-appropriate beauty tips and seasonal product recommendations'
+    }
+  };
+
+  const opportunities = contentOpportunities[businessType.toLowerCase()] || contentOpportunities['retail'];
+
+  // Find the most relevant weather condition
+  for (const [weatherKey, opportunity] of Object.entries(opportunities)) {
+    if (weatherKey !== 'default' && condition.includes(weatherKey)) {
+      return opportunity;
+    }
+  }
+
+  return opportunities['default'];
+}
+
 function generateLocalOpportunities(businessType: string, location: string): any[] {
   const opportunities = [
     { name: `${location} Business Expo`, venue: 'Local Convention Center', relevance: 'networking' },
@@ -1559,33 +1810,42 @@ export async function generateRevo10Content(input: {
     // Extract hashtags from advanced content for use in business-specific generation
     const hashtags = advancedContent.hashtags;
 
-    // Gather real-time context data (keeping existing functionality)
-    const realTimeContext = await gatherRealTimeContext(input.businessType, input.location, input.platform);
+    // Gather enhanced real-time context data with scheduled services integration
+    const realTimeContext = await gatherRealTimeContext(
+      input.businessType,
+      input.location,
+      input.platform,
+      input.brandId, // Pass brandId for calendar access
+      [] // scheduledServices will be fetched inside the function
+    );
 
-    // 🎯 NEW: Scheduled Services Integration (matching Revo 1.5 and 2.0 approach)
+    // 🎯 ENHANCED: Scheduled Services Integration from Real-Time Context
     let serviceFocus = input.services || 'Business services';
     let serviceContext = '';
 
-    if (input.scheduledServices && input.scheduledServices.length > 0) {
-      const todaysServices = input.scheduledServices.filter(s => s.isToday);
-      const upcomingServices = input.scheduledServices.filter(s => s.isUpcoming);
+    // Use scheduled services from enhanced real-time context
+    const scheduledServices = realTimeContext.scheduledServices || [];
+
+    if (scheduledServices.length > 0) {
+      const todaysServices = scheduledServices.filter((s: any) => s.isToday);
+      const upcomingServices = scheduledServices.filter((s: any) => s.isUpcoming);
 
       if (todaysServices.length > 0) {
-        serviceFocus = todaysServices.map(s => s.serviceName).join(', ');
+        serviceFocus = todaysServices.map((s: any) => s.serviceName).join(', ');
         serviceContext = `\n🎯 PRIORITY SERVICES (HIGHEST PRIORITY - Focus ALL content on these specific services scheduled for TODAY):
-${todaysServices.map(s => `- ${s.serviceName}: ${s.description || 'Available today'}`).join('\n')}
+${todaysServices.map((s: any) => `- ${s.serviceName}: ${s.description || 'Available today'}`).join('\n')}
 
 ⚠️ CRITICAL REQUIREMENT:
 - The content MUST specifically promote ONLY these TODAY'S services
 - Use the EXACT service names in headlines, subheadlines, and captions
 - Create urgent, today-focused language: "today", "now", "available today", "don't miss out"
 - DO NOT mention other business services not listed above`;
-        console.log('🎯 [Revo 1.0] Content focusing on TODAY\'S services:', todaysServices.map(s => s.serviceName));
+        console.log('🎯 [Revo 1.0] Content focusing on TODAY\'S services:', todaysServices.map((s: any) => s.serviceName));
       } else if (upcomingServices.length > 0) {
-        serviceFocus = upcomingServices.map(s => s.serviceName).join(', ');
+        serviceFocus = upcomingServices.map((s: any) => s.serviceName).join(', ');
         serviceContext = `\n📅 UPCOMING SERVICES (Build anticipation for these services):
-${upcomingServices.map(s => `- ${s.serviceName} (in ${s.daysUntil} days): ${s.description || ''}`).join('\n')}`;
-        console.log('📅 [Revo 1.0] Content focusing on UPCOMING services:', upcomingServices.map(s => s.serviceName));
+${upcomingServices.map((s: any) => `- ${s.serviceName} (in ${s.daysUntil} days): ${s.description || ''}`).join('\n')}`;
+        console.log('📅 [Revo 1.0] Content focusing on UPCOMING services:', upcomingServices.map((s: any) => s.serviceName));
       }
     } else {
       console.log('🏢 [Revo 1.0] Using general brand services (no scheduled services)');
@@ -1643,18 +1903,62 @@ ${upcomingServices.map(s => `- ${s.serviceName} (in ${s.daysUntil} days): ${s.de
       .replace('{contactAddress}', '') // Contact details will be added during image generation
       .replace('{websiteUrl}', ''); // Contact details will be added during image generation
 
-    // Debug logging for the final prompt
-    console.log('🔍 [Revo 1.0] Final Prompt Contact Section:', {
-      includeContactsInPrompt: contentPrompt.includes('Include Contacts: true'),
-      contactPhoneInPrompt: contentPrompt.includes(input.contactInfo?.phone || ''),
-      contactEmailInPrompt: contentPrompt.includes(input.contactInfo?.email || ''),
-      contactAddressInPrompt: contentPrompt.includes(input.contactInfo?.address || ''),
-      websiteUrlInPrompt: contentPrompt.includes(input.websiteUrl || '')
-    });
+    // 🔥 ENHANCED: Add RSS Data and Relevance Insights to Content Prompt
+    let enhancedContentPrompt = contentPrompt;
 
-    // Show the actual contact section of the prompt
-    const contactSection = contentPrompt.split('Contact Information:')[1]?.split('Requirements:')[0] || 'NOT FOUND';
-    console.log('🔍 [Revo 1.0] Contact Section of Prompt:', contactSection);
+    // Add RSS insights if available
+    if (realTimeContext.rssData && realTimeContext.rssData.articles.length > 0) {
+      const rssInsights = `\n\n📰 CURRENT NEWS & TRENDS (Use these insights to make content timely and relevant):
+${realTimeContext.rssData.insights.join('\n')}
+
+🔥 TRENDING TOPICS: ${realTimeContext.rssData.trends.slice(0, 5).join(', ')}
+
+📈 RELEVANT NEWS HEADLINES:
+${realTimeContext.rssData.articles.slice(0, 3).map((article: any) => `- ${article.title}`).join('\n')}
+
+💡 CONTENT OPPORTUNITIES: Use these current events to create timely, engaging content that connects your business to what's happening now.`;
+
+      enhancedContentPrompt += rssInsights;
+    }
+
+    // Add relevance insights if available
+    if (realTimeContext.relevanceInsights && realTimeContext.relevanceInsights.length > 0) {
+      const relevanceSection = `\n\n🎯 DATA RELEVANCE INSIGHTS:
+${realTimeContext.relevanceInsights.join('\n')}
+
+📊 CONTEXT SUMMARY: ${realTimeContext.relevanceSummary || 'Focus on core business messaging with available contextual enhancements.'}`;
+
+      enhancedContentPrompt += relevanceSection;
+    }
+
+    // Add high-relevance data insights
+    if (realTimeContext.highRelevanceData && realTimeContext.highRelevanceData.length > 0) {
+      const highRelevanceSection = `\n\n⭐ HIGH-PRIORITY CONTEXTUAL DATA (Integrate these into content):
+${realTimeContext.highRelevanceData.map((item: any) => {
+        if (item.type === 'scheduled_service') {
+          return `🎯 SCHEDULED: ${item.content.serviceName} - ${item.content.description || 'Priority service'}`;
+        } else if (item.type === 'rss' || item.type === 'news') {
+          return `📰 NEWS: ${item.content.title}`;
+        } else if (item.type === 'weather') {
+          return `🌤️ WEATHER: ${item.content.condition} - ${item.content.business_impact}`;
+        } else if (item.type === 'event') {
+          return `🎉 EVENT: ${item.content.description}`;
+        }
+        return `📌 ${item.type.toUpperCase()}: ${JSON.stringify(item.content).substring(0, 100)}`;
+      }).join('\n')}`;
+
+      enhancedContentPrompt += highRelevanceSection;
+    }
+
+    // Debug logging for the enhanced prompt
+    console.log('🔍 [Revo 1.0] Enhanced Content Prompt:', {
+      hasRSSData: !!(realTimeContext.rssData && realTimeContext.rssData.articles.length > 0),
+      rssArticlesCount: realTimeContext.rssData?.articles.length || 0,
+      hasRelevanceInsights: !!(realTimeContext.relevanceInsights && realTimeContext.relevanceInsights.length > 0),
+      highRelevanceDataCount: realTimeContext.highRelevanceData?.length || 0,
+      scheduledServicesCount: scheduledServices.length,
+      promptLength: enhancedContentPrompt.length
+    });
 
 
     // 🎨 CREATIVE CAPTION GENERATION: Apply creative enhancement system
@@ -1688,31 +1992,55 @@ ${upcomingServices.map(s => `- ${s.serviceName} (in ${s.daysUntil} days): ${s.de
 
     // 🎨 NEW: Generate business-specific headlines and subheadlines with AI
 
-    const businessHeadline = await generateBusinessSpecificHeadline(
-      contentGenerationInput.businessType,
-      contentGenerationInput.businessName,
-      contentGenerationInput.location,
-      businessDetails,
-      contentGenerationInput.platform,
-      'awareness',
-      trendingEnhancement,
-      advancedContent,
-      input.useLocalLanguage || false,
-      realTimeContext.localLanguage
-    );
+    let businessHeadline;
+    try {
+      businessHeadline = await generateBusinessSpecificHeadline(
+        contentGenerationInput.businessType,
+        contentGenerationInput.businessName,
+        contentGenerationInput.location,
+        businessDetails,
+        contentGenerationInput.platform,
+        'awareness',
+        trendingEnhancement,
+        advancedContent,
+        input.useLocalLanguage || false,
+        realTimeContext.localLanguage,
+        realTimeContext // Pass real-time context for RSS data integration
+      );
+    } catch (error) {
+      console.error('Failed to generate business-specific headline:', error);
+      // Fallback to simple headline
+      businessHeadline = {
+        headline: `${contentGenerationInput.businessName} - Quality ${contentGenerationInput.businessType} in ${contentGenerationInput.location}`,
+        approach: 'professional',
+        emotionalImpact: 'confident'
+      };
+    }
 
-    const businessSubheadline = await generateBusinessSpecificSubheadline(
-      contentGenerationInput.businessType,
-      contentGenerationInput.businessName,
-      contentGenerationInput.location,
-      businessDetails,
-      businessHeadline.headline,
-      'awareness',
-      trendingEnhancement,
-      advancedContent,
-      input.useLocalLanguage || false,
-      realTimeContext.localLanguage
-    );
+    let businessSubheadline;
+    try {
+      businessSubheadline = await generateBusinessSpecificSubheadline(
+        contentGenerationInput.businessType,
+        contentGenerationInput.businessName,
+        contentGenerationInput.location,
+        businessDetails,
+        businessHeadline.headline,
+        'awareness',
+        trendingEnhancement,
+        advancedContent,
+        input.useLocalLanguage || false,
+        realTimeContext.localLanguage,
+        realTimeContext // Pass real-time context for RSS data integration
+      );
+    } catch (error) {
+      console.error('Failed to generate business-specific subheadline:', error);
+      // Fallback to simple subheadline
+      businessSubheadline = {
+        subheadline: `Professional ${contentGenerationInput.businessType} services for ${contentGenerationInput.location}`,
+        framework: 'benefit-focused',
+        benefit: 'reliable service'
+      };
+    }
 
 
     // 📝 NEW: Generate AI-powered business-specific caption
@@ -1732,25 +2060,37 @@ ${upcomingServices.map(s => `- ${s.serviceName} (in ${s.daysUntil} days): ${s.de
       console.log('❌🌍 REVO 1.0 LOCAL LANGUAGE IS DISABLED - English only');
     }
 
-    const businessCaption = await generateBusinessSpecificCaption(
-      contentGenerationInput.businessType,
-      contentGenerationInput.businessName,
-      contentGenerationInput.location,
-      businessDetails,
-      contentGenerationInput.platform,
-      'awareness',
-      trendingEnhancement,
-      advancedContent,
-      {
-        includeContacts: false, // Always false for content generation
-        phone: undefined, // No contact info in content generation
-        email: undefined, // No contact info in content generation
-        address: undefined, // No contact info in content generation
-        websiteUrl: undefined // No contact info in content generation
-      },
-      input.useLocalLanguage || false,
-      realTimeContext.localLanguage
-    );
+    let businessCaption;
+    try {
+      businessCaption = await generateBusinessSpecificCaption(
+        contentGenerationInput.businessType,
+        contentGenerationInput.businessName,
+        contentGenerationInput.location,
+        businessDetails,
+        contentGenerationInput.platform,
+        'awareness',
+        trendingEnhancement,
+        advancedContent,
+        {
+          includeContacts: false, // Always false for content generation
+          phone: undefined, // No contact info in content generation
+          email: undefined, // No contact info in content generation
+          address: undefined, // No contact info in content generation
+          websiteUrl: undefined // No contact info in content generation
+        },
+        input.useLocalLanguage || false,
+        realTimeContext.localLanguage,
+        realTimeContext // Pass the entire real-time context for RSS data and relevance insights
+      );
+    } catch (error) {
+      console.error('Failed to generate business-specific caption:', error);
+      // Fallback to simple caption
+      businessCaption = {
+        caption: `${contentGenerationInput.businessName} provides quality ${contentGenerationInput.businessType} services in ${contentGenerationInput.location}. Experience the difference with our professional approach and commitment to excellence.`,
+        engagementHooks: ['Quality service', 'Professional approach', 'Local expertise'],
+        callToAction: 'Contact us today to learn more'
+      };
+    }
 
 
     // 🎯 BUSINESS-SPECIFIC CAPTION GENERATION COMPLETE
@@ -1798,6 +2138,39 @@ ${upcomingServices.map(s => `- ${s.serviceName} (in ${s.daysUntil} days): ${s.de
       generatedAt: new Date().toISOString()
     };
 
+    // 🎨 ENHANCED: Content Cohesion Analysis and Optimization
+    try {
+      const { analyzeContentCohesion } = await import('@/ai/utils/content-cohesion-engine');
+
+      const contentElements = {
+        headline: businessHeadline.headline,
+        subheadline: businessSubheadline.subheadline,
+        caption: businessCaption.caption,
+        callToAction: businessCaption.callToAction,
+        hashtags: hashtags
+      };
+
+      const cohesionAnalysis = analyzeContentCohesion(contentElements);
+
+      console.log('🎨 [Revo 1.0] Content Cohesion Analysis:', {
+        cohesionScore: cohesionAnalysis.cohesionScore,
+        primaryTheme: cohesionAnalysis.theme?.primaryTheme,
+        emotionalTone: cohesionAnalysis.theme?.emotionalTone,
+        issuesCount: cohesionAnalysis.issues.length,
+        suggestionsCount: cohesionAnalysis.suggestions.length
+      });
+
+      // Add cohesion data to the final content
+      finalContent.cohesionAnalysis = {
+        score: cohesionAnalysis.cohesionScore,
+        theme: cohesionAnalysis.theme,
+        suggestions: cohesionAnalysis.suggestions,
+        issues: cohesionAnalysis.issues
+      };
+
+    } catch (error) {
+      console.warn('Content cohesion analysis failed:', error);
+    }
 
     return finalContent;
 
