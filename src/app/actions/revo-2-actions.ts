@@ -7,6 +7,7 @@
 
 import { generateWithRevo20, testRevo20Availability, type Revo20GenerationOptions } from '@/ai/revo-2.0-service';
 import type { BrandProfile, Platform, BrandConsistencyPreferences, GeneratedPost } from '@/lib/types';
+import type { ScheduledService } from '@/services/calendar-service';
 
 /**
  * Generate content with Revo 2.0 (Gemini 2.5 Flash Image Preview)
@@ -21,9 +22,21 @@ export async function generateRevo2ContentAction(
     visualStyle?: 'modern' | 'minimalist' | 'bold' | 'elegant' | 'playful' | 'professional';
     includePeopleInDesigns?: boolean;
     useLocalLanguage?: boolean;
-  }
+  },
+  scheduledServices?: ScheduledService[] // NEW: Scheduled services parameter
 ): Promise<GeneratedPost> {
   try {
+
+    // Log scheduled services integration
+    console.log('📅 [Revo 2.0 Action] Scheduled Services Integration:', {
+      hasScheduledServices: !!(scheduledServices && scheduledServices.length > 0),
+      scheduledServicesCount: scheduledServices?.length || 0,
+      todaysServicesCount: scheduledServices?.filter(s => s.isToday).length || 0,
+      upcomingServicesCount: scheduledServices?.filter(s => s.isUpcoming).length || 0,
+      scheduledServiceNames: scheduledServices?.map(s => s.serviceName) || [],
+      todaysServiceNames: scheduledServices?.filter(s => s.isToday).map(s => s.serviceName) || [],
+      upcomingServiceNames: scheduledServices?.filter(s => s.isUpcoming).map(s => s.serviceName) || []
+    });
 
     // Prepare Revo 2.0 generation options
     const revo2Options: Revo20GenerationOptions = {
@@ -35,7 +48,8 @@ export async function generateRevo2ContentAction(
       aspectRatio: options?.aspectRatio || '1:1',
       includePeopleInDesigns: options?.includePeopleInDesigns || false,
       useLocalLanguage: options?.useLocalLanguage || false,
-      includeContacts: !!brandConsistency?.includeContacts
+      includeContacts: !!brandConsistency?.includeContacts,
+      scheduledServices: scheduledServices // NEW: Pass scheduled services to Revo 2.0
     };
 
     // Generate with Revo 2.0

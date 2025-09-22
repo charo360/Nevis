@@ -27,6 +27,23 @@ BUSINESS INTELLIGENCE:
 {{#if keyFeatures}}- Key Features: {{{keyFeatures}}}{{/if}}
 {{#if competitiveAdvantages}}- Competitive Edge: {{{competitiveAdvantages}}}{{/if}}
 
+SCHEDULED SERVICES CONTEXT:
+{{#if hasScheduledContent}}
+🗓️ CALENDAR-DRIVEN CONTENT OPPORTUNITY:
+{{#if todaysServices}}- TODAY'S FOCUS: {{{todaysServices}}} - Create content that promotes, builds anticipation for, or celebrates these scheduled services.{{/if}}
+{{#if upcomingServices}}- UPCOMING OPPORTUNITIES: {{{upcomingServices}}} - Consider mentioning upcoming services to build anticipation.{{/if}}
+{{#if scheduledServices}}- FULL CONTEXT: {{{scheduledServices}}}{{/if}}
+
+⚡ PRIORITY: When scheduled services are available, prioritize creating content that:
+1. Directly promotes today's scheduled services with specific calls-to-action
+2. Creates urgency and FOMO for today's services
+3. Builds anticipation for upcoming scheduled services
+4. Uses service-specific language and benefits
+5. Includes relevant timing information (e.g., "Join us today at 6 PM", "This afternoon's special session")
+{{else}}
+📝 No specific services are scheduled for today. Focus on general business promotion and brand building.
+{{/if}}
+
 PLATFORM-SPECIFIC OPTIMIZATION:
 {{#if platform}}
 🎯 PLATFORM FOCUS: Optimizing for {{{platform}}} with appropriate content style, length, and engagement strategies.

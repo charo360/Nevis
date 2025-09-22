@@ -60,7 +60,7 @@ function ContentCalendarPageContent() {
   const { currentBrand, brands, loading: brandLoading, selectBrand, getBrandStorage } = useUnifiedBrand();
   // Don't memoize storage - get fresh instance each time to prevent caching issues
   const getScheduleStorage = () => getBrandStorage(STORAGE_FEATURES.CONTENT_CALENDAR);
-  
+
   // Ref to track the current brand ID to prevent stale closures
   const currentBrandIdRef = React.useRef<string | null>(null);
   React.useEffect(() => {
@@ -90,34 +90,34 @@ function ContentCalendarPageContent() {
     const today = new Date();
     const currentMonth = today.getMonth();
     const currentYear = today.getFullYear();
-    
+
     // Get all days in the current month
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    
+
     // Better randomization: Each service gets equal distribution
     const servicePriorities = services.map((service, index) => ({
       service,
       priority: Math.random(), // True random priority 0-1
       frequency: Math.floor(daysInMonth / services.length) + Math.floor(Math.random() * 2) // Equal base + random 0-1 extra
     })).sort((a, b) => a.priority - b.priority); // Random order, not by priority
-    
+
     // If only one service, distribute it across the entire month with better coverage
     if (services.length === 1) {
       const service = services[0];
       const frequency = Math.floor(daysInMonth / 2); // Every 2nd day for better coverage
-      
+
       for (let i = 0; i < frequency; i++) {
         const dayOfMonth = Math.floor((i * daysInMonth) / frequency) + 1;
         const scheduledDate = new Date(currentYear, currentMonth, dayOfMonth);
         const dateString = scheduledDate.toISOString().split('T')[0];
-        
+
         // Create multiple content pieces for the single service
         const platforms: ('Facebook' | 'Instagram' | 'LinkedIn' | 'Twitter')[] = ['Facebook', 'Instagram', 'LinkedIn'];
         const contentTypes: ('post' | 'story' | 'reel' | 'ad')[] = ['post', 'story', 'reel'];
-        
+
         platforms.forEach((platform, platformIndex) => {
           const contentType = contentTypes[platformIndex % contentTypes.length];
-          
+
           distributedContent.push({
             id: `auto-${service.id}-${platform}-${dateString}-${i}`,
             date: dateString,
@@ -133,38 +133,38 @@ function ContentCalendarPageContent() {
     } else {
       // Multiple services: Much better randomization with equal distribution
       const allDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-      
+
       // Shuffle all days randomly
       for (let i = allDays.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [allDays[i], allDays[j]] = [allDays[j], allDays[i]];
       }
-      
+
       // Calculate equal distribution for each service
       const daysPerService = Math.floor(daysInMonth / services.length);
       const extraDays = daysInMonth % services.length;
-      
+
       let dayIndex = 0;
-      
+
       servicePriorities.forEach(({ service }, serviceIndex) => {
         // Each service gets equal days + some get 1 extra day
         const serviceDays = daysPerService + (serviceIndex < extraDays ? 1 : 0);
-        
+
         // Get random days for this service
         const serviceDayNumbers = allDays.slice(dayIndex, dayIndex + serviceDays);
         dayIndex += serviceDays;
-        
+
         serviceDayNumbers.forEach((dayOfMonth, dayIndex) => {
           const scheduledDate = new Date(currentYear, currentMonth, dayOfMonth);
           const dateString = scheduledDate.toISOString().split('T')[0];
-          
+
           // Create content for different platforms
           const platforms: ('Facebook' | 'Instagram' | 'LinkedIn' | 'Twitter')[] = ['Facebook', 'Instagram', 'LinkedIn'];
           const contentTypes: ('post' | 'story' | 'reel' | 'ad')[] = ['post', 'story', 'reel'];
-          
+
           platforms.forEach((platform, platformIndex) => {
             const contentType = contentTypes[platformIndex % contentTypes.length];
-            
+
             distributedContent.push({
               id: `auto-${service.id}-${platform}-${dateString}-${dayIndex}`,
               date: dateString,
@@ -179,7 +179,7 @@ function ContentCalendarPageContent() {
         });
       });
     }
-    
+
     return distributedContent;
   }, []); // No dependencies since it only uses parameters
 
@@ -206,7 +206,7 @@ function ContentCalendarPageContent() {
       console.log('🧹 Clearing storage for brand switch');
       currentStorage.removeItem();
     }
-    
+
     // Clear any old brand data from localStorage
     const allKeys = Object.keys(localStorage);
     allKeys.forEach(key => {
@@ -226,32 +226,32 @@ function ContentCalendarPageContent() {
             name: service.name || service,
             description: service.description || ''
           }));
-          
+
           console.log('📋 Setting services for brand:', serviceObjects.length, 'services');
           console.log('📋 Service objects:', serviceObjects);
           setServices(serviceObjects);
-          
+
           // Get fresh storage instance for current brand after clearing
           const freshStorage = getScheduleStorage();
-          
+
           // Load existing scheduled content from brand-scoped storage
           let existingSchedule: ScheduledContent[] = [];
           if (freshStorage) {
             existingSchedule = freshStorage.getItem<ScheduledContent[]>() || [];
             console.log('📅 Loaded existing schedule:', existingSchedule.length, 'items');
           }
-          
+
           // Double-check: Filter to ensure only current brand's content
-          const brandSpecificSchedule = existingSchedule.filter(item => 
+          const brandSpecificSchedule = existingSchedule.filter(item =>
             item.serviceId.startsWith(`${brandId}-`)
           );
-          
+
           // If no existing schedule, auto-distribute services
           if (brandSpecificSchedule.length === 0) {
             console.log('🎯 Auto-distributing services for new brand');
             const autoScheduled = autoDistributeServices(serviceObjects);
             setScheduledContent(autoScheduled);
-            
+
             // Save auto-distributed schedule
             if (freshStorage) {
               freshStorage.setItem(autoScheduled);
@@ -276,7 +276,7 @@ function ContentCalendarPageContent() {
         setIsLoading(false);
       }
     }, 150); // Increased delay to ensure storage clearing is complete
-    
+
   }, [toast, autoDistributeServices, getBrandStorage]));
 
   // Service reassignment functions
@@ -288,11 +288,11 @@ function ContentCalendarPageContent() {
 
     // Remove existing content for this day
     const updatedContent = scheduledContent.filter(item => item.date !== reassignDay);
-    
+
     // Create new content for the selected service
     const platforms: ('Facebook' | 'Instagram' | 'LinkedIn' | 'Twitter')[] = ['Facebook', 'Instagram', 'LinkedIn'];
     const contentTypes: ('post' | 'story' | 'reel' | 'ad')[] = ['post', 'story', 'reel'];
-    
+
     const newContent: ScheduledContent[] = platforms.map((platform, index) => {
       const contentType = contentTypes[index % contentTypes.length];
       return {
@@ -313,7 +313,7 @@ function ContentCalendarPageContent() {
     setReassignDialogOpen(false);
     setReassignDay('');
     setReassignService('');
-    
+
     toast({
       title: "Service Reassigned",
       description: `Day ${reassignDay} now features ${selectedServiceObj.name} content.`,
@@ -360,6 +360,17 @@ function ContentCalendarPageContent() {
       console.log('💾 Saving calendar content for brand:', currentBrandId, content.length, 'items');
       currentStorage.setItem(content);
       setScheduledContent(content);
+
+      // Dispatch custom event to notify other pages about calendar data changes
+      const event = new CustomEvent('calendarDataChanged', {
+        detail: {
+          brandId: currentBrandId,
+          contentCount: content.length,
+          timestamp: Date.now()
+        }
+      });
+      window.dispatchEvent(event);
+      console.log('📡 Dispatched calendarDataChanged event for brand:', currentBrandId);
     } catch (error) {
       console.error('❌ Failed to save calendar content:', error);
       toast({
@@ -459,7 +470,7 @@ function ContentCalendarPageContent() {
 
   const brandKey = currentBrand?.id || currentBrand?.businessName || 'no-brand';
   const calendarKey = `calendar-${brandKey}`; // Stable key per brand
-  
+
   return (
     <SidebarInset fullWidth key={calendarKey}>
       <div className="h-screen overflow-y-auto bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -493,21 +504,21 @@ function ContentCalendarPageContent() {
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => {
                     // Force refresh with cache busting
                     setScheduledContent([]);
                     setServices([]);
                     setIsLoading(true);
-                    
+
                     // Clear all cached storage
                     const storage = getScheduleStorage();
                     if (storage) {
                       storage.removeItem();
                     }
-                    
+
                     // Force re-trigger brand change listener
                     if (currentBrand) {
                       const event = new CustomEvent('brandChanged', {
@@ -520,28 +531,28 @@ function ContentCalendarPageContent() {
                 >
                   Refresh
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => {
                     // Clear ONLY current brand's calendar data
                     const currentBrandId = currentBrand?.id;
                     const currentBrandName = currentBrand?.businessName || currentBrand?.name;
-                    
+
                     console.log('🧹 Clearing calendar data for current brand only:', currentBrandId, currentBrandName);
-                    
+
                     // Clear only current brand's calendar data
                     if (currentBrandId) {
                       const currentBrandKey = `content-calendar_${currentBrandId}`;
                       localStorage.removeItem(currentBrandKey);
                       console.log('🗑️ Cleared current brand calendar data:', currentBrandKey);
                     }
-                    
+
                     // Clear state
                     setScheduledContent([]);
                     setServices([]);
                     setIsLoading(true);
-                    
+
                     toast({
                       title: "Current Brand Cleared",
                       description: `Calendar data cleared for ${currentBrandName || 'current brand'}.`,
@@ -551,16 +562,16 @@ function ContentCalendarPageContent() {
                 >
                   Clear Current
                 </Button>
-                <Button 
-                  variant="destructive" 
-                  size="sm" 
+                <Button
+                  variant="destructive"
+                  size="sm"
                   onClick={() => {
                     // Clear ALL calendar data, preserve current brand
                     const currentBrandId = currentBrand?.id;
                     const currentBrandName = currentBrand?.businessName || currentBrand?.name;
-                    
+
                     console.log('🧹 Force clearing ALL calendar data for brand:', currentBrandId, currentBrandName);
-                    
+
                     // Clear calendar data for all brands
                     const allKeys = Object.keys(localStorage);
                     allKeys.forEach(key => {
@@ -568,18 +579,18 @@ function ContentCalendarPageContent() {
                         localStorage.removeItem(key);
                       }
                     });
-                    
+
                     // Clear state
                     setScheduledContent([]);
                     setServices([]);
                     setIsLoading(true);
-                    
+
                     // Preserve current brand selection
                     if (currentBrand) {
                       localStorage.setItem('currentBrandData', JSON.stringify(currentBrand));
                       console.log('💾 Preserved current brand selection:', currentBrandName);
                     }
-                    
+
                     toast({
                       title: "All Calendar Data Cleared",
                       description: `All calendar data cleared. Staying on ${currentBrandName || 'current brand'}.`,
@@ -781,7 +792,7 @@ function ContentCalendarPageContent() {
                             +{day.content.length - 3} more
                           </div>
                         )}
-                        
+
                         {/* Action Buttons for this day */}
                         <div className="flex gap-1 mt-1">
                           {day.content.length > 0 ? (
@@ -796,7 +807,7 @@ function ContentCalendarPageContent() {
                                   const serviceNames = day.content.map(c => c.serviceName);
                                   const brandId = currentBrand?.id || '';
                                   const brandName = currentBrand?.businessName || currentBrand?.name || '';
-                                  
+
                                   console.log('🚀 Calendar Generate Click:', {
                                     brandId,
                                     brandName,
@@ -807,8 +818,20 @@ function ContentCalendarPageContent() {
                                     dayContentLength: day.content.length,
                                     servicesFromContent: day.content.map(c => ({ serviceId: c.serviceId, serviceName: c.serviceName }))
                                   });
-                                  
-                                  router.push(`/quick-content?services=${serviceIds.join(',')}&date=${day.date}&serviceNames=${serviceNames.join(',')}&brandId=${brandId}&brandName=${encodeURIComponent(brandName)}`);
+
+                                  // Ensure service names are properly encoded
+                                  const encodedServiceNames = serviceNames.map(name => encodeURIComponent(name)).join(',');
+                                  const encodedServiceIds = serviceIds.join(',');
+
+                                  console.log('🔗 Redirecting to quick-content with:', {
+                                    serviceIds: encodedServiceIds,
+                                    serviceNames: encodedServiceNames,
+                                    date: day.date,
+                                    brandId,
+                                    brandName: encodeURIComponent(brandName)
+                                  });
+
+                                  router.push(`/quick-content?services=${encodedServiceIds}&date=${day.date}&serviceNames=${encodedServiceNames}&brandId=${brandId}&brandName=${encodeURIComponent(brandName)}`);
                                 }}
                               >
                                 Generate

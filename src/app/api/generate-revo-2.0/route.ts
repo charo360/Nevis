@@ -19,7 +19,8 @@ export async function POST(request: NextRequest) {
       aspectRatio,
       includePeopleInDesigns,
       useLocalLanguage,
-      includeContacts
+      includeContacts,
+      scheduledServices // NEW: Extract scheduled services from request
     } = body;
 
     // Validate required fields
@@ -44,6 +45,17 @@ export async function POST(request: NextRequest) {
       brandProfileKeys: Object.keys(brandProfile || {})
     });
 
+    // Log scheduled services integration
+    console.log('📅 [Revo 2.0 API] Scheduled Services Integration:', {
+      hasScheduledServices: !!(scheduledServices && scheduledServices.length > 0),
+      scheduledServicesCount: scheduledServices?.length || 0,
+      todaysServicesCount: scheduledServices?.filter((s: any) => s.isToday).length || 0,
+      upcomingServicesCount: scheduledServices?.filter((s: any) => s.isUpcoming).length || 0,
+      scheduledServiceNames: scheduledServices?.map((s: any) => s.serviceName) || [],
+      todaysServiceNames: scheduledServices?.filter((s: any) => s.isToday).map((s: any) => s.serviceName) || [],
+      upcomingServiceNames: scheduledServices?.filter((s: any) => s.isUpcoming).map((s: any) => s.serviceName) || []
+    });
+
     // Generate content with Revo 2.0 Enhanced
     const result = await generateWithRevo20({
       businessType,
@@ -54,7 +66,8 @@ export async function POST(request: NextRequest) {
       aspectRatio,
       includePeopleInDesigns,
       useLocalLanguage,
-      includeContacts: !!includeContacts
+      includeContacts: !!includeContacts,
+      scheduledServices: scheduledServices // NEW: Pass scheduled services to Revo 2.0
     });
 
 

@@ -4,6 +4,7 @@
  */
 
 import type { BrandProfile, Platform } from '@/lib/types';
+import type { ScheduledService } from '@/services/calendar-service';
 
 // Core model identifier type
 export type RevoModelId = 'revo-1.0' | 'revo-1.5' | 'revo-2.0';
@@ -84,6 +85,7 @@ export interface ContentGenerationRequest {
   customInstructions?: string;
   modelId: RevoModelId;
   useLocalLanguage?: boolean; // Control whether to use local language in content generation
+  scheduledServices?: ScheduledService[]; // NEW: Scheduled services integration
 }
 
 // Design generation request interface

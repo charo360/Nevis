@@ -8,6 +8,7 @@ import { BrandProfile } from '@/lib/types';
 import OpenAI from 'openai';
 import { TrendingHashtagsService } from '@/services/trending-hashtags-service';
 import { RegionalSocialTrendsService } from '@/services/regional-social-trends-service';
+import type { ScheduledService } from '@/services/calendar-service';
 
 import { ensureExactDimensions } from './utils/image-dimensions';
 
@@ -253,7 +254,8 @@ async function generateCaptionAndHashtags(
   platform: string,
   designPlan: any,
   brandProfile: BrandProfile,
-  useLocalLanguage: boolean = false
+  useLocalLanguage: boolean = false,
+  scheduledServices?: ScheduledService[]
 ): Promise<{
   caption: string;
   hashtags: string[];
@@ -271,14 +273,44 @@ async function generateCaptionAndHashtags(
     });
 
     // Fetch trending data for current, relevant content
-    // Use services from brand profile if available, otherwise fall back to business type
-    const trendingContext = brandProfile.services || businessType;
-    console.log('🔍 [Revo 1.5] Using trending context:', {
+    // PRIORITY: Use scheduled services if available, otherwise fall back to brand services or business type
+    let trendingContext = businessType;
+
+    if (scheduledServices && scheduledServices.length > 0) {
+      // Use scheduled services with ABSOLUTE PRIORITY - never fall back to brand services
+      const todaysServices = scheduledServices.filter(s => s.isToday);
+      const upcomingServices = scheduledServices.filter(s => s.isUpcoming);
+
+      if (todaysServices.length > 0) {
+        // ABSOLUTE PRIORITY: Today's services override everything
+        trendingContext = todaysServices.map(s => s.serviceName).join('\n');
+        console.log('🎯 [Revo 1.5] ABSOLUTE PRIORITY: Using TODAY\'S scheduled services:', todaysServices.map(s => s.serviceName));
+        console.log('🚫 [Revo 1.5] Ignoring brand services due to today\'s scheduled services');
+      } else if (upcomingServices.length > 0) {
+        // Use upcoming services
+        trendingContext = upcomingServices.map(s => s.serviceName).join('\n');
+        console.log('📅 [Revo 1.5] Using UPCOMING scheduled services for trending context:', upcomingServices.map(s => s.serviceName));
+      } else {
+        // Use all scheduled services
+        trendingContext = scheduledServices.map(s => s.serviceName).join('\n');
+        console.log('📋 [Revo 1.5] Using ALL scheduled services for trending context:', scheduledServices.map(s => s.serviceName));
+      }
+    } else if (brandProfile.services) {
+      // Only fall back to general brand services if NO scheduled services exist
+      trendingContext = brandProfile.services;
+      console.log('🏢 [Revo 1.5] FALLBACK: Using general brand services (no scheduled services found)');
+    }
+
+    console.log('🔍 [Revo 1.5] Final trending context:', {
+      hasScheduledServices: !!(scheduledServices && scheduledServices.length > 0),
+      scheduledServicesCount: scheduledServices?.length || 0,
+      todaysServicesCount: scheduledServices?.filter(s => s.isToday).length || 0,
+      upcomingServicesCount: scheduledServices?.filter(s => s.isUpcoming).length || 0,
       services: brandProfile.services,
       businessType,
       finalContext: trendingContext
     });
-    
+
     const trendingData = await fetchTrendingData(
       trendingContext,
       brandProfile.location || 'Local area',
@@ -329,6 +361,37 @@ ${locationText}
 - Design Concept: ${designPlan?.concept || 'Professional business content'}
 - Key Elements: ${designPlan?.keyElements?.join(', ') || 'Modern design elements'}
 ${languageInstruction}
+
+${scheduledServices && scheduledServices.length > 0 ? `
+🎯 SCHEDULED SERVICES (HIGHEST PRIORITY - Focus content on these specific services):
+${scheduledServices.filter(s => s.isToday).length > 0 ? `
+⚡ TODAY'S SERVICES (Create URGENT, action-focused content):
+${scheduledServices.filter(s => s.isToday).map(s => `- ${s.serviceName}: ${s.description || 'Available today'}`).join('\n')}
+
+URGENT CONTENT REQUIREMENTS:
+- Use TODAY-focused language: "today", "now", "available today", "don't miss out"
+- Create urgency and immediate action
+- Mention specific service names in headlines/content
+- Use urgent CTAs: "Book now", "Available today", "Don't wait"
+` : ''}
+${scheduledServices.filter(s => s.isUpcoming).length > 0 ? `
+📅 UPCOMING SERVICES (Build anticipation and early booking):
+${scheduledServices.filter(s => s.isUpcoming).map(s => `- ${s.serviceName} (in ${s.daysUntil} days): ${s.description || 'Coming soon'}`).join('\n')}
+
+ANTICIPATION CONTENT REQUIREMENTS:
+- Build excitement for upcoming services
+- Use anticipation language: "coming soon", "get ready", "reserve your spot"
+- Create early booking incentives
+- Mention specific dates/timing
+` : ''}
+
+⚠️ CRITICAL REQUIREMENT:
+- The content MUST specifically promote ONLY these scheduled services
+- DO NOT create generic business content or mention other services
+- Focus ENTIRELY on the scheduled services listed above
+- Use the EXACT service names in headlines and content
+- Ignore any other business services not listed above
+` : ''}
 
 CURRENT TRENDING DATA (Use these to make content current and relevant):
 ${trendingData.trendingHashtags.length > 0 ? `- Trending Hashtags: ${trendingData.trendingHashtags.slice(0, 5).join(', ')}` : ''}
@@ -521,6 +584,26 @@ Format as JSON:
         hashtags: parsed.hashtags?.slice(0, 3) || []
       });
 
+      // VALIDATION: Check if content mentions scheduled services
+      if (scheduledServices && scheduledServices.length > 0) {
+        const todaysServices = scheduledServices.filter(s => s.isToday);
+        if (todaysServices.length > 0) {
+          const contentText = `${parsed.headline} ${parsed.subheadline} ${parsed.caption}`.toLowerCase();
+          const mentionsScheduledService = todaysServices.some(service =>
+            contentText.includes(service.serviceName.toLowerCase())
+          );
+
+          if (mentionsScheduledService) {
+            console.log('✅ [Revo 1.5] VALIDATION PASSED: Content mentions scheduled services');
+          } else {
+            console.warn('⚠️ [Revo 1.5] VALIDATION WARNING: Content does not mention today\'s scheduled services:', {
+              todaysServices: todaysServices.map(s => s.serviceName),
+              generatedContent: contentText.substring(0, 200)
+            });
+          }
+        }
+      }
+
       return {
         caption: parsed.caption || `Enhanced ${businessName} content with premium design`,
         headline: parsed.headline || `Premium ${businessName} Solutions`,
@@ -585,6 +668,7 @@ export interface Revo15DesignInput {
   useLocalLanguage?: boolean; // Control whether to use local language in text (default: false)
   logoDataUrl?: string; // Base64 logo data
   logoUrl?: string; // Storage URL for logo
+  scheduledServices?: ScheduledService[]; // NEW: Scheduled services from calendar
 }
 
 export interface Revo15DesignResult {
@@ -1353,7 +1437,8 @@ export async function generateRevo15EnhancedDesign(
       input.platform,
       designPlan,
       input.brandProfile,
-      input.useLocalLanguage === true // Default to false if not specified
+      input.useLocalLanguage === true, // Default to false if not specified
+      input.scheduledServices // NEW: Pass scheduled services to content generation
     );
     enhancementsApplied.push('AI-Generated Content & Design Text');
 

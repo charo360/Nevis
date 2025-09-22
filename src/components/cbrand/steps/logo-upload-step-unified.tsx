@@ -115,6 +115,37 @@ export function LogoUploadStepUnified({
         version: '1.0',
       };
 
+      // 🎯 NEW: Automatically add business type as a service if not already present
+      if (profileToSave.businessType && profileToSave.businessType.trim()) {
+        const businessTypeService = profileToSave.businessType.trim();
+
+        // Check if business type already exists as a service
+        const existingServices = profileToSave.services || [];
+        const businessTypeExists = existingServices.some(service =>
+          (typeof service === 'string' ? service : service.name)
+            .toLowerCase()
+            .trim() === businessTypeService.toLowerCase()
+        );
+
+        if (!businessTypeExists) {
+          // Add business type as the first service
+          const businessTypeServiceObj = {
+            name: businessTypeService,
+            description: `Core ${businessTypeService.toLowerCase()} services and solutions`
+          };
+
+          profileToSave.services = [businessTypeServiceObj, ...existingServices];
+
+          console.log('✨ Auto-added business type as service:', {
+            businessType: businessTypeService,
+            totalServices: profileToSave.services.length,
+            serviceNames: profileToSave.services.map(s => typeof s === 'string' ? s : s.name)
+          });
+        } else {
+          console.log('✅ Business type already exists as service:', businessTypeService);
+        }
+      }
+
       let profileId: string;
 
       // Debug logging for edit mode

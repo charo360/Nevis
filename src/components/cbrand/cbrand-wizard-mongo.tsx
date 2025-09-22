@@ -150,6 +150,37 @@ export function CbrandWizardMongo({ mode, brandId }: CbrandWizardMongoProps) {
         updatedAt: new Date(),
       };
 
+      // 🎯 NEW: Automatically add business type as a service if not already present
+      if (completeProfile.businessType && completeProfile.businessType.trim()) {
+        const businessTypeService = completeProfile.businessType.trim();
+
+        // Check if business type already exists as a service
+        const existingServices = completeProfile.services || [];
+        const businessTypeExists = existingServices.some(service =>
+          service.name.toLowerCase().trim() === businessTypeService.toLowerCase()
+        );
+
+        if (!businessTypeExists) {
+          // Add business type as the first service
+          const businessTypeServiceObj = {
+            name: businessTypeService,
+            description: `Core ${businessTypeService.toLowerCase()} services and solutions`,
+            price: 0,
+            currency: 'USD'
+          };
+
+          completeProfile.services = [businessTypeServiceObj, ...existingServices];
+
+          console.log('✨ Auto-added business type as service (MongoDB):', {
+            businessType: businessTypeService,
+            totalServices: completeProfile.services.length,
+            serviceNames: completeProfile.services.map(s => s.name)
+          });
+        } else {
+          console.log('✅ Business type already exists as service (MongoDB):', businessTypeService);
+        }
+      }
+
       if (isEditMode) {
         await updateProfile(brandId!, completeProfile);
         toast({

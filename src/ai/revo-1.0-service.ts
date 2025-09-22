@@ -6,6 +6,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { BrandProfile } from '@/lib/types';
 import { revo10Config, revo10Prompts } from './models/versions/revo-1.0/config';
+import type { ScheduledService } from '@/services/calendar-service';
 import { advancedContentGenerator, BusinessProfile } from './advanced-content-generator';
 import { performanceAnalyzer } from './content-performance-analyzer';
 import { trendingEnhancer } from './trending-content-enhancer';
@@ -1516,6 +1517,7 @@ export async function generateRevo10Content(input: {
   };
   websiteUrl?: string;
   useLocalLanguage?: boolean; // When true, mix local language with English; when false, use 100% English
+  scheduledServices?: ScheduledService[]; // NEW: Scheduled services integration
 }) {
   try {
     // Auto-detect platform-specific aspect ratio
@@ -1560,6 +1562,35 @@ export async function generateRevo10Content(input: {
     // Gather real-time context data (keeping existing functionality)
     const realTimeContext = await gatherRealTimeContext(input.businessType, input.location, input.platform);
 
+    // 🎯 NEW: Scheduled Services Integration (matching Revo 1.5 and 2.0 approach)
+    let serviceFocus = input.services || 'Business services';
+    let serviceContext = '';
+
+    if (input.scheduledServices && input.scheduledServices.length > 0) {
+      const todaysServices = input.scheduledServices.filter(s => s.isToday);
+      const upcomingServices = input.scheduledServices.filter(s => s.isUpcoming);
+
+      if (todaysServices.length > 0) {
+        serviceFocus = todaysServices.map(s => s.serviceName).join(', ');
+        serviceContext = `\n🎯 PRIORITY SERVICES (HIGHEST PRIORITY - Focus ALL content on these specific services scheduled for TODAY):
+${todaysServices.map(s => `- ${s.serviceName}: ${s.description || 'Available today'}`).join('\n')}
+
+⚠️ CRITICAL REQUIREMENT:
+- The content MUST specifically promote ONLY these TODAY'S services
+- Use the EXACT service names in headlines, subheadlines, and captions
+- Create urgent, today-focused language: "today", "now", "available today", "don't miss out"
+- DO NOT mention other business services not listed above`;
+        console.log('🎯 [Revo 1.0] Content focusing on TODAY\'S services:', todaysServices.map(s => s.serviceName));
+      } else if (upcomingServices.length > 0) {
+        serviceFocus = upcomingServices.map(s => s.serviceName).join(', ');
+        serviceContext = `\n📅 UPCOMING SERVICES (Build anticipation for these services):
+${upcomingServices.map(s => `- ${s.serviceName} (in ${s.daysUntil} days): ${s.description || ''}`).join('\n')}`;
+        console.log('📅 [Revo 1.0] Content focusing on UPCOMING services:', upcomingServices.map(s => s.serviceName));
+      }
+    } else {
+      console.log('🏢 [Revo 1.0] Using general brand services (no scheduled services)');
+    }
+
     const model = ai.getGenerativeModel({
       model: REVO_1_0_MODEL,
       generationConfig: {
@@ -1603,7 +1634,7 @@ export async function generateRevo10Content(input: {
       .replace('{primaryColor}', contentGenerationInput.primaryColor || '#3B82F6')
       .replace('{visualStyle}', contentGenerationInput.visualStyle || 'modern')
       .replace('{targetAudience}', contentGenerationInput.targetAudience)
-      .replace('{services}', contentGenerationInput.services || '')
+      .replace('{services}', serviceFocus + serviceContext)
       .replace('{keyFeatures}', contentGenerationInput.keyFeatures || '')
       .replace('{competitiveAdvantages}', contentGenerationInput.competitiveAdvantages || '')
       .replace('{contentThemes}', Array.isArray(contentGenerationInput.contentThemes) ? contentGenerationInput.contentThemes.join(', ') : 'general business content')
@@ -1639,7 +1670,7 @@ export async function generateRevo10Content(input: {
     const businessDetails = {
       experience: '5+ years', // Could be extracted from business profile
       expertise: input.keyFeatures,
-      services: input.services,
+      services: serviceFocus, // Use scheduled services focus instead of generic services
       location: input.location,
       targetAudience: input.targetAudience
     };
@@ -1976,7 +2007,7 @@ ANTI-GENERIC REQUIREMENTS:
       : '';
 
     // Strategic cultural context - only include when location is mentioned
-    const culturalContext = shouldMentionLocationInDesign 
+    const culturalContext = shouldMentionLocationInDesign
       ? getLocalCulturalContext(input.location || 'Global')
       : 'Focus on universal design elements that appeal to a broad audience';
 

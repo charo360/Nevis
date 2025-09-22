@@ -51,7 +51,9 @@ export class Revo10ContentGenerator implements IContentGenerator {
         contactInfo: generationParams.contactInfo || {},
         websiteUrl: generationParams.websiteUrl || '',
         // Local language control (standardized parameter name)
-        useLocalLanguage: request.useLocalLanguage || false
+        useLocalLanguage: request.useLocalLanguage || false,
+        // NEW: Scheduled services integration
+        scheduledServices: generationParams.scheduledServices || []
       });
 
       // Generate image using the catchy words and brand profile data
@@ -238,6 +240,8 @@ export class Revo10ContentGenerator implements IContentGenerator {
       includeContacts: (request as any).includeContacts || false,
       contactInfo: (request as any).contactInfo || profile.contactInfo || {},
       websiteUrl: (request as any).websiteUrl || profile.websiteUrl || '',
+      // NEW: Scheduled services integration
+      scheduledServices: request.scheduledServices || [],
       // Revo 1.0 specific constraints (updated to match config)
       modelConstraints: {
         maxComplexity: 'enhanced', // Upgraded from basic

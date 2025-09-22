@@ -18,7 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Plus, // Still needed for Services section
-  // Trash2, // COMMENTED OUT - Products functionality not working yet
+  Trash2, // Needed for removing services
   // Upload, // COMMENTED OUT - Products functionality not working yet
   // Brain, // COMMENTED OUT - Products functionality not working yet
   // Loader2 // COMMENTED OUT - Products functionality not working yet
@@ -87,11 +87,11 @@ export function BrandDetailsStep({
   // Check if all required fields are completed
   const canProceedToNextStep = (): boolean => {
     return !isRequiredFieldEmpty(brandProfile.businessName) &&
-           !isRequiredFieldEmpty(brandProfile.businessType) &&
-           !isRequiredFieldEmpty(brandProfile.location) &&
-           !isRequiredFieldEmpty(brandProfile.description) &&
-           brandProfile.services.length > 0 &&
-           !brandProfile.services.some(service => isRequiredFieldEmpty(service.name));
+      !isRequiredFieldEmpty(brandProfile.businessType) &&
+      !isRequiredFieldEmpty(brandProfile.location) &&
+      !isRequiredFieldEmpty(brandProfile.description) &&
+      brandProfile.services.length > 0 &&
+      !brandProfile.services.some(service => isRequiredFieldEmpty(service.name));
   };
 
   const handleInputChange = async (field: keyof CompleteBrandProfile, value: string) => {
@@ -895,14 +895,14 @@ export function BrandDetailsStep({
             </ul>
           </div>
         )}
-        
+
         <div className="flex justify-between">
           <Button variant="outline" onClick={onPrevious}>
             <ChevronLeft className="mr-2 h-4 w-4" />
             Previous Step
           </Button>
 
-          <Button 
+          <Button
             onClick={onNext}
             disabled={!canProceedToNextStep()}
             className={!canProceedToNextStep() ? 'opacity-50 cursor-not-allowed' : ''}

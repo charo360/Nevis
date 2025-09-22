@@ -12,6 +12,7 @@ import { generateRevo15ContentAction } from "@/app/actions/revo-1.5-actions";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth-supabase";
 import type { BrandProfile, GeneratedPost, Platform, BrandConsistencyPreferences } from "@/lib/types";
+import type { ScheduledService } from "@/services/calendar-service";
 
 type RevoModel = 'revo-1.0' | 'revo-1.5';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -26,6 +27,11 @@ type ContentCalendarProps = {
   posts: GeneratedPost[];
   onPostGenerated: (post: GeneratedPost) => void;
   onPostUpdated: (post: GeneratedPost) => Promise<void>;
+  // NEW: Scheduled services integration
+  scheduledServices?: ScheduledService[];
+  todaysServices?: ScheduledService[];
+  upcomingServices?: ScheduledService[];
+  hasScheduledContent?: boolean;
 };
 
 const platforms: { name: Platform; icon: React.ElementType }[] = [
@@ -35,7 +41,16 @@ const platforms: { name: Platform; icon: React.ElementType }[] = [
   { name: 'LinkedIn', icon: Linkedin },
 ];
 
-export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUpdated }: ContentCalendarProps) {
+export function ContentCalendar({
+  brandProfile,
+  posts,
+  onPostGenerated,
+  onPostUpdated,
+  scheduledServices = [],
+  todaysServices = [],
+  upcomingServices = [],
+  hasScheduledContent = false
+}: ContentCalendarProps) {
   const [isGenerating, setIsGenerating] = React.useState<Platform | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -143,6 +158,15 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
           businessType: brandProfile.businessType || 'business'
         };
 
+        console.log('🎨 Calling Revo 2.0 API with scheduled services:', {
+          platform,
+          scheduledServicesCount: scheduledServices?.length || 0,
+          scheduledServiceNames: scheduledServices?.map(s => s.serviceName) || [],
+          todaysServicesCount: scheduledServices?.filter(s => s.isToday).length || 0,
+          upcomingServicesCount: scheduledServices?.filter(s => s.isUpcoming).length || 0,
+          hasScheduledContent
+        });
+
         const response = await fetch('/api/generate-revo-2.0', {
           method: 'POST',
           headers: {
@@ -158,7 +182,8 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
             includePeopleInDesigns,
             useLocalLanguage,
             includeContacts: brandConsistency.includeContacts,
-            trendingContext: trendingContext
+            trendingContext: trendingContext,
+            scheduledServices: scheduledServices // NEW: Pass scheduled services to Revo 2.0
           })
         });
 
@@ -173,9 +198,9 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
           ...(revo20Result.hashtags || ['#NextGen', '#AI', '#Innovation']),
           ...platformHashtags // Add platform-optimized trending hashtags
         ]
-        // Remove duplicates and limit based on platform
-        .filter((tag, index, arr) => arr.indexOf(tag) === index)
-        .slice(0, platform === 'Twitter' ? 5 : platform === 'LinkedIn' ? 8 : 10);
+          // Remove duplicates and limit based on platform
+          .filter((tag, index, arr) => arr.indexOf(tag) === index)
+          .slice(0, platform === 'Twitter' ? 5 : platform === 'LinkedIn' ? 8 : 10);
 
         newPost = {
           id: `revo-2.0-${Date.now()}`,
@@ -214,6 +239,15 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
         };
       } else if (selectedRevoModel === 'revo-1.5') {
         // Use Revo 1.5 directly with logo support
+        console.log('🎨 Calling generateRevo15ContentAction with scheduled services:', {
+          platform,
+          scheduledServicesCount: scheduledServices?.length || 0,
+          scheduledServiceNames: scheduledServices?.map(s => s.serviceName) || [],
+          todaysServicesCount: scheduledServices?.filter(s => s.isToday).length || 0,
+          upcomingServicesCount: scheduledServices?.filter(s => s.isUpcoming).length || 0,
+          hasScheduledContent
+        });
+
         newPost = await generateRevo15ContentAction(
           brandProfile,
           platform,
@@ -224,7 +258,8 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
             visualStyle: brandProfile.visualStyle || 'modern',
             includePeopleInDesigns,
             useLocalLanguage
-          }
+          },
+          scheduledServices // NEW: Pass scheduled services to Revo 1.5
         );
       } else if (useEnhancedGeneration) {
         // Use artifact-enhanced generation - will automatically use active artifacts from artifacts page
@@ -238,8 +273,21 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
           useLocalLanguage
         );
       } else {
-        // Use standard content generation
-        newPost = await generateContentAction(brandProfile, platform, brandConsistency, useLocalLanguage);
+        // Use standard content generation with scheduled services
+        console.log('🤖 Calling generateContentAction with scheduled services:', {
+          platform,
+          scheduledServicesCount: scheduledServices?.length || 0,
+          scheduledServiceNames: scheduledServices?.map(s => s.serviceName) || [],
+          hasScheduledContent
+        });
+
+        newPost = await generateContentAction(
+          brandProfile,
+          platform,
+          brandConsistency,
+          useLocalLanguage,
+          scheduledServices // NEW: Pass scheduled services to AI generation
+        );
       }
 
 
@@ -249,7 +297,7 @@ export function ContentCalendar({ brandProfile, posts, onPostGenerated, onPostUp
       // Dynamic toast message based on generation type
       let title = "Content Generated!";
       let description = `A new ${platform} post has been saved to your database.`;
-      
+
       // Special message for Instagram with multiple captions
       if (platform === 'Instagram' && selectedRevoModel === 'revo-2.0' && revo20Result?.captionVariations?.length > 1) {
         title = "Instagram Content with 5 Captions Generated! 📸";

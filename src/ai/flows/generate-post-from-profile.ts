@@ -20,6 +20,7 @@ import { viralHashtagEngine } from '@/ai/viral-hashtag-engine';
 import { generateMarketIntelligence, generateRealTimeTrendingTopics } from '@/ai/utils/trending-topics';
 import { fetchLocalContext } from '@/ai/utils/real-time-trends-integration';
 import { selectRelevantContext, filterContextData } from '@/ai/utils/intelligent-context-selector';
+import { CalendarService } from '@/services/calendar-service';
 import { generateHumanizationTechniques, generateTrafficDrivingElements } from '@/ai/utils/human-content-generator';
 import {
   ADVANCED_DESIGN_PRINCIPLES,
@@ -152,6 +153,21 @@ const GeneratePostFromProfileInputSchema = z.object({
 
   // Language preferences
   useLocalLanguage: z.boolean().optional().describe('Whether to use local language in content generation (default: false).'),
+
+  // NEW: Scheduled services integration
+  scheduledServices: z.array(z.object({
+    serviceId: z.string(),
+    serviceName: z.string(),
+    description: z.string().optional(),
+    contentType: z.string(),
+    platform: z.string(),
+    priority: z.enum(['low', 'medium', 'high']),
+    isToday: z.boolean().optional(),
+    isUpcoming: z.boolean().optional(),
+    daysUntil: z.number().optional(),
+  })).optional().describe('Scheduled services from content calendar for contextual content generation.'),
+
+  brandId: z.string().optional().describe('Brand ID for accessing calendar data.'),
 });
 
 export type GeneratePostFromProfileInput = z.infer<typeof GeneratePostFromProfileInputSchema>;
@@ -250,12 +266,12 @@ function cleanBusinessNamePattern(text: string): string {
     .replace(/^[A-Z]+:\s*/i, '') // Remove "PAYA: "
     .replace(/^[A-Z][a-z]+:\s*/i, '') // Remove "Paya: "
     .trim();
-  
+
   // If the text is too short after cleaning, return original
   if (cleaned.length < 3) {
     return text;
   }
-  
+
   return cleaned;
 }
 
@@ -282,6 +298,11 @@ const enhancedTextGenPrompt = ai.definePrompt({
       selectedTrends: z.any().optional(),
       selectedCultural: z.any().optional(),
       useLocalLanguage: z.boolean().optional(),
+      // NEW: Scheduled services integration
+      scheduledServices: z.string().optional(),
+      todaysServices: z.string().optional(),
+      upcomingServices: z.string().optional(),
+      hasScheduledContent: z.boolean().optional(),
     })
   },
   output: {
@@ -333,7 +354,7 @@ const getMimeTypeFromDataURI = (dataURI: string): string => {
   if (match) {
     return match[1];
   }
-  
+
   // If no MIME type found, try to detect from data URI content
   if (dataURI.startsWith('data:')) {
     // Check if it looks like a PNG (starts with iVBORw0KGgo)
@@ -357,7 +378,7 @@ const getMimeTypeFromDataURI = (dataURI: string): string => {
       return 'image/svg+xml';
     }
   }
-  
+
   // Default to PNG for image data URIs (most common and widely supported)
   return 'image/png';
 };
@@ -426,7 +447,7 @@ async function generateImageForVariant(
   const getEthnicityInstructions = (location: string, businessType: string) => {
     const locationKey = location.toLowerCase();
     const africanCountries = ['kenya', 'nigeria', 'south africa', 'ghana', 'uganda', 'tanzania', 'ethiopia', 'rwanda', 'zambia', 'zimbabwe', 'botswana', 'namibia', 'malawi', 'mozambique', 'senegal', 'mali', 'burkina faso', 'ivory coast', 'cameroon', 'chad', 'sudan', 'egypt', 'morocco', 'algeria', 'tunisia', 'libya'];
-    
+
     for (const country of africanCountries) {
       if (locationKey.includes(country)) {
         return `
@@ -892,6 +913,74 @@ const generatePostFromProfileFlow = ai.defineFlow(
       input.targetAudience
     );
 
+    // Step 7.5: Process Scheduled Services Context
+    let scheduledServicesContext = '';
+    let todaysServicesContext = '';
+    let upcomingServicesContext = '';
+    let hasScheduledContent = false;
+
+    if (input.brandId) {
+      try {
+        // Get calendar context for AI generation
+        const calendarContext = await CalendarService.getCalendarContext(input.brandId);
+        hasScheduledContent = calendarContext.hasScheduledContent;
+
+        if (hasScheduledContent) {
+          // Format today's services for AI context
+          if (calendarContext.todaysServices.length > 0) {
+            todaysServicesContext = `Today's scheduled services: ${calendarContext.todaysServices
+              .map(s => `${s.serviceName} (${s.contentType} for ${s.platform})`)
+              .join(', ')}`;
+          }
+
+          // Format upcoming services for AI context
+          if (calendarContext.upcomingServices.length > 0) {
+            upcomingServicesContext = `Upcoming services this week: ${calendarContext.upcomingServices
+              .slice(0, 3) // Limit to top 3 upcoming services
+              .map(s => `${s.serviceName} in ${s.daysUntil} day${s.daysUntil !== 1 ? 's' : ''}`)
+              .join(', ')}`;
+          }
+
+          // Create comprehensive scheduled services context
+          scheduledServicesContext = [todaysServicesContext, upcomingServicesContext]
+            .filter(Boolean)
+            .join('. ');
+
+          console.log('📅 Calendar Context for AI:', {
+            hasScheduledContent,
+            todaysServices: calendarContext.todaysServices.length,
+            upcomingServices: calendarContext.upcomingServices.length,
+            context: scheduledServicesContext
+          });
+        }
+      } catch (error) {
+        console.warn('Failed to fetch calendar context for AI generation:', error);
+      }
+    } else if (input.scheduledServices && input.scheduledServices.length > 0) {
+      // Use provided scheduled services if brandId not available
+      const todaysServices = input.scheduledServices.filter(s => s.isToday);
+      const upcomingServices = input.scheduledServices.filter(s => s.isUpcoming);
+
+      hasScheduledContent = input.scheduledServices.length > 0;
+
+      if (todaysServices.length > 0) {
+        todaysServicesContext = `Today's scheduled services: ${todaysServices
+          .map(s => `${s.serviceName} (${s.contentType})`)
+          .join(', ')}`;
+      }
+
+      if (upcomingServices.length > 0) {
+        upcomingServicesContext = `Upcoming services: ${upcomingServices
+          .slice(0, 3)
+          .map(s => `${s.serviceName}`)
+          .join(', ')}`;
+      }
+
+      scheduledServicesContext = [todaysServicesContext, upcomingServicesContext]
+        .filter(Boolean)
+        .join('. ');
+    }
+
     // Step 8: Generate Enhanced Text Content with Intelligent Context
     const { output: textOutput } = await enhancedTextGenPrompt({
       businessType: input.businessType,
@@ -919,6 +1008,11 @@ const generatePostFromProfileFlow = ai.defineFlow(
       templateDescription: selectedTemplate.description,
       // Language preferences
       useLocalLanguage: input.useLocalLanguage || false,
+      // NEW: Scheduled services context
+      scheduledServices: scheduledServicesContext,
+      todaysServices: todaysServicesContext,
+      upcomingServices: upcomingServicesContext,
+      hasScheduledContent: hasScheduledContent,
     });
 
     if (!textOutput) {

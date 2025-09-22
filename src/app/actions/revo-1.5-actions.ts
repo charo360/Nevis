@@ -7,6 +7,7 @@
 
 import { generateRevo15EnhancedDesign } from '@/ai/revo-1.5-enhanced-design';
 import type { BrandProfile, Platform, BrandConsistencyPreferences, GeneratedPost } from '@/lib/types';
+import type { ScheduledService } from '@/services/calendar-service';
 
 // Helper function to convert logo URL to base64 data URL for AI models (matching Revo 1.0)
 async function convertLogoToDataUrl(logoUrl?: string): Promise<string | undefined> {
@@ -57,7 +58,8 @@ export async function generateRevo15ContentAction(
     visualStyle?: 'modern' | 'minimalist' | 'bold' | 'elegant' | 'playful' | 'professional';
     includePeopleInDesigns?: boolean;
     useLocalLanguage?: boolean;
-  }
+  },
+  scheduledServices?: ScheduledService[]
 ): Promise<GeneratedPost> {
   try {
     console.log('🎨 Revo 1.5: Starting content generation with logo support');
@@ -67,6 +69,17 @@ export async function generateRevo15ContentAction(
       hasLogoUrl: !!brandProfile.logoUrl,
       logoDataUrlLength: brandProfile.logoDataUrl?.length || 0,
       logoUrlLength: brandProfile.logoUrl?.length || 0
+    });
+
+    // NEW: Log scheduled services integration
+    console.log('📅 [Revo 1.5] Scheduled Services Integration:', {
+      hasScheduledServices: !!(scheduledServices && scheduledServices.length > 0),
+      scheduledServicesCount: scheduledServices?.length || 0,
+      todaysServicesCount: scheduledServices?.filter(s => s.isToday).length || 0,
+      upcomingServicesCount: scheduledServices?.filter(s => s.isUpcoming).length || 0,
+      scheduledServiceNames: scheduledServices?.map(s => s.serviceName) || [],
+      todaysServiceNames: scheduledServices?.filter(s => s.isToday).map(s => s.serviceName) || [],
+      upcomingServiceNames: scheduledServices?.filter(s => s.isUpcoming).map(s => s.serviceName) || []
     });
 
     // Convert logo URL to base64 data URL (matching Revo 1.0 approach)
@@ -87,7 +100,9 @@ export async function generateRevo15ContentAction(
       includePeopleInDesigns: options?.includePeopleInDesigns || false,
       useLocalLanguage: options?.useLocalLanguage || false,
       logoDataUrl: convertedLogoDataUrl || brandProfile.logoDataUrl,
-      logoUrl: brandProfile.logoUrl
+      logoUrl: brandProfile.logoUrl,
+      // NEW: Scheduled services integration
+      scheduledServices: scheduledServices || []
     });
 
     console.log('✅ Revo 1.5: Content generation completed');

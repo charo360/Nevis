@@ -17,7 +17,7 @@ export async function GET(
   { params }: { params: Promise<{ brandId: string }> }
 ) {
   try {
-    // Extract user ID from JWT token
+    // Extract user ID from Supabase access token
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
@@ -30,9 +30,21 @@ export async function GET(
     let userId: string;
 
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
-      userId = decoded.userId;
-    } catch (jwtError) {
+      // Verify the Supabase access token
+      const { data: { user }, error } = await supabase.auth.getUser(token);
+      
+      if (error || !user) {
+        console.error('❌ Supabase token verification failed:', error);
+        return NextResponse.json(
+          { error: 'Invalid token' },
+          { status: 401 }
+        );
+      }
+      
+      userId = user.id;
+      console.log('✅ Supabase token verified for user:', userId);
+    } catch (authError) {
+      console.error('❌ Token verification error:', authError);
       return NextResponse.json(
         { error: 'Invalid token' },
         { status: 401 }

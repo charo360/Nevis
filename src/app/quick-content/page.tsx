@@ -27,6 +27,7 @@ import { STORAGE_FEATURES, getStorageUsage, cleanupAllStorage } from "@/lib/serv
 import { processGeneratedPost } from "@/lib/services/generated-post-storage";
 import { useAuth } from '@/hooks/use-auth-supabase';
 import { useQuickContentStorage } from "@/hooks/use-feature-storage";
+import { CalendarService, type ScheduledService } from "@/services/calendar-service";
 // Using Supabase storage for images and content
 
 // No limit on posts - store all generated content
@@ -98,6 +99,11 @@ function QuickContentPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [urlBrandSwitchPending, setUrlBrandSwitchPending] = useState(false);
   const [calendarServices, setCalendarServices] = useState<string[]>([]);
+  // NEW: Scheduled services state
+  const [scheduledServices, setScheduledServices] = useState<ScheduledService[]>([]);
+  const [todaysServices, setTodaysServices] = useState<ScheduledService[]>([]);
+  const [upcomingServices, setUpcomingServices] = useState<ScheduledService[]>([]);
+  const [hasScheduledContent, setHasScheduledContent] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
   const { open: sidebarOpen, toggleSidebar } = useSidebar();
@@ -211,32 +217,34 @@ function QuickContentPage() {
     const brandName = searchParams.get('brandName');
     const services = searchParams.get('services');
     const serviceNames = searchParams.get('serviceNames');
-    
+
     console.log('🔍 URL Parameters:', { brandId, brandName, services, serviceNames });
     console.log('🔍 Current Brand:', currentBrand?.id, currentBrand?.businessName);
     console.log('🔍 Available Brands:', brands.map(b => ({ id: b.id, name: b.businessName })));
     console.log('🔍 Full URL:', window.location.href);
     console.log('🔍 Search Params:', Object.fromEntries(searchParams.entries()));
-    
+
     // Extract calendar services from URL parameters
     if (serviceNames) {
-      const servicesArray = serviceNames.split(',').filter(s => s.trim());
+      const servicesArray = serviceNames.split(',').map(s => decodeURIComponent(s.trim())).filter(s => s);
       setCalendarServices(servicesArray);
       console.log('📋 Calendar services extracted from serviceNames:', servicesArray);
+      console.log('📋 Raw serviceNames parameter:', serviceNames);
     } else if (services) {
-      const servicesArray = services.split(',').filter(s => s.trim());
+      const servicesArray = services.split(',').map(s => decodeURIComponent(s.trim())).filter(s => s);
       setCalendarServices(servicesArray);
       console.log('📋 Calendar services extracted from services:', servicesArray);
+      console.log('📋 Raw services parameter:', services);
     } else {
       setCalendarServices([]);
       console.log('📋 No calendar services found in URL parameters');
     }
-    
+
     if (brandId && brands.length > 0) {
       // Find the brand by ID
       const targetBrand = brands.find(brand => brand.id === brandId);
       console.log('🔍 Target Brand Found:', targetBrand ? { id: targetBrand.id, name: targetBrand.businessName } : 'NOT FOUND');
-      
+
       if (targetBrand) {
         // Always switch if we have a target brand from URL, regardless of current brand
         console.log('🔄 Switching to brand from calendar:', brandName, brandId);
@@ -272,11 +280,118 @@ function QuickContentPage() {
 
     if (!brand) {
       setGeneratedPosts([]);
+      setScheduledServices([]);
+      setTodaysServices([]);
+      setUpcomingServices([]);
+      setHasScheduledContent(false);
       setIsLoading(false);
       return;
     }
 
     setIsLoading(true);
+
+    // Load scheduled services for the current brand
+    const loadScheduledServices = async () => {
+      try {
+        console.log('📅 Loading scheduled services for brand:', brand.businessName);
+        const calendarContext = await CalendarService.getCalendarContext(brand.id);
+
+        setTodaysServices(calendarContext.todaysServices);
+        setUpcomingServices(calendarContext.upcomingServices);
+        setScheduledServices([...calendarContext.todaysServices, ...calendarContext.upcomingServices]);
+        setHasScheduledContent(calendarContext.hasScheduledContent);
+
+        console.log('📅 Loaded calendar context:', {
+          todaysServices: calendarContext.todaysServices.length,
+          upcomingServices: calendarContext.upcomingServices.length,
+          hasScheduledContent: calendarContext.hasScheduledContent,
+          todaysServiceNames: calendarContext.todaysServices.map(s => s.serviceName),
+          upcomingServiceNames: calendarContext.upcomingServices.map(s => s.serviceName),
+          fullContext: calendarContext
+        });
+
+        console.log('🔍 [Quick Content] CRITICAL DATA SOURCE COMPARISON:', {
+          brandId: currentBrand?.id,
+          storageServices: {
+            count: calendarContext.todaysServices.length + calendarContext.upcomingServices.length,
+            todaysServices: calendarContext.todaysServices.map(s => s.serviceName),
+            upcomingServices: calendarContext.upcomingServices.map(s => s.serviceName),
+            hasScheduledContent: calendarContext.hasScheduledContent
+          },
+          urlServices: {
+            count: calendarServices.length,
+            services: calendarServices
+          },
+          decisionLogic: {
+            willUseStorage: calendarContext.hasScheduledContent,
+            willUseUrl: !calendarContext.hasScheduledContent && calendarServices.length > 0,
+            finalDecision: calendarContext.hasScheduledContent ? 'STORAGE' : (calendarServices.length > 0 ? 'URL' : 'NONE')
+          }
+        });
+
+        // Show toast if there are today's services
+        if (calendarContext.todaysServices.length > 0) {
+          toast({
+            title: "📅 Today's Scheduled Services",
+            description: `${calendarContext.todaysServices.length} service${calendarContext.todaysServices.length > 1 ? 's' : ''} scheduled for today: ${calendarContext.todaysServices.map(s => s.serviceName).join(', ')}`,
+          });
+        }
+
+        // PROPER PRIORITY: Storage services first, URL services as fallback only
+        if (calendarContext.hasScheduledContent) {
+          // Use storage-based scheduled services (highest priority)
+          console.log('✅ [Quick Content] USING STORAGE-BASED SERVICES (highest priority)');
+          console.log('📊 [Quick Content] Setting state with storage data:', {
+            todaysServices: calendarContext.todaysServices.map(s => s.serviceName),
+            upcomingServices: calendarContext.upcomingServices.map(s => s.serviceName),
+            allServices: [...calendarContext.todaysServices, ...calendarContext.upcomingServices].map(s => s.serviceName)
+          });
+
+          // Set state with storage data
+          setTodaysServices(calendarContext.todaysServices);
+          setUpcomingServices(calendarContext.upcomingServices);
+          setScheduledServices([...calendarContext.todaysServices, ...calendarContext.upcomingServices]);
+          setHasScheduledContent(true);
+        } else if (calendarServices.length > 0) {
+          // Fallback to URL-based services only if no storage services exist
+          console.log('📅 No storage services found, using URL calendar services as fallback:', calendarServices);
+
+          const urlBasedScheduledServices: ScheduledService[] = calendarServices.map((serviceName, index) => ({
+            serviceId: `url-service-${index}`,
+            serviceName: serviceName,
+            description: `Service from calendar: ${serviceName}`,
+            contentType: 'post',
+            platform: 'All',
+            priority: 'high' as const,
+            isToday: true,
+            isUpcoming: false,
+            daysUntil: undefined,
+          }));
+
+          setTodaysServices(urlBasedScheduledServices);
+          setScheduledServices(urlBasedScheduledServices);
+          setHasScheduledContent(true);
+
+          console.log('📅 Using URL-based scheduled services as fallback:', {
+            count: urlBasedScheduledServices.length,
+            services: urlBasedScheduledServices.map(s => s.serviceName)
+          });
+
+          toast({
+            title: "📅 Calendar Services (Initial)",
+            description: `Starting with: ${urlBasedScheduledServices.map(s => s.serviceName).join(', ')}`,
+          });
+        } else {
+          console.log('📝 No scheduled services detected from any source');
+        }
+      } catch (error) {
+        console.error('❌ Error loading scheduled services:', error);
+        setScheduledServices([]);
+        setTodaysServices([]);
+        setUpcomingServices([]);
+        setHasScheduledContent(false);
+      }
+    };
 
     // Load posts from database first, then fallback to localStorage
     const loadPosts = async () => {
@@ -351,7 +466,7 @@ function QuickContentPage() {
         console.log(`✅ Combined posts: ${databasePosts.length} from database + ${localStoragePosts.length} from localStorage = ${combinedPosts.length} total`);
 
         setGeneratedPosts(combinedPosts);
-        
+
         // Persist combined posts locally for resilience across refresh
         try {
           postsStorage?.setItem(combinedPosts);
@@ -385,8 +500,9 @@ function QuickContentPage() {
       }
     };
 
-    // Call the async function
+    // Call the async functions
     loadPosts();
+    loadScheduledServices();
   }, [currentBrand, postsStorage, toast, user, urlBrandSwitchPending]);
 
   // Enhanced brand selection logic with persistence recovery
@@ -425,6 +541,69 @@ function QuickContentPage() {
     }
   }, [currentBrand, brands.length, brandsLoading, router, selectBrand, forceBrandRestore]);
 
+  // Listen for calendar data changes and refresh scheduled services
+  useEffect(() => {
+    const handleCalendarDataChange = async (event: CustomEvent) => {
+      const { brandId } = event.detail;
+
+      // Only refresh if the change is for the current brand
+      if (currentBrand?.id === brandId) {
+        console.log('📡 Received calendarDataChanged event for current brand, refreshing scheduled services...');
+
+        try {
+          // Reload scheduled services using the same logic as the main useEffect
+          const calendarContext = await CalendarService.getCalendarContext(currentBrand.id);
+
+          console.log('📅 Loaded calendar context:', {
+            todaysServices: calendarContext.todaysServices.length,
+            upcomingServices: calendarContext.upcomingServices.length,
+            hasScheduledContent: calendarContext.hasScheduledContent
+          });
+
+          // Critical data source comparison for debugging
+          console.log('🔍 [Quick Content] CALENDAR REFRESH - Data source comparison:', {
+            brandId: currentBrand.id,
+            brandName: currentBrand.businessName,
+            storageServicesCount: calendarContext.todaysServices.length + calendarContext.upcomingServices.length,
+            todaysServicesCount: calendarContext.todaysServices.length,
+            upcomingServicesCount: calendarContext.upcomingServices.length,
+            hasScheduledContent: calendarContext.hasScheduledContent
+          });
+
+          if (calendarContext.hasScheduledContent) {
+            console.log('✅ [Quick Content] USING REFRESHED STORAGE-BASED SERVICES');
+            console.log('📊 [Quick Content] Refreshing state with updated storage data:', {
+              todaysServices: calendarContext.todaysServices,
+              upcomingServices: calendarContext.upcomingServices,
+              totalServices: calendarContext.todaysServices.length + calendarContext.upcomingServices.length
+            });
+
+            // Update state with fresh data
+            setTodaysServices(calendarContext.todaysServices);
+            setUpcomingServices(calendarContext.upcomingServices);
+            setScheduledServices([...calendarContext.todaysServices, ...calendarContext.upcomingServices]);
+            setHasScheduledContent(true);
+
+            // Show notification about the refresh
+            toast({
+              title: "📅 Calendar Updated",
+              description: `Refreshed ${calendarContext.todaysServices.length} today's services and ${calendarContext.upcomingServices.length} upcoming services`,
+            });
+          }
+        } catch (error) {
+          console.error('❌ Error refreshing scheduled services:', error);
+        }
+      }
+    };
+
+    // Add event listener
+    window.addEventListener('calendarDataChanged', handleCalendarDataChange as EventListener);
+
+    // Cleanup event listener on unmount
+    return () => {
+      window.removeEventListener('calendarDataChanged', handleCalendarDataChange as EventListener);
+    };
+  }, [currentBrand, toast]);
 
   // Process generated post with Supabase-only storage (no fallbacks)
   const processPostImages = async (post: GeneratedPost): Promise<GeneratedPost> => {
@@ -515,7 +694,7 @@ function QuickContentPage() {
     // Add the processed post to the beginning of the array
     const newPosts = [processedPost, ...generatedPosts];
     setGeneratedPosts(newPosts);
-    
+
     // Persist to brand-scoped Quick Content storage so posts survive refresh
     try {
       postsStorage?.setItem(newPosts);
@@ -706,59 +885,82 @@ function QuickContentPage() {
                         </p>
                       </div>
                     )}
+
+                    {/* NEW: Display today's scheduled services */}
+
+
+                    {/* Debug scheduled services being passed to ContentCalendar */}
+                    {(() => {
+                      console.log('🎯 Passing scheduled services to ContentCalendar:', {
+                        scheduledServicesCount: scheduledServices.length,
+                        todaysServicesCount: todaysServices.length,
+                        upcomingServicesCount: upcomingServices.length,
+                        hasScheduledContent,
+                        scheduledServiceNames: scheduledServices.map(s => s.serviceName),
+                        todaysServiceNames: todaysServices.map(s => s.serviceName),
+                        upcomingServiceNames: upcomingServices.map(s => s.serviceName)
+                      });
+                      return null;
+                    })()}
+
                     <ContentCalendar
-                    brandProfile={{
-                      businessName: currentBrand.businessName,
-                      businessType: currentBrand.businessType || '',
-                      location: typeof currentBrand.location === 'string'
-                        ? currentBrand.location
-                        : currentBrand.location
-                          ? `${currentBrand.location.city || ''}, ${currentBrand.location.country || ''}`.replace(/^,\s*/, '').replace(/,\s*$/, '')
-                          : '',
-                      logoUrl: currentBrand.logoUrl || '',
-                      logoDataUrl: currentBrand.logoDataUrl || '',
-                      visualStyle: currentBrand.visualStyle || '',
-                      writingTone: currentBrand.writingTone || '',
-                      contentThemes: currentBrand.contentThemes || '',
-                      websiteUrl: currentBrand.websiteUrl || '',
-                      description: currentBrand.description || '',
-                      services: (() => {
-                        const finalServices = calendarServices.length > 0 
-                          ? calendarServices.join('\n')
-                          : Array.isArray((currentBrand as any).services)
-                            ? (currentBrand as any).services.map((s: any) => s.name).join('\n')
-                            : (currentBrand as any).services || '';
-                        console.log('🔍 Services being passed to AI:', {
-                          calendarServices,
-                          calendarServicesLength: calendarServices.length,
-                          currentBrandServices: (currentBrand as any).services,
-                          finalServices
-                        });
-                        return finalServices;
-                      })(),
-                      targetAudience: currentBrand.targetAudience || '',
-                      keyFeatures: currentBrand.keyFeatures || '',
-                      competitiveAdvantages: currentBrand.competitiveAdvantages || '',
-                      contactInfo: {
-                        phone: currentBrand.contactPhone || '',
-                        email: currentBrand.contactEmail || '',
-                        address: currentBrand.contactAddress || '',
-                      },
-                      socialMedia: {
-                        facebook: currentBrand.facebookUrl || '',
-                        instagram: currentBrand.instagramUrl || '',
-                        twitter: currentBrand.twitterUrl || '',
-                        linkedin: currentBrand.linkedinUrl || '',
-                      },
-                      primaryColor: currentBrand.primaryColor || undefined,
-                      accentColor: currentBrand.accentColor || undefined,
-                      backgroundColor: currentBrand.backgroundColor || undefined,
-                      designExamples: currentBrand.designExamples || [],
-                    }}
-                    posts={generatedPosts}
-                    onPostGenerated={handlePostGenerated}
-                    onPostUpdated={handlePostUpdated}
-                  />
+                      brandProfile={{
+                        businessName: currentBrand.businessName,
+                        businessType: currentBrand.businessType || '',
+                        location: typeof currentBrand.location === 'string'
+                          ? currentBrand.location
+                          : currentBrand.location
+                            ? `${currentBrand.location.city || ''}, ${currentBrand.location.country || ''}`.replace(/^,\s*/, '').replace(/,\s*$/, '')
+                            : '',
+                        logoUrl: currentBrand.logoUrl || '',
+                        logoDataUrl: currentBrand.logoDataUrl || '',
+                        visualStyle: currentBrand.visualStyle || '',
+                        writingTone: currentBrand.writingTone || '',
+                        contentThemes: currentBrand.contentThemes || '',
+                        websiteUrl: currentBrand.websiteUrl || '',
+                        description: currentBrand.description || '',
+                        services: (() => {
+                          const finalServices = calendarServices.length > 0
+                            ? calendarServices.join('\n')
+                            : Array.isArray((currentBrand as any).services)
+                              ? (currentBrand as any).services.map((s: any) => s.name).join('\n')
+                              : (currentBrand as any).services || '';
+                          console.log('🔍 Services being passed to AI:', {
+                            calendarServices,
+                            calendarServicesLength: calendarServices.length,
+                            currentBrandServices: (currentBrand as any).services,
+                            finalServices
+                          });
+                          return finalServices;
+                        })(),
+                        targetAudience: currentBrand.targetAudience || '',
+                        keyFeatures: currentBrand.keyFeatures || '',
+                        competitiveAdvantages: currentBrand.competitiveAdvantages || '',
+                        contactInfo: {
+                          phone: currentBrand.contactPhone || '',
+                          email: currentBrand.contactEmail || '',
+                          address: currentBrand.contactAddress || '',
+                        },
+                        socialMedia: {
+                          facebook: currentBrand.facebookUrl || '',
+                          instagram: currentBrand.instagramUrl || '',
+                          twitter: currentBrand.twitterUrl || '',
+                          linkedin: currentBrand.linkedinUrl || '',
+                        },
+                        primaryColor: currentBrand.primaryColor || undefined,
+                        accentColor: currentBrand.accentColor || undefined,
+                        backgroundColor: currentBrand.backgroundColor || undefined,
+                        designExamples: currentBrand.designExamples || [],
+                      }}
+                      posts={generatedPosts}
+                      onPostGenerated={handlePostGenerated}
+                      onPostUpdated={handlePostUpdated}
+                      // NEW: Pass scheduled services to ContentCalendar
+                      scheduledServices={scheduledServices}
+                      todaysServices={todaysServices}
+                      upcomingServices={upcomingServices}
+                      hasScheduledContent={hasScheduledContent}
+                    />
                   </>
                 )}
               </div>

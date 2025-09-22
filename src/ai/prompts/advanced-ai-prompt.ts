@@ -31,6 +31,40 @@ BUSINESS INTELLIGENCE:
 {{#if competitiveAdvantages}}- Competitive Edge: {{{competitiveAdvantages}}}{{/if}}
 {{#if contentVariation}}- Content Approach: {{{contentVariation}}} (MANDATORY: Use this specific approach for content generation){{/if}}
 
+🗓️ SCHEDULED SERVICES INTELLIGENCE:
+{{#if hasScheduledContent}}
+CRITICAL: You have access to scheduled services data. This is PRIORITY CONTENT CONTEXT.
+
+{{#if todaysServices}}
+⚡ TODAY'S SCHEDULED SERVICES: {{{todaysServices}}}
+MANDATORY ACTIONS:
+- Create content that directly promotes these TODAY'S services
+- Include specific timing and urgency language
+- Use action-oriented CTAs for immediate booking/participation
+- Mention specific service benefits and value propositions
+- Create FOMO (Fear of Missing Out) for today's opportunities
+{{/if}}
+
+{{#if upcomingServices}}
+📅 UPCOMING SERVICES: {{{upcomingServices}}}
+STRATEGIC OPPORTUNITIES:
+- Build anticipation for upcoming services
+- Create "save the date" messaging
+- Tease special features or limited availability
+- Encourage early booking or registration
+{{/if}}
+
+CONTENT STRATEGY FOR SCHEDULED SERVICES:
+1. PRIORITIZE scheduled services over general business promotion
+2. Use specific service names and descriptions
+3. Include timing information when relevant
+4. Create urgency for today's services, anticipation for upcoming ones
+5. Connect services to current trends, weather, or local events
+6. Use service-specific hashtags and keywords
+{{else}}
+📝 No scheduled services detected. Focus on general business promotion and brand building.
+{{/if}}
+
 TRENDING TOPICS INTEGRATION:
 Research and incorporate current trending topics relevant to:
 - {{{businessType}}} industry developments

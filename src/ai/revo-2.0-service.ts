@@ -6,6 +6,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import OpenAI from 'openai';
 import type { BrandProfile, Platform } from '@/lib/types';
+import type { ScheduledService } from '@/services/calendar-service';
 import { resolveLocationFromProfile } from '@/ai/tools/local-data';
 
 import { ensureExactDimensions } from './utils/image-dimensions';
@@ -122,6 +123,7 @@ export interface Revo20GenerationOptions {
   includePeopleInDesigns?: boolean;
   useLocalLanguage?: boolean;
   includeContacts?: boolean;
+  scheduledServices?: ScheduledService[]; // NEW: Scheduled services integration
 }
 
 export interface Revo20GenerationResult {
@@ -199,7 +201,32 @@ function getPlatformDescription(platform: string): string {
  * Generate enhanced creative concept using GPT-4
  */
 async function generateCreativeConcept(options: Revo20GenerationOptions): Promise<any> {
-  const { businessType, platform, brandProfile, visualStyle = 'modern' } = options;
+  const { businessType, platform, brandProfile, visualStyle = 'modern', scheduledServices } = options;
+
+  // Determine service focus based on scheduled services priority
+  let serviceFocus = businessType;
+  let serviceContext = '';
+
+  if (scheduledServices && scheduledServices.length > 0) {
+    const todaysServices = scheduledServices.filter(s => s.isToday);
+    const upcomingServices = scheduledServices.filter(s => s.isUpcoming);
+
+    if (todaysServices.length > 0) {
+      serviceFocus = todaysServices.map(s => s.serviceName).join(', ');
+      serviceContext = `\n🎯 PRIORITY SERVICES (Focus content on these specific services scheduled for TODAY):
+${todaysServices.map(s => `- ${s.serviceName}: ${s.description || 'Available today'}`).join('\n')}
+
+CRITICAL: The creative concept MUST specifically promote these TODAY'S services. Do not create generic business content.`;
+      console.log('🎯 [Revo 2.0] Creative concept focusing on TODAY\'S services:', todaysServices.map(s => s.serviceName));
+    } else if (upcomingServices.length > 0) {
+      serviceFocus = upcomingServices.map(s => s.serviceName).join(', ');
+      serviceContext = `\n📅 UPCOMING SERVICES (Build anticipation for these services):
+${upcomingServices.map(s => `- ${s.serviceName} (in ${s.daysUntil} days): ${s.description || ''}`).join('\n')}`;
+      console.log('📅 [Revo 2.0] Creative concept focusing on UPCOMING services:', upcomingServices.map(s => s.serviceName));
+    }
+  } else {
+    console.log('🏢 [Revo 2.0] Creative concept using general business type (no scheduled services)');
+  }
 
   const prompt = `You are a world-class creative director specializing in ${businessType} businesses.
 Create an authentic, locally-relevant creative concept for ${platform} that feels genuine and relatable.
@@ -210,6 +237,7 @@ Business Context:
 - Style: ${visualStyle}
 - Location: ${brandProfile.location || 'Global'}
 - Brand: ${brandProfile.businessName || businessType}
+- Service Focus: ${serviceFocus}${serviceContext}
 
 Create a concept that:
 1. Feels authentic and locally relevant
@@ -217,6 +245,7 @@ Create a concept that:
 3. Connects emotionally with the target audience
 4. Incorporates cultural nuances naturally
 5. Avoids generic corporate messaging
+${scheduledServices && scheduledServices.length > 0 ? '6. SPECIFICALLY promotes the scheduled services listed above' : ''}
 
 Return your response in this exact JSON format:
 {
@@ -790,7 +819,36 @@ async function generateStructuredContent(options: Revo20GenerationOptions, conce
     competitiveAdvantage: string;
   };
 }> {
-  const { businessType, platform, brandProfile } = options;
+  const { businessType, platform, brandProfile, scheduledServices } = options;
+
+  // Determine service focus based on scheduled services priority
+  let serviceFocus = brandProfile.services || 'Business services';
+  let serviceContext = '';
+
+  if (scheduledServices && scheduledServices.length > 0) {
+    const todaysServices = scheduledServices.filter(s => s.isToday);
+    const upcomingServices = scheduledServices.filter(s => s.isUpcoming);
+
+    if (todaysServices.length > 0) {
+      serviceFocus = todaysServices.map(s => s.serviceName).join(', ');
+      serviceContext = `\n🎯 PRIORITY SERVICES (HIGHEST PRIORITY - Focus ALL content on these specific services scheduled for TODAY):
+${todaysServices.map(s => `- ${s.serviceName}: ${s.description || 'Available today'}`).join('\n')}
+
+⚠️ CRITICAL REQUIREMENT:
+- The content MUST specifically promote ONLY these TODAY'S services
+- Use the EXACT service names in headlines, subheadlines, and captions
+- Create urgent, today-focused language: "today", "now", "available today", "don't miss out"
+- DO NOT mention other business services not listed above`;
+      console.log('🎯 [Revo 2.0] Structured content focusing on TODAY\'S services:', todaysServices.map(s => s.serviceName));
+    } else if (upcomingServices.length > 0) {
+      serviceFocus = upcomingServices.map(s => s.serviceName).join(', ');
+      serviceContext = `\n📅 UPCOMING SERVICES (Build anticipation for these services):
+${upcomingServices.map(s => `- ${s.serviceName} (in ${s.daysUntil} days): ${s.description || ''}`).join('\n')}`;
+      console.log('📅 [Revo 2.0] Structured content focusing on UPCOMING services:', upcomingServices.map(s => s.serviceName));
+    }
+  } else {
+    console.log('🏢 [Revo 2.0] Structured content using general brand services (no scheduled services)');
+  }
 
   // Contact information for CTA generation
   const includeContacts = options.includeContacts === true;
@@ -829,7 +887,7 @@ Business Details:
 - Type: ${businessType}
 - Location: ${brandProfile.location || 'Local area'}
 - Description: ${brandProfile.description || 'Professional business'}
-- Services: ${brandProfile.services || 'Business services'}
+- Services Focus: ${serviceFocus}
 - Target Audience: ${brandProfile.targetAudience || 'General audience'}
 - Key Features: ${brandProfile.keyFeatures || 'Key business features'}
 - Competitive Advantages: ${brandProfile.competitiveAdvantages || 'Business advantages'}
@@ -838,7 +896,7 @@ Business Details:
 - Content Themes: ${brandProfile.contentThemes || 'Business themes'}
 - Website: ${brandProfile.websiteUrl || 'Not specified'}
 - Concept: ${concept.concept}
-- Catchwords: ${concept.catchwords.join(', ')}
+- Catchwords: ${concept.catchwords.join(', ')}${serviceContext}
 
 ${includeContacts && hasAnyContact ? `
 CONTACT INFORMATION AVAILABLE:
@@ -918,6 +976,27 @@ Format as JSON:
 
     // Validate the response
     if (result.headline && result.subheadline && result.caption && result.cta && Array.isArray(result.hashtags)) {
+
+      // VALIDATION: Check if content mentions scheduled services
+      if (scheduledServices && scheduledServices.length > 0) {
+        const todaysServices = scheduledServices.filter(s => s.isToday);
+        if (todaysServices.length > 0) {
+          const contentText = `${result.headline} ${result.subheadline} ${result.caption}`.toLowerCase();
+          const mentionsScheduledService = todaysServices.some(service =>
+            contentText.includes(service.serviceName.toLowerCase())
+          );
+
+          if (mentionsScheduledService) {
+            console.log('✅ [Revo 2.0] VALIDATION PASSED: Structured content mentions scheduled services');
+          } else {
+            console.warn('⚠️ [Revo 2.0] VALIDATION WARNING: Structured content does not mention today\'s scheduled services:', {
+              todaysServices: todaysServices.map(s => s.serviceName),
+              generatedContent: contentText.substring(0, 200)
+            });
+          }
+        }
+      }
+
       return {
         headline: result.headline,
         subheadline: result.subheadline,

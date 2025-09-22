@@ -11,6 +11,7 @@ import type { Artifact } from "@/lib/types/artifacts";
 import { generateEnhancedDesign } from "@/ai/gemini-2.5-design";
 import { generateRevo2ContentAction, generateRevo2CreativeAssetAction } from "@/app/actions/revo-2-actions";
 import { supabaseService } from "@/lib/services/supabase-service";
+import type { ScheduledService } from "@/services/calendar-service";
 
 // Helper function to convert logo URL to base64 data URL for AI models
 async function convertLogoToDataUrl(logoUrl?: string): Promise<string | undefined> {
@@ -150,9 +151,16 @@ export async function generateContentAction(
   profile: BrandProfile,
   platform: Platform,
   brandConsistency?: { strictConsistency: boolean; followBrandColors: boolean; includeContacts: boolean },
-  useLocalLanguage: boolean = false
+  useLocalLanguage: boolean = false,
+  scheduledServices?: ScheduledService[]
 ): Promise<GeneratedPost> {
   try {
+    console.log('🎯 generateContentAction called with scheduled services:', {
+      scheduledServicesCount: scheduledServices?.length || 0,
+      scheduledServiceNames: scheduledServices?.map(s => s.serviceName) || [],
+      businessName: profile.businessName
+    });
+
     const today = new Date();
     const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long' });
     const currentDate = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -256,6 +264,8 @@ export async function generateContentAction(
       useLocalLanguage: useLocalLanguage,
       // Product image descriptions for AI context
       productImageDescriptions: profile.productImageDescriptions || {},
+      // NEW: Scheduled services integration
+      scheduledServices: scheduledServices || [],
       variants: [{
         platform: platform,
         aspectRatio: getAspectRatioForPlatform(platform),
@@ -627,13 +637,13 @@ export async function generateContentWithArtifactsAction(
       .join('\n');
 
     // Collect product image descriptions for AI context
-    const productDescriptions = profile.productImageDescriptions 
+    const productDescriptions = profile.productImageDescriptions
       ? Object.entries(profile.productImageDescriptions)
-          .map(([productId, description]) => {
-            const product = profile.productImages?.find(p => p.id === productId);
-            return `- ${product?.name || 'Product'}: ${description}`;
-          })
-          .join('\n')
+        .map(([productId, description]) => {
+          const product = profile.productImages?.find(p => p.id === productId);
+          return `- ${product?.name || 'Product'}: ${description}`;
+        })
+        .join('\n')
       : '';
 
     // Collect text overlay instructions from text artifacts
