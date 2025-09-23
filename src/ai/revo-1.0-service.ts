@@ -197,64 +197,64 @@ function getBusinessDesignDNA(businessType: string): string {
   return designDNA[businessType.toLowerCase()] || designDNA['default'];
 }
 
-// NEW: 15 truly different design types for dynamic social media feeds - EXPANDED FOR MAXIMUM VARIETY
+// MODERN DESIGN VARIATIONS - Focused on Visual Appeal and Engagement
 function getHumanDesignVariations(seed: number): any {
   const variations = [
     {
-      style: 'Watercolor Quotes',
-      layout: 'Soft, artistic watercolor background with elegant typography overlay',
-      composition: 'Centered or asymmetrical text with flowing watercolor elements',
-      mood: 'Artistic, elegant, inspirational',
-      elements: 'Watercolor textures, elegant fonts, soft color transitions, artistic backgrounds',
-      description: 'Create a design that looks like an artist painted it with watercolors, with flowing, organic shapes and elegant typography that feels handcrafted and artistic.'
+      style: 'Modern Minimalist',
+      layout: 'Clean, sophisticated layout with strategic white space and single focal point',
+      composition: 'Centered composition with asymmetrical elements, modern typography hierarchy',
+      mood: 'Professional, clean, sophisticated, premium',
+      elements: 'Subtle gradients, soft shadows, modern sans-serif fonts, clean geometric shapes, strategic white space',
+      description: 'Create a sophisticated minimal design with clean lines, subtle gradients, and modern typography. Think Apple or premium brand aesthetics - clean, elegant, and highly professional.'
     },
     {
-      style: 'Split Photo Collages',
-      layout: 'Two or three photo sections with text overlay on one section',
-      composition: 'Grid-based photo layout with text integrated naturally',
-      mood: 'Modern, dynamic, photo-driven',
-      elements: 'Photo sections, clean grid lines, integrated text, modern typography',
-      description: 'Design with a clean grid layout that splits the image into photo sections, with text naturally integrated into one section. Think Instagram grid meets modern magazine layout.'
+      style: 'Bold Vibrant',
+      layout: 'High-energy design with dynamic composition and bold visual elements',
+      composition: 'Diagonal composition with strong focal points, energetic flow, modern grid systems',
+      mood: 'Energetic, exciting, attention-grabbing, modern',
+      elements: 'Bold colors, dynamic shapes, modern gradients, strong typography, contemporary patterns',
+      description: 'Create a bold, vibrant design that demands attention. Use modern gradients, dynamic layouts, and contemporary design elements that feel current and engaging.'
     },
     {
-      style: 'Meme-Style Posts',
-      layout: 'Bold, punchy text with minimal background and high contrast',
-      composition: 'Centered text with simple, impactful background',
-      mood: 'Fun, viral, shareable',
-      elements: 'Bold typography, simple backgrounds, high contrast, meme-like simplicity',
-      description: 'Create a design that feels like a viral meme - bold, simple text with minimal background elements. Think Twitter meme aesthetics but professional.'
+      style: 'Photo-Driven Modern',
+      layout: 'Large photo background with modern text overlay and contemporary styling',
+      composition: 'Photo-focused with modern text treatment, clean overlays, magazine-style layout',
+      mood: 'Contemporary, aspirational, lifestyle-focused, premium',
+      elements: 'High-quality photos, modern text overlays, clean typography, contemporary filters',
+      description: 'Design with a large, high-quality photo as the main element, with modern text overlays and contemporary styling. Think modern magazine or lifestyle brand aesthetics.'
     },
     {
-      style: 'Polaroid-Style Testimonials',
-      layout: 'Polaroid frame with photo area and handwritten-style text',
-      composition: 'Polaroid border with content inside, vintage feel',
-      mood: 'Authentic, personal, nostalgic',
-      elements: 'Polaroid borders, vintage textures, handwritten fonts, authentic feel',
-      description: 'Design that looks like a vintage Polaroid photo with a white border, containing either a photo area or text that feels handwritten and personal.'
+      style: 'Creative Artistic',
+      layout: 'Artistic composition with creative elements, hand-drawn touches, and unique visual treatments',
+      composition: 'Creative angles, artistic overlays, organic shapes, unique perspectives',
+      mood: 'Creative, innovative, unique, inspiring, artistic',
+      elements: 'Hand-drawn elements, artistic effects, creative typography, unique color combinations, organic shapes',
+      description: 'Create an artistic design with hand-drawn elements, creative compositions, and unique visual treatments. Think modern art meets graphic design - creative, inspiring, and visually interesting.'
     },
     {
-      style: 'Minimal Photo-Driven Promos',
-      layout: 'Large photo background with minimal text overlay',
-      composition: 'Photo as hero element with subtle text placement',
-      mood: 'Clean, premium, photo-focused',
-      elements: 'Large photos, minimal text, clean typography, lots of white space',
-      description: 'Create a design where a beautiful photo is the main focus, with minimal, elegant text overlay. Think high-end magazine or premium brand aesthetics.'
+      style: 'Luxury Premium',
+      layout: 'Elegant, sophisticated layout with premium materials and refined aesthetics',
+      composition: 'Luxurious spacing, premium typography, elegant proportions, sophisticated hierarchy',
+      mood: 'Luxurious, premium, exclusive, sophisticated, high-end',
+      elements: 'Premium materials, elegant typography, sophisticated colors, luxury imagery, refined details',
+      description: 'Create a luxurious, premium design with elegant typography, sophisticated color palettes, and refined details. Think high-end luxury brand aesthetics - sophisticated, exclusive, and premium.'
     },
     {
-      style: 'Mixed-Media Artistic Posts',
-      layout: 'Layered design with multiple textures, patterns, and artistic elements',
-      composition: 'Complex layering with artistic elements and modern typography',
-      mood: 'Creative, artistic, unique',
-      elements: 'Multiple textures, artistic patterns, layered elements, creative typography',
-      description: 'Design with multiple artistic layers - think digital art meets graphic design. Include textures, patterns, and creative elements that feel like modern digital art.'
+      style: 'Tech Modern',
+      layout: 'Futuristic design with modern tech elements and contemporary digital aesthetics',
+      composition: 'Digital grid systems, modern UI elements, contemporary layouts, tech-inspired design',
+      mood: 'Innovative, cutting-edge, digital, forward-thinking, modern',
+      elements: 'Digital effects, modern interfaces, tech imagery, contemporary gradients, sleek typography',
+      description: 'Create a modern, tech-forward design with contemporary digital aesthetics and sleek interfaces. Think modern tech company or startup aesthetics - innovative, cutting-edge, and digitally sophisticated.'
     },
     {
-      style: 'Branded Posters (Current Style)',
-      layout: 'Illustration-heavy design with brand elements and structured layout',
-      composition: 'Illustrated background with organized text and brand placement',
-      mood: 'Professional, branded, consistent',
-      elements: 'Illustrations, brand colors, structured typography, consistent branding',
-      description: 'The current style - professional illustrated posters with brand consistency. Use when you need to maintain strong brand identity.'
+      style: 'Lifestyle Aspirational',
+      layout: 'Lifestyle-focused design with aspirational imagery and modern lifestyle aesthetics',
+      composition: 'Lifestyle imagery, modern composition, aspirational mood, contemporary styling',
+      mood: 'Aspirational, lifestyle-focused, modern, inspiring, contemporary',
+      elements: 'Lifestyle photos, modern filters, contemporary typography, aspirational imagery, clean layouts',
+      description: 'Create an aspirational lifestyle design with modern imagery and contemporary styling. Think lifestyle brand or modern influencer aesthetics - aspirational, contemporary, and lifestyle-focused.'
     },
     {
       style: 'Neon Cyberpunk',
@@ -787,6 +787,117 @@ function getAdvancedPeopleInstructions(businessType: string, location: string): 
 - Include intergenerational representation when appropriate
 - Show modern African/local fashion and styling
 - Ensure people are central to the story, not just decorative elements`;
+}
+
+// NEW: Enhanced product intelligence for contextual awareness and marketing appeal
+function getProductIntelligence(imageText: string, businessType: string): string {
+  const text = imageText.toLowerCase();
+  
+  // Phone/Electronics Intelligence
+  if (text.includes('samsung') || text.includes('note') || text.includes('galaxy') || text.includes('iphone') || text.includes('phone') || text.includes('mobile')) {
+    return `PRODUCT INTELLIGENCE: This is about a PHONE/MOBILE DEVICE. Use specific language like "UPGRADE YOUR PHONE", "NEW PHONE", "MOBILE UPGRADE" instead of generic "TECH" terms.
+
+MARKETING APPEAL STRATEGY FOR PHONES:
+- Focus on: Camera quality, performance, storage, design, status symbol
+- Visual elements: Show the phone prominently, highlight camera features, display screen quality
+- Emotional triggers: "Capture every moment", "Stay connected", "Premium experience", "Cutting-edge technology"
+- Target audience: Tech enthusiasts, professionals, social media users, young adults
+- Design approach: Modern, sleek, premium aesthetics with clean lines and high contrast`;
+  }
+  
+  // Laptop/Computer Intelligence
+  if (text.includes('laptop') || text.includes('computer') || text.includes('macbook') || text.includes('dell') || text.includes('hp')) {
+    return `PRODUCT INTELLIGENCE: This is about a LAPTOP/COMPUTER. Use specific language like "UPGRADE YOUR LAPTOP", "NEW COMPUTER", "LAPTOP DEAL" instead of generic "TECH" terms.
+
+MARKETING APPEAL STRATEGY FOR LAPTOPS:
+- Focus on: Performance, portability, battery life, screen quality, productivity
+- Visual elements: Show laptop in use, highlight screen clarity, emphasize portability
+- Emotional triggers: "Boost productivity", "Work anywhere", "Powerful performance", "Professional grade"
+- Target audience: Professionals, students, remote workers, creative professionals
+- Design approach: Clean, professional, productivity-focused with modern workspace aesthetics`;
+  }
+  
+  // Car/Vehicle Intelligence
+  if (text.includes('car') || text.includes('vehicle') || text.includes('toyota') || text.includes('honda') || text.includes('bmw') || text.includes('mercedes')) {
+    return `PRODUCT INTELLIGENCE: This is about a VEHICLE/CAR. Use specific language like "NEW CAR", "CAR DEAL", "VEHICLE UPGRADE" instead of generic terms.
+
+MARKETING APPEAL STRATEGY FOR CARS:
+- Focus on: Performance, luxury, reliability, fuel efficiency, safety, status
+- Visual elements: Show car in motion, highlight design features, emphasize interior/exterior
+- Emotional triggers: "Freedom to explore", "Luxury experience", "Safe journey", "Adventure awaits"
+- Target audience: Families, professionals, adventure seekers, luxury buyers
+- Design approach: Dynamic, aspirational, lifestyle-focused with motion and energy`;
+  }
+  
+  // Food/Restaurant Intelligence
+  if (text.includes('pizza') || text.includes('burger') || text.includes('food') || text.includes('meal') || text.includes('restaurant') || text.includes('delivery')) {
+    return `PRODUCT INTELLIGENCE: This is about FOOD/DINING. Use specific language like "DELICIOUS FOOD", "FRESH MEAL", "FOOD DELIVERY" instead of generic terms.
+
+MARKETING APPEAL STRATEGY FOR FOOD:
+- Focus on: Taste, freshness, presentation, convenience, comfort, social experience
+- Visual elements: Show food prominently, highlight ingredients, emphasize presentation
+- Emotional triggers: "Mouth-watering", "Fresh ingredients", "Comfort food", "Share with loved ones"
+- Target audience: Food lovers, families, busy professionals, social groups
+- Design approach: Warm, appetizing, social, vibrant colors, food-focused imagery`;
+  }
+  
+  // Fashion/Clothing Intelligence
+  if (text.includes('shirt') || text.includes('dress') || text.includes('clothes') || text.includes('fashion') || text.includes('outfit') || text.includes('style')) {
+    return `PRODUCT INTELLIGENCE: This is about FASHION/CLOTHING. Use specific language like "NEW STYLE", "FASHION TREND", "CLOTHING DEAL" instead of generic terms.
+
+MARKETING APPEAL STRATEGY FOR FASHION:
+- Focus on: Style, quality, trendiness, confidence, self-expression, fit
+- Visual elements: Show clothing on models, highlight details, emphasize style
+- Emotional triggers: "Express yourself", "Feel confident", "Stay trendy", "Perfect fit"
+- Target audience: Fashion-conscious individuals, young adults, professionals, style enthusiasts
+- Design approach: Trendy, aspirational, lifestyle-focused with modern aesthetics`;
+  }
+  
+  // Beauty/Cosmetics Intelligence
+  if (text.includes('makeup') || text.includes('cosmetic') || text.includes('beauty') || text.includes('skincare') || text.includes('perfume') || text.includes('lipstick')) {
+    return `PRODUCT INTELLIGENCE: This is about BEAUTY/COSMETICS. Use specific language like "BEAUTY PRODUCTS", "COSMETIC DEAL", "SKINCARE" instead of generic terms.
+
+MARKETING APPEAL STRATEGY FOR BEAUTY:
+- Focus on: Results, quality, natural ingredients, confidence, self-care, transformation
+- Visual elements: Show before/after, highlight product details, emphasize results
+- Emotional triggers: "Feel beautiful", "Natural glow", "Confidence boost", "Self-care ritual"
+- Target audience: Beauty enthusiasts, young women, professionals, self-care focused individuals
+- Design approach: Elegant, feminine, aspirational, clean with soft colors and premium feel`;
+  }
+  
+  // Home/Furniture Intelligence
+  if (text.includes('furniture') || text.includes('sofa') || text.includes('chair') || text.includes('table') || text.includes('home') || text.includes('decor')) {
+    return `PRODUCT INTELLIGENCE: This is about HOME/FURNITURE. Use specific language like "HOME DECOR", "FURNITURE DEAL", "HOME UPGRADE" instead of generic terms.
+
+MARKETING APPEAL STRATEGY FOR HOME/FURNITURE:
+- Focus on: Comfort, style, quality, durability, home improvement, lifestyle
+- Visual elements: Show furniture in home settings, highlight comfort, emphasize style
+- Emotional triggers: "Create your sanctuary", "Comfortable living", "Style your space", "Quality that lasts"
+- Target audience: Homeowners, families, interior design enthusiasts, young professionals
+- Design approach: Warm, inviting, lifestyle-focused with home aesthetics`;
+  }
+  
+  // Fitness/Health Intelligence
+  if (text.includes('gym') || text.includes('fitness') || text.includes('workout') || text.includes('exercise') || text.includes('health') || text.includes('training')) {
+    return `PRODUCT INTELLIGENCE: This is about FITNESS/HEALTH. Use specific language like "FITNESS TRAINING", "HEALTHY LIFESTYLE", "WORKOUT DEAL" instead of generic terms.
+
+MARKETING APPEAL STRATEGY FOR FITNESS:
+- Focus on: Results, motivation, health benefits, community, transformation, energy
+- Visual elements: Show active people, highlight equipment, emphasize results
+- Emotional triggers: "Transform your body", "Feel energized", "Join the community", "Achieve your goals"
+- Target audience: Fitness enthusiasts, health-conscious individuals, beginners, athletes
+- Design approach: Energetic, motivational, dynamic with bold colors and action imagery`;
+  }
+  
+  // Default Intelligence
+  return `PRODUCT INTELLIGENCE: Analyze the specific product/service being advertised and use precise, contextual language that matches what's actually being sold. Avoid generic terms like "TECH" when advertising specific products.
+
+GENERAL MARKETING APPEAL STRATEGY:
+- Focus on: Benefits, quality, value, customer satisfaction, results
+- Visual elements: Show product in use, highlight key features, emphasize benefits
+- Emotional triggers: "Transform your experience", "Quality you can trust", "Results that matter"
+- Target audience: Identify the specific customer segment and their needs
+- Design approach: Professional, trustworthy, benefit-focused with clear value proposition`;
 }
 
 // NEW: Industry Intelligence System with World-Class Design Benchmarks
@@ -2773,8 +2884,11 @@ ANTI-GENERIC REQUIREMENTS:
     // NEW: Get industry intelligence and creativity framework
     const industryIntel = getIndustryDesignIntelligence(input.businessType);
     const creativityFramework = getEnhancedCreativityFramework(input.businessType, designVariations.style, designSeed);
+    
+    // NEW: Enhanced product intelligence for contextual awareness
+    const productIntelligence = getProductIntelligence(input.imageText, input.businessType);
 
-    let imagePrompt = `🎨 Create a ${designVariations.style.toLowerCase()} social media design for ${input.businessName} that looks completely different from typical business posts and feels genuinely human-made.
+    let imagePrompt = `🎨 Create a visually stunning, modern ${designVariations.style.toLowerCase()} social media design for ${input.businessName} that stops scrolling and drives engagement.
 
 BUSINESS CONTEXT:
 - Business: ${input.businessName} (${input.businessType})
@@ -2787,13 +2901,29 @@ ${ctaInstructions}
 TEXT CONTENT TO DISPLAY:
 ${contentStructure.map(item => `- ${item}`).join('\n')}
 
-DESIGN APPROACH:
-- Create a design that's VISUALLY APPEALING and engaging
-- Focus on the specific style: ${designVariations.style}
-- Make it look genuinely different from other design types
-- Each design type should have its own unique visual language
-- **MOST IMPORTANT: Make it look like a human designer made it, not AI**
+**VISUAL APPEAL REQUIREMENTS:**
+- Create a design that DEMANDS ATTENTION and encourages engagement
+- Use modern design trends: gradients, shadows, contemporary typography, clean layouts
+- Focus on strong visual hierarchy with one clear focal point
+- Make it look like a premium brand campaign, not a generic business post
+- Ensure the design feels current and on-trend
+
+**DESIGN STYLE EXECUTION:**
+- Follow the specific style: ${designVariations.style}
+- Each style must look completely different and unique
+- ${designVariations.description}
+- Each style should have its own distinct visual language
 - **CRITICAL: Include ALL text content listed above in the design**
+
+**MODERN DESIGN ELEMENTS TO INCLUDE:**
+- Subtle gradients and color transitions for depth
+- Soft shadows and modern depth effects
+- Contemporary typography with clear hierarchy
+- Clean geometric shapes and patterns
+- Strategic white space (30-40%, not excessive)
+- High-quality visual elements that build trust
+
+${productIntelligence}
 
 VISUAL STYLE:
 - ${businessDesignDNA}
@@ -2865,7 +2995,7 @@ TECHNICAL REQUIREMENTS:
 - Logo integration should look natural
 - Optimized for Instagram, Facebook, Twitter, LinkedIn mobile viewing
 
-🎨 GOAL: Create a ${designVariations.style.toLowerCase()} design that looks completely different from other design types while feeling genuinely human-made. Focus on the specific style requirements, make it unique, and add subtle local touches without being overwhelming. The design should look like a skilled human designer created it, not AI.`;
+🎨 **GOAL: Create a visually stunning ${designVariations.style.toLowerCase()} design that stops scrolling, drives engagement, and makes people want to learn more about the business. Focus on modern aesthetics, strong visual impact, and professional quality that rivals top-tier brand campaigns.**`;
 
     // NEW: Enhance with industry intelligence and creativity
     imagePrompt = enhanceDesignWithIndustryIntelligence(imagePrompt, input.businessType, designVariations.style, designSeed);

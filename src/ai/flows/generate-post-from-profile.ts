@@ -30,56 +30,56 @@ import {
 } from '@/ai/prompts/advanced-design-prompts';
 // Clean design system implemented inline for immediate use
 
-// 7 Different Design Template Styles for Variety - STRONG VISUAL DIFFERENTIATION
+// 7 Modern Design Template Styles - FOCUSED ON VISUAL APPEAL AND ENGAGEMENT
 const DESIGN_TEMPLATES = [
   {
-    name: "Motivational Quote",
-    style: "WATERCOLOR BACKGROUND - NO ILLUSTRATIONS",
-    description: "MANDATORY: Soft watercolor wash background in pastels (pink/blue/purple). NO illustrations, NO graphics, NO icons. Only elegant typography on watercolor texture.",
-    elements: ["watercolor texture background", "script font headlines", "minimal text-only design"],
-    forbidden: ["illustrations", "graphics", "icons", "people", "objects", "geometric shapes"]
+    name: "Modern Minimalist",
+    style: "CLEAN MODERN DESIGN - SOPHISTICATED AESTHETICS",
+    description: "MANDATORY: Clean, sophisticated layout with strategic white space, subtle gradients, and modern typography. Think Apple or premium brand aesthetics.",
+    elements: ["subtle gradients", "modern typography", "clean geometric shapes", "strategic white space", "soft shadows"],
+    forbidden: ["busy backgrounds", "complex patterns", "excessive elements", "outdated styles"]
   },
   {
-    name: "Behind the Brand",
-    style: "CUSTOM ILLUSTRATIONS ONLY",
-    description: "MANDATORY: Hand-drawn style illustrations of business elements. Illustrated style with warm storytelling visuals.",
-    elements: ["custom illustrations", "hand-drawn style", "storytelling visuals"],
-    forbidden: ["photos", "watercolor", "geometric shapes", "minimal design"]
+    name: "Bold Vibrant",
+    style: "HIGH-ENERGY MODERN DESIGN - ATTENTION-GRABBING",
+    description: "MANDATORY: Dynamic, energetic design with bold colors, modern gradients, and contemporary layouts. High visual impact that demands attention.",
+    elements: ["bold colors", "modern gradients", "dynamic layouts", "contemporary patterns", "strong typography"],
+    forbidden: ["boring layouts", "muted colors", "static designs", "outdated aesthetics"]
   },
   {
-    name: "Engagement Post",
-    style: "SPLIT PHOTO COLLAGE - NO ILLUSTRATIONS",
-    description: "MANDATORY: Split screen layout with real photos on each side. 'This or That' style with bold text overlay. NO illustrations allowed.",
-    elements: ["split screen layout", "real photographs", "comparison design", "bold overlay text"],
-    forbidden: ["illustrations", "watercolor", "single image", "minimal design"]
+    name: "Photo-Driven Modern",
+    style: "LIFESTYLE PHOTO FOCUS - MAGAZINE AESTHETICS",
+    description: "MANDATORY: Large, high-quality photo as main element with modern text overlays and contemporary styling. Think modern magazine or lifestyle brand.",
+    elements: ["high-quality photos", "modern text overlays", "contemporary filters", "clean typography", "magazine-style layout"],
+    forbidden: ["low-quality images", "outdated photo styles", "poor text placement", "generic layouts"]
   },
   {
-    name: "Promotional Highlight",
-    style: "BOLD TYPOGRAPHY FOCUS - MINIMAL GRAPHICS",
-    description: "MANDATORY: Typography-driven design with clean background. Focus on text hierarchy and product showcase. Minimal geometric accents only.",
-    elements: ["large typography", "text hierarchy", "clean background", "minimal geometric accents"],
-    forbidden: ["illustrations", "watercolor", "complex graphics", "busy backgrounds"]
+    name: "Creative Artistic",
+    style: "ARTISTIC MODERN DESIGN - CREATIVE VISUAL INTEREST",
+    description: "MANDATORY: Creative, artistic design with hand-drawn elements, unique compositions, and modern artistic treatments. Think modern art meets graphic design.",
+    elements: ["hand-drawn elements", "artistic effects", "creative typography", "unique compositions", "modern artistic touches"],
+    forbidden: ["generic templates", "boring layouts", "uninspired designs", "outdated artistic styles"]
   },
   {
-    name: "Fun/Trending",
-    style: "MEME TEMPLATE - WHITE BACKGROUND",
-    description: "MANDATORY: Clean white background with meme-style text placement. Simple, humorous layout with minimal visual elements.",
-    elements: ["white background", "meme-style text", "simple layout", "humorous approach"],
-    forbidden: ["illustrations", "watercolor", "complex graphics", "busy designs", "multiple colors"]
+    name: "Luxury Premium",
+    style: "SOPHISTICATED LUXURY DESIGN - HIGH-END AESTHETICS",
+    description: "MANDATORY: Elegant, sophisticated design with premium materials, refined typography, and luxury aesthetics. Think high-end luxury brand campaigns.",
+    elements: ["elegant typography", "sophisticated colors", "luxury imagery", "refined details", "premium materials"],
+    forbidden: ["cheap aesthetics", "generic designs", "poor quality elements", "unprofessional styling"]
   },
   {
-    name: "Customer Love",
-    style: "POLAROID FRAME - RETRO PHOTO STYLE",
-    description: "MANDATORY: Polaroid photo frame design with retro styling. Testimonial presentation with vintage photo aesthetic.",
-    elements: ["polaroid frame", "retro photo style", "vintage aesthetic", "testimonial layout"],
-    forbidden: ["illustrations", "watercolor", "modern design", "minimal layout"]
+    name: "Tech Modern",
+    style: "FUTURISTIC TECH DESIGN - CONTEMPORARY DIGITAL AESTHETICS",
+    description: "MANDATORY: Modern, tech-forward design with contemporary digital aesthetics, sleek interfaces, and cutting-edge visual elements.",
+    elements: ["digital effects", "modern interfaces", "tech imagery", "contemporary gradients", "sleek typography"],
+    forbidden: ["outdated tech styles", "generic designs", "poor digital aesthetics", "uninspired layouts"]
   },
   {
-    name: "Creativity + Brand Values",
-    style: "MIXED MEDIA ARTISTIC - WATERCOLOR + ELEMENTS",
-    description: "MANDATORY: Watercolor splash background combined with artistic mixed media elements. Creative inspiration with artistic flair.",
-    elements: ["watercolor splash", "mixed media", "artistic elements", "creative inspiration"],
-    forbidden: ["pure illustrations", "clean minimal", "geometric only", "photo-based"]
+    name: "Lifestyle Aspirational",
+    style: "ASPIRATIONAL LIFESTYLE DESIGN - MODERN LIFESTYLE AESTHETICS",
+    description: "MANDATORY: Aspirational lifestyle design with modern imagery, contemporary styling, and lifestyle-focused aesthetics that inspire action.",
+    elements: ["lifestyle photos", "modern filters", "contemporary typography", "aspirational imagery", "clean layouts"],
+    forbidden: ["outdated lifestyle styles", "generic imagery", "poor quality photos", "uninspiring designs"]
   }
 ];
 // Enhanced design system temporarily disabled - will be re-enabled after module resolution
@@ -529,16 +529,16 @@ ${ethnicityInstructions}
 
 **CRITICAL: You MUST follow the template style exactly. Do NOT default to illustrations if the template specifies otherwise.**
 
-**STRICT REQUIREMENTS - FOLLOW EXACTLY:**
-- Use ONLY 3 visual elements maximum: logo, main text, one simple accent
-- 50%+ of the design must be white/empty space
-- Single, clean sans-serif font family only
-- MAXIMUM 3 COLORS TOTAL in entire design
-- NO LINES: no decorative lines, borders, dividers, or linear elements
-- No decorative elements, shapes, or complex backgrounds
+**MODERN DESIGN REQUIREMENTS - FOCUS ON VISUAL APPEAL:**
+- Use 4-5 visual elements for rich, engaging designs: logo, main text, accent elements, supporting graphics
+- 30-40% white space for clean, modern layouts (not excessive empty space)
+- 1-2 font families maximum for clean typography hierarchy
+- MAXIMUM 3 COLORS TOTAL in entire design (as requested)
+- ALLOW decorative elements: subtle lines, geometric shapes, patterns for visual interest
+- Include modern design elements: gradients, shadows, clean geometric shapes
 - High contrast for perfect readability
-- Generous margins and spacing throughout
-- One clear focal point only
+- Balanced margins and spacing throughout
+- One clear focal point with supporting elements
 
 **MAXIMUM 3 COLORS ONLY - BRAND COLORS:**
 - Primary Color: ${input.primaryColor} (DOMINANT - 60-70% of design)
