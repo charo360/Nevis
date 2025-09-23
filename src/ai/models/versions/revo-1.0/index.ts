@@ -23,11 +23,11 @@ export class Revo10Implementation implements IModelImplementation {
   constructor() {
     try {
       this.model = getModelConfig('revo-1.0');
-      
+
       this.contentGenerator = new Revo10ContentGenerator();
-      
+
       this.designGenerator = new Revo10DesignGenerator();
-      
+
     } catch (error) {
       throw error;
     }
@@ -41,6 +41,7 @@ export class Revo10Implementation implements IModelImplementation {
       // Check if the underlying AI service (Gemini 2.5 Flash Image Preview) is available
       // For now, we'll assume it's available if we have the API key
       const hasApiKey = !!(
+        process.env.GEMINI_API_KEY_REVO_1_0 ||
         process.env.GEMINI_API_KEY ||
         process.env.GOOGLE_API_KEY ||
         process.env.GOOGLE_GENAI_API_KEY

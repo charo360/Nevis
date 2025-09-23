@@ -32,6 +32,7 @@ export class Revo15Implementation implements IModelImplementation {
     try {
       // Check if Gemini 2.5 (preferred) or fallback services are available
       const hasGeminiKey = !!(
+        process.env.GEMINI_API_KEY_REVO_1_5 ||
         process.env.GEMINI_API_KEY ||
         process.env.GOOGLE_API_KEY ||
         process.env.GOOGLE_GENAI_API_KEY

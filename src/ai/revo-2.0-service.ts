@@ -81,10 +81,11 @@ let openai: OpenAI | null = null;
 
 function getGoogleAI(): GoogleGenerativeAI {
   if (!ai) {
-    if (!process.env.GEMINI_API_KEY) {
-      throw new Error('GEMINI_API_KEY environment variable is required');
+    const apiKey = process.env.GEMINI_API_KEY_REVO_2_0 || process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error('Revo 2.0: No Gemini API key found. Please set GEMINI_API_KEY_REVO_2_0 or GEMINI_API_KEY in your environment variables.');
     }
-    ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    ai = new GoogleGenerativeAI(apiKey);
   }
   return ai;
 }

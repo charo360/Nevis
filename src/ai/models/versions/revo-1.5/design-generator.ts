@@ -321,6 +321,7 @@ export class Revo15DesignGenerator implements IDesignGenerator {
     try {
       // Check if we can access enhanced AI services
       const hasGeminiKey = !!(
+        process.env.GEMINI_API_KEY_REVO_1_5 ||
         process.env.GEMINI_API_KEY ||
         process.env.GOOGLE_API_KEY ||
         process.env.GOOGLE_GENAI_API_KEY

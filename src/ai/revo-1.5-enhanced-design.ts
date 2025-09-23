@@ -868,9 +868,9 @@ export async function generateFinalImage(
       // Use direct Gemini generation like Revo 2.0 for proper logo integration
       const { GoogleGenerativeAI } = await import('@google/generative-ai');
 
-      const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
+      const apiKey = process.env.GEMINI_API_KEY_REVO_1_5 || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
       if (!apiKey) {
-        throw new Error('No Gemini API key found for Revo 1.5 generation');
+        throw new Error('Revo 1.5: No Gemini API key found. Please set GEMINI_API_KEY_REVO_1_5 or GEMINI_API_KEY in your environment variables.');
       }
 
       const genAI = new GoogleGenerativeAI(apiKey);

@@ -128,19 +128,19 @@ export class Revo15ContentGenerator implements IContentGenerator {
     try {
       console.log('🖼️  [Revo 1.5 Content] Fetching logo from storage:', logoUrl.substring(0, 100) + '...');
       const response = await fetch(logoUrl);
-      
+
       if (!response.ok) {
         console.warn('⚠️  [Revo 1.5 Content] Logo fetch failed:', response.status, response.statusText);
         return '';
       }
-      
+
       const arrayBuffer = await response.arrayBuffer();
       const base64String = Buffer.from(arrayBuffer).toString('base64');
-      
+
       // Determine content type
       const contentType = response.headers.get('content-type') || 'image/png';
       const logoDataUrl = `data:${contentType};base64,${base64String}`;
-      
+
       console.log('✅ [Revo 1.5 Content] Logo converted to base64:', logoDataUrl.length, 'characters');
       return logoDataUrl;
     } catch (error) {
@@ -159,12 +159,12 @@ export class Revo15ContentGenerator implements IContentGenerator {
     // Handle logo conversion from storage URL to data URL
     let processedLogoDataUrl = profile.logoDataUrl || '';
     const logoUrl = profile.logoUrl;
-    
+
     if (logoUrl && !processedLogoDataUrl) {
       console.log('🔄 [Revo 1.5 Content] Converting logo from storage URL to base64...');
       processedLogoDataUrl = await this.fetchAndConvertLogo(logoUrl);
     }
-    
+
     if (processedLogoDataUrl) {
       console.log('🖼️  [Revo 1.5 Content] Logo available for content generation:', processedLogoDataUrl.length, 'characters');
     } else {
@@ -298,6 +298,7 @@ export class Revo15ContentGenerator implements IContentGenerator {
     try {
       // Check if we can access enhanced AI services
       const hasGeminiKey = !!(
+        process.env.GEMINI_API_KEY_REVO_1_5 ||
         process.env.GEMINI_API_KEY ||
         process.env.GOOGLE_API_KEY ||
         process.env.GOOGLE_GENAI_API_KEY

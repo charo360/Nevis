@@ -296,6 +296,7 @@ export class Revo10ContentGenerator implements IContentGenerator {
     try {
       // Check if we can access the AI service
       const hasApiKey = !!(
+        process.env.GEMINI_API_KEY_REVO_1_0 ||
         process.env.GEMINI_API_KEY ||
         process.env.GOOGLE_API_KEY ||
         process.env.GOOGLE_GENAI_API_KEY

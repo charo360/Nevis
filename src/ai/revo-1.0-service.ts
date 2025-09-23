@@ -792,7 +792,7 @@ function getAdvancedPeopleInstructions(businessType: string, location: string): 
 // NEW: Enhanced product intelligence for contextual awareness and marketing appeal
 function getProductIntelligence(imageText: string, businessType: string): string {
   const text = imageText.toLowerCase();
-  
+
   // Phone/Electronics Intelligence
   if (text.includes('samsung') || text.includes('note') || text.includes('galaxy') || text.includes('iphone') || text.includes('phone') || text.includes('mobile')) {
     return `PRODUCT INTELLIGENCE: This is about a PHONE/MOBILE DEVICE. Use specific language like "UPGRADE YOUR PHONE", "NEW PHONE", "MOBILE UPGRADE" instead of generic "TECH" terms.
@@ -804,7 +804,7 @@ MARKETING APPEAL STRATEGY FOR PHONES:
 - Target audience: Tech enthusiasts, professionals, social media users, young adults
 - Design approach: Modern, sleek, premium aesthetics with clean lines and high contrast`;
   }
-  
+
   // Laptop/Computer Intelligence
   if (text.includes('laptop') || text.includes('computer') || text.includes('macbook') || text.includes('dell') || text.includes('hp')) {
     return `PRODUCT INTELLIGENCE: This is about a LAPTOP/COMPUTER. Use specific language like "UPGRADE YOUR LAPTOP", "NEW COMPUTER", "LAPTOP DEAL" instead of generic "TECH" terms.
@@ -816,7 +816,7 @@ MARKETING APPEAL STRATEGY FOR LAPTOPS:
 - Target audience: Professionals, students, remote workers, creative professionals
 - Design approach: Clean, professional, productivity-focused with modern workspace aesthetics`;
   }
-  
+
   // Car/Vehicle Intelligence
   if (text.includes('car') || text.includes('vehicle') || text.includes('toyota') || text.includes('honda') || text.includes('bmw') || text.includes('mercedes')) {
     return `PRODUCT INTELLIGENCE: This is about a VEHICLE/CAR. Use specific language like "NEW CAR", "CAR DEAL", "VEHICLE UPGRADE" instead of generic terms.
@@ -828,7 +828,7 @@ MARKETING APPEAL STRATEGY FOR CARS:
 - Target audience: Families, professionals, adventure seekers, luxury buyers
 - Design approach: Dynamic, aspirational, lifestyle-focused with motion and energy`;
   }
-  
+
   // Food/Restaurant Intelligence
   if (text.includes('pizza') || text.includes('burger') || text.includes('food') || text.includes('meal') || text.includes('restaurant') || text.includes('delivery')) {
     return `PRODUCT INTELLIGENCE: This is about FOOD/DINING. Use specific language like "DELICIOUS FOOD", "FRESH MEAL", "FOOD DELIVERY" instead of generic terms.
@@ -840,7 +840,7 @@ MARKETING APPEAL STRATEGY FOR FOOD:
 - Target audience: Food lovers, families, busy professionals, social groups
 - Design approach: Warm, appetizing, social, vibrant colors, food-focused imagery`;
   }
-  
+
   // Fashion/Clothing Intelligence
   if (text.includes('shirt') || text.includes('dress') || text.includes('clothes') || text.includes('fashion') || text.includes('outfit') || text.includes('style')) {
     return `PRODUCT INTELLIGENCE: This is about FASHION/CLOTHING. Use specific language like "NEW STYLE", "FASHION TREND", "CLOTHING DEAL" instead of generic terms.
@@ -852,7 +852,7 @@ MARKETING APPEAL STRATEGY FOR FASHION:
 - Target audience: Fashion-conscious individuals, young adults, professionals, style enthusiasts
 - Design approach: Trendy, aspirational, lifestyle-focused with modern aesthetics`;
   }
-  
+
   // Beauty/Cosmetics Intelligence
   if (text.includes('makeup') || text.includes('cosmetic') || text.includes('beauty') || text.includes('skincare') || text.includes('perfume') || text.includes('lipstick')) {
     return `PRODUCT INTELLIGENCE: This is about BEAUTY/COSMETICS. Use specific language like "BEAUTY PRODUCTS", "COSMETIC DEAL", "SKINCARE" instead of generic terms.
@@ -864,7 +864,7 @@ MARKETING APPEAL STRATEGY FOR BEAUTY:
 - Target audience: Beauty enthusiasts, young women, professionals, self-care focused individuals
 - Design approach: Elegant, feminine, aspirational, clean with soft colors and premium feel`;
   }
-  
+
   // Home/Furniture Intelligence
   if (text.includes('furniture') || text.includes('sofa') || text.includes('chair') || text.includes('table') || text.includes('home') || text.includes('decor')) {
     return `PRODUCT INTELLIGENCE: This is about HOME/FURNITURE. Use specific language like "HOME DECOR", "FURNITURE DEAL", "HOME UPGRADE" instead of generic terms.
@@ -876,7 +876,7 @@ MARKETING APPEAL STRATEGY FOR HOME/FURNITURE:
 - Target audience: Homeowners, families, interior design enthusiasts, young professionals
 - Design approach: Warm, inviting, lifestyle-focused with home aesthetics`;
   }
-  
+
   // Fitness/Health Intelligence
   if (text.includes('gym') || text.includes('fitness') || text.includes('workout') || text.includes('exercise') || text.includes('health') || text.includes('training')) {
     return `PRODUCT INTELLIGENCE: This is about FITNESS/HEALTH. Use specific language like "FITNESS TRAINING", "HEALTHY LIFESTYLE", "WORKOUT DEAL" instead of generic terms.
@@ -888,7 +888,7 @@ MARKETING APPEAL STRATEGY FOR FITNESS:
 - Target audience: Fitness enthusiasts, health-conscious individuals, beginners, athletes
 - Design approach: Energetic, motivational, dynamic with bold colors and action imagery`;
   }
-  
+
   // Default Intelligence
   return `PRODUCT INTELLIGENCE: Analyze the specific product/service being advertised and use precise, contextual language that matches what's actually being sold. Avoid generic terms like "TECH" when advertising specific products.
 
@@ -2045,8 +2045,9 @@ function generateLocalOpportunities(businessType: string, location: string): any
   return opportunities.slice(0, 2);
 }
 
-// Get API keys (supporting both server-side and client-side)
+// Get Revo 1.0 specific API key
 const apiKey =
+  process.env.GEMINI_API_KEY_REVO_1_0 ||
   process.env.GEMINI_API_KEY ||
   process.env.GOOGLE_API_KEY ||
   process.env.GOOGLE_GENAI_API_KEY ||
@@ -2055,6 +2056,7 @@ const apiKey =
   process.env.NEXT_PUBLIC_GOOGLE_GENAI_API_KEY;
 
 if (!apiKey) {
+  throw new Error('Revo 1.0: No Gemini API key found. Please set GEMINI_API_KEY_REVO_1_0 or GEMINI_API_KEY in your environment variables.');
 }
 
 // Initialize Google GenAI client with Revo 1.0 configuration
@@ -2884,7 +2886,7 @@ ANTI-GENERIC REQUIREMENTS:
     // NEW: Get industry intelligence and creativity framework
     const industryIntel = getIndustryDesignIntelligence(input.businessType);
     const creativityFramework = getEnhancedCreativityFramework(input.businessType, designVariations.style, designSeed);
-    
+
     // NEW: Enhanced product intelligence for contextual awareness
     const productIntelligence = getProductIntelligence(input.imageText, input.businessType);
 
