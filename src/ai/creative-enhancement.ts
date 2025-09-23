@@ -338,10 +338,13 @@ export const BUSINESS_INTELLIGENCE_SYSTEM = {
       emotionalTone: 'expert, trustworthy, helpful'
     },
     'conversion': {
-      goal: 'Drive action and sales',
-      approach: 'Urgency, offers, clear benefits, strong CTAs',
-      contentTypes: ['special offers', 'limited time deals', 'clear benefits', 'action-oriented content'],
-      emotionalTone: 'urgent, compelling, confident'
+      goal: 'Drive immediate sales and purchase decisions',
+      approach: 'Product specifications, pricing emphasis, purchase incentives, urgency, direct sales language',
+      contentTypes: ['product specifications', 'pricing highlights', 'purchase incentives', 'limited time offers', 'direct sales pitches', 'feature comparisons'],
+      emotionalTone: 'urgent, compelling, confident, sales-focused',
+      salesElements: ['specific pricing', 'product specs', 'storage/memory details', 'technical features', 'availability status', 'purchase urgency'],
+      ctaStyle: 'direct purchase-oriented',
+      contentFocus: 'product-first, specifications-heavy, price-prominent'
     },
     'retention': {
       goal: 'Keep existing customers engaged',
@@ -520,21 +523,23 @@ export async function generateBusinessSpecificHeadline(
 
   const contextualData = await getContextualData();
 
-  // Strategic location mention - only 25% of the time for headlines
-  const shouldMentionLocation = Math.random() < 0.25; // 25% chance for headlines
+  // Strategic location mention - use business details location strategy if available, otherwise 40% chance
+  const shouldMentionLocation = businessDetails.locationStrategy?.includeLocation ?? (Math.random() < 0.40); // 40% chance for headlines
 
   const locationContext = shouldMentionLocation
-    ? `You understand ${location} culture, language, and market dynamics. You know how businesses in ${location} market themselves successfully.`
-    : `You are a brilliant marketing expert who understands diverse markets and customer psychology. You create compelling headlines that focus on business value.`;
+    ? `You understand ${location} culture, language, and market dynamics. You know how businesses in ${location} market themselves successfully. Use location for LOCAL CREDIBILITY and COMMUNITY CONNECTION.`
+    : `You are a brilliant marketing expert who creates compelling headlines that focus on PRODUCT SPECIFICATIONS, UNIVERSAL VALUE PROPOSITIONS, and BROADER MARKET APPEAL. Avoid location references to appeal to customers beyond the local area.`;
 
   const businessLocationInfo = shouldMentionLocation
-    ? `- Location: ${location}
+    ? `- Location: ${location} (for local credibility and trust building)
 - Regional Marketing Style: ${marketingStyle}
 - Local Language Tone: ${regionalLanguage}
-- How locals talk about ${businessType}: ${getLocalBusinessLanguage(location, businessType)}`
-    : `- Focus: Business value and customer benefits
-- Marketing Style: Professional and engaging
-- Tone: Clear and compelling`;
+- How locals talk about ${businessType}: ${getLocalBusinessLanguage(location, businessType)}
+- Purpose: Community connection and geographic targeting`
+    : `- Focus: Product specifications, features, and universal benefits
+- Marketing Style: Professional and product-focused
+- Tone: Clear, compelling, and sales-oriented
+- Purpose: Broader market appeal beyond local customers`;
 
   const prompt = `${locationContext}
 
@@ -584,8 +589,8 @@ RELEVANCE CRITERIA:
 
 MARKETING STRATEGY:
 ${shouldMentionLocation
-      ? `You understand that in ${location}, people respond to ${marketingStyle} marketing. Use the trending keywords naturally and speak like locals do. Create content that feels authentic to ${location} culture and current market trends.`
-      : `Focus on universal business value and customer benefits. Use trending keywords naturally and create content that resonates with ${businessType} customers. Emphasize quality, reliability, and customer satisfaction.`}
+      ? `You understand that in ${location}, people respond to ${marketingStyle} marketing. Use location for LOCAL CREDIBILITY, COMMUNITY CONNECTION, and GEOGRAPHIC TARGETING. Create content that feels authentic to ${location} culture while incorporating current market trends.`
+      : `Focus on PRODUCT SPECIFICATIONS, UNIVERSAL VALUE PROPOSITIONS, and BROADER MARKET APPEAL. Emphasize product features, technical specifications, pricing, and benefits that appeal to customers beyond the local area. Create content that drives sales through product excellence rather than location-based trust.`}
 
 ${useLocalLanguage ? `
 LANGUAGE REQUIREMENTS:
@@ -638,42 +643,65 @@ LANGUAGE REQUIREMENTS:
 - Keep content in English for universal accessibility
 - Focus on local cultural understanding in English rather than local language mixing`}
 
-CONVERSION PSYCHOLOGY REQUIREMENTS:
-- Maximum 5 words that trigger immediate desire to try/buy
-- Use psychological triggers: scarcity, exclusivity, curiosity, FOMO
-- Create urgency and desire - make people think "I NEED this NOW"
-- Sound like a successful marketer who knows conversion psychology
-- Incorporate trending elements naturally (don't force them)
-- Use language patterns that drive action and engagement
-- Focus on what makes people instantly want to experience the service/product
-- Create curiosity gaps that make people want to know more
-- CRITICAL: NEVER start with business name + colon pattern (e.g., "${businessName}: DESCRIPTION")
-- Create headlines that stand alone without business name prefix
+HUMAN-LIKE CONTENT CREATION:
+- Write like you're genuinely excited to share something cool with a friend
+- Use conversational language that feels natural and authentic
+- Vary your sentence structure - mix short punchy statements with longer flowing ones
+- Include emotional triggers that make people actually FEEL something
+- Ask questions that get people thinking or engaged
+- Use the kind of language real people use when they're excited about something
+- Avoid corporate-speak, jargon, or overly formal language
+- Make it sound like a real person wrote it, not a marketing robot
 
-CONVERSION-FOCUSED EXAMPLES (DO NOT COPY THESE - CREATE SOMETHING COMPLETELY DIFFERENT):
-- "Secret Recipe Finally Revealed" (curiosity + exclusivity)
-- "Last Batch This Week" (scarcity + urgency)
-- "Addictive Flavors Warning Inside" (intrigue + benefit)
-- "Hidden Gem Locals Obsess" (social proof + exclusivity)
-- "Revolutionary Taste Experience Awaits" (innovation + anticipation)
+${businessDetails.productSpecStrategy?.useSpecs ? `
+🛍️ TECHNICAL FOCUS MODE - Make the specs shine!
+Hey, you've got some amazing technical details to work with: ${businessDetails.productSpecs.specifications.join(', ')}
+${businessDetails.productSpecs.pricing.length > 0 ? `And the pricing: ${businessDetails.productSpecs.pricing.join(', ')}` : ''}
 
-CRITICAL ANTI-REPETITION INSTRUCTIONS:
-❌ DO NOT use "2025's Best-Kept Secret" or any variation
-❌ DO NOT use "Chakula Kizuri" or repetitive Swahili phrases
-❌ DO NOT use "for your familia's delight" or similar family references
-❌ DO NOT use "Tired of..." or similar repetitive opening patterns
-❌ DO NOT start headlines with the same words repeatedly across different businesses
-❌ DO NOT use static templates that don't adapt to unique business context
-❌ DO NOT repeat opening phrases like "Tired of waiting", "Tired of slow", etc.
-❌ CREATE something completely original that has never been generated before
-❌ AVOID any pattern that sounds like a template or formula
+Your mission: Make these technical details sound absolutely irresistible
+- Lead with the most impressive spec or price point
+- Make technical features sound exciting and desirable
+- Use numbers and specs as the hero of your headline
+- Think "Wow, that's exactly what I've been looking for!"
+- Make it feel like they're getting incredible value
 
-IMPORTANT: Generate ONLY ONE headline, not multiple options or lists.
-Do NOT write "Here are headlines" or provide multiple choices.
-Generate ONE unique headline that makes people instantly want to try the service/product. Focus on conversion, not just awareness.
-CRITICAL: NEVER start with business name + colon pattern (e.g., "${businessName}: DESCRIPTION")
-Create headlines that stand alone without business name prefix
-Make it so specific to the service/product in ${location} that it could never be used for another business.`;
+Examples of the vibe (but create something totally different):
+- "128GB of pure power in your pocket"
+- "That $999 price tag? For THIS much tech?"
+- "A17 Pro chip just changed everything"
+` : `
+💝 EMOTIONAL FOCUS MODE - Make them feel something!
+Forget the technical stuff for now - this is all about the human experience and emotions.
+
+Your mission: Focus on how this makes people FEEL and the lifestyle benefits
+- What problem does this solve in their daily life?
+- How will they feel after using this service/product?
+- What lifestyle or emotional benefit are they really buying?
+- Make it about the experience, not the specifications
+- Think transformation, confidence, joy, peace of mind, community
+
+Examples of the vibe (but create something totally different):
+- "Finally, that confidence you've been looking for"
+- "Transform your mornings from chaos to calm"
+- "Join the community that gets it"
+`}
+
+HUMAN-LIKE HEADLINE INSPIRATION (Don't copy - just feel the vibe):
+- "Okay, this is actually incredible" (genuine excitement)
+- "Why didn't anyone tell me about this?" (discovery + curiosity)
+- "This changes everything I thought I knew" (transformation)
+- "Finally found what I've been searching for" (relief + satisfaction)
+- "You're going to want to see this" (friendly recommendation)
+
+KEEP IT FRESH AND AUTHENTIC:
+- Never use those overused marketing phrases that make people cringe
+- Avoid starting every headline the same way
+- Don't sound like every other business out there
+- Make it specific to THIS business and what makes them special
+- If it sounds like it could be copy-pasted to another business, try again
+- Trust your instincts - if it sounds robotic to you, it probably is
+
+Remember: Just write ONE amazing headline that captures the essence of what makes this business special. Make it sound like something a real person would say when they're genuinely excited about sharing a great discovery with a friend.`;
 
   try {
     // Add unique generation context to prevent repetitive responses
@@ -1001,13 +1029,9 @@ export async function generateBusinessSpecificSubheadline(
   // Strategic location mention - only 30% of the time for subheadlines
   const shouldMentionLocation = Math.random() < 0.30; // 30% chance for subheadlines
 
-  const marketingContext = shouldMentionLocation
-    ? `You are a skilled local marketer creating a subheadline for ${businessName} that will make people in ${location} want to visit immediately. You understand current trends and local marketing patterns.`
-    : `You are a skilled marketer creating a compelling subheadline for ${businessName} that will make customers want to visit immediately. You understand current trends and customer psychology.`;
+  const marketingContext = `You are a skilled personal marketing expert creating a subheadline for ${businessName} that will make the individual user reading this want to take action immediately. You understand how to speak directly to "YOU" - the person reading this - and make them feel personally addressed and valued.`;
 
-  const targetMarketInfo = shouldMentionLocation
-    ? `- Target Market: Local ${location} residents and visitors`
-    : `- Target Market: Customers seeking quality ${businessType} services`;
+  const targetMarketInfo = `- Target Market: Individual users seeking personal value and quality ${businessType} services`;
 
   const marketingIntelligence = shouldMentionLocation
     ? `CURRENT TRENDING INTELLIGENCE:
@@ -1020,9 +1044,7 @@ export async function generateBusinessSpecificSubheadline(
 - Marketing Style: Professional and engaging
 - Customer Language: Clear, benefit-focused communication`;
 
-  const marketingStrategy = shouldMentionLocation
-    ? `Create a subheadline that makes locals think "I need to try this place!" Use trending keywords naturally and speak like successful marketers in ${location} do. Focus on what makes ${businessName} irresistible to people in ${location}.`
-    : `Create a subheadline that makes customers think "I need to try this business!" Use trending keywords naturally and focus on clear value propositions. Emphasize what makes ${businessName} the best choice for ${businessType} services.`;
+  const marketingStrategy = `Create a subheadline that makes the individual user think "This is exactly what I need!" Use trending keywords naturally and speak directly to "YOU" - the individual person reading this. Focus on personal benefits, individual value, and what makes ${businessName} the perfect choice for YOU. Address the user directly with "you," "your," "your family" language. Make it feel like a personal recommendation, not a generic advertisement.`;
 
   const prompt = `${marketingContext}
 
@@ -1109,6 +1131,9 @@ REVO 1.5 PREMIUM SUBHEADLINE REQUIREMENTS:
 - Keep it concise but impactful - every word must earn its place
 - Ensure smooth readability and natural rhythm
 - Focus on business value and benefits rather than location references
+- CRITICAL: Always speak directly to "YOU" - use personal, direct language
+- Address the individual user, not groups or locations
+- Focus on personal benefits and individual value propositions
 
 Examples of effective subheadlines (DO NOT COPY THESE - CREATE SOMETHING COMPLETELY DIFFERENT):
 ${getLocalMarketingExamples(location, businessType).split('\n').map(line => line.replace('- "', '- "').replace('"', '" (subheadline style)')).slice(0, 3).join('\n')}
@@ -1130,6 +1155,14 @@ CRITICAL ANTI-REPETITION INSTRUCTIONS FOR SUBHEADLINES:
 ❌ CREATE something completely original that has never been generated before
 ❌ AVOID any pattern that sounds like a template or formula
 ❌ Make it specific to ${businessName}'s actual services and features
+
+PERSONAL MESSAGING REQUIREMENTS:
+✅ ALWAYS use "you," "your," "your family" - speak directly to the individual
+✅ Focus on personal benefits: "for you," "your success," "your needs"
+✅ Make it feel like a personal recommendation, not a generic ad
+✅ Address the individual user's specific pain points and desires
+✅ Use personal value propositions: "your satisfaction," "your peace of mind"
+✅ Create urgency around personal benefits: "your opportunity," "your chance"
 
 CREATIVITY REQUIREMENTS:
 - Generate a subheadline that sounds like it was written by a human copywriter, not AI
@@ -1382,17 +1415,65 @@ Use this ID to ensure this content is completely different from any previous gen
 
   const selectedCtaStyle = ctaStyles[creativityBoost % ctaStyles.length];
 
-  // Strategic location mention - only 20% of the time for unified content
-  const shouldMentionLocation = Math.random() < 0.20; // 20% chance for unified content
+  // Strategic location mention - use business details location strategy if available, otherwise 40% chance
+  const shouldMentionLocation = businessDetails.locationStrategy?.includeLocation ?? (Math.random() < 0.40); // 40% chance for unified content
+
   const locationContext = shouldMentionLocation
-    ? `You are a conversion-focused social media marketer creating a COMPLETE UNIFIED CAMPAIGN for ${businessName} that will make people in ${location} take immediate action.`
-    : `You are a conversion-focused social media marketer creating a COMPLETE UNIFIED CAMPAIGN for ${businessName} that will make customers take immediate action.`;
+    ? `You are a conversion-focused social media marketer creating a COMPLETE UNIFIED CAMPAIGN for ${businessName} that will make people in ${location} take immediate action. Use location for LOCAL CREDIBILITY and COMMUNITY CONNECTION.`
+    : `You are a conversion-focused social media marketer creating a COMPLETE UNIFIED CAMPAIGN for ${businessName} that will make customers take immediate action. Focus on PRODUCT SPECIFICATIONS and UNIVERSAL APPEAL for broader market reach.`;
 
   const targetMarketInfo = shouldMentionLocation
-    ? `- Target Market: Local ${location} residents and visitors`
-    : `- Target Market: Customers seeking quality ${businessType} services`;
+    ? `- Target Market: Local ${location} residents and visitors (geographic targeting)
+- Strategy: Local credibility and community connection`
+    : `- Target Market: Customers seeking quality ${businessType} products/services (universal appeal)
+- Strategy: Product specifications and broader market appeal`;
 
   const unifiedPrompt = `${locationContext} You must create ALL components (headline, subheadline, caption, CTA, design direction) that work together as ONE cohesive message.
+
+${businessDetails.productSpecStrategy?.useSpecs ? `
+🛍️ TECHNICAL FOCUS MODE - Let's make these specs irresistible!
+
+You've got some amazing technical details to work with:
+- Specs: ${businessDetails.productSpecs.specifications.join(', ')}
+- Pricing: ${businessDetails.productSpecs.pricing.join(', ')}
+- Features: ${businessDetails.productSpecs.features.join(', ')}
+
+For ALL your content (headline, subheadline, caption, CTA):
+- Make the technical details the star of the show
+- Lead with the most impressive numbers or features
+- Use pricing as a compelling hook when available
+- Make specs sound exciting, not boring
+- Think "This is exactly what I've been looking for!"
+- Use language like: "Get", "Featuring", "With", "Starting at", "Powered by"
+
+The goal: Make people excited about the technical excellence and value they're getting.
+` : `
+💝 EMOTIONAL FOCUS MODE - Let's connect with their hearts!
+
+Forget the technical details for now - this is all about the human experience.
+
+For ALL your content (headline, subheadline, caption, CTA):
+- Focus on how this makes people FEEL
+- What problem does this solve in their daily life?
+- What transformation or benefit are they really getting?
+- Make it about the experience, community, or lifestyle
+- Use emotional language: "Feel", "Experience", "Transform", "Discover", "Join"
+- Think confidence, joy, peace of mind, belonging, success
+
+The goal: Make people excited about how their life will be better with this business.
+`}
+
+${!shouldMentionLocation ? `
+🌍 UNIVERSAL APPEAL MODE - Speaking to everyone, everywhere!
+
+Since we're not focusing on location this time:
+- Skip the city names and local references
+- Make your content work for customers anywhere
+- Focus on what makes this business universally appealing
+- Use language that resonates with people regardless of where they live
+- Think about the core value that anyone would appreciate
+- Make it about the product, service, or experience itself
+` : ''}
 
 ${uniquenessPrompt}
 
@@ -1462,17 +1543,20 @@ REVO 1.5 PREMIUM SUBHEADLINE GENERATION REQUIREMENTS:
 - Maintain consistent tone and flow across all subheadlines
 - Keep it concise but impactful - every word must earn its place
 - Ensure smooth readability and natural rhythm
-- Examples of business-integrated subheadlines:
+- Examples of business-integrated subheadlines (PERSONAL & DIRECT):
   * "15-year experience, 200+ events monthly"
-  * ${shouldMentionLocation ? `"Same-day delivery for ${location} residents"` : `"Same-day delivery nationwide"`}
-  * "Certified organic, locally sourced ingredients"
-  * "24/7 service, 30-minute response time"
+  * "Same-day delivery just for you"
+  * "Certified organic ingredients for your family"
+  * "24/7 service when you need it most"
+  * "Your satisfaction guaranteed or money back"
+  * "Built specifically for your success"
+  * "Your personal success is our mission"
 
 SPECIFIC BUSINESS DETAILS:
 - Business Name: ${businessName}
 - Services/Products: ${businessDetails.services || businessDetails.expertise || businessDetails.specialties || 'quality offerings'}
 - Unique Features: ${businessDetails.uniqueFeatures || businessDetails.keyFeatures || 'exceptional service'}
-- Target Audience: ${businessDetails.targetAudience || (shouldMentionLocation ? `local ${location} residents and visitors` : 'customers seeking quality services')}
+- Target Audience: ${businessDetails.targetAudience || 'individuals seeking quality services and personal value'}
 - Business Hours: ${businessDetails.hours || 'regular business hours'}
 - Special Offers: ${businessDetails.offers || businessDetails.promotions || 'quality service at competitive prices'}
 
@@ -2427,7 +2511,11 @@ function generateFallbackCTA(platform: string): string {
       'You deserve this! 💎',
       'Made just for you! 🎯',
       'Your perfect match! 💕',
-      'Exactly what you need! ✅'
+      'Exactly what you need! ✅',
+      'Built for your success! 🚀',
+      'Your personal solution! ✨',
+      'Designed with you in mind! 💡',
+      'Your journey starts here! 🌟'
     ],
     'EXCLUSIVE': [
       'Members only access! 🔐',

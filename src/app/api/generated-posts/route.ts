@@ -48,7 +48,7 @@ async function uploadDataUrlToSupabase(dataUrl: string, userId: string, fileName
     if (!base64Data) {
       return { success: false, error: 'Invalid data URL format' };
     }
-    
+
     const buffer = Buffer.from(base64Data, 'base64');
     console.log(`📦 Buffer size: ${buffer.length} bytes`);
 
@@ -56,7 +56,7 @@ async function uploadDataUrlToSupabase(dataUrl: string, userId: string, fileName
     // Using public folder to match existing storage policies
     const uploadPath = `public/${fileName}`;
     console.log(`🎯 Upload path: ${uploadPath}`);
-    
+
     const { data, error } = await supabase.storage
       .from('nevis-storage')
       .upload(uploadPath, buffer, {
@@ -72,15 +72,15 @@ async function uploadDataUrlToSupabase(dataUrl: string, userId: string, fileName
         name: error.name,
         cause: error.cause
       });
-      
+
       // Provide more specific error information
       if (error.message?.includes('row-level security policy')) {
-        return { 
-          success: false, 
-          error: 'Storage permission error - RLS policy blocking upload. Please check Supabase storage policies or disable RLS for development.' 
+        return {
+          success: false,
+          error: 'Storage permission error - RLS policy blocking upload. Please check Supabase storage policies or disable RLS for development.'
         };
       }
-      
+
       return { success: false, error: error.message };
     }
 
@@ -135,9 +135,9 @@ export async function GET(request: NextRequest) {
           process.env.NEXT_PUBLIC_SUPABASE_URL!,
           process.env.SUPABASE_SERVICE_ROLE_KEY!
         );
-        
+
         const { data: { user }, error } = await supabaseAuth.auth.getUser(token);
-        
+
         if (error || !user) {
           // Fallback to MongoDB JWT authentication
           try {
@@ -181,7 +181,7 @@ export async function GET(request: NextRequest) {
     // Load posts from Supabase database
     try {
       console.log('🔄 Loading posts from Supabase database...');
-      
+
       let query = supabaseRead
         .from('generated_posts')
         .select(`
@@ -215,7 +215,7 @@ export async function GET(request: NextRequest) {
         .limit(limit);
 
       const { data: posts, error } = await query;
-      
+
       if (error) {
         console.error('❌ Supabase query error:', error);
         // Return empty array for any query errors (table might not exist yet)
@@ -224,10 +224,10 @@ export async function GET(request: NextRequest) {
       } else {
         console.log('✅ Loaded', posts?.length || 0, 'posts from Supabase database');
       }
-      
+
       const allPosts = posts || [];
       console.log('✅ API: Returning', allPosts.length, 'posts from Supabase');
-    
+
       // Transform posts to match expected format
       const transformedPosts = allPosts.map((post: any) => ({
         id: post.id,
@@ -329,9 +329,9 @@ export async function POST(request: NextRequest) {
           process.env.NEXT_PUBLIC_SUPABASE_URL!,
           process.env.SUPABASE_SERVICE_ROLE_KEY!
         );
-        
+
         const { data: { user }, error } = await supabaseAuth.auth.getUser(token);
-        
+
         if (error || !user) {
           // Fallback to MongoDB JWT authentication
           try {
@@ -461,16 +461,48 @@ export async function POST(request: NextRequest) {
 
     console.log('💾 API: Saving post to Supabase database...');
 
+    const platform = processedPost.platform || 'instagram';
+    const contentText = typeof processedPost.content === 'string' ? processedPost.content : (processedPost.content?.text || '');
+
+    // Check for existing post with same content
+    console.log('🔍 Checking for duplicate posts...');
+    const { data: existingPosts, error: checkError } = await supabase
+      .from('generated_posts')
+      .select('id, created_at')
+      .eq('user_id', userId)
+      .eq('content', contentText)
+      .eq('platform', platform)
+      .limit(1);
+
+    if (checkError) {
+      console.warn('⚠️ Could not check for duplicates:', checkError);
+    } else if (existingPosts && existingPosts.length > 0) {
+      const existingPost = existingPosts[0];
+      console.log('⚠️ Duplicate post detected, returning existing post:', existingPost.id);
+
+      return NextResponse.json({
+        success: true,
+        id: existingPost.id,
+        duplicate: true,
+        message: 'Post already exists',
+        post: {
+          ...processedPost,
+          id: existingPost.id,
+          createdAt: existingPost.created_at
+        }
+      });
+    }
+
     // Save post to Supabase database
     try {
       const postData = {
         user_id: userId,
         brand_profile_id: brandProfileId,
-        content: typeof processedPost.content === 'string' ? processedPost.content : (processedPost.content?.text || ''),
+        content: contentText,
         hashtags: Array.isArray(processedPost.hashtags) ? processedPost.hashtags.join(' ') : processedPost.hashtags || '',
         image_text: processedPost.imageText || processedPost.subheadline || '',
         image_url: processedPost.imageUrl,
-        platform: processedPost.platform || 'instagram',
+        platform: platform,
         variants: processedPost.variants ? JSON.stringify(processedPost.variants) : null,
         catchy_words: processedPost.catchyWords,
         subheadline: processedPost.subheadline,
@@ -523,11 +555,11 @@ export async function POST(request: NextRequest) {
       });
     } catch (saveError) {
       console.error('❌ Failed to save post to database:', saveError);
-      
+
       // Fallback: return success with temporary ID (images are still uploaded)
       const fallbackId = `post_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       console.log('⚠️ API: Using fallback ID due to database error:', fallbackId);
-      
+
       return NextResponse.json({
         success: true,
         id: fallbackId,

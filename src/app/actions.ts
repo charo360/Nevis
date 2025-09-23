@@ -152,7 +152,8 @@ export async function generateContentAction(
   platform: Platform,
   brandConsistency?: { strictConsistency: boolean; followBrandColors: boolean; includeContacts: boolean },
   useLocalLanguage: boolean = false,
-  scheduledServices?: ScheduledService[]
+  scheduledServices?: ScheduledService[],
+  includePeopleInDesigns: boolean = true
 ): Promise<GeneratedPost> {
   try {
     console.log('🎯 generateContentAction called with scheduled services:', {
@@ -235,6 +236,12 @@ export async function generateContentAction(
     }
 
 
+    console.log('🔍 [Actions] People Toggle Debug:', {
+      includePeopleInDesignsParam: includePeopleInDesigns,
+      includePeopleInDesignsType: typeof includePeopleInDesigns,
+      businessName: profile.businessName
+    });
+
     const generationRequest = {
       modelId: 'revo-1.0',
       profile: enhancedProfile,
@@ -266,11 +273,18 @@ export async function generateContentAction(
       productImageDescriptions: profile.productImageDescriptions || {},
       // NEW: Scheduled services integration
       scheduledServices: scheduledServices || [],
+      // People in designs toggle
+      includePeople: includePeopleInDesigns,
       variants: [{
         platform: platform,
         aspectRatio: getAspectRatioForPlatform(platform),
       }]
     };
+
+    console.log('🔍 [Actions] Generation Request People Toggle:', {
+      includePeople: generationRequest.includePeople,
+      includePeopleType: typeof generationRequest.includePeople
+    });
 
     const result = await revo10Model.contentGenerator.generateContent(generationRequest);
 

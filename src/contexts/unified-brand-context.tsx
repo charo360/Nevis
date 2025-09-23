@@ -41,7 +41,7 @@ interface UnifiedBrandProviderProps {
 
 export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
   const { user, getAccessToken } = useAuth();
-  
+
   // Initialize currentBrand from localStorage immediately to prevent flash of missing logo
   const [currentBrand, setCurrentBrand] = useState<CompleteBrandProfile | null>(() => {
     if (typeof window === 'undefined') return null;
@@ -138,9 +138,31 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
       });
 
       if (!response.ok) {
+        // Check if it's a network/auth issue and try fallback
+        if (response.status === 401 || response.status === 0) {
+          console.warn('⚠️ Network/Auth issue detected, trying fallback approach...');
+
+          // Try to load from localStorage as fallback
+          const fallbackBrand = localStorage.getItem('completeBrandProfile');
+          if (fallbackBrand) {
+            try {
+              const parsedBrand = JSON.parse(fallbackBrand);
+              console.log('✅ Using fallback brand from localStorage:', parsedBrand.businessName);
+              setBrands([parsedBrand]);
+              setCurrentBrand(parsedBrand);
+              setLoading(false);
+              return;
+            } catch (parseError) {
+              console.error('❌ Failed to parse fallback brand:', parseError);
+            }
+          }
+
+          // If no fallback available, show helpful error
+          throw new Error('Network connectivity issue. Please check your internet connection and try again.');
+        }
         throw new Error('Failed to load brand profiles');
       }
-      
+
       const userBrands = await response.json();
       console.log('✅ Brands loaded successfully from Supabase:', userBrands.length, 'brands found');
       console.log('📋 Brand names:', userBrands.map(b => b.businessName || b.name));
@@ -157,7 +179,7 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
             oldLogoDataUrl: !!currentBrand.logoDataUrl,
             newLogoDataUrl: !!freshBrand.logoDataUrl
           });
-          
+
           const updatedBrand = {
             ...currentBrand,
             ...freshBrand,
@@ -165,7 +187,7 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
             logoUrl: freshBrand.logoUrl || currentBrand.logoUrl,
             logoDataUrl: freshBrand.logoDataUrl || currentBrand.logoDataUrl,
           };
-          
+
           setCurrentBrand(updatedBrand);
           updateAllBrandScopedServices(updatedBrand);
         }
@@ -174,10 +196,10 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
       // If no current brand is selected, try to restore from localStorage or select the first active one
       if (!currentBrand && userBrands.length > 0) {
         console.log('🔍 No current brand selected, attempting restoration from localStorage');
-        
+
         // Try to restore from localStorage first
         let restoredBrand: CompleteBrandProfile | null = null;
-        
+
         try {
           const savedBrandId = localStorage.getItem('selectedBrandId');
           if (savedBrandId) {
@@ -187,7 +209,7 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
         } catch (error) {
           console.error('Error restoring from localStorage:', error);
         }
-        
+
         // If restoration failed, try to restore from full brand data
         if (!restoredBrand) {
           try {
@@ -201,23 +223,32 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
             console.error('Error restoring from full brand data:', error);
           }
         }
-        
+
         // If restoration still failed, select the first active brand or first brand
         const brandToSelect = restoredBrand || userBrands.find(b => b.isActive) || userBrands[0];
-        
+
         console.log('🎯 Selecting brand:', {
           restored: !!restoredBrand,
           businessName: brandToSelect.businessName || brandToSelect.name,
           brandId: brandToSelect.id,
           isFirstBrand: brandToSelect === userBrands[0]
         });
-        
+
         setCurrentBrand(brandToSelect);
         updateAllBrandScopedServices(brandToSelect);
       }
     } catch (err) {
       console.error('❌ Error loading brands from Supabase:', err);
-      setError('Failed to load brand profiles');
+
+      // Provide more specific error messages
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load brand profiles';
+      if (errorMessage.includes('Network connectivity')) {
+        setError('Network connectivity issue. Please check your internet connection and try refreshing the page.');
+      } else if (errorMessage.includes('fetch failed') || errorMessage.includes('timeout')) {
+        setError('Connection timeout. Please check your internet connection and try again.');
+      } else {
+        setError('Failed to load brand profiles. Please try refreshing the page.');
+      }
     } finally {
       setLoading(false);
       console.log('✅ Brand loading completed');
@@ -262,7 +293,7 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
     if (brand) {
       // Save brand ID for quick restoration
       localStorage.setItem('selectedBrandId', brand.id);
-      
+
       // Save full brand data for complete restoration
       const brandData = {
         id: brand.id,
@@ -280,7 +311,7 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
         selectedAt: new Date().toISOString()
       };
       localStorage.setItem('currentBrandData', JSON.stringify(brandData));
-      
+
       // Save colors separately for quick access
       const colorData = {
         primaryColor: brand.primaryColor,
@@ -291,7 +322,7 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
         updatedAt: new Date().toISOString()
       };
       localStorage.setItem('brandColors', JSON.stringify(colorData));
-      
+
       console.log('💾 Brand selection persisted to localStorage:', brandName);
     } else {
       // Clear localStorage when no brand is selected

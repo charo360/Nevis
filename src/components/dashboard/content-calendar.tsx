@@ -281,15 +281,45 @@ export function ContentCalendar({
           hasScheduledContent
         });
 
+        console.log('🔍 [ContentCalendar] People Toggle Debug:', {
+          includePeopleInDesigns,
+          includePeopleInDesignsType: typeof includePeopleInDesigns,
+          businessName: brandProfile.businessName
+        });
+
         newPost = await generateContentAction(
           brandProfile,
           platform,
           brandConsistency,
           useLocalLanguage,
-          scheduledServices // NEW: Pass scheduled services to AI generation
+          scheduledServices, // NEW: Pass scheduled services to AI generation
+          includePeopleInDesigns // NEW: Pass people toggle to Revo 1.0
         );
       }
 
+      // Validate newPost before processing
+      if (!newPost) {
+        console.error('❌ Content generation failed - no post returned');
+        toast({
+          title: "Generation Failed",
+          description: "Failed to generate content. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Ensure the post has a unique ID
+      if (!newPost.id) {
+        newPost.id = `post-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        console.log('🔧 Generated new ID for post:', newPost.id);
+      }
+
+      console.log('✅ Content generation successful, processing post:', {
+        id: newPost.id,
+        platform: newPost.platform,
+        hasContent: !!newPost.content,
+        hasImageUrl: !!newPost.imageUrl
+      });
 
       // Let the parent component handle saving
       onPostGenerated(newPost);

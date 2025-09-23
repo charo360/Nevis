@@ -53,7 +53,15 @@ export class Revo10ContentGenerator implements IContentGenerator {
         // Local language control (standardized parameter name)
         useLocalLanguage: request.useLocalLanguage || false,
         // NEW: Scheduled services integration
-        scheduledServices: generationParams.scheduledServices || []
+        scheduledServices: generationParams.scheduledServices || [],
+        // NEW: People in designs toggle
+        includePeople: (request as any).includePeople
+      });
+
+      console.log('🔍 [Revo 1.0 Content Generator] People Toggle Debug:', {
+        requestIncludePeople: (request as any).includePeople,
+        requestIncludePeopleType: typeof (request as any).includePeople,
+        businessName: generationParams.profile?.businessName
       });
 
       // Generate image using the catchy words and brand profile data
@@ -91,7 +99,9 @@ export class Revo10ContentGenerator implements IContentGenerator {
         // Contact information for brand consistency
         includeContacts: generationParams.includeContacts || false,
         contactInfo: generationParams.contactInfo || {},
-        websiteUrl: generationParams.websiteUrl || ''
+        websiteUrl: generationParams.websiteUrl || '',
+        // People in designs toggle
+        includePeople: (request as any).includePeople
       });
 
       // Update variants with the generated image

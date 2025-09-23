@@ -34,56 +34,123 @@ export class RSSFeedService {
   private readonly cacheTimeout = 30 * 60 * 1000; // 30 minutes
 
   /**
-   * Fetch trending data from API route
+   * Fetch trending data using direct RSS fetching (FIXED for 1K users)
    */
   async getTrendingData(category: 'tech' | 'business' | 'general' = 'general', limit: number = 50): Promise<TrendingData> {
     const cacheKey = `${category}-${limit}`;
-    
+
     // Check cache first
     const cached = this.cache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
+      console.log(`✅ [RSS Service] Cache hit for ${category}`);
       return cached.data;
     }
 
     try {
-      const response = await fetch(`/api/rss-data?category=${category}&limit=${limit}`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch RSS data: ${response.status}`);
-      }
-      
-      const data: TrendingData = await response.json();
-      
-      // Convert date strings back to Date objects
-      data.lastUpdated = new Date(data.lastUpdated);
-      data.articles = data.articles.map(article => ({
-        ...article,
-        pubDate: new Date(article.pubDate)
-      }));
-      
+      console.log(`🔄 [RSS Service] Fetching fresh data for ${category}`);
+
+      // 🛡️ FIXED: Use direct RSS fetching instead of problematic API calls
+      const { fetchRSSFeedDirect } = await import('../ai/utils/rss-direct-fetch');
+      const articles = await fetchRSSFeedDirect(category, limit);
+
+      // Process articles into trending data
+      const data = this.processArticlesIntoTrendingData(articles, category);
+
       // Cache the result
       this.cache.set(cacheKey, { data, timestamp: Date.now() });
-      
+
+      console.log(`✅ [RSS Service] Generated trending data: ${data.hashtags.length} hashtags, ${data.articles.length} articles`);
       return data;
+
     } catch (error) {
-      console.error('Error fetching RSS data:', error);
-      
-      // Return fallback data if API fails
-      return {
-        keywords: [],
-        hashtags: [],
-        topics: [],
-        themes: [],
-        articles: [],
-        lastUpdated: new Date(),
-        hashtagAnalytics: {
-          trending: [],
-          byCategory: {},
-          byLocation: {},
-          byIndustry: {},
-          sentiment: {}
-        }
-      };
+      console.error('❌ [RSS Service] Error fetching RSS data:', error);
+
+      // Return fallback data if everything fails
+      return this.getFallbackTrendingData(category);
     }
+  }
+
+  /**
+   * Process articles into trending data format
+   */
+  private processArticlesIntoTrendingData(articles: any[], category: string): TrendingData {
+    // Extract keywords from articles
+    const allKeywords = articles.flatMap(article => article.keywords || []);
+    const keywordCounts = new Map<string, number>();
+
+    allKeywords.forEach(keyword => {
+      keywordCounts.set(keyword, (keywordCounts.get(keyword) || 0) + 1);
+    });
+
+    // Get top keywords
+    const topKeywords = Array.from(keywordCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 20)
+      .map(([keyword]) => keyword);
+
+    // Generate hashtags from keywords
+    const hashtags = topKeywords.map(keyword => `#${keyword.toLowerCase().replace(/\s+/g, '')}`);
+
+    return {
+      keywords: topKeywords,
+      hashtags,
+      topics: topKeywords.slice(0, 10),
+      themes: topKeywords.slice(0, 15),
+      articles: articles.map(article => ({
+        ...article,
+        pubDate: new Date(article.pubDate)
+      })),
+      lastUpdated: new Date(),
+      hashtagAnalytics: {
+        trending: topKeywords.slice(0, 10).map(keyword => ({
+          hashtag: `#${keyword}`,
+          frequency: keywordCounts.get(keyword) || 0,
+          momentum: 'rising' as const
+        })),
+        byCategory: {
+          [category]: hashtags.slice(0, 10)
+        },
+        byLocation: {},
+        byIndustry: {},
+        sentiment: {}
+      }
+    };
+  }
+
+  /**
+   * Get fallback trending data when all else fails
+   */
+  private getFallbackTrendingData(category: string): TrendingData {
+    const fallbackKeywords = {
+      tech: ['technology', 'innovation', 'digital', 'software', 'ai', 'startup'],
+      business: ['business', 'growth', 'success', 'strategy', 'market', 'sales'],
+      general: ['news', 'update', 'trending', 'popular', 'latest', 'breaking']
+    };
+
+    const keywords = fallbackKeywords[category] || fallbackKeywords.general;
+    const hashtags = keywords.map(keyword => `#${keyword}`);
+
+    return {
+      keywords,
+      hashtags,
+      topics: keywords.slice(0, 5),
+      themes: keywords.slice(0, 8),
+      articles: [],
+      lastUpdated: new Date(),
+      hashtagAnalytics: {
+        trending: keywords.map(keyword => ({
+          hashtag: `#${keyword}`,
+          frequency: 1,
+          momentum: 'stable' as const
+        })),
+        byCategory: {
+          [category]: hashtags
+        },
+        byLocation: {},
+        byIndustry: {},
+        sentiment: {}
+      }
+    };
   }
 
   /**
@@ -128,7 +195,7 @@ export class RSSFeedService {
       tech: 'tech',
       design: 'general'
     };
-    
+
     const data = await this.getTrendingData(categoryMap[category] as any);
     return data.keywords.slice(0, 20);
   }

@@ -26,7 +26,7 @@ interface SocialTrendSource {
  * Alternative Social Media Data Sources (Legal & Effective)
  */
 export class RegionalSocialTrendsService {
-  
+
   // Legal alternative sources for social media trends
   private static REGIONAL_SOURCES: Record<string, SocialTrendSource[]> = {
     'kenya': [
@@ -229,23 +229,23 @@ export class RegionalSocialTrendsService {
   ): Promise<RegionalSocialData> {
     const country = this.extractCountry(location);
     const sources = this.REGIONAL_SOURCES[country] || this.REGIONAL_SOURCES['usa'];
-    
+
     try {
       // Fetch from multiple regional sources in parallel
       const trendPromises = sources.map(source => this.fetchSourceData(source, businessType));
       const results = await Promise.all(trendPromises);
-      
+
       // Combine and deduplicate data
       const combinedData = this.combineRegionalData(results, location);
-      
+
       console.log(`📍 Got regional trends for ${location}:`, {
         hashtags: combinedData.trendingHashtags.length,
         events: combinedData.currentEvents.length,
         cultural: combinedData.culturalMoments.length
       });
-      
+
       return combinedData;
-      
+
     } catch (error) {
       console.warn('Regional trends fetch failed:', error);
       return this.getFallbackRegionalData(location, businessType);
@@ -263,7 +263,7 @@ export class RegionalSocialTrendsService {
       if (source.type === 'rss') {
         return await this.fetchRSSSourceData(source, businessType);
       }
-      
+
       return {};
     } catch (error) {
       console.warn(`Failed to fetch from ${source.name}:`, error);
@@ -272,35 +272,47 @@ export class RegionalSocialTrendsService {
   }
 
   /**
-   * Fetch RSS source data
+   * Fetch RSS source data (FIXED for 1K users)
    */
   private static async fetchRSSSourceData(
     source: SocialTrendSource,
     businessType: string
   ): Promise<Partial<RegionalSocialData>> {
     try {
-      // Use your existing RSS system
-      const response = await fetch(`/api/rss-data?customUrl=${encodeURIComponent(source.url)}&limit=30`);
-      if (!response.ok) return {};
-      
-      const rssData = await response.json();
-      
+      console.log(`🔄 [Regional Trends] Fetching data for ${source.region}`);
+
+      // 🛡️ FIXED: Use direct RSS fetching instead of problematic API calls
+      const { fetchRSSFeedDirect } = await import('../ai/utils/rss-direct-fetch');
+
+      // Map region to appropriate RSS category
+      const category = this.mapRegionToCategory(source.region);
+      const articles = await fetchRSSFeedDirect(category, 30);
+
       const result: Partial<RegionalSocialData> = {};
-      
-      // Extract hashtags from RSS content
-      if (rssData.hashtags) {
-        result.trendingHashtags = rssData.hashtags
-          .filter((tag: string) => this.isRegionallyRelevant(tag, source.region))
-          .slice(0, 10);
+
+      if (articles && articles.length > 0) {
+        // Extract hashtags from article keywords
+        const allKeywords = articles.flatMap(article => article.keywords || []);
+        const regionalHashtags = allKeywords
+          .filter(keyword => this.isRegionallyRelevant(keyword, source.region))
+          .map(keyword => `#${keyword.toLowerCase().replace(/\s+/g, '')}`)
+          .filter(tag => tag.length > 2 && tag.length < 30);
+
+        result.trendingHashtags = [...new Set(regionalHashtags)].slice(0, 10);
+
+        console.log(`✅ [Regional Trends] Generated ${result.trendingHashtags.length} hashtags for ${source.region}`);
+      } else {
+        result.trendingHashtags = this.getFallbackRegionalHashtags(source.region);
       }
-      
-      // Extract current events
-      if (rssData.keywords) {
-        result.currentEvents = rssData.keywords
+
+      // Extract current events from articles
+      if (articles && articles.length > 0) {
+        const allKeywords = articles.flatMap(article => article.keywords || []);
+        result.currentEvents = [...new Set(allKeywords)]
           .filter((keyword: string) => this.isCurrentEvent(keyword, source.region))
           .slice(0, 5);
       }
-      
+
       // Extract business trends
       if (rssData.articles) {
         result.businessTrends = rssData.articles
@@ -308,16 +320,16 @@ export class RegionalSocialTrendsService {
           .map((article: any) => article.title)
           .slice(0, 3);
       }
-      
+
       // Extract social buzz from Reddit-like sources
       if (source.dataType === 'social' && rssData.keywords) {
         result.socialBuzz = rssData.keywords
           .filter((keyword: string) => this.isSocialBuzz(keyword))
           .slice(0, 5);
       }
-      
+
       return result;
-      
+
     } catch (error) {
       console.warn(`RSS fetch failed for ${source.name}:`, error);
       return {};
@@ -334,7 +346,7 @@ export class RegionalSocialTrendsService {
       this.getNewsBasedSocialTrends(location, businessType),
       this.getInfluencerPlatformData(businessType)
     ]);
-    
+
     return alternatives.flat().slice(0, 15);
   }
 
@@ -345,17 +357,17 @@ export class RegionalSocialTrendsService {
     try {
       const countryCode = this.getCountryCode(location);
       const trendsUrl = `https://trends.google.com/trends/trendingsearches/daily/rss?geo=${countryCode}`;
-      
+
       const response = await fetch(`/api/rss-data?customUrl=${encodeURIComponent(trendsUrl)}&limit=20`);
       if (!response.ok) return [];
-      
+
       const trendsData = await response.json();
-      
+
       return trendsData.keywords
         ?.filter((keyword: string) => this.isBusinessRelevantKeyword(keyword, businessType))
         ?.map((keyword: string) => `#${keyword.toLowerCase().replace(/\s+/g, '')}`)
         ?.slice(0, 8) || [];
-        
+
     } catch (error) {
       console.warn('Google Trends fetch failed:', error);
       return [];
@@ -375,25 +387,36 @@ export class RegionalSocialTrendsService {
         'retail': ['r/fashion', 'r/deals', 'r/shopping', 'r/smallbusiness']
       };
 
-      const subreddits = businessSubreddits[businessType] || ['r/popular'];
-      const trendPromises = subreddits.slice(0, 2).map(subreddit =>
-        fetch(`/api/rss-data?customUrl=${encodeURIComponent(`https://www.reddit.com/${subreddit}/.rss`)}&limit=15`)
-      );
+      console.log(`🔄 [Reddit Trends] Fetching trends for ${businessType}`);
 
-      const responses = await Promise.all(trendPromises);
-      const allData = await Promise.all(
-        responses.map(r => r.ok ? r.json() : null)
-      );
+      // 🛡️ FIXED: Use direct RSS fetching instead of problematic API calls
+      const { fetchRSSFeedDirect } = await import('../ai/utils/rss-direct-fetch');
 
-      const combinedHashtags = allData
-        .filter(data => data && data.keywords)
-        .flatMap(data => data.keywords)
-        .filter((keyword: string) => this.isBusinessRelevantKeyword(keyword, businessType))
-        .map((keyword: string) => `#${keyword.toLowerCase().replace(/\s+/g, '')}`)
-        .slice(0, 10);
+      const subreddits = businessSubreddits[businessType] || ['business'];
+      const allHashtags: string[] = [];
 
-      return combinedHashtags;
-      
+      // Fetch from business-relevant categories instead of Reddit RSS
+      for (const category of ['business', 'tech', 'general']) {
+        try {
+          const articles = await fetchRSSFeedDirect(category, 10);
+          if (articles && articles.length > 0) {
+            const keywords = articles.flatMap(article => article.keywords || []);
+            const hashtags = keywords
+              .filter(keyword => this.isBusinessRelevantKeyword(keyword, businessType))
+              .map(keyword => `#${keyword.toLowerCase().replace(/\s+/g, '')}`)
+              .filter(tag => tag.length > 2 && tag.length < 30);
+
+            allHashtags.push(...hashtags);
+          }
+        } catch (error) {
+          console.warn(`⚠️ [Reddit Trends] Failed to fetch ${category} data:`, error);
+        }
+      }
+
+      const uniqueHashtags = [...new Set(allHashtags)];
+      console.log(`✅ [Reddit Trends] Generated ${uniqueHashtags.length} hashtags for ${businessType}`);
+      return uniqueHashtags.slice(0, 10);
+
     } catch (error) {
       console.warn('Reddit trends fetch failed:', error);
       return [];
@@ -406,14 +429,14 @@ export class RegionalSocialTrendsService {
   private static async getNewsBasedSocialTrends(location: string, businessType: string): Promise<string[]> {
     try {
       const regionalData = await this.getRegionalTrends(location, businessType);
-      
+
       // Convert current events to hashtags
       const eventHashtags = regionalData.currentEvents
         .map(event => `#${event.toLowerCase().replace(/\s+/g, '')}`)
         .slice(0, 5);
-        
+
       return eventHashtags;
-      
+
     } catch (error) {
       return [];
     }
@@ -425,7 +448,7 @@ export class RegionalSocialTrendsService {
   private static async getInfluencerPlatformData(businessType: string): Promise<string[]> {
     // This could integrate with influencer marketing platforms that publish trending hashtags
     // For now, return business-specific trending patterns
-    
+
     const influencerTrends: Record<string, string[]> = {
       'restaurant': ['#foodstagram', '#eatlocal', '#cheflife', '#foodblogger', '#tastethis'],
       'fitness': ['#fitspo', '#gymlife', '#workoutmotivation', '#fitnessjourney', '#healthyeating'],
@@ -433,7 +456,7 @@ export class RegionalSocialTrendsService {
       'healthcare': ['#healthtech', '#wellness', '#preventivecare', '#healthylife', '#medicalcare'],
       'retail': ['#shoplocal', '#sustainablefashion', '#qualityover quantity', '#ethicalbrand', '#madetoorder']
     };
-    
+
     return influencerTrends[businessType] || ['#quality', '#service', '#local', '#community', '#excellence'];
   }
 
@@ -453,11 +476,43 @@ export class RegionalSocialTrendsService {
     return 'global';
   }
 
+  /**
+   * Map region to RSS category
+   */
+  private static mapRegionToCategory(region: string): string {
+    const regionLower = region.toLowerCase();
+    if (regionLower.includes('tech') || regionLower.includes('silicon')) return 'tech';
+    if (regionLower.includes('business') || regionLower.includes('finance')) return 'business';
+    return 'general';
+  }
+
+  /**
+   * Get fallback regional hashtags
+   */
+  private static getFallbackRegionalHashtags(region: string): string[] {
+    const fallbackHashtags = {
+      'africa': ['#africa', '#business', '#growth', '#local', '#community', '#innovation'],
+      'kenya': ['#kenya', '#nairobi', '#business', '#local', '#growth', '#innovation'],
+      'nigeria': ['#nigeria', '#lagos', '#business', '#local', '#growth', '#innovation'],
+      'usa': ['#usa', '#business', '#innovation', '#growth', '#local', '#success'],
+      'global': ['#business', '#global', '#innovation', '#growth', '#success', '#quality']
+    };
+
+    const regionLower = region.toLowerCase();
+    for (const [key, hashtags] of Object.entries(fallbackHashtags)) {
+      if (regionLower.includes(key)) {
+        return hashtags;
+      }
+    }
+
+    return fallbackHashtags.global;
+  }
+
   private static getCountryCode(location: string): string {
     const country = this.extractCountry(location);
     const codes: Record<string, string> = {
       'kenya': 'KE',
-      'nigeria': 'NG', 
+      'nigeria': 'NG',
       'south africa': 'ZA',
       'ghana': 'GH',
       'usa': 'US',
@@ -506,17 +561,17 @@ export class RegionalSocialTrendsService {
       'nigeria': ['nigeria', 'naija', 'lagos', 'west', 'african'],
       'south africa': ['south', 'africa', 'cape', 'joburg', 'mzansi']
     };
-    
+
     const terms = regionalTerms[region] || [];
     const hashtagLower = hashtag.toLowerCase();
-    
+
     return terms.some(term => hashtagLower.includes(term));
   }
 
   private static isCurrentEvent(keyword: string, region: string): boolean {
     const eventIndicators = ['festival', 'event', 'celebration', 'conference', 'summit', 'launch', 'opening'];
     const keywordLower = keyword.toLowerCase();
-    
+
     return eventIndicators.some(indicator => keywordLower.includes(indicator));
   }
 
@@ -528,10 +583,10 @@ export class RegionalSocialTrendsService {
       'healthcare': ['health', 'medical', 'clinic', 'hospital', 'care', 'wellness'],
       'retail': ['retail', 'shop', 'store', 'fashion', 'brand', 'business']
     };
-    
+
     const keywords = businessKeywords[businessType] || [];
     const titleLower = title.toLowerCase();
-    
+
     return keywords.some(keyword => titleLower.includes(keyword));
   }
 
@@ -546,7 +601,7 @@ export class RegionalSocialTrendsService {
 
   private static getFallbackRegionalData(location: string, businessType: string): RegionalSocialData {
     const country = this.extractCountry(location);
-    
+
     const fallbackData: Record<string, Partial<RegionalSocialData>> = {
       'kenya': {
         trendingHashtags: ['#Kenya', '#Nairobi', '#EastAfrica', '#Harambee', '#Innovation'],
@@ -593,7 +648,7 @@ export class RegionalSocialTrendsService {
     };
 
     const regionData = fallbackData[country] || {};
-    
+
     return {
       location,
       trendingHashtags: regionData.trendingHashtags || [`#${businessType}`, '#Quality'],

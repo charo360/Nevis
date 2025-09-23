@@ -440,16 +440,74 @@ function QuickContentPage() {
           console.log('✅ Loaded', localStoragePosts.length, 'posts from localStorage');
         }
 
-        // Combine database and localStorage posts, removing duplicates
-        const combinedPosts = [...databasePosts];
+        // Helper function to normalize content for comparison
+        const normalizeContent = (content: any): string => {
+          if (typeof content === 'string') return content.trim();
+          if (content?.text) return content.text.trim();
+          return '';
+        };
+
+        // Helper function to generate content hash for duplicate detection
+        const generateContentHash = (post: any): string => {
+          const content = normalizeContent(post.content);
+          const platform = post.platform || 'instagram';
+
+          // Use a simple hash function that works with Unicode characters
+          let hash = 0;
+          const str = content + platform;
+          for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32-bit integer
+          }
+          return Math.abs(hash).toString(36);
+        };
+
+        // First, deduplicate database posts themselves (in case there are duplicates in DB)
+        const deduplicatedDbPosts = databasePosts.reduce((acc: GeneratedPost[], post: GeneratedPost) => {
+          const contentHash = generateContentHash(post);
+          const existingPost = acc.find(p =>
+            p.id === post.id ||
+            generateContentHash(p) === contentHash
+          );
+
+          if (!existingPost) {
+            acc.push(post);
+          } else {
+            // Keep the more recent post
+            const existingDate = new Date(existingPost.createdAt || existingPost.date).getTime();
+            const currentDate = new Date(post.createdAt || post.date).getTime();
+            if (currentDate > existingDate) {
+              const index = acc.findIndex(p => p.id === existingPost.id);
+              if (index !== -1) {
+                acc[index] = post;
+              }
+            }
+          }
+          return acc;
+        }, []);
+
+        // Combine deduplicated database posts with localStorage posts, removing duplicates
+        const combinedPosts = [...deduplicatedDbPosts];
 
         // Add localStorage posts that aren't already in database posts
         localStoragePosts.forEach(localPost => {
-          const existsInDatabase = databasePosts.some(dbPost =>
-            dbPost.id === localPost.id ||
-            (dbPost.content?.text === localPost.content?.text &&
-              Math.abs(new Date(dbPost.createdAt || dbPost.date).getTime() - new Date(localPost.date).getTime()) < 5000)
-          );
+          const localContentHash = generateContentHash(localPost);
+          const existsInDatabase = deduplicatedDbPosts.some(dbPost => {
+            if (dbPost.id === localPost.id) return true;
+
+            const dbContentHash = generateContentHash(dbPost);
+            if (dbContentHash === localContentHash) {
+              // Same content, check if they're close in time (within 30 seconds)
+              const timeDiff = Math.abs(
+                new Date(dbPost.createdAt || dbPost.date).getTime() -
+                new Date(localPost.date).getTime()
+              );
+              return timeDiff < 30000; // 30 seconds
+            }
+
+            return false;
+          });
 
           if (!existsInDatabase) {
             combinedPosts.push(localPost);
@@ -676,12 +734,38 @@ function QuickContentPage() {
   };
 
   const handlePostGenerated = async (post: GeneratedPost) => {
+    // Validate post object
+    if (!post) {
+      console.error('❌ handlePostGenerated called with undefined post');
+      toast({
+        title: "Processing Error",
+        description: "Invalid post data received. Please try generating again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     console.log('🔄 Processing individual post with Supabase storage:', post.id || 'no-id');
 
     // Ensure the post has a unique ID
     if (!post.id) {
-      post.id = `post-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      console.log('🔧 Generated new ID for post:', post.id);
+      // Generate a more robust unique ID using timestamp, random string, and content hash
+      const timestamp = Date.now();
+      const randomStr = Math.random().toString(36).substr(2, 9);
+      const contentStr = typeof post.content === 'string' ? post.content : (post.content?.text || '');
+
+      // Generate content hash using a simple hash function that works with Unicode
+      let contentHash = 0;
+      const hashStr = contentStr.substring(0, 50);
+      for (let i = 0; i < hashStr.length; i++) {
+        const char = hashStr.charCodeAt(i);
+        contentHash = ((contentHash << 5) - contentHash) + char;
+        contentHash = contentHash & contentHash; // Convert to 32-bit integer
+      }
+      const hashString = Math.abs(contentHash).toString(36).substring(0, 8);
+
+      post.id = `post-${timestamp}-${randomStr}-${hashString}`;
+      console.log('🔧 Generated new robust ID for post:', post.id);
     }
 
     // Process images and save everything to Supabase via API route

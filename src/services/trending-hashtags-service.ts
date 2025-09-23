@@ -23,7 +23,7 @@ interface IndustryHashtagData {
  * Provides industry-specific trending hashtags that seamlessly integrate into content generation
  */
 export class TrendingHashtagsService {
-  
+
   /**
    * Check if the context is a service rather than a business type
    */
@@ -50,11 +50,11 @@ export class TrendingHashtagsService {
       'mortgage',
       'refinancing'
     ];
-    
+
     const contextLower = context.toLowerCase();
     return serviceKeywords.some(keyword => contextLower.includes(keyword));
   }
-  
+
   /**
    * Get trending hashtags for a specific industry
    */
@@ -67,22 +67,22 @@ export class TrendingHashtagsService {
       // Check if this is a service (contains specific service keywords) or business type
       const isService = this.isServiceContext(businessType);
       const contextType = isService ? 'service' : 'business type';
-      
+
       console.log(`🔍 Analyzing ${contextType}: ${businessType}`);
-      
+
       // First try to get real trending data from your RSS system
       const realTrendingHashtags = await this.fetchRealTrendingHashtags(businessType, location);
-      
+
       if (realTrendingHashtags && realTrendingHashtags.length > 0) {
         console.log(`📈 Using real trending hashtags for ${businessType}:`, realTrendingHashtags.slice(0, 5));
         return realTrendingHashtags.slice(0, limit);
       }
-      
+
       // Fallback to curated industry data when real data unavailable
-      const industryData = isService 
+      const industryData = isService
         ? await this.getServiceHashtagData(businessType, location)
         : await this.getIndustryHashtagData(businessType, location);
-      
+
       // Combine and sort hashtags by relevance and trend score
       const allHashtags = [
         ...industryData.trending,
@@ -90,7 +90,7 @@ export class TrendingHashtagsService {
         ...industryData.seasonal,
         ...(industryData.location || [])
       ];
-      
+
       // Sort by combined score (trend score + relevance score + engagement rate)
       const sortedHashtags = allHashtags
         .sort((a, b) => {
@@ -102,7 +102,7 @@ export class TrendingHashtagsService {
 
       console.log(`📊 Using curated hashtags for ${businessType}:`, sortedHashtags.slice(0, 5).map(h => h.tag));
       return sortedHashtags.map(h => h.tag);
-      
+
     } catch (error) {
       console.warn('Failed to fetch trending hashtags:', error);
       return this.getFallbackHashtags(businessType);
@@ -113,13 +113,13 @@ export class TrendingHashtagsService {
    * Fetch real trending hashtags using your advanced trending analyzer
    */
   private static async fetchRealTrendingHashtags(
-    businessType: string, 
+    businessType: string,
     location?: string
   ): Promise<string[]> {
     try {
       // Use your existing Advanced Trending Hashtag Analyzer
       const analyzer = new AdvancedTrendingHashtagAnalyzer();
-      
+
       const context: AnalysisContext = {
         businessType: businessType,
         businessName: '', // Can be passed in later
@@ -127,19 +127,19 @@ export class TrendingHashtagsService {
         platform: 'instagram', // Default platform for analysis
         industry: businessType
       };
-      
+
       console.log(`🔍 Using AdvancedTrendingHashtagAnalyzer for ${businessType}`);
       const strategy = await analyzer.analyzeHashtagTrends(context);
-      
+
       if (strategy && strategy.finalRecommendations && strategy.finalRecommendations.length > 0) {
         console.log(`✅ Advanced analyzer returned ${strategy.finalRecommendations.length} hashtags`);
         return strategy.finalRecommendations;
       }
-      
+
       // Fallback to RSS data endpoint if advanced analyzer doesn't work
       console.log('🔄 Falling back to direct RSS data endpoint');
       return await this.fetchDirectRSSHashtags(businessType);
-      
+
     } catch (error) {
       console.warn('Advanced hashtag analyzer failed, trying direct RSS:', error);
       return await this.fetchDirectRSSHashtags(businessType);
@@ -147,34 +147,62 @@ export class TrendingHashtagsService {
   }
 
   /**
-   * Direct RSS data fetch as fallback
+   * Direct RSS data fetch as fallback (FIXED for 1K users)
    */
   private static async fetchDirectRSSHashtags(businessType: string): Promise<string[]> {
     try {
+      console.log(`🔄 [Trending Hashtags] Using direct RSS fetch for ${businessType}`);
+
+      // 🛡️ FIXED: Use direct RSS fetching instead of problematic API calls
+      const { fetchRSSFeedDirect } = await import('../ai/utils/rss-direct-fetch');
       const category = this.mapBusinessTypeToRSSCategory(businessType);
-      const response = await fetch(`/api/rss-data?category=${category}&limit=30`);
-      if (!response.ok) return [];
-      
-      const rssData = await response.json();
-      
-      if (rssData.hashtags && Array.isArray(rssData.hashtags)) {
-        // Filter hashtags relevant to business type
-        const relevantHashtags = rssData.hashtags
-          .filter((hashtag: any) => {
-            const tag = typeof hashtag === 'string' ? hashtag : hashtag.tag;
-            return this.isHashtagRelevantToBusiness(tag, businessType);
-          })
-          .map((hashtag: any) => typeof hashtag === 'string' ? hashtag : hashtag.tag)
-          .filter((tag: string) => tag.startsWith('#')); // Ensure proper hashtag format
-          
-        return relevantHashtags.slice(0, 10);
+      const articles = await fetchRSSFeedDirect(category, 30);
+
+      if (articles && articles.length > 0) {
+        // Extract hashtags from article keywords
+        const allKeywords = articles.flatMap(article => article.keywords || []);
+        const relevantHashtags = allKeywords
+          .filter(keyword => this.isHashtagRelevantToBusiness(keyword, businessType))
+          .map(keyword => `#${keyword.toLowerCase().replace(/\s+/g, '')}`)
+          .filter(tag => tag.length > 2 && tag.length < 30); // Reasonable hashtag length
+
+        // Remove duplicates and return top 10
+        const uniqueHashtags = [...new Set(relevantHashtags)];
+        console.log(`✅ [Trending Hashtags] Generated ${uniqueHashtags.length} hashtags from RSS data`);
+        return uniqueHashtags.slice(0, 10);
       }
-      
-      return [];
+
+      console.warn(`⚠️ [Trending Hashtags] No articles found for ${category}, using fallback`);
+      return this.getFallbackHashtags(businessType);
+
     } catch (error) {
-      console.warn('Direct RSS fetch failed:', error);
-      return [];
+      console.warn('❌ [Trending Hashtags] Direct RSS fetch failed:', error);
+      return this.getFallbackHashtags(businessType);
     }
+  }
+
+  /**
+   * Get fallback hashtags when all else fails
+   */
+  private static getFallbackHashtags(businessType: string): string[] {
+    const fallbackHashtags = {
+      'restaurant': ['#food', '#dining', '#restaurant', '#delicious', '#local', '#fresh'],
+      'retail': ['#shopping', '#retail', '#fashion', '#deals', '#style', '#quality'],
+      'tech': ['#technology', '#innovation', '#digital', '#tech', '#startup', '#software'],
+      'healthcare': ['#health', '#wellness', '#care', '#medical', '#healthy', '#fitness'],
+      'finance': ['#finance', '#money', '#investment', '#business', '#financial', '#success'],
+      'education': ['#education', '#learning', '#knowledge', '#school', '#training', '#skills'],
+      'default': ['#business', '#quality', '#service', '#professional', '#local', '#trusted']
+    };
+
+    const businessTypeLower = businessType.toLowerCase();
+    for (const [key, hashtags] of Object.entries(fallbackHashtags)) {
+      if (businessTypeLower.includes(key)) {
+        return hashtags;
+      }
+    }
+
+    return fallbackHashtags.default;
   }
 
   /**
@@ -189,7 +217,7 @@ export class TrendingHashtagsService {
       restaurant: 'general',
       fitness: 'general'
     };
-    
+
     return categoryMap[businessType.toLowerCase()] || 'general';
   }
 
@@ -204,11 +232,11 @@ export class TrendingHashtagsService {
       healthcare: ['health', 'medical', 'wellness', 'care', 'treatment', 'medicine', 'therapy'],
       retail: ['shopping', 'fashion', 'style', 'deals', 'sale', 'brand', 'quality', 'design']
     };
-    
+
     const keywords = businessKeywords[businessType.toLowerCase()] || [];
     const hashtagLower = hashtag.toLowerCase().replace('#', '');
-    
-    return keywords.some(keyword => 
+
+    return keywords.some(keyword =>
       hashtagLower.includes(keyword) || keyword.includes(hashtagLower)
     );
   }
@@ -227,7 +255,7 @@ export class TrendingHashtagsService {
     businessType: string,
     location?: string
   ): Promise<IndustryHashtagData> {
-    
+
     const industryHashtags: Record<string, IndustryHashtagData> = {
       restaurant: {
         core: [
@@ -243,7 +271,7 @@ export class TrendingHashtagsService {
         ],
         seasonal: this.getSeasonalHashtags('restaurant'),
       },
-      
+
       fitness: {
         core: [
           { tag: '#fitness', trendScore: 88, momentum: 'stable', engagementRate: 4.5, postCount: 125000, relevanceScore: 98 },
@@ -258,7 +286,7 @@ export class TrendingHashtagsService {
         ],
         seasonal: this.getSeasonalHashtags('fitness'),
       },
-      
+
       technology: {
         core: [
           { tag: '#tech', trendScore: 83, momentum: 'stable', engagementRate: 3.9, postCount: 156000, relevanceScore: 95 },
@@ -273,7 +301,7 @@ export class TrendingHashtagsService {
         ],
         seasonal: this.getSeasonalHashtags('technology'),
       },
-      
+
       healthcare: {
         core: [
           { tag: '#healthcare', trendScore: 85, momentum: 'stable', engagementRate: 4.0, postCount: 78000, relevanceScore: 98 },
@@ -288,7 +316,7 @@ export class TrendingHashtagsService {
         ],
         seasonal: this.getSeasonalHashtags('healthcare'),
       },
-      
+
       retail: {
         core: [
           { tag: '#shopping', trendScore: 82, momentum: 'stable', engagementRate: 3.9, postCount: 234000, relevanceScore: 94 },
@@ -354,7 +382,7 @@ export class TrendingHashtagsService {
     location?: string
   ): Promise<IndustryHashtagData> {
     const serviceLower = service.toLowerCase();
-    
+
     // Service-specific hashtags
     const serviceHashtags: Record<string, IndustryHashtagData> = {
       'buy now pay later': {
@@ -403,7 +431,7 @@ export class TrendingHashtagsService {
     };
 
     // Find matching service or use generic financial service data
-    const matchingService = Object.keys(serviceHashtags).find(key => 
+    const matchingService = Object.keys(serviceHashtags).find(key =>
       serviceLower.includes(key.toLowerCase())
     );
 

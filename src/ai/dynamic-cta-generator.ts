@@ -152,16 +152,11 @@ export class DynamicCTAGenerator {
         `See what the buzz is about!`,
         `Uncover our best kept secret!`
       ],
-      LOCAL_REFERENCE: shouldMentionLocation ? [
-        `${location}'s favorite spot awaits!`,
-        `Proudly serving ${location} families!`,
-        `Your neighborhood ${businessType}!`,
-        `Where ${location} locals go!`
-      ] : [
+      LOCAL_REFERENCE: [
         `Your favorite spot awaits!`,
-        `Proudly serving families!`,
+        `Proudly serving your family!`,
         `Your neighborhood ${businessType}!`,
-        `Where locals go!`
+        `Where you belong!`
       ],
       SENSORY: [
         `Taste the difference today!`,

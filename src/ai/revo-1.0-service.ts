@@ -8,6 +8,7 @@ import { BrandProfile } from '@/lib/types';
 import { revo10Config, revo10Prompts } from './models/versions/revo-1.0/config';
 import type { ScheduledService } from '@/services/calendar-service';
 import { advancedContentGenerator, BusinessProfile } from './advanced-content-generator';
+import { CircuitBreakerManager } from './utils/circuit-breaker';
 import { performanceAnalyzer } from './content-performance-analyzer';
 import { trendingEnhancer } from './trending-content-enhancer';
 import {
@@ -31,6 +32,154 @@ import {
 
 import { ensureExactDimensions } from './utils/image-dimensions';
 
+// Smart Product-Specific Language System
+interface ProductCategory {
+  category: string;
+  specificTerms: string[];
+  actionWords: string[];
+  descriptors: string[];
+}
+
+const PRODUCT_CATEGORIES: ProductCategory[] = [
+  {
+    category: 'phone',
+    specificTerms: ['phone', 'smartphone', 'mobile device', 'handset'],
+    actionWords: ['upgrade your phone', 'get a new phone', 'switch to', 'experience'],
+    descriptors: ['latest smartphone', 'powerful phone', 'flagship device', 'mobile powerhouse']
+  },
+  {
+    category: 'laptop',
+    specificTerms: ['laptop', 'notebook', 'computer', 'business machine'],
+    actionWords: ['upgrade your laptop', 'get a powerful laptop', 'invest in', 'experience'],
+    descriptors: ['business laptop', 'powerful computer', 'professional machine', 'productivity powerhouse']
+  },
+  {
+    category: 'audio',
+    specificTerms: ['microphone', 'audio equipment', 'recording gear', 'sound system'],
+    actionWords: ['upgrade your audio', 'get professional sound', 'invest in quality audio', 'experience'],
+    descriptors: ['professional microphone', 'quality audio gear', 'recording equipment', 'sound solution']
+  },
+  {
+    category: 'accessories',
+    specificTerms: ['keyboard', 'mouse', 'accessory', 'peripheral'],
+    actionWords: ['upgrade your setup', 'enhance your workspace', 'get quality accessories', 'improve'],
+    descriptors: ['professional accessories', 'quality peripherals', 'workspace essentials', 'productivity tools']
+  },
+  {
+    category: 'food',
+    specificTerms: ['dish', 'meal', 'food', 'cuisine'],
+    actionWords: ['try our', 'taste our', 'enjoy our', 'experience'],
+    descriptors: ['delicious', 'fresh', 'authentic', 'quality']
+  },
+  {
+    category: 'financial',
+    specificTerms: ['loan', 'payment', 'banking service', 'financial solution'],
+    actionWords: ['apply for', 'get', 'access', 'use'],
+    descriptors: ['flexible', 'convenient', 'secure', 'reliable']
+  },
+  {
+    category: 'software',
+    specificTerms: ['software', 'platform', 'solution', 'system'],
+    actionWords: ['use our', 'try our', 'implement', 'experience'],
+    descriptors: ['powerful', 'innovative', 'comprehensive', 'advanced']
+  }
+];
+
+function detectProductCategory(productName: string): ProductCategory | null {
+  const productLower = productName.toLowerCase();
+
+  // Phone detection
+  if (productLower.includes('galaxy') || productLower.includes('iphone') ||
+    productLower.includes('phone') || productLower.includes('smartphone') ||
+    productLower.includes('mobile')) {
+    return PRODUCT_CATEGORIES.find(cat => cat.category === 'phone') || null;
+  }
+
+  // Laptop detection
+  if (productLower.includes('latitude') || productLower.includes('inspiron') ||
+    productLower.includes('laptop') || productLower.includes('notebook') ||
+    productLower.includes('dell') || productLower.includes('xps')) {
+    return PRODUCT_CATEGORIES.find(cat => cat.category === 'laptop') || null;
+  }
+
+  // Audio equipment detection
+  if (productLower.includes('lark') || productLower.includes('microphone') ||
+    productLower.includes('audio') || productLower.includes('mic') ||
+    productLower.includes('hollyland') || productLower.includes('sound')) {
+    return PRODUCT_CATEGORIES.find(cat => cat.category === 'audio') || null;
+  }
+
+  // Accessories detection
+  if (productLower.includes('keyboard') || productLower.includes('mouse') ||
+    productLower.includes('logitech') || productLower.includes('combo') ||
+    productLower.includes('peripheral')) {
+    return PRODUCT_CATEGORIES.find(cat => cat.category === 'accessories') || null;
+  }
+
+  // Food detection
+  if (productLower.includes('cookie') || productLower.includes('food') ||
+    productLower.includes('meal') || productLower.includes('dish') ||
+    productLower.includes('nutrition')) {
+    return PRODUCT_CATEGORIES.find(cat => cat.category === 'food') || null;
+  }
+
+  // Financial services detection
+  if (productLower.includes('loan') || productLower.includes('payment') ||
+    productLower.includes('banking') || productLower.includes('finance') ||
+    productLower.includes('bnpl') || productLower.includes('buy now pay later')) {
+    return PRODUCT_CATEGORIES.find(cat => cat.category === 'financial') || null;
+  }
+
+  // Software detection
+  if (productLower.includes('software') || productLower.includes('platform') ||
+    productLower.includes('system') || productLower.includes('api') ||
+    productLower.includes('solution')) {
+    return PRODUCT_CATEGORIES.find(cat => cat.category === 'software') || null;
+  }
+
+  return null;
+}
+
+function generateProductSpecificLanguage(scheduledServices: any[]): {
+  primaryProduct: string;
+  specificLanguage: string;
+  actionWords: string[];
+  descriptors: string[];
+} {
+  if (!scheduledServices || scheduledServices.length === 0) {
+    return {
+      primaryProduct: 'product',
+      specificLanguage: 'Upgrade your experience',
+      actionWords: ['get', 'try', 'experience'],
+      descriptors: ['quality', 'premium', 'excellent']
+    };
+  }
+
+  // Get today's primary service
+  const primaryService = scheduledServices[0];
+  const productCategory = detectProductCategory(primaryService);
+
+  if (productCategory) {
+    const randomActionWord = productCategory.actionWords[Math.floor(Math.random() * productCategory.actionWords.length)];
+    const randomDescriptor = productCategory.descriptors[Math.floor(Math.random() * productCategory.descriptors.length)];
+
+    return {
+      primaryProduct: productCategory.specificTerms[0],
+      specificLanguage: randomActionWord,
+      actionWords: productCategory.actionWords,
+      descriptors: productCategory.descriptors
+    };
+  }
+
+  // Fallback for unrecognized products
+  return {
+    primaryProduct: 'product',
+    specificLanguage: 'Get quality products',
+    actionWords: ['get', 'try', 'choose'],
+    descriptors: ['quality', 'premium', 'reliable']
+  };
+}
+
 // Helper functions for advanced design generation
 function getBusinessDesignDNA(businessType: string): string {
   const designDNA: Record<string, string> = {
@@ -48,7 +197,7 @@ function getBusinessDesignDNA(businessType: string): string {
   return designDNA[businessType.toLowerCase()] || designDNA['default'];
 }
 
-// NEW: 7 truly different design types for dynamic social media feeds
+// NEW: 15 truly different design types for dynamic social media feeds - EXPANDED FOR MAXIMUM VARIETY
 function getHumanDesignVariations(seed: number): any {
   const variations = [
     {
@@ -106,6 +255,70 @@ function getHumanDesignVariations(seed: number): any {
       mood: 'Professional, branded, consistent',
       elements: 'Illustrations, brand colors, structured typography, consistent branding',
       description: 'The current style - professional illustrated posters with brand consistency. Use when you need to maintain strong brand identity.'
+    },
+    {
+      style: 'Neon Cyberpunk',
+      layout: 'Dark background with bright neon accents and futuristic elements',
+      composition: 'High contrast with glowing text and tech-inspired geometric shapes',
+      mood: 'Futuristic, bold, cutting-edge, energetic',
+      elements: 'Neon colors, dark backgrounds, glowing effects, geometric shapes, tech elements',
+      description: 'Create a futuristic cyberpunk aesthetic with bright neon colors against dark backgrounds. Think Blade Runner meets modern tech - glowing text, geometric shapes, and high-tech visual elements.'
+    },
+    {
+      style: 'Hand-Drawn Sketch',
+      layout: 'Organic, hand-drawn elements with sketch-like typography and illustrations',
+      composition: 'Asymmetrical, natural flow with hand-drawn borders and decorative elements',
+      mood: 'Personal, authentic, creative, approachable',
+      elements: 'Hand-drawn lines, sketch textures, organic shapes, handwritten fonts, doodle elements',
+      description: 'Design that looks like it was sketched by hand with pencil or pen. Include hand-drawn borders, organic shapes, and typography that feels handwritten and personal.'
+    },
+    {
+      style: 'Magazine Editorial',
+      layout: 'Clean, sophisticated layout inspired by high-end fashion and lifestyle magazines',
+      composition: 'Grid-based with perfect typography hierarchy and premium spacing',
+      mood: 'Sophisticated, premium, editorial, refined',
+      elements: 'Clean typography, sophisticated layouts, premium spacing, editorial-style imagery',
+      description: 'Create designs inspired by Vogue, GQ, or Architectural Digest - clean, sophisticated layouts with perfect typography and premium aesthetic that feels like a magazine spread.'
+    },
+    {
+      style: 'Retro Vintage',
+      layout: 'Nostalgic design with vintage color palettes and retro typography',
+      composition: 'Centered or badge-style layouts with vintage decorative elements',
+      mood: 'Nostalgic, warm, timeless, authentic',
+      elements: 'Vintage colors, retro fonts, aged textures, classic design elements, nostalgic imagery',
+      description: 'Design with 70s, 80s, or 90s aesthetic - warm vintage colors, retro typography, and nostalgic elements that evoke classic design eras with authentic vintage feel.'
+    },
+    {
+      style: 'Geometric Patterns',
+      layout: 'Bold geometric shapes and patterns with mathematical precision',
+      composition: 'Symmetrical or asymmetrical geometric arrangements with clean lines',
+      mood: 'Modern, precise, bold, structured',
+      elements: 'Geometric shapes, mathematical patterns, clean lines, bold colors, precise alignment',
+      description: 'Create designs using bold geometric shapes, patterns, and mathematical precision. Think Bauhaus meets modern design - clean lines, perfect shapes, and structured compositions.'
+    },
+    {
+      style: 'Textured Backgrounds',
+      layout: 'Rich textural backgrounds (paper, fabric, concrete) with overlay text',
+      composition: 'Texture as foundation with carefully placed typography and elements',
+      mood: 'Tactile, organic, sophisticated, grounded',
+      elements: 'Paper textures, fabric patterns, concrete surfaces, wood grain, natural textures',
+      description: 'Use rich, tactile textures as the foundation - paper, fabric, concrete, wood, or stone textures with elegant text overlay that feels sophisticated and grounded.'
+    },
+    {
+      style: 'Photo Frames & Borders',
+      layout: 'Decorative frames and borders around content with Instagram-style aesthetics',
+      composition: 'Framed content with decorative borders and elegant spacing',
+      mood: 'Elegant, framed, curated, premium',
+      elements: 'Decorative frames, elegant borders, premium spacing, curated aesthetic, frame styles',
+      description: 'Design with beautiful decorative frames and borders - think Instagram story frames, elegant photo borders, or premium packaging design with sophisticated framing elements.'
+    },
+    {
+      style: 'Typography Hero',
+      layout: 'Large, bold typography as the main design element with minimal supporting graphics',
+      composition: 'Text-dominant layout with typography as the primary visual element',
+      mood: 'Bold, impactful, statement-making, confident',
+      elements: 'Large typography, bold fonts, minimal graphics, strong hierarchy, text-focused design',
+      description: 'Make typography the hero of the design - large, bold, impactful text with minimal supporting elements. Think Nike or Apple advertising where the message is the main visual element.'
     }
   ];
 
@@ -267,31 +480,27 @@ async function gatherRealTimeContext(
     const contextualData: any[] = [];
 
     // 1. SCHEDULED SERVICES INTEGRATION (Highest Priority)
-    if (brandId) {
-      try {
-        const todaysServices = await CalendarService.getTodaysScheduledServices(brandId);
-        const upcomingServices = await CalendarService.getUpcomingScheduledServices(brandId);
+    if (scheduledServices && scheduledServices.length > 0) {
+      context.scheduledServices = scheduledServices;
 
-        context.scheduledServices = [...todaysServices, ...upcomingServices];
-
-        // Add to contextual data for relevance filtering
-        [...todaysServices, ...upcomingServices].forEach(service => {
-          contextualData.push({
-            type: 'scheduled_service',
-            content: service,
-            source: 'calendar',
-            timestamp: new Date()
-          });
+      // Add to contextual data for relevance filtering
+      scheduledServices.forEach(service => {
+        contextualData.push({
+          type: 'scheduled_service',
+          content: service,
+          source: 'calendar',
+          timestamp: new Date()
         });
+      });
 
-        console.log('📅 [Revo 1.0] Scheduled Services:', {
-          todaysCount: todaysServices.length,
-          upcomingCount: upcomingServices.length,
-          services: context.scheduledServices.map(s => s.serviceName)
-        });
-      } catch (error) {
-        console.warn('Failed to fetch scheduled services:', error);
-      }
+      console.log('📅 [Revo 1.0] Scheduled Services:', {
+        totalCount: scheduledServices.length,
+        todaysCount: scheduledServices.filter((s: any) => s.isToday).length,
+        upcomingCount: scheduledServices.filter((s: any) => s.isUpcoming).length,
+        services: scheduledServices.map((s: any) => s.serviceName)
+      });
+    } else {
+      console.log('📅 [Revo 1.0] No scheduled services provided');
     }
 
     // 2. RSS DATA INTEGRATION
@@ -380,8 +589,8 @@ async function gatherRealTimeContext(
 
     // 5.1. ENHANCED CULTURAL INTELLIGENCE
     try {
-      const { getEnhancedCulturalContext } = await import('@/ai/utils/enhanced-cultural-intelligence');
-      const enhancedCulturalContext = getEnhancedCulturalContext(location);
+      const { getCulturalContext } = await import('@/ai/utils/enhanced-cultural-intelligence');
+      const enhancedCulturalContext = getCulturalContext(location);
       if (enhancedCulturalContext) {
         context.enhancedCulturalContext = enhancedCulturalContext;
         console.log('🌍 [Revo 1.0] Enhanced Cultural Context:', {
@@ -435,16 +644,41 @@ async function gatherRealTimeContext(
 // Advanced design enhancement functions
 function shouldIncludePeopleInDesign(businessType: string, location: string, visualStyle: string): boolean {
   const peopleBusinessTypes = [
+    // Service-based businesses
     'restaurant', 'fitness', 'healthcare', 'education', 'retail', 'hospitality',
     'beauty', 'wellness', 'consulting', 'coaching', 'real estate', 'finance',
-    'technology', 'marketing', 'events', 'photography', 'fashion'
+    'technology', 'marketing', 'events', 'photography', 'fashion',
+
+    // Food & Nutrition related
+    'food', 'nutritional', 'nutrition', 'catering', 'bakery', 'cafe', 'deli',
+    'grocery', 'organic', 'healthy', 'diet', 'meal', 'cooking', 'culinary',
+
+    // Business & Professional services
+    'company', 'business', 'service', 'agency', 'firm', 'studio', 'center',
+    'clinic', 'office', 'shop', 'store', 'boutique', 'salon', 'spa',
+
+    // Community & Social
+    'community', 'social', 'training', 'workshop', 'seminar', 'course',
+    'therapy', 'counseling', 'support', 'care', 'assistance',
+
+    // E-commerce & Tech
+    'ecommerce', 'e-commerce', 'electronics', 'tech', 'digital'
   ];
 
-  return peopleBusinessTypes.some(type =>
-    businessType.toLowerCase().includes(type) ||
-    visualStyle === 'lifestyle' ||
-    visualStyle === 'authentic'
-  );
+  const businessTypeLower = businessType.toLowerCase();
+  const matchesBusinessType = peopleBusinessTypes.some(type => businessTypeLower.includes(type));
+  const matchesVisualStyle = visualStyle === 'lifestyle' || visualStyle === 'authentic';
+
+  console.log('🔍 [People Toggle Debug] Business type matching:', {
+    businessType: businessType,
+    businessTypeLower: businessTypeLower,
+    visualStyle: visualStyle,
+    matchesBusinessType: matchesBusinessType,
+    matchesVisualStyle: matchesVisualStyle,
+    finalResult: matchesBusinessType || matchesVisualStyle
+  });
+
+  return matchesBusinessType || matchesVisualStyle;
 }
 
 function getLocalCulturalContext(location: string): string {
@@ -1769,6 +2003,7 @@ export async function generateRevo10Content(input: {
   websiteUrl?: string;
   useLocalLanguage?: boolean; // When true, mix local language with English; when false, use 100% English
   scheduledServices?: ScheduledService[]; // NEW: Scheduled services integration
+  includePeople?: boolean; // NEW: People in designs toggle
 }) {
   try {
     // Auto-detect platform-specific aspect ratio
@@ -1816,7 +2051,7 @@ export async function generateRevo10Content(input: {
       input.location,
       input.platform,
       input.brandId, // Pass brandId for calendar access
-      [] // scheduledServices will be fetched inside the function
+      input.scheduledServices || [] // Pass scheduled services from input
     );
 
     // 🎯 ENHANCED: Scheduled Services Integration from Real-Time Context
@@ -1832,19 +2067,49 @@ export async function generateRevo10Content(input: {
 
       if (todaysServices.length > 0) {
         serviceFocus = todaysServices.map((s: any) => s.serviceName).join(', ');
+
+        // Enhanced service context with sales focus detection
+        const hasProductSpecs = todaysServices.some((s: any) =>
+          s.description && (
+            s.description.includes('$') ||
+            s.description.includes('GB') ||
+            s.description.includes('MP') ||
+            s.description.includes('Pro') ||
+            s.description.includes('starting at') ||
+            s.description.includes('price') ||
+            s.description.toLowerCase().includes('available')
+          )
+        );
+
         serviceContext = `\n🎯 PRIORITY SERVICES (HIGHEST PRIORITY - Focus ALL content on these specific services scheduled for TODAY):
 ${todaysServices.map((s: any) => `- ${s.serviceName}: ${s.description || 'Available today'}`).join('\n')}
 
-⚠️ CRITICAL REQUIREMENT:
+⚠️ CRITICAL SALES-FOCUSED REQUIREMENTS:
+${hasProductSpecs ? `
+🛍️ PRODUCT SALES MODE ACTIVATED:
+- Extract and PROMINENTLY feature ALL product specifications (storage, camera, processor, etc.)
+- Include ALL pricing information in headlines, subheadlines, or captions
+- Create DIRECT SALES content with purchase incentives and urgency
+- Use product specs as the PRIMARY content focus, not general business promotion
+- Generate content that drives immediate purchase decisions
+` : ''}
 - The content MUST specifically promote ONLY these TODAY'S services
-- Use the EXACT service names in headlines, subheadlines, and captions
+- Use the EXACT service names and specifications in headlines, subheadlines, and captions
 - Create urgent, today-focused language: "today", "now", "available today", "don't miss out"
+- Balance local context - mention location strategically but don't overemphasize for broader market appeal
 - DO NOT mention other business services not listed above`;
+
         console.log('🎯 [Revo 1.0] Content focusing on TODAY\'S services:', todaysServices.map((s: any) => s.serviceName));
+        console.log('🛍️ [Revo 1.0] Product specs detected:', hasProductSpecs);
       } else if (upcomingServices.length > 0) {
         serviceFocus = upcomingServices.map((s: any) => s.serviceName).join(', ');
         serviceContext = `\n📅 UPCOMING SERVICES (Build anticipation for these services):
-${upcomingServices.map((s: any) => `- ${s.serviceName} (in ${s.daysUntil} days): ${s.description || ''}`).join('\n')}`;
+${upcomingServices.map((s: any) => `- ${s.serviceName} (in ${s.daysUntil} days): ${s.description || ''}`).join('\n')}
+
+⚠️ ANTICIPATION BUILDING REQUIREMENTS:
+- Focus on creating excitement for upcoming product launches
+- Highlight key specifications and expected pricing if available
+- Use anticipation language: "coming soon", "get ready", "pre-order now"`;
         console.log('📅 [Revo 1.0] Content focusing on UPCOMING services:', upcomingServices.map((s: any) => s.serviceName));
       }
     } else {
@@ -1884,6 +2149,17 @@ ${upcomingServices.map((s: any) => `- ${s.serviceName} (in ${s.daysUntil} days):
       includeContacts: false
     };
 
+    // Generate product-specific language BEFORE template replacement
+    const todaysServices = scheduledServices ? scheduledServices.filter((s: any) => s.isToday).map((s: any) => s.serviceName) : [];
+    const productLanguage = generateProductSpecificLanguage(todaysServices);
+
+    console.log('🎯 [Revo 1.0] Product-Specific Language:', {
+      primaryProduct: productLanguage.primaryProduct,
+      specificLanguage: productLanguage.specificLanguage,
+      todaysServices: todaysServices.slice(0, 3), // Show first 3 services
+      detectedCategory: todaysServices.length > 0 ? detectProductCategory(todaysServices[0])?.category : 'none'
+    });
+
     // Build the content generation prompt with enhanced brand context (using contact-free input)
     const contentPrompt = revo10Prompts.CONTENT_USER_PROMPT_TEMPLATE
       .replace('{businessName}', contentGenerationInput.businessName)
@@ -1896,6 +2172,20 @@ ${upcomingServices.map((s: any) => `- ${s.serviceName} (in ${s.daysUntil} days):
       .replace('{targetAudience}', contentGenerationInput.targetAudience)
       .replace('{services}', serviceFocus + serviceContext)
       .replace('{keyFeatures}', contentGenerationInput.keyFeatures || '')
+      .replace('{productLanguage}', `
+🎯 PRODUCT-SPECIFIC LANGUAGE REQUIREMENTS:
+- Primary Product Type: ${productLanguage.primaryProduct}
+- Use Specific Action Language: ${productLanguage.specificLanguage}
+- Available Action Words: ${(productLanguage.actionWords || []).join(', ')}
+- Product Descriptors: ${(productLanguage.descriptors || []).join(', ')}
+
+⚠️ CRITICAL: Instead of generic terms like "tech", "product", or "service", use the SPECIFIC product language above.
+Examples:
+- ❌ "Upgrade your tech" → ✅ "${productLanguage.specificLanguage}"
+- ❌ "Get our products" → ✅ "Get our ${productLanguage.primaryProduct}"
+- ❌ "Quality tech solutions" → ✅ "${(productLanguage.descriptors || ['quality'])[0]} ${productLanguage.primaryProduct}"
+
+This makes content more engaging and specific to what you're actually selling.`)
       .replace('{competitiveAdvantages}', contentGenerationInput.competitiveAdvantages || '')
       .replace('{contentThemes}', Array.isArray(contentGenerationInput.contentThemes) ? contentGenerationInput.contentThemes.join(', ') : 'general business content')
       .replace('{contactPhone}', '') // Contact details will be added during image generation
@@ -1909,12 +2199,12 @@ ${upcomingServices.map((s: any) => `- ${s.serviceName} (in ${s.daysUntil} days):
     // Add RSS insights if available
     if (realTimeContext.rssData && realTimeContext.rssData.articles.length > 0) {
       const rssInsights = `\n\n📰 CURRENT NEWS & TRENDS (Use these insights to make content timely and relevant):
-${realTimeContext.rssData.insights.join('\n')}
+${(realTimeContext.rssData.insights || []).join('\n')}
 
-🔥 TRENDING TOPICS: ${realTimeContext.rssData.trends.slice(0, 5).join(', ')}
+🔥 TRENDING TOPICS: ${(realTimeContext.rssData.trends || []).slice(0, 5).join(', ')}
 
 📈 RELEVANT NEWS HEADLINES:
-${realTimeContext.rssData.articles.slice(0, 3).map((article: any) => `- ${article.title}`).join('\n')}
+${(realTimeContext.rssData.articles || []).slice(0, 3).map((article: any) => `- ${article.title}`).join('\n')}
 
 💡 CONTENT OPPORTUNITIES: Use these current events to create timely, engaging content that connects your business to what's happening now.`;
 
@@ -1924,7 +2214,7 @@ ${realTimeContext.rssData.articles.slice(0, 3).map((article: any) => `- ${articl
     // Add relevance insights if available
     if (realTimeContext.relevanceInsights && realTimeContext.relevanceInsights.length > 0) {
       const relevanceSection = `\n\n🎯 DATA RELEVANCE INSIGHTS:
-${realTimeContext.relevanceInsights.join('\n')}
+${(realTimeContext.relevanceInsights || []).join('\n')}
 
 📊 CONTEXT SUMMARY: ${realTimeContext.relevanceSummary || 'Focus on core business messaging with available contextual enhancements.'}`;
 
@@ -1969,24 +2259,103 @@ ${realTimeContext.highRelevanceData.map((item: any) => {
     const uniqueContentVariation = generateUniqueContentVariation(input.businessType, input.location, randomSeed % 1000);
 
 
-    // 🎯 NEW: Generate business-specific content strategy
+    // 🎯 STRATEGIC LOCATION MENTION SYSTEM
+    // Only 40% of content should include location references for variety and broader market appeal
+    const shouldIncludeLocationContext = Math.random() < 0.40; // 40% chance for location mentions
+    console.log('🌍 [Revo 1.0] Strategic location mention:', shouldIncludeLocationContext ? 'ENABLED' : 'DISABLED (product/service focus)');
+
+    // 🛍️ STRATEGIC PRODUCT SPECIFICATION USAGE SYSTEM
+    // Only 50% of content should prominently feature product specifications for variety
+    const shouldUseProductSpecs = Math.random() < 0.50; // 50% chance for product spec focus
+    console.log('📱 [Revo 1.0] Strategic product spec usage:', shouldUseProductSpecs ? 'ENABLED (technical focus)' : 'DISABLED (emotional/lifestyle focus)');
+
+    // 🎯 NEW: Generate business-specific content strategy with enhanced product focus
+
+    // Extract product specifications from scheduled services
+    const extractProductSpecs = (services: any[]): any => {
+      const specs = {
+        hasSpecs: false,
+        pricing: [],
+        features: [],
+        specifications: [],
+        urgencyIndicators: []
+      };
+
+      services.forEach(service => {
+        if (service.description) {
+          const desc = service.description;
+
+          // Extract pricing
+          const priceMatches = desc.match(/\$[\d,]+|\d+\s*GB|\d+MP|starting at \$[\d,]+/gi);
+          if (priceMatches) {
+            specs.pricing.push(...priceMatches);
+            specs.hasSpecs = true;
+          }
+
+          // Extract technical specifications
+          const techSpecs = desc.match(/\d+GB|\d+MP|A\d+\s*Pro|Pro\s*chip|camera\s*system|titanium|storage/gi);
+          if (techSpecs) {
+            specs.specifications.push(...techSpecs);
+            specs.hasSpecs = true;
+          }
+
+          // Extract features
+          const features = desc.match(/Pro|chip|camera|system|design|available|colors?|free\s*shipping|trade-in/gi);
+          if (features) {
+            specs.features.push(...features);
+          }
+
+          // Extract urgency indicators
+          const urgency = desc.match(/available\s*now|today\s*only|limited\s*time|while\s*supplies\s*last|free\s*shipping/gi);
+          if (urgency) {
+            specs.urgencyIndicators.push(...urgency);
+          }
+        }
+      });
+
+      return specs;
+    };
+
+    const productSpecs = scheduledServices ? extractProductSpecs(scheduledServices.filter((s: any) => s.isToday)) : { hasSpecs: false };
 
     const businessDetails = {
       experience: '5+ years', // Could be extracted from business profile
       expertise: input.keyFeatures,
       services: serviceFocus, // Use scheduled services focus instead of generic services
       location: input.location,
-      targetAudience: input.targetAudience
+      targetAudience: input.targetAudience,
+      productSpecs: productSpecs, // Enhanced product specifications
+      salesFocus: productSpecs.hasSpecs && shouldUseProductSpecs, // Only sales-focused when specs available AND strategy enabled
+      contentMode: (productSpecs.hasSpecs && shouldUseProductSpecs) ? 'sales' : 'awareness', // Dynamic content mode
+      locationStrategy: {
+        includeLocation: shouldIncludeLocationContext,
+        purpose: shouldIncludeLocationContext ? 'local_credibility' : 'universal_appeal',
+        focus: shouldIncludeLocationContext ? 'community_connection' : 'product_specifications'
+      },
+      productSpecStrategy: {
+        useSpecs: shouldUseProductSpecs && productSpecs.hasSpecs,
+        focus: shouldUseProductSpecs ? 'technical_specifications' : 'emotional_benefits',
+        approach: shouldUseProductSpecs ? 'product_focused' : 'lifestyle_focused'
+      },
+      productLanguage: {
+        primaryProduct: productLanguage.primaryProduct,
+        specificLanguage: productLanguage.specificLanguage,
+        actionWords: productLanguage.actionWords,
+        descriptors: productLanguage.descriptors
+      }
     };
 
-    // Generate strategic content plan based on business type and goals
+    // Generate strategic content plan based on business type and goals (dynamic based on product specs)
+    const contentGoal = businessDetails.salesFocus ? 'conversion' : 'awareness';
+    console.log('🎯 [Revo 1.0] Content goal:', contentGoal, '(Sales focus:', businessDetails.salesFocus, ')');
+
     const contentPlan = StrategicContentPlanner.generateBusinessSpecificContent(
       input.businessType,
       input.businessName,
       input.location,
       businessDetails,
       input.platform,
-      'awareness' // Can be dynamic based on business goals
+      contentGoal // Dynamic: 'conversion' for sales, 'awareness' for general
     );
 
 
@@ -2000,7 +2369,7 @@ ${realTimeContext.highRelevanceData.map((item: any) => {
         contentGenerationInput.location,
         businessDetails,
         contentGenerationInput.platform,
-        'awareness',
+        contentGoal, // Use dynamic content goal (conversion for sales, awareness for general)
         trendingEnhancement,
         advancedContent,
         input.useLocalLanguage || false,
@@ -2025,7 +2394,7 @@ ${realTimeContext.highRelevanceData.map((item: any) => {
         contentGenerationInput.location,
         businessDetails,
         businessHeadline.headline,
-        'awareness',
+        contentGoal, // Use dynamic content goal (conversion for sales, awareness for general)
         trendingEnhancement,
         advancedContent,
         input.useLocalLanguage || false,
@@ -2068,7 +2437,7 @@ ${realTimeContext.highRelevanceData.map((item: any) => {
         contentGenerationInput.location,
         businessDetails,
         contentGenerationInput.platform,
-        'awareness',
+        contentGoal, // Use dynamic content goal (conversion for sales, awareness for general)
         trendingEnhancement,
         advancedContent,
         {
@@ -2156,8 +2525,8 @@ ${realTimeContext.highRelevanceData.map((item: any) => {
         cohesionScore: cohesionAnalysis.cohesionScore,
         primaryTheme: cohesionAnalysis.theme?.primaryTheme,
         emotionalTone: cohesionAnalysis.theme?.emotionalTone,
-        issuesCount: cohesionAnalysis.issues.length,
-        suggestionsCount: cohesionAnalysis.suggestions.length
+        issuesCount: cohesionAnalysis.issues?.length || 0,
+        suggestionsCount: cohesionAnalysis.suggestions?.length || 0
       });
 
       // Add cohesion data to the final content
@@ -2292,6 +2661,7 @@ export async function generateRevo10Image(input: {
     email?: string;
   };
   websiteUrl?: string;
+  includePeople?: boolean; // NEW: People toggle parameter
 }) {
   try {
 
@@ -2371,18 +2741,29 @@ ANTI-GENERIC REQUIREMENTS:
     // Get advanced design features
     const businessDesignDNA = getBusinessDesignDNA(input.businessType);
     const platformOptimization = getPlatformOptimization(input.platform);
-    const shouldIncludePeople = shouldIncludePeopleInDesign(input.businessType, input.location || 'Global', input.visualStyle);
+    // Respect the UI toggle for people in designs - if explicitly set to false, don't include people
+    // If toggle is explicitly true, prioritize user preference; otherwise check business type compatibility
+    const businessTypeSupportsePeople = shouldIncludePeopleInDesign(input.businessType, input.location || 'Global', input.visualStyle);
+    const shouldIncludePeople = input.includePeople === true ? true : (input.includePeople !== false && businessTypeSupportsePeople);
     const peopleInstructions = shouldIncludePeople ? getAdvancedPeopleInstructions(input.businessType, input.location || 'Global') : '';
-    // Strategic location mention - only 20% of the time for designs
-    const shouldMentionLocationInDesign = Math.random() < 0.20; // 20% chance to mention location
+
+    console.log('👥 [Revo 1.0] People in Designs:', {
+      includePeopleToggle: input.includePeople,
+      businessTypeSupportsePeople: businessTypeSupportsePeople,
+      finalDecision: shouldIncludePeople,
+      hasPeopleInstructions: !!peopleInstructions,
+      businessType: input.businessType
+    });
+    // Strategic location mention - use the same 40% system for consistency
+    const shouldMentionLocationInDesign = Math.random() < 0.40; // 40% chance for location mentions in design
     const locationTextForDesign = shouldMentionLocationInDesign && input.location
-      ? `- Location: ${input.location}`
-      : '';
+      ? `- Location: ${input.location} (for local credibility and community connection)`
+      : '- Focus: Universal appeal and product specifications';
 
     // Strategic cultural context - only include when location is mentioned
     const culturalContext = shouldMentionLocationInDesign
       ? getLocalCulturalContext(input.location || 'Global')
-      : 'Focus on universal design elements that appeal to a broad audience';
+      : 'Focus on universal design elements, product specifications, and features that appeal to a broad audience beyond local market';
 
     // Generate human-like design variation for authentic, creative designs
     const designRandomSeed = Math.floor(Math.random() * 10000) + Date.now();
@@ -2656,34 +3037,61 @@ You MUST include the exact brand logo image that was provided above in your desi
       console.warn('Revo 1.0: Final contact info integration failed:', e);
     }
 
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        result = await model.generateContent(generationParts);
-        response = await result.response;
-        break; // Success, exit retry loop
-      } catch (error: any) {
-        lastError = error;
-        console.error(`❌ [Revo 1.0] Attempt ${attempt} failed:`, error.message);
+    // 🛡️ CIRCUIT BREAKER: Protect against Gemini API failures for 1K+ users
+    const circuitBreaker = CircuitBreakerManager.getInstance().getBreaker('gemini-api', {
+      failureThreshold: 3,      // Open circuit after 3 failures
+      recoveryTimeout: 30000,   // Wait 30 seconds before trying again
+      monitoringPeriod: 60000,  // Monitor failures over 1 minute
+      successThreshold: 2       // Need 2 successes to close circuit
+    });
 
-        // Check if it's a 503 error and we have retries left
-        if (error.message && error.message.includes('503') && attempt < maxRetries) {
-          const waitTime = Math.pow(2, attempt) * 1000; // Exponential backoff
-          console.log(`⏳ [Revo 1.0] Waiting ${waitTime}ms before retry ${attempt + 1}...`);
-          await new Promise(resolve => setTimeout(resolve, waitTime));
-          continue;
-        }
+    try {
+      const geminiResult = await circuitBreaker.execute(
+        // Primary operation: Call Gemini API with retries
+        async () => {
+          for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+              const geminiResult = await model.generateContent(generationParts);
+              const geminiResponse = await geminiResult.response;
+              return { result: geminiResult, response: geminiResponse };
+            } catch (error: any) {
+              lastError = error;
+              console.error(`❌ [Revo 1.0] Gemini attempt ${attempt} failed:`, error.message);
 
-        // If it's the last attempt or not a 503 error, throw
-        if (attempt === maxRetries) {
-          if (error.message && error.message.includes('503')) {
-            throw new Error('Revo 1.0 is super busy right now! 🚀 Try Revo 2.0 instead - it\'s working perfectly and ready to create amazing content!');
+              // Check if it's a 503 error and we have retries left
+              if (error.message && error.message.includes('503') && attempt < maxRetries) {
+                const waitTime = Math.pow(2, attempt) * 1000; // Exponential backoff
+                console.log(`⏳ [Revo 1.0] Waiting ${waitTime}ms before retry ${attempt + 1}...`);
+                await new Promise(resolve => setTimeout(resolve, waitTime));
+                continue;
+              }
+
+              // If it's the last attempt or not a 503 error, throw
+              if (attempt === maxRetries) {
+                if (error.message && error.message.includes('503')) {
+                  throw new Error('Gemini API overloaded - circuit breaker will handle this');
+                }
+                if (error.message && error.message.includes('500')) {
+                  throw new Error('Gemini API server error - circuit breaker will handle this');
+                }
+                throw new Error('Gemini API failed - circuit breaker will handle this');
+              }
+            }
           }
-          if (error.message && error.message.includes('500')) {
-            throw new Error('Revo 1.0 needs a quick tech break! 🔧 Switch to Revo 2.0 for fantastic results while we wait.');
-          }
-          throw new Error('Revo 1.0 is taking a breather! 😴 Good news: Revo 2.0 is wide awake and ready to help you create stunning designs!');
+          throw lastError || new Error('Gemini API failed after all retries');
+        },
+        // Fallback operation: Generate simple text-based response
+        () => {
+          console.warn('🔄 [Revo 1.0] Circuit breaker activated - using fallback response');
+          throw new Error('Revo 1.0 is super busy right now! 🚀 Try Revo 2.0 instead - it\'s working perfectly and ready to create amazing content!');
         }
-      }
+      );
+
+      result = geminiResult.result;
+      response = geminiResult.response;
+    } catch (error) {
+      // Circuit breaker fallback was used
+      throw error;
     }
 
     // Extract image data from Gemini response
