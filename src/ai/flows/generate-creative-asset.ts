@@ -334,6 +334,18 @@ const generateCreativeAssetFlow = ai.defineFlow(
         const userIntent = analyzeUserIntent(input.prompt, parsedInstructions);
         const { imageText, remainingPrompt } = extractQuotedText(input.prompt); // Keep for backward compatibility
 
+        // Debug logging for user intent analysis
+        console.log('🔍 [Creative Studio] User Intent Analysis:', {
+            prompt: input.prompt,
+            preferredModel: input.preferredModel,
+            isLiteralTextRequest: userIntent.isLiteralTextRequest,
+            isDesignDirectionRequest: userIntent.isDesignDirectionRequest,
+            textInstructions: userIntent.textInstructions,
+            designDirection: userIntent.designDirection,
+            quotedText: parsedInstructions.quotedText,
+            remainingPrompt: parsedInstructions.remainingPrompt
+        });
+
         if (input.maskDataUrl && input.referenceAssetUrl) {
             // This is an inpainting request.
             textPrompt = `You are an expert image editor performing a precise inpainting task.
