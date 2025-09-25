@@ -365,6 +365,15 @@ export async function generateCreativeAssetAction(
   }
 ): Promise<CreativeAsset> {
   try {
+    console.log('🎨 [Creative Studio Action] Called with:', {
+      prompt,
+      outputType,
+      preferredModel,
+      useBrandProfile,
+      brandProfileName: brandProfile?.businessName,
+      hasReferenceAsset: !!referenceAssetUrl
+    });
+
     const result = await generateCreativeAssetFlow({
       prompt,
       outputType,

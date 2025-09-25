@@ -183,7 +183,12 @@ const analyzeUserIntent = (prompt: string, parsedInstructions: ParsedInstruction
         /make\s+(?:a\s+)?(?:promotional|marketing|advertising)/i,
         /design\s+(?:a\s+)?(?:promotional|marketing|advertising)/i,
         /generate\s+(?:a\s+)?(?:promotional|marketing|advertising)/i,
+        /create\s+(?:a\s+)?design/i,
+        /make\s+(?:a\s+)?design/i,
+        /generate\s+(?:a\s+)?design/i,
+        /design\s+(?:something|anything)/i,
         /for\s+today'?s?\s+(?:special|event|promotion)/i,
+        /for\s+today/i,
         /promotional\s+design/i,
         /marketing\s+design/i,
         /advertising\s+design/i,
@@ -195,6 +200,16 @@ const analyzeUserIntent = (prompt: string, parsedInstructions: ParsedInstruction
     const hasDesignDirectionPatterns = designDirectionPatterns.some(pattern => pattern.test(prompt));
     const hasQuotedText = parsedInstructions.quotedText.length > 0;
     const hasStructuredInstructions = !!(parsedInstructions.headline || parsedInstructions.subheadline || parsedInstructions.cta);
+
+    // Debug pattern matching
+    console.log('🔍 [Intent Analysis] Pattern Matching:', {
+        prompt,
+        hasLiteralTextPatterns,
+        hasDesignDirectionPatterns,
+        hasQuotedText,
+        hasStructuredInstructions,
+        matchingDesignPatterns: designDirectionPatterns.filter(pattern => pattern.test(prompt)).map(p => p.toString())
+    });
 
     // Determine intent
     const isLiteralTextRequest = hasLiteralTextPatterns || hasQuotedText || hasStructuredInstructions;
@@ -345,6 +360,9 @@ const generateCreativeAssetFlow = ai.defineFlow(
             quotedText: parsedInstructions.quotedText,
             remainingPrompt: parsedInstructions.remainingPrompt
         });
+
+        // Additional debug for pattern matching
+        console.log('🔍 [Pattern Debug] Analyzing prompt patterns for:', input.prompt);
 
         if (input.maskDataUrl && input.referenceAssetUrl) {
             // This is an inpainting request.
