@@ -316,7 +316,7 @@ The logo has been normalized to 200px standard size to prevent design dimension 
 }
 
 /**
- * Generate caption and hashtags for Revo 2.0
+ * Generate unique caption and hashtags for Revo 2.0
  */
 async function generateCaptionAndHashtags(options: Revo20GenerationOptions, concept: any): Promise<{
   caption: string;
@@ -328,32 +328,67 @@ async function generateCaptionAndHashtags(options: Revo20GenerationOptions, conc
 }> {
   const { businessType, brandProfile, platform } = options;
 
-  try {
-    const model = ai.getGenerativeModel({ model: REVO_2_0_MODEL });
+  // Determine hashtag count based on platform
+  const hashtagCount = platform.toLowerCase() === 'instagram' ? 5 : 3;
 
-    const contentPrompt = `Generate sophisticated social media content for ${brandProfile.businessName} (${businessType}) on ${platform}.
+  // Generate unique timestamp-based seed for variety
+  const uniqueSeed = Date.now() + Math.random();
+  const creativityBoost = Math.floor(uniqueSeed % 10) + 1;
+
+  try {
+    const model = ai.getGenerativeModel({
+      model: REVO_2_0_MODEL,
+      generationConfig: {
+        temperature: 0.9, // Higher temperature for more creativity
+        topP: 0.95,
+        topK: 50,
+        maxOutputTokens: 2048,
+      }
+    });
+
+    const contentPrompt = `Generate UNIQUE and CREATIVE social media content for ${brandProfile.businessName} (${businessType}) on ${platform}.
+
+🎯 CREATIVITY REQUIREMENT: This must be COMPLETELY DIFFERENT from any previous content. Use creativity level ${creativityBoost}/10.
 
 CREATIVE CONCEPT: ${concept.concept}
 LOCATION: ${brandProfile.location || 'Global'}
+BUSINESS FOCUS: ${businessType}
+PLATFORM: ${platform}
 
-Generate:
-1. HEADLINE (max 6 words): Catchy, attention-grabbing
-2. SUBHEADLINE (max 25 words): Compelling value proposition  
-3. CAPTION (50-100 words): Engaging, authentic, professional
-4. CALL-TO-ACTION (2-4 words): Action-oriented
-5. HASHTAGS (8-12): Mix of trending, niche, and branded tags
+🚫 ANTI-REPETITION RULES:
+- DO NOT use "Experience the excellence of" - BANNED PHRASE
+- DO NOT use generic templates or repetitive patterns
+- DO NOT repeat previous captions - be completely original
+- DO NOT use placeholder text - create authentic content
+- CREATE fresh, unique content every time
 
-Focus on:
-- Authentic, human-like tone
-- Cultural relevance
-- Platform-specific engagement
-- Business value proposition
-- Local market appeal
+✅ CONTENT REQUIREMENTS:
+1. HEADLINE (max 6 words): Catchy, unique, attention-grabbing
+2. SUBHEADLINE (max 25 words): Compelling, specific value proposition
+3. CAPTION (50-100 words): Engaging, authentic, conversational, UNIQUE
+4. CALL-TO-ACTION (2-4 words): Action-oriented, compelling
+5. HASHTAGS (EXACTLY ${hashtagCount}): ${platform === 'instagram' ? 'Instagram gets 5 hashtags' : 'Other platforms get 3 hashtags'}
+
+🎨 CONTENT STYLE:
+- Write like a sophisticated marketer who understands ${brandProfile.location || 'the local market'}
+- Use persuasive, engaging language that drives interest
+- Be conversational and authentic, not corporate
+- Include specific benefits and value propositions
+- Make it feel personal and relatable
+- Use local cultural context when appropriate
+
+📱 PLATFORM OPTIMIZATION:
+- ${platform === 'instagram' ? 'Instagram: Visual storytelling, lifestyle focus, 5 strategic hashtags' : 'Other platforms: Professional tone, business focus, 3 targeted hashtags'}
+
+🌍 CULTURAL INTELLIGENCE:
+- Adapt tone for ${brandProfile.location || 'global audience'}
+- Use culturally relevant references when appropriate
+- Consider local business practices and communication styles
 
 Format as JSON:
 {
   "headline": "...",
-  "subheadline": "...", 
+  "subheadline": "...",
   "caption": "...",
   "cta": "...",
   "hashtags": ["#tag1", "#tag2", ...]
@@ -364,38 +399,106 @@ Format as JSON:
     const content = response.text();
 
     try {
-      const parsed = JSON.parse(content);
+      // Clean the response to extract JSON
+      let cleanContent = content.trim();
+      if (cleanContent.includes('```json')) {
+        cleanContent = cleanContent.split('```json')[1].split('```')[0].trim();
+      } else if (cleanContent.includes('```')) {
+        cleanContent = cleanContent.split('```')[1].split('```')[0].trim();
+      }
+
+      const parsed = JSON.parse(cleanContent);
+
+      // Ensure hashtag count is correct
+      let finalHashtags = parsed.hashtags || [];
+      if (finalHashtags.length !== hashtagCount) {
+        // Generate platform-appropriate hashtags if count is wrong
+        finalHashtags = generateFallbackHashtags(brandProfile, businessType, platform, hashtagCount);
+      }
+
+      // Ensure no repetitive captions
+      const caption = parsed.caption && !parsed.caption.includes('Experience the excellence of')
+        ? parsed.caption
+        : generateUniqueFallbackCaption(brandProfile, businessType, creativityBoost);
+
       return {
-        caption: parsed.caption || `Experience the excellence of ${brandProfile.businessName} - your trusted ${businessType} partner.`,
-        hashtags: parsed.hashtags || [`#${brandProfile.businessName.replace(/\s+/g, '')}`, '#Business', '#Quality'],
+        caption,
+        hashtags: finalHashtags,
         headline: parsed.headline,
         subheadline: parsed.subheadline,
         cta: parsed.cta,
-        captionVariations: [parsed.caption]
+        captionVariations: [caption]
       };
+
     } catch (parseError) {
-      console.warn('⚠️ Revo 2.0: Failed to parse content JSON, using fallback');
-      return {
-        caption: `Experience the excellence of ${brandProfile.businessName} - your trusted ${businessType} partner in ${brandProfile.location || 'delivering quality service'}.`,
-        hashtags: [`#${brandProfile.businessName.replace(/\s+/g, '')}`, '#Business', '#Quality', '#Professional'],
-        headline: 'Excellence Delivered',
-        subheadline: 'Your trusted partner for quality service',
-        cta: 'Get Started',
-        captionVariations: []
-      };
+      console.warn('⚠️ Revo 2.0: Failed to parse content JSON, generating unique fallback');
+      return generateUniqueFallbackContent(brandProfile, businessType, platform, hashtagCount, creativityBoost);
     }
 
   } catch (error) {
-    console.warn('⚠️ Revo 2.0: Content generation failed, using fallback');
-    return {
-      caption: `Discover the difference with ${brandProfile.businessName} - where quality meets innovation in ${businessType}.`,
-      hashtags: [`#${brandProfile.businessName.replace(/\s+/g, '')}`, '#Innovation', '#Quality', '#Business'],
-      headline: 'Quality Innovation',
-      subheadline: 'Where excellence meets innovation',
-      cta: 'Learn More',
-      captionVariations: []
-    };
+    console.warn('⚠️ Revo 2.0: Content generation failed, generating unique fallback');
+    return generateUniqueFallbackContent(brandProfile, businessType, platform, hashtagCount, Date.now() % 10);
   }
+}
+
+/**
+ * Generate unique fallback content to avoid repetition
+ */
+function generateUniqueFallbackContent(brandProfile: any, businessType: string, platform: string, hashtagCount: number, creativityLevel: number) {
+  const uniqueCaptions = [
+    `Transform your ${businessType.toLowerCase()} experience with ${brandProfile.businessName}. We're redefining excellence in ${brandProfile.location || 'the industry'}.`,
+    `Ready to elevate your ${businessType.toLowerCase()} journey? ${brandProfile.businessName} brings innovation and expertise to ${brandProfile.location || 'every project'}.`,
+    `Discover why ${brandProfile.businessName} is the preferred choice for ${businessType.toLowerCase()} solutions in ${brandProfile.location || 'the market'}.`,
+    `Your success is our mission. ${brandProfile.businessName} delivers exceptional ${businessType.toLowerCase()} services with a personal touch.`,
+    `Innovation meets reliability at ${brandProfile.businessName}. Experience the future of ${businessType.toLowerCase()} today.`,
+    `Quality, trust, and results - that's what ${brandProfile.businessName} brings to ${businessType.toLowerCase()} in ${brandProfile.location || 'every community'}.`,
+    `Unlock your potential with ${brandProfile.businessName}. We're more than just ${businessType.toLowerCase()} - we're your growth partners.`,
+    `Where expertise meets passion: ${brandProfile.businessName} is revolutionizing ${businessType.toLowerCase()} services.`,
+    `Join the success story. ${brandProfile.businessName} has been transforming ${businessType.toLowerCase()} experiences across ${brandProfile.location || 'the region'}.`,
+    `The smart choice for ${businessType.toLowerCase()}: ${brandProfile.businessName} combines innovation with proven results.`
+  ];
+
+  const selectedCaption = uniqueCaptions[creativityLevel % uniqueCaptions.length];
+  const hashtags = generateFallbackHashtags(brandProfile, businessType, platform, hashtagCount);
+
+  return {
+    caption: selectedCaption,
+    hashtags,
+    headline: 'Innovation Delivered',
+    subheadline: `Your trusted ${businessType.toLowerCase()} partner`,
+    cta: 'Get Started',
+    captionVariations: [selectedCaption]
+  };
+}
+
+/**
+ * Generate platform-appropriate hashtags
+ */
+function generateFallbackHashtags(brandProfile: any, businessType: string, platform: string, count: number): string[] {
+  const brandTag = `#${brandProfile.businessName.replace(/\s+/g, '')}`;
+  const businessTag = `#${businessType.replace(/\s+/g, '')}`;
+
+  const instagramHashtags = [brandTag, businessTag, '#Innovation', '#Quality', '#Success'];
+  const otherHashtags = [brandTag, businessTag, '#Professional'];
+
+  const baseHashtags = platform.toLowerCase() === 'instagram' ? instagramHashtags : otherHashtags;
+
+  return baseHashtags.slice(0, count);
+}
+
+/**
+ * Generate unique fallback caption
+ */
+function generateUniqueFallbackCaption(brandProfile: any, businessType: string, creativityLevel: number): string {
+  const templates = [
+    `Elevate your ${businessType.toLowerCase()} experience with ${brandProfile.businessName} - where innovation meets excellence.`,
+    `Transform your business with ${brandProfile.businessName}. We're redefining ${businessType.toLowerCase()} standards.`,
+    `Ready for exceptional ${businessType.toLowerCase()} solutions? ${brandProfile.businessName} delivers results that matter.`,
+    `Your success story starts here. ${brandProfile.businessName} brings expertise and innovation to every project.`,
+    `Discover the ${brandProfile.businessName} difference in ${businessType.toLowerCase()} excellence.`
+  ];
+
+  return templates[creativityLevel % templates.length];
 }
 
 /**
