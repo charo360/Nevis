@@ -151,17 +151,18 @@ const parseInstructions = (prompt: string): ParsedInstructions => {
     return result;
 };
 
-// Intelligent analysis to distinguish between literal text instructions vs design direction
+// Intelligent human-like analysis to understand natural requests
 const analyzeUserIntent = (prompt: string, parsedInstructions: ParsedInstructions): {
     isLiteralTextRequest: boolean;
     isDesignDirectionRequest: boolean;
     textInstructions: string[];
     designDirection: string;
+    humanIntent: string;
 } => {
-    const lowerPrompt = prompt.toLowerCase();
+    const cleanPrompt = prompt.trim().toLowerCase();
 
-    // Patterns that indicate literal text instructions
-    const literalTextPatterns = [
+    // EXPLICIT TEXT REQUESTS - User wants specific text
+    const explicitTextIndicators = [
         /add\s+(?:the\s+)?text/i,
         /include\s+(?:the\s+)?(?:words?|text)/i,
         /write\s+(?:the\s+)?(?:words?|text)/i,
@@ -177,43 +178,64 @@ const analyzeUserIntent = (prompt: string, parsedInstructions: ParsedInstruction
         /cta:\s*/i
     ];
 
-    // Patterns that indicate design direction requests
-    const designDirectionPatterns = [
-        /create\s+(?:a\s+)?(?:promotional|marketing|advertising)/i,
-        /make\s+(?:a\s+)?(?:promotional|marketing|advertising)/i,
-        /design\s+(?:a\s+)?(?:promotional|marketing|advertising)/i,
-        /generate\s+(?:a\s+)?(?:promotional|marketing|advertising)/i,
-        /create\s+(?:a\s+)?design/i,
-        /make\s+(?:a\s+)?design/i,
-        /generate\s+(?:a\s+)?design/i,
-        /design\s+(?:something|anything)/i,
-        /for\s+today'?s?\s+(?:special|event|promotion)/i,
-        /for\s+today/i,
-        /promotional\s+design/i,
-        /marketing\s+design/i,
-        /advertising\s+design/i,
-        /social\s+media\s+post/i,
-        /business\s+promotion/i
+    // HUMAN DESIGN REQUESTS - Natural language requests for designs
+    const humanDesignRequests = [
+        // Direct design requests
+        /^(?:create|make|design|generate|build)\s+(?:a\s+|an\s+|some\s+)?(?:design|image|graphic|visual|post|content)/i,
+
+        // Casual requests
+        /^(?:i\s+)?(?:want|need|would\s+like)\s+(?:a\s+|an\s+|some\s+)?(?:design|image|graphic|visual|post)/i,
+
+        // Purpose-based requests
+        /for\s+(?:today|tomorrow|this\s+week|marketing|promotion|social\s+media|instagram|facebook|twitter)/i,
+        /to\s+(?:promote|advertise|showcase|highlight|announce)/i,
+
+        // Business context requests
+        /(?:promotional|marketing|advertising|business|commercial|professional)\s+(?:design|image|graphic|visual|post|content)/i,
+
+        // Event/time-based requests
+        /(?:special\s+offer|sale|event|launch|opening|announcement)/i,
+
+        // Simple creative requests
+        /^(?:something|anything)\s+(?:creative|nice|good|professional|modern|cool)/i,
+
+        // Platform-specific requests
+        /(?:social\s+media|instagram|facebook|twitter|linkedin)\s+(?:post|content|design)/i
     ];
 
-    const hasLiteralTextPatterns = literalTextPatterns.some(pattern => pattern.test(prompt));
-    const hasDesignDirectionPatterns = designDirectionPatterns.some(pattern => pattern.test(prompt));
+    // Check for explicit text requests first
+    const hasExplicitTextRequest = explicitTextIndicators.some(pattern => pattern.test(prompt));
     const hasQuotedText = parsedInstructions.quotedText.length > 0;
     const hasStructuredInstructions = !!(parsedInstructions.headline || parsedInstructions.subheadline || parsedInstructions.cta);
 
-    // Debug pattern matching
-    console.log('🔍 [Intent Analysis] Pattern Matching:', {
-        prompt,
-        hasLiteralTextPatterns,
-        hasDesignDirectionPatterns,
+    // Check for human design requests
+    const hasHumanDesignRequest = humanDesignRequests.some(pattern => pattern.test(prompt));
+
+    // Determine human intent
+    let humanIntent = 'general_design';
+    if (hasExplicitTextRequest || hasQuotedText || hasStructuredInstructions) {
+        humanIntent = 'specific_text';
+    } else if (hasHumanDesignRequest) {
+        humanIntent = 'creative_design';
+    }
+
+    // Final intent determination
+    const isLiteralTextRequest = hasExplicitTextRequest || hasQuotedText || hasStructuredInstructions;
+    const isDesignDirectionRequest = !isLiteralTextRequest; // If not literal text, it's a design request
+
+    // Debug human intent analysis
+    console.log('🧠 [Human Intent Analysis]:', {
+        originalPrompt: prompt,
+        cleanPrompt,
+        humanIntent,
+        isLiteralTextRequest,
+        isDesignDirectionRequest,
+        hasExplicitTextRequest,
         hasQuotedText,
         hasStructuredInstructions,
-        matchingDesignPatterns: designDirectionPatterns.filter(pattern => pattern.test(prompt)).map(p => p.toString())
+        hasHumanDesignRequest,
+        matchingPatterns: humanDesignRequests.filter(pattern => pattern.test(prompt)).length
     });
-
-    // Determine intent
-    const isLiteralTextRequest = hasLiteralTextPatterns || hasQuotedText || hasStructuredInstructions;
-    const isDesignDirectionRequest = hasDesignDirectionPatterns && !isLiteralTextRequest;
 
     // Collect all text instructions
     const textInstructions: string[] = [];
@@ -234,7 +256,8 @@ const analyzeUserIntent = (prompt: string, parsedInstructions: ParsedInstruction
         isLiteralTextRequest,
         isDesignDirectionRequest,
         textInstructions,
-        designDirection: parsedInstructions.remainingPrompt
+        designDirection: parsedInstructions.remainingPrompt,
+        humanIntent
     };
 };
 
@@ -636,36 +659,37 @@ Transform the uploaded image into a professional marketing design by enhancing i
 
             if (userIntent.isLiteralTextRequest) {
                 // User wants specific text - use exactly what they specified
-                structuredContentInstructions += `\n\n🚨🚨🚨 LITERAL TEXT REQUEST DETECTED 🚨🚨🚨\n`;
-                structuredContentInstructions += `**USER SPECIFIED TEXT (HIGHEST PRIORITY):**\n`;
+                structuredContentInstructions += `\n\n🎯 USER SPECIFIED EXACT TEXT\n`;
+                structuredContentInstructions += `**LITERAL TEXT REQUIREMENTS:**\n`;
                 userIntent.textInstructions.forEach((text, index) => {
                     structuredContentInstructions += `- ${text}\n`;
                 });
-                structuredContentInstructions += `\n⛔ CRITICAL RESTRICTIONS:\n`;
-                structuredContentInstructions += `- ONLY use the exact text specified by the user above\n`;
-                structuredContentInstructions += `- NEVER add "CREATE A DESIGN FOR TODAY" or similar promotional text\n`;
-                structuredContentInstructions += `- NEVER add marketing slogans or business taglines\n`;
-                structuredContentInstructions += `- NEVER generate additional text content\n`;
-                structuredContentInstructions += `- DO NOT create promotional phrases unless explicitly requested\n`;
-            } else if (userIntent.isDesignDirectionRequest) {
-                // User wants AI to create content using brand information
-                structuredContentInstructions += `\n\n🎯 DESIGN DIRECTION REQUEST DETECTED 🎯\n`;
-                structuredContentInstructions += `**BRAND-BASED CONTENT GENERATION:**\n`;
-                structuredContentInstructions += `- Generate appropriate marketing content using the company's brand information\n`;
-                structuredContentInstructions += `- Use business name: ${bp.businessName}\n`;
-                structuredContentInstructions += `- Focus on services: ${servicesText || bp.businessType}\n`;
-                structuredContentInstructions += `- Location context: ${bp.location}\n`;
-                structuredContentInstructions += `- Create relevant, professional marketing text that serves the business\n`;
-                structuredContentInstructions += `- AVOID generic phrases like "CREATE A DESIGN FOR TODAY"\n`;
-                structuredContentInstructions += `- Focus on actual business value and services\n`;
+                structuredContentInstructions += `\n⛔ RESTRICTIONS:\n`;
+                structuredContentInstructions += `- Use ONLY the exact text specified above\n`;
+                structuredContentInstructions += `- Do NOT add any additional promotional text\n`;
+                structuredContentInstructions += `- Do NOT generate marketing slogans\n`;
             } else {
-                // Default case - minimal promotional content
-                structuredContentInstructions += `\n\n📝 GENERAL DESIGN REQUEST\n`;
-                structuredContentInstructions += `**CONTENT APPROACH:**\n`;
-                structuredContentInstructions += `- Create professional design with minimal text\n`;
-                structuredContentInstructions += `- Use business name: ${bp.businessName} if text is needed\n`;
-                structuredContentInstructions += `- Focus on visual design over promotional text\n`;
-                structuredContentInstructions += `- AVOID adding unnecessary promotional phrases\n`;
+                // User wants AI to create appropriate content - understand their intent
+                const intentDescription = userIntent.humanIntent === 'creative_design'
+                    ? 'CREATIVE DESIGN REQUEST - User wants AI to create appropriate content'
+                    : 'GENERAL DESIGN REQUEST - User wants a professional design';
+
+                structuredContentInstructions += `\n\n🧠 ${intentDescription}\n`;
+                structuredContentInstructions += `**HUMAN-FRIENDLY CONTENT GENERATION:**\n`;
+                structuredContentInstructions += `- Understand the user's natural request: "${input.prompt}"\n`;
+                structuredContentInstructions += `- Create content that makes sense for: ${bp.businessName} (${bp.businessType})\n`;
+                structuredContentInstructions += `- Location: ${bp.location}\n`;
+                structuredContentInstructions += `- Services: ${servicesText || 'General business services'}\n`;
+                structuredContentInstructions += `\n✅ SMART CONTENT APPROACH:\n`;
+                structuredContentInstructions += `- Generate relevant, natural marketing content\n`;
+                structuredContentInstructions += `- Use business context intelligently\n`;
+                structuredContentInstructions += `- Make it sound human and authentic\n`;
+                structuredContentInstructions += `- Focus on what the business actually offers\n`;
+                structuredContentInstructions += `\n❌ AVOID:\n`;
+                structuredContentInstructions += `- Generic phrases like "CREATE A DESIGN FOR TODAY"\n`;
+                structuredContentInstructions += `- Robotic or template-like language\n`;
+                structuredContentInstructions += `- Irrelevant promotional text\n`;
+                structuredContentInstructions += `- One-size-fits-all marketing speak\n`;
             }
 
             if (parsedInstructions.headline) {
