@@ -92,20 +92,73 @@ async function videoToDataURI(videoPart: MediaPart): Promise<string> {
 }
 
 /**
- * Extracts text in quotes and the remaining prompt.
+ * Enhanced instruction processing with intelligent parsing
+ */
+interface ParsedInstructions {
+    quotedText: string[];
+    headline: string | null;
+    subheadline: string | null;
+    cta: string | null;
+    designBrief: string | null;
+    remainingPrompt: string;
+}
+
+const parseInstructions = (prompt: string): ParsedInstructions => {
+    let workingPrompt = prompt;
+    const result: ParsedInstructions = {
+        quotedText: [],
+        headline: null,
+        subheadline: null,
+        cta: null,
+        designBrief: null,
+        remainingPrompt: prompt
+    };
+
+    // Extract all quoted text (highest priority)
+    const quotedTextRegex = /"([^"]*)"/g;
+    let match;
+    while ((match = quotedTextRegex.exec(prompt)) !== null) {
+        result.quotedText.push(match[1]);
+        workingPrompt = workingPrompt.replace(match[0], '').trim();
+    }
+
+    // Extract structured content instructions
+    const headlineMatch = workingPrompt.match(/\b(?:headline|title|heading):\s*([^\n.!?]+)/i);
+    if (headlineMatch) {
+        result.headline = headlineMatch[1].trim();
+        workingPrompt = workingPrompt.replace(headlineMatch[0], '').trim();
+    }
+
+    const subheadlineMatch = workingPrompt.match(/\b(?:subheadline|subtitle|tagline|description):\s*([^\n.!?]+)/i);
+    if (subheadlineMatch) {
+        result.subheadline = subheadlineMatch[1].trim();
+        workingPrompt = workingPrompt.replace(subheadlineMatch[0], '').trim();
+    }
+
+    const ctaMatch = workingPrompt.match(/\b(?:cta|call.to.action|button|action):\s*([^\n.!?]+)/i);
+    if (ctaMatch) {
+        result.cta = ctaMatch[1].trim();
+        workingPrompt = workingPrompt.replace(ctaMatch[0], '').trim();
+    }
+
+    const designBriefMatch = workingPrompt.match(/\b(?:design.brief|brief|style|aesthetic|look):\s*([^\n]+)/i);
+    if (designBriefMatch) {
+        result.designBrief = designBriefMatch[1].trim();
+        workingPrompt = workingPrompt.replace(designBriefMatch[0], '').trim();
+    }
+
+    result.remainingPrompt = workingPrompt.trim();
+    return result;
+};
+
+/**
+ * Legacy function for backward compatibility
  */
 const extractQuotedText = (prompt: string): { imageText: string | null; remainingPrompt: string } => {
-    const quoteRegex = /"([^"]*)"/;
-    const match = prompt.match(quoteRegex);
-    if (match) {
-        return {
-            imageText: match[1],
-            remainingPrompt: prompt.replace(quoteRegex, '').trim()
-        };
-    }
+    const parsed = parseInstructions(prompt);
     return {
-        imageText: null,
-        remainingPrompt: prompt
+        imageText: parsed.quotedText.length > 0 ? parsed.quotedText.join(' ') : null,
+        remainingPrompt: parsed.remainingPrompt
     };
 };
 
@@ -136,37 +189,37 @@ async function generateWithRetry(request: GenerateRequest, retries = 3, delay = 
 }
 
 const getMimeTypeFromDataURI = (dataURI: string): string => {
-  const match = dataURI.match(/^data:(.*?);/);
-  if (match) {
-    return match[1];
-  }
-  
-  // If no MIME type found, try to detect from data URI content
-  if (dataURI.startsWith('data:')) {
-    // Check if it looks like a PNG (starts with iVBORw0KGgo)
-    if (dataURI.includes('iVBORw0KGgo')) {
-      return 'image/png';
+    const match = dataURI.match(/^data:(.*?);/);
+    if (match) {
+        return match[1];
     }
-    // Check if it looks like a JPEG (starts with /9j/)
-    if (dataURI.includes('/9j/')) {
-      return 'image/jpeg';
+
+    // If no MIME type found, try to detect from data URI content
+    if (dataURI.startsWith('data:')) {
+        // Check if it looks like a PNG (starts with iVBORw0KGgo)
+        if (dataURI.includes('iVBORw0KGgo')) {
+            return 'image/png';
+        }
+        // Check if it looks like a JPEG (starts with /9j/)
+        if (dataURI.includes('/9j/')) {
+            return 'image/jpeg';
+        }
+        // Check if it looks like a WebP (starts with UklGR)
+        if (dataURI.includes('UklGR')) {
+            return 'image/webp';
+        }
+        // Check if it looks like a GIF (starts with R0lGOD)
+        if (dataURI.includes('R0lGOD')) {
+            return 'image/gif';
+        }
+        // Check if it looks like an SVG (starts with PHN2Zy)
+        if (dataURI.includes('PHN2Zy')) {
+            return 'image/svg+xml';
+        }
     }
-    // Check if it looks like a WebP (starts with UklGR)
-    if (dataURI.includes('UklGR')) {
-      return 'image/webp';
-    }
-    // Check if it looks like a GIF (starts with R0lGOD)
-    if (dataURI.includes('R0lGOD')) {
-      return 'image/gif';
-    }
-    // Check if it looks like an SVG (starts with PHN2Zy)
-    if (dataURI.includes('PHN2Zy')) {
-      return 'image/svg+xml';
-    }
-  }
-  
-  // Default to PNG for image data URIs (most common and widely supported)
-  return 'image/png';
+
+    // Default to PNG for image data URIs (most common and widely supported)
+    return 'image/png';
 };
 
 
@@ -175,7 +228,7 @@ const getMimeTypeFromDataURI = (dataURI: string): string => {
  */
 // Simple SVG fallback generator to guarantee an image if models fail
 function createBrandFallbackSVG({ size = 1080, primary = '#3B82F6', accent = '#10B981', background = '#F8FAFC', title = 'Creative Asset', subtitle = '' }: { size?: number; primary?: string; accent?: string; background?: string; title?: string; subtitle?: string; }) {
-  return `<?xml version="1.0" encoding="UTF-8"?>
+    return `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
@@ -184,14 +237,14 @@ function createBrandFallbackSVG({ size = 1080, primary = '#3B82F6', accent = '#1
     </linearGradient>
   </defs>
   <rect width="100%" height="100%" fill="url(#g)"/>
-  <circle cx="${size/2}" cy="${size/2}" r="${size/3}" fill="${accent}" fill-opacity="0.15" />
-  <text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="${Math.floor(size/14)}" fill="#0f172a" font-weight="700">${escapeXml(title)}</text>
-  <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="${Math.floor(size/28)}" fill="#1f2937" opacity="0.9">${escapeXml(subtitle)}</text>
+  <circle cx="${size / 2}" cy="${size / 2}" r="${size / 3}" fill="${accent}" fill-opacity="0.15" />
+  <text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="${Math.floor(size / 14)}" fill="#0f172a" font-weight="700">${escapeXml(title)}</text>
+  <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="${Math.floor(size / 28)}" fill="#1f2937" opacity="0.9">${escapeXml(subtitle)}</text>
 </svg>`;
 }
 
 function escapeXml(s: string) {
-  return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 const generateCreativeAssetFlow = ai.defineFlow(
@@ -204,7 +257,9 @@ const generateCreativeAssetFlow = ai.defineFlow(
         const promptParts: (string | { text: string } | { media: { url: string; contentType?: string } })[] = [];
         let textPrompt = '';
 
-        const { imageText, remainingPrompt } = extractQuotedText(input.prompt);
+        // Enhanced instruction parsing
+        const parsedInstructions = parseInstructions(input.prompt);
+        const { imageText, remainingPrompt } = extractQuotedText(input.prompt); // Keep for backward compatibility
 
         if (input.maskDataUrl && input.referenceAssetUrl) {
             // This is an inpainting request.
@@ -351,23 +406,23 @@ Transform the uploaded image into a professional marketing design by enhancing i
             const hasUploadedImage = !!input.referenceAssetUrl;
 
             // Extract services from brand profile for DNA selection
-            const servicesText = typeof bp.services === 'string' 
-              ? bp.services 
-              : Array.isArray(bp.services) 
-                ? bp.services.map(s => typeof s === 'object' ? s.name : s).join(', ')
-                : '';
+            const servicesText = typeof bp.services === 'string'
+                ? bp.services
+                : Array.isArray(bp.services)
+                    ? bp.services.map(s => typeof s === 'object' ? s.name : s).join(', ')
+                    : '';
 
             // Debug logging for services
             console.log('🔍 [AI Generation] Services Debug:', {
-              services: bp.services,
-              servicesText,
-              businessType: bp.businessType,
-              businessName: bp.businessName
+                services: bp.services,
+                servicesText,
+                businessType: bp.businessType,
+                businessName: bp.businessName
             });
 
             // Get business-specific design DNA - prioritize services over business type
             let businessDNA = BUSINESS_TYPE_DESIGN_DNA.default;
-            
+
             if (servicesText) {
                 // Try to match services to specific design DNA
                 const servicesLower = servicesText.toLowerCase();
@@ -471,9 +526,34 @@ Transform the uploaded image into a professional marketing design by enhancing i
                 return cleaned;
             };
 
-            const cleanedContent = cleanBusinessNamePattern(remainingPrompt);
+            const cleanedContent = cleanBusinessNamePattern(parsedInstructions.remainingPrompt || remainingPrompt);
 
-            let onBrandPrompt = `Create a stunning, professional FULL MARKETING DESIGN (NOT just a logo) for social media ${input.outputType} for ${bp.businessName || 'this business'}.
+            // Build structured content instructions
+            let structuredContentInstructions = '';
+            if (parsedInstructions.quotedText.length > 0) {
+                structuredContentInstructions += `\n\n**LITERAL TEXT REQUIREMENTS (HIGHEST PRIORITY):**\n`;
+                parsedInstructions.quotedText.forEach((text, index) => {
+                    structuredContentInstructions += `- Text ${index + 1}: "${text}" (MUST be included exactly as written)\n`;
+                });
+            }
+
+            if (parsedInstructions.headline) {
+                structuredContentInstructions += `\n**HEADLINE:** ${parsedInstructions.headline}`;
+            }
+
+            if (parsedInstructions.subheadline) {
+                structuredContentInstructions += `\n**SUBHEADLINE:** ${parsedInstructions.subheadline}`;
+            }
+
+            if (parsedInstructions.cta) {
+                structuredContentInstructions += `\n**CALL-TO-ACTION:** ${parsedInstructions.cta}`;
+            }
+
+            if (parsedInstructions.designBrief) {
+                structuredContentInstructions += `\n**DESIGN BRIEF:** ${parsedInstructions.designBrief}`;
+            }
+
+            let onBrandPrompt = `Create a stunning, professional FULL MARKETING DESIGN (NOT just a logo) for social media ${input.outputType} for ${bp.businessName || 'this business'}.${structuredContentInstructions}
 
 **BRAND INFORMATION:**
 - Business Name: ${bp.businessName}
@@ -639,7 +719,33 @@ ${designDNA}`;
             }
         } else {
             // This is a new, un-branded, creative prompt.
-            let creativePrompt = `You are an expert creative director specializing in high-end advertisements. Generate a compelling, high-quality social media advertisement ${input.outputType} based on the following instruction: "${remainingPrompt}".
+
+            // Build structured content instructions for non-branded content
+            let structuredContentInstructions = '';
+            if (parsedInstructions.quotedText.length > 0) {
+                structuredContentInstructions += `\n\n**LITERAL TEXT REQUIREMENTS (HIGHEST PRIORITY):**\n`;
+                parsedInstructions.quotedText.forEach((text, index) => {
+                    structuredContentInstructions += `- Text ${index + 1}: "${text}" (MUST be included exactly as written)\n`;
+                });
+            }
+
+            if (parsedInstructions.headline) {
+                structuredContentInstructions += `\n**HEADLINE:** ${parsedInstructions.headline}`;
+            }
+
+            if (parsedInstructions.subheadline) {
+                structuredContentInstructions += `\n**SUBHEADLINE:** ${parsedInstructions.subheadline}`;
+            }
+
+            if (parsedInstructions.cta) {
+                structuredContentInstructions += `\n**CALL-TO-ACTION:** ${parsedInstructions.cta}`;
+            }
+
+            if (parsedInstructions.designBrief) {
+                structuredContentInstructions += `\n**DESIGN BRIEF:** ${parsedInstructions.designBrief}`;
+            }
+
+            let creativePrompt = `You are an expert creative director specializing in high-end advertisements. Generate a compelling, high-quality social media advertisement ${input.outputType} based on the following instruction: "${parsedInstructions.remainingPrompt || remainingPrompt}".${structuredContentInstructions}
 
 ⚡ GEMINI 2.5 FLASH IMAGE PREVIEW QUALITY ENHANCEMENTS:
 - MOBILE-OPTIMIZED RESOLUTION: 1080x1080px HD square format for perfect mobile viewing
@@ -735,55 +841,55 @@ Ensure the text is readable and well-composed.`
                     let imageUrl: string | null = null;
 
                     try {
-                      const { media } = await generateWithRetry({
-                          model: modelToUse,
-                          prompt: promptParts,
-                          config: {
-                              responseModalities: ['TEXT', 'IMAGE'],
-                          },
-                      });
-
-                      imageUrl = media?.url ?? null;
-                    } catch (err: any) {
-                      const msg = (err?.message || '').toLowerCase();
-                      const isInternalError = msg.includes('500') || msg.includes('internal error');
-
-                      // Fallback 1: try an alternative Google image model once
-                      if (isInternalError) {
-                        try {
-                          const altModel = 'googleai/gemini-2.0-flash-exp-image-generation';
-                          const { media: altMedia } = await generateWithRetry({
-                            model: altModel,
+                        const { media } = await generateWithRetry({
+                            model: modelToUse,
                             prompt: promptParts,
-                            config: { responseModalities: ['TEXT', 'IMAGE'] },
-                          });
-                          imageUrl = altMedia?.url ?? null;
-                          modelToUse = altModel; // note which model succeeded
-                        } catch (altErr: any) {
-                          // Defer to final fallback below if this also fails
-                          imageUrl = null;
+                            config: {
+                                responseModalities: ['TEXT', 'IMAGE'],
+                            },
+                        });
+
+                        imageUrl = media?.url ?? null;
+                    } catch (err: any) {
+                        const msg = (err?.message || '').toLowerCase();
+                        const isInternalError = msg.includes('500') || msg.includes('internal error');
+
+                        // Fallback 1: try an alternative Google image model once
+                        if (isInternalError) {
+                            try {
+                                const altModel = 'googleai/gemini-2.0-flash-exp-image-generation';
+                                const { media: altMedia } = await generateWithRetry({
+                                    model: altModel,
+                                    prompt: promptParts,
+                                    config: { responseModalities: ['TEXT', 'IMAGE'] },
+                                });
+                                imageUrl = altMedia?.url ?? null;
+                                modelToUse = altModel; // note which model succeeded
+                            } catch (altErr: any) {
+                                // Defer to final fallback below if this also fails
+                                imageUrl = null;
+                            }
+                        } else {
+                            // Non-internal error: rethrow to surface a clear message
+                            throw err;
                         }
-                      } else {
-                        // Non-internal error: rethrow to surface a clear message
-                        throw err;
-                      }
                     }
 
                     if (!imageUrl) {
                         if (attempts === maxAttempts) {
                             // Final Fallback 2: generate a brand-colored SVG so the user still gets an asset
                             try {
-                              const fallbackSvg = createBrandFallbackSVG({
-                                size: 1080,
-                                primary: input.brandProfile?.primaryColor || '#3B82F6',
-                                accent: input.brandProfile?.accentColor || '#10B981',
-                                background: input.brandProfile?.backgroundColor || '#F8FAFC',
-                                title: imageText || (input.brandProfile?.businessName || 'Creative Asset'),
-                                subtitle: remainingPrompt?.slice(0, 120) || '',
-                              });
-                              imageUrl = `data:image/svg+xml;base64,${Buffer.from(fallbackSvg, 'utf-8').toString('base64')}`;
+                                const fallbackSvg = createBrandFallbackSVG({
+                                    size: 1080,
+                                    primary: input.brandProfile?.primaryColor || '#3B82F6',
+                                    accent: input.brandProfile?.accentColor || '#10B981',
+                                    background: input.brandProfile?.backgroundColor || '#F8FAFC',
+                                    title: imageText || (input.brandProfile?.businessName || 'Creative Asset'),
+                                    subtitle: remainingPrompt?.slice(0, 120) || '',
+                                });
+                                imageUrl = `data:image/svg+xml;base64,${Buffer.from(fallbackSvg, 'utf-8').toString('base64')}`;
                             } catch {
-                              throw new Error('Failed to generate image');
+                                throw new Error('Failed to generate image');
                             }
                         }
                         continue;
@@ -897,7 +1003,7 @@ Ensure the text is readable and well-composed.`
             const message = e.message || "An unknown error occurred during asset generation.";
             // Make the internal error more actionable for users
             if (message.toLowerCase().includes('internal error')) {
-              throw new Error('The image model is temporarily unavailable. I tried a fallback automatically; please try again if quality looks off.');
+                throw new Error('The image model is temporarily unavailable. I tried a fallback automatically; please try again if quality looks off.');
             }
             throw new Error(message);
         }

@@ -103,7 +103,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        
+
         // Check if video generation is selected
         if (outputType === 'video') {
             const comingSoonMessage: Message = {
@@ -114,7 +114,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
             setMessages(prevMessages => [...prevMessages, comingSoonMessage]);
             return;
         }
-        
+
         if (!input.trim()) {
             toast({
                 variant: 'destructive',
@@ -134,7 +134,14 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
         setMessages([...messages, newUserMessage]);
 
         const currentInput = input;
-        const currentImageDataUrl = imageDataUrl;
+
+        // Intelligent reference image detection
+        // Only use existing image as reference if user explicitly requests modification/editing
+        // For new design requests, start fresh without reference
+        const isModificationRequest = /\b(modify|edit|change|adjust|update|improve|enhance|fix|alter)\b/i.test(currentInput);
+        const isNewDesignRequest = /\b(new|different|another|fresh|create|generate|make)\s+(design|concept|idea|image|visual)\b/i.test(currentInput);
+
+        const currentImageDataUrl = (isModificationRequest && !isNewDesignRequest) ? imageDataUrl : null;
 
         setInput('');
         setImagePreview(null);
