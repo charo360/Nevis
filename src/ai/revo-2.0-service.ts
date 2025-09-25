@@ -117,6 +117,41 @@ function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: any): st
   // Brand location info
   const brandInfo = brandProfile.location ? ` based in ${brandProfile.location}` : '';
 
+  // Lightweight contact integration - only add if contacts toggle is enabled
+  let contactInstruction = '';
+  if (options.includeContacts === true) {
+    const contacts = [];
+
+    // Simple contact detection (multiple data structure support)
+    const phone = brandProfile?.contactInfo?.phone ||
+      (brandProfile as any)?.contact?.phone ||
+      (brandProfile as any)?.contactPhone ||
+      (brandProfile as any)?.phone;
+
+    const email = brandProfile?.contactInfo?.email ||
+      (brandProfile as any)?.contact?.email ||
+      (brandProfile as any)?.contactEmail ||
+      (brandProfile as any)?.email;
+
+    const website = brandProfile?.websiteUrl ||
+      (brandProfile as any)?.contact?.website ||
+      (brandProfile as any)?.website;
+
+    const address = brandProfile?.contactInfo?.address ||
+      (brandProfile as any)?.contact?.address ||
+      (brandProfile as any)?.contactAddress ||
+      (brandProfile as any)?.address;
+
+    if (phone) contacts.push(`📞 ${phone}`);
+    if (email) contacts.push(`📧 ${email}`);
+    if (website) contacts.push(`🌐 ${website}`);
+    if (address) contacts.push(`📍 ${address}`);
+
+    if (contacts.length > 0) {
+      contactInstruction = `\n\n📞 CONTACT INFORMATION (Include in design):\n${contacts.join('\n')}\n- Display contact info prominently in footer/corner area\n- Ensure contact details are readable and well-formatted\n- Use professional styling that complements the brand colors`;
+    }
+  }
+
   return `🎨 Create a ${visualStyle} social media design for ${brandProfile.businessName} (${businessType}) for ${platform}.
 
 CREATIVE CONCEPT: ${concept.concept}
@@ -151,7 +186,7 @@ CRITICAL REQUIREMENTS:
 - Cultural sensitivity and relevance
 - Professional typography that complements the brand colors
 
-Create a visually stunning design that stops scrolling and drives engagement while maintaining perfect brand consistency.`;
+Create a visually stunning design that stops scrolling and drives engagement while maintaining perfect brand consistency.${contactInstruction}`;
 }
 
 /**
@@ -409,9 +444,11 @@ Format as JSON:
 
       const parsed = JSON.parse(cleanContent);
 
-      // Ensure hashtag count is correct
+      // Ensure hashtag count is correct (5 for Instagram, 3 for others)
       let finalHashtags = parsed.hashtags || [];
-      if (finalHashtags.length !== hashtagCount) {
+      if (finalHashtags.length > hashtagCount) {
+        finalHashtags = finalHashtags.slice(0, hashtagCount);
+      } else if (finalHashtags.length < hashtagCount) {
         // Generate platform-appropriate hashtags if count is wrong
         finalHashtags = generateFallbackHashtags(brandProfile, businessType, platform, hashtagCount);
       }
