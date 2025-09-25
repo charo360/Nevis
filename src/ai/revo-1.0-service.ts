@@ -328,32 +328,33 @@ function getHumanDesignVariations(seed: number): any {
 // NEW: Simple, clean design instructions for better visual appeal
 function injectHumanImperfections(designPrompt: string, seed: number): string {
   const instructions = [
-    'Use natural spacing and proportions that feel balanced and appealing',
-    'Create a design that feels modern and current, not overly perfect',
-    'Focus on visual appeal and what people actually like to see',
-    'Make it look like something from a successful, popular brand'
+    'Use organic spacing and natural proportions - avoid perfect symmetry',
+    'Include subtle imperfections that make the design feel handcrafted',
+    'Focus on authentic, relatable visual elements over artificial perfection',
+    'Create designs that feel like they were made by a human, not AI'
   ];
 
   const selectedInstruction = instructions[seed % instructions.length];
 
   return designPrompt + `
 
-🎨 DESIGN FOCUS:
+🎨 AUTHENTIC DESIGN APPROACH:
 ${selectedInstruction}
 
-Keep the design simple, clean, and visually appealing.`;
+AVOID: Perfect symmetry, overly polished elements, AI-generated aesthetics, sterile perfection
+FOCUS: Natural, organic design with human touches and authentic imperfections`;
 }
 
-// NEW: Simple creative approach for better designs
+// NEW: Natural creative approach for authentic designs
 function injectCreativeRebellion(designPrompt: string, seed: number): string {
   const approaches = [
-    `DESIGN APPROACH: Create a design that's visually appealing and engaging. Focus on what looks good and what people want to engage with.`,
+    `DESIGN APPROACH: Create a design that feels natural and authentic. Focus on what real people find appealing and relatable, not artificial perfection.`,
 
-    `CREATIVE STYLE: Use a clean, modern approach that feels current and appealing. Make it look like something people would actually want to interact with.`,
+    `CREATIVE STYLE: Use an organic, human-centered approach that feels genuine. Make it look like something a talented human designer would create.`,
 
-    `VISUAL APPROACH: Design with a focus on visual appeal and engagement. Create something that stands out and looks good.`,
+    `VISUAL APPROACH: Design with authenticity and natural appeal. Create something that feels real and connects with people emotionally.`,
 
-    `DESIGN PHILOSOPHY: Focus on creating designs that people want to engage with - clean, modern, and visually appealing.`
+    `DESIGN PHILOSOPHY: Focus on creating designs that feel human-made and authentic - natural, relatable, and genuinely engaging.`
   ];
 
   const selectedApproach = approaches[seed % approaches.length];
@@ -369,31 +370,31 @@ Focus on creating designs that are visually appealing and engaging.`;
 // NEW: Simple design guidelines for better results
 function addArtisticConstraints(designPrompt: string, seed: number): string {
   const constraints = [
-    `DESIGN FOCUS: Create a design that's visually appealing and engaging. Focus on clean, modern aesthetics that people actually like.`,
+    `DESIGN FOCUS: Create a design that feels natural and authentic. Focus on organic aesthetics that people genuinely connect with.`,
 
-    `COMPOSITION APPROACH: Use simple, clean layouts that are easy to read and understand. Less is more.`,
+    `COMPOSITION APPROACH: Use natural, flowing layouts with organic spacing. Embrace subtle asymmetry and human imperfections.`,
 
-    `CREATIVE ELEMENTS: Add modern, contemporary elements that make the design look good and engaging.`,
+    `CREATIVE ELEMENTS: Add authentic, relatable elements that feel human-made rather than artificially generated.`,
 
-    `VISUAL BALANCE: Create a design that feels balanced and appealing, with elements that work together well.`,
+    `VISUAL BALANCE: Create natural balance with organic flow, avoiding overly perfect symmetry.`,
 
-    `DESIGN STYLE: Use a clean, modern approach that feels current and professional. Focus on visual appeal.`,
+    `DESIGN STYLE: Use an authentic, human-centered approach that feels genuine and relatable.`,
 
-    `CREATIVE APPROACH: Design with a focus on what people actually want to see and engage with.`,
+    `CREATIVE APPROACH: Design with emotional authenticity - focus on what feels real and meaningful to people.`,
 
-    `VISUAL HIERARCHY: Create clear visual hierarchy that guides the eye naturally through the design.`,
+    `VISUAL HIERARCHY: Create intuitive visual flow that feels natural, not forced or overly structured.`,
 
-    `DESIGN PRINCIPLES: Focus on creating a design that's both beautiful and engaging. Make it look good.`
+    `DESIGN PRINCIPLES: Focus on creating designs that feel human-made with natural imperfections and authentic appeal.`
   ];
 
   const selectedConstraint = constraints[seed % constraints.length];
 
   return designPrompt + `
 
-🎨 DESIGN GUIDELINE:
+🎨 AUTHENTIC DESIGN GUIDELINE:
 ${selectedConstraint}
 
-Keep the design simple, clean, and visually appealing.`;
+Focus on natural, human-made aesthetics with authentic imperfections.`;
 }
 
 function getPlatformOptimization(platform: string): string {
@@ -770,23 +771,22 @@ function getAdvancedPeopleInstructions(businessType: string, location: string): 
   const culturalContext = getLocalCulturalContext(location);
 
   return `
-**ADVANCED PEOPLE INTEGRATION:**
+**NATURAL PEOPLE INTEGRATION:**
 - ${getCulturallyAppropriatePersonDescription(location)}
 - Cultural Context: ${culturalContext}
-- Show people in varied, engaging settings:
-  * Professional environments (modern offices, studios, workshops)
-  * Lifestyle settings (contemporary homes, trendy cafes, outdoor spaces)
-  * Industry-specific contexts (${businessType} environments)
-  * Cultural celebrations and modern community gatherings
-  * Urban settings (co-working spaces, tech hubs, modern city life)
-  * Traditional meets modern (cultural heritage with contemporary life)
-- Ensure representation reflects local demographics and cultural values
-- Show real people in natural, engaging situations that vary by design
-- People should be actively engaged with the business/service context
-- Use authentic expressions of joy, confidence, success, and community
-- Include intergenerational representation when appropriate
-- Show modern African/local fashion and styling
-- Ensure people are central to the story, not just decorative elements`;
+- Show people in authentic, real-world settings:
+  * Natural work environments (actual offices, real workshops, genuine studios)
+  * Everyday lifestyle moments (real homes, local cafes, outdoor activities)
+  * Authentic ${businessType} contexts with real interactions
+  * Community gatherings with genuine social connections
+  * Urban life with natural city interactions
+  * Cultural heritage blended naturally with modern life
+- Focus on genuine human moments and authentic interactions
+- Show people engaged in real activities, not posed scenarios
+- Use natural expressions - genuine laughter, focused concentration, relaxed conversations
+- Include diverse ages and backgrounds that reflect real communities
+- Show contemporary local fashion and natural styling choices
+- Make people the heart of authentic stories, not decorative elements`;
 }
 
 // NEW: Enhanced product intelligence for contextual awareness and marketing appeal
@@ -2892,6 +2892,8 @@ ANTI-GENERIC REQUIREMENTS:
 
     let imagePrompt = `🎨 Create a visually stunning, modern ${designVariations.style.toLowerCase()} social media design for ${input.businessName} that stops scrolling and drives engagement.
 
+🚨 CRITICAL ANTI-AI INSTRUCTION: This must NOT look AI-generated! Avoid perfect symmetry, artificial-looking people with flawless faces, sterile aesthetics, and overly polished elements. Make it feel authentic, natural, and human-crafted with organic imperfections.
+
 BUSINESS CONTEXT:
 - Business: ${input.businessName} (${input.businessType})
 - Platform: ${input.platform}
@@ -2974,21 +2976,21 @@ KEY DESIGN PRINCIPLES:
 5. **BUSINESS APPROPRIATENESS** - Keep it professional while being creative
 
 WHAT TO AVOID:
-- Overly complex layouts
-- Too many competing elements
-- Boring, generic business designs
-- Poor contrast or readability
-- Outdated design styles
-- **MOST IMPORTANT: Don't make this look like the other design types - each should be genuinely unique**
-- **AVOID: Overly perfect, symmetrical, AI-generated looking designs**
-- **AVOID: Forced cultural elements that feel stereotypical**
+- **AI-GENERATED AESTHETICS**: Overly perfect, symmetrical, sterile designs
+- **ARTIFICIAL PEOPLE**: Perfect faces, robotic poses, studio-perfect lighting
+- **TEMPLATE DESIGNS**: Generic, cookie-cutter layouts that look mass-produced
+- **FORCED PERFECTION**: Everything perfectly aligned, no natural imperfections
+- **STOCK PHOTO FEEL**: Overly polished, artificial-looking imagery
+- **ROBOTIC COMPOSITIONS**: Layouts that feel calculated rather than intuitive
+- **STEREOTYPICAL ELEMENTS**: Forced cultural elements that feel inauthentic
 
 WHAT TO INCLUDE:
-- **Style-specific elements** that match ${designVariations.style}
-- **Unique visual approach** for this specific style
-- **Subtle local touches** that feel natural, not forced
-- **Human imperfections** - slight asymmetry, natural spacing, organic feel
-- **Style-appropriate typography** and layout
+- **NATURAL AUTHENTICITY**: Organic layouts with subtle imperfections
+- **HUMAN-MADE FEEL**: Slight asymmetry, natural spacing, handcrafted touches
+- **REAL PEOPLE**: Natural expressions, candid moments, authentic poses
+- **ORGANIC ELEMENTS**: Natural textures, authentic lighting, real-world settings
+- **STYLE-SPECIFIC AUTHENTICITY**: Make ${designVariations.style} feel genuinely handcrafted
+- **EMOTIONAL CONNECTION**: Designs that feel relatable and human
 
 TECHNICAL REQUIREMENTS:
 - Resolution: 992x1056 pixels HD (Mobile-optimized)
@@ -3016,7 +3018,7 @@ TECHNICAL REQUIREMENTS:
 
     // Prepare the generation request with logo if available
     const generationParts = [
-      'You are a skilled graphic designer who creates visually appealing social media designs. Focus on creating designs that people actually want to engage with - clean, modern, and appealing. Keep it simple and focus on visual impact.',
+      'You are a creative designer who makes authentic, engaging social media designs that look natural and human-made. Avoid overly perfect, AI-generated aesthetics. Focus on designs that feel real, relatable, and genuinely appealing to people. Use natural imperfections, organic layouts, and authentic visual elements.',
       imagePrompt
     ];
 
@@ -3655,7 +3657,7 @@ function getCulturallyAppropriatePersonDescription(location: string): string {
 
   for (const country of africanCountries) {
     if (locationKey.includes(country)) {
-      return 'MANDATORY: Include authentic Black/African people with PERFECT FACIAL FEATURES - complete faces, symmetrical features, natural expressions, professional poses. Show local African people in modern, professional settings that reflect contemporary African life. Ensure faces are fully visible, well-lit, and anatomically correct with no deformations or missing features. PRIORITY: 80%+ of people in the image should be Black/African when business is in African country. AVOID: Non-African people as primary subjects when business is in Africa. Emphasize cultural authenticity and local representation.';
+      return 'Show authentic Black/African people in natural, candid moments - relaxed expressions, genuine smiles, casual poses. Focus on real-life scenarios: people working, laughing, having conversations, or engaged in everyday activities. Use natural lighting and avoid overly posed or studio-like settings. Show contemporary African life with people wearing modern, stylish clothing. Emphasize authenticity over perfection - slight imperfections make people look real and relatable.';
     }
   }
 
@@ -3664,7 +3666,7 @@ function getCulturallyAppropriatePersonDescription(location: string): string {
 
   for (const country of asianCountries) {
     if (locationKey.includes(country)) {
-      return 'Include authentic Asian people with PERFECT FACIAL FEATURES - complete faces, symmetrical features, natural expressions, professional poses. Show local Asian people in modern, professional settings. Ensure faces are fully visible, well-lit, and anatomically correct with no deformations or missing features. Emphasize cultural authenticity and local representation.';
+      return 'Show authentic Asian people in natural, candid moments - relaxed expressions, genuine smiles, casual poses. Focus on real-life scenarios: people working, laughing, having conversations, or engaged in everyday activities. Use natural lighting and avoid overly posed or studio-like settings. Emphasize authenticity over perfection - slight imperfections make people look real and relatable.';
     }
   }
 
@@ -3673,7 +3675,7 @@ function getCulturallyAppropriatePersonDescription(location: string): string {
 
   for (const country of middleEasternCountries) {
     if (locationKey.includes(country)) {
-      return 'Include authentic Middle Eastern people with PERFECT FACIAL FEATURES - complete faces, symmetrical features, natural expressions, professional poses. Show local Middle Eastern people in modern, professional settings. Ensure faces are fully visible, well-lit, and anatomically correct with no deformations or missing features. Emphasize cultural authenticity and local representation.';
+      return 'Show authentic Middle Eastern people in natural, candid moments - relaxed expressions, genuine smiles, casual poses. Focus on real-life scenarios: people working, laughing, having conversations, or engaged in everyday activities. Use natural lighting and avoid overly posed or studio-like settings. Emphasize authenticity over perfection - slight imperfections make people look real and relatable.';
     }
   }
 
@@ -3682,10 +3684,10 @@ function getCulturallyAppropriatePersonDescription(location: string): string {
 
   for (const country of latinAmericanCountries) {
     if (locationKey.includes(country)) {
-      return 'Include authentic Latino/Hispanic people with PERFECT FACIAL FEATURES - complete faces, symmetrical features, natural expressions, professional poses. Show local Latino/Hispanic people in modern, professional settings. Ensure faces are fully visible, well-lit, and anatomically correct with no deformations or missing features. Emphasize cultural authenticity and local representation.';
+      return 'Show authentic Latino/Hispanic people in natural, candid moments - relaxed expressions, genuine smiles, casual poses. Focus on real-life scenarios: people working, laughing, having conversations, or engaged in everyday activities. Use natural lighting and avoid overly posed or studio-like settings. Emphasize authenticity over perfection - slight imperfections make people look real and relatable.';
     }
   }
 
   // Default for Western countries and others - diverse representation
-  return 'Include diverse, authentic people (various ethnicities, ages) with PERFECT FACIAL FEATURES - complete faces, symmetrical features, natural expressions, professional poses. Ensure faces are fully visible, well-lit, and anatomically correct with no deformations or missing features. Show people in modern, professional settings with cultural sensitivity.';
+  return 'Show diverse, authentic people in natural, candid moments - relaxed expressions, genuine smiles, casual poses. Focus on real-life scenarios: people working, laughing, having conversations, or engaged in everyday activities. Use natural lighting and avoid overly posed or studio-like settings. Emphasize authenticity over perfection - slight imperfections make people look real and relatable.';
 }
