@@ -82,24 +82,36 @@ export async function fetchRedditRSS(
     const targetSubreddits = subreddits || getRelevantSubreddits(businessType);
     const allTrends: ProcessedTrend[] = [];
 
-    for (const subreddit of targetSubreddits.slice(0, 5)) {
-      try {
-        // Reddit RSS URLs for hot posts
-        const url = `https://www.reddit.com/r/${subreddit}/hot.rss?limit=10`;
+    // FIXED: Use server-side RSS API instead of direct client-side fetching to avoid CORS
+    try {
+      console.log(`🔄 [Reddit RSS] Using server-side API for business type: ${businessType}`);
 
-        const response = await fetch(url, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (compatible; TrendBot/1.0)'
+      // Use our server-side RSS API instead of direct Reddit RSS fetching
+      const response = await fetch(`/api/rss-data?category=general&limit=20`);
+
+      if (response.ok) {
+        const data = await response.json();
+        const articles = data.articles || [];
+
+        // Convert articles to trends format
+        for (const article of articles.slice(0, 15)) {
+          if (article.title && article.description) {
+            const trend: ProcessedTrend = {
+              title: article.title,
+              description: article.description,
+              url: article.link || '',
+              score: 1,
+              source: 'RSS',
+              category: businessType,
+              keywords: article.keywords || [],
+              timestamp: new Date(article.pubDate || Date.now())
+            };
+            allTrends.push(trend);
           }
-        });
-
-        if (response.ok) {
-          const xmlText = await response.text();
-          const trends = parseRedditRSS(xmlText, subreddit);
-          allTrends.push(...trends);
         }
-      } catch (error) {
       }
+    } catch (error) {
+      console.warn(`⚠️ [Reddit RSS] Server API fallback failed:`, error);
     }
 
     return allTrends.slice(0, 15);

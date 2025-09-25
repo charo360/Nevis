@@ -80,10 +80,10 @@ const RSS_FEEDS = {
 async function fetchSingleRSSFeed(url: string): Promise<RSSArticle[]> {
   try {
     console.log(`📡 [Direct RSS] Fetching: ${url}`);
-    
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
-    
+
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; Nevis-AI/1.0)',
@@ -144,58 +144,58 @@ function extractKeywords(text: string): string[] {
     .split(/\s+/)
     .filter(word => word.length > 3)
     .filter(word => !['this', 'that', 'with', 'from', 'they', 'have', 'been', 'will', 'said', 'more', 'than', 'what', 'when', 'where', 'would', 'could', 'should'].includes(word));
-  
+
   // Get unique words and return top 10
   return [...new Set(words)].slice(0, 10);
 }
 
 /**
- * Fetch RSS feeds for a specific category with circuit breaker pattern
+ * Fetch RSS feeds for a specific category using server-side API (CORS-safe)
  */
 export async function fetchRSSFeedDirect(category: string, limit: number = 10): Promise<RSSArticle[]> {
   try {
-    console.log(`🔍 [Direct RSS] Fetching category: ${category}, limit: ${limit}`);
-    
-    const feedUrls = RSS_FEEDS[category as keyof typeof RSS_FEEDS] || RSS_FEEDS.general;
-    const allArticles: RSSArticle[] = [];
+    console.log(`🔍 [Direct RSS] Fetching category: ${category}, limit: ${limit} via server API`);
 
-    // Fetch from feeds with limited concurrency to prevent overload
-    const maxConcurrent = 2; // Only 2 concurrent requests to prevent rate limiting
-    
-    for (let i = 0; i < feedUrls.length; i += maxConcurrent) {
-      const batch = feedUrls.slice(i, i + maxConcurrent);
-      const batchPromises = batch.map(url => fetchSingleRSSFeed(url));
-      
-      try {
-        const batchResults = await Promise.allSettled(batchPromises);
-        
-        batchResults.forEach((result, index) => {
-          if (result.status === 'fulfilled') {
-            allArticles.push(...result.value);
-          } else {
-            console.warn(`📡 [Direct RSS] Batch failed for ${batch[index]}:`, result.reason?.message);
-          }
-        });
-        
-        // Small delay between batches to be respectful to servers
-        if (i + maxConcurrent < feedUrls.length) {
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
-      } catch (error) {
-        console.warn(`📡 [Direct RSS] Batch processing error:`, error.message);
-      }
+    // Use server-side API route to avoid CORS issues
+    const apiUrl = `/api/rss-data?category=${encodeURIComponent(category)}&limit=${limit}`;
+
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      console.warn(`📡 [Direct RSS] API request failed: ${response.status} ${response.statusText}`);
+      return [];
     }
 
-    // Sort by date and limit results
-    const sortedArticles = allArticles
-      .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime())
-      .slice(0, limit);
+    const data = await response.json();
 
-    console.log(`✅ [Direct RSS] Total articles for ${category}: ${sortedArticles.length}`);
-    return sortedArticles;
-    
+    if (data.error) {
+      console.warn(`📡 [Direct RSS] API returned error:`, data.error);
+      return [];
+    }
+
+    // Convert the API response articles to our format
+    const articles: RSSArticle[] = (data.articles || []).map((article: any) => ({
+      title: article.title || '',
+      description: article.description || '',
+      link: article.link || '',
+      pubDate: article.pubDate || new Date().toISOString(),
+      keywords: article.keywords || [],
+      source: article.source || 'unknown'
+    }));
+
+    console.log(`✅ [Direct RSS] Got ${articles.length} articles for ${category} via server API`);
+    return articles;
+
   } catch (error) {
-    console.error(`❌ [Direct RSS] Critical error for category ${category}:`, error);
+    console.error(`❌ [Direct RSS] Server API error for category ${category}:`, error);
+
+    // Fallback: return empty array instead of trying direct fetch to avoid CORS
+    console.log(`🔄 [Direct RSS] Returning empty array as fallback for ${category}`);
     return [];
   }
 }
@@ -206,33 +206,33 @@ export async function fetchRSSFeedDirect(category: string, limit: number = 10): 
 export async function checkRSSHealth(): Promise<{ healthy: number; total: number; details: any[] }> {
   const allFeeds = Object.values(RSS_FEEDS).flat();
   const uniqueFeeds = [...new Set(allFeeds)];
-  
+
   const healthChecks = await Promise.allSettled(
     uniqueFeeds.map(async (url) => {
       try {
         const controller = new AbortController();
         setTimeout(() => controller.abort(), 3000);
-        
+
         const response = await fetch(url, {
           method: 'HEAD',
           signal: controller.signal,
           headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Nevis-AI/1.0)' }
         });
-        
+
         return { url, status: response.status, healthy: response.ok };
       } catch (error) {
         return { url, status: 0, healthy: false, error: error.message };
       }
     })
   );
-  
+
   const results = healthChecks.map((check, index) => ({
     url: uniqueFeeds[index],
     ...(check.status === 'fulfilled' ? check.value : { healthy: false, error: check.reason })
   }));
-  
+
   const healthy = results.filter(r => r.healthy).length;
-  
+
   return {
     healthy,
     total: uniqueFeeds.length,

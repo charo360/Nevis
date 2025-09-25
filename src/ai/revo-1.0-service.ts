@@ -3078,8 +3078,15 @@ TECHNICAL REQUIREMENTS:
             { standardSize: 200, format: 'png', quality: 0.9 }
           );
 
-          // Extract normalized base64 data
-          const normalizedBase64 = normalizedLogo.dataUrl.split(',')[1];
+          // Extract normalized base64 data with proper error handling
+          let normalizedBase64: string;
+          if (normalizedLogo && normalizedLogo.dataUrl) {
+            normalizedBase64 = normalizedLogo.dataUrl.split(',')[1];
+          } else {
+            // Fallback: use original logo data if normalization failed
+            console.warn('⚠️ Logo normalization failed, using original');
+            normalizedBase64 = logoBase64Data;
+          }
 
           generationParts.push({
             inlineData: {

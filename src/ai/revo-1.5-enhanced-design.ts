@@ -947,8 +947,15 @@ export async function generateFinalImage(
               { standardSize: 200, format: 'png', quality: 0.9 }
             );
 
-            // Extract normalized base64 data
-            const normalizedBase64 = normalizedLogo.dataUrl.split(',')[1];
+            // Extract normalized base64 data with proper error handling
+            let normalizedBase64: string;
+            if (normalizedLogo && normalizedLogo.dataUrl) {
+              normalizedBase64 = normalizedLogo.dataUrl.split(',')[1];
+            } else {
+              // Fallback: use original logo data if normalization failed
+              console.warn('⚠️ [Revo 1.5] Logo normalization failed, using original');
+              normalizedBase64 = logoBase64Data;
+            }
 
             generationParts.push({
               inlineData: {
@@ -1465,6 +1472,13 @@ export async function generateRevo15EnhancedDesign(
     return result;
 
   } catch (error) {
+    // Log the actual error for debugging
+    console.error('❌ [Revo 1.5] Detailed error information:', {
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : 'No stack trace',
+      name: error instanceof Error ? error.name : 'Unknown error type'
+    });
+
     // Extract user-friendly message if it exists
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 

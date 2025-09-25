@@ -64,10 +64,10 @@ function getDynamicAlternatives(businessType: string): string[] {
 
   const outcomeWords = [
     'solution', 'experience', 'future', 'excellence', 'innovation', 'success', 'game',
-    'technology', 'standards', 'journey', 'performance', 'operations', 'capabilities',
+    'technology', 'standards', 'performance', 'operations', 'capabilities', 'impact',
     'growth', 'potential', 'approach', 'strategies', 'efficiency', 'solutions', 'process',
     'foundations', 'outcomes', 'expertise', 'mastery', 'leadership', 'results', 'value',
-    'breakthrough', 'transformation', 'revolution', 'evolution', 'advancement', 'progress',
+    'breakthrough', 'transformation', 'evolution', 'advancement', 'progress', 'change',
     'improvement', 'enhancement', 'optimization', 'maximization', 'realization', 'achievement'
   ];
 
@@ -126,8 +126,12 @@ function enhanceSubheadlineQuality(subheadline: string, businessType: string, lo
 
 // Shared AI initialization to avoid duplicate variable names
 function initializeAI() {
-  const geminiApiKey = process.env.GOOGLE_AI_API_KEY || process.env.GOOGLE_GENAI_API_KEY || process.env.GEMINI_API_KEY;
-  const genAI = new GoogleGenerativeAI(geminiApiKey!);
+  // Use Revo 1.0 API key for creative enhancement (since it's part of Revo 1.0 pipeline)
+  const geminiApiKey = process.env.GEMINI_API_KEY_REVO_1_0 || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
+  if (!geminiApiKey) {
+    throw new Error('Creative Enhancement: No Gemini API key found. Please set GEMINI_API_KEY_REVO_1_0 or GEMINI_API_KEY in your environment variables.');
+  }
+  const genAI = new GoogleGenerativeAI(geminiApiKey);
   // Use the same model as Revo 1.0 service for consistency
   return genAI.getGenerativeModel({
     model: 'gemini-2.5-flash-image-preview',
@@ -148,8 +152,8 @@ function getApproachInstructions(approach: string, businessName: string, locatio
   switch (approach) {
     case 'DIRECT_BENEFIT':
       return shouldMentionLocation
-        ? `HEADLINES: Lead with specific benefit. Example: "8g Protein Per Cookie" SUBHEADLINES: Expand with business details. Example: "Finally snacks that fuel kids properly - made fresh daily in ${location}" CAPTIONS: Full benefit story with RSS/business data.`
-        : `HEADLINES: Lead with specific benefit. Example: "8g Protein Per Cookie" SUBHEADLINES: Expand with business details. Example: "Finally snacks that fuel kids properly - made fresh daily" CAPTIONS: Full benefit story with RSS/business data.`;
+        ? `HEADLINES: Lead with specific benefit. Example: "8g Protein Per Cookie" SUBHEADLINES: Expand with business details. Example: "Snacks that fuel kids properly - made fresh daily in ${location}" CAPTIONS: Full benefit story with RSS/business data.`
+        : `HEADLINES: Lead with specific benefit. Example: "8g Protein Per Cookie" SUBHEADLINES: Expand with business details. Example: "Snacks that fuel kids properly - made fresh daily" CAPTIONS: Full benefit story with RSS/business data.`;
 
     case 'SOCIAL_PROOF':
       return shouldMentionLocation
@@ -197,7 +201,7 @@ function getApproachInstructions(approach: string, businessName: string, locatio
 function getCtaStyleInstructions(style: string, businessName: string, location: string): string {
   switch (style) {
     case 'DIRECT_ACTION':
-      return `Use action verbs specific to the business. Example: "Grab your protein cookies today" NOT generic "Shop now".`;
+      return `Use action verbs specific to the business. Example: "Grab your protein cookies" NOT generic "Shop now".`;
 
     case 'INVITATION':
       return `Sound like a personal invitation from ${businessName}. Example: "Come taste what ${location} is talking about" NOT generic invites.`;
@@ -681,7 +685,7 @@ Your mission: Focus on how this makes people FEEL and the lifestyle benefits
 - Think transformation, confidence, joy, peace of mind, community
 
 Examples of the vibe (but create something totally different):
-- "Finally, that confidence you've been looking for"
+- "That confidence you've been looking for"
 - "Transform your mornings from chaos to calm"
 - "Join the community that gets it"
 `}
@@ -690,7 +694,7 @@ HUMAN-LIKE HEADLINE INSPIRATION (Don't copy - just feel the vibe):
 - "Okay, this is actually incredible" (genuine excitement)
 - "Why didn't anyone tell me about this?" (discovery + curiosity)
 - "This changes everything I thought I knew" (transformation)
-- "Finally found what I've been searching for" (relief + satisfaction)
+- "Found exactly what I've been searching for" (relief + satisfaction)
 - "You're going to want to see this" (friendly recommendation)
 
 KEEP IT FRESH AND AUTHENTIC:
@@ -1139,22 +1143,19 @@ Examples of effective subheadlines (DO NOT COPY THESE - CREATE SOMETHING COMPLET
 ${getLocalMarketingExamples(location, businessType).split('\n').map(line => line.replace('- "', '- "').replace('"', '" (subheadline style)')).slice(0, 3).join('\n')}
 
 CRITICAL ANTI-REPETITION INSTRUCTIONS FOR SUBHEADLINES:
-❌ DO NOT use "2025's Best-Kept Secret" or any variation
-❌ DO NOT use "Chakula Kizuri" or repetitive Swahili phrases
-❌ DO NOT use "for your familia's delight" or similar family references
-❌ DO NOT use "Tired of..." or similar repetitive opening patterns
-❌ DO NOT start headlines with the same words repeatedly across different businesses
+❌ BANNED WORDS: "finally", "today", "freedom", "secure", "journey", "revolution", "authentic", "experience", "discover", "explore"
+❌ BANNED PHRASES: "2025's Best-Kept Secret", "Get instant access", "Start your journey", "Secure your future", "Finally [anything]"
+❌ BANNED PATTERNS: "Experience [Location]'s [adjective] [BusinessType]", "[Location]'s most [adjective] [BusinessType]", "where [location] locals [action]"
+❌ BANNED OPENINGS: "Tired of...", "Ready for...", "Looking for...", "Want to...", "Need to..."
+❌ BANNED ENDINGS: "...today", "...now", "...right now", "...this week"
+❌ DO NOT use repetitive Swahili phrases or family references
 ❌ DO NOT use static templates that don't adapt to unique business context
-❌ DO NOT repeat opening phrases like "Tired of waiting", "Tired of slow", etc.
-❌ DO NOT use "Experience [Location]'s authentic [BusinessType] revolution" patterns
-❌ DO NOT use "Get instant access now!" or similar generic CTAs in subheadlines
-❌ DO NOT use "[Location]'s most [adjective] [BusinessType] experience" patterns
-❌ DO NOT use "revolution" repeatedly - find other dynamic words
-❌ DO NOT use "authentic" in every subheadline - vary your vocabulary
-❌ AVOID "where [location] locals [action] [adjective] [businesstype]" patterns
-❌ CREATE something completely original that has never been generated before
+❌ DO NOT use generic CTAs in subheadlines
 ❌ AVOID any pattern that sounds like a template or formula
+❌ CREATE something completely original that has never been generated before
 ❌ Make it specific to ${businessName}'s actual services and features
+❌ NEVER use the same opening word for multiple businesses
+❌ AVOID overused marketing words: "ultimate", "premium", "exclusive", "limited", "special"
 
 PERSONAL MESSAGING REQUIREMENTS:
 ✅ ALWAYS use "you," "your," "your family" - speak directly to the individual
@@ -1171,15 +1172,30 @@ CREATIVITY REQUIREMENTS:
 - Make it conversational and engaging, not corporate
 - Use specific details about the business, not generic descriptions
 
+WORD VARIETY REQUIREMENTS:
+- Use synonyms instead of overused words: "amazing" → "incredible", "outstanding", "remarkable"
+- Replace "get" with: "receive", "obtain", "access", "discover", "unlock"
+- Replace "best" with: "top", "leading", "premier", "exceptional", "outstanding"
+- Replace "great" with: "excellent", "superb", "fantastic", "impressive", "remarkable"
+- Replace "perfect" with: "ideal", "flawless", "exceptional", "outstanding", "superior"
+- Use action verbs: "transform", "elevate", "enhance", "boost", "amplify", "optimize"
+
 LOCATION MENTION STRATEGY:
 - Only mention location when it adds genuine value to the message
 - Most subheadlines should focus on business benefits, not location
 - Avoid forcing location into every subheadline - it makes them repetitive
 - Location should feel natural when used, not forced or template-like
 
+FINAL UNIQUENESS CHECK:
+- Before generating, mentally check: "Have I seen this pattern before?"
+- If it sounds familiar, start over with a completely different approach
+- Think of 3 different angles, then pick the most unexpected one
+- Make it impossible to predict what you'll write next
+
 Generate ONLY the subheadline text, nothing else.
 Make it so specific to ${businessName} and their unique value proposition that it could never be used for another business.
-The subheadline should be completely unpredictable and unlike any previous generation.`;
+The subheadline should be completely unpredictable and unlike any previous generation.
+CRITICAL: If your first instinct is to use any banned word or pattern, immediately pivot to something completely different.`;
 
   try {
     // Add unique generation context to prevent repetitive responses
@@ -1657,7 +1673,7 @@ Use the business intelligence data and local context to create something genuine
 WRITE LIKE THIS INSTEAD:
 ✅ "Your kids need healthy snacks. Samaki Cookies deliver."
 ✅ "15% off this week only - grab yours before they're gone"
-✅ "Finally, cookies that are actually good for your family"
+✅ "Cookies that are actually good for your family"
 ✅ "Nairobi parents are switching to Samaki Cookies. Here's why..."
 ✅ Direct, benefit-focused, action-driving copy
 
@@ -1701,7 +1717,7 @@ MARKETING COPY REQUIREMENTS:
 - FOCUS ON PROBLEMS/SOLUTIONS: What problem does this solve for ${location} residents?
 - INCLUDE SPECIFIC OFFERS: Mention actual deals, prices, limited time offers
 - END WITH CLEAR ACTION: Tell people exactly what to do next
-- AVOID ABSTRACT CONCEPTS: No "heritage", "traditions", "journeys" - focus on concrete benefits
+- AVOID ABSTRACT CONCEPTS: No "heritage", "traditions", "processes" - focus on concrete benefits
 - USE REAL LOCAL LANGUAGE: Include actual ${location} slang/phrases naturally
 - MAKE IT SCANNABLE: Use short paragraphs, bullet points, clear structure
 - GENERATION ID ${uniqueGenerationId}: Use this number to ensure this content is completely unique
@@ -1710,7 +1726,7 @@ MARKETING COPY REQUIREMENTS:
 EXAMPLES OF GOOD MARKETING COPY:
 ✅ "Your kids need protein. Samaki Cookies deliver 8g per serving. 15% off this week."
 ✅ "Tired of unhealthy snacks? 200+ Nairobi families switched to Samaki Cookies."
-✅ "Finally - cookies that don't spike blood sugar. Made with real fish protein."
+✅ "Cookies that don't spike blood sugar. Made with real fish protein."
 ✅ "Limited batch this week: Fish protein cookies that kids actually love."
 
 EXAMPLES OF BAD AI WRITING (NEVER DO THIS):
@@ -1881,7 +1897,7 @@ IMPORTANT:
               'Limited time menu',
               'Fresh daily specials',
               'While supplies last',
-              'Today only'
+              'While supplies last'
             ],
             value: [
               'Best value in town',
@@ -1910,10 +1926,10 @@ IMPORTANT:
               'Trusted by athletes'
             ],
             urgency: [
-              'Start your journey today',
               'Limited spots available',
               'New year, new you',
-              'Don\'t wait, transform now'
+              'Transform now',
+              'Join the movement'
             ],
             value: [
               'Maximum results, minimum time',
@@ -1930,10 +1946,10 @@ IMPORTANT:
               'Building wealth, one step at a time'
             ],
             emotional: [
-              'Secure your future',
               'Take control of your money',
               'Invest in yourself',
-              'Build lasting wealth'
+              'Build lasting wealth',
+              'Smart money decisions'
             ],
             socialProof: [
               'Trusted by thousands',
@@ -1942,10 +1958,10 @@ IMPORTANT:
               'Join successful investors'
             ],
             urgency: [
-              'Start investing today',
               'Don\'t miss market opportunities',
               'Limited time offer',
-              'Act now, secure later'
+              'Act now, benefit later',
+              'Market window closing'
             ],
             value: [
               'Maximum returns, minimum risk',
@@ -1974,10 +1990,10 @@ IMPORTANT:
               'Trusted by influencers'
             ],
             urgency: [
-              'Book your transformation today',
               'Limited appointment slots',
               'New season, new look',
-              'Don\'t wait, glow now'
+              'Don\'t wait, glow now',
+              'Book your transformation'
             ],
             value: [
               'Premium beauty, accessible prices',
@@ -2009,7 +2025,7 @@ IMPORTANT:
               'Limited time offer',
               'Act now, benefit later',
               'Don\'t miss out',
-              'Secure your spot today'
+              'Reserve your spot'
             ],
             value: [
               'Best value guaranteed',
@@ -2247,15 +2263,15 @@ Generate ONE unique headline that makes people instantly want to try the service
       headline: randomAlternative,
       subheadline: `Professional ${businessType} solutions in ${location}`,
       caption: `Experience exceptional ${businessType} services in ${location}. We're committed to delivering excellence that exceeds expectations.`,
-      callToAction: `Get started today!`,
+      callToAction: `Get started!`,
       engagementHooks: ['Quality service', 'Local expertise', 'Customer satisfaction'],
       designDirection: 'Professional, clean design with local elements',
       unifiedTheme: 'Professional excellence',
       keyMessage: 'Quality service provider',
       hashtags: ['#business', '#local', '#quality', '#service', '#professional'],
       hashtagStrategy: { total: ['#business', '#local', '#quality', '#service', '#professional'] },
-      ctaStrategy: { primary: `Visit ${businessName} today!` },
-      imageText: `Visit ${businessName} today!`
+      ctaStrategy: { primary: `Visit ${businessName}!` },
+      imageText: `Visit ${businessName}!`
     };
   }
 
@@ -2460,10 +2476,10 @@ function generateFallbackCTA(platform: string): string {
   // Dynamic CTAs based on style - avoid repetitive patterns
   const dynamicCTAs = {
     'DIRECT_ACTION': [
-      'Grab yours today! 🔥',
-      'Book your spot now! ⚡',
+      'Grab yours! 🔥',
+      'Book your spot! ⚡',
       'Try it this week! 💪',
-      'Get started today! 🚀'
+      'Get started! 🚀'
     ],
     'INVITATION': [
       'Come see for yourself! 👀',
@@ -2515,7 +2531,7 @@ function generateFallbackCTA(platform: string): string {
       'Built for your success! 🚀',
       'Your personal solution! ✨',
       'Designed with you in mind! 💡',
-      'Your journey starts here! 🌟'
+      'Your path starts here! 🌟'
     ],
     'EXCLUSIVE': [
       'Members only access! 🔐',
@@ -2762,7 +2778,7 @@ export const CONTENT_VARIATION_ENGINE = {
   creativeFrameworks: [
     'Before/After', 'Problem/Solution', 'Story Arc', 'Contrast',
     'Metaphor', 'Analogy', 'Question/Answer', 'Challenge/Overcome',
-    'Journey', 'Transformation', 'Discovery', 'Achievement'
+    'Process', 'Transformation', 'Innovation', 'Achievement'
   ]
 };
 

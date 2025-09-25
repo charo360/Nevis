@@ -5,10 +5,12 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Initialize Google AI with API key
-const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
+// Initialize Google AI with API key - Use Revo 1.5 specific key
+const apiKey = process.env.GEMINI_API_KEY_REVO_1_5 || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
 
 if (!apiKey) {
+  console.error('❌ [Google AI Direct] No API key found. Please set GEMINI_API_KEY_REVO_1_5 or GEMINI_API_KEY environment variable.');
+  throw new Error('Google AI API key is required for Revo 1.5');
 }
 
 const genAI = new GoogleGenerativeAI(apiKey!);
@@ -60,6 +62,9 @@ export async function generateText(
       topP = 0.95
     } = options;
 
+    console.log(`🔍 [Google AI Direct] Generating text with model: ${model}`);
+    console.log(`🔍 [Google AI Direct] API Key available: ${!!apiKey}`);
+    console.log(`🔍 [Google AI Direct] API Key prefix: ${apiKey?.substring(0, 10)}...`);
 
     const geminiModel = genAI.getGenerativeModel({
       model,
@@ -75,6 +80,7 @@ export async function generateText(
     const response = await result.response;
     const text = response.text();
 
+    console.log(`✅ [Google AI Direct] Text generation successful, length: ${text.length}`);
 
     return {
       text,
@@ -83,6 +89,11 @@ export async function generateText(
     };
 
   } catch (error) {
+    console.error(`❌ [Google AI Direct] Text generation error:`, {
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : 'No stack trace',
+      model: options.model || GEMINI_2_5_MODELS.FLASH
+    });
     throw new Error(`Gemini 2.5 text generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

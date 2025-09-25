@@ -8,6 +8,7 @@ import OpenAI from 'openai';
 import type { BrandProfile, Platform } from '@/lib/types';
 import type { ScheduledService } from '@/services/calendar-service';
 import { resolveLocationFromProfile } from '@/ai/tools/local-data';
+import { QuotaManager } from './utils/quota-manager';
 
 import { ensureExactDimensions } from './utils/image-dimensions';
 
@@ -348,6 +349,13 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
     };
 
   } catch (error) {
+    // Check if this is a quota error and provide helpful guidance
+    const quotaError = QuotaManager.isQuotaError(error);
+    if (quotaError.isQuotaExceeded) {
+      const errorResponse = QuotaManager.createQuotaErrorResponse('Revo 2.0', error);
+      throw new Error(errorResponse.error + '\n\n' + errorResponse.suggestions.join('\n'));
+    }
+
     throw new Error(`Revo 2.0 generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -684,8 +692,15 @@ async function generateImageWithGemini(prompt: string, options: Revo20Generation
               { standardSize: 200, format: 'png', quality: 0.9 }
             );
 
-            // Extract normalized base64 data
-            const normalizedBase64 = normalizedLogo.dataUrl.split(',')[1];
+            // Extract normalized base64 data with proper error handling
+            let normalizedBase64: string;
+            if (normalizedLogo && normalizedLogo.dataUrl) {
+              normalizedBase64 = normalizedLogo.dataUrl.split(',')[1];
+            } else {
+              // Fallback: use original logo data if normalization failed
+              console.warn('⚠️ [Revo 2.0] Logo normalization failed, using original');
+              normalizedBase64 = logoBase64Data;
+            }
 
             generationParts.push({
               inlineData: {
@@ -791,12 +806,29 @@ You MUST include the exact brand logo image that was provided above in your desi
     } catch (error: any) {
       lastError = error;
 
+      // Check if this is a quota error
+      const quotaError = QuotaManager.isQuotaError(error);
+      if (quotaError.isQuotaExceeded) {
+        // For quota errors, don't retry - fail immediately with helpful message
+        const errorResponse = QuotaManager.createQuotaErrorResponse('Revo 2.0', error);
+        throw new Error(errorResponse.error + '\n\n' + errorResponse.suggestions.join('\n') + '\n\n' + (errorResponse.upgradeInfo || ''));
+      }
+
       if (attempt === maxRetries) {
         break;
       }
 
       const waitTime = Math.pow(2, attempt) * 1000;
       await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+  }
+
+  // Check if the final error was quota-related
+  if (lastError) {
+    const quotaError = QuotaManager.isQuotaError(lastError);
+    if (quotaError.isQuotaExceeded) {
+      const errorResponse = QuotaManager.createQuotaErrorResponse('Revo 2.0', lastError);
+      throw new Error(errorResponse.error + '\n\n' + errorResponse.suggestions.join('\n') + '\n\n' + (errorResponse.upgradeInfo || ''));
     }
   }
 
