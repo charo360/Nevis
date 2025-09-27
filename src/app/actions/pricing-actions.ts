@@ -1,6 +1,7 @@
 'use server';
 
 import { getPlanById, getCreditCostForRevo, calculateGenerationCost, canAffordGeneration } from '@/lib/pricing-data';
+import { CreditService } from '@/lib/credits/credit-service';
 
 export interface PurchaseResult {
   success: boolean;
@@ -73,28 +74,24 @@ export async function initiatePurchase(planId: string, userId: string): Promise<
 
 /**
  * Add credits to user account
- * TODO: Integrate with database
  */
 export async function addCreditsToUser(userId: string, credits: number): Promise<{ success: boolean; newTotal?: number }> {
   try {
-    // TODO: Update user credits in database
+    const result = await CreditService.addCredits(userId, credits, 'manual_addition');
 
-    // Simulate database update
-    const currentCredits = await getUserCredits(userId);
-    const newTotal = currentCredits.remainingCredits + credits;
-
-    // TODO: Update in Firestore
-    // await updateDoc(doc(db, 'users', userId), {
-    //   totalCredits: newTotal,
-    //   lastUpdated: new Date()
-    // });
+    if (result.success && result.newBalance) {
+      return {
+        success: true,
+        newTotal: result.newBalance.totalCredits
+      };
+    }
 
     return {
-      success: true,
-      newTotal
+      success: false
     };
 
   } catch (error) {
+    console.error('❌ Error adding credits to user:', error);
     return {
       success: false
     };
@@ -103,17 +100,24 @@ export async function addCreditsToUser(userId: string, credits: number): Promise
 
 /**
  * Get user's current credit balance
- * TODO: Integrate with database
  */
 export async function getUserCredits(userId: string): Promise<UserCredits> {
   try {
-    // TODO: Fetch from database
+    const balance = await CreditService.getUserCredits(userId);
 
-    // Simulate database fetch
+    if (!balance) {
+      return {
+        totalCredits: 0,
+        usedCredits: 0,
+        remainingCredits: 0,
+        lastUpdated: new Date()
+      };
+    }
+
     return {
-      totalCredits: 10, // Placeholder
-      usedCredits: 0,
-      remainingCredits: 10,
+      totalCredits: balance.totalCredits,
+      usedCredits: balance.usedCredits,
+      remainingCredits: balance.remainingCredits,
       lastUpdated: new Date()
     };
 
@@ -129,29 +133,18 @@ export async function getUserCredits(userId: string): Promise<UserCredits> {
 
 /**
  * Deduct credits when user generates content
- * TODO: Integrate with database
  */
 export async function deductCredits(userId: string, amount: number = 1): Promise<{ success: boolean; remainingCredits?: number }> {
   try {
-    const currentCredits = await getUserCredits(userId);
-
-    if (currentCredits.remainingCredits < amount) {
-      return {
-        success: false
-      };
-    }
-
-    const newRemaining = currentCredits.remainingCredits - amount;
-    const newUsed = currentCredits.usedCredits + amount;
-
-    // TODO: Update in database
+    const result = await CreditService.deductCredits(userId, amount, 'generation');
 
     return {
-      success: true,
-      remainingCredits: newRemaining
+      success: result.success,
+      remainingCredits: result.remainingCredits
     };
 
   } catch (error) {
+    console.error('❌ Error deducting credits:', error);
     return {
       success: false
     };
@@ -173,7 +166,12 @@ export async function deductCreditsForRevo(userId: string, revoVersion: string, 
       };
     }
 
-    const result = await deductCredits(userId, creditsCost);
+    const result = await CreditService.deductCredits(
+      userId,
+      creditsCost,
+      `${revoVersion}_generation`,
+      { revoVersion, generations, creditsCost }
+    );
 
     return {
       ...result,

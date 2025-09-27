@@ -49,11 +49,12 @@ const nextConfig = {
         crypto: false,
         stream: false,
         util: false,
-        buffer: false,
+        buffer: require.resolve('buffer'),
         events: false,
         path: false,
         os: false,
         zlib: false,
+        process: require.resolve('process/browser'),
       };
 
       // More aggressive module exclusion for client bundles
@@ -92,23 +93,19 @@ const nextConfig = {
           'http2',
           'dns',
           'net',
-          'tls',
-          'crypto',
-          'stream',
-          'util',
-          'buffer',
-          'events',
-          'path',
-          'os',
-          'zlib'
+          'tls'
         );
       }
 
-      // Ignore specific problematic modules
+      // Ignore specific problematic modules and provide polyfills
       config.plugins = config.plugins || [];
       config.plugins.push(
         new webpack.IgnorePlugin({
           resourceRegExp: /^(async_hooks|fs\/promises|http2|dns|net|tls)$/,
+        }),
+        new webpack.ProvidePlugin({
+          Buffer: ['buffer', 'Buffer'],
+          process: 'process/browser',
         })
       );
     }

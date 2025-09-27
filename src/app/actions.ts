@@ -508,18 +508,21 @@ export async function generateEnhancedDesignAction(
 
       } catch (openaiError) {
 
-        const { generateGeminiHDEnhancedDesignWithFallback } = await import('@/ai/gemini-hd-enhanced-design');
+        // const { generateGeminiHDEnhancedDesignWithFallback } = await import('@/ai/gemini-hd-enhanced-design');
 
-        result = await generateGeminiHDEnhancedDesignWithFallback({
-          businessType,
-          platform,
-          visualStyle,
-          imageText: finalImageText,
-          brandProfile,
-          brandConsistency,
-          artifactInstructions,
-          designReferences: uploadedImageUrl ? [uploadedImageUrl] : undefined,
-        });
+        // Temporary fallback while fixing syntax errors
+        throw new Error('Gemini HD Enhanced Design temporarily disabled due to syntax errors');
+
+        // result = await generateGeminiHDEnhancedDesignWithFallback({
+        //   businessType,
+        //   platform,
+        //   visualStyle,
+        //   imageText: finalImageText,
+        //   brandProfile,
+        //   brandConsistency,
+        //   artifactInstructions,
+        //   designReferences: uploadedImageUrl ? [uploadedImageUrl] : undefined,
+        // });
 
       }
     }
@@ -560,22 +563,25 @@ export async function generateGeminiHDDesignAction(
     }
 
 
-    const { generateGeminiHDEnhancedDesignWithFallback } = await import('@/ai/gemini-hd-enhanced-design');
+    // Temporarily disabled due to syntax errors
+    // const { generateGeminiHDEnhancedDesignWithFallback } = await import('@/ai/gemini-hd-enhanced-design');
 
-    const result = await generateGeminiHDEnhancedDesignWithFallback({
-      businessType,
-      platform,
-      visualStyle,
-      imageText,
-      brandProfile,
-      brandConsistency,
-      artifactInstructions,
-    });
+    throw new Error('Gemini HD Enhanced Design temporarily disabled due to syntax errors');
 
+    // const result = await generateGeminiHDEnhancedDesignWithFallback({
+    //   businessType,
+    //   platform,
+    //   visualStyle,
+    //   imageText,
+    //   brandProfile,
+    //   brandConsistency,
+    //   artifactInstructions,
+    // });
 
+    // Temporary return while fixing syntax errors
     return {
       platform,
-      imageUrl: result.imageUrl,
+      imageUrl: 'https://placehold.co/992x1056/cccccc/ffffff?text=Temporarily+Disabled',
       caption: imageText,
       hashtags: [],
     };

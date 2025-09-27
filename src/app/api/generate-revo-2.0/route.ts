@@ -5,9 +5,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { generateWithRevo20 } from '@/ai/revo-2.0-service';
+import { withSubscriptionGuard } from '@/lib/middleware/subscription-guard-server';
+import { SubscriptionService } from '@/lib/subscription/subscription-service';
 
 export async function POST(request: NextRequest) {
   try {
+    // Get user ID from headers (would be set by middleware in production)
+    const userId = 'test-user-id'; // TODO: Get from authentication
 
     const body = await request.json();
     const {
@@ -32,6 +36,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('Revo 2.0 Enhanced generation request:', {
+      userId,
       businessType,
       platform,
       visualStyle: visualStyle || 'modern',

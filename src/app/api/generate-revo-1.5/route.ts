@@ -5,6 +5,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { generateRevo15EnhancedDesign } from '@/ai/revo-1.5-enhanced-design';
+import { verifyToken } from '@/lib/auth/jwt';
+import { deductCreditsForRevo } from '@/app/actions/pricing-actions';
 import type { BrandProfile } from '@/lib/types';
 
 // Helper function to convert logo URL to base64 data URL for AI models (matching Revo 1.0)
@@ -45,6 +47,26 @@ async function convertLogoToDataUrl(logoUrl?: string): Promise<string | undefine
 
 export async function POST(request: NextRequest) {
   try {
+    // Verify authentication
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader) {
+      return NextResponse.json({
+        success: false,
+        error: 'Authentication required'
+      }, { status: 401 });
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const decoded = verifyToken(token);
+    if (!decoded) {
+      return NextResponse.json({
+        success: false,
+        error: 'Invalid authentication token'
+      }, { status: 401 });
+    }
+
+    const userId = decoded.userId;
+
     const body = await request.json();
     const {
       businessType,
@@ -65,11 +87,25 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // Check and deduct credits for Revo 1.5 generation
+    const creditResult = await deductCreditsForRevo(userId, 'revo-1.5', 1);
+    if (!creditResult.success) {
+      return NextResponse.json({
+        success: false,
+        error: 'Insufficient credits for Revo 1.5 generation',
+        creditsCost: creditResult.creditsCost,
+        remainingCredits: creditResult.remainingCredits
+      }, { status: 402 }); // Payment Required
+    }
+
     console.log('Revo 1.5 Enhanced generation request:', {
+      userId,
       businessType,
       platform,
       visualStyle: visualStyle || 'modern',
-      aspectRatio: aspectRatio || '1:1'
+      aspectRatio: aspectRatio || '1:1',
+      creditsDeducted: creditResult.creditsCost,
+      remainingCredits: creditResult.remainingCredits
     });
 
     // Convert logo URL to base64 data URL (matching Revo 1.0 approach)
