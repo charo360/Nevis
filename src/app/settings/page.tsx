@@ -12,6 +12,7 @@ import { Info } from 'lucide-react';
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
+  const userId = (user as any)?.userId ?? (user as any)?.uid ?? (user as any)?.id ?? null;
   const { toast } = useToast();
   const [billingPlan, setBillingPlan] = useState<'free' | 'starter' | 'growth' | 'pro' | 'power'>('free');
   const [loading, setLoading] = useState(false);
@@ -22,8 +23,9 @@ export default function SettingsPage() {
     async function loadUserPlan() {
       try {
         if (!user) return;
-        // userService.getById expects the document id (uid)
-        const doc = await userService.getById(user.uid);
+        // userService.getById expects the document id (uid/id)
+        if (!userId) return;
+        const doc = await userService.getById(userId);
         if (!mounted || !doc) return;
 
         // subscription.plan may be stored under subscription.plan or plan

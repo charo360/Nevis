@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 
-const stripeSecret = process.env.STRIPE_SECRET_KEY
-
-if (!stripeSecret) {
-  // Fail fast at import time in development so it's obvious
-  throw new Error('Missing STRIPE_SECRET_KEY in environment')
-}
-
-const stripe = new Stripe(stripeSecret)
+// Do not instantiate Stripe at module import time to avoid crashing the server
+// when the environment is not yet configured (helps local dev). Instantiate
+// inside the request handler and return a clear JSON error if missing.
 
 type Body = {
   priceId: string
@@ -20,6 +15,12 @@ type Body = {
 
 export async function POST(req: NextRequest) {
   try {
+    const stripeSecret = process.env.STRIPE_SECRET_KEY;
+    if (!stripeSecret) {
+      return NextResponse.json({ error: 'Server misconfiguration: STRIPE_SECRET_KEY not set' }, { status: 500 });
+    }
+
+  const stripe = new Stripe(stripeSecret, { apiVersion: '2025-07-30.basil' });
     const body = await req.json() as Body
 
     if (!body || !body.priceId) {

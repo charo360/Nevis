@@ -34,7 +34,7 @@ export default function AuthPage() {
   // Check if there's an existing session when component mounts
   useEffect(() => {
     if (user) {
-      console.log('👤 Existing user detected on auth page:', user.email);
+      console.log('User already logged in, redirecting to brand profile...');
     }
   }, [user]);
 
@@ -65,9 +65,7 @@ export default function AuthPage() {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      console.log('🔐 Starting login process...');
       await signIn(signInData.email, signInData.password);
-      console.log('✅ Login successful, auth state should be updated');
 
       // Don't call refreshBrands immediately - let the brand context react to auth state changes
       // The brand context useEffect will handle loading brands when user state updates
@@ -79,8 +77,7 @@ export default function AuthPage() {
 
       // Small delay to ensure auth state is fully settled before navigation
       setTimeout(() => {
-        console.log('🚀 Navigating to brand profile...');
-        router.push('/brand-profile');
+        router.push('/dashboard');
       }, 100);
 
     } catch (error) {
@@ -112,7 +109,7 @@ export default function AuthPage() {
         title: 'Account created!',
         description: 'Welcome — your account is ready.'
       });
-      router.push('/brand-profile');
+      router.push('/dashboard');
     } catch (error) {
       toast({
         variant: 'destructive',

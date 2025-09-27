@@ -39,6 +39,7 @@ import { AILearningWidget } from '@/components/ui/ai-learning-display';
 export default function DashboardPage() {
   const router = useRouter();
   const { user, loading: authLoading, signOut } = useAuth();
+  const userId = (user as any)?.userId ?? (user as any)?.uid ?? (user as any)?.id ?? null;
   const { toast } = useToast();
   // If auth is loading, show spinner; if user is missing or anonymous, redirect to /auth
   React.useEffect(() => {
@@ -185,7 +186,7 @@ export default function DashboardPage() {
   const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
 
   const createCheckout = async (priceId: string) => {
-    if (!user || !user.uid) {
+    if (!user || !userId) {
       // Ensure authenticated
       router.push('/auth')
       return
@@ -195,7 +196,7 @@ export default function DashboardPage() {
       const res = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId, quantity: 1, mode: 'payment', customerEmail: user.email, metadata: { userId: user.uid, priceId } })
+        body: JSON.stringify({ priceId, quantity: 1, mode: 'payment', customerEmail: user?.email, metadata: { userId, priceId } })
       })
 
       const data = await res.json()

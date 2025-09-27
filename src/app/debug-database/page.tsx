@@ -12,6 +12,7 @@ import { useGeneratedPosts } from '@/hooks/use-generated-posts';
 
 export default function DatabaseDebugPage() {
   const { user, loading: authLoading } = useAuth();
+  const userId = (user as any)?.userId ?? (user as any)?.uid ?? (user as any)?.id ?? null;
   const { profiles, loading: profilesLoading } = useBrandProfiles();
   const { posts, loading: postsLoading } = useGeneratedPosts(50); // Get more posts for debugging
   const [refreshKey, setRefreshKey] = useState(0);
@@ -65,7 +66,7 @@ export default function DatabaseDebugPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <p className="text-sm text-gray-600">User ID</p>
-                  <p className="font-mono text-xs bg-gray-100 p-1 rounded">{user.uid}</p>
+                  <p className="font-mono text-xs bg-gray-100 p-1 rounded">{userId || 'N/A'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Email</p>

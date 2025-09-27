@@ -121,7 +121,10 @@ export default function HomePage() {
   };
 
   const createCheckout = async (priceId: string) => {
-    if (!user || !user.uid) {
+    // Unified user id check: support different auth shapes (uid, userId, id)
+    const userId = (user as any)?.userId || (user as any)?.uid || (user as any)?.id;
+    if (!user || !userId) {
+      // If not logged in, redirect to auth. Calling createCheckout directly requires an authenticated user.
       router.push('/auth');
       return;
     }
@@ -130,7 +133,7 @@ export default function HomePage() {
       const res = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId, quantity: 1, mode: 'payment', customerEmail: user.email, metadata: { userId: user.uid, priceId } })
+        body: JSON.stringify({ priceId, quantity: 1, mode: 'payment', customerEmail: (user as any)?.email, metadata: { userId, priceId } })
       });
 
       const data = await res.json();
@@ -148,6 +151,38 @@ export default function HomePage() {
       toast({ variant: 'destructive', title: 'Checkout failed', description: String(err.message || err) });
     }
   };
+
+  // Handle Buy button click: if user is logged in, start checkout; otherwise save pending and redirect to auth
+  const handleBuy = (priceId: string) => {
+    const userId = (user as any)?.userId || (user as any)?.uid || (user as any)?.id;
+    if (user && userId) {
+      void createCheckout(priceId);
+    } else {
+      try {
+        // store pending checkout so we can resume after authentication
+        localStorage.setItem('pendingCheckout', priceId);
+      } catch (e) {
+        // ignore storage errors
+      }
+      router.push('/auth');
+    }
+  };
+
+  // Resume pending checkout after sign-in
+  useEffect(() => {
+    try {
+      const pending = localStorage.getItem('pendingCheckout');
+      const userId = (user as any)?.userId || (user as any)?.uid || (user as any)?.id;
+      if (pending && user && userId) {
+        // Clean up immediately to avoid double attempts
+        localStorage.removeItem('pendingCheckout');
+        // Fire-and-forget
+        void createCheckout(pending);
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, [user]);
 
   const handleSignIn = () => {
     router.push('/auth');
@@ -892,7 +927,7 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => createCheckout('price_1RxYHyFptxIKIuiwekVOOCf3')}
+                  onClick={() => handleBuy('price_1RxYHyFptxIKIuiwekVOOCf3')}
                   className="w-full"
                   variant="outline"
                 >
@@ -946,7 +981,7 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => createCheckout('price_1RxYIwFptxIKIuiwMVPibdo5')}
+                  onClick={() => handleBuy('price_1RxYIwFptxIKIuiwMVPibdo5')}
                   className="w-full"
                 >
                   Buy Credits
@@ -995,7 +1030,7 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => createCheckout('price_1RxYJzFptxIKIuiwqcRemLE8')}
+                  onClick={() => handleBuy('price_1RxYJzFptxIKIuiwqcRemLE8')}
                   className="w-full"
                   variant="outline"
                 >
@@ -1045,7 +1080,7 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => createCheckout('price_1RxYKfFptxIKIuiwCql1Wj0u')}
+                  onClick={() => handleBuy('price_1RxYKfFptxIKIuiwCql1Wj0u')}
                   className="w-full"
                   variant="outline"
                 >

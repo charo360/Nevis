@@ -371,16 +371,20 @@ export function ContentCalendar({
       <div className="w-full px-4 py-6 lg:py-8 lg:px-6">
         <div className="w-full max-w-full box-border space-y-6">
           {/* Compact Brand Consistency Controls */}
+       
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div className="flex items-start justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-2 min-w-0">
                 <Settings className="h-4 w-4 text-blue-600" />
-                <span className="font-medium text-sm">Brand Consistency</span>
+                {/* allow label to truncate instead of forcing the right-side to overflow */}
+                <span className="font-medium text-sm truncate">Brand Consistency</span>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
+
+              {/* Right side controls: wrap on small screens and avoid squeezing controls */}
+              <div className="flex items-center gap-3 flex-wrap justify-end min-w-0 w-full sm:w-auto">
+                <div className="flex items-center gap-2 flex-none min-w-[6rem]">
                   <Palette className="h-3 w-3 text-gray-500" />
-                  <span className="text-xs text-gray-600">Strict</span>
+                  <span className="text-xs text-gray-600 whitespace-nowrap">Strict</span>
                   <Switch
                     checked={brandConsistency.strictConsistency}
                     onCheckedChange={(checked) =>
@@ -388,9 +392,10 @@ export function ContentCalendar({
                     }
                   />
                 </div>
-                <div className="flex items-center gap-2">
+
+                <div className="flex items-center gap-2 flex-none min-w-[6rem]">
                   <Sparkles className="h-3 w-3 text-gray-500" />
-                  <span className="text-xs text-gray-600">Colors</span>
+                  <span className="text-xs text-gray-600 whitespace-nowrap">Colors</span>
                   <Switch
                     checked={brandConsistency.followBrandColors}
                     onCheckedChange={(checked) =>
@@ -398,9 +403,10 @@ export function ContentCalendar({
                     }
                   />
                 </div>
-                <div className="flex items-center gap-2">
+
+                <div className="flex items-center gap-2 flex-none min-w-[6rem]">
                   <Phone className="h-3 w-3 text-gray-500" />
-                  <span className="text-xs text-gray-600">Contacts</span>
+                  <span className="text-xs text-gray-600 whitespace-nowrap">Contacts</span>
                   <Switch
                     checked={brandConsistency.includeContacts}
                     onCheckedChange={(checked) =>
@@ -408,23 +414,27 @@ export function ContentCalendar({
                     }
                   />
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-600">👥 People</span>
+
+                <div className="flex items-center gap-2 flex-none min-w-[5.5rem]">
+                  <span className="text-xs text-gray-600 whitespace-nowrap">👥 People</span>
                   <Switch
                     checked={includePeopleInDesigns}
                     onCheckedChange={setIncludePeopleInDesigns}
                   />
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-600">🌍 Local</span>
+
+                <div className="flex items-center gap-2 flex-none min-w-[5.5rem]">
+                  <span className="text-xs text-gray-600 whitespace-nowrap">🌍 Local</span>
                   <Switch
                     checked={useLocalLanguage}
                     onCheckedChange={setUseLocalLanguage}
                   />
                 </div>
-                <Separator orientation="vertical" className="h-4" />
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-600">AI Model:</span>
+
+                <Separator orientation="vertical" className="h-4 hidden sm:block" />
+
+                <div className="flex items-center gap-2 flex-none min-w-[8rem]">
+                  <span className="text-xs text-gray-600 whitespace-nowrap">AI Model:</span>
                   <select
                     value={selectedRevoModel}
                     onChange={(e) => setSelectedRevoModel(e.target.value as RevoModel)}
@@ -437,7 +447,8 @@ export function ContentCalendar({
                 </div>
               </div>
             </div>
-            <p className="text-xs text-gray-500 mt-2">
+
+            <p className="text-xs text-gray-500 mt-2 max-w-full">
               {selectedRevoModel === 'revo-2.0'
                 ? `🚀 ${selectedRevoModel}: Next-Gen AI with native image generation, character consistency & intelligent editing`
                 : selectedRevoModel === 'revo-1.5'
@@ -448,6 +459,7 @@ export function ContentCalendar({
               }
             </p>
           </div>
+
 
           {/* Simple Artifacts Toggle */}
           <div className="mb-6">
