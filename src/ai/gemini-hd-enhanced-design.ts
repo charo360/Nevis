@@ -244,17 +244,25 @@ export async function generateGeminiHDEnhancedDesign(
         processingTime: Date.now() - startTime,
       };
     } catch (error) {
-      throw new Error(`Gemini HD generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Gemini HD generation failed: ${errorMessage}`);
     }
   }
 
-
 /**
-   * Build optimized prompt for Gemini 2.5 Flash Image Preview generation
-   * Enhanced with best practices for maximum quality and accuracy
-   */
-  function buildGeminiHDPrompt(input: GeminiHDEnhancedDesignInput, aspectRatio: string): string {
-    const { businessType, platform, visualStyle, imageText, brandProfile, brandConsistency, artifactInstructions } = input;
+ * Build optimized prompt for Gemini 2.5 Flash Image Preview generation
+ * Enhanced with best practices for maximum quality and accuracy
+ */
+function buildGeminiHDPrompt(input: GeminiHDEnhancedDesignInput, aspectRatio: string): string {
+    const {
+      businessType,
+      platform,
+      visualStyle,
+      imageText,
+      brandProfile,
+      brandConsistency,
+      artifactInstructions
+    } = input;
 
     // Generate unique variation elements for each request
     const generationId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -686,10 +694,9 @@ ${artifactInstructions}
           processingTime: Date.now() - startTime,
         };
       } catch (fallbackError) {
-        throw new Error(`Gemini generation completely failed: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}`);
+        const errorMessage = fallbackError instanceof Error ? fallbackError.message : 'Unknown error';
+        throw new Error(`Gemini generation completely failed: ${errorMessage}`);
       }
     }
   }
-
-
-
+}

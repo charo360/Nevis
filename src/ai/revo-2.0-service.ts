@@ -7,8 +7,14 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import OpenAI from 'openai';
 import type { BrandProfile, Platform } from '@/lib/types';
 
-// Initialize AI clients with Revo 2.0 specific API key
-const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY_REVO_2_0!);
+// Initialize AI clients with Revo 2.0 specific API key with fallback
+const apiKey = process.env.GEMINI_API_KEY_REVO_2_0 || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
+
+if (!apiKey) {
+  throw new Error('Revo 2.0: No Gemini API key found. Please set GEMINI_API_KEY_REVO_2_0 or GEMINI_API_KEY in your environment variables.');
+}
+
+const ai = new GoogleGenerativeAI(apiKey);
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
 // Revo 2.0 uses Gemini 2.5 Flash Image Preview (same as Revo 1.0 but with enhanced prompting)

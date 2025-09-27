@@ -8,25 +8,23 @@ import type { ModelPricing, RevoModelId } from '../types/model-types';
 // Pricing configuration for each model
 export const modelPricing: Record<RevoModelId, ModelPricing> = {
   'revo-1.0': {
-    creditsPerGeneration: 1.5, // Slightly increased from 1 for enhanced capabilities
-    creditsPerDesign: 1.5, // Slightly increased from 1 for enhanced capabilities
-    creditsPerVideo: 0, // Video not supported
-    tier: 'enhanced' // Upgraded from basic
+    creditsPerGeneration: 1,   // Basic AI generation
+    creditsPerDesign: 1,       // Basic AI generation
+    creditsPerVideo: 0,        // Video not supported
+    tier: 'basic'
   },
 
   'revo-1.5': {
-    creditsPerGeneration: 2,
-    creditsPerDesign: 2,
-    creditsPerVideo: 0, // Video not supported yet
-    tier: 'premium'
+    creditsPerGeneration: 1.5, // Enhanced AI generation
+    creditsPerDesign: 1.5,     // Enhanced AI generation
+    creditsPerVideo: 0,        // Video not supported yet
+    tier: 'enhanced'
   },
 
-
-
   'revo-2.0': {
-    creditsPerGeneration: 5,
-    creditsPerDesign: 5,
-    creditsPerVideo: 0, // Focus on premium image generation
+    creditsPerGeneration: 2,   // Premium AI generation
+    creditsPerDesign: 2,       // Premium AI generation
+    creditsPerVideo: 0,        // Focus on premium image generation
     tier: 'premium'
   }
 };
@@ -101,9 +99,9 @@ export const creditPackages = {
     pricePerCredit: 0.20,
     bestFor: 'revo-1.0',
     estimatedGenerations: {
-      'revo-1.0': 50,
-      'revo-1.5': 25,
-      'imagen-4': 5
+      'revo-1.0': 50,    // 50 credits ÷ 1 credit = 50 generations
+      'revo-1.5': 33,    // 50 credits ÷ 1.5 credits = 33 generations
+      'revo-2.0': 25     // 50 credits ÷ 2 credits = 25 generations
     }
   },
   professional: {
@@ -113,9 +111,9 @@ export const creditPackages = {
     pricePerCredit: 0.15,
     bestFor: 'revo-1.5',
     estimatedGenerations: {
-      'revo-1.0': 200,
-      'revo-1.5': 100,
-      'imagen-4': 20
+      'revo-1.0': 200,   // 200 credits ÷ 1 credit = 200 generations
+      'revo-1.5': 133,   // 200 credits ÷ 1.5 credits = 133 generations
+      'revo-2.0': 100    // 200 credits ÷ 2 credits = 100 generations
     }
   },
   business: {
@@ -123,11 +121,11 @@ export const creditPackages = {
     credits: 500,
     price: 59.99,
     pricePerCredit: 0.12,
-    bestFor: 'imagen-4',
+    bestFor: 'revo-2.0',
     estimatedGenerations: {
-      'revo-1.0': 500,
-      'revo-1.5': 250,
-      'imagen-4': 50
+      'revo-1.0': 500,   // 500 credits ÷ 1 credit = 500 generations
+      'revo-1.5': 333,   // 500 credits ÷ 1.5 credits = 333 generations
+      'revo-2.0': 250    // 500 credits ÷ 2 credits = 250 generations
     }
   },
   enterprise: {
@@ -135,12 +133,11 @@ export const creditPackages = {
     credits: 1000,
     price: 99.99,
     pricePerCredit: 0.10,
-    bestFor: 'imagen-4',
+    bestFor: 'revo-2.0',
     estimatedGenerations: {
-      'revo-1.0': 1000,
-      'revo-1.5': 500,
-      'revo-2.0': 200,
-      'imagen-4': 100
+      'revo-1.0': 1000,  // 1000 credits ÷ 1 credit = 1000 generations
+      'revo-1.5': 666,   // 1000 credits ÷ 1.5 credits = 666 generations
+      'revo-2.0': 500    // 1000 credits ÷ 2 credits = 500 generations
     }
   }
 } as const;

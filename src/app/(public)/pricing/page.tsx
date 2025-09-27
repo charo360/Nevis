@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Check, Star, Zap, Crown, Rocket, ArrowLeft } from 'lucide-react';
 import { PricingCard } from '@/components/pricing/PricingCard';
+import { RegionalPricingCard } from '@/components/pricing/RegionalPricingCard';
 import { RevoCreditCosts } from '@/components/pricing/RevoCreditCosts';
 import { pricingPlans, addOns, pricingFeatures } from '@/lib/pricing-data';
 import { initiatePurchase } from '@/app/actions/pricing-actions';
@@ -24,6 +25,11 @@ export default function PublicPricingPage() {
   const handleSelectPlan = async (planId: string) => {
     // Redirect to auth for plan selection
     window.location.href = `/auth?plan=${planId}`;
+  };
+
+  const handleRegionalSelect = () => {
+    // Redirect to auth for regional 45 generations
+    window.location.href = `/auth?product=regional_45`;
   };
 
   return (
@@ -78,6 +84,21 @@ export default function PublicPricingPage() {
               onSelect={handleSelectPlan}
             />
           ))}
+        </div>
+
+        {/* Regional Special Offer */}
+        <div className="mb-16">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Regional Special Offer</h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Get 45 generations at special regional pricing based on your location. 
+              Perfect for users who want more credits at a discounted rate.
+            </p>
+          </div>
+          
+          <div className="flex justify-center">
+            <RegionalPricingCard onSelect={handleRegionalSelect} />
+          </div>
         </div>
 
         {/* Detailed Credit Costs Section */}

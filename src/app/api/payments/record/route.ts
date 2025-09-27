@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth/jwt'
-import { userService } from '@/lib/mongodb/database'
-import { paymentReceiptHTML, paymentReceiptText } from '@/lib/email/paymentReceiptTemplate'
+import { supabase } from '@/lib/supabase/client'
 import { getPlanById } from '@/lib/pricing-data'
 
 interface Body {
@@ -29,51 +28,98 @@ export async function POST(req: Request) {
 
     const userId = decoded.userId
 
-    // TODO: Check for existing payment in MongoDB
-    // For now, we'll skip the idempotency check
+    // Check for existing payment (idempotency)
+    const { data: existingPayment } = await supabase
+      .from('payments')
+      .select('id')
+      .eq('stripe_session_id', sessionId)
+      .single()
+
+    if (existingPayment) {
+      return NextResponse.json({
+        success: true,
+        message: 'Payment already recorded',
+        paymentId: existingPayment.id
+      })
+    }
 
     const plan = getPlanById(planId)
     const creditsToAdd = plan ? plan.credits : 0
 
-    const now = new Date()
-
-    // Record payment
-    const paymentDoc = {
-      userId,
-      planId,
-      sessionId,
-      amount,
-      currency,
-      paymentMethod: paymentMethod || null,
-      creditsAdded: creditsToAdd,
-      createdAt: now.toISOString()
+    if (!plan) {
+      return NextResponse.json({ error: 'Invalid plan ID' }, { status: 400 })
     }
 
     try {
-      // TODO: Save to MongoDB payments collection
-      console.log('Payment recorded:', paymentDoc)
+      // Get current user credits
+      const { data: user, error: userError } = await supabase
+        .from('users')
+        .select('total_credits, used_credits, remaining_credits')
+        .eq('user_id', userId)
+        .single()
+
+      if (userError || !user) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      }
+
+      const currentTotal = user.total_credits || 0
+      const currentUsed = user.used_credits || 0
+      const currentRemaining = user.remaining_credits || 0
+
+      const newTotal = currentTotal + creditsToAdd
+      const newRemaining = currentRemaining + creditsToAdd
+
+      // Process payment transaction atomically
+      const { error: transactionError } = await supabase.rpc('process_payment_transaction', {
+        p_user_id: userId,
+        p_stripe_session_id: sessionId,
+        p_plan_id: planId,
+        p_amount: amount,
+        p_currency: currency,
+        p_credits_added: creditsToAdd,
+        p_payment_method: paymentMethod || 'card',
+        p_new_total_credits: newTotal,
+        p_new_remaining_credits: newRemaining,
+        p_balance_before: currentRemaining
+      })
+
+      if (transactionError) {
+        console.error('❌ Payment transaction failed:', transactionError)
+        return NextResponse.json({
+          error: 'Failed to process payment',
+          details: transactionError.message
+        }, { status: 500 })
+      }
+
+      console.log('✅ Payment recorded successfully:', {
+        userId,
+        planId,
+        creditsAdded,
+        newTotal,
+        newRemaining
+      })
+
     } catch (e: any) {
-      return NextResponse.json({ error: 'Failed to record payment', details: e.message }, { status: 500 })
+      console.error('❌ Payment recording error:', e)
+      return NextResponse.json({
+        error: 'Failed to record payment',
+        details: e.message
+      }, { status: 500 })
     }
 
-    // Update user's credits and plan
-    try {
-      // TODO: Update user in MongoDB
-      console.log('User credits updated:', { userId, planId, creditsToAdd })
-    } catch (e: any) {
-      return NextResponse.json({ error: 'Failed to update user credits', details: e.message }, { status: 500 })
-    }
+    return NextResponse.json({
+      success: true,
+      message: 'Payment recorded and credits added successfully',
+      creditsAdded,
+      newTotal,
+      newRemaining
+    })
 
-    // Send receipt email if possible
-    try {
-      // TODO: Get user email from MongoDB and send receipt
-      console.log('Receipt email would be sent to user:', userId)
-    } catch (e) {
-      // Email sending is not critical, so we don't fail the request
-    }
-
-    return NextResponse.json({ ok: true })
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message || String(err) }, { status: 500 })
+  } catch (error: any) {
+    console.error('❌ Payment recording error:', error)
+    return NextResponse.json({
+      error: 'Internal server error',
+      details: error.message
+    }, { status: 500 })
   }
 }
