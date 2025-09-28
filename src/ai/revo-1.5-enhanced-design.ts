@@ -875,7 +875,7 @@ export async function generateFinalImage(
 
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({
-        model: 'gemini-2.5-flash-image-preview', // Same model as Revo 1.0 and 2.0
+        model: 'gemini-2.5-flash-image-preview', // Use the model that works with Revo 1.5 API key
         generationConfig: {
           temperature: 0.7,
           topP: 0.9,
@@ -1461,7 +1461,7 @@ export async function generateRevo15EnhancedDesign(
       processingTime: Date.now() - startTime,
       model: 'revo-1.5-enhanced (gemini-2.5-flash-image-preview)',
       planningModel: GEMINI_2_5_MODELS.FLASH,
-      generationModel: 'gemini-2.5-flash-image-preview', // Same model as Revo 1.0 and 2.0
+      generationModel: 'gemini-2.5-flash-image-preview', // Model that works with Revo 1.5 API key
       caption: contentResult.caption,
       hashtags: contentResult.hashtags,
       headline: contentResult.headline,
