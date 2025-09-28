@@ -2084,18 +2084,45 @@ export async function generateRevo15EnhancedDesign(
     const designPlan = await generateDesignPlan(enhancedInput);
     enhancementsApplied.push('Strategic Design Planning');
 
-    // Step 2: Generate content (temporarily using original system while Pure AI is being tested)
-    const contentResult = await generateCaptionAndHashtags(
-      input.businessType,
-      input.brandProfile.businessName || input.businessType,
-      input.platform,
-      designPlan,
-      input.brandProfile,
-      input.trendingData,
-      input.useLocalLanguage === true, // Default to false if not specified
-      input.scheduledServices // NEW: Pass scheduled services to content generation
-    );
-    enhancementsApplied.push('AI-Generated Content & Design Text');
+    // Step 2: Generate content using Pure AI (Enhanced Cultural Intelligence System)
+    let contentResult;
+    try {
+      console.log('🧠 [Revo 1.5] Attempting Pure AI content generation...');
+      const pureAIResult = await generatePureAIContent(
+        input.businessType,
+        input.brandProfile.businessName || input.businessType,
+        input.platform,
+        input.brandProfile,
+        input.useLocalLanguage === true,
+        input.scheduledServices
+      );
+
+      contentResult = {
+        caption: pureAIResult.caption,
+        hashtags: pureAIResult.hashtags,
+        headline: pureAIResult.headline,
+        subheadline: pureAIResult.subheadline,
+        callToAction: pureAIResult.cta
+      };
+
+      enhancementsApplied.push('Pure AI Content Generation (Cultural Intelligence)');
+      console.log('✅ [Revo 1.5] Pure AI content generation successful');
+    } catch (pureAIError) {
+      console.warn('⚠️ [Revo 1.5] Pure AI failed, falling back to original system:', pureAIError);
+
+      // Fallback to original system
+      contentResult = await generateCaptionAndHashtags(
+        input.businessType,
+        input.brandProfile.businessName || input.businessType,
+        input.platform,
+        designPlan,
+        input.brandProfile,
+        input.trendingData,
+        input.useLocalLanguage === true,
+        input.scheduledServices
+      );
+      enhancementsApplied.push('AI-Generated Content & Design Text (Fallback)');
+    }
 
     // Step 3: Generate final image with text elements on design (matching Revo 1.0 approach)
     const imageUrl = await generateFinalImage(enhancedInput, designPlan, contentResult);
