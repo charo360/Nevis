@@ -263,7 +263,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
             // Handle other data URL formats (PNG, JPEG, etc.) directly
             const link = document.createElement('a');
             link.href = activeVariant.imageUrl;
-            link.download = `nevis-social-${post.id}-${activeTab}.${extension}`;
+            link.download = `crevo-social-${post.id}-${activeTab}.${extension}`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -292,7 +292,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
 
             const link = document.createElement('a');
             link.href = url;
-            link.download = `nevis-social-${post.id}-${activeTab}.${extension}`;
+            link.download = `crevo-social-${post.id}-${activeTab}.${extension}`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -353,7 +353,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
 
       const link = document.createElement('a');
       link.href = dataUrl;
-      link.download = `nevis-social-${post.id}-${activeTab}.png`;
+      link.download = `crevo-social-${post.id}-${activeTab}.png`;
       link.click();
 
       // Provide specific feedback based on content type

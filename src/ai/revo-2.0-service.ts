@@ -17,8 +17,8 @@ if (!apiKey) {
 const ai = new GoogleGenerativeAI(apiKey);
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
-// Revo 2.0 uses Gemini 2.5 Flash Image Preview (same as Revo 1.0 but with enhanced prompting)
-const REVO_2_0_MODEL = 'gemini-2.5-flash-image-preview';
+// Revo 2.0 uses Gemini 2.0 Flash Image Preview (same as Revo 1.0 but with enhanced prompting)
+const REVO_2_0_MODEL = 'gemini-2.0-flash-exp-image-generation';
 
 export interface Revo20GenerationOptions {
   businessType: string;
@@ -200,20 +200,10 @@ Create a visually stunning design that stops scrolling and drives engagement whi
  */
 async function generateImageWithGemini(prompt: string, options: Revo20GenerationOptions): Promise<{ imageUrl: string }> {
   try {
-    const model = ai.getGenerativeModel({
-      model: REVO_2_0_MODEL,
-      generationConfig: {
-        temperature: 0.7,
-        topP: 0.8,
-        topK: 40,
-        maxOutputTokens: 4096,
-      }
-    });
-
-    // Prepare generation parts array
-    const generationParts: any[] = [prompt];
-
-    // Check for logo integration (same logic as Revo 1.0)
+    // Use the Genkit flow system for image generation
+    const { generateCreativeAsset } = await import('@/ai/flows/generate-creative-asset');
+    
+    // Prepare logo data if available
     const logoDataUrl = options.brandProfile.logoDataUrl;
     const logoStorageUrl = (options.brandProfile as any).logoUrl || (options.brandProfile as any).logo_url;
     const logoUrl = logoDataUrl || logoStorageUrl;
@@ -227,128 +217,28 @@ async function generateImageWithGemini(prompt: string, options: Revo20Generation
       finalLogoUrl: logoUrl ? logoUrl.substring(0, 100) + '...' : 'None'
     });
 
-    if (logoUrl) {
-      console.log('🎨 Revo 2.0: Processing brand logo for generation using:', logoDataUrl ? 'base64 data' : 'storage URL');
+    // Call the Genkit flow for image generation
+    const result = await generateCreativeAsset({
+      prompt: prompt,
+      outputType: 'image',
+      referenceAssetUrl: null,
+      useBrandProfile: true,
+      brandProfile: options.brandProfile,
+      preferredModel: 'gemini-2.5-flash-image-preview',
+      designColors: {
+        primaryColor: options.brandProfile.primaryColor || '#3B82F6',
+        accentColor: options.brandProfile.accentColor || '#10B981',
+        backgroundColor: options.brandProfile.backgroundColor || '#FFFFFF'
+      },
+      maskDataUrl: logoUrl || null
+    });
 
-      let logoBase64Data = '';
-      let logoMimeType = 'image/png';
-
-      try {
-        if (logoUrl.startsWith('data:')) {
-          // Extract base64 data from data URL
-          const matches = logoUrl.match(/^data:([^;]+);base64,(.+)$/);
-          if (matches) {
-            logoMimeType = matches[1];
-            logoBase64Data = matches[2];
-          }
-        } else if (logoUrl.startsWith('http')) {
-          // Fetch logo from storage URL
-          const response = await fetch(logoUrl);
-          if (response.ok) {
-            const arrayBuffer = await response.arrayBuffer();
-            const buffer = Buffer.from(arrayBuffer);
-            logoBase64Data = buffer.toString('base64');
-            logoMimeType = response.headers.get('content-type') || 'image/png';
-          }
-        }
-
-        // Normalize logo before adding to generation to prevent dimension influence
-        if (logoBase64Data) {
-          try {
-            // Import logo normalization service
-            const { LogoNormalizationService } = await import('@/lib/services/logo-normalization-service');
-
-            // Normalize logo to prevent it from affecting design dimensions
-            const normalizedLogo = await LogoNormalizationService.normalizeLogo(
-              `data:${logoMimeType};base64,${logoBase64Data}`,
-              { standardSize: 200, format: 'png', quality: 0.9 }
-            );
-
-            // Extract normalized base64 data with proper error handling
-            let normalizedBase64: string;
-            if (normalizedLogo && normalizedLogo.dataUrl) {
-              normalizedBase64 = normalizedLogo.dataUrl.split(',')[1];
-            } else {
-              // Fallback: use original logo data if normalization failed
-              console.warn('⚠️ Revo 2.0: Logo normalization failed, using original');
-              normalizedBase64 = logoBase64Data;
-            }
-
-            generationParts.push({
-              inlineData: {
-                data: normalizedBase64,
-                mimeType: 'image/png'
-              }
-            });
-
-            // Get AI prompt instructions for normalized logo
-            const logoInstructions = LogoNormalizationService.getLogoPromptInstructions(normalizedLogo);
-
-            // Update the prompt with normalized logo instructions
-            const logoPrompt = `\n\n🎯 CRITICAL LOGO REQUIREMENT - THIS IS MANDATORY:
-You MUST include the exact brand logo image that was provided above in your design. This is not optional.
-
-${logoInstructions}
-
-LOGO INTEGRATION RULES:
-✅ REQUIRED: Place the provided logo prominently in the design (top corner, header, or center)
-✅ REQUIRED: Use the EXACT logo image provided - do not modify, recreate, or stylize it
-✅ REQUIRED: Make the logo clearly visible and readable
-✅ REQUIRED: Size the logo appropriately - not too small, not too large
-✅ REQUIRED: Ensure good contrast against the background
-✅ CRITICAL: Design dimensions must remain exactly 992x1056px regardless of logo size
-
-❌ FORBIDDEN: Do NOT create a new logo
-❌ FORBIDDEN: Do NOT ignore the provided logo
-❌ FORBIDDEN: Do NOT make the logo too small to see
-❌ FORBIDDEN: Do NOT place logo where it can't be seen
-
-The logo has been normalized to 200px standard size to prevent design dimension issues.`;
-
-            // Update the first part (prompt) with logo instructions
-            generationParts[0] = prompt + logoPrompt;
-
-            console.log('✅ Revo 2.0: Logo processed and added to generation');
-
-          } catch (normalizationError) {
-            console.error('❌ Revo 2.0: Logo normalization failed:', normalizationError);
-            // Continue without logo if normalization fails
-          }
-        }
-
-      } catch (logoError) {
-        console.error('❌ Revo 2.0: Logo processing failed:', {
-          originalUrl: logoUrl.substring(0, 100),
-          hasLogoDataUrl: !!logoDataUrl,
-          hasLogoStorageUrl: !!logoStorageUrl,
-          urlType: logoUrl.startsWith('data:') ? 'base64' : logoUrl.startsWith('http') ? 'storage' : 'unknown'
-        });
-        // Continue without logo if processing fails
-      }
-    } else {
-      console.log('ℹ️ Revo 2.0: No logo provided, generating design without logo');
+    if (result.imageUrl) {
+      console.log('✅ Revo 2.0: Image generated successfully with Genkit flow');
+      return { imageUrl: result.imageUrl };
     }
 
-    const result = await model.generateContent(generationParts);
-    const response = await result.response;
-
-    // Check if response contains image data
-    const candidates = response.candidates;
-    if (candidates && candidates.length > 0) {
-      const parts = candidates[0].content.parts;
-
-      for (const part of parts) {
-        if (part.inlineData && part.inlineData.mimeType?.startsWith('image/')) {
-          const base64Data = part.inlineData.data;
-          const imageUrl = `data:${part.inlineData.mimeType};base64,${base64Data}`;
-
-          console.log('✅ Revo 2.0: Image generated successfully with brand integration');
-          return { imageUrl };
-        }
-      }
-    }
-
-    throw new Error('No image data found in Gemini response');
+    throw new Error('No image data found in Genkit response');
 
   } catch (error) {
     console.error('❌ Revo 2.0: Image generation failed:', error);

@@ -14,7 +14,7 @@ import { useAuth } from "@/hooks/use-auth-supabase";
 import type { BrandProfile, GeneratedPost, Platform, BrandConsistencyPreferences } from "@/lib/types";
 import type { ScheduledService } from "@/services/calendar-service";
 
-type RevoModel = 'revo-1.0' | 'revo-1.5';
+type RevoModel = 'revo-1.0' | 'revo-1.5' | 'revo-2.0';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -63,7 +63,7 @@ export function ContentCalendar({
   });
 
   // Revo model selection
-  const [selectedRevoModel, setSelectedRevoModel] = React.useState<RevoModel>('revo-1.5');
+  const [selectedRevoModel, setSelectedRevoModel] = React.useState<RevoModel>('revo-2.0');
 
   // Artifact selection for content generation
   const [selectedArtifacts, setSelectedArtifacts] = React.useState<string[]>([]);
@@ -150,6 +150,7 @@ export function ContentCalendar({
 
       const useEnhancedGeneration = artifactsEnabled || selectedRevoModel === 'revo-1.5' || selectedRevoModel === 'revo-2.0';
 
+      // Dynamic model routing based on selected Revo version
       if (selectedRevoModel === 'revo-2.0') {
 
         // Use server action to avoid client-side imports
@@ -237,9 +238,9 @@ export function ContentCalendar({
             }
           }
         };
-      } else if (selectedRevoModel === 'revo-1.5') {
-        // Use Revo 1.5 directly with logo support
-        console.log('🎨 Calling generateRevo15ContentAction with scheduled services:', {
+      } else if (selectedRevoModel === 'revo-1.5' || selectedRevoModel === 'revo-1.0') {
+        // Use unified Quick Content API for Revo 1.0 and 1.5
+        console.log(`🎨 Calling Quick Content API for ${selectedRevoModel} with scheduled services:`, {
           platform,
           scheduledServicesCount: scheduledServices?.length || 0,
           scheduledServiceNames: scheduledServices?.map(s => s.serviceName) || [],
@@ -248,19 +249,34 @@ export function ContentCalendar({
           hasScheduledContent
         });
 
-        newPost = await generateRevo15ContentAction(
-          brandProfile,
-          platform,
-          brandConsistency,
-          '',
-          {
-            aspectRatio: '1:1',
-            visualStyle: brandProfile.visualStyle || 'modern',
-            includePeopleInDesigns,
-            useLocalLanguage
+        const response = await fetch('/api/quick-content', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
           },
-          scheduledServices // NEW: Pass scheduled services to Revo 1.5
-        );
+          body: JSON.stringify({
+            revoModel: selectedRevoModel,
+            brandProfile,
+            platform,
+            brandConsistency,
+            useLocalLanguage,
+            scheduledServices,
+            includePeopleInDesigns
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`${selectedRevoModel} generation failed: ${response.statusText}`);
+        }
+
+        const apiResponse = await response.json();
+        
+        // Check if the API returned an error
+        if (apiResponse.error) {
+          throw new Error(apiResponse.error);
+        }
+        
+        newPost = apiResponse;
       } else if (useEnhancedGeneration) {
         // Use artifact-enhanced generation - will automatically use active artifacts from artifacts page
         newPost = await generateContentWithArtifactsAction(
@@ -273,27 +289,17 @@ export function ContentCalendar({
           useLocalLanguage
         );
       } else {
-        // Use standard content generation with scheduled services
-        console.log('🤖 Calling generateContentAction with scheduled services:', {
-          platform,
-          scheduledServicesCount: scheduledServices?.length || 0,
-          scheduledServiceNames: scheduledServices?.map(s => s.serviceName) || [],
-          hasScheduledContent
-        });
-
-        console.log('🔍 [ContentCalendar] People Toggle Debug:', {
-          includePeopleInDesigns,
-          includePeopleInDesignsType: typeof includePeopleInDesigns,
-          businessName: brandProfile.businessName
-        });
-
-        newPost = await generateContentAction(
+        // Fallback to artifact-enhanced generation
+        console.log('🤖 Using artifact-enhanced generation as fallback');
+        
+        newPost = await generateContentWithArtifactsAction(
           brandProfile,
           platform,
           brandConsistency,
-          useLocalLanguage,
-          scheduledServices, // NEW: Pass scheduled services to AI generation
-          includePeopleInDesigns // NEW: Pass people toggle to Revo 1.0
+          [], // Empty array - let the action use active artifacts from artifacts service
+          selectedRevoModel === 'revo-1.5', // Enhanced design for Revo 1.5
+          includePeopleInDesigns,
+          useLocalLanguage
         );
       }
 
@@ -324,36 +330,44 @@ export function ContentCalendar({
       // Let the parent component handle saving
       onPostGenerated(newPost);
 
-      // Dynamic toast message based on generation type
+      // Dynamic toast message based on generation type and model routing
       let title = "Content Generated!";
       let description = `A new ${platform} post has been saved to your database.`;
 
-      // Special message for Instagram with multiple captions
-      if (platform === 'Instagram' && selectedRevoModel === 'revo-2.0' && revo20Result?.captionVariations?.length > 1) {
-        title = "Instagram Content with 5 Captions Generated! 📸";
-        description = `Generated ${revo20Result.captionVariations.length} caption variations for Instagram engagement optimization.`;
-      }
-
-      if (platformHashtags.length > 0 && selectedArtifacts.length > 0) {
-        title = "Trending Content Generated! 🔥📎";
-        description = `A new ${platform} post with ${platformHashtags.length} trending hashtags and ${selectedArtifacts.length} reference${selectedArtifacts.length !== 1 ? 's' : ''} has been saved.`;
-      } else if (platformHashtags.length > 0) {
-        title = "Trending Content Generated! 🔥";
-        description = `A new ${platform} post with ${platformHashtags.length} trending hashtags has been saved.`;
-      } else if (selectedArtifacts.length > 0) {
-        title = "Content Generated with References! 📎";
-        description = `A new ${platform} post using ${selectedArtifacts.length} reference${selectedArtifacts.length !== 1 ? 's' : ''} has been saved.`;
+      // Model-specific messages
+      if (selectedRevoModel === 'revo-2.0') {
+        title = "Next-Gen Content Generated! 🚀";
+        description = `${platform} post created with Revo 2.0`;
+        
+        // Special message for Instagram with multiple captions
+        if (platform === 'Instagram' && revo20Result?.captionVariations?.length > 1) {
+          title = "Instagram Content with 5 Captions Generated! 📸";
+          description = `Generated ${revo20Result.captionVariations.length} caption variations for Instagram engagement optimization.`;
+        }
       } else if (selectedRevoModel === 'revo-1.5') {
         title = "Enhanced Content Generated! ✨";
-        description = `A new enhanced ${platform} post with ${selectedRevoModel} has been saved.`;
-      } else {
-        title = "Content Generated! 🚀";
-        description = `A new ${platform} post with ${selectedRevoModel} has been saved.`;
+        description = `${platform} post created with Revo 1.5`;
+      } else if (selectedRevoModel === 'revo-1.0') {
+        title = "Content Generated! 🤖";
+        description = `${platform} post created with Revo 1.0`;
+      }
+
+      // Add hashtag and artifact context
+      if (platformHashtags.length > 0 && selectedArtifacts.length > 0) {
+        title = `Trending Content Generated! 🔥📎`;
+        description += ` • ${platformHashtags.length} trending hashtags • ${selectedArtifacts.length} reference${selectedArtifacts.length !== 1 ? 's' : ''}`;
+      } else if (platformHashtags.length > 0) {
+        description += ` • ${platformHashtags.length} trending hashtags`;
+      } else if (selectedArtifacts.length > 0) {
+        description += ` • ${selectedArtifacts.length} reference${selectedArtifacts.length !== 1 ? 's' : ''}`;
       }
 
 
 
-      toast({ title, description });
+      toast({ 
+        title, 
+        description 
+      });
     } catch (error) {
       toast({
         variant: "destructive",
@@ -439,11 +453,11 @@ export function ContentCalendar({
             </div>
             <p className="text-xs text-gray-500 mt-2">
               {selectedRevoModel === 'revo-2.0'
-                ? `🚀 ${selectedRevoModel}: Next-Gen AI with native image generation, character consistency & intelligent editing`
+                ? `🚀 Revo 2.0: Advanced image generation with character consistency`
                 : selectedRevoModel === 'revo-1.5'
-                  ? `✨ ${selectedRevoModel}: Enhanced AI with professional design principles + ${brandConsistency.strictConsistency ? "strict consistency" : "brand colors"}`
+                  ? `✨ Revo 1.5: Professional design principles with brand color integration`
                   : selectedRevoModel === 'revo-1.0'
-                    ? `🚀 ${selectedRevoModel}: Standard reliable AI + ${brandConsistency.strictConsistency ? "strict consistency" : "brand colors"}`
+                    ? `🤖 Revo 1.0: Standard content generation with reliable performance`
                     : `🌟 ${selectedRevoModel}: Next-generation AI (coming soon)`
               }
             </p>
