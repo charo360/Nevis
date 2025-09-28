@@ -308,11 +308,13 @@ CONTENT OUTPUTS REQUIRED:
    - Create urgency with limited offers or seasonal promotions
    - End with natural bridge to the purchase action
 
-5. **STRATEGIC HASHTAGS** (10-20 tags):
+5. **STRATEGIC HASHTAGS** (${platform === 'Instagram' ? '5' : '3'} tags for ${platform}):
+   - Generate EXACTLY ${platform === 'Instagram' ? '5' : '3'} hashtags for ${platform}
    - Mix of business-specific, location-based, industry, and trending tags
    - Include niche hashtags for target audience
    - Add cultural or local hashtags where relevant
    - Balance reach with relevance
+   - CRITICAL: Must be exactly ${platform === 'Instagram' ? '5' : '3'} hashtags, no more, no less
 
 6. **PERFORMANCE PREDICTION**:
    - Estimated engagement rate and why
@@ -378,7 +380,7 @@ Respond in JSON format:
     "subheadline": "Value-driven, specific subheadline",
     "cta": "Natural, conversion-focused call-to-action",
     "caption": "Story-driven, emotionally engaging caption",
-    "hashtags": ["#strategic", "#local", "#relevant", "#hashtags"]
+    "hashtags": [${platform === 'Instagram' ? '"#tag1", "#tag2", "#tag3", "#tag4", "#tag5"' : '"#tag1", "#tag2", "#tag3"'}] // EXACTLY ${platform === 'Instagram' ? '5' : '3'} hashtags for ${platform}
   },
   "performance_prediction": {
     "engagement_score": 8,

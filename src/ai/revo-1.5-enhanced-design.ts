@@ -602,19 +602,17 @@ async function generatePureAIContent(
     };
 
   } catch (error) {
-    console.error('❌ [Pure AI] Content generation failed, falling back to original system:', error);
-
-    // Fallback to original system if Pure AI fails
-    return generateCaptionAndHashtags(
-      businessType,
+    console.error('❌ [Pure AI] Content generation failed:', error);
+    console.error('❌ [Pure AI] Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
       businessName,
-      platform,
-      {}, // designPlan
-      brandProfile,
-      trendingData,
-      useLocalLanguage,
-      scheduledServices
-    );
+      businessType,
+      platform
+    });
+
+    // Re-throw error to let the main system handle fallbacks
+    throw new Error(`Pure AI content generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
