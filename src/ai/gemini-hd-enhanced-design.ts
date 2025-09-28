@@ -192,17 +192,18 @@ export async function generateGeminiHDEnhancedDesign(
           });
         });
       }
+    }
 
-      // Generate image with Gemini 2.5 Flash Image Preview with HD quality settings and platform-specific aspect ratio
-      const { media } = await generateWithRetry({
-        model: 'googleai/gemini-2.5-flash-image-preview',
-        prompt: promptParts,
-        config: {
-          responseModalities: ['TEXT', 'IMAGE'],
-          // Note: Gemini 2.5 Flash Image Preview handles aspect ratio through prompt instructions
-          // The aspect ratio is specified in the prompt itself for better control
-        },
-      });
+    // Generate image with Gemini 2.5 Flash Image Preview with HD quality settings and platform-specific aspect ratio
+    const { media } = await generateWithRetry({
+      model: 'googleai/gemini-2.5-flash-image-preview',
+      prompt: promptParts,
+      config: {
+        responseModalities: ['TEXT', 'IMAGE'],
+        // Note: Gemini 2.5 Flash Image Preview handles aspect ratio through prompt instructions
+        // The aspect ratio is specified in the prompt itself for better control
+      },
+    });
 
       const imageUrl = media?.url;
       if (!imageUrl) {
@@ -226,7 +227,6 @@ export async function generateGeminiHDEnhancedDesign(
         enhancementsApplied.push('Brand Color Enforcement');
       }
 
-
       // Dimension enforcement (log-only here): ensure 992x1056 exactly
       {
         const expectedW = 992, expectedH = 1056;
@@ -236,18 +236,17 @@ export async function generateGeminiHDEnhancedDesign(
         }
       }
 
-
       return {
         imageUrl,
         qualityScore: 9.7, // Gemini 2.5 Flash Image Preview - Excellent quality
         enhancementsApplied,
         processingTime: Date.now() - startTime,
       };
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      throw new Error(`Gemini HD generation failed: ${errorMessage}`);
-    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new Error(`Gemini HD generation failed: ${errorMessage}`);
   }
+}
 
 /**
  * Build optimized prompt for Gemini 2.5 Flash Image Preview generation
@@ -699,4 +698,3 @@ ${artifactInstructions}
       }
     }
   }
-}

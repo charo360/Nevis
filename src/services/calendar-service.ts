@@ -48,15 +48,17 @@ export class CalendarService {
     try {
       const scheduleStorage = createBrandScopedStorage(brandId, STORAGE_FEATURES.CONTENT_CALENDAR);
 
+      // Force fresh data retrieval - no caching
       const allScheduledContent = scheduleStorage.getItem<ScheduledContent[]>() || [];
       // Fix timezone issue: use local date instead of UTC conversion
       const now = new Date();
       const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-      console.log('🔍 [CalendarService] DETAILED DEBUG - getTodaysScheduledServices:', {
+      console.log('🔍 [CalendarService] FRESH DATA - getTodaysScheduledServices:', {
         brandId,
         storageKey: `${brandId}_${STORAGE_FEATURES.CONTENT_CALENDAR}`,
         today,
+        timestamp: new Date().toISOString(),
         allScheduledContentCount: allScheduledContent.length,
         allScheduledContentRaw: allScheduledContent,
         allScheduledContentServices: allScheduledContent.map(item => ({

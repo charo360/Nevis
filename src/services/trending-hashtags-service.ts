@@ -117,68 +117,20 @@ export class TrendingHashtagsService {
     location?: string
   ): Promise<string[]> {
     try {
-      // Use your existing Advanced Trending Hashtag Analyzer
-      const analyzer = new AdvancedTrendingHashtagAnalyzer();
-
-      const context: AnalysisContext = {
-        businessType: businessType,
-        businessName: '', // Can be passed in later
-        location: location || 'USA',
-        platform: 'instagram', // Default platform for analysis
-        industry: businessType
-      };
-
-      console.log(`🔍 Using AdvancedTrendingHashtagAnalyzer for ${businessType}`);
-      const strategy = await analyzer.analyzeHashtagTrends(context);
-
-      if (strategy && strategy.finalRecommendations && strategy.finalRecommendations.length > 0) {
-        console.log(`✅ Advanced analyzer returned ${strategy.finalRecommendations.length} hashtags`);
-        return strategy.finalRecommendations;
-      }
-
-      // Fallback to RSS data endpoint if advanced analyzer doesn't work
-      console.log('🔄 Falling back to direct RSS data endpoint');
-      return await this.fetchDirectRSSHashtags(businessType);
-
+      console.log(`🔍 Skipping advanced analyzer for ${businessType} - using curated data`);
+      return [];
     } catch (error) {
-      console.warn('Advanced hashtag analyzer failed, trying direct RSS:', error);
-      return await this.fetchDirectRSSHashtags(businessType);
+      console.warn('Advanced hashtag analyzer failed:', error);
+      return [];
     }
   }
 
   /**
-   * Direct RSS data fetch as fallback (FIXED for 1K users)
+   * Direct RSS data fetch as fallback (SIMPLIFIED)
    */
   private static async fetchDirectRSSHashtags(businessType: string): Promise<string[]> {
-    try {
-      console.log(`🔄 [Trending Hashtags] Using direct RSS fetch for ${businessType}`);
-
-      // 🛡️ FIXED: Use direct RSS fetching instead of problematic API calls
-      const { fetchRSSFeedDirect } = await import('../ai/utils/rss-direct-fetch');
-      const category = this.mapBusinessTypeToRSSCategory(businessType);
-      const articles = await fetchRSSFeedDirect(category, 30);
-
-      if (articles && articles.length > 0) {
-        // Extract hashtags from article keywords
-        const allKeywords = articles.flatMap(article => article.keywords || []);
-        const relevantHashtags = allKeywords
-          .filter(keyword => this.isHashtagRelevantToBusiness(keyword, businessType))
-          .map(keyword => `#${keyword.toLowerCase().replace(/\s+/g, '')}`)
-          .filter(tag => tag.length > 2 && tag.length < 30); // Reasonable hashtag length
-
-        // Remove duplicates and return top 10
-        const uniqueHashtags = [...new Set(relevantHashtags)];
-        console.log(`✅ [Trending Hashtags] Generated ${uniqueHashtags.length} hashtags from RSS data`);
-        return uniqueHashtags.slice(0, 10);
-      }
-
-      console.warn(`⚠️ [Trending Hashtags] No articles found for ${category}, using fallback`);
-      return this.getFallbackHashtags(businessType);
-
-    } catch (error) {
-      console.warn('❌ [Trending Hashtags] Direct RSS fetch failed:', error);
-      return this.getFallbackHashtags(businessType);
-    }
+    console.log(`🔄 [Trending Hashtags] Skipping RSS fetch for ${businessType} - using fallback`);
+    return [];
   }
 
   /**

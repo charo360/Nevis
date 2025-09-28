@@ -27,6 +27,9 @@ export async function POST(request: NextRequest) {
     } = body;
 
     console.log(`🚀 Quick Content API: Processing ${revoModel} request for ${platform}`);
+    console.log(`🔍 Brand Profile ID: ${(brandProfile as any)?.id || 'No ID'}`);
+    console.log(`📅 Scheduled Services Count: ${scheduledServices?.length || 0}`);
+    console.log(`📋 Scheduled Services: ${scheduledServices?.map(s => s.serviceName).join(', ') || 'None'}`);
 
     // Validate required parameters
     if (!brandProfile || !platform) {
@@ -35,6 +38,13 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Use passed services directly - brand filtering should happen on frontend
+    let brandSpecificServices: ScheduledService[] = scheduledServices || [];
+    console.log(`✅ Using provided services:`, {
+      serviceCount: brandSpecificServices.length,
+      serviceNames: brandSpecificServices.map(s => s.serviceName)
+    });
 
     let result;
 
@@ -51,7 +61,7 @@ export async function POST(request: NextRequest) {
           includePeopleInDesigns,
           useLocalLanguage
         },
-        scheduledServices
+        brandSpecificServices
       );
     } else {
       // Use Revo 1.0 standard generation
@@ -60,7 +70,7 @@ export async function POST(request: NextRequest) {
         platform,
         brandConsistency || { strictConsistency: false, followBrandColors: true, includeContacts: false },
         useLocalLanguage,
-        scheduledServices,
+        brandSpecificServices,
         includePeopleInDesigns
       );
     }

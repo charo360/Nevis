@@ -35,14 +35,14 @@ export class LogoNormalizationService {
   ): Promise<NormalizedLogoResult> {
     const opts = { ...this.DEFAULT_OPTIONS, ...options };
 
-    // Server-side fallback - return original logo URL
+    // Server-side fallback - return original logo URL with correct structure
     if (typeof window === 'undefined') {
       return Promise.resolve({
-        normalizedUrl: logoDataUrl,
-        width: opts.standardSize,
-        height: opts.standardSize,
+        dataUrl: logoDataUrl,
+        originalDimensions: { width: opts.standardSize, height: opts.standardSize },
+        normalizedDimensions: { width: opts.standardSize, height: opts.standardSize },
         aspectRatio: 1,
-        success: true
+        format: opts.format
       });
     }
 

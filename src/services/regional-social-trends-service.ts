@@ -27,7 +27,38 @@ interface SocialTrendSource {
  */
 export class RegionalSocialTrendsService {
 
-  // Legal alternative sources for social media trends
+  /**
+   * Simple method to get regional social data without RSS dependencies
+   */
+  static async getRegionalSocialData(
+    businessType: string,
+    location: string
+  ): Promise<{
+    currentEvents: string[];
+    businessTrends: string[];
+    socialBuzz: string[];
+  }> {
+    try {
+      console.log(`📍 Getting regional social data for ${businessType} in ${location}`);
+      
+      const fallbackData = this.getFallbackRegionalData(location, businessType);
+      
+      return {
+        currentEvents: fallbackData.currentEvents,
+        businessTrends: fallbackData.businessTrends,
+        socialBuzz: fallbackData.socialBuzz
+      };
+    } catch (error) {
+      console.warn('Regional social data fetch failed:', error);
+      return {
+        currentEvents: [`${location} business growth`],
+        businessTrends: [`${businessType} innovation`],
+        socialBuzz: [`${businessType} trending`]
+      };
+    }
+  }
+
+  // Legal alternative sources for social media trends (simplified)
   private static REGIONAL_SOURCES: Record<string, SocialTrendSource[]> = {
     'kenya': [
       {
@@ -221,35 +252,14 @@ export class RegionalSocialTrendsService {
   };
 
   /**
-   * Get real-time regional social trends (better than Instagram/Twitter RSS)
+   * Get real-time regional social trends (simplified)
    */
   static async getRegionalTrends(
     location: string,
     businessType: string
   ): Promise<RegionalSocialData> {
-    const country = this.extractCountry(location);
-    const sources = this.REGIONAL_SOURCES[country] || this.REGIONAL_SOURCES['usa'];
-
-    try {
-      // Fetch from multiple regional sources in parallel
-      const trendPromises = sources.map(source => this.fetchSourceData(source, businessType));
-      const results = await Promise.all(trendPromises);
-
-      // Combine and deduplicate data
-      const combinedData = this.combineRegionalData(results, location);
-
-      console.log(`📍 Got regional trends for ${location}:`, {
-        hashtags: combinedData.trendingHashtags.length,
-        events: combinedData.currentEvents.length,
-        cultural: combinedData.culturalMoments.length
-      });
-
-      return combinedData;
-
-    } catch (error) {
-      console.warn('Regional trends fetch failed:', error);
-      return this.getFallbackRegionalData(location, businessType);
-    }
+    console.log(`📍 Using fallback regional data for ${location}`);
+    return this.getFallbackRegionalData(location, businessType);
   }
 
   /**
@@ -314,16 +324,17 @@ export class RegionalSocialTrendsService {
       }
 
       // Extract business trends
-      if (rssData.articles) {
-        result.businessTrends = rssData.articles
-          .filter((article: any) => this.isBusinessRelevant(article.title, businessType))
-          .map((article: any) => article.title)
+      if (articles && articles.length > 0) {
+        result.businessTrends = articles
+          .filter(article => this.isBusinessRelevant(article.title, businessType))
+          .map(article => article.title)
           .slice(0, 3);
       }
 
       // Extract social buzz from Reddit-like sources
-      if (source.dataType === 'social' && rssData.keywords) {
-        result.socialBuzz = rssData.keywords
+      if (source.dataType === 'social' && articles && articles.length > 0) {
+        const allKeywords = articles.flatMap(article => article.keywords || []);
+        result.socialBuzz = allKeywords
           .filter((keyword: string) => this.isSocialBuzz(keyword))
           .slice(0, 5);
       }
