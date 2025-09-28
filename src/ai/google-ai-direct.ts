@@ -81,6 +81,9 @@ export async function generateText(
     const text = response.text();
 
     console.log(`✅ [Google AI Direct] Text generation successful, length: ${text.length}`);
+    console.log(`🔍 [Google AI Direct] Response preview: ${text.substring(0, 200)}...`);
+    console.log(`🔍 [Google AI Direct] Finish reason: ${response.candidates?.[0]?.finishReason}`);
+    console.log(`🔍 [Google AI Direct] Safety ratings:`, response.candidates?.[0]?.safetyRatings);
 
     return {
       text,

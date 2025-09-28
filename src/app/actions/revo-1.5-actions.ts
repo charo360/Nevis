@@ -113,6 +113,11 @@ export async function generateRevo15ContentAction(
       processingTime: result.processingTime
     });
 
+    // NO FALLBACKS - All content must come from Pure AI
+    if (!result.caption || !result.headline || !result.subheadline || !result.callToAction || !result.hashtags) {
+      throw new Error('🚫 [Revo 1.5 Actions] Pure AI response incomplete - missing required fields. No fallbacks allowed!');
+    }
+
     // Convert to GeneratedPost format
     const generatedPost: GeneratedPost = {
       id: `revo-1.5-${Date.now()}`,
@@ -120,11 +125,11 @@ export async function generateRevo15ContentAction(
       platform: platform.toLowerCase(),
       postType: 'post',
       imageUrl: result.imageUrl,
-      content: result.caption || `Enhanced ${brandProfile.businessName || brandProfile.businessType} content with Revo 1.5 technology`,
-      hashtags: result.hashtags ? result.hashtags.join(' ') : '#enhanced #AI #design #premium #quality',
-      catchyWords: result.headline || `Premium ${brandProfile.businessName} Solutions`,
-      subheadline: result.subheadline || `Experience the future of ${brandProfile.businessType?.toLowerCase()} with ${brandProfile.businessName}`,
-      callToAction: result.callToAction || `Discover ${brandProfile.businessName} Today`,
+      content: result.caption,
+      hashtags: result.hashtags.join(' '),
+      catchyWords: result.headline,
+      subheadline: result.subheadline,
+      callToAction: result.callToAction,
       status: 'generated',
       variants: [
         {

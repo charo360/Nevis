@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PureAIContentGenerator, PureAIRequest } from '@/services/pure-ai-content-generator';
+import { SimpleV2PureAIContentGenerator, PureAIRequest } from '@/services/pure-ai-content-generator-simple-v2';
 
 export async function POST(request: NextRequest) {
   try {
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
 
     try {
       console.log('🧠 [Debug Pure AI] Attempting Pure AI Gemini generation...');
-      const pureAIResult = await PureAIContentGenerator.generateContent(pureAIRequest);
+      const pureAIResult = await SimpleV2PureAIContentGenerator.generateContent(pureAIRequest);
       
       diagnostics.tests.push({
         test: 'Pure AI Gemini',
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
       if (process.env.OPENAI_API_KEY) {
         try {
           console.log('🧠 [Debug Pure AI] Attempting Pure AI OpenAI fallback...');
-          const openAIResult = await PureAIContentGenerator.generateContentWithOpenAI(pureAIRequest);
+          const openAIResult = await SimpleV2PureAIContentGenerator.generateContent(pureAIRequest);
           
           diagnostics.tests.push({
             test: 'Pure AI OpenAI',

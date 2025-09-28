@@ -13,7 +13,7 @@ import { CulturalIntelligenceService } from '@/services/cultural-intelligence-se
 import { NaturalContextMarketingService } from '@/services/natural-context-marketing';
 import { EnhancedCTAGenerator, type CTAGenerationContext } from '@/services/enhanced-cta-generator';
 import { AIContentGenerator, type AIContentRequest } from '@/services/ai-content-generator';
-import { PureAIContentGenerator, type PureAIRequest } from '@/services/pure-ai-content-generator';
+import { ClaudeSonnet4Generator, type ClaudeContentRequest } from '@/services/claude-sonnet-4-generator';
 
 import { ensureExactDimensions } from './utils/image-dimensions';
 
@@ -538,6 +538,192 @@ function isBusinessAppropriateCTA(cta: string, businessType: string): boolean {
 }
 
 /**
+ * Validate word count for headlines and subheadlines
+ */
+function validateWordCount(text: string, maxWords: number): string {
+  const words = text.trim().split(/\s+/);
+  if (words.length <= maxWords) {
+    return text;
+  }
+
+  const truncated = words.slice(0, maxWords).join(' ');
+  console.log(`⚠️ [Enhanced Simple AI] Text truncated from ${words.length} to ${maxWords} words: "${truncated}"`);
+  return truncated;
+}
+
+/**
+ * Generate Enhanced Simple Content (NO hardcoded patterns - last resort fallback)
+ */
+async function generateEnhancedSimpleContent(
+  businessType: string,
+  businessName: string,
+  platform: string,
+  brandProfile: any,
+  useLocalLanguage: boolean = false
+): Promise<{
+  caption: string;
+  hashtags: string[];
+  headline: string;
+  subheadline: string;
+  callToAction: string;
+}> {
+  try {
+    console.log('🔧 [Enhanced Simple AI] Generating content with NO hardcoded patterns for:', {
+      businessName,
+      businessType,
+      platform,
+      useLocalLanguage
+    });
+
+    // Platform-specific hashtag count
+    const hashtagCount = platform.toLowerCase() === 'instagram' ? 5 : 3;
+
+    // Enhanced prompt with product intelligence and cultural context
+    const prompt = `Create marketing content for ${businessName} (${businessType}) on ${platform}.
+
+Business: ${businessName}
+Type: ${businessType}
+Services: ${brandProfile.services || 'Professional services'}
+Location: ${brandProfile.location || 'Not specified'}
+Target Audience: ${brandProfile.targetAudience || 'General customers'}
+Platform: ${platform}
+
+REQUIREMENTS:
+1. Use SPECIFIC product names, models, and pricing
+2. Include LOCAL cultural references and language
+3. Mention WHY choose this business over competitors
+4. Include REAL numbers, testimonials, or achievements
+5. Provide SPECIFIC contact methods and locations
+
+BANNED PHRASES (DO NOT USE):
+- "wide range of products" / "comprehensive solutions"
+- "quality at an affordable price" / "best value"
+- "we understand that" / "we know that"
+- "revolutionize your" / "transform your"
+- "experience the future" / "embrace innovation"
+- "redefining" / "cutting-edge"
+- "innovative approach" / "next-generation"
+- "staying connected" / "staying ahead"
+- "wide selection" / "extensive range"
+- "premium quality" / "superior quality"
+- "upgrade your" / "enhance your"
+- "unlock potential" / "unlock possibilities"
+- "fuel your" / "power your"
+- "empower your" / "elevate your"
+- "partners in" / "tools for"
+- "exceptional work" / "exceptional results"
+- "perfect blend" / "perfect combination"
+
+MANDATORY ELEMENTS:
+- SPECIFIC product names (e.g., "Samsung Galaxy S23 Ultra", "iPhone 15 Pro")
+- EXACT pricing (e.g., "KSh 120,000", "Lipa Pole Pole available")
+- LOCAL references (e.g., "M-Pesa payments", "Nairobi delivery")
+- COMPETITIVE advantages (e.g., "vs Safaricom Shop", "genuine warranty")
+- SOCIAL proof (e.g., "500+ customers", "3 years in business")
+- CONTACT info (e.g., "WhatsApp +254", "Visit Bazaar Plaza")
+- LOCATION details (e.g., "Nairobi CBD", "Bazaar Plaza 10th Floor")
+
+Respond with ONLY valid JSON:
+{
+  "headline": "Specific, benefit-driven headline (MAX 6 WORDS)",
+  "subheadline": "Supporting subheadline with specific features, numbers, or social proof (MAX 14 WORDS)",
+  "callToAction": "Actionable call-to-action with specific next steps",
+  "caption": "Engaging caption with specific products, pricing, and cultural context",
+  "hashtags": [${Array(hashtagCount).fill('"#relevant"').join(', ')}]
+}`;
+
+    const response = await getOpenAI().chat.completions.create({
+      model: 'gpt-4o',
+      messages: [{
+        role: 'system',
+        content: `You are an expert content creator who creates authentic, business-specific content. 
+
+STRICT RULES:
+- NEVER use these overused words: upgrade, transform, revolutionize, solutions, excellence, premium, ultimate, cutting-edge, innovative, breakthrough, game-changer, elevate, empower, unlock, discover
+- ALWAYS be specific to the actual business and services
+- ALWAYS use natural, conversational language
+- ALWAYS make content feel like a real person wrote it
+- ALWAYS focus on real, tangible benefits
+- Generate exactly ${hashtagCount} hashtags for ${platform}
+- Vary your approach - don't repeat the same patterns
+- Be creative and authentic for each business`
+      }, {
+        role: 'user',
+        content: prompt
+      }],
+      temperature: 0.8, // Increase creativity
+      max_tokens: 600
+    });
+
+    let responseContent = response.choices[0].message.content || '{}';
+
+    // Clean up response
+    if (responseContent.includes('```json')) {
+      responseContent = responseContent.split('```json')[1]?.split('```')[0] || responseContent;
+    } else if (responseContent.includes('```')) {
+      responseContent = responseContent.split('```')[1] || responseContent;
+    }
+
+    const parsed = JSON.parse(responseContent);
+
+    // Ensure correct hashtag count
+    if (parsed.hashtags && parsed.hashtags.length !== hashtagCount) {
+      if (parsed.hashtags.length > hashtagCount) {
+        parsed.hashtags = parsed.hashtags.slice(0, hashtagCount);
+      } else {
+        // Add simple, relevant hashtags
+        const simpleHashtags = [`#${businessType.toLowerCase().replace(/\s+/g, '')}`, '#local', '#business', '#quality', '#professional'];
+        while (parsed.hashtags.length < hashtagCount && simpleHashtags.length > 0) {
+          const tag = simpleHashtags.shift();
+          if (tag && !parsed.hashtags.includes(tag)) {
+            parsed.hashtags.push(tag);
+          }
+        }
+      }
+    }
+
+    console.log('✅ [Enhanced Simple AI] Content generated successfully:', {
+      headline: parsed.headline,
+      hashtagCount: parsed.hashtags?.length || 0,
+      businessSpecific: true
+    });
+
+    // Validate and adjust word counts
+    const validatedHeadline = this.validateWordCount(parsed.headline || `${businessName} Excellence`, 6);
+    const validatedSubheadline = this.validateWordCount(parsed.subheadline || `Quality ${businessType.toLowerCase()} services you can trust`, 14);
+
+    return {
+      caption: parsed.caption || `${businessName} provides excellent ${businessType.toLowerCase()} services. Contact us to learn more about what we can do for you.`,
+      hashtags: parsed.hashtags || [`#${businessType.toLowerCase().replace(/\s+/g, '')}`, '#local', '#business'].slice(0, hashtagCount),
+      headline: validatedHeadline,
+      subheadline: validatedSubheadline,
+      callToAction: parsed.callToAction || 'Contact Us'
+    };
+
+  } catch (error) {
+    console.error('❌ [Enhanced Simple AI] Content generation failed:', error);
+
+    // Ultimate fallback with NO hardcoded patterns
+    const hashtagCount = platform.toLowerCase() === 'instagram' ? 5 : 3;
+    const simpleHashtags = [
+      `#${businessType.toLowerCase().replace(/\s+/g, '')}`,
+      '#local',
+      '#business',
+      '#quality',
+      '#professional'
+    ].slice(0, hashtagCount);
+
+    return {
+      caption: `${businessName} is your trusted ${businessType.toLowerCase()} partner. We're committed to providing excellent service and results.`,
+      hashtags: simpleHashtags,
+      headline: `${businessName} Quality`,
+      subheadline: `Professional ${businessType.toLowerCase()} services`,
+      callToAction: 'Get Started'
+    };
+  }
+}
+
+/**
  * Generate content using Pure AI (ZERO hardcoding)
  */
 async function generatePureAIContent(
@@ -583,22 +769,22 @@ async function generatePureAIContent(
       }
     };
 
-    // Let AI make ALL decisions
-    const aiResult = await PureAIContentGenerator.generateContent(pureAIRequest);
+    // Let Minimal AI make ALL decisions with product intelligence
+    const aiResult = await WorkingPureAIContentGenerator.generateContent(pureAIRequest);
 
     console.log('✅ [Pure AI] Content generated successfully:', {
-      headline: aiResult.headline,
-      cta: aiResult.cta,
+      headline: aiResult.content.headline,
+      cta: aiResult.content.cta,
       confidence: aiResult.confidence,
-      reasoning: aiResult.reasoning.substring(0, 100) + '...'
+      reasoning: aiResult.strategic_reasoning?.substring(0, 100) + '...'
     });
 
     return {
-      caption: aiResult.caption,
-      hashtags: aiResult.hashtags,
-      headline: aiResult.headline,
-      subheadline: aiResult.subheadline,
-      callToAction: aiResult.cta
+      caption: aiResult.content.caption,
+      hashtags: aiResult.content.hashtags,
+      headline: aiResult.content.headline,
+      subheadline: aiResult.content.subheadline,
+      callToAction: aiResult.content.cta
     };
 
   } catch (error) {
@@ -1205,62 +1391,32 @@ Format as JSON:
         reasoning: enhancedCTA.reasoning
       });
 
+      // NO FALLBACKS - All content must come from Pure AI
+      if (!parsed.caption || !parsed.headline || !parsed.subheadline || !parsed.hashtags) {
+        throw new Error('🚫 [Revo 1.5] Pure AI response incomplete - missing required fields. No fallbacks allowed!');
+      }
+
       return {
-        caption: parsed.caption || `${businessName} delivers exceptional ${businessType.toLowerCase()} services with premium quality and professional expertise`,
-        headline: parsed.headline || `${businessName} Excellence`,
-        subheadline: parsed.subheadline || `Professional ${businessType.toLowerCase()} services you can trust`,
+        caption: parsed.caption,
+        headline: parsed.headline,
+        subheadline: parsed.subheadline,
         callToAction: finalCTA,
-        hashtags: Array.isArray(parsed.hashtags) ? parsed.hashtags : generateFallbackHashtags(businessName, businessType, platform)
+        hashtags: parsed.hashtags
       };
     } catch (parseError) {
       console.error('❌ [Revo 1.5] JSON Parse Error:', parseError);
       console.error('❌ [Revo 1.5] Failed response content:', response.choices[0].message.content);
-      console.warn('⚠️ [Revo 1.5] Failed to parse caption response, using fallback');
 
-      // Generate business-specific fallback CTA
-      const fallbackCtaContext: CTAGenerationContext = {
-        businessType,
-        businessName,
-        services: brandProfile.services || 'Professional services',
-        platform,
-        targetAudience: brandProfile.targetAudience,
-        location: brandProfile.location
-      };
-
-      const fallbackCTA = EnhancedCTAGenerator.generateBusinessSpecificCTA(fallbackCtaContext);
-
-      return {
-        caption: `${businessName} delivers exceptional ${businessType.toLowerCase()} services with premium quality and professional expertise`,
-        headline: `${businessName} Excellence`,
-        subheadline: `Professional ${businessType.toLowerCase()} services you can trust`,
-        callToAction: fallbackCTA.primary,
-        hashtags: generateFallbackHashtags(businessName, businessType, platform)
-      };
+      // NO FALLBACKS - JSON parsing must work or system fails
+      throw new Error(`🚫 [Revo 1.5] JSON parsing failed and ALL fallbacks are disabled. Parse Error: ${parseError instanceof Error ? parseError.message : 'Unknown error'}. Please fix the Pure AI system!`);
     }
   } catch (error) {
     console.error('❌ [Revo 1.5] Content generation failed - MAIN ERROR:', error);
     console.error('❌ [Revo 1.5] Error type:', error instanceof Error ? error.constructor.name : typeof error);
     console.error('❌ [Revo 1.5] Error message:', error instanceof Error ? error.message : String(error));
 
-    // Generate business-specific fallback CTA even in main error
-    const errorFallbackCtaContext: CTAGenerationContext = {
-      businessType,
-      businessName,
-      services: brandProfile.services || 'Professional services',
-      platform,
-      targetAudience: brandProfile.targetAudience,
-      location: brandProfile.location
-    };
-
-    const errorFallbackCTA = EnhancedCTAGenerator.generateBusinessSpecificCTA(errorFallbackCtaContext);
-
-    return {
-      caption: `${businessName} delivers exceptional ${businessType.toLowerCase()} services with premium quality and professional expertise`,
-      headline: `${businessName} Excellence`,
-      subheadline: `Professional ${businessType.toLowerCase()} services you can trust`,
-      callToAction: errorFallbackCTA.primary,
-      hashtags: [`#${businessName.replace(/\s+/g, '')}`, `#${businessType.replace(/\s+/g, '')}`, '#professional', '#quality', '#excellence']
-    };
+    // NO FALLBACKS - Main content generation must work or system fails
+    throw new Error(`🚫 [Revo 1.5] Main content generation failed and ALL fallbacks are disabled. Error: ${error instanceof Error ? error.message : 'Unknown error'}. Please fix the Pure AI system!`);
   }
 }
 
@@ -2082,85 +2238,50 @@ export async function generateRevo15EnhancedDesign(
     const designPlan = await generateDesignPlan(enhancedInput);
     enhancementsApplied.push('Strategic Design Planning');
 
-    // Step 2: Generate content using Pure AI (Enhanced Cultural Intelligence System)
-    let contentResult;
-    try {
-      console.log('🧠 [Revo 1.5] Attempting Pure AI content generation...');
-      const pureAIResult = await generatePureAIContent(
-        input.businessType,
-        input.brandProfile.businessName || input.businessType,
-        input.platform,
-        input.brandProfile,
-        input.useLocalLanguage === true,
-        input.scheduledServices
-      );
+    // Step 2: Generate content using Claude Sonnet 4 (PRIMARY AND ONLY SYSTEM - NO FALLBACKS)
+    console.log('🧠 [Revo 1.5] Generating content with Claude Sonnet 4...');
 
-      contentResult = {
-        caption: pureAIResult.caption,
-        hashtags: pureAIResult.hashtags,
-        headline: pureAIResult.headline,
-        subheadline: pureAIResult.subheadline,
-        callToAction: pureAIResult.cta
-      };
-
-      enhancementsApplied.push('Pure AI Content Generation (Cultural Intelligence)');
-      console.log('✅ [Revo 1.5] Pure AI content generation successful');
-    } catch (pureAIError) {
-      console.warn('⚠️ [Revo 1.5] Pure AI failed, trying Pure AI with different Gemini model:', pureAIError);
-
-      try {
-        // Fallback 1: Pure AI with OpenAI backend (same intelligent prompting, different AI model)
-        console.log('🔄 [Revo 1.5] Attempting Pure AI with OpenAI backend...');
-
-        // Prepare Pure AI request for OpenAI backend
-        const pureAIRequest: PureAIRequest = {
-          businessType: input.businessType,
-          businessName: input.brandProfile.businessName || input.businessType,
-          services: Array.isArray(input.brandProfile.services)
-            ? input.brandProfile.services.join(', ')
-            : input.brandProfile.services || `${input.businessType} services`,
-          platform: input.platform,
-          contentType: 'all',
-          targetAudience: input.brandProfile.targetAudience,
-          location: input.brandProfile.location,
-          websiteUrl: input.brandProfile.websiteUrl,
-          brandContext: {
-            colors: [input.brandProfile.primaryColor, input.brandProfile.accentColor].filter(Boolean),
-            personality: input.brandProfile.brandPersonality,
-            values: input.brandProfile.brandValues
-          }
-        };
-
-        const fallbackPureAIResult = await PureAIContentGenerator.generateContentWithOpenAI(pureAIRequest);
-
-        contentResult = {
-          caption: fallbackPureAIResult.caption,
-          hashtags: fallbackPureAIResult.hashtags,
-          headline: fallbackPureAIResult.headline,
-          subheadline: fallbackPureAIResult.subheadline,
-          callToAction: fallbackPureAIResult.cta
-        };
-
-        enhancementsApplied.push('Pure AI Content Generation (OpenAI Backend)');
-        console.log('✅ [Revo 1.5] Pure AI OpenAI fallback successful');
-
-      } catch (fallbackPureAIError) {
-        console.warn('⚠️ [Revo 1.5] Pure AI Gemini fallback also failed, using original system:', fallbackPureAIError);
-
-        // Fallback 2: Original OpenAI system (last resort)
-        contentResult = await generateCaptionAndHashtags(
-          input.businessType,
-          input.brandProfile.businessName || input.businessType,
-          input.platform,
-          designPlan,
-          input.brandProfile,
-          input.trendingData,
-          input.useLocalLanguage === true,
-          input.scheduledServices
-        );
-        enhancementsApplied.push('AI-Generated Content & Design Text (Final Fallback)');
-      }
+    // Check if Claude API key is available
+    const claudeKey = process.env.ANTHROPIC_API_KEY;
+    if (!claudeKey) {
+      throw new Error('🚫 [Revo 1.5] Claude Sonnet 4 unavailable - ANTHROPIC_API_KEY not found. Please configure ANTHROPIC_API_KEY to use Revo 1.5.');
     }
+
+    console.log('🔑 [Revo 1.5] Claude API Key Status:', {
+      hasClaudeKey: !!claudeKey,
+      claudeKeyPrefix: claudeKey.substring(0, 10) + '...'
+    });
+
+    const claudeRequest: ClaudeContentRequest = {
+      businessType: input.businessType,
+      businessName: input.brandProfile.businessName || input.businessType,
+      services: Array.isArray(input.brandProfile.services)
+        ? input.brandProfile.services.join(', ')
+        : input.brandProfile.services || `${input.businessType} services`,
+      platform: input.platform,
+      targetAudience: input.brandProfile.targetAudience,
+      location: input.brandProfile.location,
+      useLocalLanguage: input.useLocalLanguage === true,
+      brandContext: {
+        colors: [input.brandProfile.primaryColor, input.brandProfile.accentColor].filter(Boolean),
+        personality: input.brandProfile.brandPersonality,
+        values: input.brandProfile.brandValues
+      }
+    };
+
+    const claudeResult = await ClaudeSonnet4Generator.generateContent(claudeRequest);
+
+    const contentResult = {
+      caption: claudeResult.caption,
+      hashtags: claudeResult.hashtags,
+      headline: claudeResult.headline,
+      subheadline: claudeResult.subheadline,
+      callToAction: claudeResult.cta
+    };
+
+    enhancementsApplied.push('Claude Sonnet 4 Content Generation');
+    console.log('✅ [Revo 1.5] Claude Sonnet 4 content generation successful');
+    console.log('🎯 [Revo 1.5] CONTENT SYSTEM USED: Claude Sonnet 4 (Primary - No Fallbacks)');
 
     // Step 3: Generate final image with text elements on design (matching Revo 1.0 approach)
     const imageUrl = await generateFinalImage(enhancedInput, designPlan, contentResult);
