@@ -2108,20 +2108,60 @@ export async function generateRevo15EnhancedDesign(
       enhancementsApplied.push('Pure AI Content Generation (Cultural Intelligence)');
       console.log('✅ [Revo 1.5] Pure AI content generation successful');
     } catch (pureAIError) {
-      console.warn('⚠️ [Revo 1.5] Pure AI failed, falling back to original system:', pureAIError);
+      console.warn('⚠️ [Revo 1.5] Pure AI failed, trying Pure AI with different Gemini model:', pureAIError);
 
-      // Fallback to original system
-      contentResult = await generateCaptionAndHashtags(
-        input.businessType,
-        input.brandProfile.businessName || input.businessType,
-        input.platform,
-        designPlan,
-        input.brandProfile,
-        input.trendingData,
-        input.useLocalLanguage === true,
-        input.scheduledServices
-      );
-      enhancementsApplied.push('AI-Generated Content & Design Text (Fallback)');
+      try {
+        // Fallback 1: Pure AI with OpenAI backend (same intelligent prompting, different AI model)
+        console.log('🔄 [Revo 1.5] Attempting Pure AI with OpenAI backend...');
+
+        // Prepare Pure AI request for OpenAI backend
+        const pureAIRequest: PureAIRequest = {
+          businessType: input.businessType,
+          businessName: input.brandProfile.businessName || input.businessType,
+          services: Array.isArray(input.brandProfile.services)
+            ? input.brandProfile.services.join(', ')
+            : input.brandProfile.services || `${input.businessType} services`,
+          platform: input.platform,
+          contentType: 'all',
+          targetAudience: input.brandProfile.targetAudience,
+          location: input.brandProfile.location,
+          websiteUrl: input.brandProfile.websiteUrl,
+          brandContext: {
+            colors: [input.brandProfile.primaryColor, input.brandProfile.accentColor].filter(Boolean),
+            personality: input.brandProfile.brandPersonality,
+            values: input.brandProfile.brandValues
+          }
+        };
+
+        const fallbackPureAIResult = await PureAIContentGenerator.generateContentWithOpenAI(pureAIRequest);
+
+        contentResult = {
+          caption: fallbackPureAIResult.caption,
+          hashtags: fallbackPureAIResult.hashtags,
+          headline: fallbackPureAIResult.headline,
+          subheadline: fallbackPureAIResult.subheadline,
+          callToAction: fallbackPureAIResult.cta
+        };
+
+        enhancementsApplied.push('Pure AI Content Generation (OpenAI Backend)');
+        console.log('✅ [Revo 1.5] Pure AI OpenAI fallback successful');
+
+      } catch (fallbackPureAIError) {
+        console.warn('⚠️ [Revo 1.5] Pure AI Gemini fallback also failed, using original system:', fallbackPureAIError);
+
+        // Fallback 2: Original OpenAI system (last resort)
+        contentResult = await generateCaptionAndHashtags(
+          input.businessType,
+          input.brandProfile.businessName || input.businessType,
+          input.platform,
+          designPlan,
+          input.brandProfile,
+          input.trendingData,
+          input.useLocalLanguage === true,
+          input.scheduledServices
+        );
+        enhancementsApplied.push('AI-Generated Content & Design Text (Final Fallback)');
+      }
     }
 
     // Step 3: Generate final image with text elements on design (matching Revo 1.0 approach)

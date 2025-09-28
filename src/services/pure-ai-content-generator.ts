@@ -428,6 +428,104 @@ Remember: Generic content gets ignored. Authentic, culturally-intelligent, story
   }
 
   /**
+   * Generate content using Pure AI approach with OpenAI backend (fallback)
+   */
+  static async generateContentWithOpenAI(request: PureAIRequest): Promise<PureAIResponse> {
+    const prompt = this.buildPureAIPrompt(request);
+
+    try {
+      console.log('🧠 [Pure AI OpenAI] Generating content with OpenAI backend...');
+
+      // Use OpenAI with the same Pure AI prompt
+      const OpenAI = (await import('openai')).default;
+
+      if (!process.env.OPENAI_API_KEY) {
+        throw new Error('OPENAI_API_KEY environment variable is required for Pure AI OpenAI fallback');
+      }
+
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert marketing strategist with deep cultural intelligence and story-mining capabilities. Always respond in valid JSON format as specified in the prompt.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.8,
+        max_tokens: 1500
+      });
+
+      const responseText = response.choices[0]?.message?.content;
+      if (!responseText) {
+        throw new Error('No response from OpenAI');
+      }
+
+      const parsed = this.parseAIResponse(responseText);
+
+      // Handle both new structured format and legacy format
+      const content = parsed.content || parsed;
+      const businessAnalysis = parsed.business_analysis || {};
+      const performancePrediction = parsed.performance_prediction || {};
+
+      // Validate required fields
+      if (!content.headline || !content.cta || !content.caption) {
+        throw new Error('AI response missing required fields (headline, cta, or caption)');
+      }
+
+      return {
+        // New structured format
+        business_analysis: {
+          product_intelligence: businessAnalysis.product_intelligence || 'Business analysis not provided',
+          cultural_context: businessAnalysis.cultural_context || 'Cultural context not analyzed',
+          emotional_drivers: businessAnalysis.emotional_drivers || 'Emotional drivers not identified',
+          natural_scenarios: businessAnalysis.natural_scenarios || 'Natural scenarios not described',
+          competitive_advantage: businessAnalysis.competitive_advantage || 'Competitive advantage not defined',
+          content_format: businessAnalysis.content_format || 'Content format not specified'
+        },
+        content: {
+          headline: content.headline || 'Business Excellence',
+          subheadline: content.subheadline || 'Professional services you can trust',
+          cta: content.cta || 'Get Started',
+          caption: content.caption || 'Discover exceptional service and quality.',
+          hashtags: Array.isArray(content.hashtags) ? content.hashtags : ['#business', '#quality', '#professional']
+        },
+        performance_prediction: {
+          engagement_score: performancePrediction.engagement_score || 7,
+          conversion_probability: performancePrediction.conversion_probability || 'Medium - standard business content',
+          viral_potential: performancePrediction.viral_potential || 'Low to medium shareability',
+          cultural_resonance: performancePrediction.cultural_resonance || 'General appeal'
+        },
+        strategic_reasoning: parsed.strategic_reasoning || parsed.reasoning || 'Pure AI-generated content with OpenAI backend',
+        confidence: parsed.confidence || 8,
+
+        // Legacy fields for backward compatibility
+        headline: content.headline || 'Business Excellence',
+        subheadline: content.subheadline || 'Professional services you can trust',
+        cta: content.cta || 'Get Started',
+        caption: content.caption || 'Discover exceptional service and quality.',
+        hashtags: Array.isArray(content.hashtags) ? content.hashtags : ['#business', '#quality', '#professional'],
+        reasoning: parsed.strategic_reasoning || parsed.reasoning || 'Pure AI-generated content with OpenAI backend'
+      };
+
+    } catch (error) {
+      console.error('❌ [Pure AI OpenAI] Content generation failed:', error);
+      console.error('❌ [Pure AI OpenAI] Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        businessName: request.businessName,
+        businessType: request.businessType
+      });
+      throw new Error(`Pure AI OpenAI content generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
    * Generate specific content type (for backward compatibility)
    */
   static async generateSpecificContent(
