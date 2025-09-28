@@ -377,8 +377,8 @@ export function ContentCalendar({
                 <Settings className="h-4 w-4 text-blue-600" />
                 <span className="font-medium text-sm">Brand Consistency</span>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="flex items-center gap-2 min-w-[96px]">
                   <Palette className="h-3 w-3 text-gray-500" />
                   <span className="text-xs text-gray-600">Strict</span>
                   <Switch
@@ -388,7 +388,7 @@ export function ContentCalendar({
                     }
                   />
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-w-[96px]">
                   <Sparkles className="h-3 w-3 text-gray-500" />
                   <span className="text-xs text-gray-600">Colors</span>
                   <Switch
@@ -398,7 +398,7 @@ export function ContentCalendar({
                     }
                   />
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-w-[96px]">
                   <Phone className="h-3 w-3 text-gray-500" />
                   <span className="text-xs text-gray-600">Contacts</span>
                   <Switch
@@ -408,27 +408,27 @@ export function ContentCalendar({
                     }
                   />
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-w-[96px]">
                   <span className="text-xs text-gray-600">👥 People</span>
                   <Switch
                     checked={includePeopleInDesigns}
                     onCheckedChange={setIncludePeopleInDesigns}
                   />
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-w-[96px]">
                   <span className="text-xs text-gray-600">🌍 Local</span>
                   <Switch
                     checked={useLocalLanguage}
                     onCheckedChange={setUseLocalLanguage}
                   />
                 </div>
-                <Separator orientation="vertical" className="h-4" />
-                <div className="flex items-center gap-2">
+                <Separator orientation="vertical" className="hidden sm:block h-4" />
+                <div className="flex items-center gap-2 min-w-[160px]">
                   <span className="text-xs text-gray-600">AI Model:</span>
                   <select
                     value={selectedRevoModel}
                     onChange={(e) => setSelectedRevoModel(e.target.value as RevoModel)}
-                    className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-1 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-1 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-[140px]"
                   >
                     <option value="revo-1.0">Revo 1.0</option>
                     <option value="revo-1.5">Revo 1.5</option>
@@ -457,7 +457,7 @@ export function ContentCalendar({
                   <div className="space-y-1">
                     <Label className="text-sm font-medium">Use Artifacts</Label>
                     <p className="text-xs text-muted-foreground">
-                      Enable to use your uploaded reference materials and exact-use content
+                      
                     </p>
                   </div>
                   <div className="flex items-center gap-2">

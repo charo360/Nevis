@@ -9,12 +9,20 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   // Try to use a different build directory to bypass locked .next/trace
-  distDir: '.next-alt',
+  // Allow overriding via NEXT_DIST_DIR env var so developers can place build output
+  // on a local fast disk or RAM disk when working on network-mounted repos.
+  distDir: process.env.NEXT_DIST_DIR || '.next-alt',
   images: {
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'placehold.co',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
         port: '',
         pathname: '/**',
       },

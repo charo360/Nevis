@@ -69,8 +69,34 @@ const FullWidthSpinner: React.FC = () => (
   </div>
 );
 
+const SkeletonPage: React.FC = () => (
+  <div className="w-full min-h-screen p-6 lg:p-12">
+    <div className="max-w-7xl mx-auto">
+      <div className="animate-pulse">
+        <div className="h-8 bg-gray-200 rounded w-1/3 mb-6" />
+        <div className="h-6 bg-gray-200 rounded w-2/3 mb-4" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="h-40 bg-gray-100 rounded" />
+          <div className="h-40 bg-gray-100 rounded" />
+          <div className="h-40 bg-gray-100 rounded" />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 export function AppRoute() {
   const pathname = usePathname?.() || (typeof window !== 'undefined' ? window.location.pathname : '/');
+
+  // Prefetch a small set of likely routes in the background to reduce first-time navigation latency.
+  // These imports use webpackPrefetch hint so the browser can fetch them with low priority.
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    // Only prefetch a few small routes to avoid increasing initial network usage.
+    void import(/* webpackPrefetch: true */ '../../app/dashboard/page').catch(() => {});
+    void import(/* webpackPrefetch: true */ '../../app/quick-content/page').catch(() => {});
+    void import(/* webpackPrefetch: true */ '../../app/brands/page').catch(() => {});
+  }, []);
 
   // Map path prefixes to lazy components. Add or reorder as needed.
   const routes: { test: (p: string) => boolean; Component: React.LazyExoticComponent<React.ComponentType<any>> }[] = [
@@ -99,7 +125,7 @@ export function AppRoute() {
   const Element = match ? match.Component : null;
 
   return (
-    <Suspense fallback={<FullWidthSpinner />}>
+    <Suspense fallback={<SkeletonPage />}>
       {Element ? <Element /> : <div className="p-6">Not Found</div>}
     </Suspense>
   );
