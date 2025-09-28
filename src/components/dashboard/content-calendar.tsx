@@ -14,7 +14,7 @@ import { useAuth } from "@/hooks/use-auth-supabase";
 import type { BrandProfile, GeneratedPost, Platform, BrandConsistencyPreferences } from "@/lib/types";
 import type { ScheduledService } from "@/services/calendar-service";
 
-type RevoModel = 'revo-1.0' | 'revo-1.5';
+import type { RevoModel } from '@/components/ui/revo-model-selector';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -148,9 +148,9 @@ export function ContentCalendar({
       // Check if artifacts are enabled (simple toggle approach)
       const artifactsEnabled = selectedArtifacts.length > 0;
 
-      const useEnhancedGeneration = artifactsEnabled || selectedRevoModel === 'revo-1.5' || selectedRevoModel === 'revo-2.0';
+  const useEnhancedGeneration = artifactsEnabled || String(selectedRevoModel) === 'revo-1.5' || String(selectedRevoModel) === 'revo-2.0';
 
-      if (selectedRevoModel === 'revo-2.0') {
+  if (String(selectedRevoModel) === 'revo-2.0') {
 
         // Use server action to avoid client-side imports
         const trendingContext = {
@@ -172,10 +172,10 @@ export function ContentCalendar({
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
+            body: JSON.stringify({
             businessType: brandProfile.businessType || 'Business',
             platform: platform.toLowerCase(),
-            visualStyle: brandProfile.visualStyle || 'modern',
+              visualStyle: (brandProfile.visualStyle as any) || 'modern',
             imageText: '',
             brandProfile,
             aspectRatio: '1:1',
@@ -255,7 +255,7 @@ export function ContentCalendar({
           '',
           {
             aspectRatio: '1:1',
-            visualStyle: brandProfile.visualStyle || 'modern',
+            visualStyle: (brandProfile.visualStyle as any) as 'modern' | 'minimalist' | 'bold' | 'elegant' | 'playful' | 'professional' || 'modern',
             includePeopleInDesigns,
             useLocalLanguage
           },
@@ -268,7 +268,7 @@ export function ContentCalendar({
           platform,
           brandConsistency,
           [], // Empty array - let the action use active artifacts from artifacts service
-          selectedRevoModel === 'revo-1.5', // Enhanced design for Revo 1.5
+          String(selectedRevoModel) === 'revo-1.5', // Enhanced design for Revo 1.5
           includePeopleInDesigns,
           useLocalLanguage
         );
@@ -329,12 +329,12 @@ export function ContentCalendar({
       let description = `A new ${platform} post has been saved to your database.`;
 
       // Special message for Instagram with multiple captions
-      if (platform === 'Instagram' && selectedRevoModel === 'revo-2.0' && revo20Result?.captionVariations?.length > 1) {
+  if (platform === 'Instagram' && String(selectedRevoModel) === 'revo-2.0' && revo20Result?.captionVariations?.length > 1) {
         title = "Instagram Content with 5 Captions Generated! 📸";
         description = `Generated ${revo20Result.captionVariations.length} caption variations for Instagram engagement optimization.`;
       }
 
-      if (platformHashtags.length > 0 && selectedArtifacts.length > 0) {
+  if (platformHashtags.length > 0 && selectedArtifacts.length > 0) {
         title = "Trending Content Generated! 🔥📎";
         description = `A new ${platform} post with ${platformHashtags.length} trending hashtags and ${selectedArtifacts.length} reference${selectedArtifacts.length !== 1 ? 's' : ''} has been saved.`;
       } else if (platformHashtags.length > 0) {
@@ -343,7 +343,7 @@ export function ContentCalendar({
       } else if (selectedArtifacts.length > 0) {
         title = "Content Generated with References! 📎";
         description = `A new ${platform} post using ${selectedArtifacts.length} reference${selectedArtifacts.length !== 1 ? 's' : ''} has been saved.`;
-      } else if (selectedRevoModel === 'revo-1.5') {
+  } else if (String(selectedRevoModel) === 'revo-1.5') {
         title = "Enhanced Content Generated! ✨";
         description = `A new enhanced ${platform} post with ${selectedRevoModel} has been saved.`;
       } else {
@@ -438,7 +438,7 @@ export function ContentCalendar({
               </div>
             </div>
             <p className="text-xs text-gray-500 mt-2">
-              {selectedRevoModel === 'revo-2.0'
+              {String(selectedRevoModel) === 'revo-2.0'
                 ? `🚀 ${selectedRevoModel}: Next-Gen AI with native image generation, character consistency & intelligent editing`
                 : selectedRevoModel === 'revo-1.5'
                   ? `✨ ${selectedRevoModel}: Enhanced AI with professional design principles + ${brandConsistency.strictConsistency ? "strict consistency" : "brand colors"}`
