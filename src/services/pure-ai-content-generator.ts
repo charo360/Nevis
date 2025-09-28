@@ -172,10 +172,19 @@ ADVANCED INTELLIGENCE ANALYSIS REQUIRED:
 
 1. **PRODUCT/SERVICE INTELLIGENCE EXTRACTION**:
    - What specific products/services does this business offer?
+   - **For known products (Samsung, iPhone, etc.)**: Use your knowledge of current specs, features, and market positioning
+   - **For unknown/local products**: Extract available information and ask intelligent questions
    - What are the key features that differentiate these offerings?
    - What pricing information is available? (costs, packages, deals, discounts)
    - What measurable benefits do customers receive?
    - What customer success stories or results can be highlighted?
+
+**PRODUCT KNOWLEDGE ENHANCEMENT**:
+- **Research mindset**: If it's a known product/service, leverage comprehensive knowledge of specifications, comparisons, and market position
+- **Samsung Galaxy S23 Ultra example**: 200MP camera, S-Pen, 8K video, 5000mAh battery, IP68 rating, etc.
+- **iPhone 15 Pro example**: A17 Pro chip, titanium build, Action Button, 48MP camera system, etc.
+- **Tesla Model 3 example**: 358-mile range, 0-60 in 3.1s, Autopilot, Supercharger network, etc.
+- **Always include specific technical advantages** that justify the purchase decision
 
 2. **CULTURAL INTELLIGENCE INTEGRATION**:
    - What are the specific cultural values in ${location}?
@@ -325,15 +334,23 @@ QUALITY ASSURANCE CHECKLIST:
 ✅ **Conversion Focus**: Does this naturally lead to business action?
 ✅ **Authenticity**: Does this sound human, not corporate?
 
-CRITICAL INSTRUCTIONS:
-- NEVER use generic marketing templates or clichés
-- ALWAYS extract and leverage the unique human story
-- ALWAYS integrate cultural context and local relevance
-- ALWAYS create emotional connection before rational persuasion
-- ALWAYS show natural product/service integration
-- ALWAYS differentiate from what competitors are saying
-- ALWAYS match content to platform psychology
-- ALWAYS optimize for the specific conversion goal
+**CRITICAL INSTRUCTIONS:**
+- **ACT LIKE YOUR JOB DEPENDS ON RESULTS** - because the business owner's success depends on your content
+- **NEVER use generic marketing templates or clichés** - they don't convert and get agencies fired
+- **ALWAYS leverage deep product knowledge** - show specs, comparisons, technical advantages
+- **ALWAYS extract and use the strongest business differentiators** - what makes them better than competitors
+- **ALWAYS integrate cultural context and local relevance** - generic content doesn't work globally
+- **ALWAYS create emotional connection alongside rational persuasion** - people buy emotionally, justify rationally
+- **ALWAYS show natural product/service integration** - demonstrate real-world value
+- **ALWAYS optimize for the specific conversion goal** - every element must drive the desired action
+- **ALWAYS match content to platform psychology** - what works on Instagram won't work on LinkedIn
+
+**SUCCESS METRICS YOU'RE OPTIMIZING FOR:**
+- **Business owner satisfaction**: "This AI really understands my product and market"
+- **Customer conversion**: "This content made me want to buy immediately"
+- **Competitive differentiation**: "This stands out from everything else I've seen"
+- **Cultural authenticity**: "This feels like it was created by a local expert"
+- **Purchase urgency**: "I need to act on this now"
 
 ANALYSIS DEPTH REQUIREMENT:
 You must demonstrate deep understanding of:
