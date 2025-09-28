@@ -7,15 +7,33 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import OpenAI from 'openai';
 import type { BrandProfile, Platform } from '@/lib/types';
 
-// Initialize AI clients with Revo 2.0 specific API key with fallback
-const apiKey = process.env.GEMINI_API_KEY_REVO_2_0 || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
+// Lazily initialize AI clients to avoid import-time failures when environment variables
+// (OPENAI_API_KEY, GEMINI_API_KEY, etc.) are not present. Clients are created only
+// when a function actually needs them.
+let ai: GoogleGenerativeAI | null = null;
+let openai: OpenAI | null = null;
 
-if (!apiKey) {
-  throw new Error('Revo 2.0: No Gemini API key found. Please set GEMINI_API_KEY_REVO_2_0 or GEMINI_API_KEY in your environment variables.');
+function getAiClient(): GoogleGenerativeAI {
+  if (!ai) {
+    const apiKey = process.env.GEMINI_API_KEY_REVO_2_0 || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
+    if (!apiKey) {
+      throw new Error('Revo 2.0: No Gemini API key found. Please set GEMINI_API_KEY_REVO_2_0 or GEMINI_API_KEY in your environment variables.');
+    }
+    ai = new GoogleGenerativeAI(apiKey);
+  }
+  return ai;
 }
 
-const ai = new GoogleGenerativeAI(apiKey);
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+function getOpenAIClient(): OpenAI {
+  if (!openai) {
+    const key = process.env.OPENAI_API_KEY;
+    if (!key) {
+      throw new Error('OpenAI: OPENAI_API_KEY is missing. Set OPENAI_API_KEY in your environment variables to use OpenAI features.');
+    }
+    openai = new OpenAI({ apiKey: key });
+  }
+  return openai;
+}
 
 // Revo 2.0 uses Gemini 2.5 Flash Image Preview (same as Revo 1.0 but with enhanced prompting)
 const REVO_2_0_MODEL = 'gemini-2.5-flash-image-preview';
@@ -74,7 +92,7 @@ async function generateCreativeConcept(options: Revo20GenerationOptions): Promis
   const { businessType, brandProfile, platform } = options;
 
   try {
-    const model = ai.getGenerativeModel({ model: REVO_2_0_MODEL });
+  const model = getAiClient().getGenerativeModel({ model: REVO_2_0_MODEL });
 
     const conceptPrompt = `Generate a creative concept for ${brandProfile.businessName} (${businessType}) on ${platform}.
     
@@ -126,7 +144,7 @@ function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: any): st
   // Lightweight contact integration - only add if contacts toggle is enabled
   let contactInstruction = '';
   if (options.includeContacts === true) {
-    const contacts = [];
+  const contacts: string[] = [];
 
     // Simple contact detection (multiple data structure support)
     const phone = brandProfile?.contactInfo?.phone ||
@@ -200,7 +218,7 @@ Create a visually stunning design that stops scrolling and drives engagement whi
  */
 async function generateImageWithGemini(prompt: string, options: Revo20GenerationOptions): Promise<{ imageUrl: string }> {
   try {
-    const model = ai.getGenerativeModel({
+  const model = getAiClient().getGenerativeModel({
       model: REVO_2_0_MODEL,
       generationConfig: {
         temperature: 0.7,
@@ -329,7 +347,7 @@ The logo has been normalized to 200px standard size to prevent design dimension 
       console.log('ℹ️ Revo 2.0: No logo provided, generating design without logo');
     }
 
-    const result = await model.generateContent(generationParts);
+  const result = await model.generateContent(generationParts);
     const response = await result.response;
 
     // Check if response contains image data
@@ -370,14 +388,14 @@ async function generateCaptionAndHashtags(options: Revo20GenerationOptions, conc
   const { businessType, brandProfile, platform } = options;
 
   // Determine hashtag count based on platform
-  const hashtagCount = platform.toLowerCase() === 'instagram' ? 5 : 3;
+  const hashtagCount = String(platform).toLowerCase() === 'instagram' ? 5 : 3;
 
   // Generate unique timestamp-based seed for variety
   const uniqueSeed = Date.now() + Math.random();
   const creativityBoost = Math.floor(uniqueSeed % 10) + 1;
 
   try {
-    const model = ai.getGenerativeModel({
+  const model = getAiClient().getGenerativeModel({
       model: REVO_2_0_MODEL,
       generationConfig: {
         temperature: 0.9, // Higher temperature for more creativity
@@ -408,7 +426,7 @@ PLATFORM: ${platform}
 2. SUBHEADLINE (max 25 words): Compelling, specific value proposition
 3. CAPTION (50-100 words): Engaging, authentic, conversational, UNIQUE
 4. CALL-TO-ACTION (2-4 words): Action-oriented, compelling
-5. HASHTAGS (EXACTLY ${hashtagCount}): ${platform === 'instagram' ? 'Instagram gets 5 hashtags' : 'Other platforms get 3 hashtags'}
+5. HASHTAGS (EXACTLY ${hashtagCount}): ${String(platform).toLowerCase() === 'instagram' ? 'Instagram gets 5 hashtags' : 'Other platforms get 3 hashtags'}
 
 🎨 CONTENT STYLE:
 - Write like a sophisticated marketer who understands ${brandProfile.location || 'the local market'}
@@ -418,8 +436,8 @@ PLATFORM: ${platform}
 - Make it feel personal and relatable
 - Use local cultural context when appropriate
 
-📱 PLATFORM OPTIMIZATION:
-- ${platform === 'instagram' ? 'Instagram: Visual storytelling, lifestyle focus, 5 strategic hashtags' : 'Other platforms: Professional tone, business focus, 3 targeted hashtags'}
+  📱 PLATFORM OPTIMIZATION:
+  - ${String(platform).toLowerCase() === 'instagram' ? 'Instagram: Visual storytelling, lifestyle focus, 5 strategic hashtags' : 'Other platforms: Professional tone, business focus, 3 targeted hashtags'}
 
 🌍 CULTURAL INTELLIGENCE:
 - Adapt tone for ${brandProfile.location || 'global audience'}
@@ -435,7 +453,7 @@ Format as JSON:
   "hashtags": ["#tag1", "#tag2", ...]
 }`;
 
-    const result = await model.generateContent(contentPrompt);
+  const result = await model.generateContent(contentPrompt);
     const response = await result.response;
     const content = response.text();
 
@@ -621,7 +639,7 @@ export async function testRevo20Availability(): Promise<boolean> {
   try {
     console.log('🧪 Testing Revo 2.0 availability...');
 
-    const model = ai.getGenerativeModel({ model: REVO_2_0_MODEL });
+  const model = getAiClient().getGenerativeModel({ model: REVO_2_0_MODEL });
     const response = await model.generateContent('Create a simple test image with the text "Revo 2.0 Test" on a modern gradient background');
 
     const result = await response.response;

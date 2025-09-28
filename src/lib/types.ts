@@ -12,7 +12,7 @@ export type BrandProfile = {
   location: string;
   logoUrl?: string; // Supabase storage URL
   logoDataUrl?: string; // Base64 data URL (legacy)
-  visualStyle: string;
+  visualStyle: 'bold' | 'modern' | 'minimalist' | 'elegant' | 'playful' | 'professional' | string;
   writingTone: string;
   contentThemes: string;
 

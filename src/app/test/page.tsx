@@ -15,7 +15,7 @@ export default function TestPage() {
         </ul>
       </div>
       <div style={{ marginTop: '20px' }}>
-        <a href="/" style={{ color: '#0070f3', textDecoration: 'none' }} onClick={(e)=>{e.preventDefault(); window.location.href='/'}}>
+        <a href="/" style={{ color: '#0070f3', textDecoration: 'none' }}>
           ← Back to Home
         </a>
       </div>
