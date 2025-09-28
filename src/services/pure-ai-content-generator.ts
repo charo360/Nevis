@@ -13,6 +13,7 @@ export interface PureAIRequest {
   contentType: 'headline' | 'cta' | 'caption' | 'subheadline' | 'all';
   targetAudience?: string;
   location?: string;
+  websiteUrl?: string;
   recentContent?: string[]; // Recent content to avoid repetition
   brandContext?: {
     colors?: string[];
@@ -22,13 +23,37 @@ export interface PureAIRequest {
 }
 
 export interface PureAIResponse {
+  business_analysis: {
+    product_intelligence: string;
+    cultural_context: string;
+    emotional_drivers: string;
+    natural_scenarios: string;
+    competitive_advantage: string;
+    content_format: string;
+  };
+  content: {
+    headline: string;
+    subheadline: string;
+    cta: string;
+    caption: string;
+    hashtags: string[];
+  };
+  performance_prediction: {
+    engagement_score: number;
+    conversion_probability: string;
+    viral_potential: string;
+    cultural_resonance: string;
+  };
+  strategic_reasoning: string;
+  confidence: number;
+
+  // Legacy fields for backward compatibility
   headline: string;
   subheadline: string;
   cta: string;
   caption: string;
   hashtags: string[];
   reasoning: string;
-  confidence: number;
 }
 
 export class PureAIContentGenerator {
@@ -49,19 +74,49 @@ export class PureAIContentGenerator {
 
       const parsed = this.parseAIResponse(response.text);
 
+      // Handle both new structured format and legacy format
+      const content = parsed.content || parsed;
+      const businessAnalysis = parsed.business_analysis || {};
+      const performancePrediction = parsed.performance_prediction || {};
+
       // Validate required fields
-      if (!parsed.headline || !parsed.cta || !parsed.caption) {
+      if (!content.headline || !content.cta || !content.caption) {
         throw new Error('AI response missing required fields (headline, cta, or caption)');
       }
 
       return {
-        headline: parsed.headline || 'Business Excellence',
-        subheadline: parsed.subheadline || 'Professional services you can trust',
-        cta: parsed.cta || 'Get Started',
-        caption: parsed.caption || 'Discover exceptional service and quality.',
-        hashtags: Array.isArray(parsed.hashtags) ? parsed.hashtags : ['#business', '#quality', '#professional'],
-        reasoning: parsed.reasoning || 'AI-generated content based on business analysis',
-        confidence: parsed.confidence || 8
+        // New structured format
+        business_analysis: {
+          product_intelligence: businessAnalysis.product_intelligence || 'Business analysis not provided',
+          cultural_context: businessAnalysis.cultural_context || 'Cultural context not analyzed',
+          emotional_drivers: businessAnalysis.emotional_drivers || 'Emotional drivers not identified',
+          natural_scenarios: businessAnalysis.natural_scenarios || 'Natural scenarios not described',
+          competitive_advantage: businessAnalysis.competitive_advantage || 'Competitive advantage not defined',
+          content_format: businessAnalysis.content_format || 'Content format not specified'
+        },
+        content: {
+          headline: content.headline || 'Business Excellence',
+          subheadline: content.subheadline || 'Professional services you can trust',
+          cta: content.cta || 'Get Started',
+          caption: content.caption || 'Discover exceptional service and quality.',
+          hashtags: Array.isArray(content.hashtags) ? content.hashtags : ['#business', '#quality', '#professional']
+        },
+        performance_prediction: {
+          engagement_score: performancePrediction.engagement_score || 7,
+          conversion_probability: performancePrediction.conversion_probability || 'Medium - standard business content',
+          viral_potential: performancePrediction.viral_potential || 'Low to medium shareability',
+          cultural_resonance: performancePrediction.cultural_resonance || 'General appeal'
+        },
+        strategic_reasoning: parsed.strategic_reasoning || parsed.reasoning || 'AI-generated content based on business analysis',
+        confidence: parsed.confidence || 8,
+
+        // Legacy fields for backward compatibility
+        headline: content.headline || 'Business Excellence',
+        subheadline: content.subheadline || 'Professional services you can trust',
+        cta: content.cta || 'Get Started',
+        caption: content.caption || 'Discover exceptional service and quality.',
+        hashtags: Array.isArray(content.hashtags) ? content.hashtags : ['#business', '#quality', '#professional'],
+        reasoning: parsed.strategic_reasoning || parsed.reasoning || 'AI-generated content based on business analysis'
       };
 
     } catch (error) {
@@ -87,6 +142,7 @@ export class PureAIContentGenerator {
       platform,
       targetAudience,
       location,
+      websiteUrl,
       recentContent,
       brandContext
     } = request;
@@ -100,7 +156,7 @@ export class PureAIContentGenerator {
       : '';
 
     return `
-You are an expert marketing strategist and copywriter. Analyze this business and create compelling marketing content.
+You are an expert marketing strategist with deep cultural intelligence and story-mining capabilities. Create compelling marketing content that drives real business results.
 
 BUSINESS TO ANALYZE:
 - Business Name: ${businessName}
@@ -109,75 +165,215 @@ BUSINESS TO ANALYZE:
 - Target Platform: ${platform}
 - Target Audience: ${targetAudience || 'General audience'}
 - Location: ${location || 'Not specified'}
+- Website/Social: ${websiteUrl || 'Not provided'}
 ${brandContextText}${recentContentText}
 
-YOUR TASK:
-Analyze this business deeply and create marketing content that will resonate with their specific audience and drive their primary business goals.
+ADVANCED INTELLIGENCE ANALYSIS REQUIRED:
 
-INTELLIGENT ANALYSIS REQUIRED:
-1. **Business Model Analysis**: What is their primary revenue model? How do customers typically engage with this type of business?
+1. **PRODUCT/SERVICE INTELLIGENCE EXTRACTION**:
+   - What specific products/services does this business offer?
+   - What are the key features that differentiate these offerings?
+   - What pricing information is available? (costs, packages, deals, discounts)
+   - What measurable benefits do customers receive?
+   - What customer success stories or results can be highlighted?
 
-2. **Customer Journey Mapping**: What action would a potential customer naturally take next? (booking, purchasing, signing up, calling, visiting, etc.)
+2. **CULTURAL INTELLIGENCE INTEGRATION**:
+   - What are the specific cultural values in ${location}?
+   - How do people communicate in this region? (formal vs casual, language mixing)
+   - What local challenges/opportunities does this business address?
+   - What cultural symbols, references, or expressions resonate here?
+   - How do trust signals work in this cultural context?
 
-3. **Value Proposition Identification**: What unique value does this specific business provide? What problems do they solve?
+3. **PRICING & VALUE ANALYSIS**:
+   - What pricing information is available? (exact costs, packages, discounts)
+   - How does the pricing compare to alternatives?
+   - What value justifies the investment?
+   - Are there special offers, discounts, or limited-time deals?
+   - What payment options or financing is available?
+   - What guarantees or risk-reversal offers exist?
 
-4. **Audience Psychology**: What motivates their target audience? What are their pain points, desires, and decision-making factors?
+4. **EMOTIONAL PSYCHOLOGY MAPPING**:
+   - What specific pain points keep this target audience awake at night?
+   - What aspirations/dreams drive their decision-making?
+   - What fears or anxieties must be addressed?
+   - What social pressures or status considerations matter?
+   - What emotional triggers create urgency?
 
-5. **Platform Optimization**: How should content be adapted for ${platform}? What works best on this platform?
+4. **NATURAL CONTEXT SCENARIOS**:
+   - How do real customers naturally discover this business?
+   - What daily life situations create need for this product/service?
+   - Where/when/how do customers typically use this offering?
+   - What authentic scenarios showcase the value naturally?
+   - How can we show the product integrated into real life?
 
-6. **Competitive Differentiation**: What would make this business stand out from competitors?
+5. **COMPETITIVE INTELLIGENCE**:
+   - What alternatives do customers consider?
+   - What unique advantage does THIS business have?
+   - What social proof/credibility markers set them apart?
+   - How are competitors messaging? (to differentiate)
+   - What market gaps is this business filling?
 
-7. **Content Variety**: How can we avoid repetition and create fresh, engaging content?
+6. **PLATFORM-SPECIFIC OPTIMIZATION**:
+   For ${platform}:
+   - What content formats perform best?
+   - What psychological triggers work on this platform?
+   - How do users consume content here?
+   - What visual/text balance is optimal?
+   - What engagement patterns should we optimize for?
+   - What cultural trends are relevant on this platform?
 
-CONTENT CREATION GUIDELINES:
-- **BE INTELLIGENT**: Make smart decisions based on your analysis, not generic templates
-- **BE SPECIFIC**: Tailor everything to THIS exact business and their unique context
-- **BE VARIED**: If recent content exists, create something completely different in approach and language
-- **BE STRATEGIC**: Every word should serve the business goal and audience needs
-- **BE AUTHENTIC**: Make it sound natural and genuine, not like generic marketing copy
-- **BE ACTIONABLE**: Create clear next steps that match how customers actually engage with this business
+7. **CONTENT VARIETY & FORMAT INNOVATION**:
+   - What engaging content formats would work for this business/audience?
+   - Would humor be appropriate and effective for this brand/culture?
+   - Can we create compelling before/after scenarios?
+   - What comparison formats would highlight advantages?
+   - What trending content formats are popular on ${platform}?
+   - How can we avoid repetitive messaging styles?
 
-PLATFORM-SPECIFIC CONSIDERATIONS:
-- Analyze ${platform} best practices and adapt content accordingly
-- Consider character limits, visual elements, and user behavior on this platform
-- Optimize for how people consume content on ${platform}
+**CONTENT FORMAT OPTIONS TO CONSIDER:**
+- **Humor/Relatable Content**: Funny takes on customer pain points or industry problems
+- **Before/After Comparisons**: Show transformation, improvement, or problem-solving
+- **Versus/Comparison**: This business vs competitors, old way vs new way
+- **Problem/Solution**: Identify pain point then reveal the solution
+- **Question/Answer**: Pose common customer questions then provide answers
+- **List/Tips**: "5 reasons why...", "3 ways to...", numbered benefits
+- **Testimonial/Review**: Real customer experiences and results
+- **Behind-the-scenes**: Process, team, quality control, local sourcing
+- **Educational**: How-to, tips, industry insights that build authority
+- **Trending Formats**: POV content, "This or That", challenges, viral formats
 
-CONTENT REQUIREMENTS:
-1. **HEADLINE** (4-8 words): Attention-grabbing, benefit-focused, specific to this business
-2. **SUBHEADLINE** (8-20 words): Explains the value proposition, builds on headline
-3. **CALL-TO-ACTION** (2-4 words): Matches their primary conversion goal, platform-appropriate
-4. **CAPTION** (2-4 sentences): Engaging story that connects with audience, includes business value
-5. **HASHTAGS** (8-15 tags): Mix of business-specific, location-based, and trending tags
-6. **REASONING**: Explain your strategic thinking and decisions
-7. **CONFIDENCE** (1-10): How confident you are in this content strategy
+CONTENT CREATION FRAMEWORK:
 
-CRITICAL REQUIREMENTS:
-- NO generic marketing speak or clichés
-- NO repetition of recent content approaches
-- NO one-size-fits-all solutions
-- EVERY element must be strategically chosen for THIS business
-- Content must feel authentic and natural, not promotional
-- CTA must match what customers actually do with this business type
+**AUTHENTICITY REQUIREMENTS**:
+- Must sound like it was written by someone who deeply understands this specific business
+- Should feel like genuine recommendation from a local expert, not corporate marketing
+- Include cultural nuances, local expressions, or communication styles
+- Reference specific local context, challenges, or opportunities
 
-Think step by step:
-1. Analyze the business model and customer behavior
-2. Identify the unique value proposition
-3. Determine the optimal conversion action
-4. Create content that guides customers naturally toward that action
-5. Ensure everything feels authentic and business-specific
+**PRODUCT/SERVICE MARKETING REQUIREMENTS**:
+- Clearly communicate specific products/services offered
+- Highlight concrete benefits and value propositions
+- Include pricing, features, or service details where relevant
+- Show tangible outcomes customers can expect
+- Integrate story elements to make benefits more compelling and memorable
+
+**EMOTIONAL TRIGGER REQUIREMENTS**:
+- Address specific fears, desires, or aspirations of the target audience
+- Create emotional resonance that makes people care
+- Use psychological principles (social proof, scarcity, authority, etc.)
+- Build emotional connection before rational persuasion
+
+**NATURAL CONTEXT REQUIREMENTS**:
+- Show the product/service in authentic use scenarios
+- Demonstrate value through real-life situations
+- Make the need feel natural and obvious
+- Integrate product benefits into lifestyle contexts
+
+CONTENT OUTPUTS REQUIRED:
+
+1. **STRATEGIC HEADLINE** (4-8 words):
+   - **Choose appropriate format**: Direct benefit, humor, question, comparison, etc.
+   - Must solve a specific problem or fulfill a desire
+   - Should reference local context or cultural values where relevant
+   - Include emotional hook that stops the scroll
+   - Differentiate from generic competitor messaging
+
+2. **COMPELLING SUBHEADLINE** (8-25 words):
+   - **Include specific features, pricing, or key benefits** that drive purchase decisions
+   - Add social proof, credentials, or customer results
+   - Address main value proposition with concrete details
+   - Include special offers, discounts, or urgency elements
+
+3. **CONVERSION-FOCUSED CTA** (2-5 words):
+   - Match natural customer behavior for this business type
+   - Remove friction and create easy next step
+   - Include urgency or incentive where appropriate
+   - Use culturally appropriate language
+
+4. **ENGAGING CAPTION** (3-6 sentences):
+   - **Select optimal content format** (humor, comparison, testimonial, educational, etc.)
+   - Lead with strongest product features and benefits
+   - Include specific pricing, deals, or value propositions
+   - Show quantifiable results or outcomes customers get
+   - Use format-appropriate tone (funny, informative, comparative, etc.)
+   - Create urgency with limited offers or seasonal promotions
+   - End with natural bridge to the purchase action
+
+5. **STRATEGIC HASHTAGS** (10-20 tags):
+   - Mix of business-specific, location-based, industry, and trending tags
+   - Include niche hashtags for target audience
+   - Add cultural or local hashtags where relevant
+   - Balance reach with relevance
+
+6. **PERFORMANCE PREDICTION**:
+   - Estimated engagement rate and why
+   - Conversion probability assessment
+   - Viral potential score
+   - Cultural resonance likelihood
+
+QUALITY ASSURANCE CHECKLIST:
+
+✅ **Content Format**: Is the chosen approach (humor, comparison, etc.) effective for this audience?
+✅ **Product Intelligence**: Are key features and benefits clearly communicated?
+✅ **Pricing Strategy**: Is pricing/value proposition compelling and clear?
+✅ **Purchase Motivation**: Does this create strong reasons to buy now?
+✅ **Cultural Authenticity**: Does this feel locally relevant and genuine?
+✅ **Emotional Impact**: Will this create an emotional response?
+✅ **Natural Context**: Does the value feel obvious and natural?
+✅ **Competitive Differentiation**: Does this stand out from competitors?
+✅ **Platform Optimization**: Is this format perfect for ${platform}?
+✅ **Conversion Focus**: Does this naturally lead to business action?
+✅ **Authenticity**: Does this sound human, not corporate?
+
+CRITICAL INSTRUCTIONS:
+- NEVER use generic marketing templates or clichés
+- ALWAYS extract and leverage the unique human story
+- ALWAYS integrate cultural context and local relevance
+- ALWAYS create emotional connection before rational persuasion
+- ALWAYS show natural product/service integration
+- ALWAYS differentiate from what competitors are saying
+- ALWAYS match content to platform psychology
+- ALWAYS optimize for the specific conversion goal
+
+ANALYSIS DEPTH REQUIREMENT:
+You must demonstrate deep understanding of:
+1. The specific business model and customer journey
+2. The cultural context and communication patterns
+3. The emotional psychology of the target audience
+4. The natural use cases and scenarios
+5. The competitive landscape and differentiation
+6. The platform dynamics and optimization strategies
+
+Think like a master storyteller, cultural anthropologist, and conversion psychologist combined.
 
 Respond in JSON format:
 {
-  "headline": "Your strategic headline here",
-  "subheadline": "Your supporting subheadline here", 
-  "cta": "Your conversion-focused CTA here",
-  "caption": "Your engaging caption here",
-  "hashtags": ["#specific", "#relevant", "#hashtags"],
-  "reasoning": "Explain your strategic thinking and why you made these specific choices",
-  "confidence": 8
+  "business_analysis": {
+    "product_intelligence": "Key features, pricing, and differentiators",
+    "cultural_context": "Key cultural factors and local relevance",
+    "emotional_drivers": "Primary psychological motivators for target audience",
+    "natural_scenarios": "Authentic use cases and contexts",
+    "competitive_advantage": "Unique differentiators and positioning",
+    "content_format": "Chosen approach (humor, comparison, testimonial, etc.) and reasoning"
+  },
+  "content": {
+    "headline": "Strategic, culturally-relevant headline",
+    "subheadline": "Value-driven, specific subheadline",
+    "cta": "Natural, conversion-focused call-to-action",
+    "caption": "Story-driven, emotionally engaging caption",
+    "hashtags": ["#strategic", "#local", "#relevant", "#hashtags"]
+  },
+  "performance_prediction": {
+    "engagement_score": 8,
+    "conversion_probability": "High/Medium/Low with reasoning",
+    "viral_potential": "Assessment of shareability",
+    "cultural_resonance": "How well this will connect locally"
+  },
+  "strategic_reasoning": "Detailed explanation of all strategic choices, story selection, cultural integration, and psychological triggers used",
+  "confidence": 9
 }
 
-Make every decision based on intelligent analysis, not hardcoded rules. Be creative, strategic, and business-specific.
+Remember: Generic content gets ignored. Authentic, culturally-intelligent, story-driven content gets results.
 `;
   }
 

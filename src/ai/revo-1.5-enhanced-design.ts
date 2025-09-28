@@ -575,6 +575,7 @@ async function generatePureAIContent(
       contentType: 'all',
       targetAudience: brandProfile.targetAudience,
       location: brandProfile.location,
+      websiteUrl: brandProfile.websiteUrl,
       brandContext: {
         colors: [brandProfile.primaryColor, brandProfile.secondaryColor].filter(Boolean),
         personality: brandProfile.brandPersonality,
