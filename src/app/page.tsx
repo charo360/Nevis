@@ -34,7 +34,7 @@ import { Badge } from '@/components/ui/badge';
 export default function HomePage() {
   const router = useRouter();
   const [isVisible, setIsVisible] = useState(false);
-  const { user, signOut, loading } = useAuth();
+  const { user, signOut, loading, getAccessToken } = useAuth();
   const [sessionActive, setSessionActive] = useState<boolean>(false);
   const { toast } = useToast();
 
@@ -128,9 +128,10 @@ export default function HomePage() {
           }
 
           try {
+            const token = await getAccessToken();
             const res = await fetch('/api/create-checkout-session', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
               body: JSON.stringify({ priceId, quantity: 1, mode: 'payment', customerEmail: user.email, metadata: { userId: user.userId, priceId } })
             });
 
@@ -932,7 +933,7 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => handleGetStarted('price_1RxYHyFptxIKIuiwekVOOCf3')}
+                  onClick={() => handleGetStarted('price_1SCjHOCXEBwbxwozVVUdU1TW')}
                   className="w-full"
                   variant="outline"
                 >
@@ -986,7 +987,7 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => handleGetStarted('price_1RxYIwFptxIKIuiwMVPibdo5')}
+                  onClick={() => handleGetStarted('price_1SCjJlCXEBwbxwozhKzAtCH1')}
                   className="w-full"
                 >
                   Buy Credits
@@ -1035,7 +1036,7 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => handleGetStarted('price_1RxYJzFptxIKIuiwqcRemLE8')}
+                  onClick={() => handleGetStarted('price_1SCjMpCXEBwbxwozhT1RWAYP')}
                   className="w-full"
                   variant="outline"
                 >
@@ -1085,7 +1086,7 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => handleGetStarted('price_1RxYKfFptxIKIuiwCql1Wj0u')}
+                  onClick={() => handleGetStarted('price_1SCjPgCXEBwbxwozjCNWanOY')}
                   className="w-full"
                   variant="outline"
                 >
