@@ -79,8 +79,8 @@ export default function AuthPage() {
 
       // Small delay to ensure auth state is fully settled before navigation
       setTimeout(() => {
-        console.log('🚀 Navigating to brand profile...');
-        router.push('/brand-profile');
+        console.log('🚀 Navigating to dashboard...');
+        router.push('/dashboard');
       }, 100);
 
     } catch (error) {
@@ -112,7 +112,7 @@ export default function AuthPage() {
         title: 'Account created!',
         description: 'Welcome — your account is ready.'
       });
-      router.push('/brand-profile');
+      router.push('/dashboard');
     } catch (error) {
       toast({
         variant: 'destructive',
