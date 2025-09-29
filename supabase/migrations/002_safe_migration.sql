@@ -13,7 +13,7 @@ EXCEPTION
 END $$;
 
 DO $$ BEGIN
-    CREATE TYPE subscription_plan AS ENUM ('free', 'pro', 'enterprise');
+    CREATE TYPE subscription_plan AS ENUM ('free', 'pro', 'power');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;

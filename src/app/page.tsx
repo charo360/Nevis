@@ -933,7 +933,7 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => handleGetStarted('price_1SCjHOCXEBwbxwozVVUdU1TW')}
+                  onClick={() => handleGetStarted('price_1SCkbnCik0ZJySexGw26mCgg')}
                   className="w-full"
                   variant="outline"
                 >
@@ -987,7 +987,7 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => handleGetStarted('price_1SCjJlCXEBwbxwozhKzAtCH1')}
+                  onClick={() => handleGetStarted('price_1SCkefCik0ZJySexBO34LAsl')}
                   className="w-full"
                 >
                   Buy Credits
@@ -1036,7 +1036,7 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => handleGetStarted('price_1SCjMpCXEBwbxwozhT1RWAYP')}
+                  onClick={() => handleGetStarted('price_1SCkhJCik0ZJySexgkXpFKTO')}
                   className="w-full"
                   variant="outline"
                 >
@@ -1086,7 +1086,7 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => handleGetStarted('price_1SCjPgCXEBwbxwozjCNWanOY')}
+                  onClick={() => handleGetStarted('price_1SCkjkCik0ZJySexpx9RGhu3')}
                   className="w-full"
                   variant="outline"
                 >

@@ -7,7 +7,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- Create enum types
 CREATE TYPE user_theme AS ENUM ('light', 'dark', 'system');
-CREATE TYPE subscription_plan AS ENUM ('free', 'pro', 'enterprise');
+CREATE TYPE subscription_plan AS ENUM ('free', 'pro', 'power');
 CREATE TYPE subscription_status AS ENUM ('active', 'inactive', 'cancelled');
 CREATE TYPE post_platform AS ENUM ('instagram', 'facebook', 'twitter', 'linkedin', 'tiktok');
 CREATE TYPE post_type AS ENUM ('post', 'story', 'reel', 'advertisement');

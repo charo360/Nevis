@@ -10,7 +10,9 @@ if (!stripeSecret) {
   throw new Error('Missing STRIPE_SECRET_KEY in environment')
 }
 
-const stripe = new Stripe(stripeSecret)
+const stripe = new Stripe(stripeSecret, {
+  apiVersion: '2023-10-16'
+})
 
 // Optional Supabase persistence (only if keys are provided)
 let supabase: ReturnType<typeof createClient> | null = null
@@ -28,12 +30,12 @@ type Body = {
 
 // Map known Stripe price IDs to internal plans/credits
 const PRICE_MAP: Record<string, { planId: string; credits: number; name: string }> = {
-  // new price ids provided by the user
-  'price_1SCjPgCXEBwbxwozjCNWanOY': { planId: 'enterprise', credits: 550, name: 'Enterprise Agent' },
-  'price_1SCjMpCXEBwbxwozhT1RWAYP': { planId: 'pro', credits: 250, name: 'Pro Agent' },
-  'price_1SCjJlCXEBwbxwozhKzAtCH1': { planId: 'growth', credits: 150, name: 'Growth Agent' },
-  'price_1SCjHOCXEBwbxwozVVUdU1TW': { planId: 'starter', credits: 50, name: 'Starter Agent' },
-  'price_1SCjDVCXEBwbxwozB5a6oXUp': { planId: 'free', credits: 10, name: 'Try Agent Free' },
+  // CORRECT price IDs from your TEST Stripe account
+  'price_1SCkjkCik0ZJySexpx9RGhu3': { planId: 'power', credits: 550, name: 'Enterprise Agent' },
+  'price_1SCkhJCik0ZJySexgkXpFKTO': { planId: 'pro', credits: 250, name: 'Pro Agent' },
+  'price_1SCkefCik0ZJySexBO34LAsl': { planId: 'growth', credits: 150, name: 'Growth Agent' },
+  'price_1SCkbnCik0ZJySexGw26mCgg': { planId: 'starter', credits: 50, name: 'Starter Agent' },
+  'price_1SCkZMCik0ZJySexGFq9FtxO': { planId: 'free', credits: 10, name: 'Try Agent Free' },
 }
 
 export async function POST(req: NextRequest) {
@@ -44,15 +46,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing priceId in request body' }, { status: 400 })
     }
 
+    // Validate price ID exists in our mapping
+    const mapped = PRICE_MAP[body.priceId]
+    if (!mapped) {
+      return NextResponse.json({ 
+        error: `Invalid price ID: ${body.priceId}. Available prices: ${Object.keys(PRICE_MAP).join(', ')}`
+      }, { status: 400 })
+    }
+
     const url = new URL(req.url)
     const origin = url.origin || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
     const quantity = body.quantity && body.quantity > 0 ? body.quantity : 1
     const mode = body.mode === 'subscription' ? 'subscription' : 'payment'
-
-  // Determine plan from price map if available
-  const mapped = PRICE_MAP[body.priceId]
-  const metadata: Record<string, string> = { ...(body.metadata || {}), planId: mapped ? mapped.planId : 'custom', priceId: body.priceId }
+    const metadata: Record<string, string> = { ...(body.metadata || {}), planId: mapped.planId, priceId: body.priceId }
 
     // Require Authorization header (Bearer token) to associate session with a user
     const authHeader = req.headers.get('authorization') || ''
@@ -79,8 +86,12 @@ export async function POST(req: NextRequest) {
 
     // Fallback to application JWT verification
     if (!verifiedUserId) {
-      const decoded = verifyToken(token)
-      if (decoded) verifiedUserId = decoded.userId
+      try {
+        const decoded = verifyToken(token)
+        if (decoded) verifiedUserId = decoded.userId
+      } catch (jwtError) {
+        console.warn('JWT token verification failed:', jwtError)
+      }
     }
 
     if (!verifiedUserId) {
@@ -91,49 +102,69 @@ export async function POST(req: NextRequest) {
     const metadataWithUser: Record<string, string> = { ...metadata, userId: verifiedUserId }
 
     // Create Stripe Checkout session (using price id directly)
-    const session = await stripe.checkout.sessions.create({
-      mode,
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price: body.priceId,
-          quantity: Number(quantity) || 1,
-        },
-      ],
-      allow_promotion_codes: true,
-  customer_email: body.customerEmail,
-  metadata: metadataWithUser,
-      client_reference_id: clientReferenceId,
-      success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/cancel`,
-      locale: 'auto',
-    })
+    let session
+    try {
+      session = await stripe.checkout.sessions.create({
+        mode,
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price: body.priceId,
+            quantity: Number(quantity) || 1,
+          },
+        ],
+        allow_promotion_codes: true,
+        customer_email: body.customerEmail,
+        metadata: metadataWithUser,
+        client_reference_id: clientReferenceId,
+        success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${origin}/cancel`,
+        locale: 'auto',
+      })
+    } catch (stripeError: any) {
+      console.error('❌ Stripe session creation failed:', stripeError.message)
+      
+      if (stripeError.code === 'resource_missing') {
+        return NextResponse.json({ 
+          error: `Price not found: ${body.priceId}. Please verify this price ID exists in your Stripe account.`,
+          details: stripeError.message
+        }, { status: 400 })
+      }
+      
+      return NextResponse.json({ 
+        error: 'Failed to create checkout session',
+        details: stripeError.message
+      }, { status: 500 })
+    }
 
     // Persist pending payment to Supabase if available
     if (supabase) {
       try {
-        const payload: any = {
+        // Get default amount from known plans
+        const defaultAmount = (() => {
+          if (mapped?.planId === 'power') return 99
+          if (mapped?.planId === 'pro') return 49
+          if (mapped?.planId === 'growth') return 29
+          if (mapped?.planId === 'starter') return 10
+          if (mapped?.planId === 'free') return 0
+          return 0
+        })()
+
+        const payload = {
           stripe_session_id: session.id,
-          user_id: verifiedUserId || null,
-          price_id: body.priceId,
-          plan_id: mapped ? mapped.planId : null,
-          credits_reserved: mapped ? mapped.credits : null,
-          amount: null,
-          currency: null,
+          user_id: verifiedUserId,
+          plan_id: mapped ? mapped.planId : 'custom',
+          amount: defaultAmount,
+          currency: 'usd',
           status: 'pending',
+          credits_added: mapped ? mapped.credits : 0,
           metadata: metadataWithUser,
-          created_at: new Date().toISOString(),
         }
 
-        // Attempt to read amount from session if available
-        if ((session as any).amount_total) {
-          payload.amount = (session as any).amount_total / 100
+        const { error: insertError } = await supabase.from('payment_transactions').insert(payload as any)
+        if (insertError) {
+          console.error('Database insert failed:', insertError)
         }
-        if ((session as any).currency) {
-          payload.currency = (session as any).currency
-        }
-
-        await supabase.from('payment_transactions').insert(payload)
       } catch (e) {
         console.error('Failed to persist checkout session to Supabase:', e)
       }
@@ -141,6 +172,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ id: session.id, url: session.url })
   } catch (err: any) {
-    return NextResponse.json({ error: (err && err.message) || 'Internal Server Error' }, { status: 500 })
+    console.error('❌ Checkout session creation failed:', err)
+    return NextResponse.json({ 
+      error: (err && err.message) || 'Internal Server Error',
+      details: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    }, { status: 500 })
   }
 }
