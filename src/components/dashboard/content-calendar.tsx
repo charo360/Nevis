@@ -14,7 +14,7 @@ import { useAuth } from "@/hooks/use-auth-supabase";
 import type { BrandProfile, GeneratedPost, Platform, BrandConsistencyPreferences } from "@/lib/types";
 import type { ScheduledService } from "@/services/calendar-service";
 
-type RevoModel = 'revo-1.0' | 'revo-1.5' | 'revo-2.0';
+import type { RevoModel } from '@/components/ui/revo-model-selector';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -148,8 +148,9 @@ export function ContentCalendar({
       // Check if artifacts are enabled (simple toggle approach)
       const artifactsEnabled = selectedArtifacts.length > 0;
 
-      const useEnhancedGeneration = artifactsEnabled || selectedRevoModel === 'revo-1.5' || selectedRevoModel === 'revo-2.0';
+  const useEnhancedGeneration = artifactsEnabled || String(selectedRevoModel) === 'revo-1.5' || String(selectedRevoModel) === 'revo-2.0';
 
+<<<<<<< HEAD
       // Dynamic model routing based on selected Revo version
       if (selectedRevoModel === 'revo-2.0') {
 
@@ -173,10 +174,10 @@ export function ContentCalendar({
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
+            body: JSON.stringify({
             businessType: brandProfile.businessType || 'Business',
             platform: platform.toLowerCase(),
-            visualStyle: brandProfile.visualStyle || 'modern',
+              visualStyle: (brandProfile.visualStyle as any) || 'modern',
             imageText: '',
             brandProfile,
             aspectRatio: '1:1',
@@ -249,34 +250,19 @@ export function ContentCalendar({
           hasScheduledContent
         });
 
-        const response = await fetch('/api/quick-content', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
+        newPost = await generateRevo15ContentAction(
+          brandProfile,
+          platform,
+          brandConsistency,
+          '',
+          {
+            aspectRatio: '1:1',
+            visualStyle: (brandProfile.visualStyle as any) as 'modern' | 'minimalist' | 'bold' | 'elegant' | 'playful' | 'professional' || 'modern',
+            includePeopleInDesigns,
+            useLocalLanguage
           },
-          body: JSON.stringify({
-            revoModel: selectedRevoModel,
-            brandProfile,
-            platform,
-            brandConsistency,
-            useLocalLanguage,
-            scheduledServices,
-            includePeopleInDesigns
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error(`${selectedRevoModel} generation failed: ${response.statusText}`);
-        }
-
-        const apiResponse = await response.json();
-        
-        // Check if the API returned an error
-        if (apiResponse.error) {
-          throw new Error(apiResponse.error);
-        }
-        
-        newPost = apiResponse;
+          scheduledServices // Pass scheduled services
+        );
       } else if (useEnhancedGeneration) {
         // Use artifact-enhanced generation - will automatically use active artifacts from artifacts page
         newPost = await generateContentWithArtifactsAction(
@@ -284,7 +270,7 @@ export function ContentCalendar({
           platform,
           brandConsistency,
           [], // Empty array - let the action use active artifacts from artifacts service
-          selectedRevoModel === 'revo-1.5', // Enhanced design for Revo 1.5
+          String(selectedRevoModel) === 'revo-1.5', // Enhanced design for Revo 1.5
           includePeopleInDesigns,
           useLocalLanguage
         );
@@ -391,8 +377,8 @@ export function ContentCalendar({
                 <Settings className="h-4 w-4 text-blue-600" />
                 <span className="font-medium text-sm">Brand Consistency</span>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="flex items-center gap-2 min-w-[96px]">
                   <Palette className="h-3 w-3 text-gray-500" />
                   <span className="text-xs text-gray-600">Strict</span>
                   <Switch
@@ -402,7 +388,7 @@ export function ContentCalendar({
                     }
                   />
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-w-[96px]">
                   <Sparkles className="h-3 w-3 text-gray-500" />
                   <span className="text-xs text-gray-600">Colors</span>
                   <Switch
@@ -412,7 +398,7 @@ export function ContentCalendar({
                     }
                   />
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-w-[96px]">
                   <Phone className="h-3 w-3 text-gray-500" />
                   <span className="text-xs text-gray-600">Contacts</span>
                   <Switch
@@ -422,27 +408,27 @@ export function ContentCalendar({
                     }
                   />
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-w-[96px]">
                   <span className="text-xs text-gray-600">👥 People</span>
                   <Switch
                     checked={includePeopleInDesigns}
                     onCheckedChange={setIncludePeopleInDesigns}
                   />
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-w-[96px]">
                   <span className="text-xs text-gray-600">🌍 Local</span>
                   <Switch
                     checked={useLocalLanguage}
                     onCheckedChange={setUseLocalLanguage}
                   />
                 </div>
-                <Separator orientation="vertical" className="h-4" />
-                <div className="flex items-center gap-2">
+                <Separator orientation="vertical" className="hidden sm:block h-4" />
+                <div className="flex items-center gap-2 min-w-[160px]">
                   <span className="text-xs text-gray-600">AI Model:</span>
                   <select
                     value={selectedRevoModel}
                     onChange={(e) => setSelectedRevoModel(e.target.value as RevoModel)}
-                    className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-1 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-1 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-[140px]"
                   >
                     <option value="revo-1.0">Revo 1.0</option>
                     <option value="revo-1.5">Revo 1.5</option>
@@ -452,8 +438,9 @@ export function ContentCalendar({
               </div>
             </div>
             <p className="text-xs text-gray-500 mt-2">
+<<<<<<< HEAD
               {selectedRevoModel === 'revo-2.0'
-                ? `🚀 Revo 2.0: Advanced image generation with character consistency`
+                ? `🚀 Revo 2.0: Next-Gen AI with native image generation, character consistency & intelligent editing`
                 : selectedRevoModel === 'revo-1.5'
                   ? `✨ Revo 1.5: Professional design principles with brand color integration`
                   : selectedRevoModel === 'revo-1.0'
@@ -471,7 +458,7 @@ export function ContentCalendar({
                   <div className="space-y-1">
                     <Label className="text-sm font-medium">Use Artifacts</Label>
                     <p className="text-xs text-muted-foreground">
-                      Enable to use your uploaded reference materials and exact-use content
+                      
                     </p>
                   </div>
                   <div className="flex items-center gap-2">

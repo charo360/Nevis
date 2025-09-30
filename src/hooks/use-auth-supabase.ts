@@ -263,6 +263,19 @@ export function useAuth() {
           loading: false,
           error: null,
         });
+          // Call server-side initializer to ensure subscription_plan and free credits
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+            if (token) {
+              await fetch('/api/users/initialize', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              });
+            }
+          } catch (e) {
+            console.warn('Failed to call user initializer:', e);
+          }
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Registration failed';

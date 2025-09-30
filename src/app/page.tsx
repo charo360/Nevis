@@ -22,6 +22,8 @@ import {
   Clock,
   X
 } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth-supabase';
 import { useToast } from '@/hooks/use-toast';
@@ -32,10 +34,9 @@ import { Badge } from '@/components/ui/badge';
 export default function HomePage() {
   const router = useRouter();
   const [isVisible, setIsVisible] = useState(false);
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading, getAccessToken } = useAuth();
   const [sessionActive, setSessionActive] = useState<boolean>(false);
   const { toast } = useToast();
-  const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
 
   // Typewriter animation for "AI Designer"
   const [displayText, setDisplayText] = useState('');
@@ -113,41 +114,69 @@ export default function HomePage() {
     return () => { mounted = false; if (interval) clearInterval(interval); };
   }, [user, signOut]);
 
-  const handleGetStarted = () => {
-    try {
-      router.push('/auth');
-    } catch (error) {
-    }
-  };
+        const createCheckout = async (priceId: string) => {
+          // If auth is still loading, wait and inform the user
+          if (loading) {
+            toast({ title: 'Please wait', description: 'Checking authentication status...', variant: 'default' });
+            return;
+          }
 
-  const createCheckout = async (priceId: string) => {
-    if (!user || !user.uid) {
-      router.push('/auth');
-      return;
-    }
+          if (!user || !user.userId) {
+            toast({ title: 'Sign in required', description: 'You need to sign in before purchasing credits.', variant: 'default' });
+            router.push('/auth');
+            return;
+          }
 
-    try {
-      const res = await fetch('/api/create-checkout-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId, quantity: 1, mode: 'payment', customerEmail: user.email, metadata: { userId: user.uid, priceId } })
-      });
+          try {
+            const token = await getAccessToken();
+            const res = await fetch('/api/create-checkout-session', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+              body: JSON.stringify({ priceId, quantity: 1, mode: 'payment', customerEmail: user.email, metadata: { userId: user.userId, priceId } })
+            });
 
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
 
-      const stripe = await stripePromise;
-      if (!stripe) throw new Error('Stripe failed to load');
+            // Defer loading Stripe until needed to reduce initial bundle size
+            const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
+            if (!stripe) throw new Error('Stripe failed to load');
 
-      if (data.url) {
-        window.location.href = data.url;
-      } else if (data.id) {
-        await stripe.redirectToCheckout({ sessionId: data.id });
-      }
-    } catch (err: any) {
-      toast({ variant: 'destructive', title: 'Checkout failed', description: String(err.message || err) });
-    }
-  };
+            if (data.url) {
+              window.location.href = data.url;
+            } else if (data.id) {
+              await stripe.redirectToCheckout({ sessionId: data.id });
+            }
+          } catch (err: any) {
+            toast({ variant: 'destructive', title: 'Checkout failed', description: String(err.message || err) });
+          }
+        };
+
+        const handleGetStarted = (priceId?: string) => {
+          try {
+            // If auth is still loading, do nothing and notify user
+            if (loading) {
+              toast({ title: 'Please wait', description: 'Checking authentication status...', variant: 'default' });
+              return;
+            }
+
+            // If user is not logged in, redirect to auth
+            if (!user || !user.userId) {
+              router.push('/auth');
+              return;
+            }
+
+            // If a priceId was provided, start the checkout flow for logged-in users
+            if (priceId) {
+              void createCheckout(priceId);
+              return;
+            }
+
+            // Default action for logged-in users: go to dashboard
+            router.push('/dashboard');
+          } catch (error) {
+          }
+        };
 
   const handleSignIn = () => {
     router.push('/auth');
@@ -172,9 +201,9 @@ export default function HomePage() {
           </div>
 
           <div className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">Features</a>
-            <a href="/pricing" className="text-gray-600 hover:text-gray-900 transition-colors">Pricing</a>
-            <a href="#about" className="text-gray-600 hover:text-gray-900 transition-colors">About</a>
+            <Link href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">Features</Link>
+            <Link href="/pricing" className="text-gray-600 hover:text-gray-900 transition-colors">Pricing</Link>
+            <Link href="#about" className="text-gray-600 hover:text-gray-900 transition-colors">About</Link>
             {sessionActive ? (
               <Button onClick={() => router.push('/dashboard')} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
                 Dashboard
@@ -189,7 +218,7 @@ export default function HomePage() {
                   Sign In
                 </Button>
                 <Button
-                  onClick={handleGetStarted}
+                  onClick={() => handleGetStarted()}
                   className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 cursor-pointer z-10 relative"
                 >
                   Get Started
@@ -227,7 +256,7 @@ export default function HomePage() {
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
               <Button
-                onClick={handleGetStarted}
+                onClick={() => handleGetStarted()}
                 size="lg"
                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-8 py-4 h-auto cursor-pointer z-10 relative"
               >
@@ -458,7 +487,7 @@ export default function HomePage() {
 
           <div className="text-center mt-12">
             <Button
-              onClick={handleGetStarted}
+              onClick={() => handleGetStarted()}
               size="lg"
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-8 py-4 h-auto"
             >
@@ -538,7 +567,7 @@ export default function HomePage() {
           {/* CTA */}
           <div className="text-center mt-16">
             <Button
-              onClick={handleGetStarted}
+              onClick={() => handleGetStarted()}
               size="lg"
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-8 py-4 h-auto"
             >
@@ -574,10 +603,14 @@ export default function HomePage() {
                   "Our AI agent cut post creation from 15 minutes to 30 seconds. Engagement soared by 300%! It's like having a designer that never sleeps."
                 </p>
                 <div className="flex items-center gap-3">
-                  <img
+                  <Image
                     src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=40&h=40&fit=crop&crop=face&auto=format&q=80"
                     alt="Sarah Chen"
-                    className="w-10 h-10 rounded-full object-cover"
+                    width={40}
+                    height={40}
+                    className="rounded-full object-cover"
+                    loading="lazy"
+                    unoptimized
                   />
                   <div>
                     <p className="font-semibold text-gray-900">Sarah Chen</p>
@@ -599,10 +632,14 @@ export default function HomePage() {
                   "It's like a designer that never sleeps. Perfectly on-brand every time. The agent learns our style and creates content that looks like our team made it."
                 </p>
                 <div className="flex items-center gap-3">
-                  <img
+                  <Image
                     src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face&auto=format&q=80"
                     alt="Marcus Rodriguez"
-                    className="w-10 h-10 rounded-full object-cover"
+                    width={40}
+                    height={40}
+                    className="rounded-full object-cover"
+                    loading="lazy"
+                    unoptimized
                   />
                   <div>
                     <p className="font-semibold text-gray-900">Marcus Rodriguez</p>
@@ -624,10 +661,14 @@ export default function HomePage() {
                   "We serve 3x more clients with the same team. Crevo's agent is a game changer. The cultural intelligence makes our global campaigns resonate perfectly."
                 </p>
                 <div className="flex items-center gap-3">
-                  <img
+                  <Image
                     src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face&auto=format&q=80"
                     alt="Alex Thompson"
-                    className="w-10 h-10 rounded-full object-cover"
+                    width={40}
+                    height={40}
+                    className="rounded-full object-cover"
+                    loading="lazy"
+                    unoptimized
                   />
                   <div>
                     <p className="font-semibold text-gray-900">Alex Thompson</p>
@@ -843,7 +884,7 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={handleGetStarted}
+                  onClick={() => handleGetStarted()}
                   className="w-full"
                   variant="outline"
                 >
@@ -892,7 +933,7 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => createCheckout('price_1RxYHyFptxIKIuiwekVOOCf3')}
+                  onClick={() => handleGetStarted('price_1SCkbnCik0ZJySexGw26mCgg')}
                   className="w-full"
                   variant="outline"
                 >
@@ -946,7 +987,7 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => createCheckout('price_1RxYIwFptxIKIuiwMVPibdo5')}
+                  onClick={() => handleGetStarted('price_1SCkefCik0ZJySexBO34LAsl')}
                   className="w-full"
                 >
                   Buy Credits
@@ -995,7 +1036,7 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => createCheckout('price_1RxYJzFptxIKIuiwqcRemLE8')}
+                  onClick={() => handleGetStarted('price_1SCkhJCik0ZJySexgkXpFKTO')}
                   className="w-full"
                   variant="outline"
                 >
@@ -1045,7 +1086,7 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => createCheckout('price_1RxYKfFptxIKIuiwCql1Wj0u')}
+                  onClick={() => handleGetStarted('price_1SCkjkCik0ZJySexpx9RGhu3')}
                   className="w-full"
                   variant="outline"
                 >
@@ -1099,7 +1140,7 @@ export default function HomePage() {
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                 <Button
-                  onClick={handleGetStarted}
+                  onClick={() => handleGetStarted()}
                   size="lg"
                   className="bg-white text-gray-900 hover:bg-gray-100 text-lg px-8 py-4 h-auto font-semibold"
                 >
@@ -1138,10 +1179,10 @@ export default function HomePage() {
             <div>
               <h3 className="font-semibold mb-4">Product</h3>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="/pricing" className="hover:text-white transition-colors">Pricing</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Templates</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">API</a></li>
+                <li><Link href="#features" className="hover:text-white transition-colors">Features</Link></li>
+                <li><Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
+                <li><Link href="/templates" className="hover:text-white transition-colors">Templates</Link></li>
+                <li><Link href="/api" className="hover:text-white transition-colors">API</Link></li>
               </ul>
             </div>
 
@@ -1149,10 +1190,10 @@ export default function HomePage() {
             <div>
               <h3 className="font-semibold mb-4">Company</h3>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">About</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
+                <li><Link href="/about" className="hover:text-white transition-colors">About</Link></li>
+                <li><Link href="/blog" className="hover:text-white transition-colors">Blog</Link></li>
+                <li><Link href="/careers" className="hover:text-white transition-colors">Careers</Link></li>
+                <li><Link href="/contact" className="hover:text-white transition-colors">Contact</Link></li>
               </ul>
             </div>
 
@@ -1160,10 +1201,10 @@ export default function HomePage() {
             <div>
               <h3 className="font-semibold mb-4">Support</h3>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Documentation</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
+                <li><Link href="/help" className="hover:text-white transition-colors">Help Center</Link></li>
+                <li><Link href="/docs" className="hover:text-white transition-colors">Documentation</Link></li>
+                <li><Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
+                <li><Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link></li>
               </ul>
             </div>
           </div>
@@ -1171,13 +1212,13 @@ export default function HomePage() {
           <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400">© 2024 Crevo. All rights reserved.</p>
             <div className="flex items-center gap-6 mt-4 md:mt-0">
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+              <a href="#" onClick={(e)=>e.preventDefault()} className="text-gray-400 hover:text-white transition-colors">
                 <Users className="w-5 h-5" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+              <a href="#" onClick={(e)=>e.preventDefault()} className="text-gray-400 hover:text-white transition-colors">
                 <Globe className="w-5 h-5" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+              <a href="#" onClick={(e)=>e.preventDefault()} className="text-gray-400 hover:text-white transition-colors">
                 <TrendingUp className="w-5 h-5" />
               </a>
             </div>
