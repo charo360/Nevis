@@ -933,7 +933,7 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => handleGetStarted('price_1SCkbnCik0ZJySexGw26mCgg')}
+                  onClick={() => handleGetStarted('price_1SCwe1Cik0ZJySexYVYW97uQ')}
                   className="w-full"
                   variant="outline"
                 >

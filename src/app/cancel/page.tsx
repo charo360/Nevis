@@ -15,12 +15,13 @@ export default function CancelPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Link href="/dashboard" className="block text-center px-6 py-3 bg-red-600 text-white rounded-lg shadow hover:bg-red-700">Return to Dashboard</Link>
-          <Link href="/pricing" className="block text-center px-6 py-3 border border-gray-200 rounded-lg hover:bg-gray-50">View Pricing Options</Link>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Link href="/dashboard" className="block text-center px-6 py-3 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 transition-colors">Return to Dashboard</Link>
+          <Link href="/" className="block text-center px-6 py-3 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors">Go to Home</Link>
+          <Link href="/" className="block text-center px-6 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">View Pricing</Link>
         </div>
 
-        <div className="mt-6 text-xs text-gray-400">If you think this is an error contact support@crevo.example</div>
+        <div className="mt-6 text-xs text-gray-400 text-center">If you think this is an error, contact support@crevo.app</div>
       </div>
     </div>
   )
