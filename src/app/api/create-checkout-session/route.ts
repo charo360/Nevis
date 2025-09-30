@@ -34,7 +34,7 @@ const PRICE_MAP: Record<string, { planId: string; credits: number; name: string 
   'price_1SCkjkCik0ZJySexpx9RGhu3': { planId: 'power', credits: 550, name: 'Enterprise Agent' },
   'price_1SCkhJCik0ZJySexgkXpFKTO': { planId: 'pro', credits: 250, name: 'Pro Agent' },
   'price_1SCkefCik0ZJySexBO34LAsl': { planId: 'growth', credits: 150, name: 'Growth Agent' },
-  'price_1SCkbnCik0ZJySexGw26mCgg': { planId: 'starter', credits: 50, name: 'Starter Agent' },
+  'price_1SCwe1Cik0ZJySexYVYW97uQ': { planId: 'starter', credits: 50, name: 'Starter Agent' },
   'price_1SCkZMCik0ZJySexGFq9FtxO': { planId: 'free', credits: 10, name: 'Try Agent Free' },
 }
 
@@ -54,8 +54,15 @@ export async function POST(req: NextRequest) {
       }, { status: 400 })
     }
 
-    const url = new URL(req.url)
-    const origin = url.origin || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    // Determine the correct origin based on environment
+    const getAppOrigin = () => {
+      if (process.env.NODE_ENV === 'production') {
+        return 'https://crevo.app'
+      }
+      return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'
+    }
+    
+    const origin = getAppOrigin()
 
     const quantity = body.quantity && body.quantity > 0 ? body.quantity : 1
     const mode = body.mode === 'subscription' ? 'subscription' : 'payment'
@@ -151,14 +158,12 @@ export async function POST(req: NextRequest) {
         })()
 
         const payload = {
-          stripe_session_id: session.id,
           user_id: verifiedUserId,
+          stripe_session_id: session.id,
           plan_id: mapped ? mapped.planId : 'custom',
           amount: defaultAmount,
-          currency: 'usd',
           status: 'pending',
           credits_added: mapped ? mapped.credits : 0,
-          metadata: metadataWithUser,
         }
 
         const { error: insertError } = await supabase.from('payment_transactions').insert(payload as any)
