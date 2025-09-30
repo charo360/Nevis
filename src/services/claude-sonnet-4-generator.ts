@@ -4,6 +4,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
+import { supabaseAdmin as supabase } from '@/lib/supabase/client';
 
 export interface ClaudeContentRequest {
   businessType: string;
@@ -13,6 +14,7 @@ export interface ClaudeContentRequest {
   targetAudience?: string;
   location?: string;
   useLocalLanguage?: boolean;
+  brandProfileId?: string; // For DB-based repetition tracking
   brandContext?: {
     colors?: string[];
     personality?: string;
@@ -21,6 +23,7 @@ export interface ClaudeContentRequest {
 }
 
 export interface ClaudeContentResponse {
+  format?: string; // Selected enforced format used
   headline: string;
   subheadline: string;
   cta: string;
@@ -44,8 +47,134 @@ export class ClaudeSonnet4Generator {
     return this.anthropic;
   }
 
+  // Track last used formats per brand+platform
+  private static recentFormats: Record<string, string[]> = {};
+
+  private static async fetchRecentDbPosts(brandProfileId?: string, platform?: string): Promise<Array<{ content?: string; format?: string }>> {
+    try {
+      if (!brandProfileId || !platform) return [];
+      const { data, error } = await supabase
+        .from('generated_posts')
+        .select('content, generation_settings')
+        .eq('brand_profile_id', brandProfileId)
+        .eq('platform', platform)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      if (error) {
+        console.warn('[Claude Sonnet 4] Supabase fetch error (generated_posts):', error.message);
+        return [];
+      }
+      return (data || []).map((row: any) => ({
+        content: row.content || '',
+        format: row.generation_settings?.format || undefined
+      }));
+    } catch (e) {
+      console.warn('[Claude Sonnet 4] Supabase fetch exception:', (e as Error).message);
+      return [];
+    }
+  }
+
+  private static rememberFormat(request: ClaudeContentRequest, format: string) {
+    const key = this.keyFor(request);
+    const arr = this.recentFormats[key] || (this.recentFormats[key] = []);
+    arr.push(format);
+    if (arr.length > 10) arr.shift();
+  }
+
+  private static getRecentlyUsedFormats(request: ClaudeContentRequest): string[] {
+    const key = this.keyFor(request);
+    return (this.recentFormats[key] || []).slice(-10);
+  }
+
+  private static chooseFormat = async (request: ClaudeContentRequest, available: string[]): Promise<string> => {
+    const recentMemory = this.getRecentlyUsedFormats(request);
+    let recentDb: string[] = [];
+    const dbPosts = await this.fetchRecentDbPosts(request.brandProfileId, request.platform);
+    recentDb = dbPosts.map(p => p.format).filter(Boolean) as string[];
+    const recentlyUsed = new Set([...recentMemory, ...recentDb]);
+    const candidates = available.filter(f => !recentlyUsed.has(f));
+    if (candidates.length > 0) return candidates[Math.floor(Math.random() * candidates.length)];
+    // If all recently used, pick least recently used by random fallback
+    return available[Math.floor(Math.random() * available.length)];
+  };
+
   private static keyFor(request: ClaudeContentRequest) {
-    return `${request.businessName}::${request.platform}`.toLowerCase();
+    // Prefer brandProfileId for exact scoping; fallback to businessName
+    const brandKey = request.brandProfileId ? `${request.brandProfileId}::${request.platform}` : `${request.businessName}::${request.platform}`;
+    return brandKey.toLowerCase();
+  }
+
+
+  // Recent products memory per brand/platform to rotate SKUs without repetition
+  private static recentProducts: Record<string, string[]> = {};
+
+  private static rememberProduct(request: ClaudeContentRequest, productName: string) {
+    const key = this.keyFor(request);
+    const arr = this.recentProducts[key] || (this.recentProducts[key] = []);
+    arr.push(productName);
+    if (arr.length > 10) arr.shift();
+  }
+
+  private static getRecentlyUsedProducts(request: ClaudeContentRequest): string[] {
+    const key = this.keyFor(request);
+    return (this.recentProducts[key] || []).slice(-10);
+  }
+
+  // Parse product/service data from the existing services field (string | string[] | object[])
+  private static parseProductsFromServices(services: any): Array<{ name: string; price?: string; discount?: string; features?: string[]; raw?: any; }> {
+    const items: Array<{ name: string; price?: string; discount?: string; features?: string[]; raw?: any; }> = [];
+    const addItem = (name: string, desc?: string, priceField?: any, raw?: any) => {
+      const text = [name, desc || '', typeof priceField === 'string' ? priceField : ''].filter(Boolean).join(' | ');
+      const priceRegex = /(KSh|KES|₵|GHS|₦|NGN|Rs|₹|\$|£|€|R)\s?\d{1,3}(?:[\,\s]\d{3})*(?:\.\d{1,2})?|(?:from|starting at)\s+(KSh|KES|₵|GHS|₦|NGN|Rs|₹|\$|£|€|R)\s?\d{1,3}(?:[\,\s]\d{3})*(?:\.\d{1,2})?/gi;
+      const discountRegex = /(\d{1,2}|[1-9]\d)%\s?(off|discount)|save\s+(KSh|KES|₵|GHS|₦|NGN|Rs|₹|\$|£|€|R)\s?\d{1,3}(?:[\,\s]\d{3})*/gi;
+      const featureRegex = /(\d+\s?GB|\d+\s?MP|\d{2,3}"|\d{2,3}”|warranty|genuine|original|same[-\s]?day\s+delivery|delivery|m-?pesa|pos|bank\s+transfer|installments?|trade-?in|fast\s+charging|battery|camera|oled|amoled|retina|ram|storage)/gi;
+      const priceMatch = text.match(priceRegex)?.[0];
+      const discountMatch = text.match(discountRegex)?.[0];
+      const features = Array.from(new Set((desc || '').match(featureRegex) || [])).slice(0, 6);
+      items.push({ name: name.trim(), price: priceMatch?.trim(), discount: discountMatch?.trim(), features, raw });
+    };
+
+    try {
+      if (!services) return items;
+      if (Array.isArray(services)) {
+        for (const s of services) {
+          if (!s) continue;
+          if (typeof s === 'string') {
+            const line = s.trim();
+            if (!line) continue;
+            // try to split name:desc if present
+            const [name, ...rest] = line.split(/[:\-\u2013\u2014]/);
+            const desc = rest.join(' ').trim();
+            addItem(name, desc || line, undefined, s);
+          } else if (typeof s === 'object') {
+            const name = s.name || s.title || s.productName || '';
+            const desc = s.description || s.details || '';
+            const price = s.price || s.currentPrice || s.amount || '';
+            if (name || desc || price) addItem(String(name || desc).slice(0, 120), String(desc || ''), price, s);
+          }
+        }
+      } else if (typeof services === 'string') {
+        const lines = services.split(/\n|\r|;|\|/);
+        for (const rawLine of lines) {
+          const line = rawLine.trim();
+          if (!line) continue;
+          const [name, ...rest] = line.split(/[:\-\u2013\u2014]/);
+          const desc = rest.join(' ').trim();
+          addItem(name, desc || line, undefined, rawLine);
+        }
+      }
+    } catch (e) {
+      console.warn('[Claude Sonnet 4] parseProductsFromServices error:', (e as Error).message);
+    }
+
+    // Deduplicate by name
+    const seen = new Set<string>();
+    return items.filter(it => {
+      const key = it.name.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   }
 
   private static normalize(text: string): string[] {
@@ -55,6 +184,39 @@ export class ClaudeSonnet4Generator {
       .replace(/[^a-z0-9\s]/g, ' ')
       .split(/\s+/)
       .filter(w => w && !stop.has(w));
+  }
+
+  // Generate creative concept first (Revo 2.0 approach)
+  private static async generateCreativeConcept(request: ClaudeContentRequest): Promise<string> {
+    try {
+      const anthropic = this.getAnthropicClient();
+      const conceptPrompt = `Generate a creative concept for ${request.businessName} (${request.businessType}) on ${request.platform}.
+
+Focus on:
+- Unique visual storytelling approach
+- Brand personality expression
+- Platform-specific engagement strategies
+- Cultural relevance for ${request.location || 'global audience'}
+
+Return a brief creative concept (2-3 sentences) that will guide the content creation.`;
+
+      const response = await anthropic.messages.create({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 300,
+        temperature: 0.8,
+        messages: [{ role: 'user', content: conceptPrompt }]
+      });
+
+      const content = response.content[0];
+      if (content.type === 'text') {
+        return content.text.trim();
+      }
+    } catch (error) {
+      console.warn('⚠️ [Claude Sonnet 4] Creative concept generation failed, using fallback');
+    }
+
+    // Fallback concept
+    return `Create engaging content for ${request.businessName} that showcases their ${request.businessType} expertise with authentic, professional appeal tailored for ${request.platform}.`;
   }
 
   private static jaccard(a: string, b: string): number {
@@ -115,6 +277,142 @@ export class ClaudeSonnet4Generator {
     if (buzz.length) reasons.push(`Contains corporate buzzwords: ${Array.from(new Set(buzz)).join(', ')}`);
     return { similar: reasons.length > 0, reasons };
   }
+  private static getCulturalRule(location?: string, useLocalLanguage?: boolean): { name: string; regex: RegExp; extraRules: string } | null {
+    // Apply cultural guidance whenever a location is provided; code-switching only if appropriate
+    const loc = (location || '').toLowerCase();
+    const mk = (name: string, examples: string[], notes: string[]): { name: string; regex: RegExp; extraRules: string } => ({
+      name,
+      regex: new RegExp(examples.join('|'), 'i'),
+      extraRules: `REQUIRED ${name.toUpperCase()} CULTURAL ELEMENTS (MUST INCLUDE):\n- Natural local code-switching where appropriate\n- Specific locality references when relevant\n- Payment/holiday references only if contextually appropriate\nExamples to consider (use naturally, not all at once): ${examples.join(', ')}\nNotes: ${notes.join(' ')}`
+    });
+
+    // Specific over regional
+    if (loc.includes('ghana') || loc.includes('accra') || loc.includes('kumasi')) {
+      return mk('Ghana', ['Ghana', 'Accra', 'Kumasi', 'cedi', 'GHS', 'MoMo', 'mobile money'], ['Avoid stereotypes; use natural brand-appropriate tone.']);
+    }
+    if (loc.includes('kenya') || loc.includes('nairobi')) {
+      return mk('Kenya', ['Mpesa', 'M-Pesa', 'Nairobi', 'Westlands', 'Karibu', 'Habari', 'Sawa'], ['Use Swahili/English mix naturally; avoid overuse.']);
+    }
+    if (loc.includes('india') || loc.includes('delhi') || loc.includes('mumbai') || loc.includes('bengaluru') || loc.includes('bangalore') || loc.includes('chennai')) {
+      return mk('India', ['UPI', 'Rupee', '₹', 'Delhi', 'Mumbai', 'Bengaluru', 'Chennai', 'Diwali', 'Holi', 'namaste', 'jugaad'], ['Use Hinglish only if appropriate to audience; avoid clichés.']);
+    }
+    if (loc.includes('united states') || loc.includes('usa') || loc.includes('america') || loc.includes('u.s.')) {
+      return mk('USA', ['US', 'USA', 'American', 'NYC', 'Los Angeles', 'San Francisco', 'Black Friday', 'Thanksgiving'], ['Prefer city/region specifics tied to the brand audience.']);
+    }
+    if (loc.includes('canada') || loc.includes('toronto') || loc.includes('vancouver') || loc.includes('montreal')) {
+      return mk('Canada', ['Canada', 'Canadian', 'Toronto', 'Vancouver', 'Montreal', 'CAD', 'C$'], ['Avoid stereotypes; focus on locality and seasons.']);
+    }
+    // Europe subregions first
+    if (loc.includes('united kingdom') || loc.includes('uk') || loc.includes('london') || loc.includes('manchester')) {
+      return mk('UK', ['UK', 'London', 'Manchester', 'GBP', '£', 'British'], ['Prefer city-level references and seasons; avoid clichés.']);
+    }
+    if (loc.includes('germany') || loc.includes('berlin') || loc.includes('munich') || loc.includes('münchen')) {
+      return mk('Germany', ['Germany', 'Berlin', 'Munich', 'Euro', '€', 'DE'], ['Neutral tone; avoid stereotypes; focus on locality.']);
+    }
+    if (loc.includes('france') || loc.includes('paris') || loc.includes('lyon')) {
+      return mk('France', ['France', 'Paris', 'Lyon', 'Euro', '€', 'FR'], ['Avoid clichés; keep references natural and brand-appropriate.']);
+    }
+    if (loc.includes('spain') || loc.includes('madrid') || loc.includes('barcelona')) {
+      return mk('Spain', ['Spain', 'Madrid', 'Barcelona', 'Euro', '€', 'ES'], ['Use local city/event references when relevant.']);
+    }
+    if (loc.includes('italy') || loc.includes('rome') || loc.includes('milan')) {
+      return mk('Italy', ['Italy', 'Rome', 'Milan', 'Euro', '€', 'IT'], ['Keep references authentic; avoid stereotypes.']);
+    }
+    if (loc.includes('europe') || loc.includes('eu')) {
+      return mk('Europe', ['Europe', 'EU', 'Euro', '€', 'Berlin', 'Paris', 'Madrid', 'Milan', 'Amsterdam', 'Stockholm'], ['Prefer specific country/city references over generic "Europe" where possible.']);
+    }
+    // West Africa + Nigeria
+    if (loc.includes('nigeria') || loc.includes('lagos') || loc.includes('abuja') || loc.includes('naira') || loc.includes('₦')) {
+      return mk('Nigeria', ['Nigeria', 'Lagos', 'Abuja', 'Naira', '₦', 'bank transfer', 'POS'], ['Avoid slang unless brand voice; use authentic payment/locale cues.']);
+    }
+    if (loc.includes('west africa') || loc.includes('west-africa') || loc.includes('westafrica')) {
+      return mk('West Africa', ['West Africa', 'ECOWAS', 'Lagos', 'Accra', 'Abidjan', 'Abuja', 'Kumasi', 'mobile money'], ['Use neutral, authentic references; avoid slang unless brand voice.']);
+    }
+    return null;
+  }
+
+  private static collapseDuplicateWords(text: string): string {
+    if (!text) return text;
+    // Collapse immediate duplicates: "best best" -> "best"
+    return text.replace(/\b(\w+)(\s+\1\b)+/gi, '$1').replace(/\s{2,}/g, ' ').trim();
+  }
+
+  private static tidyPunctuation(text: string): string {
+    if (!text) return text;
+    let t = text.trim();
+    // Ensure single punctuation at the end of sentences
+    t = t.replace(/([!?\.]){2,}$/g, '$1');
+    // Capitalize first letter conservatively
+    t = t.charAt(0) ? t.charAt(0).toUpperCase() + t.slice(1) : t;
+    return t;
+  }
+
+  private static applyQualityGuards(parsed: { headline?: string; subheadline?: string; caption?: string; cta?: string }): void {
+    const fix = (s?: string) => this.tidyPunctuation(this.collapseDuplicateWords(s || ''));
+    parsed.headline = fix(parsed.headline);
+    parsed.subheadline = fix(parsed.subheadline);
+    parsed.caption = fix(parsed.caption);
+    parsed.cta = this.collapseDuplicateWords(parsed.cta || '');
+  }
+
+  private static async logBusinessTypePerformance(params: { businessType: string; platform: string; format?: string; hadRetry: boolean; issues: string[] }): Promise<void> {
+    try {
+      const { businessType, platform, format, hadRetry, issues } = params;
+      await supabase.from('generation_analytics').insert([
+        {
+          business_type: businessType,
+          platform,
+          format,
+          had_retry: hadRetry,
+          issues,
+          created_at: new Date().toISOString()
+        }
+      ]);
+    } catch (e) {
+      console.warn('[Claude Sonnet 4] Analytics insert skipped:', (e as Error).message);
+    }
+  }
+  private static hasGrammarSignals(text: string): boolean {
+    if (!text) return false;
+    // Repeated letters like "goooood" or "accouunt", or multiple punctuation
+    if (/(\w)\1{2,}/i.test(text)) return true;
+    if (/[!?\.]{3,}/.test(text)) return true;
+    return false;
+  }
+
+  private static async grammarRefineWithClaude(parsed: { headline?: string; subheadline?: string; caption?: string; cta?: string; hashtags?: string[] }): Promise<typeof parsed> {
+    try {
+      const client = this.getAnthropicClient();
+      const json = JSON.stringify({
+        headline: parsed.headline || '',
+        subheadline: parsed.subheadline || '',
+        cta: parsed.cta || '',
+        caption: parsed.caption || '',
+        hashtags: parsed.hashtags || []
+      });
+      const prompt = `You are a world-class copy editor. Correct spelling and grammar ONLY. Do not add facts. Do not change meaning. Keep the SAME JSON keys and structure. Return JSON only.\n\nJSON:\n${json}`;
+      const resp = await client.messages.create({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 800,
+        temperature: 0,
+        messages: [{ role: 'user', content: prompt }]
+      });
+      const content = resp.content[0];
+      if (content.type === 'text') {
+        let t = content.text.trim();
+        const m = t.match(/```json\s*([\s\S]*?)\s*```/);
+        if (m) t = m[1].trim();
+        const refined = JSON.parse(t);
+        return refined;
+      }
+    } catch (e) {
+      console.warn('[Claude Sonnet 4] Grammar refine skipped:', (e as Error).message);
+    }
+    return parsed;
+  }
+
+
+
 
   /**
    * Generate content using Claude Sonnet 4 ONLY - NO FALLBACKS
@@ -132,7 +430,41 @@ export class ClaudeSonnet4Generator {
     const hashtagCount = request.platform.toLowerCase() === 'instagram' ? 5 : 3;
 
     const anthropic = this.getAnthropicClient();
-    const prompt = this.buildClaudePrompt(request, hashtagCount, this.getAvoidSnippet(request));
+
+    // Enforce format selection (no defaulting). Exclude recently used formats (memory + DB when available)
+    const contentFormats = [
+      'Problem/Solution', 'Feature Focus', 'Humor/Relatable', 'Comparison', 'Social Proof (generic, no names)',
+      'How-To (3-step)', 'Myth vs Fact', 'FAQ (3 Q&A)', 'Data Point Insight', 'Limited-Time Offer (ethical, no fake scarcity)',
+      'Community Spotlight (no real names)', 'Local Slang/Language Mix', 'Micro Case Study (no names)', 'Objection Handling', 'Checklist (short, practical)'
+    ];
+    const enforcedFormat = await this.chooseFormat(request, contentFormats);
+
+    // Cultural enforcement rules (region-aware)
+    const cultural = this.getCulturalRule(request.location, request.useLocalLanguage);
+
+    const extraRules = `STEP 1: You MUST use exactly this format and its structure.\nSTEP 2: Follow that format's structure strictly; no generic benefit blurbs.\nSTEP 3: Validate uniqueness > 80% against last outputs; if fails, regenerate with different phrasing.\nSTEP 4: Do not include any statistics, numbers, or certifications unless provided in input.\n${cultural ? cultural.extraRules : ''}`;
+
+    // STEP 1: Generate creative concept first (Revo 2.0 approach)
+    const creativeConcept = await this.generateCreativeConcept(request);
+    console.log('✅ [Claude Sonnet 4] Creative concept generated:', creativeConcept.slice(0, 100) + '...');
+
+    // Build product context from existing services for retail-focused ads
+    const productCandidates = this.parseProductsFromServices((request as any).servicesRaw ?? request.services);
+    let selectedProduct: { name: string; price?: string; discount?: string; features?: string[] } | undefined;
+    let productBlock: string | undefined;
+    if (productCandidates.length > 0) {
+      const recent = new Set(this.getRecentlyUsedProducts(request));
+      const available = productCandidates.filter(c => !recent.has(c.name));
+      selectedProduct = (available.length > 0 ? available : productCandidates)[Math.floor(Math.random() * (available.length > 0 ? available.length : productCandidates.length))];
+      const lines = [
+        `- Selected Product: ${selectedProduct.name}${selectedProduct.price ? ` — ${selectedProduct.price}` : ''}${selectedProduct.discount ? ` — ${selectedProduct.discount}` : ''}`,
+        selectedProduct.features && selectedProduct.features.length ? `  Features: ${selectedProduct.features.slice(0, 4).join(', ')}` : ''
+      ].filter(Boolean);
+      productBlock = `Use this specific product for a retail spotlight with a price anchor and action CTA.\n${lines.join('\n')}`;
+    }
+
+    // STEP 2: Build focused prompt with creative concept (Revo 2.0 style)
+    const prompt = this.buildFocusedClaudePrompt(request, hashtagCount, creativeConcept, enforcedFormat, productBlock);
 
     // Log prompt details for debugging
     console.log('🔍 [Claude Sonnet 4] Prompt length:', prompt.length);
@@ -141,8 +473,8 @@ export class ClaudeSonnet4Generator {
 
     const response = await anthropic.messages.create({
       model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 2000, // Increased for longer responses
-      temperature: 0.98, // Even higher temperature for maximum creativity
+      max_tokens: 2000,
+      temperature: 0.9, // Revo 2.0 uses 0.9 for better balance
       messages: [{
         role: 'user',
         content: prompt
@@ -190,7 +522,7 @@ export class ClaudeSonnet4Generator {
 
       if (escapeNext) {
         escapeNext = false;
-        continue;
+
       }
 
       if (char === '\\') {
@@ -226,6 +558,9 @@ export class ClaudeSonnet4Generator {
     let parsed;
     try {
       parsed = JSON.parse(jsonContent);
+      // Always-on grammar refine to correct spelling/grammar while preserving meaning and JSON
+      try { parsed = await this.grammarRefineWithClaude(parsed); } catch { }
+
     } catch (parseError) {
       console.error('❌ [Claude Sonnet 4] JSON parse error:', parseError);
       console.error('❌ [Claude Sonnet 4] Raw content:', jsonContent);
@@ -261,6 +596,9 @@ export class ClaudeSonnet4Generator {
       }
     }
 
+    // Apply quality guards (dedupe words, tidy punctuation)
+    this.applyQualityGuards(parsed);
+
     console.log('✅ [Claude Sonnet 4] Content generated successfully:', {
       headline: parsed.headline,
       subheadline: parsed.subheadline?.substring(0, 50) + '...',
@@ -269,18 +607,65 @@ export class ClaudeSonnet4Generator {
       platform: request.platform
     });
 
+
+    // Additional validation: cultural and fact-safety checks (post-parse)
+    const combinedText = `${parsed.headline || ''} ${parsed.subheadline || ''} ${parsed.caption || ''}`;
+
+    // Cultural enforcement (region-aware)
+    const culturalRule = this.getCulturalRule(request.location, request.useLocalLanguage);
+    let culturalIssue = false;
+    if (culturalRule && !culturalRule.regex.test(combinedText)) {
+      culturalIssue = true;
+      console.warn(`⚠️ [Claude Sonnet 4] Missing required ${culturalRule.name} cultural elements — will retry with stronger constraints`);
+    }
+
+    // Fact-safety: disallow unverified stats/claims (percentages or large numbers)
+    const riskyNumbers = /(\d{4,}|\d+%)/;
+    let factIssue = false;
+    if (riskyNumbers.test(combinedText)) {
+      factIssue = true;
+      console.warn('⚠️ [Claude Sonnet 4] Potential unverified numeric claims detected — will retry without numbers');
+    }
+
+
+    // DB-based repetition check against last 5 posts (if available)
+    let dbSimilar = false;
+    let dbReasons: string[] = [];
+    try {
+      const recentDb = await this.fetchRecentDbPosts(request.brandProfileId, request.platform);
+      for (const p of recentDb.slice(0, 5)) {
+        const sim = this.jaccard(parsed.caption || '', p.content || '');
+        if (sim > 0.7) {
+          dbSimilar = true;
+          dbReasons.push(`Caption too similar to a recent post (${(sim * 100).toFixed(0)}%)`);
+          break;
+        }
+      }
+    } catch { }
+
+
     // Diversity check and optional single retry
     let { similar, reasons } = this.tooSimilar(request, { headline: parsed.headline, subheadline: parsed.subheadline || '', caption: parsed.caption || '' });
-    if (similar) {
-      console.warn('⚠️ [Claude Sonnet 4] Similarity/buzzword issues detected, retrying once with stronger constraints:', reasons);
+    if (dbSimilar) {
+      similar = true;
+      reasons = reasons.concat(dbReasons);
+    }
+    if (similar || culturalIssue || factIssue) {
+      const issues = [
+        ...(similar ? reasons : []),
+        ...(culturalIssue ? [`Missing ${culturalRule?.name || 'regional'} cultural elements`] : []),
+        ...(factIssue ? ['Potential unverified numeric claims'] : []),
+      ];
+      console.warn('⚠️ [Claude Sonnet 4] Validation issues detected, retrying once with stronger constraints:', issues);
       const avoid = (this.getAvoidSnippet(request) ? this.getAvoidSnippet(request) + '\n' : '') +
         'Additional reasons to avoid: ' + reasons.join('; ');
-      const retryPrompt = this.buildClaudePrompt(request, hashtagCount, avoid);
+      const retryExtra = `${culturalIssue ? `MUST include ${culturalRule?.name || 'regional'} cultural elements as specified.` : ''}${factIssue ? '\nREMOVE all numeric claims, percentages, or specific numbers.' : ''}`;
+      const retryPrompt = this.buildClaudePrompt(request, hashtagCount, avoid, enforcedFormat, retryExtra, productBlock);
       console.log('🔁 [Claude Sonnet 4] Retrying with updated prompt (length):', retryPrompt.length);
       const retryResp = await anthropic.messages.create({
         model: 'claude-3-5-sonnet-20241022',
         max_tokens: 2000,
-        temperature: 0.98,
+        temperature: 0.9, // Match main generation temperature
         messages: [{ role: 'user', content: retryPrompt }]
       });
       const retryContent = retryResp.content[0];
@@ -312,7 +697,26 @@ export class ClaudeSonnet4Generator {
             if (p2.hashtags && p2.hashtags.length !== hashtagCount) {
               if (p2.hashtags.length > hashtagCount) p2.hashtags = p2.hashtags.slice(0, hashtagCount);
             }
+            // Apply quality guards on retry parse as well
+            this.applyQualityGuards(p2);
             parsed = p2;
+            // Optional grammar refine on retry
+            // Enhanced fallback content system (Revo 2.0 approach)
+            if (!p2.caption || p2.caption.includes('Experience the excellence of')) {
+              const creativityLevel = Math.floor(Math.random() * 10);
+              const fallbackCaptions = [
+                `Transform your ${request.businessType.toLowerCase()} experience with ${request.businessName}. We're redefining excellence in ${request.location || 'the industry'}.`,
+                `Ready to elevate your ${request.businessType.toLowerCase()} journey? ${request.businessName} brings innovation and expertise to ${request.location || 'every project'}.`,
+                `Discover why ${request.businessName} is the preferred choice for ${request.businessType.toLowerCase()} solutions in ${request.location || 'the market'}.`,
+                `Your success is our mission. ${request.businessName} delivers exceptional ${request.businessType.toLowerCase()} services with a personal touch.`,
+                `Innovation meets reliability at ${request.businessName}. Experience the future of ${request.businessType.toLowerCase()} today.`
+              ];
+              p2.caption = fallbackCaptions[creativityLevel % fallbackCaptions.length];
+            }
+
+            // Always-on grammar refine on retry parse as well
+            try { parsed = await this.grammarRefineWithClaude(p2); } catch { }
+
             ({ similar, reasons } = this.tooSimilar(request, { headline: parsed.headline, subheadline: parsed.subheadline || '', caption: parsed.caption || '' }));
           } catch { }
         }
@@ -323,9 +727,41 @@ export class ClaudeSonnet4Generator {
       console.warn('⚠️ [Claude Sonnet 4] Still similar after retry:', reasons);
     } else {
       this.rememberOutput(request, { headline: parsed.headline, subheadline: parsed.subheadline || '', cta: parsed.cta, caption: parsed.caption || '' });
+      // Re-validate cultural/fact after retry parse
+      {
+        const combinedText2 = `${parsed.headline || ''} ${parsed.subheadline || ''} ${parsed.caption || ''}`;
+        if (culturalRule) {
+          culturalIssue = !culturalRule.regex.test(combinedText2);
+        }
+        const riskyNumbers2 = /(\d{4,}|\d+%)/;
+        factIssue = riskyNumbers2.test(combinedText2);
+      }
+
     }
 
+    // Log analytics (best-effort)
+    const hadRetry = (similar || culturalIssue || factIssue || dbSimilar);
+    this.logBusinessTypePerformance({
+      businessType: request.businessType,
+      platform: request.platform,
+      format: enforcedFormat,
+      hadRetry,
+      issues: [
+        ...(reasons || []),
+        ...(culturalIssue ? [`Missing ${culturalRule?.name || 'regional'} elements`] : []),
+        ...(factIssue ? ['Numeric claims detected'] : []),
+        ...(dbSimilar ? dbReasons : [])
+      ]
+    });
+
+    this.rememberFormat(request, enforcedFormat);
+
+
+    // Remember selected product to avoid repetition next time
+    try { if (selectedProduct?.name) this.rememberProduct(request, selectedProduct.name); } catch { }
+
     return {
+      format: enforcedFormat,
       headline: parsed.headline,
       subheadline: parsed.subheadline || `Quality ${request.businessType.toLowerCase()} services`,
       cta: parsed.cta,
@@ -336,7 +772,63 @@ export class ClaudeSonnet4Generator {
 
 
 
-  private static buildClaudePrompt(request: ClaudeContentRequest, hashtagCount: number, avoidSnippet?: string): string {
+  // Build focused prompt using Revo 2.0 approach (shorter, more structured)
+  private static buildFocusedClaudePrompt(request: ClaudeContentRequest, hashtagCount: number, creativeConcept: string, enforcedFormat: string, productBlock?: string): string {
+    const creativityBoost = Math.floor(Math.random() * 10) + 1;
+
+    return `Generate UNIQUE and CREATIVE social media content for ${request.businessName} (${request.businessType}) on ${request.platform}.
+
+🎯 CREATIVITY REQUIREMENT: This must be COMPLETELY DIFFERENT from any previous content. Use creativity level ${creativityBoost}/10.
+
+CREATIVE CONCEPT: ${creativeConcept}
+LOCATION: ${request.location || 'Global'}
+BUSINESS FOCUS: ${request.businessType}
+PLATFORM: ${request.platform}
+ENFORCED FORMAT: ${enforcedFormat}
+${productBlock ? `\nPRODUCT FOCUS:\n${productBlock}\n` : ''}
+
+🚫 ANTI-REPETITION RULES:
+- DO NOT use "Experience the excellence of" - BANNED PHRASE
+- DO NOT use generic templates or repetitive patterns
+- DO NOT repeat previous captions - be completely original
+- DO NOT use placeholder text - create authentic content
+- CREATE fresh, unique content every time
+
+✅ CONTENT REQUIREMENTS:
+1. HEADLINE (max 6 words): Catchy, unique, attention-grabbing
+2. SUBHEADLINE (max 25 words): Compelling, specific value proposition
+3. CAPTION (50-100 words): Engaging, authentic, conversational, UNIQUE
+4. CALL-TO-ACTION (2-4 words): Action-oriented, compelling
+5. HASHTAGS (EXACTLY ${hashtagCount}): ${request.platform === 'instagram' ? 'Instagram gets 5 hashtags' : 'Other platforms get 3 hashtags'}
+
+🎨 CONTENT STYLE:
+- Write like a sophisticated marketer who understands ${request.location || 'the local market'}
+- Use persuasive, engaging language that drives interest
+- Be conversational and authentic, not corporate
+- Include specific benefits and value propositions
+- Make it feel personal and relatable
+- Use local cultural context when appropriate
+
+📱 PLATFORM OPTIMIZATION:
+- ${request.platform === 'instagram' ? 'Instagram: Visual storytelling, lifestyle focus, 5 strategic hashtags' : 'Other platforms: Professional tone, business focus, 3 targeted hashtags'}
+
+🌍 CULTURAL INTELLIGENCE:
+- Adapt tone for ${request.location || 'global audience'}
+- Use culturally relevant references when appropriate
+- Consider local business practices and communication styles
+
+Format as JSON:
+{
+  "headline": "...",
+  "subheadline": "...",
+  "caption": "...",
+  "cta": "...",
+  "hashtags": ["#tag1", "#tag2", ...]
+}`;
+  }
+
+  // Keep original buildClaudePrompt for fallback/retry scenarios
+  private static buildClaudePrompt(request: ClaudeContentRequest, hashtagCount: number, avoidSnippet?: string, enforcedFormat?: string, extraRules?: string, productBlock?: string): string {
     const languageInstruction = request.useLocalLanguage && request.location
       ? `- Use English with natural local language elements appropriate for ${request.location} (mix English with local language for authentic feel)`
       : `- Use English only, do not use local language`;
@@ -400,7 +892,7 @@ export class ClaudeSonnet4Generator {
     ];
 
     const selectedAngle = contentAngles[Math.floor(Math.random() * contentAngles.length)];
-    const selectedFormat = contentFormats[Math.floor(Math.random() * contentFormats.length)];
+    const selectedFormat = enforcedFormat || contentFormats[Math.floor(Math.random() * contentFormats.length)];
 
     // Banned phrases from previous generations to prevent repetition
     const bannedPhrases = [
@@ -412,6 +904,7 @@ export class ClaudeSonnet4Generator {
     ];
 
     return `🎯 CREATIVE SESSION #${randomSeed} | TIMESTAMP: ${timestamp} | SESSION: ${sessionId}
+${productBlock ? '\nRETAIL EXECUTION RULES (auto-applied):\n- Use the SELECTED PRODUCT above for a product spotlight ad.\n- Include exact price anchor (or "from" price if present).\n- If discount is present, mention it clearly and ethically.\n- Keep headline ≤ 6 words; subheadline ≤ 25 words total.\n- Use retail CTAs (Shop Now, Order Today, Visit Store) appropriate to platform.\n- Use local cues like M-Pesa or delivery as supporting details, not headline.\n' : ''}
 
 🚨 EXTREME ANTI-REPETITION PROTOCOL ACTIVATED 🚨
 
@@ -420,6 +913,11 @@ MANDATORY UNIQUENESS DIRECTIVE: You are a ${selectedPersonality} creating COMPLE
 CREATIVE ANGLE FOR THIS SESSION: ${selectedAngle}
 
 FORMAT FOR THIS SESSION: ${selectedFormat}
+
+${extraRules ? `\n${extraRules}\n` : ''}
+
+LANGUAGE POLICY: ${languageInstruction}
+
 
 ⚠️ CRITICAL REPETITION WARNING ⚠️
 The following phrases are ABSOLUTELY BANNED and must NEVER appear in your response:
@@ -452,6 +950,25 @@ BUSINESS TO ANALYZE:
 - Location: ${request.location || 'Not specified'}
 - Website/Social: Not provided
 ${brandContextText}
+${productBlock ? `\nPRODUCT CATALOG SNAPSHOT (parsed from brand services):\n${productBlock}\n` : ''}
+
+	BUSINESS MODEL ANALYSIS & CONVERSION MAPPING:
+	- Identify which category best fits this business from: Banking/Fintech, E-commerce/Retail, Restaurant/Food, Local Services, App/Software, Experience/Events.
+	- Then apply the matching strategy below to craft action-oriented content that drives the correct next step.
+
+	CATEGORY PLAYBOOKS (pick the single best fit):
+	- Banking/Fintech: Trust + security + convenience. Mention features that reduce friction. CTA examples: "Open Account", "Get Started", "Apply Now".
+	- E-commerce/Retail: Product specifics (use-case, materials, variants), benefits, social proof (generic), optional price cues. CTA: "Shop Now", "Add to Cart", "Visit Store".
+	- Restaurant/Food: Sensory language + dish specificity + occasion fit + location cue. CTA: "Reserve Table", "Order Now", "Visit Today".
+	- Local Services: Before/after, the job in action, tools/equipment, proof of reliability. CTA: "Book Service", "Get Quote", "Call Now".
+	- App/Software: Feature→Value mapping, problem solved, onboarding ease. CTA: "Download App", "Try Free", "Start Free Trial".
+	- Experience/Events: Date/time/location clarity, what attendees get, social energy. CTA: "RSVP", "Get Tickets", "Join Us".
+
+	ACTION LOGIC:
+	- Determine primary customer journey: browse→buy vs book→visit vs download→use.
+	- Ensure the CTA matches that journey, and the caption narrates the path to action.
+	- Create natural urgency (limited availability, seasonal relevance) without fake scarcity.
+
 
 ADVANCED INTELLIGENCE ANALYSIS REQUIRED:
 

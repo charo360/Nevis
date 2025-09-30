@@ -636,7 +636,7 @@ Respond with ONLY valid JSON:
       model: 'gpt-4o',
       messages: [{
         role: 'system',
-        content: `You are an expert content creator who creates authentic, business-specific content. 
+        content: `You are an expert content creator who creates authentic, business-specific content.
 
 STRICT RULES:
 - NEVER use these overused words: upgrade, transform, revolutionize, solutions, excellence, premium, ultimate, cutting-edge, innovative, breakthrough, game-changer, elevate, empower, unlock, discover
@@ -1043,31 +1043,32 @@ INTELLIGENT CONTENT STRATEGY (Based on business analysis):
 - Content Tone: ${businessAnalysis.contentTone}
 - Local Insights: ${businessAnalysis.localInsights.join(', ')}
 
-🎯 PRODUCT-LIFESTYLE INTEGRATION REQUIREMENTS (BALANCED APPROACH):
-Create content showing AUTHENTIC PRODUCT USE within natural lifestyle scenarios:
-- SHOW real people actually using the specific product/service
-- DEMONSTRATE the product function in action within the scenario
-- HIGHLIGHT the real benefit the user gets from the product
-- AVOID generic lifestyle scenes without clear product interaction
-- FOCUS on authentic product demonstrations, not just lifestyle branding
-- MAKE the product use feel natural and unforced
-- SHOW the "why" - why this product enhances this specific scenario
-- BALANCE lifestyle context with clear product value demonstration
+🎯 CRITICAL PRODUCT-CONTENT ALIGNMENT (MANDATORY):
+The IMAGE must EXACTLY match the CONTENT being generated:
+- IF content is about "YOUR desk setup" → IMAGE must show HOME OFFICE/DESK setup
+- IF content mentions "individual professionals" → IMAGE must show SOLO person, NOT groups
+- IF content promotes specific PRODUCT → IMAGE must show that EXACT product prominently
+- IF content says "home workers" → IMAGE must show HOME environment, NOT corporate office
+- NEVER show corporate meetings when content is about personal/individual use
+- NEVER show office buildings when content is about home/desk setups
+- ALWAYS show the ACTUAL product being promoted in the content
+- ALWAYS match the SETTING described in the content (home vs office vs store)
+- ALWAYS match the AUDIENCE described in the content (individual vs team vs family)
 
-CRITICAL PRODUCT-LIFESTYLE INTEGRATION RULE: Show authentic product use within natural scenarios
+CRITICAL CONTENT-IMAGE ALIGNMENT RULE: The image MUST visually represent exactly what the content describes
 
-Example of GOOD Product-Lifestyle Integration:
-- Scenario: Grandmother video-calling grandchildren
-- Headline: "Connecting Three Generations Daily"
-- Subheadline: "HD video calls make family time feel like being together"
-- CTA: "Start Your Family Calls"
-- Context: Shows actual video calling feature being used naturally
+Example of GOOD Content-Image Alignment:
+- Content: "Your Desk, Your Kenyan Hustle" (Logitech keyboard for home workers)
+- Image: Person at HOME desk using Logitech keyboard, home environment visible
+- Shows: INDIVIDUAL person, HOME setting, ACTUAL product (keyboard/mouse)
+- Matches: Personal desk setup, solo worker, product prominently featured
 
-Example of BAD Over-Correction (Too Abstract):
-- Headline: "Saturday Morning Tech Anticipation"
-- Subheadline: "Where technology meets family traditions"
-- CTA: "Join the Experience"
-- Context: Vague tech branding without showing actual product use
+Example of BAD Content-Image Mismatch:
+- Content: "Your Desk, Your Kenyan Hustle" (individual home office setup)
+- Image: Corporate boardroom with 5 people in office building
+- Problem: Content says "YOUR desk" but shows corporate meeting
+- Problem: Content targets home workers but shows office environment
+- Problem: No product visible despite being product-focused content
 
 Example of BAD Direct Promotion:
 - Headline: "Best Smartphone Camera"
@@ -1075,7 +1076,7 @@ Example of BAD Direct Promotion:
 - CTA: "Buy Now"
 - Context: Direct sales pitch without lifestyle context
 
-Create PRODUCT-LIFESTYLE INTEGRATION content:
+Create CONTENT-ALIGNED VISUAL content:
 1. A product-in-action caption (2-3 sentences max) that:
    - SHOWS specific product/service being used in the natural scenario
    - DESCRIBES the authentic product interaction and its benefit
@@ -1173,24 +1174,24 @@ LANGUAGE REQUIREMENTS:
 - Use English only, do not use local language
 - Keep all content in English for universal accessibility`}
 
-🎯 FINAL PRODUCT-LIFESTYLE INTEGRATION CHECKLIST:
-✅ SHOW authentic product use: Real people actually using specific product features
-✅ DEMONSTRATE product function: Clear connection between product capability and user benefit
-✅ HIGHLIGHT real benefits: Tangible outcomes users get from the product
-✅ AVOID vague lifestyle scenes: Must show actual product interaction, not just lifestyle branding
-✅ BALANCE content types: 40% product demo, 30% lifestyle integration, 20% feature benefits, 10% community
-✅ INCLUDE ${businessName} as the solution that enables the positive outcome
-✅ GENERATE content showing authentic product value within natural scenarios
-✅ EMPHASIZE both the human experience AND the product function that enhances it
+🎯 FINAL CONTENT-IMAGE ALIGNMENT CHECKLIST:
+✅ MATCH setting: If content mentions "home office" → show home office, NOT corporate office
+✅ MATCH audience: If content says "individual" → show solo person, NOT group meetings
+✅ MATCH product: If content promotes specific product → show that exact product prominently
+✅ MATCH context: If content says "your desk" → show personal desk setup, NOT boardroom
+✅ AVOID mismatches: Corporate scenes for home-focused content, groups for individual content
+✅ INCLUDE ${businessName} product/service exactly as described in the content
+✅ GENERATE images that visually represent the exact scenario described in content
+✅ EMPHASIZE visual consistency between what content says and what image shows
 
-CRITICAL SUCCESS CRITERIA FOR BALANCED INTEGRATION:
-- Content should show real product use that solves real problems in natural contexts
-- Headlines should capture the benefit/outcome that the product enables
-- Subheadlines should explain HOW the product delivers that benefit
-- CTAs should invite users to experience the specific benefit demonstrated
-- Overall approach should be authentic product demonstration within lifestyle contexts
-- NEVER create lifestyle content without clear product integration
-- ALWAYS show the "why" - why this product enhances this specific scenario
+CRITICAL SUCCESS CRITERIA FOR CONTENT-IMAGE ALIGNMENT:
+- Image should visually match exactly what the content describes
+- Headlines should be reflected in the visual scene shown in the image
+- Subheadlines should describe what's actually visible in the image
+- CTAs should relate to the action/scenario shown in the image
+- Overall approach should be perfect visual representation of written content
+- NEVER create images that contradict the content messaging
+- ALWAYS show the exact scenario, setting, and context described in the content
 - AVOID generic content: Every piece should feel tailored to this exact business
 - AVOID template phrases: No "your business", "our company", "we provide", "contact us"
 - USE the business analysis: Let the identified approach, pain points, and value props guide your content
@@ -1472,6 +1473,7 @@ export interface Revo15DesignResult {
   headline?: string;
   subheadline?: string;
   callToAction?: string;
+  format?: string;
 }
 
 /**
@@ -1556,13 +1558,13 @@ REVO 1.5 EXCLUSIVE DESIGN STYLES (CHOOSE ONE):
 1. **Neo-Minimalist**: Ultra-clean with strategic negative space, single focal point, premium typography
 2. **Fluid Dynamics**: Organic shapes, flowing lines, gradient overlays, dynamic movement
 3. **Geometric Precision**: Sharp angles, perfect symmetry, mathematical proportions, bold contrasts
-4. **Layered Depth**: Multiple transparent layers, sophisticated shadows, 3D-like depth
+4. **Layered Depth**: Multiple transparent layers, subtle shadows, natural depth
 5. **Typography-First**: Large, bold text as primary design element, minimal supporting graphics
-6. **Photo-Artistic**: High-quality photography with artistic overlays, filters, and effects
+6. **Photo-Artistic**: High-quality photography with natural overlays, realistic effects
 7. **Brand-Centric**: Logo and brand elements as core design components, identity-focused
-8. **Interactive-Style**: Design elements that suggest buttons, hover effects, and engagement
+8. **Interactive-Style**: Design elements that suggest natural user engagement
 9. **Cultural-Fusion**: Subtle cultural elements integrated naturally into modern design
-10. **Future-Tech**: Cutting-edge aesthetics, metallic elements, neon accents, sci-fi inspired
+10. **Natural-Professional**: Clean business aesthetics, natural materials, authentic lighting
 
 REVO 1.5 PREMIUM TYPOGRAPHY SYSTEM:
 - **Headlines**: Use bold, modern fonts (Inter Bold, Poppins Black, Montserrat ExtraBold)
@@ -1587,6 +1589,14 @@ Create a detailed design plan including:
 8. **Style Selection**: Choose one of the 10 exclusive Revo 1.5 design styles
 9. **Typography Hierarchy**: Specific font selections and weight distribution
 10. **Visual Storytelling**: How the design tells the brand story
+
+BUSINESS-TYPE VISUAL REQUIREMENTS (MANDATORY):
+- If business type indicates E-commerce: MUST show product with packaging and brand logo visible in-scene (not overlaid), clean background, subtle shadow, and a contextual prop that matches use-case.
+- If App/Software: MUST show a realistic device screen with the interface visible and a hand/user interaction; include brand colors in UI elements.
+- If Food: MUST show the actual dish/product, a natural consumption scenario, steam/texture details, and people enjoying when appropriate.
+- If Services: MUST show before/after or the service in action with tools/equipment visible; avoid generic stock meeting scenes.
+- Always include brand colors and respect the aspect ratio and text blocks for headline/subheadline/CTA.
+
 
 Provide a structured plan that will guide the image generation process.`;
 
@@ -2063,6 +2073,20 @@ ${cleanedImageText ? `ADDITIONAL TEXT CONTENT TO INCLUDE:
 "${cleanedImageText}"` : 'TEXT CONTENT: Use the generated headline, subheadline, and CTA from the content generation above'}
 
 ${contentResult ? `
+🎯 CRITICAL CONTENT-IMAGE ALIGNMENT REQUIREMENTS:
+- The IMAGE must visually represent exactly what these text elements describe:
+- PRIMARY HEADLINE: "${contentResult.headline}" → Image must show this scenario/benefit
+- SECONDARY SUBHEADLINE: "${contentResult.subheadline}" → Image must demonstrate this feature/context
+- CALL-TO-ACTION: "${contentResult.callToAction}" → Image must show the action/setting this CTA relates to
+
+🚨 MANDATORY VISUAL MATCHING:
+- IF headline mentions "your desk" → SHOW personal desk setup, NOT corporate office
+- IF headline mentions "home office" → SHOW home environment, NOT office building
+- IF headline mentions individual/personal → SHOW solo person, NOT group meetings
+- IF headline mentions specific product → SHOW that exact product prominently
+- IF subheadline describes a feature → SHOW that feature being used in the image
+- IF CTA is about booking/buying → SHOW the product/service being offered
+
 🎯 CRITICAL TEXT ELEMENTS TO DISPLAY ON DESIGN:
 - PRIMARY HEADLINE (Largest, most prominent): "${contentResult.headline}"
 - SECONDARY SUBHEADLINE (Medium, supporting): "${contentResult.subheadline}"
@@ -2104,16 +2128,27 @@ ${(input.brandProfile.logoDataUrl || input.brandProfile.logoUrl) ? `
 ` : ''}
 
 REVO 1.5 EXCLUSIVE PREMIUM REQUIREMENTS:
-✨ ULTRA-MODERN AESTHETICS: Cutting-edge design that stands out from Revo 1.0
-🎨 DYNAMIC COMPOSITION: Asymmetrical balance, fluid layouts, sophisticated visual hierarchy
-🌈 INTELLIGENT COLOR PSYCHOLOGY: Color schemes that trigger specific emotions and actions
-📝 PREMIUM TYPOGRAPHY SYSTEM: Exclusive font combinations with perfect weight distribution
-🏢 SEAMLESS BRAND FUSION: Brand elements as natural design components, not add-ons
-📱 PLATFORM-SPECIFIC INTELLIGENCE: Optimized for ${input.platform} algorithm and user behavior
-🎯 EMOTIONAL ARCHITECTURE: Visual storytelling that builds emotional connection
-✨ ADVANCED VISUAL DEPTH: Multi-layered designs with sophisticated shadows and glows
-🚀 FUTURE-FORWARD AESTHETICS: Trends that will remain relevant for 2+ years
-💫 MICRO-INTERACTIONS: Design elements that suggest interactivity and engagement
+✨ NATURAL MODERN AESTHETICS: Clean, professional design that looks human-created
+🎨 BALANCED COMPOSITION: Well-structured layouts with natural visual hierarchy
+🌈 AUTHENTIC COLOR PSYCHOLOGY: Natural color schemes that feel genuine
+📝 PROFESSIONAL TYPOGRAPHY: Clean font combinations with proper spacing
+🏢 ORGANIC BRAND FUSION: Brand elements integrated naturally into real scenarios
+📱 PLATFORM-OPTIMIZED DESIGN: Clean visuals optimized for ${input.platform}
+🎯 AUTHENTIC STORYTELLING: Real-world scenarios that build genuine connection
+✨ NATURAL VISUAL DEPTH: Subtle shadows and realistic lighting effects
+🚀 TIMELESS AESTHETICS: Classic design principles that remain effective
+💫 REALISTIC INTERACTIONS: Design elements that suggest natural user engagement
+
+❌ CRITICAL VISUAL RESTRICTIONS - NEVER INCLUDE:
+❌ Glowing AI portals and tech visualizations
+❌ Perfect corporate stock scenarios
+❌ Overly dramatic lighting effects
+❌ Artificial neon glows or sci-fi elements
+❌ Generic stock photo poses
+❌ Unrealistic perfect lighting setups
+❌ AI-generated abstract patterns
+❌ Futuristic tech interfaces
+❌ Holographic or digital overlays
 
 REVO 1.5 EXCLUSIVE DESIGN STYLE SELECTION:
 Choose ONE of these 10 exclusive Revo 1.5 design styles (completely different from Revo 1.0):
@@ -2252,22 +2287,38 @@ export async function generateRevo15EnhancedDesign(
       claudeKeyPrefix: claudeKey.substring(0, 10) + '...'
     });
 
+    // Build services string robustly from scraped brand services (could be string | string[] | object[])
+    const rawServices: any = (input.brandProfile as any).services;
+    let servicesStr = '';
+    if (Array.isArray(rawServices)) {
+      if (rawServices.length > 0 && typeof rawServices[0] === 'object') {
+        servicesStr = rawServices
+          .map((s: any) => [s.name, s.description, s.price ? String(s.price) : ''].filter(Boolean).join(' - '))
+          .join('; ');
+      } else {
+        servicesStr = (rawServices as any[]).filter(Boolean).join(', ');
+      }
+    } else {
+      servicesStr = rawServices || `${input.businessType} services`;
+    }
+
     const claudeRequest: ClaudeContentRequest = {
       businessType: input.businessType,
       businessName: input.brandProfile.businessName || input.businessType,
-      services: Array.isArray(input.brandProfile.services)
-        ? input.brandProfile.services.join(', ')
-        : input.brandProfile.services || `${input.businessType} services`,
+      services: servicesStr,
       platform: input.platform,
       targetAudience: input.brandProfile.targetAudience,
       location: input.brandProfile.location,
       useLocalLanguage: input.useLocalLanguage === true,
+      brandProfileId: (input.brandProfile as any).id,
       brandContext: {
         colors: [input.brandProfile.primaryColor, input.brandProfile.accentColor].filter(Boolean),
         personality: input.brandProfile.brandPersonality,
         values: input.brandProfile.brandValues
       }
-    };
+    } as any;
+    // Preserve raw services for deeper parsing in the generator
+    (claudeRequest as any).servicesRaw = rawServices;
 
     const claudeResult = await ClaudeSonnet4Generator.generateContent(claudeRequest);
 
@@ -2296,6 +2347,7 @@ export async function generateRevo15EnhancedDesign(
       model: 'revo-1.5-enhanced (gemini-2.5-flash-image-preview)',
       planningModel: GEMINI_2_5_MODELS.FLASH,
       generationModel: 'gemini-2.5-flash-image-preview', // Model that works with Revo 1.5 API key
+      format: claudeResult.format,
       caption: contentResult.caption,
       hashtags: contentResult.hashtags,
       headline: contentResult.headline,

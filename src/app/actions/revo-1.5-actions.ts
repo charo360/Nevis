@@ -137,6 +137,7 @@ export async function generateRevo15ContentAction(
           imageUrl: result.imageUrl
         }
       ],
+      format: result.format,
       metadata: {
         model: result.model,
         qualityScore: result.qualityScore,

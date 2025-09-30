@@ -183,6 +183,17 @@ REVO 2.0 ENHANCED FEATURES:
 🔥 Platform-optimized for maximum engagement
 🎨 Precise brand color integration and logo placement
 
+❌ CRITICAL VISUAL RESTRICTIONS - NEVER INCLUDE:
+❌ Glowing AI portals and tech visualizations
+❌ Perfect corporate stock scenarios
+❌ Overly dramatic lighting effects
+❌ Artificial neon glows or sci-fi elements
+❌ Generic stock photo poses
+❌ Unrealistic perfect lighting setups
+❌ AI-generated abstract patterns
+❌ Futuristic tech interfaces
+❌ Holographic or digital overlays
+
 CRITICAL REQUIREMENTS:
 - Resolution: 992x1056px (1:1 square format)
 - High-quality, professional appearance
@@ -298,7 +309,13 @@ PLATFORM: ${platform}
 2. SUBHEADLINE (max 25 words): Compelling, specific value proposition
 3. CAPTION (50-100 words): Engaging, authentic, conversational, UNIQUE
 4. CALL-TO-ACTION (2-4 words): Action-oriented, compelling
-5. HASHTAGS (EXACTLY ${hashtagCount}): ${platform === 'instagram' ? 'Instagram gets 5 hashtags' : 'Other platforms get 3 hashtags'}
+5. HASHTAGS (EXACTLY ${hashtagCount} - NO MORE, NO LESS): ${platform === 'instagram' ? 'Instagram gets EXACTLY 5 hashtags' : 'Other platforms get EXACTLY 3 hashtags'}
+
+🚨 CRITICAL HASHTAG REQUIREMENT:
+- You MUST generate EXACTLY ${hashtagCount} hashtags
+- Do NOT generate more than ${hashtagCount} hashtags
+- Do NOT generate fewer than ${hashtagCount} hashtags
+- Count your hashtags before responding
 
 🎨 CONTENT STYLE:
 - Write like a sophisticated marketer who understands ${brandProfile.location || 'the local market'}
@@ -340,14 +357,20 @@ Format as JSON:
 
       const parsed = JSON.parse(cleanContent);
 
-      // Ensure hashtag count is correct (5 for Instagram, 3 for others)
+      // Ensure hashtag count is EXACTLY correct (5 for Instagram, 3 for others)
       let finalHashtags = parsed.hashtags || [];
+      // ALWAYS enforce exact count - trim if too many, pad if too few
       if (finalHashtags.length > hashtagCount) {
         finalHashtags = finalHashtags.slice(0, hashtagCount);
+        console.log(`✂️ Revo 2.0: Trimmed hashtags from ${parsed.hashtags.length} to ${hashtagCount} for ${platform}`);
       } else if (finalHashtags.length < hashtagCount) {
         // Generate platform-appropriate hashtags if count is wrong
         finalHashtags = generateFallbackHashtags(brandProfile, businessType, platform, hashtagCount);
+        console.log(`➕ Revo 2.0: Added hashtags to reach ${hashtagCount} for ${platform}`);
       }
+      
+      // Final validation - ensure EXACTLY the right count
+      finalHashtags = finalHashtags.slice(0, hashtagCount);
 
       // Ensure no repetitive captions
       const caption = parsed.caption && !parsed.caption.includes('Experience the excellence of')
