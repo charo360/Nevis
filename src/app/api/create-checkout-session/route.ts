@@ -2,15 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 import { verifyToken } from '@/lib/auth/jwt'
+import { getStripeConfig, getStripePrices, getCheckoutUrls } from '@/lib/stripe-config'
 
-const stripeSecret = process.env.STRIPE_SECRET_KEY
-
-if (!stripeSecret) {
-  // Fail fast at import time in development so it's obvious
-  throw new Error('Missing STRIPE_SECRET_KEY in environment')
-}
-
-const stripe = new Stripe(stripeSecret, {
+// Get environment-aware Stripe configuration
+const stripeConfig = getStripeConfig()
+const stripe = new Stripe(stripeConfig.secretKey, {
   apiVersion: '2023-10-16'
 })
 
@@ -28,14 +24,17 @@ type Body = {
   metadata?: Record<string, string>
 }
 
-// Map known Stripe price IDs to internal plans/credits
-const PRICE_MAP: Record<string, { planId: string; credits: number; name: string }> = {
-  // CORRECT price IDs from your TEST Stripe account
-  'price_1SCkjkCik0ZJySexpx9RGhu3': { planId: 'power', credits: 550, name: 'Enterprise Agent' },
-  'price_1SCkhJCik0ZJySexgkXpFKTO': { planId: 'pro', credits: 250, name: 'Pro Agent' },
-  'price_1SCkefCik0ZJySexBO34LAsl': { planId: 'growth', credits: 150, name: 'Growth Agent' },
-  'price_1SCwe1Cik0ZJySexYVYW97uQ': { planId: 'starter', credits: 50, name: 'Starter Agent' },
-  'price_1SCkZMCik0ZJySexGFq9FtxO': { planId: 'free', credits: 10, name: 'Try Agent Free' },
+// Get environment-aware price mapping
+function getPriceMapping() {
+  const prices = getStripePrices()
+  
+  return {
+    [prices['try-free']]: { planId: 'try-free', credits: 10, name: 'Try Agent Free' },
+    [prices['starter']]: { planId: 'starter', credits: 50, name: 'Starter Agent' },
+    [prices['growth']]: { planId: 'growth', credits: 150, name: 'Growth Agent' },
+    [prices['pro']]: { planId: 'pro', credits: 250, name: 'Pro Agent' },
+    [prices['enterprise']]: { planId: 'enterprise', credits: 550, name: 'Enterprise Agent' },
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -46,9 +45,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing priceId in request body' }, { status: 400 })
     }
 
+    // Get environment-aware price mapping
+    const PRICE_MAP = getPriceMapping()
+    
     // Validate price ID exists in our mapping
     const mapped = PRICE_MAP[body.priceId]
     if (!mapped) {
+      console.log(`🔧 Available prices for ${stripeConfig.environment}:`, Object.keys(PRICE_MAP))
       return NextResponse.json({ 
         error: `Invalid price ID: ${body.priceId}. Available prices: ${Object.keys(PRICE_MAP).join(', ')}`
       }, { status: 400 })
@@ -124,8 +127,8 @@ export async function POST(req: NextRequest) {
         customer_email: body.customerEmail,
         metadata: metadataWithUser,
         client_reference_id: clientReferenceId,
-        success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${origin}/cancel`,
+        success_url: getCheckoutUrls().successUrl,
+        cancel_url: getCheckoutUrls().cancelUrl,
         locale: 'auto',
       })
     } catch (stripeError: any) {
