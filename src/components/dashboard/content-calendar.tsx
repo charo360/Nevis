@@ -150,7 +150,6 @@ export function ContentCalendar({
 
   const useEnhancedGeneration = artifactsEnabled || String(selectedRevoModel) === 'revo-1.5' || String(selectedRevoModel) === 'revo-2.0';
 
-<<<<<<< HEAD
       // Dynamic model routing based on selected Revo version
       if (selectedRevoModel === 'revo-2.0') {
 
@@ -438,7 +437,6 @@ export function ContentCalendar({
               </div>
             </div>
             <p className="text-xs text-gray-500 mt-2">
-<<<<<<< HEAD
               {selectedRevoModel === 'revo-2.0'
                 ? `🚀 Revo 2.0: Next-Gen AI with native image generation, character consistency & intelligent editing`
                 : selectedRevoModel === 'revo-1.5'

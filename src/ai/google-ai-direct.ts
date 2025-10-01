@@ -97,7 +97,27 @@ export async function generateText(
       stack: error instanceof Error ? error.stack : 'No stack trace',
       model: options.model || GEMINI_2_5_MODELS.FLASH
     });
-    throw new Error(`Gemini 2.5 text generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    
+    // Handle specific error types with user-friendly messages
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    if (errorMessage.includes('429') || errorMessage.includes('quota') || errorMessage.includes('Too Many Requests')) {
+      throw new Error('😅 Revo is experiencing high demand right now! Please try again in a few minutes or switch to Revo 2.0.');
+    }
+    
+    if (errorMessage.includes('401') || errorMessage.includes('unauthorized') || errorMessage.includes('API key')) {
+      throw new Error('🔧 Revo is having a technical hiccup. Please try Revo 2.0 while we fix this!');
+    }
+    
+    if (errorMessage.includes('403') || errorMessage.includes('forbidden')) {
+      throw new Error('🔧 Revo is having a technical hiccup. Please try Revo 2.0 while we fix this!');
+    }
+    
+    if (errorMessage.includes('network') || errorMessage.includes('timeout') || errorMessage.includes('ECONNRESET')) {
+      throw new Error('🌐 Connection hiccup! Please try again in a moment.');
+    }
+    
+    throw new Error('😅 Revo is having some trouble right now! Try Revo 2.0 for great results while we get things sorted out.');
   }
 }
 
@@ -154,7 +174,13 @@ Format as JSON for easy parsing.`;
     };
 
   } catch (error) {
-    throw new Error(`Gemini 2.5 image generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    if (errorMessage.includes('429') || errorMessage.includes('quota') || errorMessage.includes('Too Many Requests')) {
+      throw new Error('😅 Revo is experiencing high demand right now! Please try again in a few minutes or switch to Revo 2.0.');
+    }
+    
+    throw new Error('😅 Revo is having some trouble right now! Try Revo 2.0 for great results while we get things sorted out.');
   }
 }
 
@@ -206,7 +232,13 @@ export async function generateMultimodal(
     };
 
   } catch (error) {
-    throw new Error(`Gemini 2.5 multimodal generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    if (errorMessage.includes('429') || errorMessage.includes('quota') || errorMessage.includes('Too Many Requests')) {
+      throw new Error('😅 Revo is experiencing high demand right now! Please try again in a few minutes or switch to Revo 2.0.');
+    }
+    
+    throw new Error('😅 Revo is having some trouble right now! Try Revo 2.0 for great results while we get things sorted out.');
   }
 }
 

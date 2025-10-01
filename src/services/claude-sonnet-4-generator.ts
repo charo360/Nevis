@@ -20,6 +20,14 @@ export interface ClaudeContentRequest {
     personality?: string;
     values?: string[];
   };
+  scheduledServices?: Array<{
+    serviceId: string;
+    serviceName: string;
+    description?: string;
+    isToday?: boolean;
+    isUpcoming?: boolean;
+    daysUntil?: number;
+  }>;
 }
 
 export interface ClaudeContentResponse {
@@ -186,17 +194,29 @@ export class ClaudeSonnet4Generator {
       .filter(w => w && !stop.has(w));
   }
 
-  // Generate creative concept first (Revo 2.0 approach)
-  private static async generateCreativeConcept(request: ClaudeContentRequest): Promise<string> {
+  // Generate creative concept with scheduled services (Revo 2.0 approach)
+  private static async generateCreativeConcept(request: ClaudeContentRequest, todaysServices: any[], upcomingServices: any[]): Promise<string> {
     try {
       const anthropic = this.getAnthropicClient();
+      
+      // Build service-aware concept prompt (Revo 2.0 approach)
+      let serviceContext = '';
+      if (todaysServices.length > 0) {
+        serviceContext = `\n\n🎯 TODAY'S FEATURED SERVICES (Priority Focus):\n${todaysServices.map(s => `- ${s.serviceName}: ${s.description || 'Premium service offering'}`).join('\n')}`;
+      }
+      if (upcomingServices.length > 0) {
+        serviceContext += `\n\n📅 UPCOMING SERVICES (Secondary Focus):\n${upcomingServices.slice(0, 2).map(s => `- ${s.serviceName}`).join('\n')}`;
+      }
+      
       const conceptPrompt = `Generate a creative concept for ${request.businessName} (${request.businessType}) on ${request.platform}.
-
+      ${serviceContext}
+      
 Focus on:
-- Unique visual storytelling approach
-- Brand personality expression
+- Unique visual storytelling approach featuring today's services
+- Brand personality expression through service excellence
 - Platform-specific engagement strategies
 - Cultural relevance for ${request.location || 'global audience'}
+${todaysServices.length > 0 ? `- Highlight today's featured service: ${todaysServices[0].serviceName}` : ''}
 
 Return a brief creative concept (2-3 sentences) that will guide the content creation.`;
 
@@ -215,8 +235,12 @@ Return a brief creative concept (2-3 sentences) that will guide the content crea
       console.warn('⚠️ [Claude Sonnet 4] Creative concept generation failed, using fallback');
     }
 
-    // Fallback concept
-    return `Create engaging content for ${request.businessName} that showcases their ${request.businessType} expertise with authentic, professional appeal tailored for ${request.platform}.`;
+    // Fallback concept with service integration
+    const fallbackConcept = todaysServices.length > 0 
+      ? `Create engaging content for ${request.businessName} featuring today's ${todaysServices[0].serviceName} with authentic, professional appeal tailored for ${request.platform}.`
+      : `Create engaging content for ${request.businessName} that showcases their ${request.businessType} expertise with authentic, professional appeal tailored for ${request.platform}.`;
+    
+    return fallbackConcept;
   }
 
   private static jaccard(a: string, b: string): number {
@@ -423,7 +447,20 @@ Return a brief creative concept (2-3 sentences) that will guide the content crea
       businessType: request.businessType,
       platform: request.platform,
       location: request.location,
-      useLocalLanguage: request.useLocalLanguage
+      useLocalLanguage: request.useLocalLanguage,
+      scheduledServicesCount: request.scheduledServices?.length || 0,
+      todaysServicesCount: request.scheduledServices?.filter(s => s.isToday).length || 0
+    });
+
+    // Extract scheduled services for priority content focus (Revo 2.0 approach)
+    const todaysServices = request.scheduledServices?.filter(s => s.isToday) || [];
+    const upcomingServices = request.scheduledServices?.filter(s => s.isUpcoming) || [];
+    
+    console.log('📅 [Claude Sonnet 4] Scheduled services integration:', {
+      todaysServicesCount: todaysServices.length,
+      todaysServiceNames: todaysServices.map(s => s.serviceName),
+      upcomingServicesCount: upcomingServices.length,
+      upcomingServiceNames: upcomingServices.map(s => s.serviceName)
     });
 
     // Platform-specific hashtag count
@@ -444,8 +481,8 @@ Return a brief creative concept (2-3 sentences) that will guide the content crea
 
     const extraRules = `STEP 1: You MUST use exactly this format and its structure.\nSTEP 2: Follow that format's structure strictly; no generic benefit blurbs.\nSTEP 3: Validate uniqueness > 80% against last outputs; if fails, regenerate with different phrasing.\nSTEP 4: Do not include any statistics, numbers, or certifications unless provided in input.\n${cultural ? cultural.extraRules : ''}`;
 
-    // STEP 1: Generate creative concept first (Revo 2.0 approach)
-    const creativeConcept = await this.generateCreativeConcept(request);
+    // STEP 1: Generate creative concept with scheduled services (Revo 2.0 approach)
+    const creativeConcept = await this.generateCreativeConcept(request, todaysServices, upcomingServices);
     console.log('✅ [Claude Sonnet 4] Creative concept generated:', creativeConcept.slice(0, 100) + '...');
 
     // Build product context from existing services for retail-focused ads
@@ -463,8 +500,8 @@ Return a brief creative concept (2-3 sentences) that will guide the content crea
       productBlock = `Use this specific product for a retail spotlight with a price anchor and action CTA.\n${lines.join('\n')}`;
     }
 
-    // STEP 2: Build focused prompt with creative concept (Revo 2.0 style)
-    const prompt = this.buildFocusedClaudePrompt(request, hashtagCount, creativeConcept, enforcedFormat, productBlock);
+    // STEP 2: Build focused prompt with creative concept and scheduled services (Revo 2.0 style)
+    const prompt = this.buildFocusedClaudePrompt(request, hashtagCount, creativeConcept, enforcedFormat, productBlock, todaysServices, upcomingServices);
 
     // Log prompt details for debugging
     console.log('🔍 [Claude Sonnet 4] Prompt length:', prompt.length);
@@ -773,8 +810,41 @@ Return a brief creative concept (2-3 sentences) that will guide the content crea
 
 
   // Build focused prompt using Revo 2.0 approach (shorter, more structured)
-  private static buildFocusedClaudePrompt(request: ClaudeContentRequest, hashtagCount: number, creativeConcept: string, enforcedFormat: string, productBlock?: string): string {
+  private static buildFocusedClaudePrompt(request: ClaudeContentRequest, hashtagCount: number, creativeConcept: string, enforcedFormat: string, productBlock?: string, todaysServices?: any[], upcomingServices?: any[]): string {
     const creativityBoost = Math.floor(Math.random() * 10) + 1;
+
+    // Build scheduled services context (Revo 2.0 approach)
+    let scheduledServicesContext = '';
+    if (todaysServices && todaysServices.length > 0) {
+      scheduledServicesContext = `\n\n🎯 SCHEDULED SERVICES (HIGHEST PRIORITY - Focus content on these specific services):
+${todaysServices.filter(s => s.isToday).length > 0 ? `
+⚡ TODAY'S SERVICES (Create URGENT, action-focused content):
+${todaysServices.filter(s => s.isToday).map(s => `- ${s.serviceName}: ${s.description || 'Available today'}`).join('\n')}
+
+URGENT CONTENT REQUIREMENTS:
+- Use TODAY-focused language: "today", "now", "available today", "don't miss out"
+- Create urgency and immediate action
+- Mention specific service names in headlines/content
+- Use urgent CTAs: "Book now", "Available today", "Don't wait"
+` : ''}
+${upcomingServices && upcomingServices.length > 0 ? `
+📅 UPCOMING SERVICES (Build anticipation and early booking):
+${upcomingServices.map(s => `- ${s.serviceName} (in ${s.daysUntil} days): ${s.description || 'Coming soon'}`).join('\n')}
+
+ANTICIPATION CONTENT REQUIREMENTS:
+- Build excitement for upcoming services
+- Use anticipation language: "coming soon", "get ready", "reserve your spot"
+- Create early booking incentives
+- Mention specific dates/timing
+` : ''}
+
+⚠️ CRITICAL REQUIREMENT:
+- The content MUST specifically promote ONLY these scheduled services
+- DO NOT create generic business content or mention other services
+- Focus ENTIRELY on the scheduled services listed above
+- Use the EXACT service names in headlines and content
+- Ignore any other business services not listed above`;
+    }
 
     return `Generate UNIQUE and CREATIVE social media content for ${request.businessName} (${request.businessType}) on ${request.platform}.
 
@@ -785,7 +855,7 @@ LOCATION: ${request.location || 'Global'}
 BUSINESS FOCUS: ${request.businessType}
 PLATFORM: ${request.platform}
 ENFORCED FORMAT: ${enforcedFormat}
-${productBlock ? `\nPRODUCT FOCUS:\n${productBlock}\n` : ''}
+${productBlock ? `\nPRODUCT FOCUS:\n${productBlock}\n` : ''}${scheduledServicesContext}
 
 🚫 ANTI-REPETITION RULES:
 - DO NOT use "Experience the excellence of" - BANNED PHRASE

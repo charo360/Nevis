@@ -86,21 +86,42 @@ function getPlatformDimensions(platform: string): string {
 }
 
 /**
- * Generate creative concept for Revo 2.0
+ * Generate creative concept for Revo 2.0 with scheduled services integration
  */
 async function generateCreativeConcept(options: Revo20GenerationOptions): Promise<any> {
-  const { businessType, brandProfile, platform } = options;
+  const { businessType, brandProfile, platform, scheduledServices } = options;
+
+  // Extract today's services for focused content
+  const todaysServices = scheduledServices?.filter(s => s.isToday) || [];
+  const upcomingServices = scheduledServices?.filter(s => s.isUpcoming) || [];
+  
+  console.log('📅 Revo 2.0: Using scheduled services for concept generation:', {
+    todaysServicesCount: todaysServices.length,
+    todaysServiceNames: todaysServices.map(s => s.serviceName),
+    upcomingServicesCount: upcomingServices.length
+  });
 
   try {
   const model = getAiClient().getGenerativeModel({ model: REVO_2_0_MODEL });
 
+    // Build service-aware concept prompt
+    let serviceContext = '';
+    if (todaysServices.length > 0) {
+      serviceContext = `\n\n🎯 TODAY'S FEATURED SERVICES (Priority Focus):\n${todaysServices.map(s => `- ${s.serviceName}: ${s.description || 'Premium service offering'}`).join('\n')}`;
+    }
+    if (upcomingServices.length > 0) {
+      serviceContext += `\n\n📅 UPCOMING SERVICES (Secondary Focus):\n${upcomingServices.slice(0, 2).map(s => `- ${s.serviceName}`).join('\n')}`;
+    }
+
     const conceptPrompt = `Generate a creative concept for ${brandProfile.businessName} (${businessType}) on ${platform}.
+    ${serviceContext}
     
     Focus on:
-    - Unique visual storytelling approach
-    - Brand personality expression
+    - Unique visual storytelling approach featuring today's services
+    - Brand personality expression through service excellence
     - Platform-specific engagement strategies
     - Cultural relevance for ${brandProfile.location || 'global audience'}
+    ${todaysServices.length > 0 ? `- Highlight today's featured service: ${todaysServices[0].serviceName}` : ''}
     
     Return a brief creative concept (2-3 sentences) that will guide the visual design.`;
 
@@ -111,24 +132,32 @@ async function generateCreativeConcept(options: Revo20GenerationOptions): Promis
     return {
       concept: concept.trim(),
       visualTheme: 'modern-authentic',
-      emotionalTone: 'engaging-professional'
+      emotionalTone: 'engaging-professional',
+      featuredServices: todaysServices,
+      upcomingServices: upcomingServices.slice(0, 2)
     };
 
   } catch (error) {
     console.warn('⚠️ Revo 2.0: Creative concept generation failed, using fallback');
+    const fallbackConcept = todaysServices.length > 0 
+      ? `Create engaging visual content for ${brandProfile.businessName} featuring today's ${todaysServices[0].serviceName} with authentic, professional appeal.`
+      : `Create engaging visual content for ${brandProfile.businessName} that showcases their ${businessType} expertise with authentic, professional appeal.`;
+    
     return {
-      concept: `Create engaging visual content for ${brandProfile.businessName} that showcases their ${businessType} expertise with authentic, professional appeal.`,
+      concept: fallbackConcept,
       visualTheme: 'modern-authentic',
-      emotionalTone: 'engaging-professional'
+      emotionalTone: 'engaging-professional',
+      featuredServices: todaysServices,
+      upcomingServices: upcomingServices.slice(0, 2)
     };
   }
 }
 
 /**
- * Build enhanced prompt for Revo 2.0 with brand integration
+ * Build enhanced prompt for Revo 2.0 with brand integration, visual consistency, and scheduled services
  */
 function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: any): string {
-  const { businessType, platform, brandProfile, aspectRatio = '1:1', visualStyle = 'modern' } = options;
+  const { businessType, platform, brandProfile, aspectRatio = '1:1', visualStyle = 'modern', scheduledServices } = options;
 
   // Extract brand colors from profile
   const primaryColor = brandProfile.primaryColor || '#3B82F6';
@@ -140,6 +169,33 @@ function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: any): st
 
   // Brand location info
   const brandInfo = brandProfile.location ? ` based in ${brandProfile.location}` : '';
+
+  // Determine specific visual context based on business type and concept
+  const visualContext = getVisualContextForBusiness(businessType, concept.concept);
+
+  // Build scheduled services context for visual design
+  let serviceVisualContext = '';
+  if (concept.featuredServices && concept.featuredServices.length > 0) {
+    const todayService = concept.featuredServices[0];
+    serviceVisualContext = `\n\n🎯 TODAY'S FEATURED SERVICE INTEGRATION:\n- Service: ${todayService.serviceName}\n- Description: ${todayService.description || 'Premium service offering'}\n- Visual Focus: Create imagery that showcases this specific service in action\n- Service Priority: This should be the PRIMARY visual element in the design`;
+  }
+
+  // Build people inclusion instructions based on toggle
+  let peopleInstructions = '';
+  if (options.includePeopleInDesigns === false) {
+    peopleInstructions = `\n\n👥 PEOPLE EXCLUSION REQUIREMENT:\n- MANDATORY: Create a clean, professional design WITHOUT any people or human figures\n- AVOID: Any human faces, bodies, or silhouettes\n- FOCUS: Products, services, abstract elements, or clean minimalist design\n- STYLE: Professional, clean aesthetics without human elements\n- EMPHASIS: Brand elements, typography, and non-human visual elements`;
+  } else {
+    // Default behavior - include people when appropriate
+    const location = brandProfile.location || 'Global';
+    const africanCountries = ['kenya', 'nigeria', 'south africa', 'ghana', 'uganda', 'tanzania', 'ethiopia', 'rwanda'];
+    const isAfricanCountry = africanCountries.some(country => location.toLowerCase().includes(country.toLowerCase()));
+    
+    if (isAfricanCountry) {
+      peopleInstructions = `\n\n👥 PEOPLE INCLUSION (AFRICAN REPRESENTATION):\n- Include authentic Black/African people who represent the target market\n- Show people who would actually use ${businessType} services\n- Display local African people in settings relevant to ${businessType} business\n- Ensure faces are fully visible, well-lit, and anatomically correct\n- PRIORITY: 80%+ of people should be Black/African for cultural authenticity\n- Context: Show people in ${businessType}-relevant settings, not generic offices`;
+    } else {
+      peopleInstructions = `\n\n👥 PEOPLE INCLUSION (DIVERSE REPRESENTATION):\n- Include diverse, authentic people who represent the target market\n- Show people who would actually use ${businessType} services\n- Display people in settings relevant to ${businessType} business\n- Ensure faces are fully visible, well-lit, and anatomically correct\n- Context: Show people in ${businessType}-relevant settings`;
+    }
+  }
 
   // Lightweight contact integration - only add if contacts toggle is enabled
   let contactInstruction = '';
@@ -180,11 +236,15 @@ function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: any): st
 
 CREATIVE CONCEPT: ${concept.concept}
 
+🎯 VISUAL CONTEXT REQUIREMENT: ${visualContext}${serviceVisualContext}
+
 DESIGN REQUIREMENTS:
 - Platform: ${platform} (${getPlatformDimensions(platform)})
 - Visual Style: ${visualStyle}
 - Business: ${brandProfile.businessName} - ${businessType}${brandInfo}
 - Location: ${brandProfile.location || 'Global'}
+- Visual Theme: ${visualContext}
+${concept.featuredServices && concept.featuredServices.length > 0 ? `- Featured Service: ${concept.featuredServices[0].serviceName} (TODAY'S FOCUS)` : ''}
 
 🎨 BRAND COLOR SCHEME (MANDATORY):
 ${colorScheme}
@@ -220,8 +280,16 @@ CRITICAL REQUIREMENTS:
 - Engaging visual composition with brand consistency
 - Cultural sensitivity and relevance
 - Professional typography that complements the brand colors
+- VISUAL CONSISTENCY: Ensure the image clearly represents ${visualContext}
 
-Create a visually stunning design that stops scrolling and drives engagement while maintaining perfect brand consistency.${contactInstruction}`;
+📝 TEXT ELEMENT REQUIREMENTS:
+- Include clear, readable headline text in the design
+- Include supporting subheadline text that complements the headline
+- Ensure all text is legible and professionally styled
+- Text should be integrated naturally into the design composition
+- Use typography that matches the brand aesthetic
+
+Create a visually stunning design that stops scrolling and drives engagement while maintaining perfect brand consistency.${contactInstruction}${peopleInstructions}`;
 }
 
 /**
@@ -289,9 +357,9 @@ async function generateImageWithGemini(prompt: string, options: Revo20Generation
 }
 
 /**
- * Generate unique caption and hashtags for Revo 2.0
+ * Generate unique caption and hashtags for Revo 2.0 that align with the image
  */
-async function generateCaptionAndHashtags(options: Revo20GenerationOptions, concept: any): Promise<{
+async function generateCaptionAndHashtags(options: Revo20GenerationOptions, concept: any, imagePrompt: string, imageUrl?: string): Promise<{
   caption: string;
   hashtags: string[];
   headline?: string;
@@ -319,28 +387,106 @@ async function generateCaptionAndHashtags(options: Revo20GenerationOptions, conc
       }
     });
 
-    const contentPrompt = `Generate UNIQUE and CREATIVE social media content for ${brandProfile.businessName} (${businessType}) on ${platform}.
+    // Build service-specific content context
+    let serviceContentContext = '';
+    if (concept.featuredServices && concept.featuredServices.length > 0) {
+      const todayService = concept.featuredServices[0];
+      serviceContentContext = `\n\n🎯 TODAY'S FEATURED SERVICE (Primary Focus):\n- Service: ${todayService.serviceName}\n- Description: ${todayService.description || 'Premium service offering'}\n- Content Focus: Write about THIS specific service as today's highlight\n- Call-to-Action: Encourage engagement with this service`;
+      
+      if (concept.upcomingServices && concept.upcomingServices.length > 0) {
+        serviceContentContext += `\n\n📅 UPCOMING SERVICES (Mention briefly):\n${concept.upcomingServices.map(s => `- ${s.serviceName}`).join('\n')}`;
+      }
+    }
 
-🎯 CREATIVITY REQUIREMENT: This must be COMPLETELY DIFFERENT from any previous content. Use creativity level ${creativityBoost}/10.
+    // Prepare the generation parts - include image if available for analysis
+    const generationParts: any[] = [];
+    
+    let imageAnalysisContext = '';
+    if (imageUrl && imageUrl.startsWith('data:image/')) {
+      // Add the actual generated image for analysis
+      generationParts.push({
+        inlineData: {
+          data: imageUrl.split(',')[1], // Remove data:image/...;base64, prefix
+          mimeType: imageUrl.split(';')[0].split(':')[1] // Extract mime type
+        }
+      });
+      imageAnalysisContext = '\n\n🖼️ CRITICAL: Analyze the uploaded image and generate headlines/subheadlines that EXACTLY match the text and visual elements shown in this specific image.';
+    }
+
+    // Generate unique seed-based variations
+    const timeBasedSeed = Date.now();
+    const randomSeed = Math.floor(Math.random() * 10000);
+    const uniqueId = `${timeBasedSeed}-${randomSeed}`;
+    
+    // Create variation themes to ensure uniqueness
+    const variationThemes = [
+      'innovation-focused', 'results-driven', 'customer-centric', 'quality-emphasis', 
+      'expertise-showcase', 'trust-building', 'solution-oriented', 'value-proposition',
+      'transformation-story', 'excellence-highlight'
+    ];
+    const selectedTheme = variationThemes[creativityBoost % variationThemes.length];
+    
+    const contentPrompt = `Generate COMPLETELY UNIQUE social media content for ${brandProfile.businessName} (${businessType}) on ${platform}.
+
+🚨 UNIQUENESS MANDATE (ID: ${uniqueId}):
+- This content must be 100% DIFFERENT from any previous generation
+- Use creativity level ${creativityBoost}/10 with theme: ${selectedTheme}
+- NEVER repeat previous headlines, subheadlines, or phrases
+- Create fresh, original content every single time
+- Variation theme: ${selectedTheme}
+
+🖼️ IMAGE CONTEXT: The visual design shows: ${concept.concept}
+📝 VISUAL ELEMENTS: ${imagePrompt.includes('office') ? 'Professional office/workspace setting' : imagePrompt.includes('market') ? 'Market/business environment' : 'Business-focused visual elements'}${serviceContentContext}${imageAnalysisContext}
 
 CREATIVE CONCEPT: ${concept.concept}
 LOCATION: ${brandProfile.location || 'Global'}
 BUSINESS FOCUS: ${businessType}
 PLATFORM: ${platform}
+THEME: ${selectedTheme}
 
-🚫 ANTI-REPETITION RULES:
-- DO NOT use "Experience the excellence of" - BANNED PHRASE
-- DO NOT use generic templates or repetitive patterns
-- DO NOT repeat previous captions - be completely original
-- DO NOT use placeholder text - create authentic content
-- CREATE fresh, unique content every time
+🎯 CRITICAL ALIGNMENT REQUIREMENT:
+- The caption MUST match the visual elements described above
+- If the image shows office/workspace, write about office/workspace services
+- If the image shows market/business, write about market/business solutions
+- DO NOT write about markets if the image shows offices
+- DO NOT write about offices if the image shows markets
+- ENSURE perfect alignment between visual and text content
+${concept.featuredServices && concept.featuredServices.length > 0 ? `- MANDATORY: Feature today's service "${concept.featuredServices[0].serviceName}" prominently in the caption` : ''}
+${concept.featuredServices && concept.featuredServices.length > 0 ? `- Write as if promoting TODAY'S special service offering` : ''}
+
+🚫 ANTI-REPETITION RULES (STRICTLY ENFORCED):
+- BANNED PHRASES: "Experience the excellence of", "Your trusted partner", "Innovation meets", "Transform your"
+- BANNED PATTERNS: "Ready to [verb]", "Discover why", "Join the [noun]", "Where [noun] meets [noun]"
+- NO generic business templates or corporate speak
+- NO repetitive sentence structures from previous generations
+- CREATE completely original headlines and subheadlines
+- USE unexpected angles and fresh perspectives
+- VARY sentence length, tone, and approach dramatically
+- MUST sound human, not AI-generated
 
 ✅ CONTENT REQUIREMENTS:
-1. HEADLINE (max 6 words): Catchy, unique, attention-grabbing
-2. SUBHEADLINE (max 25 words): Compelling, specific value proposition
+1. HEADLINE (max 6 words): Catchy, ${selectedTheme}, NEVER used before
+2. SUBHEADLINE (max 25 words): Compelling, specific, completely original
 3. CAPTION (50-100 words): Engaging, authentic, conversational, UNIQUE
-4. CALL-TO-ACTION (2-4 words): Action-oriented, compelling
-<<<<<<< HEAD
+4. CALL-TO-ACTION (2-4 words): Action-oriented, compelling, fresh
+
+🎯 HEADLINE VARIATION REQUIREMENTS:
+- Use different emotional triggers: urgency, curiosity, benefit, social proof
+- Vary formats: questions, statements, commands, exclamations
+- Theme-specific approach: ${selectedTheme}
+- Examples of variety: "Why [Business] Wins", "[Number] Game-Changers", "Behind [Service]", "[Location]'s Choice"
+
+🎯 SUBHEADLINE VARIATION REQUIREMENTS:
+- Different value propositions each time
+- Vary between features, benefits, outcomes, and social proof
+- Use specific numbers, locations, or unique selling points
+- Theme alignment: ${selectedTheme}
+
+🚨 CRITICAL TEXT ALIGNMENT:
+- If the image contains headline text, use EXACTLY that text
+- If the image contains subheadline text, use EXACTLY that text
+- DO NOT create different headlines/subheadlines than what appears in the image
+- The goal is perfect alignment between image text and metadata
 5. HASHTAGS (EXACTLY ${hashtagCount} - NO MORE, NO LESS): ${platform === 'instagram' ? 'Instagram gets EXACTLY 5 hashtags' : 'Other platforms get EXACTLY 3 hashtags'}
 
 🚨 CRITICAL HASHTAG REQUIREMENT:
@@ -348,15 +494,6 @@ PLATFORM: ${platform}
 - Do NOT generate more than ${hashtagCount} hashtags
 - Do NOT generate fewer than ${hashtagCount} hashtags
 - Count your hashtags before responding
-=======
-5. HASHTAGS (EXACTLY ${hashtagCount} - NO MORE, NO LESS): ${platform === 'instagram' ? 'Instagram gets EXACTLY 5 hashtags' : 'Other platforms get EXACTLY 3 hashtags'}
-
-🚨 CRITICAL HASHTAG REQUIREMENT:
-- You MUST generate EXACTLY ${hashtagCount} hashtags
-- Do NOT generate more than ${hashtagCount} hashtags
-- Do NOT generate fewer than ${hashtagCount} hashtags
-- Count your hashtags before responding
->>>>>>> 584f54769f8ffc7a9de0ee0eac45b5e9d40ea9e6
 
 🎨 CONTENT STYLE:
 - Write like a sophisticated marketer who understands ${brandProfile.location || 'the local market'}
@@ -383,7 +520,10 @@ Format as JSON:
   "hashtags": ["#tag1", "#tag2", ...]
 }`;
 
-  const result = await model.generateContent(contentPrompt);
+    // Add the text prompt to generation parts
+    generationParts.push(contentPrompt);
+
+    const result = await model.generateContent(generationParts);
     const response = await result.response;
     const content = response.text();
 
@@ -429,58 +569,108 @@ Format as JSON:
 
     } catch (parseError) {
       console.warn('⚠️ Revo 2.0: Failed to parse content JSON, generating unique fallback');
-      return generateUniqueFallbackContent(brandProfile, businessType, platform, hashtagCount, creativityBoost);
+      console.log('Parse error details:', parseError);
+      return generateUniqueFallbackContent(brandProfile, businessType, platform, hashtagCount, creativityBoost, concept);
     }
 
   } catch (error) {
     console.warn('⚠️ Revo 2.0: Content generation failed, generating unique fallback');
-    return generateUniqueFallbackContent(brandProfile, businessType, platform, hashtagCount, Date.now() % 10);
+    console.log('Generation error details:', error);
+    return generateUniqueFallbackContent(brandProfile, businessType, platform, hashtagCount, Date.now() % 10, concept);
   }
 }
 
 /**
- * Generate unique fallback content to avoid repetition
+ * Generate unique fallback content to avoid repetition with service integration
  */
-function generateUniqueFallbackContent(brandProfile: any, businessType: string, platform: string, hashtagCount: number, creativityLevel: number) {
-  const uniqueCaptions = [
+function generateUniqueFallbackContent(brandProfile: any, businessType: string, platform: string, hashtagCount: number, creativityLevel: number, concept?: any) {
+  // Check if we have today's featured service
+  const todayService = concept?.featuredServices?.[0];
+  
+  const uniqueCaptions = todayService ? [
+    `Today's spotlight: ${todayService.serviceName} at ${brandProfile.businessName}. Experience excellence in ${businessType.toLowerCase()} like never before.`,
+    `Featuring today: ${todayService.serviceName}. ${brandProfile.businessName} brings you premium ${businessType.toLowerCase()} solutions in ${brandProfile.location || 'your area'}.`,
+    `Don't miss today's ${todayService.serviceName} from ${brandProfile.businessName}. Your trusted ${businessType.toLowerCase()} partner delivers again.`,
+    `Today we're highlighting ${todayService.serviceName}. See why ${brandProfile.businessName} leads in ${businessType.toLowerCase()} innovation.`,
+    `Special focus today: ${todayService.serviceName}. ${brandProfile.businessName} continues to set the standard in ${businessType.toLowerCase()}.`
+  ] : [
     `Transform your ${businessType.toLowerCase()} experience with ${brandProfile.businessName}. We're redefining excellence in ${brandProfile.location || 'the industry'}.`,
     `Ready to elevate your ${businessType.toLowerCase()} journey? ${brandProfile.businessName} brings innovation and expertise to ${brandProfile.location || 'every project'}.`,
     `Discover why ${brandProfile.businessName} is the preferred choice for ${businessType.toLowerCase()} solutions in ${brandProfile.location || 'the market'}.`,
     `Your success is our mission. ${brandProfile.businessName} delivers exceptional ${businessType.toLowerCase()} services with a personal touch.`,
-    `Innovation meets reliability at ${brandProfile.businessName}. Experience the future of ${businessType.toLowerCase()} today.`,
-    `Quality, trust, and results - that's what ${brandProfile.businessName} brings to ${businessType.toLowerCase()} in ${brandProfile.location || 'every community'}.`,
-    `Unlock your potential with ${brandProfile.businessName}. We're more than just ${businessType.toLowerCase()} - we're your growth partners.`,
-    `Where expertise meets passion: ${brandProfile.businessName} is revolutionizing ${businessType.toLowerCase()} services.`,
-    `Join the success story. ${brandProfile.businessName} has been transforming ${businessType.toLowerCase()} experiences across ${brandProfile.location || 'the region'}.`,
-    `The smart choice for ${businessType.toLowerCase()}: ${brandProfile.businessName} combines innovation with proven results.`
+    `Innovation meets reliability at ${brandProfile.businessName}. Experience the future of ${businessType.toLowerCase()} today.`
   ];
 
   const selectedCaption = uniqueCaptions[creativityLevel % uniqueCaptions.length];
-  const hashtags = generateFallbackHashtags(brandProfile, businessType, platform, hashtagCount);
+  const hashtags = generateFallbackHashtags(brandProfile, businessType, platform, hashtagCount, todayService);
 
   return {
     caption: selectedCaption,
     hashtags,
-    headline: 'Innovation Delivered',
-    subheadline: `Your trusted ${businessType.toLowerCase()} partner`,
-    cta: 'Get Started',
+    headline: todayService ? `Today's ${todayService.serviceName}` : 'Innovation Delivered',
+    subheadline: todayService ? `Featured service from ${brandProfile.businessName}` : `Your trusted ${businessType.toLowerCase()} partner`,
+    cta: todayService ? 'Learn More' : 'Get Started',
     captionVariations: [selectedCaption]
   };
 }
 
 /**
- * Generate platform-appropriate hashtags
+ * Generate platform-appropriate hashtags with service integration
  */
-function generateFallbackHashtags(brandProfile: any, businessType: string, platform: string, count: number): string[] {
+function generateFallbackHashtags(brandProfile: any, businessType: string, platform: string, count: number, todayService?: any): string[] {
   const brandTag = `#${brandProfile.businessName.replace(/\s+/g, '')}`;
   const businessTag = `#${businessType.replace(/\s+/g, '')}`;
+  const serviceTag = todayService ? `#${todayService.serviceName.replace(/\s+/g, '')}` : null;
 
-  const instagramHashtags = [brandTag, businessTag, '#Innovation', '#Quality', '#Success'];
-  const otherHashtags = [brandTag, businessTag, '#Professional'];
+  const instagramHashtags = serviceTag 
+    ? [brandTag, businessTag, serviceTag, '#TodaysFocus', '#Featured']
+    : [brandTag, businessTag, '#Innovation', '#Quality', '#Success'];
+    
+  const otherHashtags = serviceTag
+    ? [brandTag, businessTag, serviceTag]
+    : [brandTag, businessTag, '#Professional'];
 
   const baseHashtags = platform.toLowerCase() === 'instagram' ? instagramHashtags : otherHashtags;
 
   return baseHashtags.slice(0, count);
+}
+
+/**
+ * Get visual context based on business type to ensure image-caption alignment
+ */
+function getVisualContextForBusiness(businessType: string, concept: string): string {
+  const businessLower = businessType.toLowerCase();
+  
+  if (businessLower.includes('office') || businessLower.includes('workspace') || businessLower.includes('corporate')) {
+    return 'Professional office/workspace environment with modern business aesthetics';
+  }
+  
+  if (businessLower.includes('market') || businessLower.includes('retail') || businessLower.includes('shop')) {
+    return 'Market/retail business environment with customer-focused elements';
+  }
+  
+  if (businessLower.includes('restaurant') || businessLower.includes('food') || businessLower.includes('cafe')) {
+    return 'Food service environment with culinary and hospitality elements';
+  }
+  
+  if (businessLower.includes('tech') || businessLower.includes('software') || businessLower.includes('digital')) {
+    return 'Modern technology workspace with digital innovation elements';
+  }
+  
+  if (businessLower.includes('health') || businessLower.includes('medical') || businessLower.includes('clinic')) {
+    return 'Healthcare/medical environment with professional wellness aesthetics';
+  }
+  
+  // Default based on concept
+  if (concept.includes('office') || concept.includes('workspace')) {
+    return 'Professional office/workspace environment';
+  }
+  
+  if (concept.includes('market') || concept.includes('customer')) {
+    return 'Market/customer-focused business environment';
+  }
+  
+  return 'Professional business environment that matches the service offering';
 }
 
 /**
@@ -526,9 +716,9 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
     const imageResult = await generateImageWithGemini(enhancedPrompt, enhancedOptions);
     console.log('✅ Revo 2.0: Image generated');
 
-    // Step 4: Generate caption and hashtags
-    const contentResult = await generateCaptionAndHashtags(enhancedOptions, concept);
-    console.log('✅ Revo 2.0: Content generated');
+    // Step 4: Generate caption and hashtags that align with the image
+    const contentResult = await generateCaptionAndHashtags(enhancedOptions, concept, enhancedPrompt, imageResult.imageUrl);
+    console.log('✅ Revo 2.0: Content generated with image alignment');
 
     const processingTime = Date.now() - startTime;
 
@@ -593,4 +783,105 @@ export async function testRevo20Availability(): Promise<boolean> {
     console.error('❌ Revo 2.0: Availability test failed:', error);
     return false;
   }
+}
+
+/**
+ * Generate unique headlines based on theme
+ */
+function generateUniqueHeadline(brandProfile: any, businessType: string, theme: string): string {
+  const headlines = {
+    'innovation-focused': [
+      'Next-Level Solutions',
+      'Future-Ready Business',
+      'Innovation Unleashed',
+      'Tomorrow Starts Today',
+      'Breakthrough Results'
+    ],
+    'results-driven': [
+      'Proven Performance',
+      'Results That Matter',
+      'Success Delivered',
+      'Measurable Impact',
+      'Achievement Unlocked'
+    ],
+    'customer-centric': [
+      'Your Success First',
+      'Client-Focused Excellence',
+      'Tailored Solutions',
+      'Personal Attention',
+      'Customer Champions'
+    ],
+    'quality-emphasis': [
+      'Premium Standards',
+      'Excellence Defined',
+      'Quality Guaranteed',
+      'Superior Service',
+      'Unmatched Quality'
+    ],
+    'expertise-showcase': [
+      'Expert Solutions',
+      'Professional Excellence',
+      'Skilled Specialists',
+      'Master Craftsmen',
+      'Industry Leaders'
+    ]
+  };
+
+  const themeHeadlines = headlines[theme as keyof typeof headlines] || headlines['innovation-focused'];
+  const randomIndex = Math.floor(Math.random() * themeHeadlines.length);
+  return themeHeadlines[randomIndex];
+}
+
+/**
+ * Generate unique subheadlines based on theme and service
+ */
+function generateUniqueSubheadline(brandProfile: any, businessType: string, theme: string, todayService?: any): string {
+  const location = brandProfile.location || 'your area';
+  const business = brandProfile.businessName;
+  const service = todayService?.serviceName || businessType;
+
+  const subheadlines = {
+    'innovation-focused': [
+      `${business} brings cutting-edge ${service} to ${location}`,
+      `Revolutionary ${service} solutions from ${business}`,
+      `Advanced ${service} technology meets local expertise`,
+      `${business} pioneers the future of ${service}`,
+      `Next-generation ${service} available in ${location}`
+    ],
+    'results-driven': [
+      `${business} delivers measurable ${service} outcomes`,
+      `Proven ${service} results from ${business}`,
+      `${business} guarantees ${service} success in ${location}`,
+      `Track record of ${service} excellence at ${business}`,
+      `${business} turns ${service} goals into reality`
+    ],
+    'customer-centric': [
+      `${business} puts your ${service} needs first`,
+      `Personalized ${service} solutions from ${business}`,
+      `${business} listens, understands, delivers ${service}`,
+      `Your ${service} success is our priority at ${business}`,
+      `${business} creates ${service} experiences just for you`
+    ]
+  };
+
+  const themeSubheadlines = subheadlines[theme as keyof typeof subheadlines] || subheadlines['innovation-focused'];
+  const randomIndex = Math.floor(Math.random() * themeSubheadlines.length);
+  return themeSubheadlines[randomIndex];
+}
+
+/**
+ * Generate unique CTAs based on theme
+ */
+function generateUniqueCTA(theme: string): string {
+  const ctas = {
+    'innovation-focused': ['Explore Now', 'Discover More', 'See Innovation', 'Try Today'],
+    'results-driven': ['Get Results', 'Start Now', 'Achieve More', 'See Proof'],
+    'customer-centric': ['Connect Today', 'Let\'s Talk', 'Your Solution', 'Get Personal'],
+    'quality-emphasis': ['Experience Quality', 'See Excellence', 'Choose Best', 'Premium Access'],
+    'expertise-showcase': ['Meet Experts', 'Get Professional', 'Expert Help', 'Skilled Service']
+  };
+
+  const themeCTAs = ctas[theme as keyof typeof ctas] || ctas['innovation-focused'];
+  const randomIndex = Math.floor(Math.random() * themeCTAs.length);
+  return themeCTAs[randomIndex];
 }

@@ -290,68 +290,110 @@ function QuickContentPage() {
 
     setIsLoading(true);
 
-    // Load scheduled services for the current brand
+    // Load scheduled services for the current brand from database
     const loadScheduledServices = async () => {
       try {
-        console.log('📅 Loading scheduled services for brand:', brand.businessName);
-        const calendarContext = await CalendarService.getCalendarContext(brand.id);
-
-        setTodaysServices(calendarContext.todaysServices);
-        setUpcomingServices(calendarContext.upcomingServices);
-        setScheduledServices([...calendarContext.todaysServices, ...calendarContext.upcomingServices]);
-        setHasScheduledContent(calendarContext.hasScheduledContent);
-
-        console.log('📅 Loaded calendar context:', {
-          todaysServices: calendarContext.todaysServices.length,
-          upcomingServices: calendarContext.upcomingServices.length,
-          hasScheduledContent: calendarContext.hasScheduledContent,
-          todaysServiceNames: calendarContext.todaysServices.map(s => s.serviceName),
-          upcomingServiceNames: calendarContext.upcomingServices.map(s => s.serviceName),
-          fullContext: calendarContext
+        console.log('📅 Loading scheduled services from database for brand:', brand.businessName);
+        
+        // Load directly from database API instead of CalendarService
+        const response = await fetch(`/api/calendar?brandId=${brand.id}`);
+        if (!response.ok) {
+          console.log('⚠️ Database API failed, no scheduled services');
+          setTodaysServices([]);
+          setUpcomingServices([]);
+          setScheduledServices([]);
+          setHasScheduledContent(false);
+          return;
+        }
+        
+        const allScheduledContent = await response.json();
+        console.log('📊 Database response:', allScheduledContent.length, 'items');
+        
+        // Filter today's and upcoming services
+        const today = new Date().toISOString().split('T')[0];
+        const todaysContent = allScheduledContent.filter((item: any) => item.date === today);
+        const upcomingContent = allScheduledContent.filter((item: any) => item.date > today);
+        
+        // Transform to ScheduledService format
+        const todaysServices = todaysContent.map((item: any) => ({
+          serviceId: item.id.toString(),
+          serviceName: item.service_name,
+          description: item.notes,
+          contentType: item.content_type,
+          platform: item.platform,
+          priority: 'high' as const,
+          isToday: true,
+          isUpcoming: false,
+          daysUntil: 0
+        }));
+        
+        const upcomingServices = upcomingContent.slice(0, 5).map((item: any) => {
+          const itemDate = new Date(item.date);
+          const daysUntil = Math.ceil((itemDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+          return {
+            serviceId: item.id.toString(),
+            serviceName: item.service_name,
+            description: item.notes,
+            contentType: item.content_type,
+            platform: item.platform,
+            priority: 'medium' as const,
+            isToday: false,
+            isUpcoming: true,
+            daysUntil
+          };
         });
 
-        console.log('🔍 [Quick Content] CRITICAL DATA SOURCE COMPARISON:', {
+        setTodaysServices(todaysServices);
+        setUpcomingServices(upcomingServices);
+        setScheduledServices([...todaysServices, ...upcomingServices]);
+        setHasScheduledContent(todaysServices.length > 0 || upcomingServices.length > 0);
+
+        console.log('📅 Loaded calendar from database:', {
+          todaysServices: todaysServices.length,
+          upcomingServices: upcomingServices.length,
+          hasScheduledContent: todaysServices.length > 0 || upcomingServices.length > 0,
+          todaysServiceNames: todaysServices.map(s => s.serviceName),
+          upcomingServiceNames: upcomingServices.map(s => s.serviceName)
+        });
+
+        console.log('🔍 [Quick Content] DATABASE DATA SOURCE:', {
           brandId: currentBrand?.id,
-          storageServices: {
-            count: calendarContext.todaysServices.length + calendarContext.upcomingServices.length,
-            todaysServices: calendarContext.todaysServices.map(s => s.serviceName),
-            upcomingServices: calendarContext.upcomingServices.map(s => s.serviceName),
-            hasScheduledContent: calendarContext.hasScheduledContent
+          databaseServices: {
+            count: todaysServices.length + upcomingServices.length,
+            todaysServices: todaysServices.map(s => s.serviceName),
+            upcomingServices: upcomingServices.map(s => s.serviceName),
+            hasScheduledContent: todaysServices.length > 0 || upcomingServices.length > 0
           },
           urlServices: {
             count: calendarServices.length,
             services: calendarServices
           },
           decisionLogic: {
-            willUseStorage: calendarContext.hasScheduledContent,
-            willUseUrl: !calendarContext.hasScheduledContent && calendarServices.length > 0,
-            finalDecision: calendarContext.hasScheduledContent ? 'STORAGE' : (calendarServices.length > 0 ? 'URL' : 'NONE')
+            willUseDatabase: todaysServices.length > 0 || upcomingServices.length > 0,
+            willUseUrl: (todaysServices.length === 0 && upcomingServices.length === 0) && calendarServices.length > 0,
+            finalDecision: (todaysServices.length > 0 || upcomingServices.length > 0) ? 'DATABASE' : (calendarServices.length > 0 ? 'URL' : 'NONE')
           }
         });
 
         // Show toast if there are today's services
-        if (calendarContext.todaysServices.length > 0) {
+        if (todaysServices.length > 0) {
           toast({
             title: "📅 Today's Scheduled Services",
-            description: `${calendarContext.todaysServices.length} service${calendarContext.todaysServices.length > 1 ? 's' : ''} scheduled for today: ${calendarContext.todaysServices.map(s => s.serviceName).join(', ')}`,
+            description: `${todaysServices.length} service${todaysServices.length > 1 ? 's' : ''} scheduled for today: ${todaysServices.map(s => s.serviceName).join(', ')}`,
           });
         }
 
-        // PROPER PRIORITY: Storage services first, URL services as fallback only
-        if (calendarContext.hasScheduledContent) {
-          // Use storage-based scheduled services (highest priority)
-          console.log('✅ [Quick Content] USING STORAGE-BASED SERVICES (highest priority)');
-          console.log('📊 [Quick Content] Setting state with storage data:', {
-            todaysServices: calendarContext.todaysServices.map(s => s.serviceName),
-            upcomingServices: calendarContext.upcomingServices.map(s => s.serviceName),
-            allServices: [...calendarContext.todaysServices, ...calendarContext.upcomingServices].map(s => s.serviceName)
+        // PROPER PRIORITY: Database services first, URL services as fallback only
+        if (todaysServices.length > 0 || upcomingServices.length > 0) {
+          // Use database-based scheduled services (highest priority)
+          console.log('✅ [Quick Content] USING DATABASE-BASED SERVICES (highest priority)');
+          console.log('📊 [Quick Content] Setting state with database data:', {
+            todaysServices: todaysServices.map(s => s.serviceName),
+            upcomingServices: upcomingServices.map(s => s.serviceName),
+            allServices: [...todaysServices, ...upcomingServices].map(s => s.serviceName)
           });
 
-          // Set state with storage data
-          setTodaysServices(calendarContext.todaysServices);
-          setUpcomingServices(calendarContext.upcomingServices);
-          setScheduledServices([...calendarContext.todaysServices, ...calendarContext.upcomingServices]);
-          setHasScheduledContent(true);
+          // State is already set above - no need to set again
         } else if (calendarServices.length > 0) {
           // Fallback to URL-based services only if no storage services exist
           console.log('📅 No storage services found, using URL calendar services as fallback:', calendarServices);
@@ -609,45 +651,68 @@ function QuickContentPage() {
         console.log('📡 Received calendarDataChanged event for current brand, refreshing scheduled services...');
 
         try {
-          // Reload scheduled services using the same logic as the main useEffect
-          const calendarContext = await CalendarService.getCalendarContext(currentBrand.id);
-
-          console.log('📅 Loaded calendar context:', {
-            todaysServices: calendarContext.todaysServices.length,
-            upcomingServices: calendarContext.upcomingServices.length,
-            hasScheduledContent: calendarContext.hasScheduledContent
+          // Reload scheduled services from database API
+          const response = await fetch(`/api/calendar?brandId=${currentBrand.id}`);
+          if (!response.ok) {
+            console.log('⚠️ Database refresh failed');
+            return;
+          }
+          
+          const allScheduledContent = await response.json();
+          console.log('📊 Database refresh response:', allScheduledContent.length, 'items');
+          
+          // Filter and transform services
+          const today = new Date().toISOString().split('T')[0];
+          const todaysContent = allScheduledContent.filter((item: any) => item.date === today);
+          const upcomingContent = allScheduledContent.filter((item: any) => item.date > today);
+          
+          const todaysServices = todaysContent.map((item: any) => ({
+            serviceId: item.id.toString(),
+            serviceName: item.service_name,
+            description: item.notes,
+            contentType: item.content_type,
+            platform: item.platform,
+            priority: 'high' as const,
+            isToday: true,
+            isUpcoming: false,
+            daysUntil: 0
+          }));
+          
+          const upcomingServices = upcomingContent.slice(0, 5).map((item: any) => {
+            const itemDate = new Date(item.date);
+            const daysUntil = Math.ceil((itemDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+            return {
+              serviceId: item.id.toString(),
+              serviceName: item.service_name,
+              description: item.notes,
+              contentType: item.content_type,
+              platform: item.platform,
+              priority: 'medium' as const,
+              isToday: false,
+              isUpcoming: true,
+              daysUntil
+            };
           });
 
-          // Critical data source comparison for debugging
-          console.log('🔍 [Quick Content] CALENDAR REFRESH - Data source comparison:', {
+          console.log('🔍 [Quick Content] DATABASE REFRESH - Services loaded:', {
             brandId: currentBrand.id,
             brandName: currentBrand.businessName,
-            storageServicesCount: calendarContext.todaysServices.length + calendarContext.upcomingServices.length,
-            todaysServicesCount: calendarContext.todaysServices.length,
-            upcomingServicesCount: calendarContext.upcomingServices.length,
-            hasScheduledContent: calendarContext.hasScheduledContent
+            todaysServicesCount: todaysServices.length,
+            upcomingServicesCount: upcomingServices.length,
+            hasScheduledContent: todaysServices.length > 0 || upcomingServices.length > 0
           });
 
-          if (calendarContext.hasScheduledContent) {
-            console.log('✅ [Quick Content] USING REFRESHED STORAGE-BASED SERVICES');
-            console.log('📊 [Quick Content] Refreshing state with updated storage data:', {
-              todaysServices: calendarContext.todaysServices,
-              upcomingServices: calendarContext.upcomingServices,
-              totalServices: calendarContext.todaysServices.length + calendarContext.upcomingServices.length
-            });
+          // Update state with fresh database data
+          setTodaysServices(todaysServices);
+          setUpcomingServices(upcomingServices);
+          setScheduledServices([...todaysServices, ...upcomingServices]);
+          setHasScheduledContent(todaysServices.length > 0 || upcomingServices.length > 0);
 
-            // Update state with fresh data
-            setTodaysServices(calendarContext.todaysServices);
-            setUpcomingServices(calendarContext.upcomingServices);
-            setScheduledServices([...calendarContext.todaysServices, ...calendarContext.upcomingServices]);
-            setHasScheduledContent(true);
-
-            // Show notification about the refresh
-            toast({
-              title: "📅 Calendar Updated",
-              description: `Refreshed ${calendarContext.todaysServices.length} today's services and ${calendarContext.upcomingServices.length} upcoming services`,
-            });
-          }
+          // Show notification about the refresh
+          toast({
+            title: "📅 Calendar Updated",
+            description: `Refreshed ${todaysServices.length} today's services and ${upcomingServices.length} upcoming services from database`,
+          });
         } catch (error) {
           console.error('❌ Error refreshing scheduled services:', error);
         }

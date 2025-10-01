@@ -244,16 +244,33 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
             setMessages(prevMessages => [...prevMessages, aiResponse]);
 
         } catch (error) {
+            const errorMessage = (error as Error).message;
+            let friendlyMessage = errorMessage;
+            
+            // Handle specific error types with user-friendly messages
+            if (errorMessage.includes('429') || errorMessage.includes('quota') || errorMessage.includes('Too Many Requests')) {
+                friendlyMessage = '😅 Creative Studio is experiencing high demand right now! Please try again in a few minutes or switch to Revo 2.0.';
+            } else if (errorMessage.includes('401') || errorMessage.includes('unauthorized') || errorMessage.includes('API key')) {
+                friendlyMessage = '🔧 Creative Studio is having a technical hiccup. Please try Revo 2.0 while we fix this!';
+            } else if (errorMessage.includes('403') || errorMessage.includes('forbidden')) {
+                friendlyMessage = '🔧 Creative Studio is having a technical hiccup. Please try Revo 2.0 while we fix this!';
+            } else if (errorMessage.includes('network') || errorMessage.includes('timeout') || errorMessage.includes('ECONNRESET')) {
+                friendlyMessage = '🌐 Connection hiccup! Please try again in a moment.';
+            } else if (!errorMessage.includes('😅') && !errorMessage.includes('🔧') && !errorMessage.includes('🌐')) {
+                // Only modify if it's not already a friendly message
+                friendlyMessage = '😅 Creative Studio is having some trouble right now! Try Revo 2.0 for great results while we get things sorted out.';
+            }
+            
             const errorResponse: Message = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
-                content: `Sorry, I ran into an error: ${(error as Error).message}`,
+                content: friendlyMessage,
             };
             setMessages(prevMessages => [...prevMessages, errorResponse]);
             toast({
                 variant: 'destructive',
-                title: 'Generation Failed',
-                description: (error as Error).message,
+                title: 'Generation Issue',
+                description: friendlyMessage,
             });
         } finally {
             setIsLoading(false);

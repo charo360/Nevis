@@ -481,13 +481,9 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
                 )}
                 Regenerate Image
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleGenerateVideo} disabled={isGeneratingVideo}>
-                {isGeneratingVideo ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Video className="mr-2 h-4 w-4" />
-                )}
-                Generate Video
+              <DropdownMenuItem disabled>
+                <Video className="mr-2 h-4 w-4 text-muted-foreground" />
+                Generate Video (Coming Soon)
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleDownload}>
                 <Download className="mr-2 h-4 w-4" />

@@ -148,7 +148,27 @@ export class PureAIContentGenerator {
         businessType: request.businessType,
         platform: request.platform
       });
-      throw new Error(`Pure AI content generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      // Handle specific error types with user-friendly messages
+      if (errorMessage.includes('429') || errorMessage.includes('quota') || errorMessage.includes('Too Many Requests')) {
+        throw new Error('😅 Revo is experiencing high demand right now! Please try again in a few minutes or switch to Revo 2.0.');
+      }
+      
+      if (errorMessage.includes('401') || errorMessage.includes('unauthorized') || errorMessage.includes('API key')) {
+        throw new Error('🔧 Revo is having a technical hiccup. Please try Revo 2.0 while we fix this!');
+      }
+      
+      if (errorMessage.includes('403') || errorMessage.includes('forbidden')) {
+        throw new Error('🔧 Revo is having a technical hiccup. Please try Revo 2.0 while we fix this!');
+      }
+      
+      if (errorMessage.includes('network') || errorMessage.includes('timeout') || errorMessage.includes('ECONNRESET')) {
+        throw new Error('🌐 Connection hiccup! Please try again in a moment.');
+      }
+      
+      throw new Error('😅 Revo is having some trouble right now! Try Revo 2.0 for great results while we get things sorted out.');
     }
   }
 
@@ -411,7 +431,19 @@ Generate EXACTLY ${platform === 'Instagram' ? '5' : '3'} hashtags. Be creative a
         businessType: request.businessType,
         platform: request.platform
       });
-      throw new Error(`Pure AI OpenAI content generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      // Handle specific error types with user-friendly messages
+      if (errorMessage.includes('429') || errorMessage.includes('quota') || errorMessage.includes('Too Many Requests')) {
+        throw new Error('😅 Revo is experiencing high demand right now! Please try again in a few minutes or switch to Revo 2.0.');
+      }
+      
+      if (errorMessage.includes('401') || errorMessage.includes('unauthorized') || errorMessage.includes('API key')) {
+        throw new Error('🔧 Revo is having a technical hiccup. Please try Revo 2.0 while we fix this!');
+      }
+      
+      throw new Error('😅 Revo is having some trouble right now! Try Revo 2.0 for great results while we get things sorted out.');
     }
   }
 

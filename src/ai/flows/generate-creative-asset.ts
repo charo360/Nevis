@@ -370,6 +370,8 @@ const generateCreativeAssetFlow = ai.defineFlow(
         // Enhanced instruction parsing with intelligent intent analysis
         const parsedInstructions = parseInstructions(input.prompt);
         const userIntent = analyzeUserIntent(input.prompt, parsedInstructions);
+        // Detect explicit no-people requirement coming from upstream prompts (e.g., Revo 2.0)
+        const noPeopleRequirement = /PEOPLE EXCLUSION REQUIREMENT|WITHOUT any people|NO PEOPLE/i.test(input.prompt);
         const { imageText, remainingPrompt } = extractQuotedText(input.prompt); // Keep for backward compatibility
 
         // Debug logging for user intent analysis
@@ -477,6 +479,11 @@ Transform the uploaded image into a professional marketing design by enhancing i
                 referencePrompt += `\n\n**Text Overlay Integration:** The user has provided specific text in quotes: "${imageText}". You MUST overlay this text on the design in a way that complements both the uploaded image and the overall composition. Ensure the text is readable and professionally integrated.`
             }
 
+            // Enforce no-people directive if present
+            if (noPeopleRequirement) {
+                referencePrompt += `\n\n👥 PEOPLE EXCLUSION REQUIREMENT:\n- MANDATORY: Create a clean, professional design WITHOUT any people or human figures\n- AVOID: Any human faces, bodies, silhouettes, or human-like shapes\n- FOCUS: Products, services, abstract elements, or clean minimalist design\n- STYLE: Professional, clean aesthetics without human elements\n- EMPHASIS: Brand elements, typography, and non-human visual elements`;
+            }
+
             if (input.outputType === 'video') {
                 referencePrompt += `\n\n**Video Integration:** Create a video that showcases the uploaded image as a key element throughout the sequence. The uploaded image should be prominently featured and integrated naturally into the video narrative.`;
                 if (imageText) {
@@ -572,7 +579,7 @@ Transform the uploaded image into a professional marketing design by enhancing i
             }
 
             // Enhanced target market representation for all locations
-            const getTargetMarketInstructions = (location: string, businessType: string, targetAudience: string) => {
+            const getTargetMarketInstructions = (location: string, businessType: string, targetAudience: string, includePeople: boolean) => {
                 const locationKey = location.toLowerCase();
                 const africanCountries = ['kenya', 'nigeria', 'south africa', 'ghana', 'uganda', 'tanzania', 'ethiopia', 'rwanda', 'zambia', 'zimbabwe', 'botswana', 'namibia', 'malawi', 'mozambique', 'senegal', 'mali', 'burkina faso', 'ivory coast', 'cameroon', 'chad', 'sudan', 'egypt', 'morocco', 'algeria', 'tunisia', 'libya'];
 
@@ -607,6 +614,11 @@ Transform the uploaded image into a professional marketing design by enhancing i
 
                 const targetMarket = getBusinessTargetMarket(businessType);
 
+                // If people are excluded, return clean design guidance without any people
+                if (!includePeople) {
+                    return `\n**CLEAN PROFESSIONAL DESIGN WITHOUT PEOPLE FOR ${location.toUpperCase()}:**\n- MANDATORY: Do NOT include people, faces, silhouettes, or human-like figures\n- FOCUS: Products, services, abstract elements, brand typography, and shapes\n- CONTEXT: ${businessType} design without human subjects\n- STYLE: Professional, clean, minimalist aesthetics with strong brand elements`;
+                }
+
                 // Check if it's an African country
                 const isAfricanCountry = africanCountries.some(country => locationKey.includes(country));
 
@@ -634,7 +646,7 @@ Transform the uploaded image into a professional marketing design by enhancing i
                 }
             };
 
-            const targetMarketInstructions = getTargetMarketInstructions(bp.location || '', bp.businessType, bp.targetAudience || '');
+            const targetMarketInstructions = getTargetMarketInstructions(bp.location || '', bp.businessType, bp.targetAudience || '', !noPeopleRequirement);
 
             // Clean business name pattern from content
             const cleanBusinessNamePattern = (text: string): string => {
@@ -820,6 +832,9 @@ ${designDNA}`;
                 }
 
                 onBrandPrompt += `\n- **UPLOADED IMAGE FOCUSED DESIGN:** ${hasUploadedImage ? 'Create a professional marketing design using ONLY the uploaded image as the visual foundation. Enhance it with text overlays, color treatments, and design elements. DO NOT generate any additional images.' : 'Create a complete, professional marketing design with full layout composition. This should be a comprehensive social media post design, NOT just a logo. Include backgrounds, graphics, text elements, and visual hierarchy.'}`;
+                if (noPeopleRequirement) {
+                    onBrandPrompt += `\n- **PEOPLE EXCLUSION (MANDATORY):** Do NOT include people, faces, silhouettes, or human-like figures in any part of the design.`;
+                }
                 onBrandPrompt += `\n- **Brand Integration:** ${bp.logoDataUrl ? 'If a logo is provided, integrate it as a small brand element within the design - focus on enhancing the uploaded image with brand elements' : 'Create a design that represents the brand identity while focusing on the uploaded image'}.`;
                 onBrandPrompt += `\n- **Design Completeness:** ${hasUploadedImage ? 'Enhance the uploaded image with professional text layouts, color treatments, and design elements - use ONLY the uploaded image as the visual foundation' : 'Generate a full marketing design with backgrounds, graphics, text layouts, and visual elements - NOT just a logo or simple graphic.'}`;
                 onBrandPrompt += `\n- **Critical Language Rule:** ALL text must be in clear, readable ENGLISH only. Never use foreign languages, corrupted text, or unreadable symbols.`;
@@ -953,6 +968,9 @@ ${designDNA}`;
 Overlay ONLY the following text onto the asset: "${imageText}".
 DO NOT ADD ANY OTHER TEXT.
 Ensure the text is readable and well-composed.`
+                if (noPeopleRequirement) {
+                    creativePrompt += `\n\n👥 PEOPLE EXCLUSION REQUIREMENT:\n- MANDATORY: Create a clean, professional design WITHOUT any people or human figures\n- AVOID: Any human faces, bodies, silhouettes, or human-like shapes`;
+                }
                 textPrompt = creativePrompt;
                 if (textPrompt) {
                     promptParts.unshift({ text: textPrompt });
@@ -964,6 +982,9 @@ Ensure the text is readable and well-composed.`
                 }
                 if (imageText) {
                     creativePrompt += `\n\n**Text Overlay:** The following text MUST be overlaid on the video in a stylish, readable font: "${imageText}". It is critical that the text is clearly readable, well-composed, and not cut off. The entire text must be visible.`;
+                }
+                if (noPeopleRequirement) {
+                    creativePrompt += `\n\n👥 PEOPLE EXCLUSION REQUIREMENT:\n- MANDATORY: Do not include people, faces, silhouettes, or human-like figures in any generated scenes.`;
                 }
                 textPrompt = creativePrompt;
                 if (textPrompt) {
@@ -1166,11 +1187,34 @@ Ensure the text is readable and well-composed.`
         } catch (e: any) {
             // Ensure a user-friendly error is thrown
             const message = e.message || "An unknown error occurred during asset generation.";
-            // Make the internal error more actionable for users
-            if (message.toLowerCase().includes('internal error')) {
-                throw new Error('The image model is temporarily unavailable. I tried a fallback automatically; please try again if quality looks off.');
+            
+            // Handle specific error types with user-friendly messages
+            if (message.includes('429') || message.includes('quota') || message.includes('Too Many Requests')) {
+                throw new Error('😅 Creative Studio is experiencing high demand right now! Please try again in a few minutes or switch to Revo 2.0.');
             }
-            throw new Error(message);
+            
+            if (message.includes('401') || message.includes('unauthorized') || message.includes('API key')) {
+                throw new Error('🔧 Creative Studio is having a technical hiccup. Please try Revo 2.0 while we fix this!');
+            }
+            
+            if (message.includes('403') || message.includes('forbidden')) {
+                throw new Error('🔧 Creative Studio is having a technical hiccup. Please try Revo 2.0 while we fix this!');
+            }
+            
+            if (message.includes('network') || message.includes('timeout') || message.includes('ECONNRESET')) {
+                throw new Error('🌐 Connection hiccup! Please try again in a moment.');
+            }
+            
+            if (message.toLowerCase().includes('internal error')) {
+                throw new Error('😅 Creative Studio is having some trouble right now! Try Revo 2.0 for great results while we get things sorted out.');
+            }
+            
+            // If it's already a friendly message, pass it through
+            if (message.includes('😅') || message.includes('🔧') || message.includes('🌐')) {
+                throw new Error(message);
+            }
+            
+            throw new Error('😅 Creative Studio is having some trouble right now! Try Revo 2.0 for great results while we get things sorted out.');
         }
     }
 );

@@ -155,8 +155,21 @@ export async function generateRevo15ContentAction(
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
     // If it's already a user-friendly message, use it directly
-    if (errorMessage.includes('😅') || errorMessage.includes('🤖') || errorMessage.includes('😔')) {
+    if (errorMessage.includes('😅') || errorMessage.includes('🤖') || errorMessage.includes('😔') || errorMessage.includes('🚫') || errorMessage.includes('🔑') || errorMessage.includes('🌐')) {
       throw new Error(errorMessage);
+    }
+
+    // Handle specific error types
+    if (errorMessage.includes('quota') || errorMessage.includes('429') || errorMessage.includes('Too Many Requests')) {
+      throw new Error('😅 Revo 1.5 is experiencing high demand right now! Please try again in a few minutes or switch to Revo 2.0.');
+    }
+
+    if (errorMessage.includes('401') || errorMessage.includes('unauthorized') || errorMessage.includes('API key')) {
+      throw new Error('🔧 Revo 1.5 is having a technical hiccup. Please try Revo 2.0 while we fix this!');
+    }
+
+    if (errorMessage.includes('network') || errorMessage.includes('timeout') || errorMessage.includes('ECONNRESET')) {
+      throw new Error('🌐 Connection hiccup! Please try again in a moment.');
     }
 
     // Otherwise, make it friendly

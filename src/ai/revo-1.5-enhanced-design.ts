@@ -2315,10 +2315,19 @@ export async function generateRevo15EnhancedDesign(
         colors: [input.brandProfile.primaryColor, input.brandProfile.accentColor].filter(Boolean),
         personality: input.brandProfile.brandPersonality,
         values: input.brandProfile.brandValues
-      }
+      },
+      // NEW: Pass scheduled services to Claude (Revo 2.0 approach)
+      scheduledServices: input.scheduledServices || []
     } as any;
     // Preserve raw services for deeper parsing in the generator
     (claudeRequest as any).servicesRaw = rawServices;
+    
+    console.log('📅 [Revo 1.5] Passing scheduled services to Claude Sonnet 4:', {
+      scheduledServicesCount: input.scheduledServices?.length || 0,
+      todaysServicesCount: input.scheduledServices?.filter(s => s.isToday).length || 0,
+      upcomingServicesCount: input.scheduledServices?.filter(s => s.isUpcoming).length || 0,
+      scheduledServiceNames: input.scheduledServices?.map(s => s.serviceName) || []
+    });
 
     const claudeResult = await ClaudeSonnet4Generator.generateContent(claudeRequest);
 
