@@ -414,11 +414,52 @@ export function useAuth() {
     }
   }, []);
 
+  // Google OAuth sign-in
+  const signInWithGoogle = async (): Promise<void> => {
+    try {
+      setAuthState(prev => ({ ...prev, loading: true, error: null }));
+
+      // Get current origin for redirect
+      const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001';
+      const redirectTo = `${origin}/auth/callback`;
+
+      // Call our Google OAuth API route
+      const response = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ redirectTo }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Google OAuth failed');
+      }
+
+      // Redirect to Google OAuth URL
+      if (typeof window !== 'undefined' && data.url) {
+        window.location.href = data.url;
+      }
+
+    } catch (error) {
+      console.error('Google OAuth error:', error);
+      setAuthState(prev => ({
+        ...prev,
+        loading: false,
+        error: error instanceof Error ? error.message : 'Google sign-in failed',
+      }));
+      throw error;
+    }
+  };
+
   return {
     ...authState,
     signIn,
     signUp,
     signInAnonymous,
+    signInWithGoogle,
     signOut,
     updateUserProfile,
     refreshToken,
