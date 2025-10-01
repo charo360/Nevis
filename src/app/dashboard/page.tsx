@@ -184,7 +184,7 @@ export default function DashboardPage() {
 
   const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
 
-  const createCheckout = async (priceId: string) => {
+  const createCheckout = async (planId: string) => {
     if (!user || !user.userId) {
       // Ensure authenticated
       router.push('/auth')
@@ -196,7 +196,7 @@ export default function DashboardPage() {
       const res = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ priceId, quantity: 1, mode: 'payment', customerEmail: user.email, metadata: { userId: user.userId, priceId } })
+        body: JSON.stringify({ planId, quantity: 1, mode: 'payment', customerEmail: user.email, metadata: { userId: user.userId, planId } })
       })
 
       const data = await res.json()
