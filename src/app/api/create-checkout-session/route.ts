@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
         'price_1SCkjkCik0ZJySexpx9RGhu3': 'enterprise'
       };
       actualPlanId = legacyMapping[planId] || 'starter'; // fallback to starter
-      console.log(`🔄 Converting legacy price ID ${planId} to plan ID: ${actualPlanId}`);
+  
     }
 
     // Validate plan ID and get plan details
