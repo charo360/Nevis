@@ -5,18 +5,6 @@ import { verifyToken } from '@/lib/auth/jwt'
 import { getStripeConfig, getCheckoutUrls } from '@/lib/stripe-config'
 import { getPlanById, planIdToStripePrice, PRICING_PLANS } from '@/lib/secure-pricing'
 
-// Get environment-aware Stripe configuration
-const stripeConfig = getStripeConfig()
-const stripe = new Stripe(stripeConfig.secretKey, {
-  apiVersion: '2023-10-16'
-})
-
-// Optional Supabase persistence (only if keys are provided)
-let supabase: ReturnType<typeof createClient> | null = null
-if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
-}
-
 type Body = {
   planId?: string  // New secure format
   priceId?: string // Legacy format for backward compatibility
@@ -26,10 +14,35 @@ type Body = {
   metadata?: Record<string, string>
 }
 
-// No longer needed - using secure pricing system instead
-
 export async function POST(req: NextRequest) {
+  let stripeConfig: any = null;
+  let stripe: Stripe | null = null;
+  let supabase: any = null;
+
   try {
+    // Initialize configuration inside the function with error handling
+    try {
+      stripeConfig = getStripeConfig();
+      stripe = new Stripe(stripeConfig.secretKey, {
+        apiVersion: '2025-08-27.basil'
+      });
+    } catch (configError: any) {
+      console.error('❌ Stripe configuration error:', configError);
+      return NextResponse.json({ 
+        error: 'Payment system configuration error. Please try again later.'
+      }, { status: 500 });
+    }
+
+    // Initialize Supabase if keys are available
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      try {
+        supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+      } catch (supabaseError: any) {
+        console.error('❌ Supabase initialization error:', supabaseError);
+        // Continue without Supabase - don't fail the entire request
+      }
+    }
+
     const body = await req.json() as Body
     
     // Debug logging for troubleshooting
@@ -59,7 +72,7 @@ export async function POST(req: NextRequest) {
         'price_1SCjJlCXEBwbxwozhKzAtCH1': 'growth',
         'price_1SCjMpCXEBwbxwozhT1RWAYP': 'pro',
         'price_1SCjPgCXEBwbxwozjCNWanOY': 'enterprise',
-        // Development/Test price IDs (corrected)
+        // Development/Test price IDs  
         'price_1SCkZMCik0ZJySexGFq9FtxO': 'try-free',
         'price_1SCwe1Cik0ZJySexYVYW97uQ': 'starter',
         'price_1SCkefCik0ZJySexBO34LAsl': 'growth',
@@ -67,7 +80,7 @@ export async function POST(req: NextRequest) {
         'price_1SCkjkCik0ZJySexpx9RGhu3': 'enterprise'
       };
       actualPlanId = legacyMapping[planId] || 'starter'; // fallback to starter
-  
+      console.log(`🔄 Converting legacy price ID ${planId} to plan ID: ${actualPlanId}`);
     }
 
     // Validate plan ID and get plan details
@@ -76,7 +89,7 @@ export async function POST(req: NextRequest) {
       console.error(`❌ Invalid plan ID attempted: ${actualPlanId}`, {
         attempted: actualPlanId,
         original: planId,
-        environment: stripeConfig.environment,
+        environment: stripeConfig?.environment || 'unknown',
         timestamp: new Date().toISOString()
       })
       return NextResponse.json({ 
@@ -89,7 +102,7 @@ export async function POST(req: NextRequest) {
     if (!stripePriceId) {
       console.error(`❌ No Stripe price ID found for plan: ${actualPlanId}`, {
         planId: actualPlanId,
-        environment: stripeConfig.environment,
+        environment: stripeConfig?.environment || 'unknown',
         timestamp: new Date().toISOString()
       })
       return NextResponse.json({ 
