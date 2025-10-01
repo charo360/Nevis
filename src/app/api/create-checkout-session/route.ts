@@ -18,7 +18,8 @@ if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KE
 }
 
 type Body = {
-  planId: string  // Changed from priceId to planId for security
+  planId?: string  // New secure format
+  priceId?: string // Legacy format for backward compatibility
   quantity?: number
   customerEmail?: string
   mode?: 'payment' | 'subscription'
@@ -30,16 +31,51 @@ type Body = {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json() as Body
+    
+    // Debug logging for troubleshooting
+    console.log('🔄 Checkout request received:', {
+      planId: body.planId,
+      priceId: body.priceId,
+      customerEmail: body.customerEmail,
+      hasAuth: !!req.headers.get('authorization'),
+      environment: stripeConfig.environment
+    });
 
-    if (!body || !body.planId) {
+    // Support both old priceId (legacy) and new planId (secure) formats
+    const planId = body.planId || body.priceId; // priceId for backward compatibility
+    
+    if (!planId) {
       return NextResponse.json({ error: 'Missing planId in request body' }, { status: 400 })
     }
 
+    // If it's a legacy priceId (starts with price_), convert it to planId  
+    let actualPlanId = planId;
+    if (planId.startsWith('price_')) {
+      // Map old price IDs to plan IDs for backward compatibility
+      const legacyMapping: Record<string, string> = {
+        // Production price IDs
+        'price_1SCjDVCXEBwbxwozB5a6oXUp': 'try-free',
+        'price_1SDUAiCXEBwbxwozr788ke9X': 'starter',
+        'price_1SCjJlCXEBwbxwozhKzAtCH1': 'growth',
+        'price_1SCjMpCXEBwbxwozhT1RWAYP': 'pro',
+        'price_1SCjPgCXEBwbxwozjCNWanOY': 'enterprise',
+        // Development/Test price IDs (corrected)
+        'price_1SCkZMCik0ZJySexGFq9FtxO': 'try-free',
+        'price_1SCwe1Cik0ZJySexYVYW97uQ': 'starter',
+        'price_1SCkefCik0ZJySexBO34LAsl': 'growth',
+        'price_1SCkhJCik0ZJySexgkXpFKTO': 'pro',
+        'price_1SCkjkCik0ZJySexpx9RGhu3': 'enterprise'
+      };
+      actualPlanId = legacyMapping[planId] || 'starter'; // fallback to starter
+      console.log(`🔄 Converting legacy price ID ${planId} to plan ID: ${actualPlanId}`);
+    }
+
     // Validate plan ID and get plan details
-    const planDetails = getPlanById(body.planId)
+    const planDetails = getPlanById(actualPlanId)
     if (!planDetails) {
-      console.error(`❌ Invalid plan ID attempted: ${body.planId}`, {
-        attempted: body.planId,
+      console.error(`❌ Invalid plan ID attempted: ${actualPlanId}`, {
+        attempted: actualPlanId,
+        original: planId,
         environment: stripeConfig.environment,
         timestamp: new Date().toISOString()
       })
@@ -49,10 +85,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Convert plan ID to Stripe price ID (server-side only)
-    const stripePriceId = planIdToStripePrice(body.planId)
+    const stripePriceId = planIdToStripePrice(actualPlanId)
     if (!stripePriceId) {
-      console.error(`❌ No Stripe price ID found for plan: ${body.planId}`, {
-        planId: body.planId,
+      console.error(`❌ No Stripe price ID found for plan: ${actualPlanId}`, {
+        planId: actualPlanId,
         environment: stripeConfig.environment,
         timestamp: new Date().toISOString()
       })
@@ -75,7 +111,7 @@ export async function POST(req: NextRequest) {
     const mode = body.mode === 'subscription' ? 'subscription' : 'payment'
     const metadata: Record<string, string> = { 
       ...(body.metadata || {}), 
-      planId: body.planId,
+      planId: actualPlanId,
       planName: planDetails.name,
       credits: planDetails.credits.toString()
     }
@@ -145,7 +181,7 @@ export async function POST(req: NextRequest) {
       console.error('❌ Stripe session creation failed:', {
         error: stripeError.message,
         code: stripeError.code,
-        planId: body.planId,
+        planId: actualPlanId,
         stripePriceId: stripePriceId, // Safe to log internally
         environment: stripeConfig.environment,
         timestamp: new Date().toISOString()
@@ -169,7 +205,7 @@ export async function POST(req: NextRequest) {
         const payload = {
           user_id: verifiedUserId,
           stripe_session_id: session.id,
-          plan_id: planDetails.id,
+          plan_id: actualPlanId,
           amount: planDetails.price,
           status: 'pending',
           credits_added: planDetails.credits,
