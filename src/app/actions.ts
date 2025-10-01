@@ -87,11 +87,38 @@ export async function analyzeBrandAction(
       designImageUris: designImageUris || []
     });
 
-
     if (!result) {
       return {
         success: false,
         error: "Analysis returned empty result",
+        errorType: 'error'
+      };
+    }
+
+    // Additional validation to prevent schema returns in production
+    const resultStr = JSON.stringify(result);
+    if (resultStr.includes('"type": "string"') || 
+        resultStr.includes('"description": "ALL the SPECIFIC') ||
+        resultStr.includes('services."') ||
+        resultStr.includes('keyFeatures": { "type": "string"') ||
+        result.businessName?.includes('"type"') ||
+        result.description?.includes('"description"')) {
+      
+      console.error('❌ AI returned schema format instead of analysis:', result);
+      return {
+        success: false,
+        error: "AI analysis service returned invalid format. This is a technical issue that has been logged. Please try again or proceed manually.",
+        errorType: 'error'
+      };
+    }
+
+    // Validate that we have actual content, not schema definitions
+    if (!result.businessName || result.businessName.length < 2 ||
+        !result.description || result.description.length < 10) {
+      console.error('❌ AI returned incomplete analysis:', result);
+      return {
+        success: false,
+        error: "AI analysis returned incomplete results. Please try again or proceed manually.",
         errorType: 'error'
       };
     }
