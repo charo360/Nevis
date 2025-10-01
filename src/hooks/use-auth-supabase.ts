@@ -419,9 +419,18 @@ export function useAuth() {
     try {
       setAuthState(prev => ({ ...prev, loading: true, error: null }));
 
-      // Get current origin for redirect
-      const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001';
+      // Environment-aware origin detection
+      let origin = 'http://localhost:3001';
+      if (typeof window !== 'undefined') {
+        origin = window.location.origin;
+        // Force production URL if on production domain
+        if (window.location.hostname === 'crevo.app' || window.location.hostname.includes('crevo.app')) {
+          origin = 'https://crevo.app';
+        }
+      }
       const redirectTo = `${origin}/auth/callback`;
+      
+      console.log('🔄 Google OAuth redirect setup:', { origin, redirectTo });
 
       // Call our Google OAuth API route
       const response = await fetch('/api/auth/google', {

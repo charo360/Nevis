@@ -44,11 +44,20 @@ export async function POST(req: NextRequest): Promise<NextResponse<GoogleOAuthRe
     const host = req.headers.get('host') || 'localhost:3001';
     const origin = `${protocol}://${host}`;
     
-    // Base URL selection based on environment
+    // Base URL selection based on environment - prioritize production domain
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-                   (process.env.NODE_ENV === 'production' 
+                   (host?.includes('crevo.app') || process.env.NODE_ENV === 'production' 
                      ? 'https://crevo.app' 
                      : origin);
+
+    console.log('🌍 Environment detection:', {
+      NODE_ENV: process.env.NODE_ENV,
+      host,
+      protocol,
+      origin,
+      baseUrl,
+      NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL
+    });
 
     // Default and final redirect URL determination
     const defaultRedirectPath = '/auth/callback';
