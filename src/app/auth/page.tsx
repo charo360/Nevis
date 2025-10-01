@@ -27,6 +27,8 @@ import { useEffect } from 'react';
 
 export default function AuthPage() {
   const router = useRouter();
+  // Temporarily commenting out Google OAuth
+  // const { signIn, signUp, signInWithGoogle, signOut, loading, user } = useAuth();
   const { signIn, signUp, signOut, loading, user } = useAuth();
   const { toast } = useToast();
   const { refreshBrands } = useBrandActions();
