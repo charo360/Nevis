@@ -97,6 +97,38 @@ export async function POST(req: NextRequest) {
       }, { status: 400 })
     }
 
+    // If the plan is free (price === 0), short-circuit Stripe and grant credits directly
+    if (planDetails.price === 0) {
+      console.log('ℹ️ Free plan selected - granting credits without Stripe:', { planId: actualPlanId, credits: planDetails.credits })
+
+      // Persist the free transaction if Supabase is available and we have a user id in metadata
+      if (supabase) {
+        try {
+          const userIdToPersist = body.metadata?.userId || null
+          const payload = {
+            user_id: userIdToPersist,
+            stripe_session_id: null,
+            plan_id: actualPlanId,
+            amount: 0,
+            status: 'completed',
+            credits_added: planDetails.credits,
+          }
+
+          const { error: insertError } = await supabase.from('payment_transactions').insert(payload as any)
+          if (insertError) {
+            console.error('Database insert failed for free plan grant:', insertError)
+          }
+        } catch (e) {
+          console.error('Failed to persist free plan grant to Supabase:', e)
+        }
+      } else {
+        console.log('ℹ️ No Supabase configured - skipping persistence for free plan grant')
+      }
+
+      // Return success URL so frontend can redirect to the success page
+      return NextResponse.json({ id: `free-${Date.now()}`, url: getCheckoutUrls().successUrl })
+    }
+
     // Convert plan ID to Stripe price ID (server-side only)
     const stripePriceId = planIdToStripePrice(actualPlanId)
     if (!stripePriceId) {
@@ -172,6 +204,29 @@ export async function POST(req: NextRequest) {
     // Create Stripe Checkout session (using price id directly)
     let session
     try {
+      // Preflight: ensure the Stripe Price exists in this Stripe account
+      try {
+        await stripe.prices.retrieve(stripePriceId)
+      } catch (priceErr: any) {
+        console.error('❌ Stripe price retrieval failed:', {
+          message: priceErr?.message,
+          code: priceErr?.code,
+          stripePriceId,
+          planId: actualPlanId,
+          environment: stripeConfig.environment,
+          timestamp: new Date().toISOString()
+        })
+
+        // If the price doesn't exist in this account, return a clear error
+        if (priceErr && priceErr.code === 'resource_missing') {
+          return NextResponse.json({ 
+            error: 'The selected pricing plan is not available. Please try again or contact support.'
+          }, { status: 400 })
+        }
+
+        // For other errors, continue to the generic error handling below
+      }
+
       session = await stripe.checkout.sessions.create({
         mode,
         payment_method_types: ['card'],
