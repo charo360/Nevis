@@ -821,7 +821,7 @@ export default function HomePage() {
                     <Zap className="w-5 h-5 text-blue-500" />
                   </div>
                   <div className="text-sm font-medium">Basic</div>
-                  <div className="text-lg font-bold text-blue-600">1 credit</div>
+                  <div className="text-lg font-bold text-blue-600">2 credits</div>
                   <div className="text-xs text-gray-500">Fast & Efficient</div>
                 </div>
                 <div className="p-4 border rounded-lg bg-white">
@@ -829,7 +829,7 @@ export default function HomePage() {
                     <Sparkles className="w-5 h-5 text-purple-500" />
                   </div>
                   <div className="text-sm font-medium">Enhanced</div>
-                  <div className="text-lg font-bold text-purple-600">1.5 credits</div>
+                  <div className="text-lg font-bold text-purple-600">3 credits</div>
                   <div className="text-xs text-gray-500">Higher Quality</div>
                 </div>
                 <div className="p-4 border rounded-lg bg-white">
@@ -837,7 +837,7 @@ export default function HomePage() {
                     <Brain className="w-5 h-5 text-indigo-500" />
                   </div>
                   <div className="text-sm font-medium">Premium</div>
-                  <div className="text-lg font-bold text-indigo-600">2 credits</div>
+                  <div className="text-lg font-bold text-indigo-600">3.5 credits</div>
                   <div className="text-xs text-gray-500">Best Quality</div>
                 </div>
               </div>
@@ -908,7 +908,7 @@ export default function HomePage() {
                 </div>
 
                 <div className="mb-4">
-                  <div className="text-2xl font-semibold text-blue-600">50</div>
+                  <div className="text-2xl font-semibold text-blue-600">40</div>
                   <div className="text-sm text-gray-500">credits</div>
                   <div className="text-xs text-gray-400 mt-1">$0.20 per credit</div>
                 </div>
@@ -961,7 +961,7 @@ export default function HomePage() {
                 </div>
 
                 <div className="mb-4">
-                  <div className="text-2xl font-semibold text-blue-600">150</div>
+                  <div className="text-2xl font-semibold text-blue-600">120</div>
                   <div className="text-sm text-gray-500">credits</div>
                   <div className="text-xs text-gray-400 mt-1">$0.19 per credit</div>
                 </div>
@@ -1010,7 +1010,7 @@ export default function HomePage() {
                 </div>
 
                 <div className="mb-4">
-                  <div className="text-2xl font-semibold text-blue-600">250</div>
+                  <div className="text-2xl font-semibold text-blue-600">220</div>
                   <div className="text-sm text-gray-500">credits</div>
                   <div className="text-xs text-gray-400 mt-1">$0.196 per credit</div>
                 </div>
@@ -1060,7 +1060,7 @@ export default function HomePage() {
                 </div>
 
                 <div className="mb-4">
-                  <div className="text-2xl font-semibold text-blue-600">550</div>
+                  <div className="text-2xl font-semibold text-blue-600">500</div>
                   <div className="text-sm text-gray-500">credits</div>
                   <div className="text-xs text-gray-400 mt-1">$0.18 per credit</div>
                 </div>
@@ -1106,7 +1106,7 @@ export default function HomePage() {
               </div>
               <div>
                 <h4 className="font-semibold mb-2">What do credits do?</h4>
-                <p className="text-gray-600 text-sm">Credits power content generation with different quality tiers: Basic = 1 credit, Enhanced = 1.5 credits, Premium = 2 credits per post.</p>
+                <p className="text-gray-600 text-sm">Credits power content generation with different quality tiers: Basic = 2 credits, Enhanced = 3 credits, Premium = 3.5 credits per post.</p>
               </div>
               <div>
                 <h4 className="font-semibold mb-2">Do credits expire?</h4>

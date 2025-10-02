@@ -82,11 +82,11 @@ export function getStripePrices() {
   if (isLive) {
     // Production/Live price IDs - Real live price IDs from Stripe Dashboard
     return {
-      'try-free': 'price_1SDqaWELJu3kIHjxZQBntjuO',     // Try Agent Free
-      'starter': 'price_1SDqfQELJu3kIHjxzHWPNMPs',       // Starter Agent
-      'growth': 'price_1SDqiKELJu3kIHjx0LWHBgfV',        // Growth Agent
-      'pro': 'price_1SDqloELJu3kIHjxU187qSj1',           // Pro Agent
-      'enterprise': 'price_1SDqp4ELJu3kIHjx7oLcQwzh'     // Enterprise Agent
+      'try-free': 'price_1SDqaWELJu3kIHjxZQBntjuO',     // Try Agent Free (prod)
+      'starter': 'price_1SDqfQELJu3kIHjxzHWPNMPs',       // Starter Agent (prod)
+      'growth': 'price_1SDqiKELJu3kIHjx0LWHBgfV',        // Growth Agent (prod)
+      'pro': 'price_1SDqloELJu3kIHjxU187qSj1',           // Pro Agent (prod)
+      'enterprise': 'price_1SDqp4ELJu3kIHjx7oLcQwzh'     // Enterprise Agent (prod)
     };
   } else {
     // Test/Development price IDs (actual working test mode IDs from your Stripe account)

@@ -67,11 +67,11 @@ export async function POST(req: NextRequest) {
       // Map old price IDs to plan IDs for backward compatibility
       const legacyMapping: Record<string, string> = {
         // Production price IDs
-        'price_1SCjDVCXEBwbxwozB5a6oXUp': 'try-free',
-        'price_1SDUAiCXEBwbxwozr788ke9X': 'starter',
-        'price_1SCjJlCXEBwbxwozhKzAtCH1': 'growth',
-        'price_1SCjMpCXEBwbxwozhT1RWAYP': 'pro',
-        'price_1SCjPgCXEBwbxwozjCNWanOY': 'enterprise',
+        'price_1SDqaWELJu3kIHjxZQBntjuO': 'try-free',
+        'price_1SDqfQELJu3kIHjxzHWPNMPs': 'starter',
+        'price_1SDqiKELJu3kIHjx0LWHBgfV': 'growth',
+        'price_1SDqloELJu3kIHjxU187qSj1': 'pro',
+        'price_1SDqp4ELJu3kIHjx7oLcQwzh': 'enterprise',
         // Development/Test price IDs  
         'price_1SCkZMCik0ZJySexGFq9FtxO': 'try-free',
         'price_1SCwe1Cik0ZJySexYVYW97uQ': 'starter',

@@ -38,7 +38,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     id: 'starter',
     name: 'Starter Agent',
     price: 10,
-    credits: 50,
+  credits: 40,
     description: 'Great for small businesses',
     features: [
       'Advanced AI design generation',
@@ -52,7 +52,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     id: 'growth',
     name: 'Growth Agent',
     price: 29,
-    credits: 150,
+  credits: 120,
     description: 'Perfect for growing businesses',
     popular: true,
     features: [
@@ -67,7 +67,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     id: 'pro',
     name: 'Pro Agent',
     price: 49,
-    credits: 250,
+  credits: 220,
     description: 'For professional marketers',
     features: [
       'Everything in Growth',
@@ -81,7 +81,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     id: 'enterprise',
     name: 'Enterprise Agent',
     price: 99,
-    credits: 550,
+  credits: 500,
     description: 'For large organizations',
     features: [
       'Everything in Pro',

@@ -14,10 +14,10 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '20
 // Minimal plan map (amounts in cents) — adjust to match your pricing-data if desired
 const PLANS: Record<string, { amountCents: number; credits: number; name: string }> = {
   free: { amountCents: 0, credits: 10, name: 'Free Plan' },
-  starter: { amountCents: 1000, credits: 50, name: 'Starter Pack' },
-  growth: { amountCents: 2900, credits: 150, name: 'Growth Pack' },
-  pro: { amountCents: 4900, credits: 250, name: 'Pro Pack' },
-  power: { amountCents: 9900, credits: 550, name: 'Power Users' },
+  starter: { amountCents: 1000, credits: 40, name: 'Starter Pack' },
+  growth: { amountCents: 2900, credits: 120, name: 'Growth Pack' },
+  pro: { amountCents: 4900, credits: 220, name: 'Pro Pack' },
+  power: { amountCents: 9900, credits: 500, name: 'Power Users' },
 };
 
 export async function POST(req: Request) {
