@@ -899,6 +899,14 @@ export function WebsiteAnalysisStep({
                   <strong>That's okay!</strong> Technical issues happen sometimes.
                   You can create an excellent brand profile by entering the information yourself.
                 </p>
+                <div className="mt-2 text-xs text-orange-700">
+                  <p><strong>Quick alternatives:</strong></p>
+                  <ul className="list-disc pl-5 mt-1">
+                    <li>Try a different (public) page on the same site (e.g., /about or /services).</li>
+                    <li>Upload 3-5 representative design images to improve visual analysis.</li>
+                    <li>Use the "Use Smart Fallback" button below to auto-fill a sensible starter profile derived from the URL.</li>
+                  </ul>
+                </div>
               </div>
             )}
           </div>
@@ -911,6 +919,35 @@ export function WebsiteAnalysisStep({
               handleSkipAnalysis();
             }}>
               Continue Manually
+            </AlertDialogAction>
+            <AlertDialogAction onClick={async () => {
+              // Use smart fallback: fill minimal sensible fields and continue
+              // This mirrors the fallback returned by the analyze flow and helps the user continue quickly.
+              const fallbackName = (() => {
+                try {
+                  const urlObj = new URL(websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`);
+                  const domain = urlObj.hostname.replace(/^www\./, '');
+                  const domainParts = domain.split('.');
+                  return domainParts[0].charAt(0).toUpperCase() + domainParts[0].slice(1);
+                } catch {
+                  return 'New Business';
+                }
+              })();
+
+              updateBrandProfile({
+                websiteUrl,
+                businessName: fallbackName,
+                description: 'This business provides professional services and solutions to help customers achieve their goals. We are committed to delivering quality results and excellent customer service.',
+                businessType: 'Professional Services',
+                services: 'Consulting Services: Professional consulting and advisory services\nSupport Services: Customer support and assistance',
+              });
+
+              setShowAnalysisDialog(false);
+              // Mark analysis as complete so the UI proceeds
+              setAnalysisComplete(true);
+              onNext();
+            }}>
+              Use Smart Fallback
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
