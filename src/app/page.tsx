@@ -856,7 +856,7 @@ export default function HomePage() {
                 <p className="text-sm text-gray-600 mb-4">Basic agent training, Watermarked images</p>
 
                 <div className="mb-4">
-                  <span className="text-3xl font-bold">$0</span>
+                  <span className="text-3xl font-bold" data-plan="try-free" data-amount="0" data-currency="USD">$0</span>
                 </div>
 
                 <div className="mb-4">
@@ -884,12 +884,15 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => handleGetStarted()}
+                  onClick={() => handleGetStarted('try-free')}
                   className="w-full"
                   variant="outline"
+                  data-plan="try-free"
+                  aria-label="Start Try Agent Free"
                 >
                   Start Free – No Credit Card Required
                 </Button>
+*** End Patch
               </CardContent>
             </Card>
 
@@ -903,7 +906,7 @@ export default function HomePage() {
                 <p className="text-sm text-gray-600 mb-4">HD generations, No watermark, Agent memory</p>
 
                 <div className="mb-4">
-                  <span className="text-3xl font-bold">$10</span>
+                  <span className="text-3xl font-bold" data-plan="starter" data-amount="1000" data-currency="USD">$10</span>
                   <span className="text-gray-500 text-sm"> one-time</span>
                 </div>
 
@@ -933,9 +936,11 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => handleGetStarted('try-free')}
+                  onClick={() => handleGetStarted('starter')}
                   className="w-full"
                   variant="outline"
+                  data-plan="starter"
+                  aria-label="Buy Starter Credits"
                 >
                   Buy Credits
                 </Button>
@@ -956,7 +961,7 @@ export default function HomePage() {
                 <p className="text-sm text-gray-600 mb-4">Priority speed, Advanced models, Priority support</p>
 
                 <div className="mb-4">
-                  <span className="text-3xl font-bold">$29</span>
+                  <span className="text-3xl font-bold" data-plan="growth" data-amount="2900" data-currency="USD">$29</span>
                   <span className="text-gray-500 text-sm"> one-time</span>
                 </div>
 
@@ -987,8 +992,10 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => handleGetStarted('starter')}
+                  onClick={() => handleGetStarted('growth')}
                   className="w-full"
+                  data-plan="growth"
+                  aria-label="Buy Growth Credits"
                 >
                   Buy Credits
                 </Button>
@@ -1005,7 +1012,7 @@ export default function HomePage() {
                 <p className="text-sm text-gray-600 mb-4">Bulk generations, API access, Early features</p>
 
                 <div className="mb-4">
-                  <span className="text-3xl font-bold">$49</span>
+                  <span className="text-3xl font-bold" data-plan="pro" data-amount="4900" data-currency="USD">$49</span>
                   <span className="text-gray-500 text-sm"> one-time</span>
                 </div>
 
@@ -1036,9 +1043,11 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => handleGetStarted('growth')}
+                  onClick={() => handleGetStarted('pro')}
                   className="w-full"
                   variant="outline"
+                  data-plan="pro"
+                  aria-label="Buy Pro Credits"
                 >
                   Buy Credits
                 </Button>
@@ -1055,7 +1064,7 @@ export default function HomePage() {
                 <p className="text-sm text-gray-600 mb-4">White-label, Team collaboration, Custom integrations</p>
 
                 <div className="mb-4">
-                  <span className="text-3xl font-bold">$99</span>
+                  <span className="text-3xl font-bold" data-plan="enterprise" data-amount="9900" data-currency="USD">$99</span>
                   <span className="text-gray-500 text-sm"> one-time</span>
                 </div>
 
@@ -1086,9 +1095,11 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => handleGetStarted('pro')}
+                  onClick={() => handleGetStarted('enterprise')}
                   className="w-full"
                   variant="outline"
+                  data-plan="enterprise"
+                  aria-label="Buy Enterprise Credits"
                 >
                   Buy Credits
                 </Button>
