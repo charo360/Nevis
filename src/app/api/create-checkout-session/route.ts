@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     try {
       stripeConfig = getStripeConfig();
       stripe = new Stripe(stripeConfig.secretKey, {
-        apiVersion: '2022-11-15'
+        apiVersion: '2025-08-27.basil'
       });
       // Validate configured price IDs (best-effort) and log missing ones
       try {
@@ -257,9 +257,8 @@ export async function POST(req: NextRequest) {
         timestamp: new Date().toISOString(),
         raw: stripeError
       })
-+
-      const isProd = process.env.NODE_ENV === 'production';
-      const publicMessage = isProd ? 'Unable to process payment. Please try again or contact support.' : (stripeError?.message || 'Stripe error');
+      
+    const isProd = process.env.NODE_ENV === 'production';
 
       return NextResponse.json({ error: publicMessage }, { status: 500 })
     }
