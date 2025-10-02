@@ -26,12 +26,16 @@ export function getStripeConfig(): StripeConfig {
   const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-  // Validate that keys exist
-  if (!secretKey || !publishableKey || !webhookSecret) {
+  // Validate that essential keys exist (webhook secret is optional)
+  if (!secretKey || !publishableKey) {
     throw new Error(
       `Missing Stripe configuration for ${isProduction ? 'production' : 'development'} environment. ` +
-      'Please check your environment variables.'
+      'Please ensure STRIPE_SECRET_KEY and NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY are set.'
     );
+  }
+
+  if (!webhookSecret) {
+    console.warn('⚠️ Stripe webhook secret (STRIPE_WEBHOOK_SECRET) is not set. Webhook signature verification will be disabled.');
   }
 
   // Validate key format matches environment
