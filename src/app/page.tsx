@@ -114,7 +114,7 @@ export default function HomePage() {
     return () => { mounted = false; if (interval) clearInterval(interval); };
   }, [user, signOut]);
 
-        const createCheckout = async (priceId: string) => {
+        const createCheckout = async (planId: string) => {
           // If auth is still loading, wait and inform the user
           if (loading) {
             toast({ title: 'Please wait', description: 'Checking authentication status...', variant: 'default' });
@@ -132,7 +132,7 @@ export default function HomePage() {
             const res = await fetch('/api/create-checkout-session', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-              body: JSON.stringify({ priceId, quantity: 1, mode: 'payment', customerEmail: user.email, metadata: { userId: user.userId, priceId } })
+              body: JSON.stringify({ planId, quantity: 1, mode: 'payment', customerEmail: user.email, metadata: { userId: user.userId, planId } })
             });
 
             const data = await res.json();
@@ -152,7 +152,7 @@ export default function HomePage() {
           }
         };
 
-        const handleGetStarted = (priceId?: string) => {
+        const handleGetStarted = (planId?: string) => {
           try {
             // If auth is still loading, do nothing and notify user
             if (loading) {
@@ -166,9 +166,9 @@ export default function HomePage() {
               return;
             }
 
-            // If a priceId was provided, start the checkout flow for logged-in users
-            if (priceId) {
-              void createCheckout(priceId);
+            // If a planId was provided, start the checkout flow for logged-in users
+            if (planId) {
+              void createCheckout(planId);
               return;
             }
 
@@ -933,7 +933,7 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => handleGetStarted('price_1SCkbnCik0ZJySexGw26mCgg')}
+                  onClick={() => handleGetStarted('try-free')}
                   className="w-full"
                   variant="outline"
                 >
@@ -987,7 +987,7 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => handleGetStarted('price_1SCkefCik0ZJySexBO34LAsl')}
+                  onClick={() => handleGetStarted('starter')}
                   className="w-full"
                 >
                   Buy Credits
@@ -1036,7 +1036,7 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => handleGetStarted('price_1SCkhJCik0ZJySexgkXpFKTO')}
+                  onClick={() => handleGetStarted('growth')}
                   className="w-full"
                   variant="outline"
                 >
@@ -1086,7 +1086,7 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => handleGetStarted('price_1SCkjkCik0ZJySexpx9RGhu3')}
+                  onClick={() => handleGetStarted('pro')}
                   className="w-full"
                   variant="outline"
                 >

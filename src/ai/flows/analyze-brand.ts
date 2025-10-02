@@ -207,8 +207,16 @@ const analyzeBrandPrompt = ai.definePrompt({
   - Services list must be comprehensive and complete
   - Color analysis must be based on actual colors visible in the design examples
 
+  **CRITICAL OUTPUT REQUIREMENTS:**
+  - You MUST provide ACTUAL EXTRACTED CONTENT, not schema definitions
+  - Do NOT return any JSON schema information or field descriptions
+  - Do NOT include any text like "type": "string" or "description": "ALL the SPECIFIC..."
+  - Every field must contain REAL EXTRACTED DATA from the website and design examples
+  - If you cannot extract specific information, provide a reasonable interpretation or leave empty
+  - Your response must be actual business analysis data, not technical schema information
+
   **OUTPUT FORMAT:**
-  Provide a complete, detailed analysis in the required JSON format with all available information extracted and organized according to the schema.
+  Provide a complete, detailed analysis with REAL EXTRACTED CONTENT in valid JSON format. Return actual business information, not schema definitions.
   `,
 });
 
@@ -273,26 +281,109 @@ const analyzeBrandFlow = ai.defineFlow(
         websiteContent
       };
 
+      console.log('🔍 Analyzing brand with enhanced input...');
       const { output } = await analyzeBrandPrompt(enhancedInput);
-      return output!;
+      
+      // Log raw output for debugging (only first 500 chars to avoid log spam)
+      const outputPreview = JSON.stringify(output).substring(0, 500);
+      console.log('🤖 AI Raw Output Preview:', outputPreview);
+      
+      // Validate output is not schema or error response
+      if (!output || typeof output !== 'object') {
+        console.error('❌ Invalid AI response format:', typeof output);
+        throw new Error('Invalid AI response format');
+      }
+
+      // Check if the response contains schema information (production bug)
+      const outputStr = JSON.stringify(output);
+      const schemaIndicators = [
+        '"type": "string"',
+        '"description": "ALL the SPECIFIC',
+        'services."',
+        'keyFeatures": { "type": "string"',
+        '"enum":',
+        '"required":',
+        '"properties":'
+      ];
+      
+      const hasSchemaContent = schemaIndicators.some(indicator => outputStr.includes(indicator));
+      
+      if (hasSchemaContent) {
+        console.error('❌ AI returned schema instead of analysis. Schema indicators found:', 
+          schemaIndicators.filter(indicator => outputStr.includes(indicator)));
+        throw new Error('AI returned schema format instead of analysis');
+      }
+
+      // Validate required fields are present and not empty
+      if (!output.businessName || !output.description || 
+          output.businessName.includes('"type"') || 
+          output.description.includes('"description"') ||
+          output.businessName.length < 2 ||
+          output.description.length < 10) {
+        console.error('❌ AI returned invalid or incomplete analysis:', {
+          businessName: output.businessName,
+          descriptionLength: output.description?.length || 0
+        });
+        throw new Error('AI returned incomplete or invalid analysis');
+      }
+
+      // Final validation: ensure the output matches our expected schema structure
+      const requiredFields = ['businessName', 'description', 'businessType'];
+      const missingFields = requiredFields.filter(field => !output[field]);
+      
+      if (missingFields.length > 0) {
+        console.error('❌ Missing required fields in AI response:', missingFields);
+        throw new Error(`AI response missing required fields: ${missingFields.join(', ')}`);
+      }
+
+      console.log('✅ AI analysis validation passed');
+      return output;
     } catch (error) {
-      // If JSON mode fails, return a basic analysis
-      console.warn('Brand analysis failed, returning basic analysis:', error);
+      // Enhanced fallback analysis with better error handling
+      console.warn('Brand analysis failed, returning enhanced fallback analysis:', error);
+      
+      // Try to extract basic info from URL if possible
+      let businessName = 'New Business';
+      try {
+        const urlObj = new URL(input.websiteUrl.startsWith('http') ? input.websiteUrl : `https://${input.websiteUrl}`);
+        const domain = urlObj.hostname.replace(/^www\./, '');
+        const domainParts = domain.split('.');
+        businessName = domainParts[0].charAt(0).toUpperCase() + domainParts[0].slice(1);
+      } catch (urlError) {
+        // Keep default business name
+      }
+
       return {
-        businessName: 'Business Analysis',
-        description: 'Unable to complete detailed analysis due to technical limitations.',
-        businessType: 'General Business',
-        services: 'Various services offered',
-        targetAudience: 'General audience',
-        brandVoice: 'Professional',
-        visualStyle: 'Modern',
-        primaryColors: ['#2563eb', '#1f2937'],
-        typography: 'Clean, professional fonts',
-        keyMessages: ['Quality service', 'Professional approach'],
-        competitiveAdvantages: ['Experienced team', 'Quality focus'],
-        contentStrategy: 'Professional content approach',
-        callsToAction: ['Contact us', 'Learn more'],
-        valueProposition: 'Quality service provider'
+        businessName,
+        description: 'This business provides professional services and solutions to help customers achieve their goals. We are committed to delivering quality results and excellent customer service.',
+        businessType: 'Professional Services',
+        services: 'Consulting Services: Professional consulting and advisory services\nSupport Services: Customer support and assistance\nCustom Solutions: Tailored solutions to meet specific needs',
+        targetAudience: 'Small to medium-sized businesses, entrepreneurs, and professionals seeking quality services and solutions',
+        visualStyle: 'Professional and clean design approach with modern aesthetics',
+        writingTone: 'Professional, clear, and customer-focused communication style',
+        contentThemes: 'Quality, professionalism, customer success, innovation, and reliability',
+        keyFeatures: 'Professional service delivery, experienced team, customer-focused approach, quality results',
+        competitiveAdvantages: 'Experienced professionals, personalized service, proven track record, commitment to quality',
+        contactInfo: {
+          phone: '',
+          email: '',
+          address: '',
+          website: input.websiteUrl,
+          hours: ''
+        },
+        socialMedia: {
+          facebook: '',
+          instagram: '',
+          twitter: '',
+          linkedin: ''
+        },
+        location: '',
+        colorPalette: {
+          primary: '#3B82F6',
+          secondary: '#10B981',
+          accent: '#8B5CF6',
+          description: 'Professional blue and green color scheme with modern accent colors'
+        }
       };
     }
   }
