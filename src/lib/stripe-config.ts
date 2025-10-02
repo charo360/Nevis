@@ -65,13 +65,17 @@ export function getStripeConfig(): StripeConfig {
   };
 
   // Log configuration (without exposing keys)
-  console.log(`🔧 Stripe Configuration:`, {
-    environment: config.environment,
-    isLive: config.isLive,
-    secretKeyPrefix: secretKey.substring(0, 12) + '...',
-    publishableKeyPrefix: publishableKey.substring(0, 12) + '...',
-    webhookSecretPrefix: webhookSecret.substring(0, 12) + '...'
-  });
+    const secretKeyPrefix = secretKey ? `${secretKey.substring(0, 12)}...` : 'not set';
+    const publishableKeyPrefix = publishableKey ? `${publishableKey.substring(0, 12)}...` : 'not set';
+    const webhookSecretPrefix = webhookSecret ? `${webhookSecret.substring(0, 12)}...` : 'not set';
+
+    console.log(`🔧 Stripe Configuration:`, {
+      environment: config.environment,
+      isLive: config.isLive,
+      secretKeyPrefix,
+      publishableKeyPrefix,
+      webhookSecretPrefix
+    });
 
   return config;
 }

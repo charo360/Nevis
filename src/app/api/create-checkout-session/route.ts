@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     try {
       stripeConfig = getStripeConfig();
       stripe = new Stripe(stripeConfig.secretKey, {
-        apiVersion: '2025-08-27.basil'
+        apiVersion: '2022-11-15'
       });
       // Validate configured price IDs (best-effort) and log missing ones
       try {
@@ -254,10 +254,14 @@ export async function POST(req: NextRequest) {
         code: stripeError?.code,
         planId: actualPlanId,
         environment: stripeConfig.environment,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        raw: stripeError
       })
++
+      const isProd = process.env.NODE_ENV === 'production';
+      const publicMessage = isProd ? 'Unable to process payment. Please try again or contact support.' : (stripeError?.message || 'Stripe error');
 
-      return NextResponse.json({ error: 'Unable to process payment. Please try again or contact support.' }, { status: 500 })
+      return NextResponse.json({ error: publicMessage }, { status: 500 })
     }
 
     // Persist pending payment to Supabase if available
