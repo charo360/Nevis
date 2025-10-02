@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import { verifyToken } from '@/lib/auth/jwt';
 import { createClient } from '@supabase/supabase-js';
 import { getRegionPriceForCountry, resolveCountryFromHeaders } from '@/lib/region-pricing';
+import { planIdToStripePrice } from '@/lib/secure-pricing';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -100,25 +101,54 @@ export async function POST(req: Request) {
       name = `${plan.name} (${plan.credits} credits)`;
     }
 
-    // create stripe checkout session
-    const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency,
-            product_data: { name, metadata: { planId: isRegional45 ? 'regional_45' : planId } },
-            unit_amount: unitAmount,
-          },
-          quantity: 1,
-        },
-      ],
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-      metadata: { userId: decoded.userId, planId: isRegional45 ? 'regional_45' : planId, country: regionCountry || '' },
-      client_reference_id: decoded.userId,
-    });
+    // Prefer using configured Stripe Price IDs (server-side mapping). If missing, fall back to inline price_data.
+    let session;
+    try {
+      const mappedPriceId = isRegional45 ? null : planIdToStripePrice(planId);
+      if (mappedPriceId) {
+        // Try to retrieve the price to ensure it exists in this Stripe account
+        try {
+          await stripe.prices.retrieve(mappedPriceId);
+          // Use the stored price id
+          session = await stripe.checkout.sessions.create({
+            mode: 'payment',
+            payment_method_types: ['card'],
+            line_items: [ { price: mappedPriceId, quantity: 1 } ],
+            success_url: successUrl,
+            cancel_url: cancelUrl,
+            metadata: { userId: decoded.userId, planId: isRegional45 ? 'regional_45' : planId, country: regionCountry || '' },
+            client_reference_id: decoded.userId,
+          });
+        } catch (priceErr: any) {
+          console.warn('Configured Stripe price ID not available or retrieval failed, falling back to price_data', { mappedPriceId, err: priceErr?.message || priceErr });
+        }
+      }
+
+      if (!session) {
+        // Fallback to inline price_data (creates temporary Price for the Checkout Session)
+        session = await stripe.checkout.sessions.create({
+          mode: 'payment',
+          payment_method_types: ['card'],
+          line_items: [
+            {
+              price_data: {
+                currency,
+                product_data: { name, metadata: { planId: isRegional45 ? 'regional_45' : planId } },
+                unit_amount: unitAmount,
+              },
+              quantity: 1,
+            },
+          ],
+          success_url: successUrl,
+          cancel_url: cancelUrl,
+          metadata: { userId: decoded.userId, planId: isRegional45 ? 'regional_45' : planId, country: regionCountry || '' },
+          client_reference_id: decoded.userId,
+        });
+      }
+    } catch (err: any) {
+      console.error('Failed to create Stripe checkout session (both mapped price and fallback):', err);
+      return NextResponse.json({ error: 'Unable to create checkout session. Please try again or contact support.' }, { status: 500 });
+    }
 
     // persist pending payment keyed by session id
     try {

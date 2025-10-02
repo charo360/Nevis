@@ -99,14 +99,23 @@ export const PRICING_PLANS: PricingPlan[] = [
  * Never expose actual price IDs to the frontend
  */
 export function getPlanToStripeMapping(): Record<string, string> {
+  // Allow override with explicit environment variables for production stability
+  const envMap: Record<string, string | undefined> = {
+    'try-free': process.env.STRIPE_PRICE_TRY_FREE,
+    'starter': process.env.STRIPE_PRICE_STARTER,
+    'growth': process.env.STRIPE_PRICE_GROWTH,
+    'pro': process.env.STRIPE_PRICE_PRO,
+    'enterprise': process.env.STRIPE_PRICE_ENTERPRISE,
+  };
+
   const prices = getStripePrices();
-  
+
   return {
-    'try-free': prices['try-free'],
-    'starter': prices['starter'], 
-    'growth': prices['growth'],
-    'pro': prices['pro'],
-    'enterprise': prices['enterprise']
+    'try-free': envMap['try-free'] || prices['try-free'],
+    'starter': envMap['starter'] || prices['starter'],
+    'growth': envMap['growth'] || prices['growth'],
+    'pro': envMap['pro'] || prices['pro'],
+    'enterprise': envMap['enterprise'] || prices['enterprise']
   };
 }
 
