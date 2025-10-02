@@ -146,7 +146,7 @@ export class Revo10ContentGenerator implements IContentGenerator {
           modelId: this.modelId,
           processingTime,
           qualityScore,
-          creditsUsed: 1.5, // Revo 1.0 now uses 1.5 credits for enhanced capabilities
+          creditsUsed: 2, // Revo 1.0 now uses 2 credits (updated)
           enhancementsApplied: ['enhanced-optimization', 'platform-formatting', 'gemini-2.5-flash-image']
         }
       };

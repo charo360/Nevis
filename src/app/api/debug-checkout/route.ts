@@ -26,11 +26,11 @@ export async function POST(req: NextRequest) {
     let actualPlanId = planId;
     if (planId.startsWith('price_')) {
       const legacyMapping: Record<string, string> = {
-        'price_1SCjDVCXEBwbxwozB5a6oXUp': 'try-free',
-        'price_1SDUAiCXEBwbxwozr788ke9X': 'starter',
-        'price_1SCjJlCXEBwbxwozhKzAtCH1': 'growth',
-        'price_1SCjMpCXEBwbxwozhT1RWAYP': 'pro',
-        'price_1SCjPgCXEBwbxwozjCNWanOY': 'enterprise',
+        'price_1SDqaWELJu3kIHjxZQBntjuO': 'try-free',
+        'price_1SDqfQELJu3kIHjxzHWPNMPs': 'starter',
+        'price_1SDqiKELJu3kIHjx0LWHBgfV': 'growth',
+        'price_1SDqloELJu3kIHjxU187qSj1': 'pro',
+        'price_1SDqp4ELJu3kIHjx7oLcQwzh': 'enterprise',
         // Test price IDs
         'price_1QOmb6CXEBwbxwozSgD8cGay': 'try-free',
         'price_1QOmbYCXEBwbxwozp29zWxFb': 'starter',
