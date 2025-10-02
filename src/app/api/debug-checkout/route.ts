@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPlanById, planIdToStripePrice } from '@/lib/secure-pricing';
+import { getStripeConfig } from '@/lib/stripe-config';
+import Stripe from 'stripe';
 
 export async function POST(req: NextRequest) {
   try {
@@ -62,16 +64,43 @@ export async function POST(req: NextRequest) {
       }, { status: 500 });
     }
 
-    return NextResponse.json({
-      success: true,
-      debug: {
-        originalPlanId: planId,
-        actualPlanId,
-        planDetails,
-        stripePriceId,
-        message: 'All validations passed - would create Stripe session'
+    // Attempt to retrieve the Stripe Price object using server Stripe keys
+    try {
+      const stripeConfig = getStripeConfig();
+      const stripe = new Stripe(stripeConfig.secretKey, { apiVersion: '2025-08-27.basil' });
+
+      let priceObj = null;
+      try {
+        priceObj = await stripe.prices.retrieve(stripePriceId as string);
+      } catch (stripeErr: any) {
+        console.error('🧪 DEBUG: Stripe price retrieval failed:', { message: stripeErr?.message, code: stripeErr?.code, stripePriceId });
+        return NextResponse.json({
+          success: false,
+          debug: {
+            originalPlanId: planId,
+            actualPlanId,
+            planDetails,
+            stripePriceId,
+            stripeError: { message: stripeErr?.message, code: stripeErr?.code }
+          }
+        }, { status: 502 });
       }
-    });
+
+      return NextResponse.json({
+        success: true,
+        debug: {
+          originalPlanId: planId,
+          actualPlanId,
+          planDetails,
+          stripePriceId,
+          priceObject: priceObj,
+          message: 'All validations passed - Stripe price retrieved successfully'
+        }
+      });
+    } catch (err: any) {
+      console.error('🧪 DEBUG ERROR (stripe init):', err);
+      return NextResponse.json({ error: 'Debug stripe init failed', debug: { message: err?.message } }, { status: 500 });
+    }
 
   } catch (error: any) {
     console.error('🧪 DEBUG ERROR:', error);
