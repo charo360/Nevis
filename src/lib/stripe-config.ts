@@ -120,4 +120,34 @@ export function getCheckoutUrls() {
   };
 }
 
+/**
+ * Validate that configured Stripe price IDs are present (best-effort runtime check)
+ * This uses the current server Stripe key to attempt a simple retrieval of each price id.
+ * Useful to detect missing price IDs in production and surface a helpful log message.
+ */
+export async function validateStripePrices(stripeClient?: any) {
+  try {
+    const prices = getStripePrices();
+    const ids = Object.values(prices).filter(Boolean) as string[];
+    if (!ids.length) return { ok: true, missing: [] };
+
+    const s = stripeClient;
+    if (!s) return { ok: false, error: 'stripe client not provided' };
+
+    const missing: string[] = [];
+    for (const id of ids) {
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        await s.prices.retrieve(id);
+      } catch (err: any) {
+        missing.push(id);
+      }
+    }
+
+    return { ok: missing.length === 0, missing };
+  } catch (e) {
+    return { ok: false, error: String(e) };
+  }
+}
+
 export default getStripeConfig;

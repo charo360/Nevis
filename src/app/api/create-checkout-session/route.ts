@@ -26,6 +26,16 @@ export async function POST(req: NextRequest) {
       stripe = new Stripe(stripeConfig.secretKey, {
         apiVersion: '2025-08-27.basil'
       });
+      // Validate configured price IDs (best-effort) and log missing ones
+      try {
+        const { validateStripePrices } = await import('@/lib/stripe-config');
+        const val = await validateStripePrices(stripe as any);
+        if (val && !val.ok) {
+          console.warn('⚠️ Stripe price validation detected missing price IDs:', val.missing || val.error);
+        }
+      } catch (e) {
+        // ignore validator errors
+      }
     } catch (configError: any) {
       console.error('❌ Stripe configuration error:', configError);
       return NextResponse.json({ 
@@ -129,18 +139,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ id: `free-${Date.now()}`, url: getCheckoutUrls().successUrl })
     }
 
-    // Convert plan ID to Stripe price ID (server-side only)
-    const stripePriceId = planIdToStripePrice(actualPlanId)
-    if (!stripePriceId) {
-      console.error(`❌ No Stripe price ID found for plan: ${actualPlanId}`, {
-        planId: actualPlanId,
-        environment: stripeConfig?.environment || 'unknown',
-        timestamp: new Date().toISOString()
-      })
-      return NextResponse.json({ 
-        error: 'Pricing configuration error. Please contact support.'
-      }, { status: 500 })
-    }
+    // Note: We'll map plan -> Stripe price later (after we know the mode)
 
     // Determine the correct origin based on environment
     const getAppOrigin = () => {
@@ -201,85 +200,64 @@ export async function POST(req: NextRequest) {
     clientReferenceId = verifiedUserId
     const metadataWithUser: Record<string, string> = { ...metadata, userId: verifiedUserId }
 
-    // Create Stripe Checkout session (using price id directly or inline price_data fallback)
+    // Create Stripe Checkout session
+    // For one-time payments (mode === 'payment') always use inline price_data so Checkout will open
+    // For subscriptions, attempt to use mapped Stripe price IDs (server-side mapping)
     let session
     try {
-      // Preflight: ensure the Stripe Price exists in this Stripe account
-      let useInlinePriceData = false
-      try {
-        await stripe.prices.retrieve(stripePriceId)
-      } catch (priceErr: any) {
-        console.error('❌ Stripe price retrieval failed:', {
-          message: priceErr?.message,
-          code: priceErr?.code,
-          stripePriceId,
-          planId: actualPlanId,
-          environment: stripeConfig.environment,
-          timestamp: new Date().toISOString()
+      if (mode === 'payment') {
+        session = await stripe.checkout.sessions.create({
+          mode: 'payment',
+          payment_method_types: ['card'],
+          line_items: [
+            {
+              price_data: {
+                currency: 'usd',
+                product_data: { name: planDetails.name, metadata: { planId: actualPlanId } },
+                unit_amount: Math.round((planDetails.price || 0) * 100),
+              },
+              quantity: Number(quantity) || 1,
+            },
+          ],
+          allow_promotion_codes: true,
+          customer_email: body.customerEmail,
+          metadata: metadataWithUser,
+          client_reference_id: clientReferenceId,
+          success_url: getCheckoutUrls().successUrl,
+          cancel_url: getCheckoutUrls().cancelUrl,
+          locale: 'auto',
         })
-
-        // If the price doesn't exist in this account, fallback to inline price_data for one-time payments
-        if (priceErr && priceErr.code === 'resource_missing') {
-          if (mode === 'payment') {
-            console.warn('⚠️ Stripe price missing - falling back to inline price_data for one-time payment')
-            useInlinePriceData = true
-          } else {
-            // For subscriptions we cannot safely fallback
-            return NextResponse.json({ 
-              error: 'The selected subscription plan is not available. Please try again or contact support.'
-            }, { status: 400 })
-          }
+      } else {
+        // subscription flow: require mapped Stripe price ID
+        const mapped = planIdToStripePrice(actualPlanId)
+        if (!mapped) {
+          console.error('❌ Subscription plan has no mapped Stripe price ID:', actualPlanId)
+          return NextResponse.json({ error: 'Subscription plan not available. Please contact support.' }, { status: 400 })
         }
 
-        // For other errors, continue to the generic error handling below
+        session = await stripe.checkout.sessions.create({
+          mode: 'subscription',
+          payment_method_types: ['card'],
+          line_items: [{ price: mapped, quantity: Number(quantity) || 1 }],
+          allow_promotion_codes: true,
+          customer_email: body.customerEmail,
+          metadata: metadataWithUser,
+          client_reference_id: clientReferenceId,
+          success_url: getCheckoutUrls().successUrl,
+          cancel_url: getCheckoutUrls().cancelUrl,
+          locale: 'auto',
+        })
       }
-
-      // Build line item either with price ID or with inline price_data
-      const lineItem = useInlinePriceData ? {
-        price_data: {
-          currency: 'usd',
-          product_data: { name: planDetails.name },
-          unit_amount: Math.round((planDetails.price || 0) * 100)
-        },
-        quantity: Number(quantity) || 1
-      } : {
-        price: stripePriceId,
-        quantity: Number(quantity) || 1
-      }
-
-      session = await stripe.checkout.sessions.create({
-        mode,
-        payment_method_types: ['card'],
-        line_items: [ lineItem as any ],
-        allow_promotion_codes: true,
-        customer_email: body.customerEmail,
-        metadata: metadataWithUser,
-        client_reference_id: clientReferenceId,
-        success_url: getCheckoutUrls().successUrl,
-        cancel_url: getCheckoutUrls().cancelUrl,
-        locale: 'auto',
-      })
     } catch (stripeError: any) {
-      // Log detailed error internally but don't expose sensitive data
       console.error('❌ Stripe session creation failed:', {
-        error: stripeError.message,
-        code: stripeError.code,
+        message: stripeError?.message || String(stripeError),
+        code: stripeError?.code,
         planId: actualPlanId,
-        stripePriceId: stripePriceId, // Safe to log internally
         environment: stripeConfig.environment,
         timestamp: new Date().toISOString()
       })
-      
-      if (stripeError.code === 'resource_missing') {
-        return NextResponse.json({ 
-          error: 'The selected pricing plan is not available. Please try again or contact support.'
-        }, { status: 400 })
-      }
-      
-      // Generic error response for security
-      return NextResponse.json({ 
-        error: 'Unable to process payment. Please try again or contact support.'
-      }, { status: 500 })
+
+      return NextResponse.json({ error: 'Unable to process payment. Please try again or contact support.' }, { status: 500 })
     }
 
     // Persist pending payment to Supabase if available
