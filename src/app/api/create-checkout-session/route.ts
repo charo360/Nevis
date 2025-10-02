@@ -201,10 +201,11 @@ export async function POST(req: NextRequest) {
     clientReferenceId = verifiedUserId
     const metadataWithUser: Record<string, string> = { ...metadata, userId: verifiedUserId }
 
-    // Create Stripe Checkout session (using price id directly)
+    // Create Stripe Checkout session (using price id directly or inline price_data fallback)
     let session
     try {
       // Preflight: ensure the Stripe Price exists in this Stripe account
+      let useInlinePriceData = false
       try {
         await stripe.prices.retrieve(stripePriceId)
       } catch (priceErr: any) {
@@ -217,25 +218,39 @@ export async function POST(req: NextRequest) {
           timestamp: new Date().toISOString()
         })
 
-        // If the price doesn't exist in this account, return a clear error
+        // If the price doesn't exist in this account, fallback to inline price_data for one-time payments
         if (priceErr && priceErr.code === 'resource_missing') {
-          return NextResponse.json({ 
-            error: 'The selected pricing plan is not available. Please try again or contact support.'
-          }, { status: 400 })
+          if (mode === 'payment') {
+            console.warn('⚠️ Stripe price missing - falling back to inline price_data for one-time payment')
+            useInlinePriceData = true
+          } else {
+            // For subscriptions we cannot safely fallback
+            return NextResponse.json({ 
+              error: 'The selected subscription plan is not available. Please try again or contact support.'
+            }, { status: 400 })
+          }
         }
 
         // For other errors, continue to the generic error handling below
       }
 
+      // Build line item either with price ID or with inline price_data
+      const lineItem = useInlinePriceData ? {
+        price_data: {
+          currency: 'usd',
+          product_data: { name: planDetails.name },
+          unit_amount: Math.round((planDetails.price || 0) * 100)
+        },
+        quantity: Number(quantity) || 1
+      } : {
+        price: stripePriceId,
+        quantity: Number(quantity) || 1
+      }
+
       session = await stripe.checkout.sessions.create({
         mode,
         payment_method_types: ['card'],
-        line_items: [
-          {
-            price: stripePriceId,  // Use the mapped Stripe price ID
-            quantity: Number(quantity) || 1,
-          },
-        ],
+        line_items: [ lineItem as any ],
         allow_promotion_codes: true,
         customer_email: body.customerEmail,
         metadata: metadataWithUser,
