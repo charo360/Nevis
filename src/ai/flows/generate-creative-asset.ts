@@ -1010,18 +1010,24 @@ Ensure the text is readable and well-composed.`
                 while (attempts < maxAttempts && !finalImageUrl) {
                     attempts++;
 
-                    // Determine which model to use based on preferred model parameter
+                    // FORCE Flash models to prevent Pro charges
                     let modelToUse = 'googleai/gemini-2.5-flash-image-preview'; // Default
 
                     if (input.preferredModel) {
-                        // Map Gemini model names to Genkit model identifiers
+                        // Map Gemini model names to Genkit model identifiers - ONLY FLASH MODELS
                         const modelMapping: Record<string, string> = {
                             'gemini-2.5-flash-image-preview': 'googleai/gemini-2.5-flash-image-preview',
-                            'gemini-2.5-flash-image-preview': 'googleai/gemini-2.5-flash-image-preview',
-                            'gemini-2.5-flash': 'googleai/gemini-2.5-flash'
+                            'gemini-2.5-flash': 'googleai/gemini-2.5-flash',
+                            'gemini-2.0-flash': 'googleai/gemini-2.0-flash'
                         };
 
-                        modelToUse = modelMapping[input.preferredModel] || modelToUse;
+                        modelToUse = modelMapping[input.preferredModel] || 'googleai/gemini-2.5-flash-image-preview';
+                        
+                        // BLOCK Pro models to prevent expensive charges
+                        if (modelToUse.includes('pro')) {
+                            console.warn('🚫 BLOCKED Pro model to prevent charges, using Flash instead');
+                            modelToUse = 'googleai/gemini-2.5-flash-image-preview';
+                        }
                     }
 
                     let imageUrl: string | null = null;

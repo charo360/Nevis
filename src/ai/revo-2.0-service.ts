@@ -24,6 +24,23 @@ function getAiClient(): GoogleGenerativeAI {
   return ai;
 }
 
+// CRITICAL: Block search tools to prevent expensive charges
+function createSafeModel(modelName: string, config?: any) {
+  const client = getAiClient();
+  const model = client.getGenerativeModel({ 
+    model: modelName,
+    tools: [], // EXPLICITLY DISABLE ALL TOOLS
+    ...config 
+  });
+  
+  // Double-check no tools are enabled
+  if ((model as any)?.tools?.length) {
+    throw new Error('🚫 BLOCKED: Search tools detected. This would cause expensive charges.');
+  }
+  
+  return model;
+}
+
 function getOpenAIClient(): OpenAI {
   if (!openai) {
     const key = process.env.OPENAI_API_KEY;
@@ -37,6 +54,60 @@ function getOpenAIClient(): OpenAI {
 
 // Revo 2.0 uses Gemini 2.0 Flash Image Preview (same as Revo 1.0 but with enhanced prompting)
 const REVO_2_0_MODEL = 'gemini-2.0-flash-exp-image-generation';
+
+/**
+ * Sanitize generic/template-sounding openings commonly produced by LLMs
+ * Ensures outputs avoid phrases like "Visually showcase how ..." or "We'll showcase ..."
+ */
+function sanitizeGeneratedCopy(
+  input: string | undefined,
+  brandProfile?: { businessName?: string; location?: string },
+  businessType?: string
+): string | undefined {
+  if (!input) return input;
+
+  const company = brandProfile?.businessName || 'our brand';
+  const location = brandProfile?.location || 'your area';
+  const biz = (businessType || 'business').toLowerCase();
+
+  let text = input.trim();
+
+  // Normalize fancy quotes and whitespace
+  text = text.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"').replace(/\s+/g, ' ').trim();
+
+  // Disallowed/generic starts → rewrite succinctly
+  const genericStarts: Array<{ pattern: RegExp; replacement: string }> = [
+    { pattern: /^visually\s+showcase\s+how\b/i, replacement: `${company} shows` },
+    { pattern: /^visual\s+showcasing\s+how\b/i, replacement: `${company} shows` },
+    { pattern: /^we['’]ll\s+showcase\b/i, replacement: `${company} showcases` },
+    { pattern: /^we\s+will\s+showcase\b/i, replacement: `${company} showcases` },
+    { pattern: /^we\s+showcase\b/i, replacement: `${company} showcases` },
+    { pattern: /^unlocking\s+dreams,?\s+one\s+swipe\s+at\s+a\s+time:?\s*/i, replacement: '' },
+    { pattern: /^experience\s+the\s+excellence\s+of\b/i, replacement: `${company} delivers` },
+  ];
+
+  for (const rule of genericStarts) {
+    if (rule.pattern.test(text)) {
+      text = text.replace(rule.pattern, rule.replacement).trim();
+      break;
+    }
+  }
+
+  // Minor cleanups: spacing, double punctuation, stray quotes
+  text = text
+    .replace(/\s+([,.;:!?])/g, '$1')
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\bSACCOS\b/g, 'SACCOs');
+
+  // If the text became empty due to removal, fall back to concise statement
+  if (text.length === 0) {
+    text = `${company} showcases real ${biz} impact in ${location}.`;
+  }
+
+  return text;
+}
 
 export interface Revo20GenerationOptions {
   businessType: string;
@@ -102,7 +173,12 @@ async function generateCreativeConcept(options: Revo20GenerationOptions): Promis
   });
 
   try {
-  const model = getAiClient().getGenerativeModel({ model: REVO_2_0_MODEL });
+  const model = createSafeModel(REVO_2_0_MODEL);
+  // Guard: block any accidental tool/grounding usage (SDK may expose tools in future)
+  if ((model as any)?.tools?.length) {
+    console.error('❌ Guard: Tools detected on model initialization. Blocking to avoid search charges.');
+    throw new Error('Guard: Tools are disabled for Gemini usage in this project.');
+  }
 
     // Build service-aware concept prompt
     let serviceContext = '';
@@ -297,8 +373,7 @@ Create a visually stunning design that stops scrolling and drives engagement whi
  */
 async function generateImageWithGemini(prompt: string, options: Revo20GenerationOptions): Promise<{ imageUrl: string }> {
   try {
-  const model = getAiClient().getGenerativeModel({
-      model: REVO_2_0_MODEL,
+  const model = createSafeModel(REVO_2_0_MODEL, {
       generationConfig: {
         temperature: 0.7,
         topP: 0.8,
@@ -306,6 +381,10 @@ async function generateImageWithGemini(prompt: string, options: Revo20Generation
         maxOutputTokens: 4096,
       }
     });
+    if ((model as any)?.tools?.length) {
+      console.error('❌ Guard: Tools detected on model initialization. Blocking to avoid search charges.');
+      throw new Error('Guard: Tools are disabled for Gemini usage in this project.');
+    }
 
     // Prepare generation parts array
     const generationParts: any[] = [prompt];
@@ -377,8 +456,7 @@ async function generateCaptionAndHashtags(options: Revo20GenerationOptions, conc
   const creativityBoost = Math.floor(uniqueSeed % 10) + 1;
 
   try {
-  const model = getAiClient().getGenerativeModel({
-      model: REVO_2_0_MODEL,
+  const model = createSafeModel(REVO_2_0_MODEL, {
       generationConfig: {
         temperature: 0.9, // Higher temperature for more creativity
         topP: 0.95,
@@ -386,6 +464,10 @@ async function generateCaptionAndHashtags(options: Revo20GenerationOptions, conc
         maxOutputTokens: 2048,
       }
     });
+    if ((model as any)?.tools?.length) {
+      console.error('❌ Guard: Tools detected on model initialization. Blocking to avoid search charges.');
+      throw new Error('Guard: Tools are disabled for Gemini usage in this project.');
+    }
 
     // Build service-specific content context
     let serviceContentContext = '';
@@ -559,12 +641,12 @@ Format as JSON:
         : generateUniqueFallbackCaption(brandProfile, businessType, creativityBoost);
 
       return {
-        caption,
+        caption: sanitizeGeneratedCopy(caption, brandProfile, businessType) as string,
         hashtags: finalHashtags,
-        headline: parsed.headline,
-        subheadline: parsed.subheadline,
-        cta: parsed.cta,
-        captionVariations: [caption]
+        headline: sanitizeGeneratedCopy(parsed.headline, brandProfile, businessType),
+        subheadline: sanitizeGeneratedCopy(parsed.subheadline, brandProfile, businessType),
+        cta: sanitizeGeneratedCopy(parsed.cta, brandProfile, businessType),
+        captionVariations: [sanitizeGeneratedCopy(caption, brandProfile, businessType) as string]
       };
 
     } catch (parseError) {
@@ -605,12 +687,12 @@ function generateUniqueFallbackContent(brandProfile: any, businessType: string, 
   const hashtags = generateFallbackHashtags(brandProfile, businessType, platform, hashtagCount, todayService);
 
   return {
-    caption: selectedCaption,
+    caption: sanitizeGeneratedCopy(selectedCaption, brandProfile, businessType) as string,
     hashtags,
-    headline: todayService ? `Today's ${todayService.serviceName}` : 'Innovation Delivered',
-    subheadline: todayService ? `Featured service from ${brandProfile.businessName}` : `Your trusted ${businessType.toLowerCase()} partner`,
-    cta: todayService ? 'Learn More' : 'Get Started',
-    captionVariations: [selectedCaption]
+    headline: sanitizeGeneratedCopy(todayService ? `Today's ${todayService.serviceName}` : 'Innovation Delivered', brandProfile, businessType),
+    subheadline: sanitizeGeneratedCopy(todayService ? `Featured service from ${brandProfile.businessName}` : `Your trusted ${businessType.toLowerCase()} partner`, brandProfile, businessType),
+    cta: sanitizeGeneratedCopy(todayService ? 'Learn More' : 'Get Started', brandProfile, businessType),
+    captionVariations: [sanitizeGeneratedCopy(selectedCaption, brandProfile, businessType) as string]
   };
 }
 
@@ -741,9 +823,9 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
       ],
       caption: contentResult.caption,
       hashtags: contentResult.hashtags,
-      headline: contentResult.headline,
-      subheadline: contentResult.subheadline,
-      cta: contentResult.cta,
+      headline: sanitizeGeneratedCopy(contentResult.headline, enhancedOptions.brandProfile, enhancedOptions.businessType) as string,
+      subheadline: sanitizeGeneratedCopy(contentResult.subheadline, enhancedOptions.brandProfile, enhancedOptions.businessType) as string,
+      cta: sanitizeGeneratedCopy(contentResult.cta, enhancedOptions.brandProfile, enhancedOptions.businessType) as string,
       captionVariations: contentResult.captionVariations,
       businessIntelligence: {
         concept: concept.concept,
@@ -765,7 +847,11 @@ export async function testRevo20Availability(): Promise<boolean> {
   try {
     console.log('🧪 Testing Revo 2.0 availability...');
 
-  const model = getAiClient().getGenerativeModel({ model: REVO_2_0_MODEL });
+  const model = createSafeModel(REVO_2_0_MODEL);
+    if ((model as any)?.tools?.length) {
+      console.error('❌ Guard: Tools detected on model initialization. Blocking to avoid search charges.');
+      throw new Error('Guard: Tools are disabled for Gemini usage in this project.');
+    }
     const response = await model.generateContent('Create a simple test image with the text "Revo 2.0 Test" on a modern gradient background');
 
     const result = await response.response;
