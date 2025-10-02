@@ -1002,7 +1002,7 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            {/* Pro Pack */}
+           
             <Card className="relative transition-all duration-300 hover:shadow-lg border-2 border-gray-200">
               <CardContent className="p-6 text-center">
                 <div className="flex justify-center mb-4">
