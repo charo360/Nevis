@@ -847,7 +847,7 @@ export default function HomePage() {
           {/* Pricing Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-16">
          
-            {/* <Card className="relative transition-all duration-300 hover:shadow-lg border-2 border-gray-200">
+            <Card className="relative transition-all duration-300 hover:shadow-lg border-2 border-gray-200">
               <CardContent className="p-6 text-center">
                 <div className="flex justify-center mb-4">
                   <Star className="w-6 h-6 text-gray-500" />
@@ -893,7 +893,7 @@ export default function HomePage() {
                   Start Free – No Credit Card Required
                 </Button>
               </CardContent>
-            </Card> */}
+            </Card>
 
             {/* Starter Pack */}
             <Card className="relative transition-all duration-300 hover:shadow-lg border-2 border-gray-200">
