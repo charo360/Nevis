@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
       const legacyMapping: Record<string, string> = {
         // Production price IDs
         'price_1SDqaWELJu3kIHjxZQBntjuO': 'try-free',
-        'price_1SDqfQELJu3kIHjxzHWPNMPs': 'starter',
+  'price_1SDqfQELJu3kIHjxzHWPNMPs': 'starter',
         'price_1SDqiKELJu3kIHjx0LWHBgfV': 'growth',
         'price_1SDqloELJu3kIHjxU187qSj1': 'pro',
         'price_1SDqp4ELJu3kIHjx7oLcQwzh': 'enterprise',

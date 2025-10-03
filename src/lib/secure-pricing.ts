@@ -102,7 +102,7 @@ export function getPlanToStripeMapping(): Record<string, string> {
   // Allow override with explicit environment variables for production stability
   const envMap: Record<string, string | undefined> = {
     'try-free': process.env.STRIPE_PRICE_TRY_FREE,
-    'starter': process.env.STRIPE_PRICE_STARTER,
+  'starter': 'price_1SDqfQELJu3kIHjxzHWPNMPs',
     'growth': process.env.STRIPE_PRICE_GROWTH,
     'pro': process.env.STRIPE_PRICE_PRO,
     'enterprise': process.env.STRIPE_PRICE_ENTERPRISE,
