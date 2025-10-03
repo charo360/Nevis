@@ -54,7 +54,15 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json() as Body
-    
+
+    // Determine the correct origin early so free-plan short-circuit can return proper URLs.
+    const hostHeader = req.headers.get('x-forwarded-host') || req.headers.get('host') || '';
+    const protoHeader = req.headers.get('x-forwarded-proto') || req.headers.get('x-forwarded-protocol') || req.headers.get('referer')?.split(':')[0] || (process.env.NODE_ENV === 'production' ? 'https' : 'http');
+    const inferredOrigin = hostHeader ? `${protoHeader}://${hostHeader}` : null;
+    const preferredProd = process.env.NEXT_PUBLIC_APP_URL || (inferredOrigin && /crevo\.app$/.test(inferredOrigin) ? inferredOrigin : 'https://www.crevo.app');
+  const getAppOriginLocal = () => inferredOrigin || preferredProd || (process.env.NODE_ENV === 'production' ? 'https://www.crevo.app' : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001');
+  const origin = getAppOriginLocal();
+
     // Debug logging for troubleshooting
     console.log('🔄 Checkout request received:', {
       planId: body.planId,
@@ -82,12 +90,12 @@ export async function POST(req: NextRequest) {
         'price_1SDqiKELJu3kIHjx0LWHBgfV': 'growth',
         'price_1SDqloELJu3kIHjxU187qSj1': 'pro',
         'price_1SDqp4ELJu3kIHjx7oLcQwzh': 'enterprise',
-        // Development/Test price IDs  
-        'price_1SCkZMCik0ZJySexGFq9FtxO': 'try-free',
-        'price_1SCwe1Cik0ZJySexYVYW97uQ': 'starter',
-        'price_1SCkefCik0ZJySexBO34LAsl': 'growth',
-        'price_1SCkhJCik0ZJySexgkXpFKTO': 'pro',
-        'price_1SCkjkCik0ZJySexpx9RGhu3': 'enterprise'
+  // Development/Test price IDs (sandbox)
+  'price_1SEDxyRn8roP0mgSNyhZjbqx': 'try-free',
+  'price_1SEE1ORn8roP0mgSS9mlHCa9': 'starter',
+  'price_1SEDzFRn8roP0mgSnReS2Y44': 'growth',
+  'price_1SEDzvRn8roP0mgSqC1sLrl8': 'pro',
+  'price_1SEE0bRn8roP0mgSun2Cz4TH': 'enterprise'
       };
       actualPlanId = legacyMapping[planId] || 'starter'; // fallback to starter
       console.log(`🔄 Converting legacy price ID ${planId} to plan ID: ${actualPlanId}`);
@@ -135,18 +143,12 @@ export async function POST(req: NextRequest) {
         console.log('ℹ️ No Supabase configured - skipping persistence for free plan grant')
       }
 
-      // Return success URL so frontend can redirect to the success page
-      return NextResponse.json({ id: `free-${Date.now()}`, url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}` })
+      // Return success URL so frontend can redirect to the billing success page
+      return NextResponse.json({ id: `free-${Date.now()}`, url: `${origin}/billing/success?session_id={CHECKOUT_SESSION_ID}` })
     }
 
     // Note: We'll map plan -> Stripe price later (after we know the mode)
 
-    // Determine the correct origin. Prefer request headers so Stripe redirects back to the same host
-    const hostHeader = req.headers.get('x-forwarded-host') || req.headers.get('host') || '';
-    const protoHeader = req.headers.get('x-forwarded-proto') || req.headers.get('x-forwarded-protocol') || req.headers.get('referer')?.split(':')[0] || (process.env.NODE_ENV === 'production' ? 'https' : 'http');
-    const inferredOrigin = hostHeader ? `${protoHeader}://${hostHeader}` : null;
-    const getAppOrigin = () => inferredOrigin || (process.env.NODE_ENV === 'production' ? 'https://crevo.app' : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001');
-    const origin = getAppOrigin();
 
     const quantity = body.quantity && body.quantity > 0 ? body.quantity : 1
     const mode = body.mode === 'subscription' ? 'subscription' : 'payment'

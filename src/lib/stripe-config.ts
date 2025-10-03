@@ -99,11 +99,11 @@ export function getStripePrices() {
   } else {
     // Test/Development price IDs (actual working test mode IDs from your Stripe account)
     return {
-      'try-free': 'price_1SCkZMCik0ZJySexGFq9FtxO',      // Try Agent Free (Test)
-      'starter': 'price_1SCwe1Cik0ZJySexYVYW97uQ',        // Starter Agent (Test)
-      'growth': 'price_1SCkefCik0ZJySexBO34LAsl',         // Growth Agent (Test)
-      'pro': 'price_1SCkhJCik0ZJySexgkXpFKTO',            // Pro Agent (Test)
-      'enterprise': 'price_1SCkjkCik0ZJySexpx9RGhu3'      // Enterprise Agent (Test)
+      'try-free': 'price_1SEDxyRn8roP0mgSNyhZjbqx',      // Try Agent Free (Dev/Sandbox)
+      'starter': 'price_1SEE1ORn8roP0mgSS9mlHCa9',        // Starter Agent (Dev/Sandbox)
+      'growth': 'price_1SEDzFRn8roP0mgSnReS2Y44',         // Growth Agent (Dev/Sandbox)
+      'pro': 'price_1SEDzvRn8roP0mgSqC1sLrl8',            // Pro Agent (Dev/Sandbox)
+      'enterprise': 'price_1SEE0bRn8roP0mgSun2Cz4TH'      // Enterprise Agent (Dev/Sandbox)
     };
   }
 }
