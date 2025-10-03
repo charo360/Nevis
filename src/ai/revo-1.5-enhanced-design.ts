@@ -9,11 +9,11 @@ import OpenAI from 'openai';
 import { TrendingHashtagsService } from '@/services/trending-hashtags-service';
 import { RegionalSocialTrendsService } from '@/services/regional-social-trends-service';
 import type { ScheduledService } from '@/services/calendar-service';
-import { CulturalIntelligenceService } from '@/services/cultural-intelligence-service';
-import { NaturalContextMarketingService } from '@/services/natural-context-marketing';
-import { EnhancedCTAGenerator, type CTAGenerationContext } from '@/services/enhanced-cta-generator';
-import { AIContentGenerator, type AIContentRequest } from '@/services/ai-content-generator';
-import { ClaudeSonnet4Generator, type ClaudeContentRequest } from '@/services/claude-sonnet-4-generator';
+// import { CulturalIntelligenceService } from '@/services/cultural-intelligence-service';
+// import { NaturalContextMarketingService } from '@/services/natural-context-marketing';
+// import { EnhancedCTAGenerator, type CTAGenerationContext } from '@/services/enhanced-cta-generator';
+// import { AIContentGenerator, type AIContentRequest } from '@/services/ai-content-generator';
+// import { ClaudeSonnet4Generator, type ClaudeContentRequest } from '@/services/claude-sonnet-4-generator';
 
 import { ensureExactDimensions } from './utils/image-dimensions';
 
@@ -86,29 +86,15 @@ async function analyzeBusinessForContentStrategy(
   localInsights: string[];
   naturalContextStrategy?: any;
 }> {
-  // 🎯 Generate Product-Lifestyle Integration Strategy (Fixed Over-Correction)
-  let naturalContextStrategy;
-  try {
-    naturalContextStrategy = NaturalContextMarketingService.generateProductLifestyleIntegration(
-      businessType,
-      businessName,
-      brandProfile.location || 'Local area',
-      brandProfile.services || 'Business services',
-      brandProfile.targetAudience || 'General audience',
-      platform
-    );
-  } catch (strategyError) {
-    console.warn('⚠️ [Revo 1.5] Natural context strategy generation failed:', strategyError);
-    // Provide a fallback strategy
-    naturalContextStrategy = {
-      primaryScenarios: [],
-      contextualApproaches: ['product-showcase', 'lifestyle-integration'],
-      lifestyleTouchpoints: ['daily-use', 'problem-solving'],
-      authenticUseCases: ['professional-use', 'personal-benefit'],
-      behavioralPatterns: ['regular-usage', 'problem-resolution'],
-      emotionalConnections: ['trust', 'satisfaction', 'reliability']
-    };
-  }
+  // 🎯 Generate Product-Lifestyle Integration Strategy (Fallback)
+  const naturalContextStrategy = {
+    primaryScenarios: [],
+    contextualApproaches: ['product-showcase', 'lifestyle-integration'],
+    lifestyleTouchpoints: ['daily-use', 'problem-solving'],
+    authenticUseCases: ['professional-use', 'personal-benefit'],
+    behavioralPatterns: ['regular-usage', 'problem-resolution'],
+    emotionalConnections: ['trust', 'satisfaction', 'reliability']
+  };
 
   try {
     console.log('🧠 [Revo 1.5] Analyzing business for intelligent content strategy:', {
@@ -896,15 +882,15 @@ async function generateCaptionAndHashtags(
       useLocalLanguage
     );
 
-    // Apply Cultural Intelligence System
-    const culturalContent = CulturalIntelligenceService.generateCulturalContent(
-      businessName,
-      businessType,
-      brandProfile.location || 'USA',
-      useLocalLanguage
-    );
+    // Apply Cultural Intelligence System (Fallback)
+    const culturalContent = {
+      headlines: [`${businessName} Excellence`, `Professional ${businessType} Services`, `Quality ${businessType} Solutions`],
+      subheadlines: [`Quality service you can trust`, `Professional results delivered`, `Expert ${businessType} services`],
+      ctas: ['Get Started', 'Learn More', 'Contact Us', 'Book Now'],
+      culturalContext: `${brandProfile.location || 'Global'} - Professional business focus`
+    };
 
-    console.log('🌍 [Revo 1.5] Cultural Intelligence Applied:', {
+    console.log('🌍 [Revo 1.5] Cultural Intelligence Applied (Fallback):', {
       location: brandProfile.location,
       culturalContext: culturalContent.culturalContext,
       useLocalLanguage,
@@ -1276,10 +1262,10 @@ Format as JSON:
       model: 'gpt-4o',
       messages: [{
         role: 'system',
-        content: `You are a direct-response copywriter for Revo 1.5. COHERENCE RULE: Headline + Subheadline + CTA must tell ONE complete story. VARIETY RULE: Never repeat the same subheadline approach - always vary between social proof, benefits, transformation, credibility, etc. ADAPT TO EACH COMPANY: Use their exact business name, industry, services, location, and target audience. FORBIDDEN WORDS (NEVER USE): transform, unlock, discover, revolutionize, solutions, elevate, empower, cutting-edge, innovative, future, advanced, premium, exclusive, ultimate, breakthrough, game-changer, journey, experience, excellence, why choose us, start your, connect with us. Focus on specific problems, quantified benefits, and social proof. ${hashtagInstruction}`
+        content: `You are a direct-response copywriter for Revo 1.5. NAME DIVERSITY RULE: Use ONLY single first names (David, Mary, Grace) from ${brandProfile.location || 'the region'}, NEVER repeat names like Joseph Njoroge or Christine Kioko. COHERENCE RULE: Headline + Subheadline + CTA must tell ONE complete story. VARIETY RULE: Never repeat the same subheadline approach - always vary between social proof, benefits, transformation, credibility, etc. ADAPT TO EACH COMPANY: Use their exact business name, industry, services, location, and target audience. FORBIDDEN WORDS (NEVER USE): transform, unlock, discover, revolutionize, solutions, elevate, empower, cutting-edge, innovative, future, advanced, premium, exclusive, ultimate, breakthrough, game-changer, journey, experience, excellence, why choose us, start your, connect with us. Focus on specific problems, quantified benefits, and social proof. ${hashtagInstruction}`
       }, {
         role: 'user',
-        content: `FORBIDDEN WORDS (DO NOT USE): transform, unlock, discover, revolutionize, solutions, elevate, empower, cutting-edge, innovative, future, advanced, premium, exclusive, ultimate, breakthrough, game-changer\n\nHEADLINE FORMAT VARIETY: Avoid rigid "${businessName}:" prefix. Use natural formats like:\n- Problem-focused: "Tired of Manual Processes?"\n- Solution-focused: "Process Loans in 3 Minutes"\n- Question format: "Still Using Paper Forms?"\n- Stat-focused: "50+ SACCOs Choose Digital"\n- Curiosity: "What Takes 3 Minutes?"\n- Urgency: "Don't Lose Another Member"\n- Comparison: "Paper vs Digital Processing"\n- Benefit: "Cut Wait Times 90%"\n- Fear: "Members Switching to Faster SACCOs?"\n- Success Story: "How 50+ SACCOs Went Digital"\n- Challenge: "Think 3-Minute Loans Are Impossible?"\n- Emotional: "Happy Members, Happy SACCO"\n- Time-based: "From Hours to Minutes"\n- Location: "Kenya's Fastest SACCO System"\n- Integrate business name naturally within headline, not as prefix\n\n${updatedPrompt}`
+        content: `FORBIDDEN WORDS (DO NOT USE): transform, unlock, discover, revolutionize, solutions, elevate, empower, cutting-edge, innovative, future, advanced, premium, exclusive, ultimate, breakthrough, game-changer\n\nNAME USAGE RULES (CRITICAL):\n- NEVER repeat the same names: Joseph Njoroge, Christine Kioko\n- Use ONLY single first names (not full names): David, Mary, Peter, Grace, etc.\n- Use diverse regional names for ${brandProfile.location || 'the location'}:\n  * Kenya: Wanjiku, Kamau, Aisha, Omar, Grace, David, Mary, Peter, Faith, John\n  * Nigeria: Adaora, Chike, Fatima, Ibrahim, Blessing, Emmanuel, Joy, Samuel\n  * General: Sarah, Michael, Lisa, James, Anna, Robert, Linda, Daniel\n- VARY names each time - never use the same name twice\n- Generate random, authentic names appropriate for the region\n- AVOID overused names from previous content\n\nHEADLINE FORMAT VARIETY: Avoid rigid "${businessName}:" prefix. Use natural formats like:\n- Problem-focused: "Tired of Manual Processes?"\n- Solution-focused: "Process Loans in 3 Minutes"\n- Question format: "Still Using Paper Forms?"\n- Stat-focused: "50+ SACCOs Choose Digital"\n- Curiosity: "What Takes 3 Minutes?"\n- Urgency: "Don't Lose Another Member"\n- Comparison: "Paper vs Digital Processing"\n- Benefit: "Cut Wait Times 90%"\n- Fear: "Members Switching to Faster SACCOs?"\n- Success Story: "How 50+ SACCOs Went Digital"\n- Challenge: "Think 3-Minute Loans Are Impossible?"\n- Emotional: "Happy Members, Happy SACCO"\n- Time-based: "From Hours to Minutes"\n- Location: "Kenya's Fastest SACCO System"\n- Integrate business name naturally within headline, not as prefix\n\n${updatedPrompt}`
       }],
       temperature: 0.8,
       max_tokens: 800
@@ -1362,34 +1348,12 @@ Format as JSON:
         }
       }
 
-      // Generate business-specific CTA using enhanced generator
-      const ctaContext: CTAGenerationContext = {
-        businessType,
-        businessName,
-        services: brandProfile.services || 'Professional services',
-        platform,
-        contentScenario: designPlan?.concept || 'business showcase',
-        targetAudience: brandProfile.targetAudience,
-        location: brandProfile.location,
-        productFunction: parsed.productFunction,
-        realBenefit: parsed.realBenefit
-      };
+      // Use AI-generated CTA directly (simplified)
+      const finalCTA = parsed.callToAction || 'Get Started';
 
-      const enhancedCTA = EnhancedCTAGenerator.generateBusinessSpecificCTA(ctaContext);
-
-      // Use AI-generated CTA if it's business-specific, otherwise use enhanced generator
-      const finalCTA = validateAndOptimizeCTA(
-        parsed.callToAction,
-        enhancedCTA.primary,
-        businessType,
-        platform
-      );
-
-      console.log('🎯 [Revo 1.5] CTA Selection:', {
+      console.log('🎯 [Revo 1.5] CTA Selection (Simplified):', {
         aiGenerated: parsed.callToAction,
-        enhanced: enhancedCTA.primary,
-        final: finalCTA,
-        reasoning: enhancedCTA.reasoning
+        final: finalCTA
       });
 
       // NO FALLBACKS - All content must come from Pure AI
@@ -2016,10 +1980,15 @@ ${languageInstruction}
   };
 
   // Apply Cultural Intelligence for Visual Adaptation
-  const visualInstructions = CulturalIntelligenceService.getVisualInstructions(
-    input.brandProfile.location || 'USA',
-    input.businessType
-  );
+  const visualInstructions = `
+CULTURAL VISUAL ADAPTATION FOR ${(input.brandProfile.location || 'USA').toUpperCase()}:
+- People: Professional representation appropriate for ${input.brandProfile.location || 'USA'}
+- Settings: Modern business environments
+- Colors: Professional color schemes
+- Business Context: ${input.businessType} professionals
+- Trust Elements: Professional credentials and quality indicators
+- Cultural Values: Professional excellence and quality service
+`;
 
   const targetMarketInstructions = getTargetMarketInstructions(
     input.brandProfile.location || '',
@@ -2276,72 +2245,21 @@ export async function generateRevo15EnhancedDesign(
     // Step 2: Generate content using Claude Sonnet 4 (PRIMARY AND ONLY SYSTEM - NO FALLBACKS)
     console.log('🧠 [Revo 1.5] Generating content with Claude Sonnet 4...');
 
-    // Check if Claude API key is available
-    const claudeKey = process.env.ANTHROPIC_API_KEY;
-    if (!claudeKey) {
-      throw new Error('🚫 [Revo 1.5] Claude Sonnet 4 unavailable - ANTHROPIC_API_KEY not found. Please configure ANTHROPIC_API_KEY to use Revo 1.5.');
-    }
+    // Use GPT-4o for content generation (fallback)
+    const contentResult = await generateCaptionAndHashtags(
+      input.businessType,
+      input.brandProfile.businessName || input.businessType,
+      input.platform,
+      designPlan,
+      input.brandProfile,
+      { trendingHashtags: [], currentEvents: [] },
+      input.useLocalLanguage === true,
+      input.scheduledServices
+    );
 
-    console.log('🔑 [Revo 1.5] Claude API Key Status:', {
-      hasClaudeKey: !!claudeKey,
-      claudeKeyPrefix: claudeKey.substring(0, 10) + '...'
-    });
-
-    // Build services string robustly from scraped brand services (could be string | string[] | object[])
-    const rawServices: any = (input.brandProfile as any).services;
-    let servicesStr = '';
-    if (Array.isArray(rawServices)) {
-      if (rawServices.length > 0 && typeof rawServices[0] === 'object') {
-        servicesStr = rawServices
-          .map((s: any) => [s.name, s.description, s.price ? String(s.price) : ''].filter(Boolean).join(' - '))
-          .join('; ');
-      } else {
-        servicesStr = (rawServices as any[]).filter(Boolean).join(', ');
-      }
-    } else {
-      servicesStr = rawServices || `${input.businessType} services`;
-    }
-
-    const claudeRequest: ClaudeContentRequest = {
-      businessType: input.businessType,
-      businessName: input.brandProfile.businessName || input.businessType,
-      services: servicesStr,
-      platform: input.platform,
-      targetAudience: input.brandProfile.targetAudience,
-      location: input.brandProfile.location,
-      useLocalLanguage: input.useLocalLanguage === true,
-      brandProfileId: (input.brandProfile as any).id,
-      brandContext: {
-        colors: [input.brandProfile.primaryColor, input.brandProfile.accentColor].filter(Boolean),
-        personality: input.brandProfile.brandPersonality,
-        values: input.brandProfile.brandValues
-      },
-      // NEW: Pass scheduled services to Claude (Revo 2.0 approach)
-      scheduledServices: input.scheduledServices || []
-    } as any;
-    // Preserve raw services for deeper parsing in the generator
-    (claudeRequest as any).servicesRaw = rawServices;
-    
-    console.log('📅 [Revo 1.5] Passing scheduled services to Claude Sonnet 4:', {
-      scheduledServicesCount: input.scheduledServices?.length || 0,
-      todaysServicesCount: input.scheduledServices?.filter(s => s.isToday).length || 0,
-      upcomingServicesCount: input.scheduledServices?.filter(s => s.isUpcoming).length || 0,
-      scheduledServiceNames: input.scheduledServices?.map(s => s.serviceName) || []
-    });
-
-    const claudeResult = await ClaudeSonnet4Generator.generateContent(claudeRequest);
-
-    const contentResult = {
-      caption: claudeResult.caption,
-      hashtags: claudeResult.hashtags,
-      headline: claudeResult.headline,
-      subheadline: claudeResult.subheadline,
-      callToAction: claudeResult.cta
-    };
-
-    enhancementsApplied.push('Claude Sonnet 4 Content Generation');
-    console.log('✅ [Revo 1.5] Claude Sonnet 4 content generation successful');
-    console.log('🎯 [Revo 1.5] CONTENT SYSTEM USED: Claude Sonnet 4 (Primary - No Fallbacks)');
+    enhancementsApplied.push('GPT-4o Content Generation (Fallback)');
+    console.log('✅ [Revo 1.5] GPT-4o content generation successful');
+    console.log('🎯 [Revo 1.5] CONTENT SYSTEM USED: GPT-4o (Fallback)');
 
     // Step 3: Generate final image with text elements on design (matching Revo 1.0 approach)
     const imageUrl = await generateFinalImage(enhancedInput, designPlan, contentResult);
@@ -2356,7 +2274,7 @@ export async function generateRevo15EnhancedDesign(
       model: 'revo-1.5-enhanced (gemini-2.5-flash-image-preview)',
       planningModel: GEMINI_2_5_MODELS.FLASH,
       generationModel: 'gemini-2.5-flash-image-preview', // Model that works with Revo 1.5 API key
-      format: claudeResult.format,
+      // format: claudeResult.format,
       caption: contentResult.caption,
       hashtags: contentResult.hashtags,
       headline: contentResult.headline,

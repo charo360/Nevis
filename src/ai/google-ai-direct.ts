@@ -281,9 +281,9 @@ export function getAvailableModels() {
         costEfficiency: 'high'
       },
       [GEMINI_2_5_MODELS.PRO]: {
-        description: 'Most capable model for complex reasoning',
+        description: 'Most capable but expensive - AVOID for cost efficiency',
         bestFor: ['complex analysis', 'detailed design planning', 'sophisticated content'],
-        costEfficiency: 'medium'
+        costEfficiency: 'LOW - USE FLASH INSTEAD'
       },
       [GEMINI_2_5_MODELS.FLASH_LITE]: {
         description: 'Lightweight and cost-effective',
