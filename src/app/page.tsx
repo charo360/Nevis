@@ -129,8 +129,8 @@ export default function HomePage() {
 
           try {
             const token = await getAccessToken();
-                // Normalize frontend plan IDs to server-expected values (server expects 'free' not 'try-free')
-                const normalizedPlanId = planId === 'try-free' ? 'free' : planId;
+                // Keep frontend planId as-is (server expects 'try-free' for the free plan)
+                const normalizedPlanId = planId;
                 const res = await fetch('/api/create-checkout-session', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -140,8 +140,9 @@ export default function HomePage() {
             const data = await res.json();
             if (data.error) throw new Error(data.error);
 
-            // If the server granted free credits (no Stripe session needed), navigate to dashboard
-            if (data.ok && normalizedPlanId === 'free') {
+            // If the Try Agent Free plan was requested, treat the response as completed and navigate to dashboard
+            if (normalizedPlanId === 'try-free') {
+              // Server grants free credits (no Stripe session required) and may return an id/url placeholder.
               router.push('/dashboard');
               return;
             }
