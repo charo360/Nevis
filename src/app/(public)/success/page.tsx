@@ -25,8 +25,36 @@ export default function PaymentSuccessPage() {
   }, []);
 
   useEffect(() => {
-    // If we have a session_id and user is logged in, attempt to fetch session details and record payment
-    if (!sessionId || !user) return;
+    if (!sessionId) return;
+
+    // First, fetch session summary unauthenticated so page is visible after Stripe redirect.
+    const fetchSummary = async () => {
+      try {
+        const sessionRes = await fetch('/api/payments/session-details', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId })
+        });
+
+        const sessionJson = await sessionRes.json();
+        if (sessionRes.ok && sessionJson.ok) {
+          const { planId, amountCents, currency } = sessionJson;
+          const amount = (amountCents || 0) / 100;
+          setSummary({ planId, amount, currency });
+        } else {
+          console.warn('Failed to fetch session summary', sessionJson);
+        }
+      } catch (e) {
+        console.error('Failed to fetch session summary', e);
+      }
+    };
+
+    void fetchSummary();
+  }, [sessionId]);
+
+  // When the user becomes available, record payment (if summary exists)
+  useEffect(() => {
+    if (!sessionId || !user || !summary) return;
 
     const record = async () => {
       setRecording('loading');
@@ -37,26 +65,10 @@ export default function PaymentSuccessPage() {
           return;
         }
 
-        // Retrieve session details from server-side Stripe lookup
-        const sessionRes = await fetch('/api/payments/session-details', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-          body: JSON.stringify({ sessionId })
-        });
+        const { planId } = summary;
+        const amount = summary.amount || 0;
+        const currency = summary.currency || 'usd';
 
-        const sessionJson = await sessionRes.json();
-        if (!sessionRes.ok || sessionJson.error) {
-          console.warn('Failed to fetch session details', sessionJson);
-          setRecording('failed');
-          return;
-        }
-
-        const { planId, amountCents, currency } = sessionJson;
-        const amount = (amountCents || 0) / 100;
-
-        setSummary({ planId, amount, currency });
-
-        // Now record the payment using the existing record endpoint (it expects idToken in body)
         const recordRes = await fetch('/api/payments/record', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -76,13 +88,8 @@ export default function PaymentSuccessPage() {
       }
     };
 
-    // Delay a little to ensure Stripe redirect settled
-    const t = setTimeout(() => {
-      void record();
-    }, 800);
-
-    return () => clearTimeout(t);
-  }, [sessionId, user, getAccessToken]);
+    void record();
+  }, [sessionId, user, summary, getAccessToken]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center py-12 px-4">

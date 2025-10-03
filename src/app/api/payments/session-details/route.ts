@@ -6,17 +6,13 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '20
 
 export async function POST(req: Request) {
   try {
-    const authHeader = req.headers.get('authorization') || ''
-    if (!authHeader.startsWith('Bearer ')) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    const idToken = authHeader.split(' ')[1]
-    const decoded = verifyToken(idToken)
-    if (!decoded) return NextResponse.json({ error: 'Unauthorized - invalid token' }, { status: 401 })
-
     const body = await req.json()
     const sessionId = String(body?.sessionId || '').trim()
     if (!sessionId) return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 })
 
-    // Retrieve the Checkout Session from Stripe
+    // Retrieve the Checkout Session from Stripe. This endpoint intentionally allows
+    // unauthenticated access for basic session metadata lookup because the session_id
+    // is a hard-to-guess token created by Stripe and is included in the redirect URL.
     const session = await stripe.checkout.sessions.retrieve(sessionId as string)
 
     // session.amount_total is in cents; session.currency is lowercase code

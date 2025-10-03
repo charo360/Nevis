@@ -136,20 +136,17 @@ export async function POST(req: NextRequest) {
       }
 
       // Return success URL so frontend can redirect to the success page
-      return NextResponse.json({ id: `free-${Date.now()}`, url: getCheckoutUrls().successUrl })
+      return NextResponse.json({ id: `free-${Date.now()}`, url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}` })
     }
 
     // Note: We'll map plan -> Stripe price later (after we know the mode)
 
-    // Determine the correct origin based on environment
-    const getAppOrigin = () => {
-      if (process.env.NODE_ENV === 'production') {
-        return 'https://crevo.app'
-      }
-      return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'
-    }
-    
-    const origin = getAppOrigin()
+    // Determine the correct origin. Prefer request headers so Stripe redirects back to the same host
+    const hostHeader = req.headers.get('x-forwarded-host') || req.headers.get('host') || '';
+    const protoHeader = req.headers.get('x-forwarded-proto') || req.headers.get('x-forwarded-protocol') || req.headers.get('referer')?.split(':')[0] || (process.env.NODE_ENV === 'production' ? 'https' : 'http');
+    const inferredOrigin = hostHeader ? `${protoHeader}://${hostHeader}` : null;
+    const getAppOrigin = () => inferredOrigin || (process.env.NODE_ENV === 'production' ? 'https://crevo.app' : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001');
+    const origin = getAppOrigin();
 
     const quantity = body.quantity && body.quantity > 0 ? body.quantity : 1
     const mode = body.mode === 'subscription' ? 'subscription' : 'payment'
@@ -171,7 +168,7 @@ export async function POST(req: NextRequest) {
 
     // Try Supabase verification first (most callers supply Supabase access tokens)
     let verifiedUserId: string | null = null
-    try {
+  try {
       if (supabase) {
         const { data: { user }, error } = await supabase.auth.getUser(token as string)
         if (!error && user) {
@@ -223,8 +220,8 @@ export async function POST(req: NextRequest) {
           customer_email: body.customerEmail,
           metadata: metadataWithUser,
           client_reference_id: clientReferenceId,
-          success_url: getCheckoutUrls().successUrl,
-          cancel_url: getCheckoutUrls().cancelUrl,
+          success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${origin}/billing/cancel`,
           locale: 'auto',
         })
       } else {
@@ -243,8 +240,8 @@ export async function POST(req: NextRequest) {
           customer_email: body.customerEmail,
           metadata: metadataWithUser,
           client_reference_id: clientReferenceId,
-          success_url: getCheckoutUrls().successUrl,
-          cancel_url: getCheckoutUrls().cancelUrl,
+          success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${origin}/billing/cancel`,
           locale: 'auto',
         })
       }
@@ -259,6 +256,11 @@ export async function POST(req: NextRequest) {
       })
       
     const isProd = process.env.NODE_ENV === 'production';
+
+      // Prepare a public-facing message for the client; keep internal details in logs
+      const publicMessage = process.env.NODE_ENV === 'production'
+        ? 'Payment processing is temporarily unavailable. Please try again later.'
+        : (stripeError?.message || 'Stripe session creation failed');
 
       return NextResponse.json({ error: publicMessage }, { status: 500 })
     }
