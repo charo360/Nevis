@@ -10,7 +10,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '2025-07-30.basil' });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '2025-08-27.basil' });
 
 // Minimal plan map (amounts in cents) — adjust to match your pricing-data if desired
 const PLANS: Record<string, { amountCents: number; credits: number; name: string }> = {
@@ -23,6 +23,13 @@ const PLANS: Record<string, { amountCents: number; credits: number; name: string
 
 export async function POST(req: Request) {
   try {
+    // Infer origin early so Stripe redirect URLs are correct for the environment
+    const hostHeader = req.headers.get('x-forwarded-host') || req.headers.get('host') || '';
+    const protoHeader = req.headers.get('x-forwarded-proto') || req.headers.get('x-forwarded-protocol') || req.headers.get('referer')?.split(':')[0] || (process.env.NODE_ENV === 'production' ? 'https' : 'http');
+    const inferredOrigin = hostHeader ? `${protoHeader}://${hostHeader}` : null;
+    const preferredProd = process.env.NEXT_PUBLIC_APP_URL || (inferredOrigin && /crevo\.app$/.test(inferredOrigin) ? inferredOrigin : 'https://www.crevo.app');
+  const getAppOriginPayments = () => inferredOrigin || preferredProd || (process.env.NODE_ENV === 'production' ? 'https://www.crevo.app' : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001');
+  const origin = getAppOriginPayments();
     // enforce id token (user must be logged in)
     const authHeader = req.headers.get('authorization') || '';
     if (!authHeader.startsWith('Bearer ')) {
@@ -49,7 +56,7 @@ export async function POST(req: Request) {
   if (planIdForLookup === 'free') {
       const doc = {
         userId: decoded.userId,
-        planId,
+        planId: planIdForLookup,
         amount: 0,
         currency: 'usd',
         creditsAdded: plan.credits,
@@ -79,8 +86,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true, message: 'Free credits granted' });
     }
 
-    const successUrl = body?.successUrl || `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_VERCEL_URL || 'http://localhost:3000'}/billing/success?session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl = body?.cancelUrl || `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/billing/cancel`;
+  const successUrl = body?.successUrl || `${origin}/billing/success?session_id={CHECKOUT_SESSION_ID}`;
+  const cancelUrl = body?.cancelUrl || `${origin}/billing/cancel`;
 
     // Determine price data
     let currency = 'usd';
@@ -123,7 +130,7 @@ export async function POST(req: Request) {
             line_items: [ { price: mappedPriceId, quantity: 1 } ],
             success_url: successUrl,
             cancel_url: cancelUrl,
-            metadata: { userId: decoded.userId, planId: isRegional45 ? 'regional_45' : planId, country: regionCountry || '' },
+            metadata: { userId: decoded.userId, planId: isRegional45 ? 'regional_45' : rawPlanId, country: regionCountry || '' },
             client_reference_id: decoded.userId,
           });
         } catch (priceErr: any) {
@@ -140,7 +147,7 @@ export async function POST(req: Request) {
             {
               price_data: {
                 currency,
-                product_data: { name, metadata: { planId: isRegional45 ? 'regional_45' : planId } },
+                product_data: { name, metadata: { planId: isRegional45 ? 'regional_45' : rawPlanId } },
                 unit_amount: unitAmount,
               },
               quantity: 1,
@@ -148,7 +155,7 @@ export async function POST(req: Request) {
           ],
           success_url: successUrl,
           cancel_url: cancelUrl,
-          metadata: { userId: decoded.userId, planId: isRegional45 ? 'regional_45' : planId, country: regionCountry || '' },
+          metadata: { userId: decoded.userId, planId: isRegional45 ? 'regional_45' : rawPlanId, country: regionCountry || '' },
           client_reference_id: decoded.userId,
         });
       }
@@ -162,7 +169,7 @@ export async function POST(req: Request) {
       const payload = {
         user_id: decoded.userId,
         stripe_session_id: session.id,
-        plan_id: isRegional45 ? 'regional_45' : planId,
+  plan_id: isRegional45 ? 'regional_45' : planIdForLookup,
         amount: unitAmount / 100,
         currency,
         status: 'pending',

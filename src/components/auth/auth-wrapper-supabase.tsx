@@ -26,13 +26,15 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
   useEffect(() => {
     if (!loading && mounted) {
       // Public routes that don't require authentication
-      const publicRoutes = ['/', '/auth', '/auth/forgot-password'];
-      const isPublicRoute = publicRoutes.includes(pathname);
+      // Treat any route that starts with /billing as public so billing redirects don't force the dashboard.
+  const publicRoutes = ['/', '/auth', '/auth/forgot-password'];
+  const currentPath = pathname ?? '';
+  const isPublicRoute = publicRoutes.includes(currentPath) || currentPath.startsWith('/billing');
 
       if (!user && !isPublicRoute) {
         console.log('🔒 User not authenticated, redirecting to login');
         router.push('/auth');
-      } else if (user && pathname === '/auth') {
+      } else if (user && currentPath === '/auth') {
         // Add a small delay to prevent immediate redirect when users want to logout/switch accounts
         const timeoutId = setTimeout(() => {
           console.log('✅ User authenticated, redirecting to brand profile');
@@ -83,7 +85,8 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
 
   // Public routes - render without auth check
   const publicRoutes = ['/', '/auth', '/auth/forgot-password'];
-  const isPublicRoute = publicRoutes.includes(pathname);
+  const currentPath = pathname ?? '';
+  const isPublicRoute = publicRoutes.includes(currentPath) || currentPath.startsWith('/billing');
 
   if (isPublicRoute) {
     return <>{children}</>;

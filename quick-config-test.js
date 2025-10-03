@@ -12,11 +12,11 @@ async function quickTest() {
   
   console.log('📋 Testing your updated price IDs:');
   const priceIds = [
-    { id: 'price_1SCkjkCik0ZJySexpx9RGhu3', name: 'Enterprise Agent' },
-    { id: 'price_1SCkhJCik0ZJySexgkXpFKTO', name: 'Pro Agent' },
-    { id: 'price_1SCkefCik0ZJySexBO34LAsl', name: 'Growth Agent' },
-    { id: 'price_1SCwe1Cik0ZJySexYVYW97uQ', name: 'Starter Agent (NEW)' },
-    { id: 'price_1SCkZMCik0ZJySexGFq9FtxO', name: 'Try Agent Free' }
+  { id: 'price_1SEE0bRn8roP0mgSun2Cz4TH', name: 'Enterprise Agent' },
+  { id: 'price_1SEDzvRn8roP0mgSqC1sLrl8', name: 'Pro Agent' },
+  { id: 'price_1SEDzFRn8roP0mgSnReS2Y44', name: 'Growth Agent' },
+  { id: 'price_1SEE1ORn8roP0mgSS9mlHCa9', name: 'Starter Agent (NEW)' },
+  { id: 'price_1SEDxyRn8roP0mgSNyhZjbqx', name: 'Try Agent Free' }
   ];
 
   for (const { id, name } of priceIds) {
