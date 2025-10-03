@@ -37,7 +37,7 @@ export const PRICING_PLANS: PricingPlan[] = [
   {
     id: 'starter',
     name: 'Starter Agent',
-    price: 10,
+    price: 0.5,
   credits: 40,
     description: 'Great for small businesses',
     features: [
