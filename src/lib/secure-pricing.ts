@@ -111,7 +111,9 @@ export function getPlanToStripeMapping(): Record<string, string> {
   const prices = getStripePrices();
 
   return {
+    // Support both frontend 'try-free' and server 'free' keys mapping to the same Stripe price
     'try-free': envMap['try-free'] || prices['try-free'],
+    'free': envMap['try-free'] || prices['try-free'],
     'starter': envMap['starter'] || prices['starter'],
     'growth': envMap['growth'] || prices['growth'],
     'pro': envMap['pro'] || prices['pro'],

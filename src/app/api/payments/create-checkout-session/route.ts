@@ -34,17 +34,19 @@ export async function POST(req: Request) {
 
     if (!decoded) return NextResponse.json({ error: 'Unauthorized - invalid token' }, { status: 401 });
 
-    const body = await req.json();
+  const body = await req.json();
 
     // New regional one-time product: 45 generations, price by region
     const isRegional45 = String(body?.product || '').toLowerCase() === 'regional_45';
 
-    const planId = String(body?.planId || 'starter').toLowerCase();
-    const plan = PLANS[planId];
+    const rawPlanId = String(body?.planId || 'starter').toLowerCase();
+    // Accept both 'try-free' (frontend) and 'free' (server canonical) as the free plan
+    const planIdForLookup = rawPlanId === 'try-free' ? 'free' : rawPlanId;
+    const plan = PLANS[planIdForLookup];
     if (!isRegional45 && !plan) return NextResponse.json({ error: 'Unknown plan' }, { status: 400 });
 
     // For free plan, don't create Stripe session — create pending succeeded payment and return a simple response
-    if (planId === 'free') {
+  if (planIdForLookup === 'free') {
       const doc = {
         userId: decoded.userId,
         planId,
@@ -56,13 +58,13 @@ export async function POST(req: Request) {
         metadata: { source: 'free-plan' },
       } as any;
 
-      try {
+  try {
         // Save to Supabase payment_transactions table
         await supabase
           .from('payment_transactions')
           .insert({
             user_id: decoded.userId,
-            plan_id: planId,
+            plan_id: planIdForLookup,
             amount: 0,
             status: 'completed',
             credits_added: plan.credits,
@@ -104,7 +106,12 @@ export async function POST(req: Request) {
     // Prefer using configured Stripe Price IDs (server-side mapping). If missing, fall back to inline price_data.
     let session;
     try {
-      const mappedPriceId = isRegional45 ? null : planIdToStripePrice(planId);
+  // For Stripe price mapping, use the original plan key from the frontend when possible
+  // (e.g. 'try-free' maps to a specific Stripe price id in secure-pricing). For non-free plans
+  // we use the rawPlanId; for fallback where rawPlanId was 'try-free', it's fine because we
+  // won't create a Stripe session for free plans above.
+  const mappingPlanId = rawPlanId;
+  const mappedPriceId = isRegional45 ? null : planIdToStripePrice(mappingPlanId);
       if (mappedPriceId) {
         // Try to retrieve the price to ensure it exists in this Stripe account
         try {
