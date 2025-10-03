@@ -11,6 +11,7 @@ import Link from 'next/link';
 export default function PaymentSuccessPage() {
   const [confetti, setConfetti] = useState(true);
   const [recording, setRecording] = useState<'idle' | 'loading' | 'done' | 'failed'>('idle');
+  const [summary, setSummary] = useState<{ planId?: string; amount?: number; currency?: string } | null>(null);
   const search = useSearchParams();
   const router = useRouter();
   const { user, getAccessToken } = useAuth();
@@ -24,47 +25,60 @@ export default function PaymentSuccessPage() {
   }, []);
 
   useEffect(() => {
-    // If we have a session_id and user is logged in, attempt to record payment
+    // If we have a session_id and user is logged in, attempt to fetch session details and record payment
     if (!sessionId || !user) return;
 
     const record = async () => {
       setRecording('loading');
       try {
-        const idToken = getAccessToken();
+        const idToken = await getAccessToken();
         if (!idToken) {
           setRecording('failed');
           return;
         }
 
-        // For now, we'll use default values - in a real app you'd fetch session details from Stripe
-        const res = await fetch('/api/payments/record', {
+        // Retrieve session details from server-side Stripe lookup
+        const sessionRes = await fetch('/api/payments/session-details', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${idToken}`,
-          },
-          body: JSON.stringify({
-            sessionId,
-            planId: 'growth', // TODO: Get from session or URL params
-            amount: 29, // TODO: Get from session
-            currency: 'usd'
-          })
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+          body: JSON.stringify({ sessionId })
         });
 
-        const json = await res.json();
-        if (res.ok && json.ok) {
+        const sessionJson = await sessionRes.json();
+        if (!sessionRes.ok || sessionJson.error) {
+          console.warn('Failed to fetch session details', sessionJson);
+          setRecording('failed');
+          return;
+        }
+
+        const { planId, amountCents, currency } = sessionJson;
+        const amount = (amountCents || 0) / 100;
+
+        setSummary({ planId, amount, currency });
+
+        // Now record the payment using the existing record endpoint (it expects idToken in body)
+        const recordRes = await fetch('/api/payments/record', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken, sessionId, planId: planId || 'starter', amount, currency })
+        });
+
+        const recordJson = await recordRes.json();
+        if (recordRes.ok && recordJson.success) {
           setRecording('done');
         } else {
+          console.warn('Recording failed', recordJson);
           setRecording('failed');
         }
       } catch (e) {
+        console.error('Recording error', e);
         setRecording('failed');
       }
     };
 
     // Delay a little to ensure Stripe redirect settled
     const t = setTimeout(() => {
-      record();
+      void record();
     }, 800);
 
     return () => clearTimeout(t);
@@ -107,78 +121,31 @@ export default function PaymentSuccessPage() {
 
         <CardContent className="space-y-8">
           {/* Purchase Summary */}
-          <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-            <h3 className="font-semibold text-green-800 mb-4">Purchase Summary</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-              <div>
-                <div className="text-2xl font-bold text-green-600">150</div>
-                <div className="text-sm text-green-700">Credits Added</div>
+          <div className="bg-white/50 p-4 rounded-lg">
+            <h4 className="text-lg font-semibold">Purchase Summary</h4>
+            {summary ? (
+              <div className="mt-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Plan</span>
+                  <span className="font-medium">{summary.planId || '—'}</span>
+                </div>
+                <div className="flex justify-between mt-1">
+                  <span className="text-sm text-gray-600">Amount</span>
+                  <span className="font-medium">{summary.amount ? `${summary.currency?.toUpperCase() || 'USD'} ${summary.amount.toFixed(2)}` : '—'}</span>
+                </div>
               </div>
-              <div>
-                <div className="text-2xl font-bold text-green-600">$29</div>
-                <div className="text-sm text-green-700">Amount Paid</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-green-600">∞</div>
-                <div className="text-sm text-green-700">Never Expire</div>
-              </div>
-            </div>
+            ) : (
+              <div className="mt-2 text-sm text-gray-500">Fetching purchase details...</div>
+            )}
           </div>
 
           {/* What's Next */}
           <div>
-            <h3 className="font-semibold text-gray-900 mb-4">What's Next?</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                <h4 className="font-medium mb-2">Start Creating</h4>
-                <p className="text-sm text-gray-600 mb-3">
-                  Use your credits to generate stunning AI-powered designs
-                </p>
-                <Link href="/auth">
-                  <Button variant="outline" size="sm" className="w-full">
-                    Sign In to Dashboard
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
-              </div>
-
-              <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                <h4 className="font-medium mb-2">Learn More</h4>
-                <p className="text-sm text-gray-600 mb-3">
-                  Discover all the features and AI models available
-                </p>
-                <Link href="/#features">
-                  <Button variant="outline" size="sm" className="w-full">
-                    View Features
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </div>
-
-          {/* Receipt & Support */}
-          <div className="border-t pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
-              <div>
-                <h4 className="font-medium mb-2">Receipt</h4>
-                <p className="text-sm text-gray-600 mb-3">
-                  A receipt has been sent to your email
-                </p>
-                <Button variant="ghost" size="sm">
-                  Download Receipt
-                </Button>
-              </div>
-
-              <div>
-                <h4 className="font-medium mb-2">Need Help?</h4>
-                <p className="text-sm text-gray-600 mb-3">
-                  Our support team is here to help
-                </p>
-                <Button variant="ghost" size="sm">
-                  Contact Support
-                </Button>
-              </div>
+            <h4 className="text-lg font-semibold">Status</h4>
+            <div className="mt-2">
+              {recording === 'loading' && <div className="text-sm text-gray-600">Recording payment...</div>}
+              {recording === 'done' && <div className="text-sm text-green-600">Payment recorded. Credits added to your account.</div>}
+              {recording === 'failed' && <div className="text-sm text-red-600">Failed to record payment. If your card was charged, contact support.</div>}
             </div>
           </div>
 
@@ -189,7 +156,7 @@ export default function PaymentSuccessPage() {
                 Back to Home
               </Button>
             </Link>
-            <Link href="/auth" className="flex-1">
+            <Link href="/dashboard" className="flex-1">
               <Button className="w-full">
                 Start Creating
                 <Sparkles className="w-4 h-4 ml-2" />

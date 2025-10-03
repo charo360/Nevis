@@ -1,0 +1,32 @@
+import { NextResponse } from 'next/server'
+import Stripe from 'stripe'
+import { verifyToken } from '@/lib/auth/jwt'
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '2025-07-30.basil' })
+
+export async function POST(req: Request) {
+  try {
+    const authHeader = req.headers.get('authorization') || ''
+    if (!authHeader.startsWith('Bearer ')) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const idToken = authHeader.split(' ')[1]
+    const decoded = verifyToken(idToken)
+    if (!decoded) return NextResponse.json({ error: 'Unauthorized - invalid token' }, { status: 401 })
+
+    const body = await req.json()
+    const sessionId = String(body?.sessionId || '').trim()
+    if (!sessionId) return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 })
+
+    // Retrieve the Checkout Session from Stripe
+    const session = await stripe.checkout.sessions.retrieve(sessionId as string)
+
+    // session.amount_total is in cents; session.currency is lowercase code
+    const amountCents = (session as any).amount_total ?? (session as any).amount_subtotal ?? 0
+    const currency = (session as any).currency || 'usd'
+    const planId = (session as any).metadata?.planId || (session as any).metadata?.plan_id || null
+
+    return NextResponse.json({ ok: true, planId, amountCents, currency })
+  } catch (err: any) {
+    console.error('Failed to retrieve session details:', err)
+    return NextResponse.json({ error: String(err?.message || err) }, { status: 500 })
+  }
+}
