@@ -140,7 +140,7 @@ async function verifySetup() {
   console.log('\n5️⃣ Checking Payment Plans...');
   
   const plans = {
-    starter: { amountCents: 1000, credits: 40, name: 'Starter Pack' },
+  starter: { amountCents: 50, credits: 40, name: 'Starter Pack' },
     growth: { amountCents: 2900, credits: 120, name: 'Growth Pack' },
     pro: { amountCents: 4900, credits: 220, name: 'Pro Pack' },
     power: { amountCents: 9900, credits: 500, name: 'Power Users' }

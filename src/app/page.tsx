@@ -129,14 +129,22 @@ export default function HomePage() {
 
           try {
             const token = await getAccessToken();
-            const res = await fetch('/api/create-checkout-session', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-              body: JSON.stringify({ planId, quantity: 1, mode: 'payment', customerEmail: user.email, metadata: { userId: user.userId, planId } })
-            });
+                // Normalize frontend plan IDs to server-expected values (server expects 'free' not 'try-free')
+                const normalizedPlanId = planId === 'try-free' ? 'free' : planId;
+                const res = await fetch('/api/create-checkout-session', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                  body: JSON.stringify({ planId: normalizedPlanId, quantity: 1, mode: 'payment', customerEmail: user.email, metadata: { userId: user.userId, planId: normalizedPlanId } })
+                });
 
             const data = await res.json();
             if (data.error) throw new Error(data.error);
+
+            // If the server granted free credits (no Stripe session needed), navigate to dashboard
+            if (data.ok && normalizedPlanId === 'free') {
+              router.push('/dashboard');
+              return;
+            }
 
             // Defer loading Stripe until needed to reduce initial bundle size
             const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
@@ -890,7 +898,7 @@ export default function HomePage() {
                   data-plan="try-free"
                   aria-label="Start Try Agent Free"
                 >
-                  Start Free – No Credit Card Required
+                  Start Free
                 </Button>
               </CardContent>
             </Card>
@@ -905,7 +913,7 @@ export default function HomePage() {
                 <p className="text-sm text-gray-600 mb-4">HD generations, No watermark, Agent memory</p>
 
                 <div className="mb-4">
-                  <span className="text-3xl font-bold" data-plan="starter" data-amount="1000" data-currency="USD">$10</span>
+                  <span className="text-3xl font-bold" data-plan="starter" data-amount="50" data-currency="USD">$0.50</span>
                   <span className="text-gray-500 text-sm"> one-time</span>
                 </div>
 

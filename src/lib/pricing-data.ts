@@ -44,7 +44,7 @@ export const pricingPlans: PricingPlan[] = [
   {
     id: 'starter',
     name: 'Starter Pack',
-    price: 10,
+    price: 0.5,
     credits: 40,
     costPerCredit: 0.20,
     icon: 'zap',
