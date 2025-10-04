@@ -129,14 +129,23 @@ export default function HomePage() {
 
           try {
             const token = await getAccessToken();
-            const res = await fetch('/api/create-checkout-session', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-              body: JSON.stringify({ planId, quantity: 1, mode: 'payment', customerEmail: user.email, metadata: { userId: user.userId, planId } })
-            });
+                // Keep frontend planId as-is (server expects 'try-free' for the free plan)
+                const normalizedPlanId = planId;
+                const res = await fetch('/api/create-checkout-session', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                  body: JSON.stringify({ planId: normalizedPlanId, quantity: 1, mode: 'payment', customerEmail: user.email, metadata: { userId: user.userId, planId: normalizedPlanId } })
+                });
 
             const data = await res.json();
             if (data.error) throw new Error(data.error);
+
+            // If the Try Agent Free plan was requested, treat the response as completed and navigate to dashboard
+            if (normalizedPlanId === 'try-free') {
+              // Server grants free credits (no Stripe session required) and may return an id/url placeholder.
+              router.push('/dashboard');
+              return;
+            }
 
             // Defer loading Stripe until needed to reduce initial bundle size
             const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
@@ -821,7 +830,7 @@ export default function HomePage() {
                     <Zap className="w-5 h-5 text-blue-500" />
                   </div>
                   <div className="text-sm font-medium">Basic</div>
-                  <div className="text-lg font-bold text-blue-600">1 credit</div>
+                  <div className="text-lg font-bold text-blue-600">2 credits</div>
                   <div className="text-xs text-gray-500">Fast & Efficient</div>
                 </div>
                 <div className="p-4 border rounded-lg bg-white">
@@ -829,7 +838,7 @@ export default function HomePage() {
                     <Sparkles className="w-5 h-5 text-purple-500" />
                   </div>
                   <div className="text-sm font-medium">Enhanced</div>
-                  <div className="text-lg font-bold text-purple-600">1.5 credits</div>
+                  <div className="text-lg font-bold text-purple-600">3 credits</div>
                   <div className="text-xs text-gray-500">Higher Quality</div>
                 </div>
                 <div className="p-4 border rounded-lg bg-white">
@@ -837,7 +846,7 @@ export default function HomePage() {
                     <Brain className="w-5 h-5 text-indigo-500" />
                   </div>
                   <div className="text-sm font-medium">Premium</div>
-                  <div className="text-lg font-bold text-indigo-600">2 credits</div>
+                  <div className="text-lg font-bold text-indigo-600">3.5 credits</div>
                   <div className="text-xs text-gray-500">Best Quality</div>
                 </div>
               </div>
@@ -846,7 +855,7 @@ export default function HomePage() {
 
           {/* Pricing Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-16">
-            {/* Free Plan */}
+         
             <Card className="relative transition-all duration-300 hover:shadow-lg border-2 border-gray-200">
               <CardContent className="p-6 text-center">
                 <div className="flex justify-center mb-4">
@@ -856,7 +865,7 @@ export default function HomePage() {
                 <p className="text-sm text-gray-600 mb-4">Basic agent training, Watermarked images</p>
 
                 <div className="mb-4">
-                  <span className="text-3xl font-bold">$0</span>
+                  <span className="text-3xl font-bold" data-plan="try-free" data-amount="0" data-currency="USD">$0</span>
                 </div>
 
                 <div className="mb-4">
@@ -884,11 +893,13 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => handleGetStarted()}
+                  onClick={() => handleGetStarted('try-free')}
                   className="w-full"
                   variant="outline"
+                  data-plan="try-free"
+                  aria-label="Start Try Agent Free"
                 >
-                  Start Free – No Credit Card Required
+                  Start Free
                 </Button>
               </CardContent>
             </Card>
@@ -903,12 +914,12 @@ export default function HomePage() {
                 <p className="text-sm text-gray-600 mb-4">HD generations, No watermark, Agent memory</p>
 
                 <div className="mb-4">
-                  <span className="text-3xl font-bold">$10</span>
+                  <span className="text-3xl font-bold" data-plan="starter" data-amount="50" data-currency="USD">$0.50</span>
                   <span className="text-gray-500 text-sm"> one-time</span>
                 </div>
 
                 <div className="mb-4">
-                  <div className="text-2xl font-semibold text-blue-600">50</div>
+                  <div className="text-2xl font-semibold text-blue-600">40</div>
                   <div className="text-sm text-gray-500">credits</div>
                   <div className="text-xs text-gray-400 mt-1">$0.20 per credit</div>
                 </div>
@@ -933,9 +944,11 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => handleGetStarted('try-free')}
+                  onClick={() => handleGetStarted('starter')}
                   className="w-full"
                   variant="outline"
+                  data-plan="starter"
+                  aria-label="Buy Starter Credits"
                 >
                   Buy Credits
                 </Button>
@@ -956,12 +969,12 @@ export default function HomePage() {
                 <p className="text-sm text-gray-600 mb-4">Priority speed, Advanced models, Priority support</p>
 
                 <div className="mb-4">
-                  <span className="text-3xl font-bold">$29</span>
+                  <span className="text-3xl font-bold" data-plan="growth" data-amount="2900" data-currency="USD">$29</span>
                   <span className="text-gray-500 text-sm"> one-time</span>
                 </div>
 
                 <div className="mb-4">
-                  <div className="text-2xl font-semibold text-blue-600">150</div>
+                  <div className="text-2xl font-semibold text-blue-600">120</div>
                   <div className="text-sm text-gray-500">credits</div>
                   <div className="text-xs text-gray-400 mt-1">$0.19 per credit</div>
                 </div>
@@ -987,15 +1000,17 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => handleGetStarted('starter')}
+                  onClick={() => handleGetStarted('growth')}
                   className="w-full"
+                  data-plan="growth"
+                  aria-label="Buy Growth Credits"
                 >
                   Buy Credits
                 </Button>
               </CardContent>
             </Card>
 
-            {/* Pro Pack */}
+           
             <Card className="relative transition-all duration-300 hover:shadow-lg border-2 border-gray-200">
               <CardContent className="p-6 text-center">
                 <div className="flex justify-center mb-4">
@@ -1005,12 +1020,12 @@ export default function HomePage() {
                 <p className="text-sm text-gray-600 mb-4">Bulk generations, API access, Early features</p>
 
                 <div className="mb-4">
-                  <span className="text-3xl font-bold">$49</span>
+                  <span className="text-3xl font-bold" data-plan="pro" data-amount="4900" data-currency="USD">$49</span>
                   <span className="text-gray-500 text-sm"> one-time</span>
                 </div>
 
                 <div className="mb-4">
-                  <div className="text-2xl font-semibold text-blue-600">250</div>
+                  <div className="text-2xl font-semibold text-blue-600">220</div>
                   <div className="text-sm text-gray-500">credits</div>
                   <div className="text-xs text-gray-400 mt-1">$0.196 per credit</div>
                 </div>
@@ -1036,9 +1051,11 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => handleGetStarted('growth')}
+                  onClick={() => handleGetStarted('pro')}
                   className="w-full"
                   variant="outline"
+                  data-plan="pro"
+                  aria-label="Buy Pro Credits"
                 >
                   Buy Credits
                 </Button>
@@ -1055,12 +1072,12 @@ export default function HomePage() {
                 <p className="text-sm text-gray-600 mb-4">White-label, Team collaboration, Custom integrations</p>
 
                 <div className="mb-4">
-                  <span className="text-3xl font-bold">$99</span>
+                  <span className="text-3xl font-bold" data-plan="enterprise" data-amount="9900" data-currency="USD">$99</span>
                   <span className="text-gray-500 text-sm"> one-time</span>
                 </div>
 
                 <div className="mb-4">
-                  <div className="text-2xl font-semibold text-blue-600">550</div>
+                  <div className="text-2xl font-semibold text-blue-600">500</div>
                   <div className="text-sm text-gray-500">credits</div>
                   <div className="text-xs text-gray-400 mt-1">$0.18 per credit</div>
                 </div>
@@ -1086,9 +1103,11 @@ export default function HomePage() {
                 </ul>
 
                 <Button
-                  onClick={() => handleGetStarted('pro')}
+                  onClick={() => handleGetStarted('enterprise')}
                   className="w-full"
                   variant="outline"
+                  data-plan="enterprise"
+                  aria-label="Buy Enterprise Credits"
                 >
                   Buy Credits
                 </Button>
@@ -1106,7 +1125,7 @@ export default function HomePage() {
               </div>
               <div>
                 <h4 className="font-semibold mb-2">What do credits do?</h4>
-                <p className="text-gray-600 text-sm">Credits power content generation with different quality tiers: Basic = 1 credit, Enhanced = 1.5 credits, Premium = 2 credits per post.</p>
+                <p className="text-gray-600 text-sm">Credits power content generation with different quality tiers: Basic = 2 credits, Enhanced = 3 credits, Premium = 3.5 credits per post.</p>
               </div>
               <div>
                 <h4 className="font-semibold mb-2">Do credits expire?</h4>

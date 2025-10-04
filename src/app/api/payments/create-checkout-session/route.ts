@@ -3,25 +3,33 @@ import Stripe from 'stripe';
 import { verifyToken } from '@/lib/auth/jwt';
 import { createClient } from '@supabase/supabase-js';
 import { getRegionPriceForCountry, resolveCountryFromHeaders } from '@/lib/region-pricing';
+import { planIdToStripePrice } from '@/lib/secure-pricing';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '2025-07-30.basil' });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '2025-08-27.basil' });
 
 // Minimal plan map (amounts in cents) — adjust to match your pricing-data if desired
 const PLANS: Record<string, { amountCents: number; credits: number; name: string }> = {
   free: { amountCents: 0, credits: 10, name: 'Free Plan' },
-  starter: { amountCents: 1000, credits: 50, name: 'Starter Pack' },
-  growth: { amountCents: 2900, credits: 150, name: 'Growth Pack' },
-  pro: { amountCents: 4900, credits: 250, name: 'Pro Pack' },
-  power: { amountCents: 9900, credits: 550, name: 'Power Users' },
+  starter: { amountCents: 50, credits: 40, name: 'Starter Pack' },
+  growth: { amountCents: 2900, credits: 120, name: 'Growth Pack' },
+  pro: { amountCents: 4900, credits: 220, name: 'Pro Pack' },
+  power: { amountCents: 9900, credits: 500, name: 'Power Users' },
 };
 
 export async function POST(req: Request) {
   try {
+    // Infer origin early so Stripe redirect URLs are correct for the environment
+    const hostHeader = req.headers.get('x-forwarded-host') || req.headers.get('host') || '';
+    const protoHeader = req.headers.get('x-forwarded-proto') || req.headers.get('x-forwarded-protocol') || req.headers.get('referer')?.split(':')[0] || (process.env.NODE_ENV === 'production' ? 'https' : 'http');
+    const inferredOrigin = hostHeader ? `${protoHeader}://${hostHeader}` : null;
+    const preferredProd = process.env.NEXT_PUBLIC_APP_URL || (inferredOrigin && /crevo\.app$/.test(inferredOrigin) ? inferredOrigin : 'https://www.crevo.app');
+  const getAppOriginPayments = () => inferredOrigin || preferredProd || (process.env.NODE_ENV === 'production' ? 'https://www.crevo.app' : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001');
+  const origin = getAppOriginPayments();
     // enforce id token (user must be logged in)
     const authHeader = req.headers.get('authorization') || '';
     if (!authHeader.startsWith('Bearer ')) {
@@ -33,20 +41,22 @@ export async function POST(req: Request) {
 
     if (!decoded) return NextResponse.json({ error: 'Unauthorized - invalid token' }, { status: 401 });
 
-    const body = await req.json();
+  const body = await req.json();
 
     // New regional one-time product: 45 generations, price by region
     const isRegional45 = String(body?.product || '').toLowerCase() === 'regional_45';
 
-    const planId = String(body?.planId || 'starter').toLowerCase();
-    const plan = PLANS[planId];
+    const rawPlanId = String(body?.planId || 'starter').toLowerCase();
+    // Accept both 'try-free' (frontend) and 'free' (server canonical) as the free plan
+    const planIdForLookup = rawPlanId === 'try-free' ? 'free' : rawPlanId;
+    const plan = PLANS[planIdForLookup];
     if (!isRegional45 && !plan) return NextResponse.json({ error: 'Unknown plan' }, { status: 400 });
 
     // For free plan, don't create Stripe session — create pending succeeded payment and return a simple response
-    if (planId === 'free') {
+  if (planIdForLookup === 'free') {
       const doc = {
         userId: decoded.userId,
-        planId,
+        planId: planIdForLookup,
         amount: 0,
         currency: 'usd',
         creditsAdded: plan.credits,
@@ -55,13 +65,13 @@ export async function POST(req: Request) {
         metadata: { source: 'free-plan' },
       } as any;
 
-      try {
+  try {
         // Save to Supabase payment_transactions table
         await supabase
           .from('payment_transactions')
           .insert({
             user_id: decoded.userId,
-            plan_id: planId,
+            plan_id: planIdForLookup,
             amount: 0,
             status: 'completed',
             credits_added: plan.credits,
@@ -76,8 +86,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true, message: 'Free credits granted' });
     }
 
-    const successUrl = body?.successUrl || `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_VERCEL_URL || 'http://localhost:3000'}/billing/success?session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl = body?.cancelUrl || `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/billing/cancel`;
+  const successUrl = body?.successUrl || `${origin}/billing/success?session_id={CHECKOUT_SESSION_ID}`;
+  const cancelUrl = body?.cancelUrl || `${origin}/billing/cancel`;
 
     // Determine price data
     let currency = 'usd';
@@ -100,32 +110,66 @@ export async function POST(req: Request) {
       name = `${plan.name} (${plan.credits} credits)`;
     }
 
-    // create stripe checkout session
-    const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency,
-            product_data: { name, metadata: { planId: isRegional45 ? 'regional_45' : planId } },
-            unit_amount: unitAmount,
-          },
-          quantity: 1,
-        },
-      ],
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-      metadata: { userId: decoded.userId, planId: isRegional45 ? 'regional_45' : planId, country: regionCountry || '' },
-      client_reference_id: decoded.userId,
-    });
+    // Prefer using configured Stripe Price IDs (server-side mapping). If missing, fall back to inline price_data.
+    let session;
+    try {
+  // For Stripe price mapping, use the original plan key from the frontend when possible
+  // (e.g. 'try-free' maps to a specific Stripe price id in secure-pricing). For non-free plans
+  // we use the rawPlanId; for fallback where rawPlanId was 'try-free', it's fine because we
+  // won't create a Stripe session for free plans above.
+  const mappingPlanId = rawPlanId;
+  const mappedPriceId = isRegional45 ? null : planIdToStripePrice(mappingPlanId);
+      if (mappedPriceId) {
+        // Try to retrieve the price to ensure it exists in this Stripe account
+        try {
+          await stripe.prices.retrieve(mappedPriceId);
+          // Use the stored price id
+          session = await stripe.checkout.sessions.create({
+            mode: 'payment',
+            payment_method_types: ['card'],
+            line_items: [ { price: mappedPriceId, quantity: 1 } ],
+            success_url: successUrl,
+            cancel_url: cancelUrl,
+            metadata: { userId: decoded.userId, planId: isRegional45 ? 'regional_45' : rawPlanId, country: regionCountry || '' },
+            client_reference_id: decoded.userId,
+          });
+        } catch (priceErr: any) {
+          console.warn('Configured Stripe price ID not available or retrieval failed, falling back to price_data', { mappedPriceId, err: priceErr?.message || priceErr });
+        }
+      }
+
+      if (!session) {
+        // Fallback to inline price_data (creates temporary Price for the Checkout Session)
+        session = await stripe.checkout.sessions.create({
+          mode: 'payment',
+          payment_method_types: ['card'],
+          line_items: [
+            {
+              price_data: {
+                currency,
+                product_data: { name, metadata: { planId: isRegional45 ? 'regional_45' : rawPlanId } },
+                unit_amount: unitAmount,
+              },
+              quantity: 1,
+            },
+          ],
+          success_url: successUrl,
+          cancel_url: cancelUrl,
+          metadata: { userId: decoded.userId, planId: isRegional45 ? 'regional_45' : rawPlanId, country: regionCountry || '' },
+          client_reference_id: decoded.userId,
+        });
+      }
+    } catch (err: any) {
+      console.error('Failed to create Stripe checkout session (both mapped price and fallback):', err);
+      return NextResponse.json({ error: 'Unable to create checkout session. Please try again or contact support.' }, { status: 500 });
+    }
 
     // persist pending payment keyed by session id
     try {
       const payload = {
         user_id: decoded.userId,
         stripe_session_id: session.id,
-        plan_id: isRegional45 ? 'regional_45' : planId,
+  plan_id: isRegional45 ? 'regional_45' : planIdForLookup,
         amount: unitAmount / 100,
         currency,
         status: 'pending',

@@ -37,8 +37,8 @@ export const PRICING_PLANS: PricingPlan[] = [
   {
     id: 'starter',
     name: 'Starter Agent',
-    price: 10,
-    credits: 50,
+    price: 0.5,
+  credits: 40,
     description: 'Great for small businesses',
     features: [
       'Advanced AI design generation',
@@ -52,7 +52,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     id: 'growth',
     name: 'Growth Agent',
     price: 29,
-    credits: 150,
+  credits: 120,
     description: 'Perfect for growing businesses',
     popular: true,
     features: [
@@ -67,7 +67,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     id: 'pro',
     name: 'Pro Agent',
     price: 49,
-    credits: 250,
+  credits: 220,
     description: 'For professional marketers',
     features: [
       'Everything in Growth',
@@ -81,7 +81,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     id: 'enterprise',
     name: 'Enterprise Agent',
     price: 99,
-    credits: 550,
+  credits: 500,
     description: 'For large organizations',
     features: [
       'Everything in Pro',
@@ -99,14 +99,25 @@ export const PRICING_PLANS: PricingPlan[] = [
  * Never expose actual price IDs to the frontend
  */
 export function getPlanToStripeMapping(): Record<string, string> {
+  // Allow override with explicit environment variables for production stability
+  const envMap: Record<string, string | undefined> = {
+    'try-free': process.env.STRIPE_PRICE_TRY_FREE,
+  'starter': 'price_1SDqfQELJu3kIHjxzHWPNMPs',
+    'growth': process.env.STRIPE_PRICE_GROWTH,
+    'pro': process.env.STRIPE_PRICE_PRO,
+    'enterprise': process.env.STRIPE_PRICE_ENTERPRISE,
+  };
+
   const prices = getStripePrices();
-  
+
   return {
-    'try-free': prices['try-free'],
-    'starter': prices['starter'], 
-    'growth': prices['growth'],
-    'pro': prices['pro'],
-    'enterprise': prices['enterprise']
+    // Support both frontend 'try-free' and server 'free' keys mapping to the same Stripe price
+    'try-free': envMap['try-free'] || prices['try-free'],
+    'free': envMap['try-free'] || prices['try-free'],
+    'starter': envMap['starter'] || prices['starter'],
+    'growth': envMap['growth'] || prices['growth'],
+    'pro': envMap['pro'] || prices['pro'],
+    'enterprise': envMap['enterprise'] || prices['enterprise']
   };
 }
 

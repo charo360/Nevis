@@ -44,8 +44,8 @@ export const pricingPlans: PricingPlan[] = [
   {
     id: 'starter',
     name: 'Starter Pack',
-    price: 10,
-    credits: 50,
+    price: 0.5,
+    credits: 40,
     costPerCredit: 0.20,
     icon: 'zap',
     description: 'Ideal for occasional users or testers',
@@ -60,7 +60,7 @@ export const pricingPlans: PricingPlan[] = [
     id: 'growth',
     name: 'Growth Pack',
     price: 29,
-    credits: 150,
+    credits: 120,
     costPerCredit: 0.19,
     icon: 'rocket',
     popular: true,
@@ -77,7 +77,7 @@ export const pricingPlans: PricingPlan[] = [
     id: 'pro',
     name: 'Pro Pack',
     price: 49,
-    credits: 250,
+    credits: 220,
     costPerCredit: 0.196,
     icon: 'crown',
     description: 'For professional content creators',
@@ -93,7 +93,7 @@ export const pricingPlans: PricingPlan[] = [
     id: 'power',
     name: 'Power Users Pack',
     price: 99,
-    credits: 550,
+    credits: 500,
     costPerCredit: 0.18,
     icon: 'crown',
     description: 'For agencies and power users',
@@ -127,9 +127,9 @@ export const addOns: AddOn[] = [
 ];
 
 export const revoCreditCosts = {
-  'revo-1.0': 1,    // Basic AI generation
-  'revo-1.5': 1.5,  // Enhanced AI generation
-  'revo-2.0': 2     // Premium AI generation
+  'revo-1.0': 2,    // Enhanced basic (updated)
+  'revo-1.5': 3,    // Enhanced with artifacts (updated)
+  'revo-2.0': 3.5   // Premium quality (updated)
 } as const;
 
 export const pricingFeatures = {
@@ -141,7 +141,7 @@ export const pricingFeatures = {
   faq: [
     {
       question: 'How do credits work?',
-      answer: 'Credits vary by AI model: Revo 1.0 = 1 credit, Revo 1.5 = 1.5 credits, Revo 2.0 = 2 credits per generation. Regenerating costs the same amount per attempt.'
+        answer: 'Credits vary by AI model: Revo 1.0 = 2 credits, Revo 1.5 = 3 credits, Revo 2.0 = 3.5 credits per generation. Regenerating costs the same amount per attempt.'
     },
     {
       question: 'Do credits expire?',
@@ -157,7 +157,7 @@ export const pricingFeatures = {
     },
     {
       question: 'What are the different Revo versions?',
-      answer: 'Revo 1.0 (1.5 credits) - Basic AI, Revo 1.5 (2 credits) - Enhanced AI with better quality, Revo 2.0 (5 credits) - Latest AI with premium features and highest quality.'
+      answer: 'Revo 1.0 (2 credits) - Enhanced basic, Revo 1.5 (3 credits) - Enhanced with artifacts, Revo 2.0 (3.5 credits) - Premium quality models with highest fidelity.'
     },
     {
       question: 'Can I get a refund?',

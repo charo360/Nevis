@@ -26,6 +26,16 @@ export async function POST(req: NextRequest) {
       stripe = new Stripe(stripeConfig.secretKey, {
         apiVersion: '2025-08-27.basil'
       });
+      // Validate configured price IDs (best-effort) and log missing ones
+      try {
+        const { validateStripePrices } = await import('@/lib/stripe-config');
+        const val = await validateStripePrices(stripe as any);
+        if (val && !val.ok) {
+          console.warn('⚠️ Stripe price validation detected missing price IDs:', val.missing || val.error);
+        }
+      } catch (e) {
+        // ignore validator errors
+      }
     } catch (configError: any) {
       console.error('❌ Stripe configuration error:', configError);
       return NextResponse.json({ 
@@ -44,7 +54,15 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json() as Body
-    
+
+    // Determine the correct origin early so free-plan short-circuit can return proper URLs.
+    const hostHeader = req.headers.get('x-forwarded-host') || req.headers.get('host') || '';
+    const protoHeader = req.headers.get('x-forwarded-proto') || req.headers.get('x-forwarded-protocol') || req.headers.get('referer')?.split(':')[0] || (process.env.NODE_ENV === 'production' ? 'https' : 'http');
+    const inferredOrigin = hostHeader ? `${protoHeader}://${hostHeader}` : null;
+    const preferredProd = process.env.NEXT_PUBLIC_APP_URL || (inferredOrigin && /crevo\.app$/.test(inferredOrigin) ? inferredOrigin : 'https://www.crevo.app');
+  const getAppOriginLocal = () => inferredOrigin || preferredProd || (process.env.NODE_ENV === 'production' ? 'https://www.crevo.app' : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001');
+  const origin = getAppOriginLocal();
+
     // Debug logging for troubleshooting
     console.log('🔄 Checkout request received:', {
       planId: body.planId,
@@ -67,17 +85,17 @@ export async function POST(req: NextRequest) {
       // Map old price IDs to plan IDs for backward compatibility
       const legacyMapping: Record<string, string> = {
         // Production price IDs
-        'price_1SCjDVCXEBwbxwozB5a6oXUp': 'try-free',
-        'price_1SDUAiCXEBwbxwozr788ke9X': 'starter',
-        'price_1SCjJlCXEBwbxwozhKzAtCH1': 'growth',
-        'price_1SCjMpCXEBwbxwozhT1RWAYP': 'pro',
-        'price_1SCjPgCXEBwbxwozjCNWanOY': 'enterprise',
-        // Development/Test price IDs  
-        'price_1SCkZMCik0ZJySexGFq9FtxO': 'try-free',
-        'price_1SCwe1Cik0ZJySexYVYW97uQ': 'starter',
-        'price_1SCkefCik0ZJySexBO34LAsl': 'growth',
-        'price_1SCkhJCik0ZJySexgkXpFKTO': 'pro',
-        'price_1SCkjkCik0ZJySexpx9RGhu3': 'enterprise'
+        'price_1SDqaWELJu3kIHjxZQBntjuO': 'try-free',
+  'price_1SDqfQELJu3kIHjxzHWPNMPs': 'starter',
+        'price_1SDqiKELJu3kIHjx0LWHBgfV': 'growth',
+        'price_1SDqloELJu3kIHjxU187qSj1': 'pro',
+        'price_1SDqp4ELJu3kIHjx7oLcQwzh': 'enterprise',
+  // Development/Test price IDs (sandbox)
+  'price_1SEDxyRn8roP0mgSNyhZjbqx': 'try-free',
+  'price_1SEE1ORn8roP0mgSS9mlHCa9': 'starter',
+  'price_1SEDzFRn8roP0mgSnReS2Y44': 'growth',
+  'price_1SEDzvRn8roP0mgSqC1sLrl8': 'pro',
+  'price_1SEE0bRn8roP0mgSun2Cz4TH': 'enterprise'
       };
       actualPlanId = legacyMapping[planId] || 'starter'; // fallback to starter
       console.log(`🔄 Converting legacy price ID ${planId} to plan ID: ${actualPlanId}`);
@@ -97,28 +115,40 @@ export async function POST(req: NextRequest) {
       }, { status: 400 })
     }
 
-    // Convert plan ID to Stripe price ID (server-side only)
-    const stripePriceId = planIdToStripePrice(actualPlanId)
-    if (!stripePriceId) {
-      console.error(`❌ No Stripe price ID found for plan: ${actualPlanId}`, {
-        planId: actualPlanId,
-        environment: stripeConfig?.environment || 'unknown',
-        timestamp: new Date().toISOString()
-      })
-      return NextResponse.json({ 
-        error: 'Pricing configuration error. Please contact support.'
-      }, { status: 500 })
+    // If the plan is free (price === 0), short-circuit Stripe and grant credits directly
+    if (planDetails.price === 0) {
+      console.log('ℹ️ Free plan selected - granting credits without Stripe:', { planId: actualPlanId, credits: planDetails.credits })
+
+      // Persist the free transaction if Supabase is available and we have a user id in metadata
+      if (supabase) {
+        try {
+          const userIdToPersist = body.metadata?.userId || null
+          const payload = {
+            user_id: userIdToPersist,
+            stripe_session_id: null,
+            plan_id: actualPlanId,
+            amount: 0,
+            status: 'completed',
+            credits_added: planDetails.credits,
+          }
+
+          const { error: insertError } = await supabase.from('payment_transactions').insert(payload as any)
+          if (insertError) {
+            console.error('Database insert failed for free plan grant:', insertError)
+          }
+        } catch (e) {
+          console.error('Failed to persist free plan grant to Supabase:', e)
+        }
+      } else {
+        console.log('ℹ️ No Supabase configured - skipping persistence for free plan grant')
+      }
+
+      // Return success URL so frontend can redirect to the billing success page
+      return NextResponse.json({ id: `free-${Date.now()}`, url: `${origin}/billing/success?session_id={CHECKOUT_SESSION_ID}` })
     }
 
-    // Determine the correct origin based on environment
-    const getAppOrigin = () => {
-      if (process.env.NODE_ENV === 'production') {
-        return 'https://crevo.app'
-      }
-      return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'
-    }
-    
-    const origin = getAppOrigin()
+    // Note: We'll map plan -> Stripe price later (after we know the mode)
+
 
     const quantity = body.quantity && body.quantity > 0 ? body.quantity : 1
     const mode = body.mode === 'subscription' ? 'subscription' : 'payment'
@@ -140,7 +170,7 @@ export async function POST(req: NextRequest) {
 
     // Try Supabase verification first (most callers supply Supabase access tokens)
     let verifiedUserId: string | null = null
-    try {
+  try {
       if (supabase) {
         const { data: { user }, error } = await supabase.auth.getUser(token as string)
         if (!error && user) {
@@ -169,47 +199,72 @@ export async function POST(req: NextRequest) {
     clientReferenceId = verifiedUserId
     const metadataWithUser: Record<string, string> = { ...metadata, userId: verifiedUserId }
 
-    // Create Stripe Checkout session (using price id directly)
+    // Create Stripe Checkout session
+    // For one-time payments (mode === 'payment') always use inline price_data so Checkout will open
+    // For subscriptions, attempt to use mapped Stripe price IDs (server-side mapping)
     let session
     try {
-      session = await stripe.checkout.sessions.create({
-        mode,
-        payment_method_types: ['card'],
-        line_items: [
-          {
-            price: stripePriceId,  // Use the mapped Stripe price ID
-            quantity: Number(quantity) || 1,
-          },
-        ],
-        allow_promotion_codes: true,
-        customer_email: body.customerEmail,
-        metadata: metadataWithUser,
-        client_reference_id: clientReferenceId,
-        success_url: getCheckoutUrls().successUrl,
-        cancel_url: getCheckoutUrls().cancelUrl,
-        locale: 'auto',
-      })
-    } catch (stripeError: any) {
-      // Log detailed error internally but don't expose sensitive data
-      console.error('❌ Stripe session creation failed:', {
-        error: stripeError.message,
-        code: stripeError.code,
-        planId: actualPlanId,
-        stripePriceId: stripePriceId, // Safe to log internally
-        environment: stripeConfig.environment,
-        timestamp: new Date().toISOString()
-      })
-      
-      if (stripeError.code === 'resource_missing') {
-        return NextResponse.json({ 
-          error: 'The selected pricing plan is not available. Please try again or contact support.'
-        }, { status: 400 })
+      if (mode === 'payment') {
+        session = await stripe.checkout.sessions.create({
+          mode: 'payment',
+          payment_method_types: ['card'],
+          line_items: [
+            {
+              price_data: {
+                currency: 'usd',
+                product_data: { name: planDetails.name, metadata: { planId: actualPlanId } },
+                unit_amount: Math.round((planDetails.price || 0) * 100),
+              },
+              quantity: Number(quantity) || 1,
+            },
+          ],
+          allow_promotion_codes: true,
+          customer_email: body.customerEmail,
+          metadata: metadataWithUser,
+          client_reference_id: clientReferenceId,
+          success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${origin}/billing/cancel`,
+          locale: 'auto',
+        })
+      } else {
+        // subscription flow: require mapped Stripe price ID
+        const mapped = planIdToStripePrice(actualPlanId)
+        if (!mapped) {
+          console.error('❌ Subscription plan has no mapped Stripe price ID:', actualPlanId)
+          return NextResponse.json({ error: 'Subscription plan not available. Please contact support.' }, { status: 400 })
+        }
+
+        session = await stripe.checkout.sessions.create({
+          mode: 'subscription',
+          payment_method_types: ['card'],
+          line_items: [{ price: mapped, quantity: Number(quantity) || 1 }],
+          allow_promotion_codes: true,
+          customer_email: body.customerEmail,
+          metadata: metadataWithUser,
+          client_reference_id: clientReferenceId,
+          success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${origin}/billing/cancel`,
+          locale: 'auto',
+        })
       }
+    } catch (stripeError: any) {
+      console.error('❌ Stripe session creation failed:', {
+        message: stripeError?.message || String(stripeError),
+        code: stripeError?.code,
+        planId: actualPlanId,
+        environment: stripeConfig.environment,
+        timestamp: new Date().toISOString(),
+        raw: stripeError
+      })
       
-      // Generic error response for security
-      return NextResponse.json({ 
-        error: 'Unable to process payment. Please try again or contact support.'
-      }, { status: 500 })
+    const isProd = process.env.NODE_ENV === 'production';
+
+      // Prepare a public-facing message for the client; keep internal details in logs
+      const publicMessage = process.env.NODE_ENV === 'production'
+        ? 'Payment processing is temporarily unavailable. Please try again later.'
+        : (stripeError?.message || 'Stripe session creation failed');
+
+      return NextResponse.json({ error: publicMessage }, { status: 500 })
     }
 
     // Persist pending payment to Supabase if available

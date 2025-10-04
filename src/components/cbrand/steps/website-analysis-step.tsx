@@ -305,10 +305,22 @@ export function WebsiteAnalysisStep({
         result.location
       ].filter(Boolean).length;
 
-      toast({
-        title: "🎉 Enhanced Analysis Complete!",
-        description: `AI extracted ${extractedCount} pieces of detailed brand information including target audience, comprehensive services, and color analysis from your designs.`,
-      });
+      if (extractedCount < 3) {
+        toast({
+          variant: 'warning',
+          title: 'Analysis produced limited results',
+          description: 'The AI was unable to extract much information from the provided website. You can try a different URL, upload more design examples, or continue and fill in details manually.',
+        });
+
+        setDialogType('error');
+        setDialogMessage('The AI could not extract enough detailed information from the website. This can happen when sites block scrapers or the site has minimal content. You can try another URL or continue to complete your profile manually.');
+        setShowAnalysisDialog(true);
+      } else {
+        toast({
+          title: "🎉 Enhanced Analysis Complete!",
+          description: `AI extracted ${extractedCount} pieces of detailed brand information including target audience, comprehensive services, and color analysis from your designs.`,
+        });
+      }
 
     } catch (error) {
       // This catch is now for unexpected errors only

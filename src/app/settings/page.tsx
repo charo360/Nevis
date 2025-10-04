@@ -107,17 +107,17 @@ export default function SettingsPage() {
                   <div className="p-3 border rounded">
                     <div className="font-semibold">Revo 1.0</div>
                     <div className="text-sm text-gray-600">Basic AI</div>
-                    <div className="mt-2 text-lg font-bold">1 credit</div>
+                    <div className="mt-2 text-lg font-bold">2 credits</div>
                   </div>
                   <div className="p-3 border rounded">
                     <div className="font-semibold">Revo 1.5</div>
                     <div className="text-sm text-gray-600">Enhanced AI</div>
-                    <div className="mt-2 text-lg font-bold">1.5 credits</div>
+                    <div className="mt-2 text-lg font-bold">3 credits</div>
                   </div>
                   <div className="p-3 border rounded">
                     <div className="font-semibold">Revo 2.0</div>
                     <div className="text-sm text-gray-600">Premium AI</div>
-                    <div className="mt-2 text-lg font-bold">2 credits</div>
+                    <div className="mt-2 text-lg font-bold">3.5 credits</div>
                   </div>
                 </div>
               </div>
@@ -159,7 +159,7 @@ export default function SettingsPage() {
                         </div>
                         <div className="text-right">
                           <div className="text-2xl font-bold">$10</div>
-                          <div className="text-sm text-gray-500">50 credits • $0.20/credit</div>
+                          <div className="text-sm text-gray-500">40 credits • $0.20/credit</div>
                         </div>
                       </div>
                       <ul className="mt-3 text-sm space-y-1 text-gray-600">
@@ -183,7 +183,7 @@ export default function SettingsPage() {
                         </div>
                         <div className="text-right">
                           <div className="text-2xl font-bold">$29</div>
-                          <div className="text-sm text-gray-500">150 credits • $0.19/credit</div>
+                          <div className="text-sm text-gray-500">120 credits • $0.19/credit</div>
                         </div>
                       </div>
                       <ul className="mt-3 text-sm space-y-1 text-gray-600">
@@ -207,7 +207,7 @@ export default function SettingsPage() {
                         </div>
                         <div className="text-right">
                           <div className="text-2xl font-bold">$49</div>
-                          <div className="text-sm text-gray-500">250 credits • $0.196/credit</div>
+                          <div className="text-sm text-gray-500">220 credits • $0.196/credit</div>
                         </div>
                       </div>
                       <ul className="mt-3 text-sm space-y-1 text-gray-600">
@@ -231,7 +231,7 @@ export default function SettingsPage() {
                         </div>
                         <div className="text-right">
                           <div className="text-2xl font-bold">$99</div>
-                          <div className="text-sm text-gray-500">550 credits • $0.18/credit</div>
+                          <div className="text-sm text-gray-500">500 credits • $0.18/credit</div>
                         </div>
                       </div>
                       <ul className="mt-3 text-sm space-y-1 text-gray-600">

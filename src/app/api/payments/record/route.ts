@@ -94,7 +94,7 @@ export async function POST(req: Request) {
       console.log('✅ Payment recorded successfully:', {
         userId,
         planId,
-        creditsAdded,
+        creditsAdded: creditsToAdd,
         newTotal,
         newRemaining
       })
@@ -110,7 +110,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       message: 'Payment recorded and credits added successfully',
-      creditsAdded,
+      creditsAdded: creditsToAdd,
       newTotal,
       newRemaining
     })

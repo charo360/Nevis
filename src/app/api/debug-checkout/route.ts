@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPlanById, planIdToStripePrice } from '@/lib/secure-pricing';
+import { getStripeConfig } from '@/lib/stripe-config';
+import Stripe from 'stripe';
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,11 +28,11 @@ export async function POST(req: NextRequest) {
     let actualPlanId = planId;
     if (planId.startsWith('price_')) {
       const legacyMapping: Record<string, string> = {
-        'price_1SCjDVCXEBwbxwozB5a6oXUp': 'try-free',
-        'price_1SDUAiCXEBwbxwozr788ke9X': 'starter',
-        'price_1SCjJlCXEBwbxwozhKzAtCH1': 'growth',
-        'price_1SCjMpCXEBwbxwozhT1RWAYP': 'pro',
-        'price_1SCjPgCXEBwbxwozjCNWanOY': 'enterprise',
+        'price_1SDqaWELJu3kIHjxZQBntjuO': 'try-free',
+  'price_1SDqfQELJu3kIHjxzHWPNMPs': 'starter',
+        'price_1SDqiKELJu3kIHjx0LWHBgfV': 'growth',
+        'price_1SDqloELJu3kIHjxU187qSj1': 'pro',
+        'price_1SDqp4ELJu3kIHjx7oLcQwzh': 'enterprise',
         // Test price IDs
         'price_1QOmb6CXEBwbxwozSgD8cGay': 'try-free',
         'price_1QOmbYCXEBwbxwozp29zWxFb': 'starter',
@@ -62,16 +64,43 @@ export async function POST(req: NextRequest) {
       }, { status: 500 });
     }
 
-    return NextResponse.json({
-      success: true,
-      debug: {
-        originalPlanId: planId,
-        actualPlanId,
-        planDetails,
-        stripePriceId,
-        message: 'All validations passed - would create Stripe session'
+    // Attempt to retrieve the Stripe Price object using server Stripe keys
+    try {
+      const stripeConfig = getStripeConfig();
+      const stripe = new Stripe(stripeConfig.secretKey, { apiVersion: '2025-08-27.basil' });
+
+      let priceObj = null;
+      try {
+        priceObj = await stripe.prices.retrieve(stripePriceId as string);
+      } catch (stripeErr: any) {
+        console.error('🧪 DEBUG: Stripe price retrieval failed:', { message: stripeErr?.message, code: stripeErr?.code, stripePriceId });
+        return NextResponse.json({
+          success: false,
+          debug: {
+            originalPlanId: planId,
+            actualPlanId,
+            planDetails,
+            stripePriceId,
+            stripeError: { message: stripeErr?.message, code: stripeErr?.code }
+          }
+        }, { status: 502 });
       }
-    });
+
+      return NextResponse.json({
+        success: true,
+        debug: {
+          originalPlanId: planId,
+          actualPlanId,
+          planDetails,
+          stripePriceId,
+          priceObject: priceObj,
+          message: 'All validations passed - Stripe price retrieved successfully'
+        }
+      });
+    } catch (err: any) {
+      console.error('🧪 DEBUG ERROR (stripe init):', err);
+      return NextResponse.json({ error: 'Debug stripe init failed', debug: { message: err?.message } }, { status: 500 });
+    }
 
   } catch (error: any) {
     console.error('🧪 DEBUG ERROR:', error);

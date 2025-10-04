@@ -142,6 +142,17 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       newRemaining
     });
 
+    // Also update the payment_transactions row (created when the checkout session was started)
+    try {
+      await supabase
+        .from('payment_transactions')
+        .update({ status: 'completed', credits_added: plan.credits })
+        .eq('stripe_session_id', session.id);
+      console.log('✅ payment_transactions updated for session:', session.id);
+    } catch (updateErr) {
+      console.warn('⚠️ Failed to update payment_transactions for session:', session.id, updateErr);
+    }
+
   } catch (error: any) {
     console.error('❌ Error processing payment:', error);
     throw error;

@@ -26,12 +26,16 @@ export function getStripeConfig(): StripeConfig {
   const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-  // Validate that keys exist
-  if (!secretKey || !publishableKey || !webhookSecret) {
+  // Validate that essential keys exist (webhook secret is optional)
+  if (!secretKey || !publishableKey) {
     throw new Error(
       `Missing Stripe configuration for ${isProduction ? 'production' : 'development'} environment. ` +
-      'Please check your environment variables.'
+      'Please ensure STRIPE_SECRET_KEY and NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY are set.'
     );
+  }
+
+  if (!webhookSecret) {
+    console.warn('⚠️ Stripe webhook secret (STRIPE_WEBHOOK_SECRET) is not set. Webhook signature verification will be disabled.');
   }
 
   // Validate key format matches environment
@@ -61,13 +65,17 @@ export function getStripeConfig(): StripeConfig {
   };
 
   // Log configuration (without exposing keys)
-  console.log(`🔧 Stripe Configuration:`, {
-    environment: config.environment,
-    isLive: config.isLive,
-    secretKeyPrefix: secretKey.substring(0, 12) + '...',
-    publishableKeyPrefix: publishableKey.substring(0, 12) + '...',
-    webhookSecretPrefix: webhookSecret.substring(0, 12) + '...'
-  });
+    const secretKeyPrefix = secretKey ? `${secretKey.substring(0, 12)}...` : 'not set';
+    const publishableKeyPrefix = publishableKey ? `${publishableKey.substring(0, 12)}...` : 'not set';
+    const webhookSecretPrefix = webhookSecret ? `${webhookSecret.substring(0, 12)}...` : 'not set';
+
+    console.log(`🔧 Stripe Configuration:`, {
+      environment: config.environment,
+      isLive: config.isLive,
+      secretKeyPrefix,
+      publishableKeyPrefix,
+      webhookSecretPrefix
+    });
 
   return config;
 }
@@ -82,20 +90,20 @@ export function getStripePrices() {
   if (isLive) {
     // Production/Live price IDs - Real live price IDs from Stripe Dashboard
     return {
-      'try-free': 'price_1SCjDVCXEBwbxwozB5a6oXUp',     // Try Agent Free
-      'starter': 'price_1SDUAiCXEBwbxwozr788ke9X',       // Starter Agent
-      'growth': 'price_1SCjJlCXEBwbxwozhKzAtCH1',        // Growth Agent
-      'pro': 'price_1SCjMpCXEBwbxwozhT1RWAYP',           // Pro Agent
-      'enterprise': 'price_1SCjPgCXEBwbxwozjCNWanOY'     // Enterprise Agent
+      'try-free': 'price_1SDqaWELJu3kIHjxZQBntjuO',     // Try Agent Free (prod)
+  'starter': 'price_1SDqfQELJu3kIHjxzHWPNMPs',       // Starter Agent (prod)
+      'growth': 'price_1SDqiKELJu3kIHjx0LWHBgfV',        // Growth Agent (prod)
+      'pro': 'price_1SDqloELJu3kIHjxU187qSj1',           // Pro Agent (prod)
+      'enterprise': 'price_1SDqp4ELJu3kIHjx7oLcQwzh'     // Enterprise Agent (prod)
     };
   } else {
     // Test/Development price IDs (actual working test mode IDs from your Stripe account)
     return {
-      'try-free': 'price_1SCkZMCik0ZJySexGFq9FtxO',      // Try Agent Free (Test)
-      'starter': 'price_1SCwe1Cik0ZJySexYVYW97uQ',        // Starter Agent (Test)
-      'growth': 'price_1SCkefCik0ZJySexBO34LAsl',         // Growth Agent (Test)
-      'pro': 'price_1SCkhJCik0ZJySexgkXpFKTO',            // Pro Agent (Test)
-      'enterprise': 'price_1SCkjkCik0ZJySexpx9RGhu3'      // Enterprise Agent (Test)
+      'try-free': 'price_1SEDxyRn8roP0mgSNyhZjbqx',      // Try Agent Free (Dev/Sandbox)
+      'starter': 'price_1SEE1ORn8roP0mgSS9mlHCa9',        // Starter Agent (Dev/Sandbox)
+      'growth': 'price_1SEDzFRn8roP0mgSnReS2Y44',         // Growth Agent (Dev/Sandbox)
+      'pro': 'price_1SEDzvRn8roP0mgSqC1sLrl8',            // Pro Agent (Dev/Sandbox)
+      'enterprise': 'price_1SEE0bRn8roP0mgSun2Cz4TH'      // Enterprise Agent (Dev/Sandbox)
     };
   }
 }
@@ -114,6 +122,36 @@ export function getCheckoutUrls() {
     successUrl: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
     cancelUrl: `${baseUrl}/cancel`
   };
+}
+
+/**
+ * Validate that configured Stripe price IDs are present (best-effort runtime check)
+ * This uses the current server Stripe key to attempt a simple retrieval of each price id.
+ * Useful to detect missing price IDs in production and surface a helpful log message.
+ */
+export async function validateStripePrices(stripeClient?: any) {
+  try {
+    const prices = getStripePrices();
+    const ids = Object.values(prices).filter(Boolean) as string[];
+    if (!ids.length) return { ok: true, missing: [] };
+
+    const s = stripeClient;
+    if (!s) return { ok: false, error: 'stripe client not provided' };
+
+    const missing: string[] = [];
+    for (const id of ids) {
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        await s.prices.retrieve(id);
+      } catch (err: any) {
+        missing.push(id);
+      }
+    }
+
+    return { ok: missing.length === 0, missing };
+  } catch (e) {
+    return { ok: false, error: String(e) };
+  }
 }
 
 export default getStripeConfig;
