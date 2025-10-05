@@ -178,13 +178,22 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('❌ Quick Content API Error:', error);
 
+    // Extract revoModel from request body for error messages
+    let requestRevoModel = 'The AI model';
+    try {
+      const body = await request.json();
+      requestRevoModel = body.revoModel || 'The AI model';
+    } catch {
+      // If we can't parse the body, use default
+    }
+
     // Provide user-friendly error messages
     let errorMessage = 'Content generation failed';
     if (error instanceof Error) {
       if (error.message.includes('🚀') || error.message.includes('🔧') || error.message.includes('🎨')) {
         errorMessage = error.message;
       } else {
-        errorMessage = `🚀 ${revoModel || 'The AI model'} is being updated! Try a different model or wait a moment for amazing results.`;
+        errorMessage = `🚀 ${requestRevoModel} is being updated! Try a different model or wait a moment for amazing results.`;
       }
     }
 
