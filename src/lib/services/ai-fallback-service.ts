@@ -70,16 +70,17 @@ class AIFallbackService {
   }
 
   /**
-   * Try Google AI generation (via proxy or direct)
+   * Try Google AI generation (via proxy only - no direct calls for cost protection)
    */
   private async tryGoogleAI(params: GenerationParams): Promise<GenerationResult> {
-    // Check if proxy is enabled
+    // Only use proxy for cost protection - never direct Google AI calls
     const shouldUseProxy = process.env.AI_PROXY_ENABLED === 'true';
-    
+
     if (shouldUseProxy) {
       return this.tryGoogleAIViaProxy(params);
     } else {
-      return this.tryGoogleAIDirect(params);
+      // If proxy is disabled, skip Google AI entirely to avoid cost issues
+      throw new Error('Google AI proxy is disabled - cannot use Google AI without cost protection');
     }
   }
 
@@ -89,7 +90,7 @@ class AIFallbackService {
   private async tryGoogleAIViaProxy(params: GenerationParams): Promise<GenerationResult> {
     const proxyUrl = process.env.AI_PROXY_URL || 'http://localhost:8000';
     const endpoint = params.isImageGeneration ? '/generate-image' : '/generate-text';
-    
+
     const requestBody = {
       prompt: params.prompt,
       model: params.model,
@@ -131,47 +132,8 @@ class AIFallbackService {
     }
   }
 
-  /**
-   * Try Google AI directly (without proxy)
-   */
-  private async tryGoogleAIDirect(params: GenerationParams): Promise<GenerationResult> {
-    // Import Google AI client dynamically to avoid circular dependencies
-    const { GoogleGenerativeAI } = await import('@google/generative-ai');
-    
-    const apiKey = this.getGoogleAPIKey(params.model);
-    if (!apiKey) {
-      throw new Error('No Google API key available');
-    }
-
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: params.model });
-
-    const result = await model.generateContent(params.prompt);
-    const response = await result.response;
-
-    if (params.isImageGeneration) {
-      // For image generation, extract the image data
-      const candidates = response.candidates;
-      if (candidates && candidates[0]?.content?.parts?.[0]?.inlineData) {
-        const imageData = candidates[0].content.parts[0].inlineData;
-        const imageUrl = `data:${imageData.mimeType};base64,${imageData.data}`;
-        
-        return {
-          imageUrl,
-          provider: 'google',
-          success: true
-        };
-      } else {
-        throw new Error('No image data in Google AI response');
-      }
-    } else {
-      return {
-        content: response.text(),
-        provider: 'google',
-        success: true
-      };
-    }
-  }
+  // REMOVED: tryGoogleAIDirect method - bypasses cost protection
+  // Only use proxy-controlled Google AI calls for cost safety
 
   /**
    * Try OpenRouter as fallback
@@ -220,7 +182,7 @@ class AIFallbackService {
     if (model.includes('revo-2.0')) {
       return process.env.GEMINI_API_KEY_REVO_2_0 || process.env.GEMINI_API_KEY || '';
     }
-    
+
     return process.env.GEMINI_API_KEY || '';
   }
 
@@ -245,8 +207,8 @@ class AIFallbackService {
 
       if (shouldUseProxy) {
         const proxyUrl = process.env.AI_PROXY_URL || 'http://localhost:8000';
-        const response = await fetch(`${proxyUrl}/health`, { 
-          signal: AbortSignal.timeout(5000) 
+        const response = await fetch(`${proxyUrl}/health`, {
+          signal: AbortSignal.timeout(5000)
         });
         results.google.status = response.ok ? 'healthy' : 'error';
       } else {

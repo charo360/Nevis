@@ -96,17 +96,11 @@ async function generateContentWithFallback(promptOrParts: string | any[], modelN
       throw new Error(result.error || 'All AI services failed');
     }
   } catch (error) {
-    console.error('❌ Revo 2.0: All fallback methods failed:', error);
+    console.error('❌ Revo 2.0: All cost-controlled fallback methods failed:', error);
 
-    // Final fallback to direct Google AI (if possible)
-    try {
-      console.log(`🔄 Revo 2.0: Attempting final direct Google AI fallback`);
-      const model = createSafeModel(modelName);
-      return await model.generateContent(promptOrParts);
-    } catch (directError) {
-      console.error('❌ Revo 2.0: Direct Google AI also failed:', directError);
-      throw new Error(`All AI generation methods failed: ${error}`);
-    }
+    // DO NOT add direct Google AI fallback - it bypasses cost protection!
+    // Only use cost-controlled methods (proxy + OpenRouter)
+    throw new Error(`All cost-controlled AI generation methods failed: ${error}`);
   }
 }
 

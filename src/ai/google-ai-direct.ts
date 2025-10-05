@@ -89,25 +89,11 @@ export async function generateText(
         throw new Error(result.error || 'Fallback system failed');
       }
     } catch (error) {
-      console.error('❌ Revo 1.5: Fallback system failed, trying direct Google AI:', error);
+      console.error('❌ Revo 1.5: All cost-controlled fallback methods failed:', error);
 
-      // Final fallback to direct Google AI
-      console.log(`🔄 Revo 1.5: Using direct Google AI as final fallback`);
-      console.log(`🔍 [Google AI Direct] API Key available: ${!!apiKey}`);
-
-      const geminiModel = genAI.getGenerativeModel({
-        model,
-        generationConfig: {
-          temperature,
-          maxOutputTokens,
-          topK,
-          topP,
-        },
-      });
-
-      const result = await geminiModel.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      // DO NOT add direct Google AI fallback - it bypasses cost protection!
+      // Only use cost-controlled methods (proxy + OpenRouter)
+      throw new Error(`All cost-controlled AI generation methods failed: ${error}`);
 
       console.log(`✅ [Google AI Direct] Text generation successful, length: ${text.length}`);
       console.log(`🔍 [Google AI Direct] Response preview: ${text.substring(0, 200)}...`);
