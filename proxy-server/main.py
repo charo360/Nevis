@@ -7,6 +7,10 @@ from datetime import datetime
 import json
 import logging
 from typing import Optional, Dict, Any
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -84,14 +88,14 @@ def get_api_key_for_model(model: str) -> str:
     # ONLY COST-EFFECTIVE MODELS ALLOWED
     model_to_key_mapping = {
         # Revo 1.0 models - Main image generation
-        "gemini-2.5-flash-image-preview": "GEMINI_API_KEY_REVO_1_0",
+        "gemini-2.5-flash-image-preview": "GOOGLE_API_KEY_REVO_1_0",
 
         # Revo 1.5 models - Content generation
-        "gemini-2.5-flash": "GEMINI_API_KEY_REVO_1_5",
-        "gemini-2.5-flash-lite": "GEMINI_API_KEY_REVO_1_5",
+        "gemini-2.5-flash": "GOOGLE_API_KEY_REVO_1_5",
+        "gemini-2.5-flash-lite": "GOOGLE_API_KEY_REVO_1_5",
 
         # Legacy models - Fallback only
-        "gemini-1.5-flash": "GEMINI_API_KEY"
+        "gemini-1.5-flash": "GOOGLE_API_KEY"
 
         # REMOVED ALL EXPENSIVE/EXPERIMENTAL MODELS:
         # - gemini-2.5-pro (TOO EXPENSIVE)
@@ -100,7 +104,7 @@ def get_api_key_for_model(model: str) -> str:
     }
 
     # Get the specific API key for this model
-    key_env_name = model_to_key_mapping.get(model, "GEMINI_API_KEY")
+    key_env_name = model_to_key_mapping.get(model, "GOOGLE_API_KEY")
     api_key = os.environ.get(key_env_name)
 
     # Fallback to general Google API key if specific key not found
@@ -227,16 +231,29 @@ async def get_user_quota(user_id: str):
     """Get user's current quota usage"""
     current_month = datetime.now().strftime("%Y-%m")
     user_data = user_quotas[user_id]
-    
+
     if user_data["month"] != current_month:
-        user_data = {"count": 0, "month": current_month}
-    
+        user_data["count"] = 0
+        user_data["month"] = current_month
+        user_quotas[user_id] = user_data
+
     return {
         "user_id": user_id,
         "current_usage": user_data["count"],
         "monthly_limit": 40,
         "remaining": 40 - user_data["count"],
         "month": current_month
+    }
+
+@app.get("/stats")
+async def get_stats():
+    """Get proxy server statistics"""
+    return {
+        "total_users": len(user_quotas),
+        "allowed_models": list(ALLOWED_MODELS.keys()),
+        "blocked_models": ["gemini-2.5-pro", "all experimental models"],
+        "cost_per_generation": "$0.039",
+        "monthly_quota_per_user": 40
     }
 
 if __name__ == "__main__":
