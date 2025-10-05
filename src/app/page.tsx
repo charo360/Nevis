@@ -30,6 +30,7 @@ import { useToast } from '@/hooks/use-toast';
 import { loadStripe } from '@stripe/stripe-js';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { AppRoutesPaths } from '@/lib/routes';
 
 export default function HomePage() {
   const router = useRouter();
@@ -210,11 +211,12 @@ export default function HomePage() {
           </div>
 
           <div className="hidden md:flex items-center gap-8">
-            <Link href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">Features</Link>
-            <Link href="/pricing" className="text-gray-600 hover:text-gray-900 transition-colors">Pricing</Link>
-            <Link href="#about" className="text-gray-600 hover:text-gray-900 transition-colors">About</Link>
+            <Link href={AppRoutesPaths.home} className="text-gray-600 hover:text-gray-900 transition-colors">Home</Link>
+            <Link href={AppRoutesPaths.features} className="text-gray-600 hover:text-gray-900 transition-colors">Features</Link>
+            <Link href={AppRoutesPaths.pricing} className="text-gray-600 hover:text-gray-900 transition-colors">Pricing</Link>
+            <Link href={AppRoutesPaths.about} className="text-gray-600 hover:text-gray-900 transition-colors">About</Link>
             {sessionActive ? (
-              <Button onClick={() => router.push('/dashboard')} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
+              <Button onClick={() => router.push(AppRoutesPaths.dashboard.root)} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
                 Dashboard
               </Button>
             ) : (
@@ -802,7 +804,7 @@ export default function HomePage() {
               <strong>Pay once, use anytime. Credits never expire.</strong>
             </p>
             <p className="text-lg text-gray-600 max-w-3xl mx-auto mb-8">
-              Compare: Canva Pro costs $120/year; our $29 Growth Agent trains your agent + creates 150+ posts.
+              Compare: Canva Pro costs $120/year; our $24.99 Growth Agent trains your agent + creates 150+ posts.
             </p>
 
             {/* Key Benefits */}
@@ -914,14 +916,14 @@ export default function HomePage() {
                 <p className="text-sm text-gray-600 mb-4">HD generations, No watermark, Agent memory</p>
 
                 <div className="mb-4">
-                  <span className="text-3xl font-bold" data-plan="starter" data-amount="50" data-currency="USD">$0.50</span>
+                  <span className="text-3xl font-bold" data-plan="starter" data-amount="999" data-currency="USD">$9.99</span>
                   <span className="text-gray-500 text-sm"> one-time</span>
                 </div>
 
                 <div className="mb-4">
                   <div className="text-2xl font-semibold text-blue-600">40</div>
                   <div className="text-sm text-gray-500">credits</div>
-                  <div className="text-xs text-gray-400 mt-1">$0.20 per credit</div>
+                  <div className="text-xs text-gray-400 mt-1">$0.25 per credit</div>
                 </div>
 
                 <ul className="text-sm text-left space-y-2 mb-6">
@@ -969,14 +971,14 @@ export default function HomePage() {
                 <p className="text-sm text-gray-600 mb-4">Priority speed, Advanced models, Priority support</p>
 
                 <div className="mb-4">
-                  <span className="text-3xl font-bold" data-plan="growth" data-amount="2900" data-currency="USD">$29</span>
+                  <span className="text-3xl font-bold" data-plan="growth" data-amount="2499" data-currency="USD">$24.99</span>
                   <span className="text-gray-500 text-sm"> one-time</span>
                 </div>
 
                 <div className="mb-4">
-                  <div className="text-2xl font-semibold text-blue-600">120</div>
+                  <div className="text-2xl font-semibold text-blue-600">100</div>
                   <div className="text-sm text-gray-500">credits</div>
-                  <div className="text-xs text-gray-400 mt-1">$0.19 per credit</div>
+                  <div className="text-xs text-gray-400 mt-1">$0.25 per credit</div>
                 </div>
 
                 <div className="mb-4 p-3 bg-blue-50 rounded-lg">
@@ -1020,14 +1022,14 @@ export default function HomePage() {
                 <p className="text-sm text-gray-600 mb-4">Bulk generations, API access, Early features</p>
 
                 <div className="mb-4">
-                  <span className="text-3xl font-bold" data-plan="pro" data-amount="4900" data-currency="USD">$49</span>
+                  <span className="text-3xl font-bold" data-plan="pro" data-amount="5999" data-currency="USD">$59.99</span>
                   <span className="text-gray-500 text-sm"> one-time</span>
                 </div>
 
                 <div className="mb-4">
-                  <div className="text-2xl font-semibold text-blue-600">220</div>
+                  <div className="text-2xl font-semibold text-blue-600">250</div>
                   <div className="text-sm text-gray-500">credits</div>
-                  <div className="text-xs text-gray-400 mt-1">$0.196 per credit</div>
+                  <div className="text-xs text-gray-400 mt-1">$0.24 per credit</div>
                 </div>
 
                 <div className="mb-4 p-3 bg-purple-50 rounded-lg">
@@ -1072,14 +1074,14 @@ export default function HomePage() {
                 <p className="text-sm text-gray-600 mb-4">White-label, Team collaboration, Custom integrations</p>
 
                 <div className="mb-4">
-                  <span className="text-3xl font-bold" data-plan="enterprise" data-amount="9900" data-currency="USD">$99</span>
+                  <span className="text-3xl font-bold" data-plan="enterprise" data-amount="19999" data-currency="USD">$199.99</span>
                   <span className="text-gray-500 text-sm"> one-time</span>
                 </div>
 
                 <div className="mb-4">
-                  <div className="text-2xl font-semibold text-blue-600">500</div>
+                  <div className="text-2xl font-semibold text-blue-600">1000</div>
                   <div className="text-sm text-gray-500">credits</div>
-                  <div className="text-xs text-gray-400 mt-1">$0.18 per credit</div>
+                  <div className="text-xs text-gray-400 mt-1">$0.20 per credit</div>
                 </div>
 
                 <div className="mb-4 p-3 bg-indigo-50 rounded-lg">

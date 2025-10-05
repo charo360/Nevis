@@ -39,7 +39,13 @@ function ConditionalLayout({ children, useAppRoute }: { children: React.ReactNod
 
   // Pages that should NOT show the sidebar (public pages only)
   // Hide the sidebar for any route under /auth or /billing so auth and billing pages render standalone
-  const shouldHideSidebar = pathname === '/' || (pathname ?? '').startsWith('/auth') || (pathname ?? '').startsWith('/billing') || pathname === '/cancel';
+  const shouldHideSidebar = pathname === '/' ||
+    pathname === '/features' ||
+    pathname === '/pricing' ||
+    pathname === '/about' ||
+    (pathname ?? '').startsWith('/auth') ||
+    (pathname ?? '').startsWith('/billing') ||
+    pathname === '/cancel';
 
 
   if (shouldHideSidebar) {
