@@ -18,16 +18,16 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Nevis AI Proxy", description="Controlled AI model proxy to prevent unexpected costs")
 
-# In-memory rate limiting with tier support
-user_quotas = defaultdict(lambda: {"count": 0, "month": "", "tier": "free"})
+# In-memory credit tracking (credit-based system)
+user_credits = defaultdict(lambda: {"credits": 0, "tier": "free", "last_updated": ""})
 
-# Tier-based quota configuration
-TIER_QUOTAS = {
-    "free": 10,        # 10 requests/month - $0.39 max cost
-    "basic": 40,       # 40 requests/month - $1.56 max cost
-    "premium": 100,    # 100 requests/month - $3.90 max cost
-    "pro": 250,        # 250 requests/month - $9.75 max cost
-    "enterprise": 1000 # 1000 requests/month - $39.00 max cost
+# Tier-based credit packages (one-time purchase)
+TIER_CREDITS = {
+    "free": 10,        # 10 credits - Free trial
+    "basic": 40,       # 40 credits - $9.99 package
+    "premium": 100,    # 100 credits - $24.99 package
+    "pro": 250,        # 250 credits - $59.99 package
+    "enterprise": 1000 # 1000 credits - $199.99 package
 }
 
 # Allowed models to prevent unexpected model calls - Based on actual Nevis usage
@@ -99,43 +99,44 @@ def validate_tier_model_access(tier: str, model: str) -> bool:
 
     return True
 
-def get_user_quota_limit(tier: str) -> int:
-    """Get quota limit based on user tier"""
-    return TIER_QUOTAS.get(tier, TIER_QUOTAS["free"])
+def get_tier_credits(tier: str) -> int:
+    """Get credit amount for a tier package"""
+    return TIER_CREDITS.get(tier, TIER_CREDITS["free"])
 
-def check_user_quota(user_id: str, tier: str = "free") -> None:
-    """Check if user has exceeded their tier-based monthly quota"""
-    current_month = datetime.now().strftime("%Y-%m")
-    user_data = user_quotas[user_id]
+def add_credits_to_user(user_id: str, tier: str) -> dict:
+    """Add credits to user when they purchase a tier package"""
+    credits_to_add = get_tier_credits(tier)
+    user_data = user_credits[user_id]
 
-    # Reset quota if new month
-    if user_data["month"] != current_month:
-        user_data["count"] = 0
-        user_data["month"] = current_month
-        user_data["tier"] = tier
-        user_quotas[user_id] = user_data
+    user_data["credits"] += credits_to_add
+    user_data["tier"] = tier
+    user_data["last_updated"] = datetime.now().isoformat()
 
-    # Update tier (in case user upgraded/downgraded)
+    logger.info(f"Added {credits_to_add} credits to user {user_id} (tier: {tier}). Total: {user_data['credits']}")
+    return user_data
+
+def check_user_credits(user_id: str, tier: str = "free") -> None:
+    """Check if user has enough credits for the request"""
+    user_data = user_credits[user_id]
+
+    # Update tier info
     user_data["tier"] = tier
 
-    # Get tier-specific quota limit
-    limit = get_user_quota_limit(tier)
-
-    if user_data["count"] >= limit:
-        logger.warning(f"User {user_id} ({tier} tier) exceeded quota: {user_data['count']}/{limit}")
+    if user_data["credits"] <= 0:
+        logger.warning(f"User {user_id} ({tier} tier) has no credits remaining: {user_data['credits']}")
         raise HTTPException(
             status_code=429,
-            detail=f"Monthly quota exceeded for {tier} tier. Used {user_data['count']}/{limit} requests this month. Upgrade your plan for more requests."
+            detail=f"No credits remaining. You have {user_data['credits']} credits left. Purchase more credits to continue."
         )
 
-def increment_user_quota(user_id: str, tier: str = "free") -> None:
-    """Increment user's quota count"""
-    user_data = user_quotas[user_id]
-    user_data["count"] += 1
+def deduct_user_credit(user_id: str, tier: str = "free") -> None:
+    """Deduct one credit from user's balance"""
+    user_data = user_credits[user_id]
+    user_data["credits"] -= 1
     user_data["tier"] = tier
+    user_data["last_updated"] = datetime.now().isoformat()
 
-    limit = get_user_quota_limit(tier)
-    logger.info(f"User {user_id} ({tier} tier) quota: {user_data['count']}/{limit}")
+    logger.info(f"User {user_id} ({tier} tier) used 1 credit. Remaining: {user_data['credits']}")
 
 def get_api_key_for_model(model: str) -> str:
     """Get the appropriate API key based on the model being used"""
@@ -210,8 +211,8 @@ async def generate_image(request: ImageRequest):
     # Validate tier has access to this model
     validate_tier_model_access(request.user_tier, request.model)
 
-    # Check user quota based on tier
-    check_user_quota(request.user_id, request.user_tier)
+    # Check user has enough credits
+    check_user_credits(request.user_id, request.user_tier)
 
     # Get model-specific API key
     api_key = get_api_key_for_model(request.model)
@@ -229,7 +230,7 @@ async def generate_image(request: ImageRequest):
     
     try:
         result = await call_google_api(endpoint, payload, api_key)
-        increment_user_quota(request.user_id, request.user_tier)
+        deduct_user_credit(request.user_id, request.user_tier)
         
         return {
             "success": True,
@@ -253,8 +254,8 @@ async def generate_text(request: TextRequest):
     # Validate tier has access to this model
     validate_tier_model_access(request.user_tier, request.model)
 
-    # Check user quota based on tier
-    check_user_quota(request.user_id, request.user_tier)
+    # Check user has enough credits
+    check_user_credits(request.user_id, request.user_tier)
 
     # Get model-specific API key
     api_key = get_api_key_for_model(request.model)
@@ -270,7 +271,7 @@ async def generate_text(request: TextRequest):
     
     try:
         result = await call_google_api(endpoint, payload, api_key)
-        increment_user_quota(request.user_id, request.user_tier)
+        deduct_user_credit(request.user_id, request.user_tier)
         
         return {
             "success": True,
@@ -288,78 +289,94 @@ async def generate_text(request: TextRequest):
 async def health():
     return {"status": "healthy", "allowed_models": list(ALLOWED_MODELS.keys())}
 
-@app.get("/quota/{user_id}")
-async def get_user_quota(user_id: str):
-    """Get user's current quota usage with tier information"""
-    current_month = datetime.now().strftime("%Y-%m")
-    user_data = user_quotas[user_id]
-
-    if user_data["month"] != current_month:
-        user_data["count"] = 0
-        user_data["month"] = current_month
-        user_quotas[user_id] = user_data
-
+@app.get("/credits/{user_id}")
+async def get_user_credits(user_id: str):
+    """Get user's current credit balance and tier information"""
+    user_data = user_credits[user_id]
     tier = user_data.get("tier", "free")
-    limit = get_user_quota_limit(tier)
 
     return {
         "user_id": user_id,
         "tier": tier,
-        "current_usage": user_data["count"],
-        "monthly_limit": limit,
-        "remaining": max(0, limit - user_data["count"]),
-        "month": current_month,
+        "credits_remaining": user_data["credits"],
+        "last_updated": user_data.get("last_updated", ""),
         "tier_info": {
             "available_models": TIER_MODELS.get(tier, TIER_MODELS["free"]),
-            "max_cost_per_month": f"${limit * 0.039:.2f}"
+            "credit_package_size": get_tier_credits(tier),
+            "estimated_cost_per_credit": "$0.039"
         }
     }
 
-@app.post("/update-tier/{user_id}")
-async def update_user_tier(user_id: str, tier: str):
-    """Update user's subscription tier"""
-    if tier not in TIER_QUOTAS:
-        raise HTTPException(status_code=400, detail=f"Invalid tier: {tier}. Valid tiers: {list(TIER_QUOTAS.keys())}")
+# Keep old endpoint for backward compatibility
+@app.get("/quota/{user_id}")
+async def get_user_quota(user_id: str):
+    """Legacy endpoint - redirects to credits"""
+    return await get_user_credits(user_id)
 
-    user_data = user_quotas[user_id]
-    old_tier = user_data.get("tier", "free")
-    user_data["tier"] = tier
+@app.post("/purchase-credits/{user_id}")
+async def purchase_credits(user_id: str, tier: str):
+    """Purchase credit package for user"""
+    if tier not in TIER_CREDITS:
+        raise HTTPException(status_code=400, detail=f"Invalid tier package: {tier}. Valid packages: {list(TIER_CREDITS.keys())}")
 
-    logger.info(f"User {user_id} tier updated from {old_tier} to {tier}")
+    # Add credits to user account
+    user_data = add_credits_to_user(user_id, tier)
+    credits_added = get_tier_credits(tier)
 
     return {
         "user_id": user_id,
-        "old_tier": old_tier,
-        "new_tier": tier,
-        "new_quota_limit": get_user_quota_limit(tier),
-        "available_models": TIER_MODELS.get(tier, TIER_MODELS["free"])
+        "tier_package": tier,
+        "credits_added": credits_added,
+        "total_credits": user_data["credits"],
+        "available_models": TIER_MODELS.get(tier, TIER_MODELS["free"]),
+        "estimated_total_value": f"${user_data['credits'] * 0.039:.2f}"
+    }
+
+@app.post("/add-credits/{user_id}")
+async def add_credits_manual(user_id: str, credits: int, tier: str = "free"):
+    """Manually add credits to user (for admin use)"""
+    if credits <= 0:
+        raise HTTPException(status_code=400, detail="Credits must be positive")
+
+    user_data = user_credits[user_id]
+    user_data["credits"] += credits
+    user_data["tier"] = tier
+    user_data["last_updated"] = datetime.now().isoformat()
+
+    logger.info(f"Manually added {credits} credits to user {user_id}. Total: {user_data['credits']}")
+
+    return {
+        "user_id": user_id,
+        "credits_added": credits,
+        "total_credits": user_data["credits"],
+        "tier": tier
     }
 
 @app.get("/stats")
 async def get_stats():
-    """Get proxy server statistics with tier breakdown"""
-    total_users = len(user_quotas)
-    total_requests = sum(data["count"] for data in user_quotas.values())
+    """Get proxy server statistics with credit-based tier breakdown"""
+    total_users = len(user_credits)
+    total_credits_remaining = sum(data["credits"] for data in user_credits.values())
 
     # Tier breakdown
     tier_stats = {}
-    for tier in TIER_QUOTAS.keys():
-        tier_users = [data for data in user_quotas.values() if data.get("tier", "free") == tier]
+    for tier in TIER_CREDITS.keys():
+        tier_users = [data for data in user_credits.values() if data.get("tier", "free") == tier]
         tier_stats[tier] = {
             "users": len(tier_users),
-            "quota_limit": TIER_QUOTAS[tier],
-            "max_monthly_cost": f"${TIER_QUOTAS[tier] * 0.039:.2f}"
+            "credit_package_size": TIER_CREDITS[tier],
+            "package_value": f"${TIER_CREDITS[tier] * 0.039:.2f}"
         }
 
     return {
         "status": "healthy",
         "total_users": total_users,
-        "total_requests_this_month": total_requests,
+        "total_credits_remaining": total_credits_remaining,
         "allowed_models": list(ALLOWED_MODELS.keys()),
         "blocked_models": ["gemini-2.5-pro", "all experimental models"],
-        "cost_per_generation": "$0.039",
+        "cost_per_credit": "$0.039",
         "tier_breakdown": tier_stats,
-        "tier_quotas": TIER_QUOTAS
+        "credit_packages": TIER_CREDITS
     }
 
 if __name__ == "__main__":

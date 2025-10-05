@@ -29,17 +29,24 @@ interface ProxyResponse {
   user_quota: number;
 }
 
-interface QuotaResponse {
+interface CreditsResponse {
   user_id: string;
   tier: string;
-  current_usage: number;
-  monthly_limit: number;
-  remaining: number;
-  month: string;
+  credits_remaining: number;
+  last_updated: string;
   tier_info: {
     available_models: string[];
-    max_cost_per_month: string;
+    credit_package_size: number;
+    estimated_cost_per_credit: string;
   };
+}
+
+// Keep old interface for backward compatibility
+interface QuotaResponse extends CreditsResponse {
+  current_usage?: number;
+  monthly_limit?: number;
+  remaining?: number;
+  month?: string;
 }
 
 class AIProxyClient {
@@ -130,21 +137,28 @@ class AIProxyClient {
   }
 
   /**
-   * Check user's quota usage
+   * Check user's credit balance
    */
-  async getUserQuota(userId: string): Promise<QuotaResponse> {
+  async getUserCredits(userId: string): Promise<CreditsResponse> {
     try {
-      const response = await fetch(`${this.baseUrl}/quota/${userId}`);
+      const response = await fetch(`${this.baseUrl}/credits/${userId}`);
 
       if (!response.ok) {
-        throw new Error(`Failed to get quota: ${response.statusText}`);
+        throw new Error(`Failed to get credits: ${response.statusText}`);
       }
 
       return await response.json();
     } catch (error) {
-      console.error('❌ Proxy: Failed to get user quota:', error);
+      console.error('❌ Proxy: Failed to get user credits:', error);
       throw error;
     }
+  }
+
+  /**
+   * Legacy method - redirects to getUserCredits
+   */
+  async getUserQuota(userId: string): Promise<QuotaResponse> {
+    return await this.getUserCredits(userId);
   }
 
   /**
@@ -161,11 +175,11 @@ class AIProxyClient {
   }
 
   /**
-   * Update user's subscription tier
+   * Purchase credit package for user
    */
-  async updateUserTier(userId: string, tier: string): Promise<any> {
+  async purchaseCredits(userId: string, tier: string): Promise<any> {
     try {
-      const response = await fetch(`${this.baseUrl}/update-tier/${userId}?tier=${tier}`, {
+      const response = await fetch(`${this.baseUrl}/purchase-credits/${userId}?tier=${tier}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -174,29 +188,54 @@ class AIProxyClient {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(`Failed to update tier: ${error.detail || response.statusText}`);
+        throw new Error(`Failed to purchase credits: ${error.detail || response.statusText}`);
       }
 
       return await response.json();
     } catch (error) {
-      console.error('❌ Proxy: Failed to update user tier:', error);
+      console.error('❌ Proxy: Failed to purchase credits:', error);
       throw error;
     }
   }
 
   /**
-   * Get available tiers and their limits
+   * Add credits manually (admin function)
    */
-  async getTierInfo(): Promise<any> {
+  async addCredits(userId: string, credits: number, tier: string = 'free'): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseUrl}/add-credits/${userId}?credits=${credits}&tier=${tier}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(`Failed to add credits: ${error.detail || response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('❌ Proxy: Failed to add credits:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get available credit packages and their info
+   */
+  async getCreditPackages(): Promise<any> {
     try {
       const response = await fetch(`${this.baseUrl}/stats`);
       const stats = await response.json();
       return {
-        tiers: stats.tier_quotas,
-        tier_breakdown: stats.tier_breakdown
+        packages: stats.credit_packages,
+        tier_breakdown: stats.tier_breakdown,
+        cost_per_credit: stats.cost_per_credit
       };
     } catch (error) {
-      console.error('❌ Proxy: Failed to get tier info:', error);
+      console.error('❌ Proxy: Failed to get credit package info:', error);
       throw error;
     }
   }
