@@ -6,6 +6,7 @@
 interface ProxyImageRequest {
   prompt: string;
   user_id: string;
+  user_tier?: string; // User's subscription tier
   model?: string;
   max_tokens?: number;
   temperature?: number;
@@ -14,6 +15,7 @@ interface ProxyImageRequest {
 interface ProxyTextRequest {
   prompt: string;
   user_id: string;
+  user_tier?: string; // User's subscription tier
   model?: string;
   max_tokens?: number;
   temperature?: number;
@@ -29,10 +31,15 @@ interface ProxyResponse {
 
 interface QuotaResponse {
   user_id: string;
+  tier: string;
   current_usage: number;
   monthly_limit: number;
   remaining: number;
   month: string;
+  tier_info: {
+    available_models: string[];
+    max_cost_per_month: string;
+  };
 }
 
 class AIProxyClient {
@@ -152,6 +159,47 @@ class AIProxyClient {
       throw error;
     }
   }
+
+  /**
+   * Update user's subscription tier
+   */
+  async updateUserTier(userId: string, tier: string): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseUrl}/update-tier/${userId}?tier=${tier}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(`Failed to update tier: ${error.detail || response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('❌ Proxy: Failed to update user tier:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get available tiers and their limits
+   */
+  async getTierInfo(): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseUrl}/stats`);
+      const stats = await response.json();
+      return {
+        tiers: stats.tier_quotas,
+        tier_breakdown: stats.tier_breakdown
+      };
+    } catch (error) {
+      console.error('❌ Proxy: Failed to get tier info:', error);
+      throw error;
+    }
+  }
 }
 
 // Export singleton instance
@@ -178,4 +226,33 @@ export function getUserIdForProxy(): string {
     // Server-side: you'll need to pass user ID from your auth system
     return 'server_user';
   }
+}
+
+/**
+ * Helper function to get user's subscription tier
+ * You should integrate this with your actual user/subscription system
+ */
+export function getUserTierForProxy(): string {
+  // TODO: Replace with your actual user tier logic
+  // This could come from:
+  // - Your user database
+  // - Stripe/payment provider
+  // - Session/JWT token
+  // - Local storage for testing
+
+  if (typeof window !== 'undefined') {
+    // For testing: allow setting tier in localStorage
+    const testTier = localStorage.getItem('proxy_user_tier');
+    if (testTier) return testTier;
+  }
+
+  // Default to free tier
+  return 'free';
+}
+
+/**
+ * Helper function to check if proxy should be used
+ */
+export function shouldUseProxy(): boolean {
+  return process.env.AI_PROXY_ENABLED === 'true';
 }
