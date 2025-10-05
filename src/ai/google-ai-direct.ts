@@ -4,6 +4,7 @@
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { aiProxyClient, getUserIdForProxy, getUserTierForProxy, shouldUseProxy } from '@/lib/services/ai-proxy-client';
 
 // Initialize Google AI with API key - Use Revo 1.5 specific key
 const apiKey = process.env.GEMINI_API_KEY_REVO_1_5 || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
@@ -63,6 +64,31 @@ export async function generateText(
     } = options;
 
     console.log(`🔍 [Google AI Direct] Generating text with model: ${model}`);
+
+    // Check if proxy should be used
+    if (shouldUseProxy()) {
+      console.log(`🔄 Revo 1.5: Using proxy for text generation with ${model}`);
+
+      try {
+        const response = await aiProxyClient.generateText({
+          prompt,
+          model,
+          user_id: getUserIdForProxy(),
+          user_tier: getUserTierForProxy()
+        });
+
+        return {
+          text: response.content,
+          finishReason: 'STOP'
+        };
+      } catch (error) {
+        console.error('❌ Proxy call failed, falling back to direct API:', error);
+        // Fall through to direct API call
+      }
+    }
+
+    // Direct API call (fallback or when proxy disabled)
+    console.log(`🔄 Revo 1.5: Using direct API for text generation with ${model}`);
     console.log(`🔍 [Google AI Direct] API Key available: ${!!apiKey}`);
     console.log(`🔍 [Google AI Direct] API Key prefix: ${apiKey?.substring(0, 10)}...`);
 
@@ -97,26 +123,26 @@ export async function generateText(
       stack: error instanceof Error ? error.stack : 'No stack trace',
       model: options.model || GEMINI_2_5_MODELS.FLASH
     });
-    
+
     // Handle specific error types with user-friendly messages
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
+
     if (errorMessage.includes('429') || errorMessage.includes('quota') || errorMessage.includes('Too Many Requests')) {
       throw new Error('😅 Revo is experiencing high demand right now! Please try again in a few minutes or switch to Revo 2.0.');
     }
-    
+
     if (errorMessage.includes('401') || errorMessage.includes('unauthorized') || errorMessage.includes('API key')) {
       throw new Error('🔧 Revo is having a technical hiccup. Please try Revo 2.0 while we fix this!');
     }
-    
+
     if (errorMessage.includes('403') || errorMessage.includes('forbidden')) {
       throw new Error('🔧 Revo is having a technical hiccup. Please try Revo 2.0 while we fix this!');
     }
-    
+
     if (errorMessage.includes('network') || errorMessage.includes('timeout') || errorMessage.includes('ECONNRESET')) {
       throw new Error('🌐 Connection hiccup! Please try again in a moment.');
     }
-    
+
     throw new Error('😅 Revo is having some trouble right now! Try Revo 2.0 for great results while we get things sorted out.');
   }
 }
@@ -159,6 +185,32 @@ Please provide:
 
 Format as JSON for easy parsing.`;
 
+    // Check if proxy should be used
+    if (shouldUseProxy()) {
+      console.log(`🔄 Revo 1.5: Using proxy for image generation with ${model}`);
+
+      try {
+        const response = await aiProxyClient.generateText({
+          prompt: designPrompt,
+          model,
+          user_id: getUserIdForProxy(),
+          user_tier: getUserTierForProxy()
+        });
+
+        return {
+          imageData: Buffer.from(response.content).toString('base64'),
+          mimeType: 'application/json',
+          finishReason: 'STOP'
+        };
+      } catch (error) {
+        console.error('❌ Proxy call failed, falling back to direct API:', error);
+        // Fall through to direct API call
+      }
+    }
+
+    // Direct API call (fallback or when proxy disabled)
+    console.log(`🔄 Revo 1.5: Using direct API for image generation with ${model}`);
+
     const result = await geminiModel.generateContent(designPrompt);
     const response = await result.response;
     const designSpecs = response.text();
@@ -175,11 +227,11 @@ Format as JSON for easy parsing.`;
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
+
     if (errorMessage.includes('429') || errorMessage.includes('quota') || errorMessage.includes('Too Many Requests')) {
       throw new Error('😅 Revo is experiencing high demand right now! Please try again in a few minutes or switch to Revo 2.0.');
     }
-    
+
     throw new Error('😅 Revo is having some trouble right now! Try Revo 2.0 for great results while we get things sorted out.');
   }
 }
@@ -199,6 +251,32 @@ export async function generateMultimodal(
       maxOutputTokens = 2048,
     } = options;
 
+    // Check if proxy should be used
+    if (shouldUseProxy()) {
+      console.log(`🔄 Revo 1.5: Using proxy for multimodal generation with ${model}`);
+
+      try {
+        // For multimodal, we'll use text generation through proxy for now
+        // (Image analysis through proxy would need additional implementation)
+        const response = await aiProxyClient.generateText({
+          prompt: textPrompt,
+          model,
+          user_id: getUserIdForProxy(),
+          user_tier: getUserTierForProxy()
+        });
+
+        return {
+          text: response.content,
+          finishReason: 'STOP'
+        };
+      } catch (error) {
+        console.error('❌ Proxy call failed, falling back to direct API:', error);
+        // Fall through to direct API call
+      }
+    }
+
+    // Direct API call (fallback or when proxy disabled)
+    console.log(`🔄 Revo 1.5: Using direct API for multimodal generation with ${model}`);
 
     const geminiModel = genAI.getGenerativeModel({
       model,
@@ -233,11 +311,11 @@ export async function generateMultimodal(
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
+
     if (errorMessage.includes('429') || errorMessage.includes('quota') || errorMessage.includes('Too Many Requests')) {
       throw new Error('😅 Revo is experiencing high demand right now! Please try again in a few minutes or switch to Revo 2.0.');
     }
-    
+
     throw new Error('😅 Revo is having some trouble right now! Try Revo 2.0 for great results while we get things sorted out.');
   }
 }

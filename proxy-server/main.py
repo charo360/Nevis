@@ -57,9 +57,9 @@ ALLOWED_MODELS = {
 
 # Tier-based model access (optional - restrict models by tier)
 TIER_MODELS = {
-    "free": ["gemini-2.5-flash-lite"],  # Only cheapest model
-    "basic": ["gemini-2.5-flash-lite", "gemini-2.5-flash"],
-    "premium": ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.5-flash-image-preview"],
+    "free": ["gemini-2.5-flash-lite"],  # Only cheapest model (text only)
+    "basic": ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.5-flash-image-preview"],  # Text + Image
+    "premium": list(ALLOWED_MODELS.keys()),  # All approved models
     "pro": list(ALLOWED_MODELS.keys()),  # All approved models
     "enterprise": list(ALLOWED_MODELS.keys())  # All approved models
 }
@@ -250,7 +250,7 @@ async def generate_image(request: ImageRequest):
             "data": result["data"],
             "model_used": request.model,
             "endpoint_used": endpoint,
-            "user_quota": user_quotas[request.user_id]["count"]
+            "user_credits": user_credits[request.user_id]["credits"]
         }
         
     except Exception as e:
@@ -291,7 +291,7 @@ async def generate_text(request: TextRequest):
             "data": result["data"],
             "model_used": request.model,
             "endpoint_used": endpoint,
-            "user_quota": user_quotas[request.user_id]["count"]
+            "user_credits": user_credits[request.user_id]["credits"]
         }
         
     except Exception as e:
