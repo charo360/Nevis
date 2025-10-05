@@ -545,11 +545,11 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
                           {variant?.imageUrl && !isValidUrl(variant.imageUrl) && (
                             <div className="absolute bottom-2 left-2 right-2">
                               <div className="text-xs text-red-500 bg-white/90 p-2 rounded">
-                                {variant.imageUrl.includes('[') && variant.imageUrl.includes(']') ? (
+                                {(typeof variant.imageUrl === 'string' && variant.imageUrl.includes('[') && variant.imageUrl.includes(']')) ? (
                                   <div>
                                     <p className="font-medium">Image temporarily unavailable</p>
                                     <p className="text-gray-600 mt-1">
-                                      {variant.imageUrl.includes('Large image data removed')
+                                      {(typeof variant.imageUrl === 'string' && variant.imageUrl.includes('Large image data removed'))
                                         ? 'Image was too large for storage. Try regenerating.'
                                         : 'Image data was optimized for storage.'
                                       }
