@@ -42,59 +42,86 @@ function createSafeModel(modelName: string, config?: any) {
   return model;
 }
 
-// Helper function to route AI calls through proxy when enabled
+// Helper function to route AI calls through proxy - PROXY ONLY, NO FALLBACK
 async function generateContentWithProxy(promptOrParts: string | any[], modelName: string, isImageGeneration: boolean = false): Promise<any> {
-  if (shouldUseProxy()) {
-    console.log(`🔄 Revo 2.0: Using proxy for ${isImageGeneration ? 'image' : 'text'} generation with ${modelName}`);
+  if (!shouldUseProxy()) {
+    throw new Error('🚫 Proxy is disabled. This system requires AI_PROXY_ENABLED=true to function.');
+  }
 
-    try {
-      // Convert parts array to string for proxy (simplified for now)
-      const prompt = Array.isArray(promptOrParts)
-        ? promptOrParts.filter(part => typeof part === 'string').join(' ')
-        : promptOrParts;
+  console.log(`🔄 Revo 2.0: Using proxy for ${isImageGeneration ? 'image' : 'text'} generation with ${modelName}`);
 
-      if (isImageGeneration) {
-        const response = await aiProxyClient.generateImage({
-          prompt,
-          model: modelName,
-          user_id: getUserIdForProxy(),
-          user_tier: getUserTierForProxy()
-        });
+  // Handle multimodal requests (text + images) properly
+  let prompt: string;
+  let imageData: string | undefined;
 
-        // Mock the Google AI response structure for image generation
-        return {
-          response: {
-            candidates: [{
-              content: {
-                parts: [{
-                  inlineData: {
-                    mimeType: 'image/png',
-                    data: response.imageUrl.split(',')[1] || response.imageUrl
-                  }
-                }]
+  if (Array.isArray(promptOrParts)) {
+    // Extract text parts
+    const textParts = promptOrParts.filter(part => typeof part === 'string');
+    prompt = textParts.join(' ');
+
+    // Extract image data from inlineData parts (for logo integration)
+    const imageParts = promptOrParts.filter(part =>
+      typeof part === 'object' && part.inlineData && part.inlineData.data
+    );
+
+    if (imageParts.length > 0) {
+      // Use the first image (logo) - convert back to data URL format for proxy
+      const firstImage = imageParts[0];
+      const mimeType = firstImage.inlineData.mimeType || 'image/png';
+      imageData = `data:${mimeType};base64,${firstImage.inlineData.data}`;
+      console.log('🖼️ Revo 2.0: Logo data extracted for proxy transmission');
+    }
+  } else {
+    prompt = promptOrParts;
+  }
+
+  if (isImageGeneration) {
+    const response = await aiProxyClient.generateImage({
+      prompt,
+      model: modelName,
+      user_id: getUserIdForProxy(),
+      user_tier: getUserTierForProxy(),
+      // Include logo image data if available
+      ...(imageData && { logoImage: imageData })
+    });
+
+    // Extract image data from proxy response
+    const candidates = response.data?.candidates;
+    if (!candidates || !candidates[0]?.content?.parts?.[0]?.inlineData?.data) {
+      throw new Error('Invalid image response from proxy - no image data found');
+    }
+
+    // Mock the Google AI response structure for image generation
+    return {
+      response: {
+        candidates: [{
+          content: {
+            parts: [{
+              inlineData: {
+                mimeType: 'image/png',
+                data: candidates[0].content.parts[0].inlineData.data
               }
             }]
           }
-        };
-      } else {
-        const response = await aiProxyClient.generateText({
-          prompt,
-          model: modelName,
-          user_id: getUserIdForProxy(),
-          user_tier: getUserTierForProxy()
-        });
-        return { response: { text: () => response.content } };
+        }]
       }
-    } catch (error) {
-      console.error('❌ Proxy call failed, falling back to direct API:', error);
-      // Fall back to direct API call
-    }
-  }
+    };
+  } else {
+    const response = await aiProxyClient.generateText({
+      prompt,
+      model: modelName,
+      user_id: getUserIdForProxy(),
+      user_tier: getUserTierForProxy()
+    });
 
-  // Direct API call (fallback or when proxy disabled)
-  console.log(`🔄 Revo 2.0: Using direct API for ${isImageGeneration ? 'image' : 'text'} generation with ${modelName}`);
-  const model = createSafeModel(modelName);
-  return await model.generateContent(promptOrParts);
+    // Extract text content from proxy response
+    const candidates = response.data?.candidates;
+    if (!candidates || !candidates[0]?.content?.parts?.[0]?.text) {
+      throw new Error('Invalid text response from proxy - no text content found');
+    }
+
+    return { response: { text: () => candidates[0].content.parts[0].text } };
+  }
 }
 
 function getOpenAIClient(): OpenAI {

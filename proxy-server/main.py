@@ -18,12 +18,12 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Nevis AI Proxy", description="Controlled AI model proxy to prevent unexpected costs")
 
-# In-memory credit tracking (credit-based system)
-user_credits = defaultdict(lambda: {"credits": 0, "tier": "free", "last_updated": ""})
+# In-memory credit tracking (credit-based system) - Updated with generous free credits
+user_credits = defaultdict(lambda: {"credits": 100, "tier": "free", "last_updated": ""})
 
 # Tier-based credit packages (one-time purchase)
 TIER_CREDITS = {
-    "free": 10,        # 10 credits - Free trial
+    "free": 100,       # 100 credits - Generous free trial (same as premium)
     "basic": 40,       # 40 credits - $9.99 package
     "premium": 100,    # 100 credits - $24.99 package
     "pro": 250,        # 250 credits - $59.99 package
@@ -55,10 +55,10 @@ ALLOWED_MODELS = {
     # - gemini-2.0-flash (legacy)
 }
 
-# Tier-based model access (optional - restrict models by tier)
+# Tier-based model access (updated - free tier gets same access as paid)
 TIER_MODELS = {
-    "free": ["gemini-2.5-flash-lite"],  # Only cheapest model (text only)
-    "basic": ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.5-flash-image-preview"],  # Text + Image
+    "free": list(ALLOWED_MODELS.keys()),  # All approved models (same as paid)
+    "basic": list(ALLOWED_MODELS.keys()),  # All approved models
     "premium": list(ALLOWED_MODELS.keys()),  # All approved models
     "pro": list(ALLOWED_MODELS.keys()),  # All approved models
     "enterprise": list(ALLOWED_MODELS.keys())  # All approved models
@@ -71,6 +71,7 @@ class ImageRequest(BaseModel):
     model: Optional[str] = "gemini-2.5-flash-image-preview"
     max_tokens: Optional[int] = 1000
     temperature: Optional[float] = 0.7
+    logoImage: Optional[str] = None  # Logo image data URL for brand integration
 
 class TextRequest(BaseModel):
     prompt: str
@@ -231,8 +232,29 @@ async def generate_image(request: ImageRequest):
     api_key = get_api_key_for_model(request.model)
     
     # Prepare payload with strict model specification
+    parts = [{"text": request.prompt}]
+
+    # Add logo image data if provided (for brand integration)
+    if request.logoImage and request.logoImage.startswith('data:image/'):
+        try:
+            # Extract base64 data and mime type from data URL
+            logo_match = request.logoImage.split(',', 1)
+            if len(logo_match) == 2:
+                mime_info = logo_match[0].split(';')[0].split(':')[1]  # Extract mime type
+                base64_data = logo_match[1]
+
+                parts.append({
+                    "inlineData": {
+                        "mimeType": mime_info,
+                        "data": base64_data
+                    }
+                })
+                logger.info(f"Added logo image data to request for user {request.user_id}")
+        except Exception as logo_error:
+            logger.warning(f"Failed to process logo image: {logo_error}")
+
     payload = {
-        "contents": [{"parts": [{"text": request.prompt}]}],
+        "contents": [{"parts": parts}],
         "generationConfig": {
             "temperature": request.temperature,
             "maxOutputTokens": request.max_tokens,

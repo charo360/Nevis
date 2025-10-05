@@ -10,6 +10,7 @@ interface ProxyImageRequest {
   model?: string;
   max_tokens?: number;
   temperature?: number;
+  logoImage?: string; // Logo image data URL for brand integration
 }
 
 interface ProxyTextRequest {
@@ -79,7 +80,8 @@ class AIProxyClient {
           user_id: request.user_id,
           model: request.model || 'gemini-2.5-flash-image-preview',
           max_tokens: request.max_tokens || 1000,
-          temperature: request.temperature || 0.7
+          temperature: request.temperature || 0.7,
+          ...(request.logoImage && { logoImage: request.logoImage })
         })
       });
 
