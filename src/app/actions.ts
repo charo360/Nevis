@@ -66,8 +66,7 @@ export async function analyzeBrandAction(
   designImageUris: string[],
 ): Promise<AnalysisResult> {
   try {
-
-    // Validate URL format
+    // Step 1: URL Validation and Normalization
     if (!websiteUrl || !websiteUrl.trim()) {
       return {
         success: false,
@@ -76,15 +75,94 @@ export async function analyzeBrandAction(
       };
     }
 
-    // Ensure URL has protocol
-    let validUrl = websiteUrl.trim();
-    if (!validUrl.startsWith('http://') && !validUrl.startsWith('https://')) {
-      validUrl = 'https://' + validUrl;
+    let normalizedUrl = websiteUrl.trim();
+    if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
+      normalizedUrl = `https://${normalizedUrl}`;
     }
 
+    // Validate URL format
+    try {
+      new URL(normalizedUrl);
+    } catch {
+      return {
+        success: false,
+        error: "Invalid URL format. Please enter a valid website URL (e.g., https://example.com).",
+        errorType: 'error'
+      };
+    }
+
+    // Security: Prevent scraping internal/private URLs
+    const urlObj = new URL(normalizedUrl);
+    if (urlObj.hostname === 'localhost' || urlObj.hostname.startsWith('127.') || urlObj.hostname.startsWith('192.168.') || urlObj.hostname.startsWith('10.')) {
+      return {
+        success: false,
+        error: "Cannot analyze local or private network URLs.",
+        errorType: 'error'
+      };
+    }
+
+    // Step 2: Check robots.txt (log warning but don't block)
+    try {
+      const robotsResponse = await fetch(`${normalizedUrl}/robots.txt`, { signal: AbortSignal.timeout(5000) });
+      if (robotsResponse.ok) {
+        const robotsText = await robotsResponse.text();
+        if (robotsText.includes('Disallow: /')) {
+          console.warn('⚠️ Website has robots.txt that disallows scraping, but proceeding for user-initiated analysis');
+        }
+      }
+    } catch {
+      // Ignore robots.txt errors, proceed
+    }
+
+    // Step 3: Scrape content using basic fetch (for static sites; dynamic sites may not work perfectly)
+    let scrapedContent = '';
+    try {
+      const response = await fetch(normalizedUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        },
+        signal: AbortSignal.timeout(30000)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const html = await response.text();
+      // Simple text extraction from HTML (remove basic tags)
+      scrapedContent = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+                           .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+                           .replace(/<[^>]+>/g, ' ')
+                           .replace(/\s+/g, ' ')
+                           .trim();
+
+      if (!scrapedContent || scrapedContent.length < 100) {
+        return {
+          success: false,
+          error: "Unable to extract sufficient content from the website. It may be protected or have minimal text.",
+          errorType: 'error'
+        };
+      }
+    } catch (scrapeError: any) {
+      if (scrapeError.name === 'AbortError') {
+        return {
+          success: false,
+          error: "Website took too long to load. Please try again or use a different URL.",
+          errorType: 'timeout'
+        };
+      }
+      return {
+        success: false,
+        error: "Failed to access the website. It may be down or blocking requests.",
+        errorType: 'error'
+      };
+    }
+
+    // Step 4: Call existing AI analysis with scraped content
     const result = await analyzeBrandFlow({
-      websiteUrl: validUrl,
-      designImageUris: designImageUris || []
+      websiteUrl: normalizedUrl,
+      designImageUris: designImageUris || [],
+      websiteContent: scrapedContent // Pass scraped content to AI flow for better accuracy
     });
 
     if (!result) {
@@ -95,30 +173,11 @@ export async function analyzeBrandAction(
       };
     }
 
-    // Additional validation to prevent schema returns in production
-    const resultStr = JSON.stringify(result);
-    if (resultStr.includes('"type": "string"') || 
-        resultStr.includes('"description": "ALL the SPECIFIC') ||
-        resultStr.includes('services."') ||
-        resultStr.includes('keyFeatures": { "type": "string"') ||
-        result.businessName?.includes('"type"') ||
-        result.description?.includes('"description"')) {
-      
-      console.error('❌ AI returned schema format instead of analysis:', result);
+    // Step 5: Basic validation of AI result
+    if (!result.businessName || typeof result.businessName !== 'string' || result.businessName.trim().length === 0) {
       return {
         success: false,
-        error: "AI analysis service returned invalid format. This is a technical issue that has been logged. Please try again or proceed manually.",
-        errorType: 'error'
-      };
-    }
-
-    // Validate that we have actual content, not schema definitions
-    if (!result.businessName || result.businessName.length < 2 ||
-        !result.description || result.description.length < 10) {
-      console.error('❌ AI returned incomplete analysis:', result);
-      return {
-        success: false,
-        error: "AI analysis returned incomplete results. Please try again or proceed manually.",
+        error: "AI could not extract a valid business name from the website.",
         errorType: 'error'
       };
     }
@@ -127,44 +186,14 @@ export async function analyzeBrandAction(
       success: true,
       data: result
     };
-  } catch (error) {
-    console.error('❌ Brand analysis error:', error);
 
-    // Return structured error response instead of throwing
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-
-    // Check for AI/API-specific errors first
-    if (errorMessage.includes('GoogleGenerativeAI') || errorMessage.includes('generativelanguage.googleapis.com') || errorMessage.includes('API key')) {
-      return {
-        success: false,
-        error: "AI analysis service is temporarily unavailable. This might be due to API limits or configuration issues. Please try again later or proceed manually.",
-        errorType: 'error'
-      };
-    } else if (errorMessage.includes('blocked:')) {
-      return {
-        success: false,
-        error: errorMessage.replace('blocked: ', ''),
-        errorType: 'blocked'
-      };
-    } else if (errorMessage.includes('timeout:')) {
-      return {
-        success: false,
-        error: errorMessage.replace('timeout: ', ''),
-        errorType: 'timeout'
-      };
-    } else if (errorMessage.includes('fetch') || errorMessage.includes('403') || errorMessage.includes('CORS')) {
-      return {
-        success: false,
-        error: "Website blocks automated access. This is common for security reasons.",
-        errorType: 'blocked'
-      };
-    } else {
-      return {
-        success: false,
-        error: `Analysis failed: ${errorMessage}`,
-        errorType: 'error'
-      };
-    }
+  } catch (error: any) {
+    console.error('❌ Analysis error:', error);
+    return {
+      success: false,
+      error: error.message || "Unexpected error during analysis",
+      errorType: 'error'
+    };
   }
 }
 

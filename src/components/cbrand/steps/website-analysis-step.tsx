@@ -128,6 +128,26 @@ export function WebsiteAnalysisStep({
       return;
     }
 
+    // URL Validation and Normalization
+    let normalizedUrl = websiteUrl.trim();
+    if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
+      normalizedUrl = `https://${normalizedUrl}`;
+    }
+
+    try {
+      new URL(normalizedUrl); // Throws if invalid
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Invalid URL",
+        description: "Please enter a valid website URL (e.g., https://example.com).",
+      });
+      return;
+    }
+
+    // Update state with normalized URL
+    setWebsiteUrl(normalizedUrl);
+
     setIsAnalyzing(true);
     setAnalysisComplete(false);
     setAnalysisError('');
@@ -154,7 +174,7 @@ export function WebsiteAnalysisStep({
 
       // Add progress feedback for AI analysis
       setAnalysisProgress('🤖 AI is analyzing website content and extracting company-specific information...');
-      const analysisResult = await analyzeBrandAction(websiteUrl, designImageUris);
+      const analysisResult = await analyzeBrandAction(normalizedUrl, designImageUris);
 
       // Check if analysis failed
       if (!analysisResult.success) {
