@@ -601,6 +601,122 @@ function validateAndOptimizeCTA(
 }
 
 /**
+ * Fix grammatically incorrect CTAs by adding proper prepositions
+ */
+function fixCTAGrammar(cta: string, businessName: string, businessType: string, location: string): string {
+  if (!cta) return cta;
+
+  const ctaLower = cta.toLowerCase();
+  const type = businessType.toLowerCase();
+
+  // Common grammatical errors to fix
+  const grammarFixes: Array<{ pattern: RegExp, replacement: string, condition?: (match: string) => boolean }> = [
+    // Fix "Shop [City] Now" -> "Shop in [City] Now" if it matches location
+    {
+      pattern: /^shop\s+([A-Za-z][A-Za-z0-9\s]*?)\s*(now|today)?$/i,
+      replacement: 'Shop in $1 $2',
+      condition: (match) => {
+        if (/(at|in|with|from)\s/i.test(match)) return false; // Already has preposition
+        const shopMatch = match.match(/^shop\s+([A-Za-z][A-Za-z0-9\s]*?)\s*(now|today)?$/i);
+        return shopMatch && location && shopMatch[1].toLowerCase().trim() === location.toLowerCase().trim();
+      }
+    },
+    // Fix "Shop [BusinessName] Now" -> "Shop at [BusinessName] Now" (only if not already has preposition and not a city)
+    {
+      pattern: /^shop\s+([A-Za-z][A-Za-z0-9\s]*?)\s*(now|today)?$/i,
+      replacement: 'Shop at $1 $2',
+      condition: (match) => {
+        if (/(at|in|with|from)\s/i.test(match)) return false; // Already has preposition
+        const shopMatch = match.match(/^shop\s+([A-Za-z][A-Za-z0-9\s]*?)\s*(now|today)?$/i);
+        // Don't apply if it's a city name
+        return !(shopMatch && location && shopMatch[1].toLowerCase().trim() === location.toLowerCase().trim());
+      }
+    },
+    // Fix "Visit [City] Now" -> "Shop in [City] Now" if it matches location
+    {
+      pattern: /^visit\s+([A-Za-z][A-Za-z0-9\s]*?)\s*(now|today)?$/i,
+      replacement: 'Shop in $1 $2',
+      condition: (match) => {
+        const cityMatch = match.match(/^visit\s+([A-Za-z][A-Za-z0-9\s]*?)\s*(now|today)?$/i);
+        return cityMatch && location && cityMatch[1].toLowerCase().trim() === location.toLowerCase().trim();
+      }
+    },
+    // Fix "Order [BusinessName] Now" -> "Order from [BusinessName] Now" (only if not already has preposition)
+    {
+      pattern: /^order\s+([A-Za-z][A-Za-z0-9\s]*?)\s*(now|today)?$/i,
+      replacement: 'Order from $1 $2',
+      condition: (match) => !/(from|at|with)\s/i.test(match)
+    },
+    // Fix "Book [BusinessName] Now" -> "Book with [BusinessName] Now" (only if not already has preposition)
+    {
+      pattern: /^book\s+([A-Za-z][A-Za-z0-9\s]*?)\s*(now|today)?$/i,
+      replacement: 'Book with $1 $2',
+      condition: (match) => !/(with|at)\s/i.test(match)
+    }
+  ];
+
+  let fixedCTA = cta;
+
+  for (const fix of grammarFixes) {
+    if (fix.pattern.test(fixedCTA)) {
+      // Check condition if provided
+      if (!fix.condition || fix.condition(fixedCTA)) {
+        fixedCTA = fixedCTA.replace(fix.pattern, fix.replacement);
+        console.log(`🔧 [Revo 1.5] Fixed CTA grammar: "${cta}" -> "${fixedCTA}"`);
+        break;
+      }
+    }
+  }
+
+  // Clean up extra spaces
+  fixedCTA = fixedCTA.replace(/\s+/g, ' ').trim();
+
+  // Ensure proper capitalization
+  fixedCTA = fixedCTA.charAt(0).toUpperCase() + fixedCTA.slice(1);
+
+  return fixedCTA;
+}
+
+/**
+ * Generate contextually appropriate CTA based on business type
+ */
+function generateContextualCTA(businessType: string, businessName: string, location: string): string {
+  const type = businessType.toLowerCase();
+
+  // Business-specific CTA patterns with proper grammar
+  const ctaPatterns: Record<string, string[]> = {
+    restaurant: ['Dine with Us', 'Order from Us', 'Reserve Table', 'Book Now'],
+    food: ['Order from Us', 'Taste Today', 'Try Now', 'Order Online'],
+    cafe: ['Visit Us', 'Order from Us', 'Try Today', 'Come In'],
+    retail: ['Shop with Us', 'Browse Store', 'View Products', 'Shop Now'],
+    store: ['Shop with Us', 'Visit Store', 'Browse Now', 'Shop Today'],
+    electronics: ['Shop with Us', 'View Products', 'Compare Now', 'Browse Tech'],
+    fashion: ['Shop with Us', 'Browse Style', 'View Collection', 'Shop Fashion'],
+    salon: ['Book with Us', 'Schedule Now', 'Book Today', 'Reserve Spot'],
+    spa: ['Book with Us', 'Relax Today', 'Schedule Now', 'Book Session'],
+    fitness: ['Join Us', 'Start Today', 'Book Session', 'Get Fit'],
+    medical: ['Schedule Now', 'Book Appointment', 'Call Today', 'Contact Us'],
+    dental: ['Schedule Now', 'Book Appointment', 'Call Today', 'Book Visit'],
+    consulting: ['Contact Us', 'Schedule Call', 'Get Quote', 'Learn More'],
+    legal: ['Contact Us', 'Schedule Consultation', 'Get Help', 'Call Now'],
+    financial: ['Contact Us', 'Schedule Meeting', 'Get Quote', 'Learn More']
+  };
+
+  // Find matching business type
+  for (const [businessKey, ctas] of Object.entries(ctaPatterns)) {
+    if (type.includes(businessKey)) {
+      const randomIndex = Math.floor(Math.random() * ctas.length);
+      return ctas[randomIndex];
+    }
+  }
+
+  // Default professional CTAs
+  const defaultCTAs = ['Contact Us', 'Learn More', 'Get Started', 'Call Today', 'Visit Us'];
+  const randomIndex = Math.floor(Math.random() * defaultCTAs.length);
+  return defaultCTAs[randomIndex];
+}
+
+/**
  * Check if CTA is appropriate for business type
  */
 function isBusinessAppropriateCTA(cta: string, businessType: string): boolean {
@@ -612,27 +728,31 @@ function isBusinessAppropriateCTA(cta: string, businessType: string): boolean {
   // Restaurant/Food business should have booking/ordering CTAs
   if (type.includes('restaurant') || type.includes('food') || type.includes('cafe')) {
     return ctaLower.includes('book') || ctaLower.includes('order') ||
-      ctaLower.includes('reserve') || ctaLower.includes('table');
+      ctaLower.includes('reserve') || ctaLower.includes('table') ||
+      ctaLower.includes('dine') || ctaLower.includes('taste') || ctaLower.includes('try');
   }
 
   // Service businesses should have booking/scheduling CTAs
   if (type.includes('salon') || type.includes('spa') || type.includes('fitness') ||
     type.includes('medical') || type.includes('dental')) {
     return ctaLower.includes('book') || ctaLower.includes('schedule') ||
-      ctaLower.includes('appointment') || ctaLower.includes('session');
+      ctaLower.includes('appointment') || ctaLower.includes('session') ||
+      ctaLower.includes('join') || ctaLower.includes('start');
   }
 
   // Retail businesses should have shopping CTAs
   if (type.includes('retail') || type.includes('store') || type.includes('shop') ||
     type.includes('electronics') || type.includes('fashion')) {
     return ctaLower.includes('shop') || ctaLower.includes('buy') ||
-      ctaLower.includes('browse') || ctaLower.includes('view');
+      ctaLower.includes('browse') || ctaLower.includes('view') ||
+      ctaLower.includes('compare');
   }
 
   // Professional services should have consultation CTAs
   if (type.includes('consulting') || type.includes('legal') || type.includes('financial')) {
     return ctaLower.includes('schedule') || ctaLower.includes('consult') ||
-      ctaLower.includes('meeting') || ctaLower.includes('call');
+      ctaLower.includes('meeting') || ctaLower.includes('call') ||
+      ctaLower.includes('contact') || ctaLower.includes('quote');
   }
 
   // If we can't determine, assume it's appropriate
@@ -791,7 +911,9 @@ ${prompt}`;
       hashtags: parsed.hashtags || [`#${businessType.toLowerCase().replace(/\s+/g, '')}`, '#local', '#business'].slice(0, hashtagCount),
       headline: validatedHeadline,
       subheadline: validatedSubheadline,
-      callToAction: parsed.callToAction || 'Contact Us'
+      callToAction: parsed.callToAction ?
+        fixCTAGrammar(parsed.callToAction, businessName, businessType, brandProfile.location || '') :
+        generateContextualCTA(businessType, businessName, brandProfile.location || '')
     };
 
   } catch (error) {
@@ -812,7 +934,7 @@ ${prompt}`;
       hashtags: simpleHashtags,
       headline: `${businessName} Quality`,
       subheadline: `Professional ${businessType.toLowerCase()} services`,
-      callToAction: 'Get Started'
+      callToAction: generateContextualCTA(businessType, businessName, brandProfile.location || '')
     };
   }
 }
@@ -990,11 +1112,16 @@ async function generateCaptionAndHashtags(
       useLocalLanguage
     );
 
-    // Apply Cultural Intelligence System (Fallback)
+    // Apply Cultural Intelligence System (Fallback) with proper CTA grammar
     const culturalContent = {
       headlines: [`${businessName} Excellence`, `Professional ${businessType} Services`, `Quality ${businessType} Solutions`],
       subheadlines: [`Quality service you can trust`, `Professional results delivered`, `Expert ${businessType} services`],
-      ctas: ['Get Started', 'Learn More', 'Contact Us', 'Book Now'],
+      ctas: [
+        generateContextualCTA(businessType, businessName, brandProfile.location || ''),
+        'Contact Us',
+        'Learn More',
+        'Get Started'
+      ],
       culturalContext: `${brandProfile.location || 'Global'} - Professional business focus`
     };
 
@@ -1055,7 +1182,14 @@ Create engaging content:
 1. Caption (2-3 sentences): Authentic business story with specific benefits
 2. Headline (5-8 words): Compelling, specific to this business
 3. Subheadline (8-15 words): Explains how the service delivers value
-4. Business-specific CTA (2-4 words): Match the business type (e.g., "Order Now", "Book Session", "Try Free")
+4. Business-specific CTA (2-5 words): Use proper English grammar with prepositions when needed
+   - CORRECT: "Shop at [Business]", "Visit [Business]", "Order from [Business]", "Book with [Business]"
+   - INCORRECT: "Shop [Business]", "Visit [City]", "Order [Business]"
+   - Examples by business type:
+     * Retail/Store: "Shop at [Business]", "Browse Our Store", "View Products"
+     * Restaurant: "Dine at [Business]", "Order from [Business]", "Reserve Table"
+     * Services: "Book with [Business]", "Schedule Today", "Get Quote"
+     * Professional: "Consult with [Business]", "Contact [Business]", "Learn More"
 5. ${hashtagCount} relevant hashtags for ${platform}
 
 
@@ -1187,13 +1321,27 @@ ${prompt}`;
         }
       }
 
-      // Use AI-generated CTA directly (simplified)
-      const finalCTA = parsed.callToAction || 'Get Started';
+      // Fix CTA grammar and validate appropriateness
+      let finalCTA = parsed.callToAction || 'Get Started';
 
-      console.log('🎯 [Revo 1.5] CTA Selection (Simplified):', {
-        aiGenerated: parsed.callToAction,
-        final: finalCTA
-      });
+      // Apply grammar fixes to correct common issues
+      if (finalCTA) {
+        const originalCTA = finalCTA;
+        finalCTA = fixCTAGrammar(finalCTA, businessName, businessType, brandProfile.location || '');
+
+        // If CTA is still inappropriate after grammar fix, generate a contextual one
+        if (!isBusinessAppropriateCTA(finalCTA, businessType)) {
+          console.log('⚠️ [Revo 1.5] CTA not appropriate for business type, generating contextual CTA');
+          finalCTA = generateContextualCTA(businessType, businessName, brandProfile.location || '');
+        }
+
+        console.log('🎯 [Revo 1.5] CTA Processing:', {
+          original: originalCTA,
+          grammarFixed: finalCTA,
+          businessType: businessType,
+          isAppropriate: isBusinessAppropriateCTA(finalCTA, businessType)
+        });
+      }
 
       // Validate required fields from proxy response
       if (!parsed.caption || !parsed.headline || !parsed.subheadline || !parsed.hashtags) {
