@@ -10,47 +10,126 @@ function fixCTAGrammar(cta, businessName, businessType, location) {
   if (!cta) return cta;
 
   const grammarFixes = [
-    // Fix "Shop [City] Now" -> "Shop in [City] Now" if it matches location
+    // Smart shop fixes - handle all shop cases in one rule
     {
       pattern: /^shop\s+([A-Za-z][A-Za-z0-9\s]*?)\s*(now|today)?$/i,
-      replacement: 'Shop in $1 $2',
-      condition: (match) => {
-        if (/(at|in|with|from)\s/i.test(match)) return false; // Already has preposition
+      replacement: (match) => {
         const shopMatch = match.match(/^shop\s+([A-Za-z][A-Za-z0-9\s]*?)\s*(now|today)?$/i);
-        return shopMatch && location && shopMatch[1].toLowerCase().trim() === location.toLowerCase().trim();
-      }
-    },
-    // Fix "Shop [BusinessName] Now" -> "Shop at [BusinessName] Now" (only if not already has preposition and not a city)
-    {
-      pattern: /^shop\s+([A-Za-z][A-Za-z0-9\s]*?)\s*(now|today)?$/i,
-      replacement: 'Shop at $1 $2',
+        if (!shopMatch) return match;
+
+        const target = shopMatch[1].trim();
+        const timeWord = shopMatch[2] ? ` ${shopMatch[2].trim()}` : '';
+
+        // Don't process if it's just "Shop Now" or "Shop Today" - already correct
+        if (!target || target.toLowerCase() === 'now' || target.toLowerCase() === 'today') {
+          return match;
+        }
+
+        // Check if it's a city first
+        if (location && target.toLowerCase() === location.toLowerCase()) {
+          console.log(`🔍 Debug: "${target}" is a city, using "in"`);
+          return `Shop in ${target}${timeWord}`;
+        }
+
+        // Generic products - keep simple (exact matches or starts with)
+        const genericProducts = ['phones', 'electronics', 'clothes', 'shoes', 'books', 'gadgets', 'fashion'];
+        if (genericProducts.some(product => target.toLowerCase() === product || target.toLowerCase().startsWith(product + ' '))) {
+          console.log(`🔍 Debug: "${target}" is generic product, simplifying`);
+          return `Shop${timeWord}`;
+        }
+
+        // Business names - use "at"
+        const businessWords = ['store', 'shop', 'mart', 'center', 'mall', 'outlet', 'boutique'];
+        if (businessWords.some(word => target.toLowerCase().includes(word))) {
+          console.log(`🔍 Debug: "${target}" contains business word, using "at"`);
+          return `Shop at ${target}${timeWord}`;
+        }
+
+        // Capitalized business names (not cities)
+        if (target !== target.toLowerCase()) {
+          console.log(`🔍 Debug: "${target}" is capitalized business name, using "at"`);
+          return `Shop at ${target}${timeWord}`;
+        }
+
+        console.log(`🔍 Debug: "${target}" defaulting to simple form`);
+        return `Shop${timeWord}`;
+      },
       condition: (match) => {
-        if (/(at|in|with|from)\s/i.test(match)) return false; // Already has preposition
-        const shopMatch = match.match(/^shop\s+([A-Za-z][A-Za-z0-9\s]*?)\s*(now|today)?$/i);
-        // Don't apply if it's a city name
-        return !(shopMatch && location && shopMatch[1].toLowerCase().trim() === location.toLowerCase().trim());
+        // Don't apply to already correct CTAs like "Shop Now"
+        if (/^shop\s*(now|today)?\s*$/i.test(match)) return false;
+        return !/(at|in|with|from)\s/i.test(match);
       }
     },
-    // Fix "Visit [City] Now" -> "Shop in [City] Now" if it matches location
-    {
-      pattern: /^visit\s+([A-Za-z][A-Za-z0-9\s]*?)\s*(now|today)?$/i,
-      replacement: 'Shop in $1 $2',
-      condition: (match) => {
-        const cityMatch = match.match(/^visit\s+([A-Za-z][A-Za-z0-9\s]*?)\s*(now|today)?$/i);
-        return cityMatch && location && cityMatch[1].toLowerCase().trim() === location.toLowerCase().trim();
-      }
-    },
-    // Fix "Order [BusinessName] Now" -> "Order from [BusinessName] Now" (only if not already has preposition)
+    // Smart order fixes
     {
       pattern: /^order\s+([A-Za-z][A-Za-z0-9\s]*?)\s*(now|today)?$/i,
-      replacement: 'Order from $1 $2',
-      condition: (match) => !/(from|at|with)\s/i.test(match)
+      replacement: (match) => {
+        const orderMatch = match.match(/^order\s+([A-Za-z][A-Za-z0-9\s]*?)\s*(now|today)?$/i);
+        if (!orderMatch) return match;
+
+        const target = orderMatch[1].trim();
+        const timeWord = orderMatch[2] ? ` ${orderMatch[2].trim()}` : '';
+
+        // Don't process if it's just "Order Now" or "Order Today" - already correct
+        if (!target || target.toLowerCase() === 'now' || target.toLowerCase() === 'today') {
+          return match;
+        }
+
+        // Generic products - keep simple (exact matches or starts with)
+        const genericProducts = ['food', 'pizza', 'coffee', 'lunch', 'dinner', 'takeout'];
+        if (genericProducts.some(product => target.toLowerCase() === product || target.toLowerCase().startsWith(product + ' '))) {
+          console.log(`🔍 Debug: "${target}" is generic food product, simplifying`);
+          return `Order${timeWord}`;
+        }
+
+        // Business names - use "from"
+        if (target !== target.toLowerCase()) {
+          console.log(`🔍 Debug: "${target}" is capitalized business name, using "from"`);
+          return `Order from ${target}${timeWord}`;
+        }
+
+        console.log(`🔍 Debug: "${target}" defaulting to simple form`);
+        return `Order${timeWord}`;
+      },
+      condition: (match) => {
+        // Don't apply to already correct CTAs like "Order Now"
+        if (/^order\s*(now|today)?\s*$/i.test(match)) return false;
+        return !/(from|at|with)\s/i.test(match);
+      }
     },
-    // Fix "Book [BusinessName] Now" -> "Book with [BusinessName] Now" (only if not already has preposition)
+    // Smart book fixes
     {
       pattern: /^book\s+([A-Za-z][A-Za-z0-9\s]*?)\s*(now|today)?$/i,
-      replacement: 'Book with $1 $2',
-      condition: (match) => !/(with|at)\s/i.test(match)
+      replacement: (match) => {
+        const bookMatch = match.match(/^book\s+([A-Za-z][A-Za-z0-9\s]*?)\s*(now|today)?$/i);
+        if (!bookMatch) return match;
+
+        const target = bookMatch[1].trim();
+        const timeWord = bookMatch[2] ? ` ${bookMatch[2].trim()}` : '';
+
+        // Don't process if it's just "Book Now" or "Book Today" - already correct
+        if (!target || target.toLowerCase() === 'now' || target.toLowerCase() === 'today') {
+          return match;
+        }
+
+        // Generic services - keep simple
+        const genericServices = ['appointment', 'session', 'consultation', 'meeting', 'call'];
+        if (genericServices.some(service => target.toLowerCase().includes(service))) {
+          return `Book${timeWord}`;
+        }
+
+        // Business names - use "with"
+        if (target !== target.toLowerCase()) {
+          return `Book with ${target}${timeWord}`;
+        }
+
+        return `Book${timeWord}`;
+      },
+      condition: (match) => {
+        // Don't apply to already correct CTAs like "Book Now"
+        if (/^book\s*(now|today)?\s*$/i.test(match)) return false;
+        return !/(with|at)\s/i.test(match);
+      }
     }
   ];
 
@@ -60,7 +139,11 @@ function fixCTAGrammar(cta, businessName, businessType, location) {
     if (fix.pattern.test(fixedCTA)) {
       // Check condition if provided
       if (!fix.condition || fix.condition(fixedCTA)) {
-        fixedCTA = fixedCTA.replace(fix.pattern, fix.replacement);
+        if (typeof fix.replacement === 'function') {
+          fixedCTA = fix.replacement(fixedCTA);
+        } else {
+          fixedCTA = fixedCTA.replace(fix.pattern, fix.replacement);
+        }
         console.log(`🔧 Fixed CTA grammar: "${cta}" -> "${fixedCTA}"`);
         break;
       }
@@ -80,12 +163,12 @@ function generateContextualCTA(businessType, businessName, location) {
   const type = businessType.toLowerCase();
 
   const ctaPatterns = {
-    restaurant: ['Dine with Us', 'Order from Us', 'Reserve Table', 'Book Now'],
-    food: ['Order from Us', 'Taste Today', 'Try Now', 'Order Online'],
-    retail: ['Shop with Us', 'Browse Store', 'View Products', 'Shop Now'],
-    store: ['Shop with Us', 'Visit Store', 'Browse Now', 'Shop Today'],
-    electronics: ['Shop with Us', 'View Products', 'Compare Now', 'Browse Tech'],
-    salon: ['Book with Us', 'Schedule Now', 'Book Today', 'Reserve Spot'],
+    restaurant: ['Dine Today', 'Order Now', 'Reserve Table', 'Book Now'],
+    food: ['Order Now', 'Taste Today', 'Try Now', 'Order Online'],
+    retail: ['Shop Now', 'Browse Store', 'View Products', 'Explore'],
+    store: ['Shop Now', 'Visit Store', 'Browse Now', 'Shop Today'],
+    electronics: ['Shop Now', 'View Products', 'Compare Now', 'Browse Tech'],
+    salon: ['Book Now', 'Schedule Now', 'Book Today', 'Reserve Spot'],
     consulting: ['Contact Us', 'Schedule Call', 'Get Quote', 'Learn More']
   };
 
@@ -98,24 +181,40 @@ function generateContextualCTA(businessType, businessName, location) {
   return 'Contact Us';
 }
 
-// Test cases for grammar fixes
+// Test cases for natural CTA fixes
 const testCases = [
-  // Current incorrect examples that should be fixed
+  // Natural fixes that make sense
   {
     input: 'Shop Nairobi Now',
     businessName: 'TechStore',
     businessType: 'Electronics Store',
     location: 'Nairobi',
     expected: 'Shop in Nairobi Now',
-    description: 'Fix "Shop [City] Now" to "Shop in [City] Now"'
+    description: 'Fix city reference to use "in"'
   },
   {
-    input: 'Shop Zentech Now',
-    businessName: 'Zentech',
+    input: 'Shop phones Now',
+    businessName: 'TechStore',
     businessType: 'Electronics Store',
     location: 'Nairobi',
-    expected: 'Shop at Zentech Now',
-    description: 'Fix "Shop [Business] Now" to "Shop at [Business] Now"'
+    expected: 'Shop Now',
+    description: 'Simplify generic product references'
+  },
+  {
+    input: 'Shop TechStore Now',
+    businessName: 'TechStore',
+    businessType: 'Electronics Store',
+    location: 'Nairobi',
+    expected: 'Shop at TechStore Now',
+    description: 'Add "at" for business names when appropriate'
+  },
+  {
+    input: 'Order pizza Now',
+    businessName: 'FoodCorp',
+    businessType: 'Restaurant',
+    location: 'Nairobi',
+    expected: 'Order Now',
+    description: 'Simplify generic food references'
   },
   {
     input: 'Order FoodCorp Now',
@@ -123,24 +222,24 @@ const testCases = [
     businessType: 'Restaurant',
     location: 'Nairobi',
     expected: 'Order from FoodCorp Now',
-    description: 'Fix "Order [Business] Now" to "Order from [Business] Now"'
+    description: 'Add "from" for business names in ordering'
   },
   {
-    input: 'Book SalonPro Now',
+    input: 'Book appointment Now',
     businessName: 'SalonPro',
     businessType: 'Salon',
     location: 'Nairobi',
-    expected: 'Book with SalonPro Now',
-    description: 'Fix "Book [Business] Now" to "Book with [Business] Now"'
+    expected: 'Book Now',
+    description: 'Simplify generic service references'
   },
   // Already correct examples that should remain unchanged
   {
-    input: 'Shop at TechStore Now',
+    input: 'Shop Now',
     businessName: 'TechStore',
     businessType: 'Electronics Store',
     location: 'Nairobi',
-    expected: 'Shop at TechStore Now',
-    description: 'Keep correct grammar unchanged'
+    expected: 'Shop Now',
+    description: 'Keep natural CTAs unchanged'
   },
   {
     input: 'Contact Us',
@@ -181,11 +280,11 @@ testCases.forEach((testCase, index) => {
 console.log('📋 Testing Contextual CTA Generation:\n');
 
 const contextualTests = [
-  { businessType: 'Restaurant', expected: 'Dine with Us' },
-  { businessType: 'Electronics Store', expected: 'Shop with Us' },
-  { businessType: 'Hair Salon', expected: 'Book with Us' },
+  { businessType: 'Restaurant', expected: 'Dine Today' },
+  { businessType: 'Electronics Store', expected: 'Shop Now' },
+  { businessType: 'Hair Salon', expected: 'Book Now' },
   { businessType: 'Consulting Firm', expected: 'Contact Us' },
-  { businessType: 'Food Truck', expected: 'Order from Us' }
+  { businessType: 'Food Truck', expected: 'Order Now' }
 ];
 
 contextualTests.forEach((test, index) => {

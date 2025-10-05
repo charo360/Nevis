@@ -609,49 +609,122 @@ function fixCTAGrammar(cta: string, businessName: string, businessType: string, 
   const ctaLower = cta.toLowerCase();
   const type = businessType.toLowerCase();
 
-  // Common grammatical errors to fix
-  const grammarFixes: Array<{ pattern: RegExp, replacement: string, condition?: (match: string) => boolean }> = [
-    // Fix "Shop [City] Now" -> "Shop in [City] Now" if it matches location
+  // Smart grammar fixes that use natural English
+  const grammarFixes: Array<{ pattern: RegExp, replacement: string | ((match: string) => string), condition?: (match: string) => boolean }> = [
+    // Smart shop fixes - handle all shop cases in one rule
     {
       pattern: /^shop\s+([A-Za-z][A-Za-z0-9\s]*?)\s*(now|today)?$/i,
-      replacement: 'Shop in $1 $2',
-      condition: (match) => {
-        if (/(at|in|with|from)\s/i.test(match)) return false; // Already has preposition
+      replacement: (match: string) => {
         const shopMatch = match.match(/^shop\s+([A-Za-z][A-Za-z0-9\s]*?)\s*(now|today)?$/i);
-        return shopMatch && location && shopMatch[1].toLowerCase().trim() === location.toLowerCase().trim();
-      }
-    },
-    // Fix "Shop [BusinessName] Now" -> "Shop at [BusinessName] Now" (only if not already has preposition and not a city)
-    {
-      pattern: /^shop\s+([A-Za-z][A-Za-z0-9\s]*?)\s*(now|today)?$/i,
-      replacement: 'Shop at $1 $2',
+        if (!shopMatch) return match;
+
+        const target = shopMatch[1].trim();
+        const timeWord = shopMatch[2] ? ` ${shopMatch[2].trim()}` : '';
+
+        // Don't process if it's just "Shop Now" or "Shop Today" - already correct
+        if (!target || target.toLowerCase() === 'now' || target.toLowerCase() === 'today') {
+          return match;
+        }
+
+        // Check if it's a city first
+        if (location && target.toLowerCase() === location.toLowerCase()) {
+          return `Shop in ${target}${timeWord}`;
+        }
+
+        // Generic products - keep simple (exact matches or starts with)
+        const genericProducts = ['phones', 'electronics', 'clothes', 'shoes', 'books', 'gadgets', 'fashion'];
+        if (genericProducts.some(product => target.toLowerCase() === product || target.toLowerCase().startsWith(product + ' '))) {
+          return `Shop${timeWord}`;
+        }
+
+        // If it looks like a business name (contains business words), use "at"
+        const businessWords = ['store', 'shop', 'mart', 'center', 'mall', 'outlet', 'boutique', 'emporium'];
+        if (businessWords.some(word => target.toLowerCase().includes(word))) {
+          return `Shop at ${target}${timeWord}`;
+        }
+
+        // If it's clearly a brand/business name (capitalized), use "at"
+        if (target !== target.toLowerCase()) {
+          return `Shop at ${target}${timeWord}`;
+        }
+
+        // Default: keep it simple
+        return `Shop${timeWord}`;
+      },
       condition: (match) => {
-        if (/(at|in|with|from)\s/i.test(match)) return false; // Already has preposition
-        const shopMatch = match.match(/^shop\s+([A-Za-z][A-Za-z0-9\s]*?)\s*(now|today)?$/i);
-        // Don't apply if it's a city name
-        return !(shopMatch && location && shopMatch[1].toLowerCase().trim() === location.toLowerCase().trim());
+        // Don't apply to already correct CTAs like "Shop Now"
+        if (/^shop\s*(now|today)?\s*$/i.test(match)) return false;
+        // Only if no preposition exists
+        return !/(at|in|with|from)\s/i.test(match);
       }
     },
-    // Fix "Visit [City] Now" -> "Shop in [City] Now" if it matches location
-    {
-      pattern: /^visit\s+([A-Za-z][A-Za-z0-9\s]*?)\s*(now|today)?$/i,
-      replacement: 'Shop in $1 $2',
-      condition: (match) => {
-        const cityMatch = match.match(/^visit\s+([A-Za-z][A-Za-z0-9\s]*?)\s*(now|today)?$/i);
-        return cityMatch && location && cityMatch[1].toLowerCase().trim() === location.toLowerCase().trim();
-      }
-    },
-    // Fix "Order [BusinessName] Now" -> "Order from [BusinessName] Now" (only if not already has preposition)
+    // Fix "Order [BusinessName]" - only add "from" when it makes sense
     {
       pattern: /^order\s+([A-Za-z][A-Za-z0-9\s]*?)\s*(now|today)?$/i,
-      replacement: 'Order from $1 $2',
-      condition: (match) => !/(from|at|with)\s/i.test(match)
+      replacement: (match: string) => {
+        const orderMatch = match.match(/^order\s+([A-Za-z][A-Za-z0-9\s]*?)\s*(now|today)?$/i);
+        if (!orderMatch) return match;
+
+        const target = orderMatch[1].trim();
+        const timeWord = orderMatch[2] ? ` ${orderMatch[2].trim()}` : '';
+
+        // Don't process if it's just "Order Now" or "Order Today" - already correct
+        if (!target || target.toLowerCase() === 'now' || target.toLowerCase() === 'today') {
+          return match;
+        }
+
+        // Generic products - keep simple (exact matches or starts with)
+        const genericProducts = ['food', 'pizza', 'coffee', 'lunch', 'dinner', 'takeout'];
+        if (genericProducts.some(product => target.toLowerCase() === product || target.toLowerCase().startsWith(product + ' '))) {
+          return `Order${timeWord}`;
+        }
+
+        // If it's clearly a business name, use "from"
+        if (target !== target.toLowerCase()) {
+          return `Order from ${target}${timeWord}`;
+        }
+
+        return `Order${timeWord}`;
+      },
+      condition: (match) => {
+        // Don't apply to already correct CTAs like "Order Now"
+        if (/^order\s*(now|today)?\s*$/i.test(match)) return false;
+        return !/(from|at|with)\s/i.test(match);
+      }
     },
-    // Fix "Book [BusinessName] Now" -> "Book with [BusinessName] Now" (only if not already has preposition)
+    // Fix "Book [BusinessName]" - only add "with" when it makes sense
     {
       pattern: /^book\s+([A-Za-z][A-Za-z0-9\s]*?)\s*(now|today)?$/i,
-      replacement: 'Book with $1 $2',
-      condition: (match) => !/(with|at)\s/i.test(match)
+      replacement: (match: string) => {
+        const bookMatch = match.match(/^book\s+([A-Za-z][A-Za-z0-9\s]*?)\s*(now|today)?$/i);
+        if (!bookMatch) return match;
+
+        const target = bookMatch[1].trim();
+        const timeWord = bookMatch[2] ? ` ${bookMatch[2].trim()}` : '';
+
+        // Don't process if it's just "Book Now" or "Book Today" - already correct
+        if (!target || target.toLowerCase() === 'now' || target.toLowerCase() === 'today') {
+          return match;
+        }
+
+        // If it's a generic service, keep simple
+        const genericServices = ['appointment', 'session', 'consultation', 'meeting', 'call'];
+        if (genericServices.some(service => target.toLowerCase().includes(service))) {
+          return `Book${timeWord}`;
+        }
+
+        // If it's clearly a business name, use "with"
+        if (target !== target.toLowerCase()) {
+          return `Book with ${target}${timeWord}`;
+        }
+
+        return `Book${timeWord}`;
+      },
+      condition: (match) => {
+        // Don't apply to already correct CTAs like "Book Now"
+        if (/^book\s*(now|today)?\s*$/i.test(match)) return false;
+        return !/(with|at)\s/i.test(match);
+      }
     }
   ];
 
@@ -661,7 +734,12 @@ function fixCTAGrammar(cta: string, businessName: string, businessType: string, 
     if (fix.pattern.test(fixedCTA)) {
       // Check condition if provided
       if (!fix.condition || fix.condition(fixedCTA)) {
-        fixedCTA = fixedCTA.replace(fix.pattern, fix.replacement);
+        const originalCTA = fixedCTA;
+        if (typeof fix.replacement === 'function') {
+          fixedCTA = fix.replacement(fixedCTA);
+        } else {
+          fixedCTA = fixedCTA.replace(fix.pattern, fix.replacement);
+        }
         console.log(`🔧 [Revo 1.5] Fixed CTA grammar: "${cta}" -> "${fixedCTA}"`);
         break;
       }
@@ -683,17 +761,17 @@ function fixCTAGrammar(cta: string, businessName: string, businessType: string, 
 function generateContextualCTA(businessType: string, businessName: string, location: string): string {
   const type = businessType.toLowerCase();
 
-  // Business-specific CTA patterns with proper grammar
+  // Natural, business-specific CTA patterns
   const ctaPatterns: Record<string, string[]> = {
-    restaurant: ['Dine with Us', 'Order from Us', 'Reserve Table', 'Book Now'],
-    food: ['Order from Us', 'Taste Today', 'Try Now', 'Order Online'],
-    cafe: ['Visit Us', 'Order from Us', 'Try Today', 'Come In'],
-    retail: ['Shop with Us', 'Browse Store', 'View Products', 'Shop Now'],
-    store: ['Shop with Us', 'Visit Store', 'Browse Now', 'Shop Today'],
-    electronics: ['Shop with Us', 'View Products', 'Compare Now', 'Browse Tech'],
-    fashion: ['Shop with Us', 'Browse Style', 'View Collection', 'Shop Fashion'],
-    salon: ['Book with Us', 'Schedule Now', 'Book Today', 'Reserve Spot'],
-    spa: ['Book with Us', 'Relax Today', 'Schedule Now', 'Book Session'],
+    restaurant: ['Dine Today', 'Order Now', 'Reserve Table', 'Book Now'],
+    food: ['Order Now', 'Taste Today', 'Try Now', 'Order Online'],
+    cafe: ['Visit Us', 'Order Now', 'Try Today', 'Come In'],
+    retail: ['Shop Now', 'Browse Store', 'View Products', 'Explore'],
+    store: ['Shop Now', 'Visit Store', 'Browse Now', 'Shop Today'],
+    electronics: ['Shop Now', 'View Products', 'Compare Now', 'Browse Tech'],
+    fashion: ['Shop Now', 'Browse Style', 'View Collection', 'Explore Fashion'],
+    salon: ['Book Now', 'Schedule Now', 'Book Today', 'Reserve Spot'],
+    spa: ['Book Now', 'Relax Today', 'Schedule Now', 'Book Session'],
     fitness: ['Join Us', 'Start Today', 'Book Session', 'Get Fit'],
     medical: ['Schedule Now', 'Book Appointment', 'Call Today', 'Contact Us'],
     dental: ['Schedule Now', 'Book Appointment', 'Call Today', 'Book Visit'],
@@ -1182,14 +1260,14 @@ Create engaging content:
 1. Caption (2-3 sentences): Authentic business story with specific benefits
 2. Headline (5-8 words): Compelling, specific to this business
 3. Subheadline (8-15 words): Explains how the service delivers value
-4. Business-specific CTA (2-5 words): Use proper English grammar with prepositions when needed
-   - CORRECT: "Shop at [Business]", "Visit [Business]", "Order from [Business]", "Book with [Business]"
-   - INCORRECT: "Shop [Business]", "Visit [City]", "Order [Business]"
+4. Business-specific CTA (2-4 words): Use natural, professional English that sounds conversational
+   - NATURAL: "Shop Now", "Order Today", "Book Now", "Visit Us", "Get Quote"
+   - AVOID: Awkward constructions like "Shop [Business Name]" or forced prepositions
    - Examples by business type:
-     * Retail/Store: "Shop at [Business]", "Browse Our Store", "View Products"
-     * Restaurant: "Dine at [Business]", "Order from [Business]", "Reserve Table"
-     * Services: "Book with [Business]", "Schedule Today", "Get Quote"
-     * Professional: "Consult with [Business]", "Contact [Business]", "Learn More"
+     * Retail/Store: "Shop Now", "Browse Store", "View Products", "Explore"
+     * Restaurant: "Order Now", "Reserve Table", "Dine Today", "Book Now"
+     * Services: "Book Now", "Schedule Today", "Get Quote", "Contact Us"
+     * Professional: "Learn More", "Contact Us", "Get Started", "Schedule Call"
 5. ${hashtagCount} relevant hashtags for ${platform}
 
 
