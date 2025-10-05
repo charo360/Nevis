@@ -27,7 +27,7 @@ export interface AddOn {
 export const pricingPlans: PricingPlan[] = [
   {
     id: 'free',
-    name: 'Free Plan',
+    name: 'Try Agent Free',
     price: 0,
     credits: 10,
     costPerCredit: 0,
@@ -43,10 +43,10 @@ export const pricingPlans: PricingPlan[] = [
   },
   {
     id: 'starter',
-    name: 'Starter Pack',
-    price: 0.5,
+    name: 'Starter Agent',
+    price: 9.99,
     credits: 40,
-    costPerCredit: 0.20,
+    costPerCredit: 0.25,
     icon: 'zap',
     description: 'Ideal for occasional users or testers',
     features: [
@@ -58,10 +58,10 @@ export const pricingPlans: PricingPlan[] = [
   },
   {
     id: 'growth',
-    name: 'Growth Pack',
-    price: 29,
-    credits: 120,
-    costPerCredit: 0.19,
+    name: 'Growth Agent',
+    price: 24.99,
+    credits: 100,
+    costPerCredit: 0.25,
     icon: 'rocket',
     popular: true,
     description: 'Most popular for growing businesses',
@@ -75,10 +75,10 @@ export const pricingPlans: PricingPlan[] = [
   },
   {
     id: 'pro',
-    name: 'Pro Pack',
-    price: 49,
-    credits: 220,
-    costPerCredit: 0.196,
+    name: 'Pro Agent',
+    price: 59.99,
+    credits: 250,
+    costPerCredit: 0.24,
     icon: 'crown',
     description: 'For professional content creators',
     features: [
@@ -90,11 +90,11 @@ export const pricingPlans: PricingPlan[] = [
     bonuses: ['Early access to new features']
   },
   {
-    id: 'power',
-    name: 'Power Users Pack',
-    price: 99,
-    credits: 500,
-    costPerCredit: 0.18,
+    id: 'enterprise',
+    name: 'Enterprise Agent',
+    price: 199.99,
+    credits: 1000,
+    costPerCredit: 0.20,
     icon: 'crown',
     description: 'For agencies and power users',
     features: [

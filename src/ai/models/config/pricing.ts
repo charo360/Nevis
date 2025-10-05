@@ -12,10 +12,10 @@ export const modelPricing: Record<RevoModelId, ModelPricing> = {
 
 export const creditPackages = {
   free: { name: 'Try Agent Free', credits: 10, price: 0, pricePerCredit: 0, bestFor: 'revo-1.0' },
-  starter: { name: 'Starter Pack', credits: 40, price: 0.5, pricePerCredit: 0.20, bestFor: 'revo-1.0' },
-  growth: { name: 'Growth Pack', credits: 120, price: 29, pricePerCredit: 0.19, bestFor: 'revo-1.5' },
-  pro: { name: 'Pro Pack', credits: 220, price: 49, pricePerCredit: 0.196, bestFor: 'revo-1.5' },
-  power: { name: 'Power Users Pack', credits: 500, price: 99, pricePerCredit: 0.18, bestFor: 'revo-2.0' }
+  starter: { name: 'Starter Pack', credits: 40, price: 9.99, pricePerCredit: 0.25, bestFor: 'revo-1.0' },
+  growth: { name: 'Growth Pack', credits: 100, price: 24.99, pricePerCredit: 0.25, bestFor: 'revo-1.5' },
+  pro: { name: 'Pro Pack', credits: 250, price: 59.99, pricePerCredit: 0.24, bestFor: 'revo-1.5' },
+  enterprise: { name: 'Enterprise Pack', credits: 1000, price: 199.99, pricePerCredit: 0.20, bestFor: 'revo-2.0' }
 } as const;
 
 export function getModelPricing(modelId: RevoModelId): ModelPricing {
