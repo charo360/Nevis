@@ -7,6 +7,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import OpenAI from 'openai';
 import type { BrandProfile, Platform } from '@/lib/types';
 import { aiProxyClient, getUserIdForProxy, getUserTierForProxy, shouldUseProxy } from '@/lib/services/ai-proxy-client';
+import { generateTextWithFallback, generateImageWithFallback } from '@/lib/services/ai-fallback-service';
 
 // Lazily initialize AI clients to avoid import-time failures when environment variables
 // (OPENAI_API_KEY, GEMINI_API_KEY, etc.) are not present. Clients are created only
@@ -42,25 +43,35 @@ function createSafeModel(modelName: string, config?: any) {
   return model;
 }
 
-// Helper function to route AI calls through proxy when enabled
-async function generateContentWithProxy(promptOrParts: string | any[], modelName: string, isImageGeneration: boolean = false): Promise<any> {
-  if (shouldUseProxy()) {
-    console.log(`🔄 Revo 2.0: Using proxy for ${isImageGeneration ? 'image' : 'text'} generation with ${modelName}`);
+// Enhanced helper function with OpenRouter fallback
+async function generateContentWithFallback(promptOrParts: string | any[], modelName: string, isImageGeneration: boolean = false): Promise<any> {
+  console.log(`🎯 Revo 2.0: Starting ${isImageGeneration ? 'image' : 'text'} generation with fallback system`);
 
-    try {
-      // Convert parts array to string for proxy (simplified for now)
-      const prompt = Array.isArray(promptOrParts)
-        ? promptOrParts.filter(part => typeof part === 'string').join(' ')
-        : promptOrParts;
+  // Convert parts array to string for fallback service
+  const prompt = Array.isArray(promptOrParts)
+    ? promptOrParts.filter(part => typeof part === 'string').join(' ')
+    : promptOrParts;
+
+  try {
+    // Use the fallback service which handles proxy + OpenRouter fallback
+    const result = isImageGeneration
+      ? await generateImageWithFallback({
+        prompt,
+        model: modelName,
+        user_id: getUserIdForProxy(),
+        user_tier: getUserTierForProxy()
+      })
+      : await generateTextWithFallback({
+        prompt,
+        model: modelName,
+        user_id: getUserIdForProxy(),
+        user_tier: getUserTierForProxy()
+      });
+
+    if (result.success) {
+      console.log(`✅ Revo 2.0: Generation successful via ${result.provider}`);
 
       if (isImageGeneration) {
-        const response = await aiProxyClient.generateImage({
-          prompt,
-          model: modelName,
-          user_id: getUserIdForProxy(),
-          user_tier: getUserTierForProxy()
-        });
-
         // Mock the Google AI response structure for image generation
         return {
           response: {
@@ -69,7 +80,9 @@ async function generateContentWithProxy(promptOrParts: string | any[], modelName
                 parts: [{
                   inlineData: {
                     mimeType: 'image/png',
-                    data: response.imageUrl.split(',')[1] || response.imageUrl
+                    data: result.imageUrl?.includes('data:')
+                      ? result.imageUrl.split(',')[1]
+                      : result.imageUrl
                   }
                 }]
               }
@@ -77,24 +90,24 @@ async function generateContentWithProxy(promptOrParts: string | any[], modelName
           }
         };
       } else {
-        const response = await aiProxyClient.generateText({
-          prompt,
-          model: modelName,
-          user_id: getUserIdForProxy(),
-          user_tier: getUserTierForProxy()
-        });
-        return { response: { text: () => response.content } };
+        return { response: { text: () => result.content } };
       }
-    } catch (error) {
-      console.error('❌ Proxy call failed, falling back to direct API:', error);
-      // Fall back to direct API call
+    } else {
+      throw new Error(result.error || 'All AI services failed');
+    }
+  } catch (error) {
+    console.error('❌ Revo 2.0: All fallback methods failed:', error);
+
+    // Final fallback to direct Google AI (if possible)
+    try {
+      console.log(`🔄 Revo 2.0: Attempting final direct Google AI fallback`);
+      const model = createSafeModel(modelName);
+      return await model.generateContent(promptOrParts);
+    } catch (directError) {
+      console.error('❌ Revo 2.0: Direct Google AI also failed:', directError);
+      throw new Error(`All AI generation methods failed: ${error}`);
     }
   }
-
-  // Direct API call (fallback or when proxy disabled)
-  console.log(`🔄 Revo 2.0: Using direct API for ${isImageGeneration ? 'image' : 'text'} generation with ${modelName}`);
-  const model = createSafeModel(modelName);
-  return await model.generateContent(promptOrParts);
 }
 
 function getOpenAIClient(): OpenAI {
@@ -295,7 +308,7 @@ async function generateCreativeConcept(options: Revo20GenerationOptions): Promis
 
     Return a brief creative concept (2-3 sentences) that will guide the visual design.`;
 
-    const result = await generateContentWithProxy(conceptPrompt, REVO_2_0_MODEL, false);
+    const result = await generateContentWithFallback(conceptPrompt, REVO_2_0_MODEL, false);
     const response = await result.response;
     const conceptText = response.text();
 
@@ -552,7 +565,7 @@ The client specifically requested their brand logo to be included. FAILURE TO IN
     }
 
     console.log('🔄 Revo 2.0: Generating image with Gemini 2.0 Flash Image Generation...');
-    const result = await generateContentWithProxy(generationParts, REVO_2_0_MODEL, true);
+    const result = await generateContentWithFallback(generationParts, REVO_2_0_MODEL, true);
     const response = await result.response;
 
     console.log('📊 Revo 2.0: Response received:', {
@@ -772,7 +785,7 @@ Format as JSON:
     // Add the text prompt to generation parts
     generationParts.push(contentPrompt);
 
-    const result = await generateContentWithProxy(generationParts, REVO_2_0_MODEL, false);
+    const result = await generateContentWithFallback(generationParts, REVO_2_0_MODEL, false);
     const response = await result.response;
     const content = response.text();
 
@@ -1029,7 +1042,7 @@ export async function testRevo20Availability(): Promise<boolean> {
       console.error('❌ Guard: Tools detected on model initialization. Blocking to avoid search charges.');
       throw new Error('Guard: Tools are disabled for Gemini usage in this project.');
     }
-    const response = await generateContentWithProxy('Create a simple test image with the text "Revo 2.0 Test" on a modern gradient background', REVO_2_0_MODEL, true);
+    const response = await generateContentWithFallback('Create a simple test image with the text "Revo 2.0 Test" on a modern gradient background', REVO_2_0_MODEL, true);
 
     const result = await response.response;
     const candidates = result.candidates;

@@ -5,6 +5,7 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { aiProxyClient, getUserIdForProxy, getUserTierForProxy, shouldUseProxy } from '@/lib/services/ai-proxy-client';
+import { generateTextWithFallback, generateImageWithFallback } from '@/lib/services/ai-fallback-service';
 
 // Initialize Google AI with API key - Use Revo 1.5 specific key
 const apiKey = process.env.GEMINI_API_KEY_REVO_1_5 || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
@@ -65,115 +66,117 @@ export async function generateText(
 
     console.log(`🔍 [Google AI Direct] Generating text with model: ${model}`);
 
-    // Check if proxy should be used
-    if (shouldUseProxy()) {
-      console.log(`🔄 Revo 1.5: Using proxy for text generation with ${model}`);
+    // Use fallback system (proxy + OpenRouter)
+    console.log(`🎯 Revo 1.5: Using fallback system for text generation with ${model}`);
 
-      try {
-        const response = await aiProxyClient.generateText({
-          prompt,
-          model,
-          user_id: getUserIdForProxy(),
-          user_tier: getUserTierForProxy()
-        });
+    try {
+      const result = await generateTextWithFallback({
+        prompt,
+        model,
+        temperature,
+        maxTokens: maxOutputTokens,
+        user_id: getUserIdForProxy(),
+        user_tier: getUserTierForProxy()
+      });
 
+      if (result.success) {
+        console.log(`✅ Revo 1.5: Text generation successful via ${result.provider}`);
         return {
-          text: response.content,
+          text: result.content || '',
           finishReason: 'STOP'
         };
-      } catch (error) {
-        console.error('❌ Proxy call failed, falling back to direct API:', error);
-        // Fall through to direct API call
+      } else {
+        throw new Error(result.error || 'Fallback system failed');
       }
+    } catch (error) {
+      console.error('❌ Revo 1.5: Fallback system failed, trying direct Google AI:', error);
+
+      // Final fallback to direct Google AI
+      console.log(`🔄 Revo 1.5: Using direct Google AI as final fallback`);
+      console.log(`🔍 [Google AI Direct] API Key available: ${!!apiKey}`);
+
+      const geminiModel = genAI.getGenerativeModel({
+        model,
+        generationConfig: {
+          temperature,
+          maxOutputTokens,
+          topK,
+          topP,
+        },
+      });
+
+      const result = await geminiModel.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+
+      console.log(`✅ [Google AI Direct] Text generation successful, length: ${text.length}`);
+      console.log(`🔍 [Google AI Direct] Response preview: ${text.substring(0, 200)}...`);
+      console.log(`🔍 [Google AI Direct] Finish reason: ${response.candidates?.[0]?.finishReason}`);
+      console.log(`🔍 [Google AI Direct] Safety ratings:`, response.candidates?.[0]?.safetyRatings);
+
+      return {
+        text,
+        finishReason: response.candidates?.[0]?.finishReason,
+        safetyRatings: response.candidates?.[0]?.safetyRatings,
+      };
+
+    } catch (error) {
+      console.error(`❌ [Google AI Direct] Text generation error:`, {
+        error: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : 'No stack trace',
+        model: options.model || GEMINI_2_5_MODELS.FLASH
+      });
+
+      // Handle specific error types with user-friendly messages
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+      if (errorMessage.includes('429') || errorMessage.includes('quota') || errorMessage.includes('Too Many Requests')) {
+        throw new Error('😅 Revo is experiencing high demand right now! Please try again in a few minutes or switch to Revo 2.0.');
+      }
+
+      if (errorMessage.includes('401') || errorMessage.includes('unauthorized') || errorMessage.includes('API key')) {
+        throw new Error('🔧 Revo is having a technical hiccup. Please try Revo 2.0 while we fix this!');
+      }
+
+      if (errorMessage.includes('403') || errorMessage.includes('forbidden')) {
+        throw new Error('🔧 Revo is having a technical hiccup. Please try Revo 2.0 while we fix this!');
+      }
+
+      if (errorMessage.includes('network') || errorMessage.includes('timeout') || errorMessage.includes('ECONNRESET')) {
+        throw new Error('🌐 Connection hiccup! Please try again in a moment.');
+      }
+
+      throw new Error('😅 Revo is having some trouble right now! Try Revo 2.0 for great results while we get things sorted out.');
     }
-
-    // Direct API call (fallback or when proxy disabled)
-    console.log(`🔄 Revo 1.5: Using direct API for text generation with ${model}`);
-    console.log(`🔍 [Google AI Direct] API Key available: ${!!apiKey}`);
-    console.log(`🔍 [Google AI Direct] API Key prefix: ${apiKey?.substring(0, 10)}...`);
-
-    const geminiModel = genAI.getGenerativeModel({
-      model,
-      generationConfig: {
-        temperature,
-        maxOutputTokens,
-        topK,
-        topP,
-      },
-    });
-
-    const result = await geminiModel.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-
-    console.log(`✅ [Google AI Direct] Text generation successful, length: ${text.length}`);
-    console.log(`🔍 [Google AI Direct] Response preview: ${text.substring(0, 200)}...`);
-    console.log(`🔍 [Google AI Direct] Finish reason: ${response.candidates?.[0]?.finishReason}`);
-    console.log(`🔍 [Google AI Direct] Safety ratings:`, response.candidates?.[0]?.safetyRatings);
-
-    return {
-      text,
-      finishReason: response.candidates?.[0]?.finishReason,
-      safetyRatings: response.candidates?.[0]?.safetyRatings,
-    };
-
-  } catch (error) {
-    console.error(`❌ [Google AI Direct] Text generation error:`, {
-      error: error instanceof Error ? error.message : error,
-      stack: error instanceof Error ? error.stack : 'No stack trace',
-      model: options.model || GEMINI_2_5_MODELS.FLASH
-    });
-
-    // Handle specific error types with user-friendly messages
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
-    if (errorMessage.includes('429') || errorMessage.includes('quota') || errorMessage.includes('Too Many Requests')) {
-      throw new Error('😅 Revo is experiencing high demand right now! Please try again in a few minutes or switch to Revo 2.0.');
-    }
-
-    if (errorMessage.includes('401') || errorMessage.includes('unauthorized') || errorMessage.includes('API key')) {
-      throw new Error('🔧 Revo is having a technical hiccup. Please try Revo 2.0 while we fix this!');
-    }
-
-    if (errorMessage.includes('403') || errorMessage.includes('forbidden')) {
-      throw new Error('🔧 Revo is having a technical hiccup. Please try Revo 2.0 while we fix this!');
-    }
-
-    if (errorMessage.includes('network') || errorMessage.includes('timeout') || errorMessage.includes('ECONNRESET')) {
-      throw new Error('🌐 Connection hiccup! Please try again in a moment.');
-    }
-
-    throw new Error('😅 Revo is having some trouble right now! Try Revo 2.0 for great results while we get things sorted out.');
   }
-}
 
 /**
  * Generate image using Gemini 2.5 models (when image generation is available)
  */
 export async function generateImage(
-  prompt: string,
-  options: Gemini25GenerateOptions = {}
-): Promise<Gemini25ImageResponse> {
-  try {
-    const {
-      model = GEMINI_2_5_MODELS.FLASH,
-      temperature = 0.8,
-      maxOutputTokens = 1024,
-    } = options;
+    prompt: string,
+    options: Gemini25GenerateOptions = {}
+  ): Promise<Gemini25ImageResponse> {
+    try {
+      const {
+        model = GEMINI_2_5_MODELS.FLASH,
+        temperature = 0.8,
+        maxOutputTokens = 1024,
+      } = options;
 
 
-    const geminiModel = genAI.getGenerativeModel({
-      model,
-      generationConfig: {
-        temperature,
-        maxOutputTokens,
-      },
-    });
+      const geminiModel = genAI.getGenerativeModel({
+        model,
+        generationConfig: {
+          temperature,
+          maxOutputTokens,
+        },
+      });
 
-    // For now, Gemini 2.5 doesn't have direct image generation
-    // This is a placeholder for when it becomes available
-    // We'll use text generation to create detailed design specifications
-    const designPrompt = `Create a detailed visual design specification for: ${prompt}
+      // For now, Gemini 2.5 doesn't have direct image generation
+      // This is a placeholder for when it becomes available
+      // We'll use text generation to create detailed design specifications
+      const designPrompt = `Create a detailed visual design specification for: ${prompt}
 
 Please provide:
 1. Color palette (specific hex codes)
@@ -185,189 +188,189 @@ Please provide:
 
 Format as JSON for easy parsing.`;
 
-    // Check if proxy should be used
-    if (shouldUseProxy()) {
-      console.log(`🔄 Revo 1.5: Using proxy for image generation with ${model}`);
+      // Check if proxy should be used
+      if (shouldUseProxy()) {
+        console.log(`🔄 Revo 1.5: Using proxy for image generation with ${model}`);
 
-      try {
-        const response = await aiProxyClient.generateText({
-          prompt: designPrompt,
-          model,
-          user_id: getUserIdForProxy(),
-          user_tier: getUserTierForProxy()
-        });
+        try {
+          const response = await aiProxyClient.generateText({
+            prompt: designPrompt,
+            model,
+            user_id: getUserIdForProxy(),
+            user_tier: getUserTierForProxy()
+          });
 
-        return {
-          imageData: Buffer.from(response.content).toString('base64'),
-          mimeType: 'application/json',
-          finishReason: 'STOP'
-        };
-      } catch (error) {
-        console.error('❌ Proxy call failed, falling back to direct API:', error);
-        // Fall through to direct API call
-      }
-    }
-
-    // Direct API call (fallback or when proxy disabled)
-    console.log(`🔄 Revo 1.5: Using direct API for image generation with ${model}`);
-
-    const result = await geminiModel.generateContent(designPrompt);
-    const response = await result.response;
-    const designSpecs = response.text();
-
-
-    // Return design specifications as "image data" for now
-    // This will be used to generate actual images via other services
-    return {
-      imageData: Buffer.from(designSpecs).toString('base64'),
-      mimeType: 'application/json',
-      finishReason: response.candidates?.[0]?.finishReason,
-      safetyRatings: response.candidates?.[0]?.safetyRatings,
-    };
-
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
-    if (errorMessage.includes('429') || errorMessage.includes('quota') || errorMessage.includes('Too Many Requests')) {
-      throw new Error('😅 Revo is experiencing high demand right now! Please try again in a few minutes or switch to Revo 2.0.');
-    }
-
-    throw new Error('😅 Revo is having some trouble right now! Try Revo 2.0 for great results while we get things sorted out.');
-  }
-}
-
-/**
- * Generate multimodal content (text + image analysis)
- */
-export async function generateMultimodal(
-  textPrompt: string,
-  imageData?: string, // Base64 encoded image
-  options: Gemini25GenerateOptions = {}
-): Promise<Gemini25TextResponse> {
-  try {
-    const {
-      model = GEMINI_2_5_MODELS.FLASH,
-      temperature = 0.7,
-      maxOutputTokens = 2048,
-    } = options;
-
-    // Check if proxy should be used
-    if (shouldUseProxy()) {
-      console.log(`🔄 Revo 1.5: Using proxy for multimodal generation with ${model}`);
-
-      try {
-        // For multimodal, we'll use text generation through proxy for now
-        // (Image analysis through proxy would need additional implementation)
-        const response = await aiProxyClient.generateText({
-          prompt: textPrompt,
-          model,
-          user_id: getUserIdForProxy(),
-          user_tier: getUserTierForProxy()
-        });
-
-        return {
-          text: response.content,
-          finishReason: 'STOP'
-        };
-      } catch (error) {
-        console.error('❌ Proxy call failed, falling back to direct API:', error);
-        // Fall through to direct API call
-      }
-    }
-
-    // Direct API call (fallback or when proxy disabled)
-    console.log(`🔄 Revo 1.5: Using direct API for multimodal generation with ${model}`);
-
-    const geminiModel = genAI.getGenerativeModel({
-      model,
-      generationConfig: {
-        temperature,
-        maxOutputTokens,
-      },
-    });
-
-    let parts: any[] = [{ text: textPrompt }];
-
-    // Add image if provided
-    if (imageData) {
-      parts.push({
-        inlineData: {
-          mimeType: 'image/jpeg', // Assume JPEG for now
-          data: imageData
+          return {
+            imageData: Buffer.from(response.content).toString('base64'),
+            mimeType: 'application/json',
+            finishReason: 'STOP'
+          };
+        } catch (error) {
+          console.error('❌ Proxy call failed, falling back to direct API:', error);
+          // Fall through to direct API call
         }
-      });
+      }
+
+      // Direct API call (fallback or when proxy disabled)
+      console.log(`🔄 Revo 1.5: Using direct API for image generation with ${model}`);
+
+      const result = await geminiModel.generateContent(designPrompt);
+      const response = await result.response;
+      const designSpecs = response.text();
+
+
+      // Return design specifications as "image data" for now
+      // This will be used to generate actual images via other services
+      return {
+        imageData: Buffer.from(designSpecs).toString('base64'),
+        mimeType: 'application/json',
+        finishReason: response.candidates?.[0]?.finishReason,
+        safetyRatings: response.candidates?.[0]?.safetyRatings,
+      };
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+      if (errorMessage.includes('429') || errorMessage.includes('quota') || errorMessage.includes('Too Many Requests')) {
+        throw new Error('😅 Revo is experiencing high demand right now! Please try again in a few minutes or switch to Revo 2.0.');
+      }
+
+      throw new Error('😅 Revo is having some trouble right now! Try Revo 2.0 for great results while we get things sorted out.');
     }
-
-    const result = await geminiModel.generateContent(parts);
-    const response = await result.response;
-    const text = response.text();
-
-
-    return {
-      text,
-      finishReason: response.candidates?.[0]?.finishReason,
-      safetyRatings: response.candidates?.[0]?.safetyRatings,
-    };
-
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
-    if (errorMessage.includes('429') || errorMessage.includes('quota') || errorMessage.includes('Too Many Requests')) {
-      throw new Error('😅 Revo is experiencing high demand right now! Please try again in a few minutes or switch to Revo 2.0.');
-    }
-
-    throw new Error('😅 Revo is having some trouble right now! Try Revo 2.0 for great results while we get things sorted out.');
   }
-}
 
-/**
- * Test connection to Gemini 2.5 API
- */
-export async function testConnection(): Promise<boolean> {
-  try {
+  /**
+   * Generate multimodal content (text + image analysis)
+   */
+  export async function generateMultimodal(
+    textPrompt: string,
+    imageData?: string, // Base64 encoded image
+    options: Gemini25GenerateOptions = {}
+  ): Promise<Gemini25TextResponse> {
+    try {
+      const {
+        model = GEMINI_2_5_MODELS.FLASH,
+        temperature = 0.7,
+        maxOutputTokens = 2048,
+      } = options;
 
-    const response = await generateText('Hello, this is a test message. Please respond with "Connection successful!"', {
-      model: GEMINI_2_5_MODELS.FLASH,
-      maxOutputTokens: 50
-    });
+      // Check if proxy should be used
+      if (shouldUseProxy()) {
+        console.log(`🔄 Revo 1.5: Using proxy for multimodal generation with ${model}`);
 
-    const isSuccessful = response.text.toLowerCase().includes('connection successful') ||
-      response.text.toLowerCase().includes('hello') ||
-      response.text.length > 0;
+        try {
+          // For multimodal, we'll use text generation through proxy for now
+          // (Image analysis through proxy would need additional implementation)
+          const response = await aiProxyClient.generateText({
+            prompt: textPrompt,
+            model,
+            user_id: getUserIdForProxy(),
+            user_tier: getUserTierForProxy()
+          });
 
-    if (isSuccessful) {
-      return true;
-    } else {
+          return {
+            text: response.content,
+            finishReason: 'STOP'
+          };
+        } catch (error) {
+          console.error('❌ Proxy call failed, falling back to direct API:', error);
+          // Fall through to direct API call
+        }
+      }
+
+      // Direct API call (fallback or when proxy disabled)
+      console.log(`🔄 Revo 1.5: Using direct API for multimodal generation with ${model}`);
+
+      const geminiModel = genAI.getGenerativeModel({
+        model,
+        generationConfig: {
+          temperature,
+          maxOutputTokens,
+        },
+      });
+
+      let parts: any[] = [{ text: textPrompt }];
+
+      // Add image if provided
+      if (imageData) {
+        parts.push({
+          inlineData: {
+            mimeType: 'image/jpeg', // Assume JPEG for now
+            data: imageData
+          }
+        });
+      }
+
+      const result = await geminiModel.generateContent(parts);
+      const response = await result.response;
+      const text = response.text();
+
+
+      return {
+        text,
+        finishReason: response.candidates?.[0]?.finishReason,
+        safetyRatings: response.candidates?.[0]?.safetyRatings,
+      };
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+      if (errorMessage.includes('429') || errorMessage.includes('quota') || errorMessage.includes('Too Many Requests')) {
+        throw new Error('😅 Revo is experiencing high demand right now! Please try again in a few minutes or switch to Revo 2.0.');
+      }
+
+      throw new Error('😅 Revo is having some trouble right now! Try Revo 2.0 for great results while we get things sorted out.');
+    }
+  }
+
+  /**
+   * Test connection to Gemini 2.5 API
+   */
+  export async function testConnection(): Promise<boolean> {
+    try {
+
+      const response = await generateText('Hello, this is a test message. Please respond with "Connection successful!"', {
+        model: GEMINI_2_5_MODELS.FLASH,
+        maxOutputTokens: 50
+      });
+
+      const isSuccessful = response.text.toLowerCase().includes('connection successful') ||
+        response.text.toLowerCase().includes('hello') ||
+        response.text.length > 0;
+
+      if (isSuccessful) {
+        return true;
+      } else {
+        return false;
+      }
+
+    } catch (error) {
       return false;
     }
-
-  } catch (error) {
-    return false;
   }
-}
 
-/**
- * Get available models and their capabilities
- */
-export function getAvailableModels() {
-  return {
-    models: GEMINI_2_5_MODELS,
-    capabilities: {
-      [GEMINI_2_5_MODELS.FLASH]: {
-        description: 'Fast and efficient for most tasks',
-        bestFor: ['content generation', 'design specifications', 'quick responses'],
-        costEfficiency: 'high'
-      },
-      [GEMINI_2_5_MODELS.PRO]: {
-        description: 'Most capable but expensive - AVOID for cost efficiency',
-        bestFor: ['complex analysis', 'detailed design planning', 'sophisticated content'],
-        costEfficiency: 'LOW - USE FLASH INSTEAD'
-      },
-      [GEMINI_2_5_MODELS.FLASH_LITE]: {
-        description: 'Lightweight and cost-effective',
-        bestFor: ['simple tasks', 'quick responses', 'high-volume requests'],
-        costEfficiency: 'very high'
+  /**
+   * Get available models and their capabilities
+   */
+  export function getAvailableModels() {
+    return {
+      models: GEMINI_2_5_MODELS,
+      capabilities: {
+        [GEMINI_2_5_MODELS.FLASH]: {
+          description: 'Fast and efficient for most tasks',
+          bestFor: ['content generation', 'design specifications', 'quick responses'],
+          costEfficiency: 'high'
+        },
+        [GEMINI_2_5_MODELS.PRO]: {
+          description: 'Most capable but expensive - AVOID for cost efficiency',
+          bestFor: ['complex analysis', 'detailed design planning', 'sophisticated content'],
+          costEfficiency: 'LOW - USE FLASH INSTEAD'
+        },
+        [GEMINI_2_5_MODELS.FLASH_LITE]: {
+          description: 'Lightweight and cost-effective',
+          bestFor: ['simple tasks', 'quick responses', 'high-volume requests'],
+          costEfficiency: 'very high'
+        }
       }
-    }
-  };
-}
+    };
+  }

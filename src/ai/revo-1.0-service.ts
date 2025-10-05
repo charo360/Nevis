@@ -6,6 +6,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { BrandProfile } from '@/lib/types';
 import { aiProxyClient, getUserIdForProxy, getUserTierForProxy, shouldUseProxy } from '@/lib/services/ai-proxy-client';
+import { generateTextWithFallback, generateImageWithFallback } from '@/lib/services/ai-fallback-service';
 import { revo10Config, revo10Prompts } from './models/versions/revo-1.0/config';
 import type { ScheduledService } from '@/services/calendar-service';
 import { advancedContentGenerator, BusinessProfile } from './advanced-content-generator';
@@ -2066,25 +2067,35 @@ const ai = new GoogleGenerativeAI(apiKey);
 // Revo 1.0 uses the configured Gemini model
 const REVO_1_0_MODEL = revo10Config.aiService;
 
-// Helper function to route AI calls through proxy when enabled
-async function generateContentWithProxy(promptOrParts: string | any[], modelName: string, isImageGeneration: boolean = false): Promise<any> {
-  if (shouldUseProxy()) {
-    console.log(`🔄 Revo 1.0: Using proxy for ${isImageGeneration ? 'image' : 'text'} generation with ${modelName}`);
+// Enhanced helper function with OpenRouter fallback
+async function generateContentWithFallback(promptOrParts: string | any[], modelName: string, isImageGeneration: boolean = false): Promise<any> {
+  console.log(`🎯 Revo 1.0: Starting ${isImageGeneration ? 'image' : 'text'} generation with fallback system`);
 
-    try {
-      // Convert parts array to string for proxy (simplified for now)
-      const prompt = Array.isArray(promptOrParts)
-        ? promptOrParts.filter(part => typeof part === 'string').join(' ')
-        : promptOrParts;
+  // Convert parts array to string for fallback service
+  const prompt = Array.isArray(promptOrParts)
+    ? promptOrParts.filter(part => typeof part === 'string').join(' ')
+    : promptOrParts;
+
+  try {
+    // Use the fallback service which handles proxy + OpenRouter fallback
+    const result = isImageGeneration
+      ? await generateImageWithFallback({
+        prompt,
+        model: modelName,
+        user_id: getUserIdForProxy(),
+        user_tier: getUserTierForProxy()
+      })
+      : await generateTextWithFallback({
+        prompt,
+        model: modelName,
+        user_id: getUserIdForProxy(),
+        user_tier: getUserTierForProxy()
+      });
+
+    if (result.success) {
+      console.log(`✅ Revo 1.0: Generation successful via ${result.provider}`);
 
       if (isImageGeneration) {
-        const response = await aiProxyClient.generateImage({
-          prompt,
-          model: modelName,
-          user_id: getUserIdForProxy(),
-          user_tier: getUserTierForProxy()
-        });
-
         // Mock the Google AI response structure for image generation
         return {
           response: {
@@ -2093,7 +2104,9 @@ async function generateContentWithProxy(promptOrParts: string | any[], modelName
                 parts: [{
                   inlineData: {
                     mimeType: 'image/png',
-                    data: response.imageUrl.split(',')[1] || response.imageUrl
+                    data: result.imageUrl?.includes('data:')
+                      ? result.imageUrl.split(',')[1]
+                      : result.imageUrl
                   }
                 }]
               }
@@ -2101,24 +2114,24 @@ async function generateContentWithProxy(promptOrParts: string | any[], modelName
           }
         };
       } else {
-        const response = await aiProxyClient.generateText({
-          prompt,
-          model: modelName,
-          user_id: getUserIdForProxy(),
-          user_tier: getUserTierForProxy()
-        });
-        return { response: { text: () => response.content } };
+        return { response: { text: () => result.content } };
       }
-    } catch (error) {
-      console.error('❌ Proxy call failed, falling back to direct API:', error);
-      // Fall back to direct API call
+    } else {
+      throw new Error(result.error || 'All AI services failed');
+    }
+  } catch (error) {
+    console.error('❌ Revo 1.0: All fallback methods failed:', error);
+
+    // Final fallback to direct Google AI (if possible)
+    try {
+      console.log(`🔄 Revo 1.0: Attempting final direct Google AI fallback`);
+      const model = ai.getGenerativeModel({ model: modelName });
+      return await model.generateContent(promptOrParts);
+    } catch (directError) {
+      console.error('❌ Revo 1.0: Direct Google AI also failed:', directError);
+      throw new Error(`All AI generation methods failed: ${error}`);
     }
   }
-
-  // Direct API call (fallback or when proxy disabled)
-  console.log(`🔄 Revo 1.0: Using direct API for ${isImageGeneration ? 'image' : 'text'} generation with ${modelName}`);
-  const model = ai.getGenerativeModel({ model: modelName });
-  return await model.generateContent(promptOrParts);
 }
 
 /**
@@ -2770,7 +2783,7 @@ Describe your creative concept in natural, designer language. Focus on the creat
 Remember: You're a creative human designer, not an AI. Think with imagination and artistic vision.`;
 
 
-    const result = await generateContentWithProxy([
+    const result = await generateContentWithFallback([
       revo10Prompts.DESIGN_SYSTEM_PROMPT,
       designPrompt
     ], REVO_1_0_MODEL, false);
@@ -3297,7 +3310,7 @@ You MUST include the exact brand logo image that was provided above in your desi
         async () => {
           for (let attempt = 1; attempt <= maxRetries; attempt++) {
             try {
-              const geminiResult = await generateContentWithProxy(generationParts, REVO_1_0_MODEL, true);
+              const geminiResult = await generateContentWithFallback(generationParts, REVO_1_0_MODEL, true);
               const geminiResponse = await geminiResult.response;
               return { result: geminiResult, response: geminiResponse };
             } catch (error: any) {
@@ -3384,7 +3397,7 @@ You MUST include the exact brand logo image that was provided above in your desi
         try {
           const strictParts = [...generationParts];
           strictParts[1] = (strictParts[1] || '') + `\nSTRICT DIMENSION ENFORCEMENT: Output must be exactly ${expectedW}x${expectedH} pixels. Do not adjust canvas based on logo.`;
-          const strictResult = await generateContentWithProxy(strictParts, REVO_1_0_MODEL, true);
+          const strictResult = await generateContentWithFallback(strictParts, REVO_1_0_MODEL, true);
           const strictResponse = await strictResult.response;
           const strictPartsOut = strictResponse.candidates?.[0]?.content?.parts || [];
           let strictImageUrl = '';
@@ -3435,7 +3448,7 @@ You MUST include the exact brand logo image that was provided above in your desi
 export async function checkRevo10Health() {
   try {
     const model = ai.getGenerativeModel({ model: REVO_1_0_MODEL });
-    const result = await generateContentWithProxy('Hello', REVO_1_0_MODEL, false);
+    const result = await generateContentWithFallback('Hello', REVO_1_0_MODEL, false);
     const response = await result.response;
 
     return {
