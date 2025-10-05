@@ -19,27 +19,20 @@ user_quotas = defaultdict(lambda: {"count": 0, "month": ""})
 
 # Allowed models to prevent unexpected model calls - Based on actual Nevis usage
 ALLOWED_MODELS = {
-    # Primary models used in Revo services
+    # Primary models used in Revo services (REMOVED gemini-2.5-pro - TOO EXPENSIVE)
     "gemini-2.5-flash-image-preview": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent",
     "gemini-2.5-flash": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
-    "gemini-2.5-pro": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent",
     "gemini-2.5-flash-lite": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent",
 
-    # Experimental models found in test files (use with caution)
-    "gemini-2.0-flash-exp-image-generation": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent",
-    "gemini-2.5-flash-exp": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-exp:generateContent",
-    "gemini-2.5-flash-experimental": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-experimental:generateContent",
-    "gemini-2.5-flash-thinking-exp": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-thinking-exp:generateContent",
-    "gemini-2.5-flash-thinking-exp-01-21": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-thinking-exp-01-21:generateContent",
-    "gemini-2.5-flash-thinking-exp-1219": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-thinking-exp-1219:generateContent",
-    "gemini-2.5-flash-002": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-002:generateContent",
-    "gemini-2.5-flash-001": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-001:generateContent",
-    "gemini-exp-1206": "https://generativelanguage.googleapis.com/v1beta/models/gemini-exp-1206:generateContent",
-    "gemini-exp-1121": "https://generativelanguage.googleapis.com/v1beta/models/gemini-exp-1121:generateContent",
+    # Legacy models (only if absolutely needed for fallback)
+    "gemini-1.5-flash": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
 
-    # Legacy models (if still needed)
-    "gemini-1.5-flash": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
-    "gemini-2.0-flash": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+    # REMOVED ALL EXPERIMENTAL MODELS - POTENTIAL HIGH COSTS:
+    # - gemini-2.0-flash-exp-image-generation
+    # - gemini-2.5-flash-exp, experimental, thinking-exp variants
+    # - gemini-exp-1206, gemini-exp-1121
+    # - All versioned models (002, 001, etc.)
+    # - gemini-2.0-flash (legacy)
 }
 
 class ImageRequest(BaseModel):
@@ -88,32 +81,22 @@ def get_api_key_for_model(model: str) -> str:
     """Get the appropriate API key based on the model being used"""
 
     # Map models to specific API keys based on Nevis configuration
+    # ONLY COST-EFFECTIVE MODELS ALLOWED
     model_to_key_mapping = {
-        # Revo 1.0 models
+        # Revo 1.0 models - Main image generation
         "gemini-2.5-flash-image-preview": "GEMINI_API_KEY_REVO_1_0",
 
-        # Revo 1.5 models
+        # Revo 1.5 models - Content generation
         "gemini-2.5-flash": "GEMINI_API_KEY_REVO_1_5",
         "gemini-2.5-flash-lite": "GEMINI_API_KEY_REVO_1_5",
 
-        # Revo 2.0 models
-        "gemini-2.5-pro": "GEMINI_API_KEY_REVO_2_0",
-        "gemini-2.0-flash-exp-image-generation": "GEMINI_API_KEY_REVO_2_0",
+        # Legacy models - Fallback only
+        "gemini-1.5-flash": "GEMINI_API_KEY"
 
-        # Experimental models - use Revo 2.0 key
-        "gemini-2.5-flash-exp": "GEMINI_API_KEY_REVO_2_0",
-        "gemini-2.5-flash-experimental": "GEMINI_API_KEY_REVO_2_0",
-        "gemini-2.5-flash-thinking-exp": "GEMINI_API_KEY_REVO_2_0",
-        "gemini-2.5-flash-thinking-exp-01-21": "GEMINI_API_KEY_REVO_2_0",
-        "gemini-2.5-flash-thinking-exp-1219": "GEMINI_API_KEY_REVO_2_0",
-        "gemini-2.5-flash-002": "GEMINI_API_KEY_REVO_2_0",
-        "gemini-2.5-flash-001": "GEMINI_API_KEY_REVO_2_0",
-        "gemini-exp-1206": "GEMINI_API_KEY_REVO_2_0",
-        "gemini-exp-1121": "GEMINI_API_KEY_REVO_2_0",
-
-        # Legacy models - use general key
-        "gemini-1.5-flash": "GEMINI_API_KEY",
-        "gemini-2.0-flash": "GEMINI_API_KEY"
+        # REMOVED ALL EXPENSIVE/EXPERIMENTAL MODELS:
+        # - gemini-2.5-pro (TOO EXPENSIVE)
+        # - All experimental models (UNKNOWN COSTS)
+        # - All thinking-exp models (POTENTIALLY EXPENSIVE)
     }
 
     # Get the specific API key for this model

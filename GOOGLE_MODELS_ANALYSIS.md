@@ -4,14 +4,22 @@
 
 Based on comprehensive codebase analysis, here are **ALL** the Google models currently used or referenced in your Nevis AI system:
 
-### 🎯 **Primary Production Models (Currently Active)**
+### 🎯 **APPROVED Models (Cost-Optimized)**
 
-| Model | Used In | API Key | Purpose |
-|-------|---------|---------|---------|
-| `gemini-2.5-flash-image-preview` | Revo 1.0, Revo 1.5, Revo 2.0 | `GEMINI_API_KEY_REVO_1_0` | Main image generation |
-| `gemini-2.5-flash` | Revo 1.5, Text generation | `GEMINI_API_KEY_REVO_1_5` | Content generation |
-| `gemini-2.5-pro` | Advanced features | `GEMINI_API_KEY_REVO_2_0` | Complex reasoning |
-| `gemini-2.5-flash-lite` | Cost-effective tasks | `GEMINI_API_KEY_REVO_1_5` | High-volume requests |
+| Model | Used In | API Key | Purpose | Cost |
+|-------|---------|---------|---------|------|
+| `gemini-2.5-flash-image-preview` | Revo 1.0, Revo 1.5, Revo 2.0 | `GEMINI_API_KEY_REVO_1_0` | Main image generation | Medium |
+| `gemini-2.5-flash` | Revo 1.5, Text generation | `GEMINI_API_KEY_REVO_1_5` | Content generation | Medium |
+| `gemini-2.5-flash-lite` | Cost-effective tasks | `GEMINI_API_KEY_REVO_1_5` | High-volume requests | **LOW** ✅ |
+| `gemini-1.5-flash` | Fallback only | `GEMINI_API_KEY` | Legacy fallback | Low |
+
+### ❌ **BLOCKED Models (Too Expensive)**
+
+| Model | Reason | Risk |
+|-------|--------|------|
+| `gemini-2.5-pro` | **TOO EXPENSIVE** | 🚫 BLOCKED |
+| All experimental models | **UNKNOWN COSTS** | 🚫 BLOCKED |
+| All thinking-exp models | **POTENTIALLY EXPENSIVE** | 🚫 BLOCKED |
 
 ### 🧪 **Experimental Models (In Test Files)**
 
@@ -96,14 +104,13 @@ The proxy automatically routes each model to its correct API key:
 - **Set up alerts** for high-cost model usage
 - **Regular audit** of model usage patterns
 
-## 🎯 **Total Model Count**
+## 🎯 **Final Model Count (Cost-Optimized)**
 
-**Production Models**: 4 models
-**Experimental Models**: 10 models  
-**Legacy Models**: 2 models
-**Total**: **16 different Google models** referenced in your codebase
+**✅ APPROVED Models**: 4 models (cost-effective only)
+**❌ BLOCKED Models**: 12+ models (expensive/experimental)
+**Total Protection**: **Complete cost control**
 
-The proxy server now protects against all 16 models being called unexpectedly, ensuring you only pay for the exact models you intend to use.
+The proxy server now **BLOCKS all expensive models** and only allows the 4 cost-effective models you actually need.
 
 ## 🚀 **Next Steps**
 
