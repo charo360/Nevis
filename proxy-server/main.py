@@ -30,6 +30,13 @@ TIER_CREDITS = {
     "enterprise": 1000 # 1000 credits - $199.99 package
 }
 
+# Cost tracking per generation type
+GENERATION_COSTS = {
+    "text": 0.00065,    # Text generation cost
+    "image": 0.03903,   # Image generation cost
+    "complete": 0.03968 # Complete post (text + image)
+}
+
 # Allowed models to prevent unexpected model calls - Based on actual Nevis usage
 ALLOWED_MODELS = {
     # Primary models used in Revo services (REMOVED gemini-2.5-pro - TOO EXPENSIVE)
@@ -129,14 +136,20 @@ def check_user_credits(user_id: str, tier: str = "free") -> None:
             detail=f"No credits remaining. You have {user_data['credits']} credits left. Purchase more credits to continue."
         )
 
-def deduct_user_credit(user_id: str, tier: str = "free") -> None:
-    """Deduct one credit from user's balance"""
+def deduct_user_credit(user_id: str, tier: str = "free", generation_type: str = "complete") -> None:
+    """Deduct one credit from user's balance and track cost"""
     user_data = user_credits[user_id]
     user_data["credits"] -= 1
     user_data["tier"] = tier
     user_data["last_updated"] = datetime.now().isoformat()
 
-    logger.info(f"User {user_id} ({tier} tier) used 1 credit. Remaining: {user_data['credits']}")
+    # Track actual cost for analytics
+    actual_cost = GENERATION_COSTS.get(generation_type, GENERATION_COSTS["complete"])
+    if "total_cost" not in user_data:
+        user_data["total_cost"] = 0
+    user_data["total_cost"] += actual_cost
+
+    logger.info(f"User {user_id} ({tier} tier) used 1 credit ({generation_type}). Cost: ${actual_cost:.5f}. Remaining: {user_data['credits']}")
 
 def get_api_key_for_model(model: str) -> str:
     """Get the appropriate API key based on the model being used"""
@@ -230,7 +243,7 @@ async def generate_image(request: ImageRequest):
     
     try:
         result = await call_google_api(endpoint, payload, api_key)
-        deduct_user_credit(request.user_id, request.user_tier)
+        deduct_user_credit(request.user_id, request.user_tier, "image")
         
         return {
             "success": True,
@@ -271,7 +284,7 @@ async def generate_text(request: TextRequest):
     
     try:
         result = await call_google_api(endpoint, payload, api_key)
-        deduct_user_credit(request.user_id, request.user_tier)
+        deduct_user_credit(request.user_id, request.user_tier, "text")
         
         return {
             "success": True,
@@ -291,19 +304,25 @@ async def health():
 
 @app.get("/credits/{user_id}")
 async def get_user_credits(user_id: str):
-    """Get user's current credit balance and tier information"""
+    """Get user's current credit balance and cost information"""
     user_data = user_credits[user_id]
     tier = user_data.get("tier", "free")
+    total_cost = user_data.get("total_cost", 0)
 
     return {
         "user_id": user_id,
         "tier": tier,
         "credits_remaining": user_data["credits"],
+        "total_ai_cost_incurred": f"${total_cost:.4f}",
         "last_updated": user_data.get("last_updated", ""),
         "tier_info": {
             "available_models": TIER_MODELS.get(tier, TIER_MODELS["free"]),
             "credit_package_size": get_tier_credits(tier),
-            "estimated_cost_per_credit": "$0.039"
+            "cost_per_generation": {
+                "text_only": f"${GENERATION_COSTS['text']:.5f}",
+                "image_only": f"${GENERATION_COSTS['image']:.5f}",
+                "complete_post": f"${GENERATION_COSTS['complete']:.5f}"
+            }
         }
     }
 
@@ -354,27 +373,35 @@ async def add_credits_manual(user_id: str, credits: int, tier: str = "free"):
 
 @app.get("/stats")
 async def get_stats():
-    """Get proxy server statistics with credit-based tier breakdown"""
+    """Get proxy server statistics with accurate cost tracking"""
     total_users = len(user_credits)
     total_credits_remaining = sum(data["credits"] for data in user_credits.values())
+    total_actual_cost = sum(data.get("total_cost", 0) for data in user_credits.values())
 
-    # Tier breakdown
+    # Tier breakdown with accurate costs
     tier_stats = {}
     for tier in TIER_CREDITS.keys():
         tier_users = [data for data in user_credits.values() if data.get("tier", "free") == tier]
+        tier_cost = sum(data.get("total_cost", 0) for data in tier_users)
         tier_stats[tier] = {
             "users": len(tier_users),
             "credit_package_size": TIER_CREDITS[tier],
-            "package_value": f"${TIER_CREDITS[tier] * 0.039:.2f}"
+            "actual_ai_cost": f"${tier_cost:.4f}",
+            "max_possible_cost": f"${TIER_CREDITS[tier] * GENERATION_COSTS['complete']:.2f}"
         }
 
     return {
         "status": "healthy",
         "total_users": total_users,
         "total_credits_remaining": total_credits_remaining,
+        "total_actual_ai_cost": f"${total_actual_cost:.4f}",
         "allowed_models": list(ALLOWED_MODELS.keys()),
         "blocked_models": ["gemini-2.5-pro", "all experimental models"],
-        "cost_per_credit": "$0.039",
+        "generation_costs": {
+            "text_only": f"${GENERATION_COSTS['text']:.5f}",
+            "image_only": f"${GENERATION_COSTS['image']:.5f}",
+            "complete_post": f"${GENERATION_COSTS['complete']:.5f}"
+        },
         "tier_breakdown": tier_stats,
         "credit_packages": TIER_CREDITS
     }
