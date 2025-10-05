@@ -27,17 +27,17 @@ function getAiClient(): GoogleGenerativeAI {
 // CRITICAL: Block search tools to prevent expensive charges
 function createSafeModel(modelName: string, config?: any) {
   const client = getAiClient();
-  const model = client.getGenerativeModel({ 
+  const model = client.getGenerativeModel({
     model: modelName,
     tools: [], // EXPLICITLY DISABLE ALL TOOLS
-    ...config 
+    ...config
   });
-  
+
   // Double-check no tools are enabled
   if ((model as any)?.tools?.length) {
     throw new Error('🚫 BLOCKED: Search tools detected. This would cause expensive charges.');
   }
-  
+
   return model;
 }
 
@@ -52,8 +52,8 @@ function getOpenAIClient(): OpenAI {
   return openai;
 }
 
-// Revo 2.0 uses Gemini 2.0 Flash Image Preview (same as Revo 1.0 but with enhanced prompting)
-const REVO_2_0_MODEL = 'gemini-2.0-flash-exp-image-generation';
+// Revo 2.0 uses Gemini 2.5 Flash Image Preview (same as Revo 1.0 but with enhanced prompting)
+const REVO_2_0_MODEL = 'gemini-2.5-flash-image-preview';
 
 /**
  * Sanitize generic/template-sounding openings commonly produced by LLMs
@@ -138,6 +138,41 @@ export interface Revo20GenerationResult {
 }
 
 /**
+ * Convert logo URL to base64 data URL for AI models (matching Revo 1.5 logic)
+ */
+async function convertLogoToDataUrl(logoUrl?: string): Promise<string | undefined> {
+  if (!logoUrl) return undefined;
+
+  // If it's already a data URL, return as is
+  if (logoUrl.startsWith('data:')) {
+    return logoUrl;
+  }
+
+  try {
+    console.log('🔄 Revo 2.0: Fetching logo from storage URL...');
+    const response = await fetch(logoUrl);
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch logo: ${response.status} ${response.statusText}`);
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString('base64');
+
+    // Determine MIME type from response headers or URL extension
+    const contentType = response.headers.get('content-type') || 'image/png';
+    const dataUrl = `data:${contentType};base64,${base64}`;
+
+    console.log('✅ Revo 2.0: Logo converted to data URL successfully');
+    return dataUrl;
+
+  } catch (error) {
+    console.error('❌ Revo 2.0: Logo conversion failed:', error);
+    return undefined;
+  }
+}
+
+/**
  * Get platform-specific aspect ratio for optimal social media display
  * STANDARDIZED: ALL platforms use 1:1 for maximum quality (no stories/reels)
  */
@@ -157,7 +192,7 @@ function getPlatformDimensions(platform: string): string {
 }
 
 /**
- * Generate creative concept for Revo 2.0 with scheduled services integration
+ * Generate creative concept for Revo 2.0 with enhanced AI creativity
  */
 async function generateCreativeConcept(options: Revo20GenerationOptions): Promise<any> {
   const { businessType, brandProfile, platform, scheduledServices } = options;
@@ -165,7 +200,7 @@ async function generateCreativeConcept(options: Revo20GenerationOptions): Promis
   // Extract today's services for focused content
   const todaysServices = scheduledServices?.filter(s => s.isToday) || [];
   const upcomingServices = scheduledServices?.filter(s => s.isUpcoming) || [];
-  
+
   console.log('📅 Revo 2.0: Using scheduled services for concept generation:', {
     todaysServicesCount: todaysServices.length,
     todaysServiceNames: todaysServices.map(s => s.serviceName),
@@ -173,52 +208,58 @@ async function generateCreativeConcept(options: Revo20GenerationOptions): Promis
   });
 
   try {
-  const model = createSafeModel(REVO_2_0_MODEL);
-  // Guard: block any accidental tool/grounding usage (SDK may expose tools in future)
-  if ((model as any)?.tools?.length) {
-    console.error('❌ Guard: Tools detected on model initialization. Blocking to avoid search charges.');
-    throw new Error('Guard: Tools are disabled for Gemini usage in this project.');
-  }
+    // Temporarily use Gemini for creative concept generation to avoid OpenAI hanging issues
+    console.log('🎨 Revo 2.0: Using Gemini for creative concept generation...');
+
+    const model = createSafeModel(REVO_2_0_MODEL, {
+      generationConfig: {
+        temperature: 0.8,
+        topP: 0.9,
+        topK: 40,
+        maxOutputTokens: 1000,
+      }
+    });
 
     // Build service-aware concept prompt
     let serviceContext = '';
     if (todaysServices.length > 0) {
       serviceContext = `\n\n🎯 TODAY'S FEATURED SERVICES (Priority Focus):\n${todaysServices.map(s => `- ${s.serviceName}: ${s.description || 'Premium service offering'}`).join('\n')}`;
     }
-    if (upcomingServices.length > 0) {
-      serviceContext += `\n\n📅 UPCOMING SERVICES (Secondary Focus):\n${upcomingServices.slice(0, 2).map(s => `- ${s.serviceName}`).join('\n')}`;
-    }
 
-    const conceptPrompt = `Generate a creative concept for ${brandProfile.businessName} (${businessType}) on ${platform}.
+    const conceptPrompt = `Generate a creative concept for ${brandProfile.businessName || businessType} (${businessType}) on ${platform}.
     ${serviceContext}
-    
-    Focus on:
-    - Unique visual storytelling approach featuring today's services
-    - Brand personality expression through service excellence
-    - Platform-specific engagement strategies
-    - Cultural relevance for ${brandProfile.location || 'global audience'}
-    ${todaysServices.length > 0 ? `- Highlight today's featured service: ${todaysServices[0].serviceName}` : ''}
-    
+
+    Business Context:
+    - Location: ${brandProfile.location || 'Global'}
+    - Target Audience: ${brandProfile.targetAudience || 'General audience'}
+    - Writing Tone: ${brandProfile.writingTone || 'Professional'}
+
+    Create a concept that feels authentic and locally relevant.
+    ${todaysServices.length > 0 ? `Highlight today's featured service: ${todaysServices[0].serviceName}` : ''}
+
     Return a brief creative concept (2-3 sentences) that will guide the visual design.`;
 
     const result = await model.generateContent(conceptPrompt);
     const response = await result.response;
-    const concept = response.text();
+    const conceptText = response.text();
 
     return {
-      concept: concept.trim(),
+      concept: conceptText.trim() || 'Professional content creation',
       visualTheme: 'modern-authentic',
       emotionalTone: 'engaging-professional',
+      designElements: ['clean typography', 'professional imagery', 'brand colors'],
+      colorSuggestions: [brandProfile.primaryColor || '#3B82F6'],
+      moodKeywords: ['professional', 'trustworthy', 'engaging'],
       featuredServices: todaysServices,
       upcomingServices: upcomingServices.slice(0, 2)
     };
 
   } catch (error) {
     console.warn('⚠️ Revo 2.0: Creative concept generation failed, using fallback');
-    const fallbackConcept = todaysServices.length > 0 
+    const fallbackConcept = todaysServices.length > 0
       ? `Create engaging visual content for ${brandProfile.businessName} featuring today's ${todaysServices[0].serviceName} with authentic, professional appeal.`
       : `Create engaging visual content for ${brandProfile.businessName} that showcases their ${businessType} expertise with authentic, professional appeal.`;
-    
+
     return {
       concept: fallbackConcept,
       visualTheme: 'modern-authentic',
@@ -265,7 +306,7 @@ function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: any): st
     const location = brandProfile.location || 'Global';
     const africanCountries = ['kenya', 'nigeria', 'south africa', 'ghana', 'uganda', 'tanzania', 'ethiopia', 'rwanda'];
     const isAfricanCountry = africanCountries.some(country => location.toLowerCase().includes(country.toLowerCase()));
-    
+
     if (isAfricanCountry) {
       peopleInstructions = `\n\n👥 PEOPLE INCLUSION (AFRICAN REPRESENTATION):\n- Include authentic Black/African people who represent the target market\n- Show people who would actually use ${businessType} services\n- Display local African people in settings relevant to ${businessType} business\n- Ensure faces are fully visible, well-lit, and anatomically correct\n- PRIORITY: 80%+ of people should be Black/African for cultural authenticity\n- Context: Show people in ${businessType}-relevant settings, not generic offices`;
     } else {
@@ -276,7 +317,7 @@ function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: any): st
   // Lightweight contact integration - only add if contacts toggle is enabled
   let contactInstruction = '';
   if (options.includeContacts === true) {
-  const contacts: string[] = [];
+    const contacts: string[] = [];
 
     // Simple contact detection (multiple data structure support)
     const phone = brandProfile?.contactInfo?.phone ||
@@ -373,7 +414,9 @@ Create a visually stunning design that stops scrolling and drives engagement whi
  */
 async function generateImageWithGemini(prompt: string, options: Revo20GenerationOptions): Promise<{ imageUrl: string }> {
   try {
-  const model = createSafeModel(REVO_2_0_MODEL, {
+    console.log('🎨 Revo 2.0: Starting direct image generation (bypassing Genkit)');
+
+    const model = createSafeModel(REVO_2_0_MODEL, {
       generationConfig: {
         temperature: 0.7,
         topP: 0.8,
@@ -381,6 +424,7 @@ async function generateImageWithGemini(prompt: string, options: Revo20Generation
         maxOutputTokens: 4096,
       }
     });
+
     if ((model as any)?.tools?.length) {
       console.error('❌ Guard: Tools detected on model initialization. Blocking to avoid search charges.');
       throw new Error('Guard: Tools are disabled for Gemini usage in this project.');
@@ -389,10 +433,10 @@ async function generateImageWithGemini(prompt: string, options: Revo20Generation
     // Prepare generation parts array
     const generationParts: any[] = [prompt];
 
-    // Check for logo integration (same logic as Revo 1.0)
+    // Enhanced logo integration (same logic as Revo 1.0 with URL conversion)
     const logoDataUrl = options.brandProfile.logoDataUrl;
     const logoStorageUrl = (options.brandProfile as any).logoUrl || (options.brandProfile as any).logo_url;
-    const logoUrl = logoDataUrl || logoStorageUrl;
+    let logoUrl = logoDataUrl || logoStorageUrl;
 
     console.log('🔍 Revo 2.0 Logo availability check:', {
       businessName: options.brandProfile.businessName,
@@ -403,31 +447,98 @@ async function generateImageWithGemini(prompt: string, options: Revo20Generation
       finalLogoUrl: logoUrl ? logoUrl.substring(0, 100) + '...' : 'None'
     });
 
-    // Use the Genkit flow system for image generation
-    const { generateCreativeAsset } = await import('@/ai/flows/generate-creative-asset');
-    
-    // Call the Genkit flow for image generation
-    const result = await generateCreativeAsset({
-      prompt: prompt,
-      outputType: 'image',
-      referenceAssetUrl: null,
-      useBrandProfile: true,
-      brandProfile: options.brandProfile,
-      preferredModel: 'gemini-2.5-flash-image-preview',
-      designColors: {
-        primaryColor: options.brandProfile.primaryColor || '#3B82F6',
-        accentColor: options.brandProfile.accentColor || '#10B981',
-        backgroundColor: options.brandProfile.backgroundColor || '#FFFFFF'
-      },
-      maskDataUrl: logoUrl || null
-    });
-
-    if (result.imageUrl) {
-      console.log('✅ Revo 2.0: Image generated successfully with Genkit flow');
-      return { imageUrl: result.imageUrl };
+    // Convert storage URL to data URL if needed (same as Revo 1.5)
+    if (logoUrl && !logoUrl.startsWith('data:') && logoUrl.startsWith('http')) {
+      console.log('🔄 Revo 2.0: Converting logo storage URL to data URL...');
+      try {
+        logoUrl = await convertLogoToDataUrl(logoUrl);
+        console.log('✅ Revo 2.0: Logo URL converted successfully');
+      } catch (conversionError) {
+        console.warn('⚠️ Revo 2.0: Logo URL conversion failed:', conversionError);
+        logoUrl = undefined; // Clear invalid logo
+      }
     }
 
-    throw new Error('No image data found in Genkit response');
+    // Add logo to generation parts if available
+    if (logoUrl && logoUrl.startsWith('data:image/')) {
+      console.log('✅ Revo 2.0: Adding logo to image generation');
+
+      // Extract base64 data and mime type
+      const logoMatch = logoUrl.match(/^data:([^;]+);base64,(.+)$/);
+      if (logoMatch) {
+        const [, mimeType, base64Data] = logoMatch;
+
+        generationParts.push({
+          inlineData: {
+            data: base64Data,
+            mimeType: mimeType
+          }
+        });
+
+        // Add logo integration prompt (same as Revo 1.0)
+        const logoPrompt = `\n\n🎯 CRITICAL LOGO REQUIREMENT - THIS IS MANDATORY:
+You MUST include the exact brand logo image that was provided above in your design. This is not optional.
+- Integrate the logo naturally into the layout - do not create a new logo
+- The logo should be prominently displayed but not overwhelming the design
+- Position the logo in a professional manner (top-left, top-right, or center as appropriate)
+- Maintain the logo's aspect ratio and clarity
+- Ensure the logo is clearly visible against the background
+
+The client specifically requested their brand logo to be included. FAILURE TO INCLUDE THE LOGO IS UNACCEPTABLE.`;
+
+        generationParts[0] = prompt + logoPrompt;
+        console.log('✅ Revo 2.0: Logo integration prompt added');
+      } else {
+        console.error('❌ Revo 2.0: Invalid logo data URL format');
+      }
+    } else {
+      console.log('ℹ️ Revo 2.0: No valid logo available for integration');
+    }
+
+    console.log('🔄 Revo 2.0: Generating image with Gemini 2.0 Flash Image Generation...');
+    const result = await model.generateContent(generationParts);
+    const response = await result.response;
+
+    console.log('📊 Revo 2.0: Response received:', {
+      candidates: response.candidates?.length || 0,
+      finishReason: response.candidates?.[0]?.finishReason
+    });
+
+    // Extract image from response
+    const candidates = response.candidates;
+    if (!candidates || candidates.length === 0) {
+      throw new Error('No candidates in response');
+    }
+
+    const candidate = candidates[0];
+    const parts = candidate.content?.parts;
+
+    if (!parts || parts.length === 0) {
+      throw new Error('No parts in candidate content');
+    }
+
+    // Find the image part
+    let imageData: string | null = null;
+    let mimeType: string = 'image/png';
+
+    for (const part of parts) {
+      if ((part as any).inlineData) {
+        imageData = (part as any).inlineData.data;
+        mimeType = (part as any).inlineData.mimeType || 'image/png';
+        break;
+      }
+    }
+
+    if (!imageData) {
+      console.error('❌ Revo 2.0: No image data found in response parts');
+      throw new Error('No image data found in response');
+    }
+
+    // Convert to data URL
+    const imageUrl = `data:${mimeType};base64,${imageData}`;
+    console.log('✅ Revo 2.0: Image generated successfully (direct generation)');
+
+    return { imageUrl };
 
   } catch (error) {
     console.error('❌ Revo 2.0: Image generation failed:', error);
@@ -456,7 +567,7 @@ async function generateCaptionAndHashtags(options: Revo20GenerationOptions, conc
   const creativityBoost = Math.floor(uniqueSeed % 10) + 1;
 
   try {
-  const model = createSafeModel(REVO_2_0_MODEL, {
+    const model = createSafeModel(REVO_2_0_MODEL, {
       generationConfig: {
         temperature: 0.9, // Higher temperature for more creativity
         topP: 0.95,
@@ -474,7 +585,7 @@ async function generateCaptionAndHashtags(options: Revo20GenerationOptions, conc
     if (concept.featuredServices && concept.featuredServices.length > 0) {
       const todayService = concept.featuredServices[0];
       serviceContentContext = `\n\n🎯 TODAY'S FEATURED SERVICE (Primary Focus):\n- Service: ${todayService.serviceName}\n- Description: ${todayService.description || 'Premium service offering'}\n- Content Focus: Write about THIS specific service as today's highlight\n- Call-to-Action: Encourage engagement with this service`;
-      
+
       if (concept.upcomingServices && concept.upcomingServices.length > 0) {
         serviceContentContext += `\n\n📅 UPCOMING SERVICES (Mention briefly):\n${concept.upcomingServices.map(s => `- ${s.serviceName}`).join('\n')}`;
       }
@@ -482,7 +593,7 @@ async function generateCaptionAndHashtags(options: Revo20GenerationOptions, conc
 
     // Prepare the generation parts - include image if available for analysis
     const generationParts: any[] = [];
-    
+
     let imageAnalysisContext = '';
     if (imageUrl && imageUrl.startsWith('data:image/')) {
       // Add the actual generated image for analysis
@@ -499,15 +610,15 @@ async function generateCaptionAndHashtags(options: Revo20GenerationOptions, conc
     const timeBasedSeed = Date.now();
     const randomSeed = Math.floor(Math.random() * 10000);
     const uniqueId = `${timeBasedSeed}-${randomSeed}`;
-    
+
     // Create variation themes to ensure uniqueness
     const variationThemes = [
-      'innovation-focused', 'results-driven', 'customer-centric', 'quality-emphasis', 
+      'innovation-focused', 'results-driven', 'customer-centric', 'quality-emphasis',
       'expertise-showcase', 'trust-building', 'solution-oriented', 'value-proposition',
       'transformation-story', 'excellence-highlight'
     ];
     const selectedTheme = variationThemes[creativityBoost % variationThemes.length];
-    
+
     const contentPrompt = `Generate COMPLETELY UNIQUE social media content for ${brandProfile.businessName} (${businessType}) on ${platform}.
 
 🚨 UNIQUENESS MANDATE (ID: ${uniqueId}):
@@ -631,7 +742,7 @@ Format as JSON:
         finalHashtags = generateFallbackHashtags(brandProfile, businessType, platform, hashtagCount);
         console.log(`➕ Revo 2.0: Added hashtags to reach ${hashtagCount} for ${platform}`);
       }
-      
+
       // Final validation - ensure EXACTLY the right count
       finalHashtags = finalHashtags.slice(0, hashtagCount);
 
@@ -668,7 +779,7 @@ Format as JSON:
 function generateUniqueFallbackContent(brandProfile: any, businessType: string, platform: string, hashtagCount: number, creativityLevel: number, concept?: any) {
   // Check if we have today's featured service
   const todayService = concept?.featuredServices?.[0];
-  
+
   const uniqueCaptions = todayService ? [
     `Today's spotlight: ${todayService.serviceName} at ${brandProfile.businessName}. Experience excellence in ${businessType.toLowerCase()} like never before.`,
     `Featuring today: ${todayService.serviceName}. ${brandProfile.businessName} brings you premium ${businessType.toLowerCase()} solutions in ${brandProfile.location || 'your area'}.`,
@@ -704,10 +815,10 @@ function generateFallbackHashtags(brandProfile: any, businessType: string, platf
   const businessTag = `#${businessType.replace(/\s+/g, '')}`;
   const serviceTag = todayService ? `#${todayService.serviceName.replace(/\s+/g, '')}` : null;
 
-  const instagramHashtags = serviceTag 
+  const instagramHashtags = serviceTag
     ? [brandTag, businessTag, serviceTag, '#TodaysFocus', '#Featured']
     : [brandTag, businessTag, '#Innovation', '#Quality', '#Success'];
-    
+
   const otherHashtags = serviceTag
     ? [brandTag, businessTag, serviceTag]
     : [brandTag, businessTag, '#Professional'];
@@ -722,36 +833,36 @@ function generateFallbackHashtags(brandProfile: any, businessType: string, platf
  */
 function getVisualContextForBusiness(businessType: string, concept: string): string {
   const businessLower = businessType.toLowerCase();
-  
+
   if (businessLower.includes('office') || businessLower.includes('workspace') || businessLower.includes('corporate')) {
     return 'Professional office/workspace environment with modern business aesthetics';
   }
-  
+
   if (businessLower.includes('market') || businessLower.includes('retail') || businessLower.includes('shop')) {
     return 'Market/retail business environment with customer-focused elements';
   }
-  
+
   if (businessLower.includes('restaurant') || businessLower.includes('food') || businessLower.includes('cafe')) {
     return 'Food service environment with culinary and hospitality elements';
   }
-  
+
   if (businessLower.includes('tech') || businessLower.includes('software') || businessLower.includes('digital')) {
     return 'Modern technology workspace with digital innovation elements';
   }
-  
+
   if (businessLower.includes('health') || businessLower.includes('medical') || businessLower.includes('clinic')) {
     return 'Healthcare/medical environment with professional wellness aesthetics';
   }
-  
+
   // Default based on concept
   if (concept.includes('office') || concept.includes('workspace')) {
     return 'Professional office/workspace environment';
   }
-  
+
   if (concept.includes('market') || concept.includes('customer')) {
     return 'Market/customer-focused business environment';
   }
-  
+
   return 'Professional business environment that matches the service offering';
 }
 
@@ -786,21 +897,34 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
 
     console.log(`🎯 Revo 2.0: Using ${aspectRatio} aspect ratio for ${options.platform}`);
 
-    // Step 1: Generate creative concept
-    const concept = await generateCreativeConcept(enhancedOptions);
+    // Step 1: Generate creative concept with timeout
+    console.log('🎨 Revo 2.0: Generating creative concept...');
+    const concept = await Promise.race([
+      generateCreativeConcept(enhancedOptions),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Creative concept generation timeout')), 15000))
+    ]);
     console.log('✅ Revo 2.0: Creative concept generated');
 
     // Step 2: Build enhanced prompt
+    console.log('📝 Revo 2.0: Building enhanced prompt...');
     const enhancedPrompt = buildEnhancedPrompt(enhancedOptions, concept);
     console.log('✅ Revo 2.0: Enhanced prompt built');
 
-    // Step 3: Generate image with Gemini 2.5 Flash Image Preview
-    const imageResult = await generateImageWithGemini(enhancedPrompt, enhancedOptions);
+    // Step 3: Generate image with Gemini 2.5 Flash Image Preview with timeout
+    console.log('🖼️ Revo 2.0: Generating image...');
+    const imageResult = await Promise.race([
+      generateImageWithGemini(enhancedPrompt, enhancedOptions),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Image generation timeout')), 20000))
+    ]);
     console.log('✅ Revo 2.0: Image generated');
 
-    // Step 4: Generate caption and hashtags that align with the image
-    const contentResult = await generateCaptionAndHashtags(enhancedOptions, concept, enhancedPrompt, imageResult.imageUrl);
-    console.log('✅ Revo 2.0: Content generated with image alignment');
+    // Step 4: Generate caption and hashtags with timeout
+    console.log('📱 Revo 2.0: Generating content...');
+    const contentResult = await Promise.race([
+      generateCaptionAndHashtags(enhancedOptions, concept),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Content generation timeout')), 15000))
+    ]);
+    console.log('✅ Revo 2.0: Content generated');
 
     const processingTime = Date.now() - startTime;
 
@@ -813,19 +937,16 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
         'Next-generation AI design',
         'Creative concept generation',
         'Enhanced prompt engineering',
-        'Brand logo integration and normalization',
-        'Brand color scheme enforcement',
         'Brand consistency optimization',
         'Platform-specific formatting',
         'Cultural relevance integration',
-        'Advanced visual storytelling',
-        'Professional typography matching brand colors'
+        'Advanced visual storytelling'
       ],
       caption: contentResult.caption,
       hashtags: contentResult.hashtags,
-      headline: sanitizeGeneratedCopy(contentResult.headline, enhancedOptions.brandProfile, enhancedOptions.businessType) as string,
-      subheadline: sanitizeGeneratedCopy(contentResult.subheadline, enhancedOptions.brandProfile, enhancedOptions.businessType) as string,
-      cta: sanitizeGeneratedCopy(contentResult.cta, enhancedOptions.brandProfile, enhancedOptions.businessType) as string,
+      headline: contentResult.headline,
+      subheadline: contentResult.subheadline,
+      cta: contentResult.cta,
       captionVariations: contentResult.captionVariations,
       businessIntelligence: {
         concept: concept.concept,
@@ -847,7 +968,7 @@ export async function testRevo20Availability(): Promise<boolean> {
   try {
     console.log('🧪 Testing Revo 2.0 availability...');
 
-  const model = createSafeModel(REVO_2_0_MODEL);
+    const model = createSafeModel(REVO_2_0_MODEL);
     if ((model as any)?.tools?.length) {
       console.error('❌ Guard: Tools detected on model initialization. Blocking to avoid search charges.');
       throw new Error('Guard: Tools are disabled for Gemini usage in this project.');

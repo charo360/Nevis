@@ -150,6 +150,11 @@ export async function generateRevo15ContentAction(
 
   } catch (error) {
     console.error('❌ Revo 1.5 content generation failed:', error);
+    console.error('❌ Revo 1.5 Full error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack trace',
+      name: error instanceof Error ? error.name : 'Unknown'
+    });
 
     // Extract user-friendly message if it exists
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -159,21 +164,21 @@ export async function generateRevo15ContentAction(
       throw new Error(errorMessage);
     }
 
-    // Handle specific error types
+    // Handle specific error types with proper solutions
     if (errorMessage.includes('quota') || errorMessage.includes('429') || errorMessage.includes('Too Many Requests')) {
-      throw new Error('😅 Revo 1.5 is experiencing high demand right now! Please try again in a few minutes or switch to Revo 2.0.');
+      throw new Error('🚫 Revo 1.5 API quota exceeded (250 requests/day). Solutions: 1) Wait for daily reset, 2) Upgrade to paid API key, or 3) Use Revo 1.0 temporarily.');
     }
 
     if (errorMessage.includes('401') || errorMessage.includes('unauthorized') || errorMessage.includes('API key')) {
-      throw new Error('🔧 Revo 1.5 is having a technical hiccup. Please try Revo 2.0 while we fix this!');
+      throw new Error('🔑 Revo 1.5 API key issue. Check GEMINI_API_KEY_REVO_1_5 in .env.local');
     }
 
     if (errorMessage.includes('network') || errorMessage.includes('timeout') || errorMessage.includes('ECONNRESET')) {
-      throw new Error('🌐 Connection hiccup! Please try again in a moment.');
+      throw new Error('🌐 Network connection issue. Please check your internet connection and try again.');
     }
 
-    // Otherwise, make it friendly
-    throw new Error('Revo 1.5 is having some trouble right now! 😅 Try switching to Revo 2.0 for great results while we get things sorted out.');
+    // Show actual error for debugging other issues
+    throw new Error(`🔧 Revo 1.5 Error: ${errorMessage}`);
   }
 }
 

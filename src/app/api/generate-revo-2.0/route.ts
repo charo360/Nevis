@@ -13,7 +13,11 @@ export async function POST(request: NextRequest) {
     // Get user ID from headers (would be set by middleware in production)
     const userId = 'test-user-id'; // TODO: Get from authentication
 
+    console.log('🎯 Revo 2.0 API: Request received');
+
     const body = await request.json();
+    console.log('✅ Revo 2.0 API: Body parsed successfully');
+
     const {
       businessType,
       platform,
@@ -26,6 +30,14 @@ export async function POST(request: NextRequest) {
       includeContacts,
       scheduledServices // NEW: Extract scheduled services from request
     } = body;
+
+    console.log('📊 Revo 2.0 API: Extracted fields:', {
+      businessType,
+      platform,
+      brandProfile: brandProfile ? 'Present' : 'Missing',
+      imageText,
+      visualStyle
+    });
 
     // Validate required fields
     if (!businessType || !platform || !brandProfile) {
@@ -61,19 +73,36 @@ export async function POST(request: NextRequest) {
       upcomingServiceNames: scheduledServices?.filter((s: any) => s.isUpcoming).map((s: any) => s.serviceName) || []
     });
 
-    // Generate content with Revo 2.0 Enhanced
-    const result = await generateWithRevo20({
-      businessType,
-      platform,
-      visualStyle: visualStyle || 'modern',
-      imageText: imageText || '',
-      brandProfile,
-      aspectRatio,
-      includePeopleInDesigns,
-      useLocalLanguage,
-      includeContacts: !!includeContacts,
-      scheduledServices: scheduledServices // NEW: Pass scheduled services to Revo 2.0
-    });
+    console.log('🚀 Revo 2.0 API: About to call generateWithRevo20...');
+
+    // Generate content with Revo 2.0 Enhanced with error handling
+    let result;
+    try {
+      console.log('🔄 Revo 2.0 API: Calling generateWithRevo20 function...');
+      result = await generateWithRevo20({
+        businessType,
+        platform,
+        visualStyle: visualStyle || 'modern',
+        imageText: imageText || '',
+        brandProfile,
+        aspectRatio,
+        includePeopleInDesigns,
+        useLocalLanguage,
+        includeContacts: !!includeContacts,
+        scheduledServices: scheduledServices // NEW: Pass scheduled services to Revo 2.0
+      });
+      console.log('✅ Revo 2.0 API: generateWithRevo20 completed successfully');
+    } catch (generationError) {
+      console.error('❌ Revo 2.0 generation failed:', generationError);
+      console.error('❌ Full error details:', {
+        message: generationError instanceof Error ? generationError.message : 'Unknown error',
+        stack: generationError instanceof Error ? generationError.stack : 'No stack trace',
+        name: generationError instanceof Error ? generationError.name : 'Unknown'
+      });
+      // Show actual error for debugging
+      const errorMessage = generationError instanceof Error ? generationError.message : 'Unknown error';
+      throw new Error(`Revo 2.0 Debug Error: ${errorMessage}`);
+    }
 
 
     return NextResponse.json({
@@ -94,10 +123,21 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
+    console.error('❌ Revo 2.0 API Error:', error);
+
+    // Provide user-friendly error messages
+    let errorMessage = 'Revo 2.0 Enhanced generation failed';
+    if (error instanceof Error) {
+      if (error.message.includes('🚀') || error.message.includes('🔧') || error.message.includes('😴')) {
+        errorMessage = error.message;
+      } else {
+        errorMessage = '🚀 Revo 2.0 is being enhanced with new features! Please try again in a moment.';
+      }
+    }
 
     return NextResponse.json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: errorMessage,
       message: 'Revo 2.0 Enhanced generation failed'
     }, { status: 500 });
   }
