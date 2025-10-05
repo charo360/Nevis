@@ -17,11 +17,29 @@ app = FastAPI(title="Nevis AI Proxy", description="Controlled AI model proxy to 
 # In-memory rate limiting (good for <1000 users)
 user_quotas = defaultdict(lambda: {"count": 0, "month": ""})
 
-# Allowed models to prevent unexpected model calls
+# Allowed models to prevent unexpected model calls - Based on actual Nevis usage
 ALLOWED_MODELS = {
+    # Primary models used in Revo services
     "gemini-2.5-flash-image-preview": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent",
     "gemini-2.5-flash": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
-    "gemini-1.5-pro": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent"
+    "gemini-2.5-pro": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent",
+    "gemini-2.5-flash-lite": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent",
+
+    # Experimental models found in test files (use with caution)
+    "gemini-2.0-flash-exp-image-generation": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent",
+    "gemini-2.5-flash-exp": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-exp:generateContent",
+    "gemini-2.5-flash-experimental": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-experimental:generateContent",
+    "gemini-2.5-flash-thinking-exp": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-thinking-exp:generateContent",
+    "gemini-2.5-flash-thinking-exp-01-21": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-thinking-exp-01-21:generateContent",
+    "gemini-2.5-flash-thinking-exp-1219": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-thinking-exp-1219:generateContent",
+    "gemini-2.5-flash-002": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-002:generateContent",
+    "gemini-2.5-flash-001": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-001:generateContent",
+    "gemini-exp-1206": "https://generativelanguage.googleapis.com/v1beta/models/gemini-exp-1206:generateContent",
+    "gemini-exp-1121": "https://generativelanguage.googleapis.com/v1beta/models/gemini-exp-1121:generateContent",
+
+    # Legacy models (if still needed)
+    "gemini-1.5-flash": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
+    "gemini-2.0-flash": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
 }
 
 class ImageRequest(BaseModel):
@@ -66,6 +84,53 @@ def increment_user_quota(user_id: str) -> None:
     user_quotas[user_id]["count"] += 1
     logger.info(f"User {user_id} quota: {user_quotas[user_id]['count']}/40")
 
+def get_api_key_for_model(model: str) -> str:
+    """Get the appropriate API key based on the model being used"""
+
+    # Map models to specific API keys based on Nevis configuration
+    model_to_key_mapping = {
+        # Revo 1.0 models
+        "gemini-2.5-flash-image-preview": "GEMINI_API_KEY_REVO_1_0",
+
+        # Revo 1.5 models
+        "gemini-2.5-flash": "GEMINI_API_KEY_REVO_1_5",
+        "gemini-2.5-flash-lite": "GEMINI_API_KEY_REVO_1_5",
+
+        # Revo 2.0 models
+        "gemini-2.5-pro": "GEMINI_API_KEY_REVO_2_0",
+        "gemini-2.0-flash-exp-image-generation": "GEMINI_API_KEY_REVO_2_0",
+
+        # Experimental models - use Revo 2.0 key
+        "gemini-2.5-flash-exp": "GEMINI_API_KEY_REVO_2_0",
+        "gemini-2.5-flash-experimental": "GEMINI_API_KEY_REVO_2_0",
+        "gemini-2.5-flash-thinking-exp": "GEMINI_API_KEY_REVO_2_0",
+        "gemini-2.5-flash-thinking-exp-01-21": "GEMINI_API_KEY_REVO_2_0",
+        "gemini-2.5-flash-thinking-exp-1219": "GEMINI_API_KEY_REVO_2_0",
+        "gemini-2.5-flash-002": "GEMINI_API_KEY_REVO_2_0",
+        "gemini-2.5-flash-001": "GEMINI_API_KEY_REVO_2_0",
+        "gemini-exp-1206": "GEMINI_API_KEY_REVO_2_0",
+        "gemini-exp-1121": "GEMINI_API_KEY_REVO_2_0",
+
+        # Legacy models - use general key
+        "gemini-1.5-flash": "GEMINI_API_KEY",
+        "gemini-2.0-flash": "GEMINI_API_KEY"
+    }
+
+    # Get the specific API key for this model
+    key_env_name = model_to_key_mapping.get(model, "GEMINI_API_KEY")
+    api_key = os.environ.get(key_env_name)
+
+    # Fallback to general Google API key if specific key not found
+    if not api_key:
+        api_key = os.environ.get('GOOGLE_API_KEY') or os.environ.get('GEMINI_API_KEY')
+
+    if not api_key:
+        logger.error(f"No API key found for model {model}. Tried {key_env_name}, GOOGLE_API_KEY, GEMINI_API_KEY")
+        raise HTTPException(status_code=500, detail=f"API key not configured for model {model}")
+
+    logger.info(f"Using API key {key_env_name} for model {model}")
+    return api_key
+
 async def call_google_api(endpoint: str, payload: Dict[str, Any], api_key: str) -> Dict[str, Any]:
     """Make controlled call to Google API with exact model specified"""
     
@@ -101,11 +166,9 @@ async def generate_image(request: ImageRequest):
     
     # Check quota
     check_user_quota(request.user_id)
-    
-    # Get API key based on model (you can customize this logic)
-    api_key = os.environ.get('GOOGLE_API_KEY')
-    if not api_key:
-        raise HTTPException(status_code=500, detail="API key not configured")
+
+    # Get model-specific API key
+    api_key = get_api_key_for_model(request.model)
     
     # Prepare payload with strict model specification
     payload = {
@@ -143,11 +206,9 @@ async def generate_text(request: TextRequest):
     
     # Check quota
     check_user_quota(request.user_id)
-    
-    # Get API key
-    api_key = os.environ.get('GOOGLE_API_KEY')
-    if not api_key:
-        raise HTTPException(status_code=500, detail="API key not configured")
+
+    # Get model-specific API key
+    api_key = get_api_key_for_model(request.model)
     
     # Prepare payload with strict model specification
     payload = {
