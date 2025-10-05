@@ -55,13 +55,13 @@ ALLOWED_MODELS = {
     # - gemini-2.0-flash (legacy)
 }
 
-# Tier-based model access (optional - restrict models by tier)
+# Tier-based model access - ALL USERS GET PREMIUM QUALITY FOR BEST EXPERIENCE
 TIER_MODELS = {
-    "free": ["gemini-2.5-flash-lite"],  # Only cheapest model (text only)
-    "basic": ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.5-flash-image-preview"],  # Text + Image
-    "premium": list(ALLOWED_MODELS.keys()),  # All approved models
-    "pro": list(ALLOWED_MODELS.keys()),  # All approved models
-    "enterprise": list(ALLOWED_MODELS.keys())  # All approved models
+    "free": list(ALLOWED_MODELS.keys()),  # ALL models for best quality (to convince users to pay)
+    "basic": list(ALLOWED_MODELS.keys()),  # ALL models for premium experience
+    "premium": list(ALLOWED_MODELS.keys()),  # ALL approved models
+    "pro": list(ALLOWED_MODELS.keys()),  # ALL approved models
+    "enterprise": list(ALLOWED_MODELS.keys())  # ALL approved models
 }
 
 class ImageRequest(BaseModel):

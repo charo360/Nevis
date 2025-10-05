@@ -115,7 +115,7 @@ function getOpenAIClient(): OpenAI {
   return openai;
 }
 
-// Revo 2.0 uses Gemini 2.5 Flash Image Preview (same as Revo 1.0 but with enhanced prompting)
+// Revo 2.0 uses Gemini 2.5 Flash Image Preview for premium quality (same as Revo 1.0 but with enhanced prompting)
 const REVO_2_0_MODEL = 'gemini-2.5-flash-image-preview';
 
 /**

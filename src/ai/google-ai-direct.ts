@@ -57,7 +57,7 @@ export async function generateText(
 ): Promise<Gemini25TextResponse> {
   try {
     const {
-      model = GEMINI_2_5_MODELS.FLASH,
+      model = GEMINI_2_5_MODELS.FLASH, // Premium model for high-quality generation
       temperature = 0.7,
       maxOutputTokens = 2048,
       topK = 40,
@@ -135,7 +135,7 @@ export async function generateImage(
 ): Promise<Gemini25ImageResponse> {
   try {
     const {
-      model = GEMINI_2_5_MODELS.FLASH,
+      model = GEMINI_2_5_MODELS.FLASH, // Premium model for high-quality generation
       temperature = 0.8,
       maxOutputTokens = 1024,
     } = options;
