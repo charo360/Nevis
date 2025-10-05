@@ -69,7 +69,7 @@ class ImageRequest(BaseModel):
     user_id: str
     user_tier: Optional[str] = "free"  # User's subscription tier
     model: Optional[str] = "gemini-2.5-flash-image-preview"
-    max_tokens: Optional[int] = 1000
+    max_tokens: Optional[int] = 8192
     temperature: Optional[float] = 0.7
     logoImage: Optional[str] = None  # Logo image data URL for brand integration
 
@@ -78,7 +78,7 @@ class TextRequest(BaseModel):
     user_id: str
     user_tier: Optional[str] = "free"  # User's subscription tier
     model: Optional[str] = "gemini-2.5-flash"
-    max_tokens: Optional[int] = 1000
+    max_tokens: Optional[int] = 8192
     temperature: Optional[float] = 0.7
 
 def validate_model(model: str) -> str:

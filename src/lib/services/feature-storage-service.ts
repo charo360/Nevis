@@ -168,7 +168,7 @@ export class FeatureStorageService {
       platform: post.platform,
       postType: post.postType || 'post',
       // Keep imageUrl but remove large base64 data
-      imageUrl: post.imageUrl?.startsWith('data:') ? '' : post.imageUrl,
+      imageUrl: (typeof post.imageUrl === 'string' && post.imageUrl.startsWith('data:')) ? '' : post.imageUrl,
       // Truncate long content
       content: post.content?.length > 500 ? post.content.substring(0, 500) + '...' : post.content,
       // Limit hashtags

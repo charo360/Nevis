@@ -3,44 +3,12 @@
  * Uses Gemini 2.5 Flash Image Preview for enhanced content generation
  */
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import OpenAI from 'openai';
 import type { BrandProfile, Platform } from '@/lib/types';
 import { aiProxyClient, getUserIdForProxy, getUserTierForProxy, shouldUseProxy } from '@/lib/services/ai-proxy-client';
 
-// Lazily initialize AI clients to avoid import-time failures when environment variables
-// (OPENAI_API_KEY, GEMINI_API_KEY, etc.) are not present. Clients are created only
-// when a function actually needs them.
-let ai: GoogleGenerativeAI | null = null;
-let openai: OpenAI | null = null;
+// All AI calls now go through the proxy system for cost control and model management
 
-function getAiClient(): GoogleGenerativeAI {
-  if (!ai) {
-    const apiKey = process.env.GEMINI_API_KEY_REVO_2_0 || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
-    if (!apiKey) {
-      throw new Error('Revo 2.0: No Gemini API key found. Please set GEMINI_API_KEY_REVO_2_0 or GEMINI_API_KEY in your environment variables.');
-    }
-    ai = new GoogleGenerativeAI(apiKey);
-  }
-  return ai;
-}
-
-// CRITICAL: Block search tools to prevent expensive charges
-function createSafeModel(modelName: string, config?: any) {
-  const client = getAiClient();
-  const model = client.getGenerativeModel({
-    model: modelName,
-    tools: [], // EXPLICITLY DISABLE ALL TOOLS
-    ...config
-  });
-
-  // Double-check no tools are enabled
-  if ((model as any)?.tools?.length) {
-    throw new Error('🚫 BLOCKED: Search tools detected. This would cause expensive charges.');
-  }
-
-  return model;
-}
+// Note: All AI calls now go through proxy for cost control and model management
 
 // Helper function to route AI calls through proxy - PROXY ONLY, NO FALLBACK
 async function generateContentWithProxy(promptOrParts: string | any[], modelName: string, isImageGeneration: boolean = false): Promise<any> {
@@ -124,16 +92,7 @@ async function generateContentWithProxy(promptOrParts: string | any[], modelName
   }
 }
 
-function getOpenAIClient(): OpenAI {
-  if (!openai) {
-    const key = process.env.OPENAI_API_KEY;
-    if (!key) {
-      throw new Error('OpenAI: OPENAI_API_KEY is missing. Set OPENAI_API_KEY in your environment variables to use OpenAI features.');
-    }
-    openai = new OpenAI({ apiKey: key });
-  }
-  return openai;
-}
+// Removed: getOpenAIClient() - All AI calls now go through proxy for cost control
 
 // Revo 2.0 uses Gemini 2.5 Flash Image Preview (same as Revo 1.0 but with enhanced prompting)
 const REVO_2_0_MODEL = 'gemini-2.5-flash-image-preview';
@@ -291,17 +250,7 @@ async function generateCreativeConcept(options: Revo20GenerationOptions): Promis
   });
 
   try {
-    // Temporarily use Gemini for creative concept generation to avoid OpenAI hanging issues
-    console.log('🎨 Revo 2.0: Using Gemini for creative concept generation...');
-
-    const model = createSafeModel(REVO_2_0_MODEL, {
-      generationConfig: {
-        temperature: 0.8,
-        topP: 0.9,
-        topK: 40,
-        maxOutputTokens: 1000,
-      }
-    });
+    console.log('🎨 Revo 2.0: Using proxy for creative concept generation...');
 
     // Build service-aware concept prompt
     let serviceContext = '';
@@ -497,21 +446,7 @@ Create a visually stunning design that stops scrolling and drives engagement whi
  */
 async function generateImageWithGemini(prompt: string, options: Revo20GenerationOptions): Promise<{ imageUrl: string }> {
   try {
-    console.log('🎨 Revo 2.0: Starting direct image generation (bypassing Genkit)');
-
-    const model = createSafeModel(REVO_2_0_MODEL, {
-      generationConfig: {
-        temperature: 0.7,
-        topP: 0.8,
-        topK: 40,
-        maxOutputTokens: 4096,
-      }
-    });
-
-    if ((model as any)?.tools?.length) {
-      console.error('❌ Guard: Tools detected on model initialization. Blocking to avoid search charges.');
-      throw new Error('Guard: Tools are disabled for Gemini usage in this project.');
-    }
+    console.log('🎨 Revo 2.0: Starting proxy image generation...');
 
     // Prepare generation parts array
     const generationParts: any[] = [prompt];
@@ -650,18 +585,7 @@ async function generateCaptionAndHashtags(options: Revo20GenerationOptions, conc
   const creativityBoost = Math.floor(uniqueSeed % 10) + 1;
 
   try {
-    const model = createSafeModel(REVO_2_0_MODEL, {
-      generationConfig: {
-        temperature: 0.9, // Higher temperature for more creativity
-        topP: 0.95,
-        topK: 50,
-        maxOutputTokens: 2048,
-      }
-    });
-    if ((model as any)?.tools?.length) {
-      console.error('❌ Guard: Tools detected on model initialization. Blocking to avoid search charges.');
-      throw new Error('Guard: Tools are disabled for Gemini usage in this project.');
-    }
+    console.log('🎨 Revo 2.0: Using proxy for content generation...');
 
     // Build service-specific content context
     let serviceContentContext = '';
@@ -972,7 +896,7 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
   const startTime = Date.now();
 
   try {
-    console.log('🚀 Revo 2.0: Starting next-generation content generation');
+    console.log('🚀 Revo 2.0: Starting next-generation content generation (Fixed Timeouts)');
 
     // Auto-detect platform-specific aspect ratio if not provided
     const aspectRatio = options.aspectRatio || getPlatformAspectRatio(options.platform);
@@ -984,7 +908,7 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
     console.log('🎨 Revo 2.0: Generating creative concept...');
     const concept = await Promise.race([
       generateCreativeConcept(enhancedOptions),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Creative concept generation timeout')), 15000))
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Creative concept generation timeout')), 60000))
     ]);
     console.log('✅ Revo 2.0: Creative concept generated');
 
@@ -1005,7 +929,7 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
     console.log('📱 Revo 2.0: Generating content...');
     const contentResult = await Promise.race([
       generateCaptionAndHashtags(enhancedOptions, concept),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Content generation timeout')), 15000))
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Content generation timeout')), 60000))
     ]);
     console.log('✅ Revo 2.0: Content generated');
 
@@ -1049,13 +973,8 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
  */
 export async function testRevo20Availability(): Promise<boolean> {
   try {
-    console.log('🧪 Testing Revo 2.0 availability...');
+    console.log('🧪 Testing Revo 2.0 availability via proxy...');
 
-    const model = createSafeModel(REVO_2_0_MODEL);
-    if ((model as any)?.tools?.length) {
-      console.error('❌ Guard: Tools detected on model initialization. Blocking to avoid search charges.');
-      throw new Error('Guard: Tools are disabled for Gemini usage in this project.');
-    }
     const response = await generateContentWithProxy('Create a simple test image with the text "Revo 2.0 Test" on a modern gradient background', REVO_2_0_MODEL, true);
 
     const result = await response.response;

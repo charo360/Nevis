@@ -21,15 +21,15 @@ export class ImprovedImagePersistence {
 
     try {
       // 1. Process main image
-      if (post.imageUrl && post.imageUrl.startsWith('data:')) {
+      if (post.imageUrl && typeof post.imageUrl === 'string' && post.imageUrl.startsWith('data:')) {
         console.log('📤 Uploading main image...');
         const result = await this.uploadDataUrl(
-          post.imageUrl, 
-          userId, 
+          post.imageUrl,
+          userId,
           post.id || `temp_${Date.now()}`,
           'main'
         );
-        
+
         if (result.success && result.url) {
           processedPost.imageUrl = result.url;
           uploadCount++;
@@ -42,11 +42,11 @@ export class ImprovedImagePersistence {
       // 2. Process variant images
       if (post.variants && post.variants.length > 0) {
         const processedVariants = [];
-        
+
         for (let i = 0; i < post.variants.length; i++) {
           const variant = post.variants[i];
-          
-          if (variant.imageUrl && variant.imageUrl.startsWith('data:')) {
+
+          if (variant.imageUrl && typeof variant.imageUrl === 'string' && variant.imageUrl.startsWith('data:')) {
             console.log(`📤 Uploading variant ${i + 1} image...`);
             const result = await this.uploadDataUrl(
               variant.imageUrl,
@@ -54,7 +54,7 @@ export class ImprovedImagePersistence {
               post.id || `temp_${Date.now()}`,
               `variant_${i}`
             );
-            
+
             if (result.success && result.url) {
               processedVariants.push({
                 ...variant,
@@ -70,13 +70,13 @@ export class ImprovedImagePersistence {
             processedVariants.push(variant);
           }
         }
-        
+
         processedPost.variants = processedVariants;
       }
 
       // 3. Set fallback main image from first variant if needed
       if (!processedPost.imageUrl && processedPost.variants?.length > 0) {
-        const firstVariantWithImage = processedPost.variants.find(v => v.imageUrl && !v.imageUrl.startsWith('data:'));
+        const firstVariantWithImage = processedPost.variants.find(v => v.imageUrl && typeof v.imageUrl === 'string' && !v.imageUrl.startsWith('data:'));
         if (firstVariantWithImage) {
           processedPost.imageUrl = firstVariantWithImage.imageUrl;
           console.log('🔄 Set main image from first variant');
@@ -105,24 +105,24 @@ export class ImprovedImagePersistence {
       // Convert data URL to buffer
       const base64Data = dataUrl.split(',')[1];
       const buffer = Buffer.from(base64Data, 'base64');
-      
+
       // Generate unique filename
       const timestamp = Date.now();
       const filename = `post-${postId}-${type}-${timestamp}.png`;
       const path = `generated-content/${userId}/${filename}`;
-      
+
       // Upload to Supabase
       const result = await supabaseService.uploadImage(buffer, path, 'image/png');
-      
+
       if (result) {
         return { success: true, url: result.url };
       } else {
         return { success: false, error: 'Upload failed' };
       }
     } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }
@@ -140,7 +140,7 @@ export class ImprovedImagePersistence {
 
     // Check main image
     if (post.imageUrl) {
-      if (post.imageUrl.startsWith('data:')) {
+      if (typeof post.imageUrl === 'string' && post.imageUrl.startsWith('data:')) {
         issues.push('Main image is a temporary data URL');
         recommendations.push('Upload main image to permanent storage');
       }
@@ -152,7 +152,7 @@ export class ImprovedImagePersistence {
     // Check variants
     if (post.variants) {
       post.variants.forEach((variant, index) => {
-        if (variant.imageUrl && variant.imageUrl.startsWith('data:')) {
+        if (variant.imageUrl && typeof variant.imageUrl === 'string' && variant.imageUrl.startsWith('data:')) {
           issues.push(`Variant ${index + 1} has temporary data URL`);
           recommendations.push(`Upload variant ${index + 1} image to permanent storage`);
         }

@@ -397,7 +397,7 @@ export async function POST(request: NextRequest) {
 
     // Process images with Supabase Storage if they exist
     let processedPost = { ...post };
-    if (post.imageUrl && post.imageUrl.startsWith('data:')) {
+    if (post.imageUrl && typeof post.imageUrl === 'string' && post.imageUrl.startsWith('data:')) {
       console.log('📤 Uploading main image to Supabase Storage');
       const imageResult = await uploadDataUrlToSupabase(
         post.imageUrl,
@@ -414,7 +414,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Process content image if it exists
-    if (post.content?.imageUrl && post.content.imageUrl.startsWith('data:')) {
+    if (post.content?.imageUrl && typeof post.content.imageUrl === 'string' && post.content.imageUrl.startsWith('data:')) {
       console.log('📤 Uploading content image to Supabase Storage');
       const contentImageResult = await uploadDataUrlToSupabase(
         post.content.imageUrl,

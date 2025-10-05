@@ -79,7 +79,7 @@ class AIProxyClient {
           prompt: request.prompt,
           user_id: request.user_id,
           model: request.model || 'gemini-2.5-flash-image-preview',
-          max_tokens: request.max_tokens || 1000,
+          max_tokens: request.max_tokens || 8192,
           temperature: request.temperature || 0.7,
           ...(request.logoImage && { logoImage: request.logoImage })
         })
@@ -117,7 +117,7 @@ class AIProxyClient {
           prompt: request.prompt,
           user_id: request.user_id,
           model: request.model || 'gemini-2.5-flash',
-          max_tokens: request.max_tokens || 1000,
+          max_tokens: request.max_tokens || 8192,
           temperature: request.temperature || 0.7
         })
       });
