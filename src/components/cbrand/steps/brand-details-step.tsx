@@ -19,7 +19,7 @@ import {
   ChevronRight,
   Plus, // Still needed for Services section
   Trash2, // Needed for removing services
-  // Upload, // COMMENTED OUT - Products functionality not working yet
+  // Upload, // Not needed anymore
   // Brain, // COMMENTED OUT - Products functionality not working yet
   // Loader2 // COMMENTED OUT - Products functionality not working yet
 } from 'lucide-react';
@@ -248,7 +248,6 @@ export function BrandDetailsStep({
     { id: 'contact', label: 'Contact', icon: Phone },
     { id: 'identity', label: 'Brand Identity', icon: Palette },
     { id: 'colors', label: 'Colors', icon: Hash },
-    // { id: 'products', label: 'Products', icon: Upload }, // COMMENTED OUT - Not working properly yet
     { id: 'social', label: 'Social (Optional)', icon: Share2 },
   ];
 
@@ -812,7 +811,7 @@ export function BrandDetailsStep({
             </TabsContent>
             */}
 
-            {/* Section 7: Social Media */}
+            {/* Section 6: Social Media */}
             <TabsContent value="social" className="w-full space-y-4 mt-6">
               <div className="mb-4">
                 <p className="text-sm text-gray-600">

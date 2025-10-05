@@ -101,7 +101,9 @@ export class Revo10ContentGenerator implements IContentGenerator {
         contactInfo: generationParams.contactInfo || {},
         websiteUrl: generationParams.websiteUrl || '',
         // People in designs toggle
-        includePeople: (request as any).includePeople
+        includePeople: (request as any).includePeople,
+        // NEW: Pass scheduled services for product-specific marketing
+        scheduledServices: generationParams.scheduledServices || []
       });
 
       // Update variants with the generated image

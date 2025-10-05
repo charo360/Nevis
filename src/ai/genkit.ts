@@ -1,6 +1,18 @@
 import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
 
+// Runtime guard to ensure no paid search/grounding tools are enabled
+function assertNoSearchToolsEnabled(options: any) {
+  if (!options) return;
+  const tools = (options.tools || options.tool || []).map((t: any) => (typeof t === 'string' ? t : t?.name)).join(',');
+  const model = options.model || options?.generate?.model || options?.modelId;
+  if (/search|ground/i.test(tools)) {
+    const message = `Guard: Attempted to enable Gemini search/grounding tools (tools=[${tools}]) on model ${model}. This is blocked to prevent per-query search charges.`;
+    console.error('❌', message);
+    throw new Error(message);
+  }
+}
+
 // Lazy initialization helper so missing env doesn't throw during module import.
 function createGenkitInstance() {
   const apiKey =
@@ -15,10 +27,25 @@ function createGenkitInstance() {
     return null;
   }
 
-  return genkit({
-    plugins: [googleAI({ apiKey })],
+  const instance = genkit({
+    plugins: [googleAI({ 
+      apiKey,
+      // FORCE Flash model to prevent Pro charges
+      defaultModel: 'gemini-2.5-flash'
+    })],
     model: 'googleai/gemini-2.5-flash', // Using Gemini 2.5 Flash (supports JSON mode)
   });
+
+  // Wrap generate to enforce guard centrally
+  const originalGenerate = (instance as any).generate?.bind(instance);
+  if (originalGenerate) {
+    (instance as any).generate = async (opts: any) => {
+      assertNoSearchToolsEnabled(opts);
+      return originalGenerate(opts);
+    };
+  }
+
+  return instance;
 }
 
 let _instance: any = null;

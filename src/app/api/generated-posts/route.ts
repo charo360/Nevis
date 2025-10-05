@@ -495,6 +495,20 @@ export async function POST(request: NextRequest) {
 
     // Save post to Supabase database
     try {
+      // Infer generation model dynamically from incoming post
+      const generationModel = (() => {
+        try {
+          const metaModel = (processedPost as any)?.metadata?.model;
+          if (typeof metaModel === 'string' && metaModel.trim()) return metaModel.trim();
+          const directModel = (processedPost as any)?.model;
+          if (typeof directModel === 'string' && directModel.trim()) return directModel.trim();
+          const id: string = (processedPost as any)?.id || '';
+          if (/^revo-?1\.5/i.test(id)) return 'revo-1.5';
+          if (/^revo-?2/i.test(id)) return 'revo-2.0';
+        } catch { }
+        return 'revo-2.0';
+      })();
+
       const postData = {
         user_id: userId,
         brand_profile_id: brandProfileId,
@@ -508,11 +522,12 @@ export async function POST(request: NextRequest) {
         subheadline: processedPost.subheadline,
         call_to_action: processedPost.callToAction,
         video_url: processedPost.videoUrl,
-        generation_model: 'revo-2.0',
+        generation_model: generationModel,
         generation_prompt: `Generated for brand ${brandProfileId}`,
         generation_settings: {
           timestamp: new Date().toISOString(),
-          version: '2.0'
+          version: '2.0',
+          format: (processedPost as any).format || undefined
         },
         status: processedPost.status || 'generated'
       };

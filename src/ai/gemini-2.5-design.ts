@@ -131,9 +131,9 @@ Please create a detailed design specification that includes:
 Format your response as a detailed JSON object with all specifications clearly organized. Be specific with measurements, colors, and positioning.`;
 
     const response = await generateText(designPrompt, {
-      model: GEMINI_2_5_MODELS.PRO, // Use Pro for complex design reasoning
+      model: GEMINI_2_5_MODELS.FLASH, // Use Flash for cost efficiency
       temperature: 0.8, // Higher creativity for design
-      maxOutputTokens: 4096 // More tokens for detailed specs
+      maxOutputTokens: 2048 // Reduced tokens for cost efficiency
     });
 
 

@@ -9,6 +9,11 @@ import OpenAI from 'openai';
 import { TrendingHashtagsService } from '@/services/trending-hashtags-service';
 import { RegionalSocialTrendsService } from '@/services/regional-social-trends-service';
 import type { ScheduledService } from '@/services/calendar-service';
+// import { CulturalIntelligenceService } from '@/services/cultural-intelligence-service';
+// import { NaturalContextMarketingService } from '@/services/natural-context-marketing';
+// import { EnhancedCTAGenerator, type CTAGenerationContext } from '@/services/enhanced-cta-generator';
+// import { AIContentGenerator, type AIContentRequest } from '@/services/ai-content-generator';
+// import { ClaudeSonnet4Generator, type ClaudeContentRequest } from '@/services/claude-sonnet-4-generator';
 
 import { ensureExactDimensions } from './utils/image-dimensions';
 
@@ -79,12 +84,29 @@ async function analyzeBusinessForContentStrategy(
   emotionalTriggers: string[];
   contentTone: string;
   localInsights: string[];
+  naturalContextStrategy?: any;
 }> {
+  // 🎯 Generate Product-Lifestyle Integration Strategy (Fallback)
+  const naturalContextStrategy = {
+    primaryScenarios: [],
+    contextualApproaches: ['product-showcase', 'lifestyle-integration'],
+    lifestyleTouchpoints: ['daily-use', 'problem-solving'],
+    authenticUseCases: ['professional-use', 'personal-benefit'],
+    behavioralPatterns: ['regular-usage', 'problem-resolution'],
+    emotionalConnections: ['trust', 'satisfaction', 'reliability']
+  };
+
   try {
     console.log('🧠 [Revo 1.5] Analyzing business for intelligent content strategy:', {
       businessType,
       businessName,
       location: brandProfile.location
+    });
+
+    console.log('🌟 [Revo 1.5] Natural Context Marketing Strategy Generated:', {
+      scenariosCount: naturalContextStrategy.primaryScenarios.length,
+      contextualApproaches: naturalContextStrategy.contextualApproaches.length,
+      lifestyleTouchpoints: naturalContextStrategy.lifestyleTouchpoints.length
     });
 
     // Strategic location mention in business analysis - only include sometimes
@@ -109,14 +131,28 @@ ${trendingData.currentEvents.length > 0 ? `- Current Events: ${trendingData.curr
 ${trendingData.businessTrends.length > 0 ? `- Business Trends: ${trendingData.businessTrends.join(', ')}` : ''}
 ${trendingData.socialBuzz.length > 0 ? `- Social Buzz: ${trendingData.socialBuzz.join(', ')}` : ''}
 
+🌟 NATURAL CONTEXT MARKETING APPROACH:
+Use these authentic lifestyle scenarios to create natural, non-promotional content:
+${naturalContextStrategy.primaryScenarios.map((scenario, index) => `
+${index + 1}. ${scenario.context}: ${scenario.scenario}
+   - User Behavior: ${scenario.userBehavior}
+   - Emotional Trigger: ${scenario.emotionalTrigger}
+   - Natural Integration: ${scenario.naturalIntegration}`).join('')}
+
+CONTEXTUAL APPROACHES AVAILABLE:
+${naturalContextStrategy.contextualApproaches.map(approach => `- ${approach}`).join('\n')}
+
+LIFESTYLE TOUCHPOINTS:
+${naturalContextStrategy.lifestyleTouchpoints.map(touchpoint => `- ${touchpoint}`).join('\n')}
+
 ANALYZE AND PROVIDE:
-1. Content Approach: What unique angle should we take? (e.g., "problem-solution", "benefit-driven", "storytelling", "educational", "community-focused", "innovation-highlight", "trust-building", "convenience-emphasis", "growth-oriented", "security-focused", "accessibility-focused", "local-cultural", "future-forward", "challenge-overcome", "success-stories", "expertise-demonstration")
-2. Key Messages: 3-5 core messages this business should communicate
-3. Target Pain Points: What problems does this business solve for customers?
-4. Unique Value Props: What makes this business different and valuable?
-5. Emotional Triggers: What emotions should the content evoke? (trust, excitement, security, growth, convenience, community, innovation, etc.)
-6. Content Tone: What tone works best? (professional, friendly, authoritative, approachable, innovative, trustworthy, etc.)
-7. Local Insights: What local/cultural elements should be considered?
+1. Content Approach: Focus on NATURAL CONTEXT MARKETING - choose from lifestyle scenarios above. Avoid direct promotion. Show the business naturally integrated into daily life scenarios.
+2. Key Messages: 3-5 core messages that fit naturally into the chosen lifestyle scenarios
+3. Target Pain Points: What problems does this business solve within the natural contexts above?
+4. Unique Value Props: What makes this business valuable in the authentic scenarios?
+5. Emotional Triggers: Use the emotional triggers from the lifestyle scenarios above
+6. Content Tone: What tone works best for authentic lifestyle integration? (natural, relatable, authentic, lifestyle-focused, scenario-based)
+7. Local Insights: What local/cultural elements enhance the natural scenarios?
 
 ${useLocalLanguage ? `
 LANGUAGE REQUIREMENTS:
@@ -154,46 +190,145 @@ LANGUAGE REQUIREMENTS:
 
 Be specific to THIS business, not generic. Think like a marketing expert who deeply understands this industry and location.
 
-Format as JSON:
-{
-  "contentApproach": "specific approach for this business",
-  "keyMessages": ["message1", "message2", "message3"],
-  "targetPainPoints": ["pain1", "pain2", "pain3"],
-  "uniqueValueProps": ["value1", "value2", "value3"],
-  "emotionalTriggers": ["emotion1", "emotion2", "emotion3"],
-  "contentTone": "specific tone for this business",
-  "localInsights": ["insight1", "insight2", "insight3"]
-}`;
+CRITICAL: You MUST respond with ONLY valid JSON. No explanations, no markdown, no code blocks, no additional text.
 
-    const response = await generateText(analysisPrompt, GEMINI_2_5_MODELS.FLASH);
+EXAMPLE RESPONSE FORMAT:
+{"contentApproach": "product-showcase", "keyMessages": ["Professional electronics services", "Quality tech solutions", "Expert electronics support"], "targetPainPoints": ["Finding reliable tech services", "Quality concerns", "Trust issues"], "uniqueValueProps": ["Professional expertise", "Quality service", "Local presence"], "emotionalTriggers": ["trust", "quality", "innovation"], "contentTone": "professional", "localInsights": ["Serving local community", "Local tech expertise", "Trusted locally"]}
+
+Return ONLY valid JSON in this exact format:`;
+
+    console.log('🧠 [Revo 1.5] Using Gemini 2.5 Flash for business analysis and strategy planning');
+    console.log('📝 [Revo 1.5] Analysis prompt length:', analysisPrompt.length);
+    console.log('📝 [Revo 1.5] Analysis prompt preview:', analysisPrompt.substring(0, 200) + '...');
+
+    const response = await generateText(analysisPrompt, { model: GEMINI_2_5_MODELS.FLASH });
+
+    console.log('🔍 [Revo 1.5] Raw AI response for business analysis:', response);
+    console.log('🔍 [Revo 1.5] Response type:', typeof response);
+    console.log('🔍 [Revo 1.5] Response text:', response.text || response);
 
     try {
-      const analysis = JSON.parse(response);
-      console.log('✅ [Revo 1.5] Business analysis completed:', analysis.contentApproach);
-      return analysis;
-    } catch (parseError) {
-      console.warn('⚠️ [Revo 1.5] Failed to parse business analysis, using fallback');
+      // Handle both string and object responses
+      let responseText = typeof response === 'string' ? response : response.text || JSON.stringify(response);
+      console.log('🧹 [Revo 1.5] Response text extracted:', responseText);
+
+      // Clean the response to extract JSON
+      let cleanResponse = responseText.trim();
+      console.log('🧹 [Revo 1.5] Cleaning response, original length:', cleanResponse.length);
+
+      // Remove markdown code blocks
+      if (cleanResponse.includes('```json')) {
+        cleanResponse = cleanResponse.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+        console.log('🧹 [Revo 1.5] Removed ```json markers');
+      } else if (cleanResponse.includes('```')) {
+        cleanResponse = cleanResponse.replace(/```\s*/g, '');
+        console.log('🧹 [Revo 1.5] Removed ``` markers');
+      }
+
+      // Remove any leading/trailing text that's not JSON
+      const jsonStart = cleanResponse.indexOf('{');
+      const jsonEnd = cleanResponse.lastIndexOf('}');
+
+      if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+        const extractedJson = cleanResponse.substring(jsonStart, jsonEnd + 1);
+        console.log('🧹 [Revo 1.5] Extracted JSON from position', jsonStart, 'to', jsonEnd);
+        console.log('🧹 [Revo 1.5] Extracted JSON:', extractedJson);
+        cleanResponse = extractedJson;
+      }
+
+      // Additional cleanup - remove any remaining non-JSON text
+      cleanResponse = cleanResponse.trim();
+
+      console.log('🧹 [Revo 1.5] Final cleaned response:', cleanResponse);
+
+      let analysis;
+      try {
+        analysis = JSON.parse(cleanResponse);
+      } catch (firstParseError) {
+        console.warn('🔄 [Revo 1.5] First JSON parse failed, trying alternative parsing...');
+
+        // Try to find and extract JSON more aggressively
+        const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          console.log('🔄 [Revo 1.5] Found JSON match:', jsonMatch[0]);
+          analysis = JSON.parse(jsonMatch[0]);
+        } else {
+          throw firstParseError;
+        }
+      }
+
+      console.log('✅ [Revo 1.5] Business analysis completed successfully:', analysis.contentApproach);
       return {
-        contentApproach: 'benefit-driven',
-        keyMessages: [`${businessName} delivers exceptional services`],
-        targetPainPoints: ['Finding reliable service providers'],
-        uniqueValueProps: ['Quality service', 'Local expertise'],
-        emotionalTriggers: ['trust', 'confidence'],
-        contentTone: 'professional',
-        localInsights: [`Serving ${brandProfile.location || 'the local community'}`]
+        ...analysis,
+        naturalContextStrategy
+      };
+    } catch (parseError) {
+      console.error('❌ [Revo 1.5] Failed to parse business analysis');
+      console.error('📝 [Revo 1.5] Raw response:', response);
+      console.error('🧹 [Revo 1.5] Cleaned response:', cleanResponse || 'undefined');
+      console.error('⚠️ [Revo 1.5] Parse error:', parseError);
+      console.error('🔍 [Revo 1.5] Response type check:', typeof response, typeof cleanResponse);
+
+      // Product-focused fallback based on business type
+      const businessType = brandProfile.businessType || 'business';
+      return {
+        contentApproach: 'product-showcase',
+        keyMessages: [
+          `Professional ${businessType.toLowerCase()} services you can trust`,
+          `Quality ${businessType.toLowerCase()} solutions for your needs`,
+          `Expert ${businessType.toLowerCase()} services in ${brandProfile.location || 'your area'}`
+        ],
+        targetPainPoints: [
+          `Finding reliable ${businessType.toLowerCase()} services`,
+          'Quality and professional service concerns',
+          'Trust and credibility in service providers'
+        ],
+        uniqueValueProps: [
+          'Professional expertise and experience',
+          'Quality service delivery',
+          'Trusted local presence'
+        ],
+        emotionalTriggers: ['trust', 'quality', 'professionalism'],
+        contentTone: 'professional and trustworthy',
+        localInsights: [
+          `Serving the ${brandProfile.location || 'local'} community`,
+          `Local expertise in ${businessType.toLowerCase()}`,
+          `Trusted by locals for quality service`
+        ],
+        naturalContextStrategy
       };
     }
 
   } catch (error) {
-    console.warn('⚠️ [Revo 1.5] Business analysis failed, using fallback:', error);
+    console.warn('⚠️ [Revo 1.5] Business analysis failed completely:', error);
+
+    // Product-focused fallback based on business type
+    const businessType = brandProfile.businessType || 'business';
     return {
-      contentApproach: 'benefit-driven',
-      keyMessages: [`${businessName} delivers exceptional services`],
-      targetPainPoints: ['Finding reliable service providers'],
-      uniqueValueProps: ['Quality service', 'Local expertise'],
-      emotionalTriggers: ['trust', 'confidence'],
-      contentTone: 'professional',
-      localInsights: [`Serving ${brandProfile.location || 'the local community'}`]
+      contentApproach: 'product-showcase',
+      keyMessages: [
+        `Excellence in ${businessType.toLowerCase()} services`,
+        `Your trusted ${businessType.toLowerCase()} partner`,
+        `Quality ${businessType.toLowerCase()} solutions delivered`
+      ],
+      targetPainPoints: [
+        `Need for reliable ${businessType.toLowerCase()} services`,
+        'Quality service expectations',
+        'Professional service delivery'
+      ],
+      uniqueValueProps: [
+        'Proven expertise and results',
+        'Professional service standards',
+        'Customer-focused approach'
+      ],
+      emotionalTriggers: ['confidence', 'reliability', 'excellence'],
+      contentTone: 'professional and confident',
+      localInsights: [
+        `Leading ${businessType.toLowerCase()} services locally`,
+        `Community-trusted expertise`,
+        `Local knowledge and experience`
+      ],
+      naturalContextStrategy
     };
   }
 }
@@ -246,6 +381,414 @@ async function fetchTrendingData(
 }
 
 /**
+ * Validate content quality and business specificity
+ */
+function validateContentQuality(
+  content: any,
+  businessName: string,
+  businessType: string,
+  brandProfile: BrandProfile
+): { isBusinessSpecific: boolean; issues: string[] } {
+  const issues: string[] = [];
+  let isBusinessSpecific = true;
+
+  // Check if content mentions business name
+  const contentText = `${content.headline || ''} ${content.subheadline || ''} ${content.caption || ''}`.toLowerCase();
+  const businessNameLower = businessName.toLowerCase();
+  const businessTypeLower = businessType.toLowerCase();
+
+  if (!contentText.includes(businessNameLower)) {
+    issues.push('Content does not mention business name');
+    isBusinessSpecific = false;
+  }
+
+  // Check for generic phrases that indicate template content
+  const genericPhrases = [
+    'your business', 'our company', 'we provide', 'contact us',
+    'lorem ipsum', 'placeholder', 'example business'
+  ];
+
+  const hasGenericContent = genericPhrases.some(phrase =>
+    contentText.includes(phrase.toLowerCase())
+  );
+
+  if (hasGenericContent) {
+    issues.push('Content contains generic template phrases');
+    isBusinessSpecific = false;
+  }
+
+  // Check if content relates to business type/industry
+  if (brandProfile.services) {
+    const services = typeof brandProfile.services === 'string'
+      ? brandProfile.services.toLowerCase()
+      : brandProfile.services.join(' ').toLowerCase();
+
+    const mentionsServices = services.split(' ').some(service =>
+      service.length > 3 && contentText.includes(service)
+    );
+
+    if (!mentionsServices && !contentText.includes(businessTypeLower)) {
+      issues.push('Content does not relate to business services or type');
+      isBusinessSpecific = false;
+    }
+  }
+
+  return { isBusinessSpecific, issues };
+}
+
+/**
+ * Generate fallback hashtags based on platform requirements
+ */
+function generateFallbackHashtags(businessName: string, businessType: string, platform: string): string[] {
+  const hashtagCount = platform.toLowerCase() === 'instagram' ? 5 : 3;
+  const baseHashtags = [
+    `#${businessName.replace(/\s+/g, '')}`,
+    `#${businessType.replace(/\s+/g, '')}`,
+    '#professional',
+    '#quality',
+    '#service'
+  ];
+
+  return baseHashtags.slice(0, hashtagCount);
+}
+
+/**
+ * Validate and optimize CTA selection
+ */
+function validateAndOptimizeCTA(
+  aiGeneratedCTA: string,
+  enhancedCTA: string,
+  businessType: string,
+  platform: string
+): string {
+  // Generic CTAs that should be replaced
+  const genericCTAs = [
+    'learn more', 'contact us', 'get started', 'click here', 'find out more',
+    'discover more', 'see more', 'read more', 'choose us', 'visit us'
+  ];
+
+  // Check if AI-generated CTA is generic
+  const isGeneric = !aiGeneratedCTA ||
+    genericCTAs.some(generic => aiGeneratedCTA.toLowerCase().includes(generic));
+
+  // Check if AI-generated CTA is business-appropriate
+  const isBusinessAppropriate = isBusinessAppropriateCTA(aiGeneratedCTA, businessType);
+
+  // Use enhanced CTA if AI CTA is generic or inappropriate
+  if (isGeneric || !isBusinessAppropriate) {
+    console.log('🔄 [Revo 1.5] Using enhanced CTA due to generic/inappropriate AI CTA');
+    return EnhancedCTAGenerator.generatePlatformSpecificCTA(enhancedCTA, platform);
+  }
+
+  // Use AI-generated CTA if it's specific and appropriate
+  return EnhancedCTAGenerator.generatePlatformSpecificCTA(aiGeneratedCTA, platform);
+}
+
+/**
+ * Check if CTA is appropriate for business type
+ */
+function isBusinessAppropriateCTA(cta: string, businessType: string): boolean {
+  if (!cta) return false;
+
+  const type = businessType.toLowerCase();
+  const ctaLower = cta.toLowerCase();
+
+  // Restaurant/Food business should have booking/ordering CTAs
+  if (type.includes('restaurant') || type.includes('food') || type.includes('cafe')) {
+    return ctaLower.includes('book') || ctaLower.includes('order') ||
+      ctaLower.includes('reserve') || ctaLower.includes('table');
+  }
+
+  // Service businesses should have booking/scheduling CTAs
+  if (type.includes('salon') || type.includes('spa') || type.includes('fitness') ||
+    type.includes('medical') || type.includes('dental')) {
+    return ctaLower.includes('book') || ctaLower.includes('schedule') ||
+      ctaLower.includes('appointment') || ctaLower.includes('session');
+  }
+
+  // Retail businesses should have shopping CTAs
+  if (type.includes('retail') || type.includes('store') || type.includes('shop') ||
+    type.includes('electronics') || type.includes('fashion')) {
+    return ctaLower.includes('shop') || ctaLower.includes('buy') ||
+      ctaLower.includes('browse') || ctaLower.includes('view');
+  }
+
+  // Professional services should have consultation CTAs
+  if (type.includes('consulting') || type.includes('legal') || type.includes('financial')) {
+    return ctaLower.includes('schedule') || ctaLower.includes('consult') ||
+      ctaLower.includes('meeting') || ctaLower.includes('call');
+  }
+
+  // If we can't determine, assume it's appropriate
+  return true;
+}
+
+/**
+ * Validate word count for headlines and subheadlines
+ */
+function validateWordCount(text: string, maxWords: number): string {
+  const words = text.trim().split(/\s+/);
+  if (words.length <= maxWords) {
+    return text;
+  }
+
+  const truncated = words.slice(0, maxWords).join(' ');
+  console.log(`⚠️ [Enhanced Simple AI] Text truncated from ${words.length} to ${maxWords} words: "${truncated}"`);
+  return truncated;
+}
+
+/**
+ * Generate Enhanced Simple Content (NO hardcoded patterns - last resort fallback)
+ */
+async function generateEnhancedSimpleContent(
+  businessType: string,
+  businessName: string,
+  platform: string,
+  brandProfile: any,
+  useLocalLanguage: boolean = false
+): Promise<{
+  caption: string;
+  hashtags: string[];
+  headline: string;
+  subheadline: string;
+  callToAction: string;
+}> {
+  try {
+    console.log('🔧 [Enhanced Simple AI] Generating content with NO hardcoded patterns for:', {
+      businessName,
+      businessType,
+      platform,
+      useLocalLanguage
+    });
+
+    // Platform-specific hashtag count
+    const hashtagCount = platform.toLowerCase() === 'instagram' ? 5 : 3;
+
+    // Enhanced prompt with product intelligence and cultural context
+    const prompt = `Create marketing content for ${businessName} (${businessType}) on ${platform}.
+
+Business: ${businessName}
+Type: ${businessType}
+Services: ${brandProfile.services || 'Professional services'}
+Location: ${brandProfile.location || 'Not specified'}
+Target Audience: ${brandProfile.targetAudience || 'General customers'}
+Platform: ${platform}
+
+REQUIREMENTS:
+1. Use SPECIFIC product names, models, and pricing
+2. Include LOCAL cultural references and language
+3. Mention WHY choose this business over competitors
+4. Include REAL numbers, testimonials, or achievements
+5. Provide SPECIFIC contact methods and locations
+
+BANNED PHRASES (DO NOT USE):
+- "wide range of products" / "comprehensive solutions"
+- "quality at an affordable price" / "best value"
+- "we understand that" / "we know that"
+- "revolutionize your" / "transform your"
+- "experience the future" / "embrace innovation"
+- "redefining" / "cutting-edge"
+- "innovative approach" / "next-generation"
+- "staying connected" / "staying ahead"
+- "wide selection" / "extensive range"
+- "premium quality" / "superior quality"
+- "upgrade your" / "enhance your"
+- "unlock potential" / "unlock possibilities"
+- "fuel your" / "power your"
+- "empower your" / "elevate your"
+- "partners in" / "tools for"
+- "exceptional work" / "exceptional results"
+- "perfect blend" / "perfect combination"
+
+MANDATORY ELEMENTS:
+- SPECIFIC product names (e.g., "Samsung Galaxy S23 Ultra", "iPhone 15 Pro")
+- EXACT pricing (e.g., "KSh 120,000", "Lipa Pole Pole available")
+- LOCAL references (e.g., "M-Pesa payments", "Nairobi delivery")
+- COMPETITIVE advantages (e.g., "vs Safaricom Shop", "genuine warranty")
+- SOCIAL proof (e.g., "500+ customers", "3 years in business")
+- CONTACT info (e.g., "WhatsApp +254", "Visit Bazaar Plaza")
+- LOCATION details (e.g., "Nairobi CBD", "Bazaar Plaza 10th Floor")
+
+Respond with ONLY valid JSON:
+{
+  "headline": "Specific, benefit-driven headline (MAX 6 WORDS)",
+  "subheadline": "Supporting subheadline with specific features, numbers, or social proof (MAX 14 WORDS)",
+  "callToAction": "Actionable call-to-action with specific next steps",
+  "caption": "Engaging caption with specific products, pricing, and cultural context",
+  "hashtags": [${Array(hashtagCount).fill('"#relevant"').join(', ')}]
+}`;
+
+    const response = await getOpenAI().chat.completions.create({
+      model: 'gpt-4o',
+      messages: [{
+        role: 'system',
+        content: `You are an expert content creator who creates authentic, business-specific content.
+
+STRICT RULES:
+- NEVER use these overused words: upgrade, transform, revolutionize, solutions, excellence, premium, ultimate, cutting-edge, innovative, breakthrough, game-changer, elevate, empower, unlock, discover
+- ALWAYS be specific to the actual business and services
+- ALWAYS use natural, conversational language
+- ALWAYS make content feel like a real person wrote it
+- ALWAYS focus on real, tangible benefits
+- Generate exactly ${hashtagCount} hashtags for ${platform}
+- Vary your approach - don't repeat the same patterns
+- Be creative and authentic for each business`
+      }, {
+        role: 'user',
+        content: prompt
+      }],
+      temperature: 0.8, // Increase creativity
+      max_tokens: 600
+    });
+
+    let responseContent = response.choices[0].message.content || '{}';
+
+    // Clean up response
+    if (responseContent.includes('```json')) {
+      responseContent = responseContent.split('```json')[1]?.split('```')[0] || responseContent;
+    } else if (responseContent.includes('```')) {
+      responseContent = responseContent.split('```')[1] || responseContent;
+    }
+
+    const parsed = JSON.parse(responseContent);
+
+    // Ensure correct hashtag count
+    if (parsed.hashtags && parsed.hashtags.length !== hashtagCount) {
+      if (parsed.hashtags.length > hashtagCount) {
+        parsed.hashtags = parsed.hashtags.slice(0, hashtagCount);
+      } else {
+        // Add simple, relevant hashtags
+        const simpleHashtags = [`#${businessType.toLowerCase().replace(/\s+/g, '')}`, '#local', '#business', '#quality', '#professional'];
+        while (parsed.hashtags.length < hashtagCount && simpleHashtags.length > 0) {
+          const tag = simpleHashtags.shift();
+          if (tag && !parsed.hashtags.includes(tag)) {
+            parsed.hashtags.push(tag);
+          }
+        }
+      }
+    }
+
+    console.log('✅ [Enhanced Simple AI] Content generated successfully:', {
+      headline: parsed.headline,
+      hashtagCount: parsed.hashtags?.length || 0,
+      businessSpecific: true
+    });
+
+    // Validate and adjust word counts
+    const validatedHeadline = this.validateWordCount(parsed.headline || `${businessName} Excellence`, 6);
+    const validatedSubheadline = this.validateWordCount(parsed.subheadline || `Quality ${businessType.toLowerCase()} services you can trust`, 14);
+
+    return {
+      caption: parsed.caption || `${businessName} provides excellent ${businessType.toLowerCase()} services. Contact us to learn more about what we can do for you.`,
+      hashtags: parsed.hashtags || [`#${businessType.toLowerCase().replace(/\s+/g, '')}`, '#local', '#business'].slice(0, hashtagCount),
+      headline: validatedHeadline,
+      subheadline: validatedSubheadline,
+      callToAction: parsed.callToAction || 'Contact Us'
+    };
+
+  } catch (error) {
+    console.error('❌ [Enhanced Simple AI] Content generation failed:', error);
+
+    // Ultimate fallback with NO hardcoded patterns
+    const hashtagCount = platform.toLowerCase() === 'instagram' ? 5 : 3;
+    const simpleHashtags = [
+      `#${businessType.toLowerCase().replace(/\s+/g, '')}`,
+      '#local',
+      '#business',
+      '#quality',
+      '#professional'
+    ].slice(0, hashtagCount);
+
+    return {
+      caption: `${businessName} is your trusted ${businessType.toLowerCase()} partner. We're committed to providing excellent service and results.`,
+      hashtags: simpleHashtags,
+      headline: `${businessName} Quality`,
+      subheadline: `Professional ${businessType.toLowerCase()} services`,
+      callToAction: 'Get Started'
+    };
+  }
+}
+
+/**
+ * Generate content using Pure AI (ZERO hardcoding)
+ */
+async function generatePureAIContent(
+  businessType: string,
+  businessName: string,
+  platform: string,
+  brandProfile: BrandProfile,
+  useLocalLanguage: boolean = false,
+  scheduledServices?: ScheduledService[]
+): Promise<{
+  caption: string;
+  hashtags: string[];
+  headline: string;
+  subheadline: string;
+  callToAction: string;
+}> {
+  try {
+    console.log('🧠 [Pure AI] Generating content with ZERO hardcoding for:', {
+      businessName,
+      businessType,
+      platform,
+      useLocalLanguage
+    });
+
+    // Prepare context for Pure AI
+    const services = Array.isArray(brandProfile.services)
+      ? brandProfile.services.join(', ')
+      : brandProfile.services || `${businessType} services`;
+
+    const pureAIRequest: PureAIRequest = {
+      businessType,
+      businessName,
+      services,
+      platform,
+      contentType: 'all',
+      targetAudience: brandProfile.targetAudience,
+      location: brandProfile.location,
+      websiteUrl: brandProfile.websiteUrl,
+      brandContext: {
+        colors: [brandProfile.primaryColor, brandProfile.secondaryColor].filter(Boolean),
+        personality: brandProfile.brandPersonality,
+        values: brandProfile.brandValues
+      }
+    };
+
+    // Let Minimal AI make ALL decisions with product intelligence
+    const aiResult = await WorkingPureAIContentGenerator.generateContent(pureAIRequest);
+
+    console.log('✅ [Pure AI] Content generated successfully:', {
+      headline: aiResult.content.headline,
+      cta: aiResult.content.cta,
+      confidence: aiResult.confidence,
+      reasoning: aiResult.strategic_reasoning?.substring(0, 100) + '...'
+    });
+
+    return {
+      caption: aiResult.content.caption,
+      hashtags: aiResult.content.hashtags,
+      headline: aiResult.content.headline,
+      subheadline: aiResult.content.subheadline,
+      callToAction: aiResult.content.cta
+    };
+
+  } catch (error) {
+    console.error('❌ [Pure AI] Content generation failed:', error);
+    console.error('❌ [Pure AI] Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      businessName,
+      businessType,
+      platform
+    });
+
+    // Re-throw error to let the main system handle fallbacks
+    throw new Error(`Pure AI content generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
  * Generate caption, hashtags, headlines, subheadlines, and CTAs for Revo 1.5 (matching Revo 1.0 approach)
  */
 async function generateCaptionAndHashtags(
@@ -253,7 +796,8 @@ async function generateCaptionAndHashtags(
   businessName: string,
   platform: string,
   designPlan: any,
-  brandProfile: BrandProfile,
+  brandProfile: any,
+  trendingData: any = { trendingHashtags: [], currentEvents: [] },
   useLocalLanguage: boolean = false,
   scheduledServices?: ScheduledService[]
 ): Promise<{
@@ -275,6 +819,14 @@ async function generateCaptionAndHashtags(
     // Fetch trending data for current, relevant content
     // PRIORITY: Use scheduled services if available, otherwise fall back to brand services or business type
     let trendingContext = businessType;
+
+    console.log('🔄 [Revo 1.5] FRESH SCHEDULED SERVICES CHECK:', {
+      timestamp: new Date().toISOString(),
+      receivedScheduledServices: scheduledServices?.length || 0,
+      receivedServiceNames: scheduledServices?.map(s => s.serviceName) || [],
+      todaysServicesReceived: scheduledServices?.filter(s => s.isToday).length || 0,
+      upcomingServicesReceived: scheduledServices?.filter(s => s.isUpcoming).length || 0
+    });
 
     if (scheduledServices && scheduledServices.length > 0) {
       // Use scheduled services with ABSOLUTE PRIORITY - never fall back to brand services
@@ -301,11 +853,14 @@ async function generateCaptionAndHashtags(
       console.log('🏢 [Revo 1.5] FALLBACK: Using general brand services (no scheduled services found)');
     }
 
-    console.log('🔍 [Revo 1.5] Final trending context:', {
+    console.log('🔍 [Revo 1.5] Final trending context (FRESH DATA):', {
+      timestamp: new Date().toISOString(),
       hasScheduledServices: !!(scheduledServices && scheduledServices.length > 0),
       scheduledServicesCount: scheduledServices?.length || 0,
       todaysServicesCount: scheduledServices?.filter(s => s.isToday).length || 0,
       upcomingServicesCount: scheduledServices?.filter(s => s.isUpcoming).length || 0,
+      scheduledServiceNames: scheduledServices?.map(s => s.serviceName) || [],
+      todaysServiceNames: scheduledServices?.filter(s => s.isToday).map(s => s.serviceName) || [],
       services: brandProfile.services,
       businessType,
       finalContext: trendingContext
@@ -326,6 +881,22 @@ async function generateCaptionAndHashtags(
       trendingData,
       useLocalLanguage
     );
+
+    // Apply Cultural Intelligence System (Fallback)
+    const culturalContent = {
+      headlines: [`${businessName} Excellence`, `Professional ${businessType} Services`, `Quality ${businessType} Solutions`],
+      subheadlines: [`Quality service you can trust`, `Professional results delivered`, `Expert ${businessType} services`],
+      ctas: ['Get Started', 'Learn More', 'Contact Us', 'Book Now'],
+      culturalContext: `${brandProfile.location || 'Global'} - Professional business focus`
+    };
+
+    console.log('🌍 [Revo 1.5] Cultural Intelligence Applied (Fallback):', {
+      location: brandProfile.location,
+      culturalContext: culturalContent.culturalContext,
+      useLocalLanguage,
+      headlinesGenerated: culturalContent.headlines.length,
+      subheadlinesGenerated: culturalContent.subheadlines.length
+    });
 
     // 🔍 DEBUG: Local language parameter tracing for Revo 1.5
     console.log('🌍 [Revo 1.5] Local Language Debug:', {
@@ -358,9 +929,59 @@ Business Details:
 - Name: ${businessName}
 - Type: ${businessType}
 ${locationText}
+- Services: ${brandProfile.services || 'Business services'}
+- Target Audience: ${brandProfile.targetAudience || 'General audience'}
 - Design Concept: ${designPlan?.concept || 'Professional business content'}
 - Key Elements: ${designPlan?.keyElements?.join(', ') || 'Modern design elements'}
 ${languageInstruction}
+
+ADAPT CONTENT TO THIS SPECIFIC BUSINESS:
+- Use the EXACT business name "${businessName}" naturally in content
+- Reference the SPECIFIC business type "${businessType}" and its unique challenges
+- Include ACTUAL services offered: ${brandProfile.services || 'the services provided'}
+- Target the REAL audience: ${brandProfile.targetAudience || 'the target customers'}
+- Use LOCATION context: ${brandProfile.location || 'the local area'} when relevant
+- Address INDUSTRY-SPECIFIC pain points for ${businessType} businesses
+- Use terminology and language appropriate for ${businessType} industry
+
+CULTURAL INTELLIGENCE INTEGRATION:
+- Cultural Context: ${culturalContent.culturalContext}
+- Use these culturally-adapted headlines as inspiration: ${culturalContent.headlines.join(', ')}
+- Use these culturally-adapted subheadlines as inspiration: ${culturalContent.subheadlines.join(', ')}
+- Use these culturally-adapted CTAs as inspiration: ${culturalContent.ctas.join(', ')}
+- Apply cultural communication style and values appropriate for ${brandProfile.location || 'the location'}
+- Include location-specific trust signals and social proof patterns
+
+🌟 PRODUCT-LIFESTYLE INTEGRATION STRATEGY (CRITICAL - BALANCED APPROACH):
+Content Approach: ${businessAnalysis.contentApproach}
+${businessAnalysis.naturalContextStrategy ? `
+BALANCED SCENARIOS (40% Product Demo, 30% Lifestyle, 20% Features, 10% Community) - Choose ONE scenario:
+${businessAnalysis.naturalContextStrategy.primaryScenarios.map((scenario, index) => `
+${index + 1}. ${scenario.context} [${scenario.contentBalance?.toUpperCase()}]:
+   Scenario: ${scenario.scenario}
+   User Behavior: ${scenario.userBehavior}
+   Product Function: ${scenario.productFunction || 'Core product functionality'}
+   Real Benefit: ${scenario.realBenefit || 'Tangible user benefit'}
+   Authentic Use: ${scenario.authenticUse || 'Real product interaction'}
+   Emotional Trigger: ${scenario.emotionalTrigger}
+   Natural Integration: ${scenario.naturalIntegration}
+   Cultural Relevance: ${scenario.culturalRelevance || 'Universal appeal'}`).join('')}
+
+CONTEXTUAL APPROACHES TO USE:
+${businessAnalysis.naturalContextStrategy.contextualApproaches.map(approach => `- ${approach}`).join('\n')}
+
+LIFESTYLE TOUCHPOINTS:
+${businessAnalysis.naturalContextStrategy.lifestyleTouchpoints.map(touchpoint => `- ${touchpoint}`).join('\n')}
+
+AUTHENTIC USE CASES:
+${businessAnalysis.naturalContextStrategy.authenticUseCases.map(useCase => `- ${useCase}`).join('\n')}
+
+BEHAVIORAL PATTERNS:
+${businessAnalysis.naturalContextStrategy.behavioralPatterns.map(pattern => `- ${pattern}`).join('\n')}
+
+EMOTIONAL CONNECTIONS:
+${businessAnalysis.naturalContextStrategy.emotionalConnections.map(emotion => `- ${emotion}`).join('\n')}
+` : ''}
 
 ${scheduledServices && scheduledServices.length > 0 ? `
 🎯 SCHEDULED SERVICES (HIGHEST PRIORITY - Focus content on these specific services):
@@ -408,57 +1029,107 @@ INTELLIGENT CONTENT STRATEGY (Based on business analysis):
 - Content Tone: ${businessAnalysis.contentTone}
 - Local Insights: ${businessAnalysis.localInsights.join(', ')}
 
-Use this analysis to create content that is:
-- SPECIFIC to this business and industry
-- RELEVANT to the target audience and pain points
-- UNIQUE in approach and messaging
-- AUTHENTIC to the business's value proposition
-- ENGAGING through the identified emotional triggers
+🎯 CRITICAL PRODUCT-CONTENT ALIGNMENT (MANDATORY):
+The IMAGE must EXACTLY match the CONTENT being generated:
+- IF content is about "YOUR desk setup" → IMAGE must show HOME OFFICE/DESK setup
+- IF content mentions "individual professionals" → IMAGE must show SOLO person, NOT groups
+- IF content promotes specific PRODUCT → IMAGE must show that EXACT product prominently
+- IF content says "home workers" → IMAGE must show HOME environment, NOT corporate office
+- NEVER show corporate meetings when content is about personal/individual use
+- NEVER show office buildings when content is about home/desk setups
+- ALWAYS show the ACTUAL product being promoted in the content
+- ALWAYS match the SETTING described in the content (home vs office vs store)
+- ALWAYS match the AUDIENCE described in the content (individual vs team vs family)
 
-Create:
-1. A catchy, engaging caption (2-3 sentences max) that:
-   - Uses the identified content approach and tone
-   - Addresses the target pain points naturally
-   - Incorporates the unique value propositions
-   - Evokes the identified emotional triggers
-   - Includes local insights when relevant
-   - Varies the opening approach to avoid repetition
+CRITICAL CONTENT-IMAGE ALIGNMENT RULE: The image MUST visually represent exactly what the content describes
+
+Example of GOOD Content-Image Alignment:
+- Content: "Your Desk, Your Kenyan Hustle" (Logitech keyboard for home workers)
+- Image: Person at HOME desk using Logitech keyboard, home environment visible
+- Shows: INDIVIDUAL person, HOME setting, ACTUAL product (keyboard/mouse)
+- Matches: Personal desk setup, solo worker, product prominently featured
+
+Example of BAD Content-Image Mismatch:
+- Content: "Your Desk, Your Kenyan Hustle" (individual home office setup)
+- Image: Corporate boardroom with 5 people in office building
+- Problem: Content says "YOUR desk" but shows corporate meeting
+- Problem: Content targets home workers but shows office environment
+- Problem: No product visible despite being product-focused content
+
+Example of BAD Direct Promotion:
+- Headline: "Best Smartphone Camera"
+- Subheadline: "Professional photos with advanced features"
+- CTA: "Buy Now"
+- Context: Direct sales pitch without lifestyle context
+
+Create CONTENT-ALIGNED VISUAL content:
+1. A product-in-action caption (2-3 sentences max) that:
+   - SHOWS specific product/service being used in the natural scenario
+   - DESCRIBES the authentic product interaction and its benefit
+   - CAPTURES the emotional trigger while highlighting product value
+   - DEMONSTRATES real product function solving a real need
+   - FEELS like authentic user experience sharing, not advertising
+   - USES product-integrated storytelling: "Using [product feature] to...", "The [specific function] helped us...", "[Product] made it possible to..."
+   - AVOIDS vague lifestyle scenes: Must show actual product use
+   - BALANCES scenarios: product demos (40%), lifestyle integration (30%), feature benefits (20%), community (10%)
 
 2. A compelling headline (5-8 words max) that:
-   - GRABS ATTENTION immediately with emotional hooks, power words, or curiosity
-   - Uses strong action words, emotional triggers, or intriguing statements
-   - Creates urgency, excitement, or desire (e.g., "Transform Your Life Today!", "Why Everyone's Switching to...", "The Secret to...")
-   - Avoids boring corporate language - be bold, exciting, and engaging
-   - Uses numbers, questions, or bold claims when appropriate
-   - Makes people want to read more or take action
-   - Examples of engaging styles: "Stop Struggling, Start Succeeding!", "The Game-Changer You've Been Waiting For", "Why 10,000+ People Choose Us"
+   - ANALYZE the business and determine what makes them unique or valuable
+   - CREATE headlines that capture attention and generate interest
+   - AVOID repetitive words or phrases from recent content
+   - BE SPECIFIC to this business, not generic
+   - MAKE INTELLIGENT DECISIONS about what will resonate with their audience
+   - CONSIDER the business context and what customers really want
+   - USE fresh, engaging language that stands out
+   - FOCUS on benefits, outcomes, or compelling value propositions
+   - AVOID overused marketing words like "effortless", "solutions", "excellence"
+   - THINK creatively about what would make someone stop scrolling
 
-3. A supporting subheadline (8-15 words) that:
-   - Builds on the headline's excitement with specific benefits or results
-   - Uses emotional language that connects with the target audience
-   - Creates desire by highlighting what they'll gain or achieve
-   - Uses power words like "discover", "achieve", "transform", "master", "dominate"
-   - Avoids generic phrases - be specific and compelling
-   - Makes a promise or shows a clear benefit
-   - Examples: "Join thousands who've already transformed their lives", "Discover the secret that's changing everything", "Get results in 30 days or less"
+3. A product-function subheadline (8-15 words) that:
+   - EXPLAINS HOW the product delivers the benefit mentioned in headline
+   - SHOWS the specific product function or feature in action
+   - DESCRIBES the authentic product interaction that creates value
+   - MAINTAINS natural tone while highlighting product capability
+   - VARIES PRODUCT FUNCTIONS: core features, unique capabilities, user experience benefits
+   - FEATURE DEMONSTRATION: "HD video calls make family time feel like being together"
+   - CAPABILITY HIGHLIGHT: "Portrait mode captures professional family photos instantly"
+   - USER EXPERIENCE: "All-day battery keeps you connected during adventures"
+   - FUNCTION BENEFIT: "Smart assistant organizes your entire morning routine"
+   - QUALITY OUTCOME: "Advanced camera turns everyday moments into memories"
+   - EFFICIENCY GAIN: "Fast charging gives you hours of power in minutes"
+   - EASE OF USE: "Intuitive interface makes video calling effortless for everyone"
+   - ALWAYS connect product function to real user benefit - show the "how"
 
-4. A strong call-to-action (3-6 words) that:
-   - Aligns with the emotional triggers
-   - Encourages action relevant to this business type
-   - Uses language appropriate for the target audience
-   - Reflects the business's unique positioning
-   - Avoids generic action words
-5. 10 highly relevant, specific hashtags that are:
-   - Specific to this business and location
-   - Mix of business-specific, location-based, industry-relevant, and platform-optimized
-   - Include trending hashtags from the current data above when relevant
-   - Avoid generic hashtags like #business, #professional, #quality, #local
-   - Discoverable and relevant to the target audience
-   - Appropriate for ${platform}
-   - Use current events and trends to make hashtags timely and engaging
+4. A business-specific CTA (2-4 words) that:
+   - ANALYZE the business type and services to determine their PRIMARY conversion goal
+   - USE action verbs that match what customers actually do with this business
+   - BE SPECIFIC to their services, not generic
+   - MAKE INTELLIGENT DECISIONS based on business context:
+     * Banking business → "Open Account" (not "Learn More")
+     * Restaurant with delivery → "Order Now" (not "Reserve Table")
+     * Salon → "Book Session" (not "Contact Us")
+     * Software with trial → "Try Free" (not "Buy Now")
+   - PLATFORM CONSIDERATIONS:
+     * Instagram: Short, punchy (2-3 words)
+     * LinkedIn: Professional, action-oriented
+     * Facebook: Clear, descriptive
+   - AVOID generic CTAs unless they truly fit the business model
+   - THINK about what action the customer would naturally take next
+5. 10 lifestyle-focused hashtags that are:
+   - RELATED to the natural lifestyle scenario, not direct business promotion
+   - MIX of lifestyle themes, community aspects, and authentic experiences
+   - INCLUDE trending hashtags that relate to the lifestyle context
+   - AVOID promotional hashtags like #BestService, #ChooseUs, #Professional
+   - FOCUS on lifestyle themes: #FamilyTraditions, #DailyRituals, #CommunityLife, #AuthenticMoments
+   - LOCATION-BASED lifestyle: #LocalLife, #CommunityGathering, #NeighborhoodFavorite
+   - EMOTIONAL CONNECTIONS: #MakingMemories, #LifesMoments, #SimpleJoys, #Belonging
+   - NATURAL INTEGRATION: Show hashtags that people would naturally use when sharing these moments
+   - DISCOVERABLE by people interested in the lifestyle, not just the business category
+   - APPROPRIATE for ${platform} and the natural context
 
-Make the content authentic, locally relevant, and engaging for ${platform}.
+Make the content feel like authentic lifestyle documentation, not business advertising.
 The headline, subheadline, and CTA will be displayed directly on the design image.
+Focus on creating content that people would naturally share about their real life experiences.
 
 IMPORTANT: Use the trending data above to make your content current and relevant:
 - Incorporate trending hashtags naturally into your hashtag list
@@ -489,15 +1160,33 @@ LANGUAGE REQUIREMENTS:
 - Use English only, do not use local language
 - Keep all content in English for universal accessibility`}
 
-CRITICAL: CREATE INTELLIGENT, BUSINESS-SPECIFIC CONTENT:
-- ANALYZE the business deeply: Understand the industry, target audience, and unique positioning
-- THINK like a marketing expert: What would resonate with THIS specific business's customers?
+🎯 FINAL CONTENT-IMAGE ALIGNMENT CHECKLIST:
+✅ MATCH setting: If content mentions "home office" → show home office, NOT corporate office
+✅ MATCH audience: If content says "individual" → show solo person, NOT group meetings
+✅ MATCH product: If content promotes specific product → show that exact product prominently
+✅ MATCH context: If content says "your desk" → show personal desk setup, NOT boardroom
+✅ AVOID mismatches: Corporate scenes for home-focused content, groups for individual content
+✅ INCLUDE ${businessName} product/service exactly as described in the content
+✅ GENERATE images that visually represent the exact scenario described in content
+✅ EMPHASIZE visual consistency between what content says and what image shows
+
+CRITICAL SUCCESS CRITERIA FOR CONTENT-IMAGE ALIGNMENT:
+- Image should visually match exactly what the content describes
+- Headlines should be reflected in the visual scene shown in the image
+- Subheadlines should describe what's actually visible in the image
+- CTAs should relate to the action/scenario shown in the image
+- Overall approach should be perfect visual representation of written content
+- NEVER create images that contradict the content messaging
+- ALWAYS show the exact scenario, setting, and context described in the content
 - AVOID generic content: Every piece should feel tailored to this exact business
+- AVOID template phrases: No "your business", "our company", "we provide", "contact us"
 - USE the business analysis: Let the identified approach, pain points, and value props guide your content
 - BE AUTHENTIC: Content should reflect the business's actual strengths and positioning
 - VARY your approach: Use different angles, but always relevant to this business
 - AVOID repetitive patterns: Each generation should feel fresh and unique
 - STAY RELEVANT: Connect content to current trends and local context when appropriate
+- CREATIVE VARIATION: Same business info, different angles - pain-focused, benefit-focused, social proof, urgency, curiosity, comparison, fear-based, success stories, emotional appeals, time-sensitive, location-pride, challenge-based, testimonial-style, competitive, aspirational
+- ROTATE MESSAGING: "What if...", "Stop...", "Join...", "Before vs After", "Don't miss...", "Why wait...", "Imagine...", "How many...", "Are you still...", "Think it's impossible?", "Ready to...", "Tired of...", "What would happen if...", "The secret to...", "Finally...", "Never again..."
 
 HEADLINE & SUBHEADLINE CREATIVITY REQUIREMENTS:
 - MAKE HEADLINES IRRESISTIBLE: Use emotional hooks, power words, curiosity gaps, or bold claims
@@ -512,8 +1201,8 @@ HEADLINE & SUBHEADLINE CREATIVITY REQUIREMENTS:
 
 HEADLINE & SUBHEADLINE EXAMPLES BY BUSINESS TYPE:
 - RESTAURANT: "Taste the Difference!" + "Where every bite tells a story of passion and flavor"
-- FITNESS: "Transform Your Body in 30 Days!" + "Join 5,000+ people who've already changed their lives"
-- TECH: "The Future is Here!" + "Discover the technology that's revolutionizing everything"
+- FITNESS: "Achieve Your Fitness Goals!" + "Join 5,000+ people who've already changed their lives"
+- TECH: "${businessName} Innovation!" + "Experience the technology that's changing everything"
 - BEAUTY: "Reveal Your True Beauty!" + "Professional results that make you feel confident every day"
 - FINANCE: "Your Money, Your Future!" + "Smart banking solutions that put you in control"
 - HEALTHCARE: "Your Health, Our Priority!" + "Expert care that puts your wellbeing first"
@@ -554,17 +1243,39 @@ Format as JSON:
   "hashtags": ["#SpecificHashtag1", "#LocationBasedHashtag", "#IndustryRelevant", ...]
 }`;
 
+    // Platform-specific hashtag requirements
+    const hashtagCount = platform.toLowerCase() === 'instagram' ? 5 : 3;
+    const hashtagInstruction = `Generate exactly ${hashtagCount} hashtags for ${platform} (${platform.toLowerCase() === 'instagram' ? 'Instagram requires 5 hashtags' : 'Facebook, Twitter, LinkedIn require 3 hashtags'})`;
+
+    const updatedPrompt = prompt.replace(
+      '5. 10 highly relevant, specific hashtags that are:',
+      `5. ${hashtagCount} highly relevant, specific hashtags that are:`
+    ).replace(
+      'hashtags: ["#SpecificHashtag1", "#LocationBasedHashtag", "#IndustryRelevant", ...]',
+      `hashtags: [${Array(hashtagCount).fill('"#SpecificHashtag"').join(', ')}] (EXACTLY ${hashtagCount} hashtags for ${platform})`
+    );
+
+    console.log(`🎯 [Revo 1.5] Using GPT-4o for content generation with ${hashtagCount} hashtags for ${platform}`);
+    console.log('🔑 [Revo 1.5] OpenAI API Key check:', process.env.OPENAI_API_KEY ? 'Present' : 'Missing');
+
     const response = await getOpenAI().chat.completions.create({
       model: 'gpt-4o',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
-      max_tokens: 600
+      messages: [{
+        role: 'system',
+        content: `You are a direct-response copywriter for Revo 1.5. NAME DIVERSITY RULE: Use ONLY single first names (David, Mary, Grace) from ${brandProfile.location || 'the region'}, NEVER repeat names like Joseph Njoroge or Christine Kioko. COHERENCE RULE: Headline + Subheadline + CTA must tell ONE complete story. VARIETY RULE: Never repeat the same subheadline approach - always vary between social proof, benefits, transformation, credibility, etc. ADAPT TO EACH COMPANY: Use their exact business name, industry, services, location, and target audience. FORBIDDEN WORDS (NEVER USE): transform, unlock, discover, revolutionize, solutions, elevate, empower, cutting-edge, innovative, future, advanced, premium, exclusive, ultimate, breakthrough, game-changer, journey, experience, excellence, why choose us, start your, connect with us. Focus on specific problems, quantified benefits, and social proof. ${hashtagInstruction}`
+      }, {
+        role: 'user',
+        content: `FORBIDDEN WORDS (DO NOT USE): transform, unlock, discover, revolutionize, solutions, elevate, empower, cutting-edge, innovative, future, advanced, premium, exclusive, ultimate, breakthrough, game-changer\n\nNAME USAGE RULES (CRITICAL):\n- NEVER repeat the same names: Joseph Njoroge, Christine Kioko\n- Use ONLY single first names (not full names): David, Mary, Peter, Grace, etc.\n- Use diverse regional names for ${brandProfile.location || 'the location'}:\n  * Kenya: Wanjiku, Kamau, Aisha, Omar, Grace, David, Mary, Peter, Faith, John\n  * Nigeria: Adaora, Chike, Fatima, Ibrahim, Blessing, Emmanuel, Joy, Samuel\n  * General: Sarah, Michael, Lisa, James, Anna, Robert, Linda, Daniel\n- VARY names each time - never use the same name twice\n- Generate random, authentic names appropriate for the region\n- AVOID overused names from previous content\n\nHEADLINE FORMAT VARIETY: Avoid rigid "${businessName}:" prefix. Use natural formats like:\n- Problem-focused: "Tired of Manual Processes?"\n- Solution-focused: "Process Loans in 3 Minutes"\n- Question format: "Still Using Paper Forms?"\n- Stat-focused: "50+ SACCOs Choose Digital"\n- Curiosity: "What Takes 3 Minutes?"\n- Urgency: "Don't Lose Another Member"\n- Comparison: "Paper vs Digital Processing"\n- Benefit: "Cut Wait Times 90%"\n- Fear: "Members Switching to Faster SACCOs?"\n- Success Story: "How 50+ SACCOs Went Digital"\n- Challenge: "Think 3-Minute Loans Are Impossible?"\n- Emotional: "Happy Members, Happy SACCO"\n- Time-based: "From Hours to Minutes"\n- Location: "Kenya's Fastest SACCO System"\n- Integrate business name naturally within headline, not as prefix\n\n${updatedPrompt}`
+      }],
+      temperature: 0.8,
+      max_tokens: 800
     });
 
-    console.log('✅ [Revo 1.5] OpenAI response received for caption generation');
+    console.log('✅ [Revo 1.5] GPT-4o response received for content generation (headlines, captions, hashtags, CTAs)');
 
     try {
       let responseContent = response.choices[0].message.content || '{}';
+      console.log('🔍 [Revo 1.5] Raw GPT response:', responseContent.substring(0, 500));
 
       // Clean up the response if it has markdown formatting
       if (responseContent.includes('```json')) {
@@ -573,7 +1284,25 @@ Format as JSON:
         responseContent = responseContent.split('```')[1] || responseContent;
       }
 
+      console.log('🧹 [Revo 1.5] Cleaned response:', responseContent.substring(0, 300));
       const parsed = JSON.parse(responseContent);
+      console.log('✅ [Revo 1.5] Successfully parsed JSON response');
+
+      // Validate hashtag count
+      const expectedHashtagCount = platform.toLowerCase() === 'instagram' ? 5 : 3;
+      if (parsed.hashtags && parsed.hashtags.length !== expectedHashtagCount) {
+        console.warn(`⚠️ [Revo 1.5] Hashtag count mismatch: expected ${expectedHashtagCount} for ${platform}, got ${parsed.hashtags.length}`);
+        // Adjust hashtag count
+        if (parsed.hashtags.length > expectedHashtagCount) {
+          parsed.hashtags = parsed.hashtags.slice(0, expectedHashtagCount);
+        } else {
+          // Add generic hashtags to reach required count
+          const genericHashtags = ['#business', '#professional', '#quality', '#service', '#local'];
+          while (parsed.hashtags.length < expectedHashtagCount && genericHashtags.length > 0) {
+            parsed.hashtags.push(genericHashtags.shift()!);
+          }
+        }
+      }
 
       console.log('✅ [Revo 1.5] Content generation successful:', {
         caption: parsed.caption?.substring(0, 100) + '...',
@@ -581,8 +1310,23 @@ Format as JSON:
         subheadline: parsed.subheadline?.substring(0, 50) + '...' || 'No subheadline',
         callToAction: parsed.callToAction || 'No CTA',
         hashtagsCount: parsed.hashtags?.length || 0,
-        hashtags: parsed.hashtags?.slice(0, 3) || []
+        hashtags: parsed.hashtags || [],
+        platform: platform,
+        expectedHashtags: expectedHashtagCount
       });
+
+      // VALIDATION: Check content quality and business specificity
+      const contentQuality = validateContentQuality(parsed, businessName, businessType, brandProfile);
+      if (!contentQuality.isBusinessSpecific) {
+        console.warn('⚠️ [Revo 1.5] Content appears generic, enhancing with business details');
+        // Enhance generic content with business specifics
+        if (parsed.headline && !parsed.headline.includes(businessName)) {
+          parsed.headline = `${businessName}: ${parsed.headline}`;
+        }
+        if (parsed.caption && !parsed.caption.toLowerCase().includes(businessName.toLowerCase())) {
+          parsed.caption = `${parsed.caption} Experience the difference with ${businessName}.`;
+        }
+      }
 
       // VALIDATION: Check if content mentions scheduled services
       if (scheduledServices && scheduledServices.length > 0) {
@@ -604,32 +1348,40 @@ Format as JSON:
         }
       }
 
+      // Use AI-generated CTA directly (simplified)
+      const finalCTA = parsed.callToAction || 'Get Started';
+
+      console.log('🎯 [Revo 1.5] CTA Selection (Simplified):', {
+        aiGenerated: parsed.callToAction,
+        final: finalCTA
+      });
+
+      // NO FALLBACKS - All content must come from Pure AI
+      if (!parsed.caption || !parsed.headline || !parsed.subheadline || !parsed.hashtags) {
+        throw new Error('🚫 [Revo 1.5] Pure AI response incomplete - missing required fields. No fallbacks allowed!');
+      }
+
       return {
-        caption: parsed.caption || `Enhanced ${businessName} content with premium design`,
-        headline: parsed.headline || `Premium ${businessName} Solutions`,
-        subheadline: parsed.subheadline || `Experience the future of ${businessType.toLowerCase()} with ${businessName}`,
-        callToAction: parsed.callToAction || `Discover ${businessName} Today`,
-        hashtags: Array.isArray(parsed.hashtags) ? parsed.hashtags : ['#enhanced', '#AI', '#design', '#premium', '#quality']
+        caption: parsed.caption,
+        headline: parsed.headline,
+        subheadline: parsed.subheadline,
+        callToAction: finalCTA,
+        hashtags: parsed.hashtags
       };
     } catch (parseError) {
-      console.warn('⚠️ [Revo 1.5] Failed to parse caption response, using fallback');
-      return {
-        caption: `Enhanced ${businessName} content with premium design and professional quality`,
-        headline: `Premium ${businessName} Solutions`,
-        subheadline: `Experience the future of ${businessType.toLowerCase()} with ${businessName}`,
-        callToAction: `Discover ${businessName} Today`,
-        hashtags: ['#enhanced', '#AI', '#design', '#premium', '#quality', `#${businessName.replace(/\s+/g, '')}`, `#${businessType.replace(/\s+/g, '')}`]
-      };
+      console.error('❌ [Revo 1.5] JSON Parse Error:', parseError);
+      console.error('❌ [Revo 1.5] Failed response content:', response.choices[0].message.content);
+
+      // NO FALLBACKS - JSON parsing must work or system fails
+      throw new Error(`🚫 [Revo 1.5] JSON parsing failed and ALL fallbacks are disabled. Parse Error: ${parseError instanceof Error ? parseError.message : 'Unknown error'}. Please fix the Pure AI system!`);
     }
   } catch (error) {
-    console.error('❌ [Revo 1.5] Content generation failed:', error);
-    return {
-      caption: `Enhanced ${businessName} content with premium design and professional quality`,
-      headline: `Premium ${businessName} Solutions`,
-      subheadline: `Experience the future of ${businessType.toLowerCase()} with ${businessName}`,
-      callToAction: `Discover ${businessName} Today`,
-      hashtags: ['#enhanced', '#AI', '#design', '#premium', '#quality', `#${businessName.replace(/\s+/g, '')}`, `#${businessType.replace(/\s+/g, '')}`]
-    };
+    console.error('❌ [Revo 1.5] Content generation failed - MAIN ERROR:', error);
+    console.error('❌ [Revo 1.5] Error type:', error instanceof Error ? error.constructor.name : typeof error);
+    console.error('❌ [Revo 1.5] Error message:', error instanceof Error ? error.message : String(error));
+
+    // NO FALLBACKS - Main content generation must work or system fails
+    throw new Error(`🚫 [Revo 1.5] Main content generation failed and ALL fallbacks are disabled. Error: ${error instanceof Error ? error.message : 'Unknown error'}. Please fix the Pure AI system!`);
   }
 }
 
@@ -685,6 +1437,7 @@ export interface Revo15DesignResult {
   headline?: string;
   subheadline?: string;
   callToAction?: string;
+  format?: string;
 }
 
 /**
@@ -769,13 +1522,13 @@ REVO 1.5 EXCLUSIVE DESIGN STYLES (CHOOSE ONE):
 1. **Neo-Minimalist**: Ultra-clean with strategic negative space, single focal point, premium typography
 2. **Fluid Dynamics**: Organic shapes, flowing lines, gradient overlays, dynamic movement
 3. **Geometric Precision**: Sharp angles, perfect symmetry, mathematical proportions, bold contrasts
-4. **Layered Depth**: Multiple transparent layers, sophisticated shadows, 3D-like depth
+4. **Layered Depth**: Multiple transparent layers, subtle shadows, natural depth
 5. **Typography-First**: Large, bold text as primary design element, minimal supporting graphics
-6. **Photo-Artistic**: High-quality photography with artistic overlays, filters, and effects
+6. **Photo-Artistic**: High-quality photography with natural overlays, realistic effects
 7. **Brand-Centric**: Logo and brand elements as core design components, identity-focused
-8. **Interactive-Style**: Design elements that suggest buttons, hover effects, and engagement
+8. **Interactive-Style**: Design elements that suggest natural user engagement
 9. **Cultural-Fusion**: Subtle cultural elements integrated naturally into modern design
-10. **Future-Tech**: Cutting-edge aesthetics, metallic elements, neon accents, sci-fi inspired
+10. **Natural-Professional**: Clean business aesthetics, natural materials, authentic lighting
 
 REVO 1.5 PREMIUM TYPOGRAPHY SYSTEM:
 - **Headlines**: Use bold, modern fonts (Inter Bold, Poppins Black, Montserrat ExtraBold)
@@ -800,6 +1553,14 @@ Create a detailed design plan including:
 8. **Style Selection**: Choose one of the 10 exclusive Revo 1.5 design styles
 9. **Typography Hierarchy**: Specific font selections and weight distribution
 10. **Visual Storytelling**: How the design tells the brand story
+
+BUSINESS-TYPE VISUAL REQUIREMENTS (MANDATORY):
+- If business type indicates E-commerce: MUST show product with packaging and brand logo visible in-scene (not overlaid), clean background, subtle shadow, and a contextual prop that matches use-case.
+- If App/Software: MUST show a realistic device screen with the interface visible and a hand/user interaction; include brand colors in UI elements.
+- If Food: MUST show the actual dish/product, a natural consumption scenario, steam/texture details, and people enjoying when appropriate.
+- If Services: MUST show before/after or the service in action with tools/equipment visible; avoid generic stock meeting scenes.
+- Always include brand colors and respect the aspect ratio and text blocks for headline/subheadline/CTA.
+
 
 Provide a structured plan that will guide the image generation process.`;
 
@@ -875,7 +1636,7 @@ export async function generateFinalImage(
 
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({
-        model: 'gemini-2.5-flash-image-preview', // Same model as Revo 1.0 and 2.0
+        model: 'gemini-2.5-flash-image-preview', // Use the model that works with Revo 1.5 API key
         generationConfig: {
           temperature: 0.7,
           topP: 0.9,
@@ -965,7 +1726,7 @@ export async function generateFinalImage(
             });
 
             // Get AI prompt instructions for normalized logo
-            const logoInstructions = LogoNormalizationService.getLogoPromptInstructions(normalizedLogo);
+            const logoInstructions = normalizedLogo ? LogoNormalizationService.getLogoPromptInstructions(normalizedLogo) : '';
 
             // Update the prompt with normalized logo instructions
             const logoPrompt = `\n\n🎯 CRITICAL LOGO REQUIREMENT - THIS IS MANDATORY:
@@ -1218,6 +1979,17 @@ ${languageInstruction}
     }
   };
 
+  // Apply Cultural Intelligence for Visual Adaptation
+  const visualInstructions = `
+CULTURAL VISUAL ADAPTATION FOR ${(input.brandProfile.location || 'USA').toUpperCase()}:
+- People: Professional representation appropriate for ${input.brandProfile.location || 'USA'}
+- Settings: Modern business environments
+- Colors: Professional color schemes
+- Business Context: ${input.businessType} professionals
+- Trust Elements: Professional credentials and quality indicators
+- Cultural Values: Professional excellence and quality service
+`;
+
   const targetMarketInstructions = getTargetMarketInstructions(
     input.brandProfile.location || '',
     input.businessType,
@@ -1225,6 +1997,12 @@ ${languageInstruction}
     input.includePeopleInDesigns !== false, // Default to true if not specified
     input.useLocalLanguage === true // Default to false if not specified
   );
+
+  console.log('🎨 [Revo 1.5] Cultural Visual Instructions Applied:', {
+    location: input.brandProfile.location,
+    businessType: input.businessType,
+    visualInstructionsLength: visualInstructions.length
+  });
 
   // Clean business name pattern from image text
   const cleanBusinessNamePattern = (text: string): string => {
@@ -1264,6 +2042,20 @@ ${cleanedImageText ? `ADDITIONAL TEXT CONTENT TO INCLUDE:
 "${cleanedImageText}"` : 'TEXT CONTENT: Use the generated headline, subheadline, and CTA from the content generation above'}
 
 ${contentResult ? `
+🎯 CRITICAL CONTENT-IMAGE ALIGNMENT REQUIREMENTS:
+- The IMAGE must visually represent exactly what these text elements describe:
+- PRIMARY HEADLINE: "${contentResult.headline}" → Image must show this scenario/benefit
+- SECONDARY SUBHEADLINE: "${contentResult.subheadline}" → Image must demonstrate this feature/context
+- CALL-TO-ACTION: "${contentResult.callToAction}" → Image must show the action/setting this CTA relates to
+
+🚨 MANDATORY VISUAL MATCHING:
+- IF headline mentions "your desk" → SHOW personal desk setup, NOT corporate office
+- IF headline mentions "home office" → SHOW home environment, NOT office building
+- IF headline mentions individual/personal → SHOW solo person, NOT group meetings
+- IF headline mentions specific product → SHOW that exact product prominently
+- IF subheadline describes a feature → SHOW that feature being used in the image
+- IF CTA is about booking/buying → SHOW the product/service being offered
+
 🎯 CRITICAL TEXT ELEMENTS TO DISPLAY ON DESIGN:
 - PRIMARY HEADLINE (Largest, most prominent): "${contentResult.headline}"
 - SECONDARY SUBHEADLINE (Medium, supporting): "${contentResult.subheadline}"
@@ -1292,6 +2084,8 @@ TEXT HIERARCHY REQUIREMENTS:
 
 ${targetMarketInstructions}
 
+${visualInstructions}
+
 ${(input.brandProfile.logoDataUrl || input.brandProfile.logoUrl) ? `
 🚨🚨🚨 CRITICAL LOGO REQUIREMENT 🚨🚨🚨
 - A BRAND LOGO IMAGE WILL BE PROVIDED ABOVE
@@ -1303,16 +2097,27 @@ ${(input.brandProfile.logoDataUrl || input.brandProfile.logoUrl) ? `
 ` : ''}
 
 REVO 1.5 EXCLUSIVE PREMIUM REQUIREMENTS:
-✨ ULTRA-MODERN AESTHETICS: Cutting-edge design that stands out from Revo 1.0
-🎨 DYNAMIC COMPOSITION: Asymmetrical balance, fluid layouts, sophisticated visual hierarchy
-🌈 INTELLIGENT COLOR PSYCHOLOGY: Color schemes that trigger specific emotions and actions
-📝 PREMIUM TYPOGRAPHY SYSTEM: Exclusive font combinations with perfect weight distribution
-🏢 SEAMLESS BRAND FUSION: Brand elements as natural design components, not add-ons
-📱 PLATFORM-SPECIFIC INTELLIGENCE: Optimized for ${input.platform} algorithm and user behavior
-🎯 EMOTIONAL ARCHITECTURE: Visual storytelling that builds emotional connection
-✨ ADVANCED VISUAL DEPTH: Multi-layered designs with sophisticated shadows and glows
-🚀 FUTURE-FORWARD AESTHETICS: Trends that will remain relevant for 2+ years
-💫 MICRO-INTERACTIONS: Design elements that suggest interactivity and engagement
+✨ NATURAL MODERN AESTHETICS: Clean, professional design that looks human-created
+🎨 BALANCED COMPOSITION: Well-structured layouts with natural visual hierarchy
+🌈 AUTHENTIC COLOR PSYCHOLOGY: Natural color schemes that feel genuine
+📝 PROFESSIONAL TYPOGRAPHY: Clean font combinations with proper spacing
+🏢 ORGANIC BRAND FUSION: Brand elements integrated naturally into real scenarios
+📱 PLATFORM-OPTIMIZED DESIGN: Clean visuals optimized for ${input.platform}
+🎯 AUTHENTIC STORYTELLING: Real-world scenarios that build genuine connection
+✨ NATURAL VISUAL DEPTH: Subtle shadows and realistic lighting effects
+🚀 TIMELESS AESTHETICS: Classic design principles that remain effective
+💫 REALISTIC INTERACTIONS: Design elements that suggest natural user engagement
+
+❌ CRITICAL VISUAL RESTRICTIONS - NEVER INCLUDE:
+❌ Glowing AI portals and tech visualizations
+❌ Perfect corporate stock scenarios
+❌ Overly dramatic lighting effects
+❌ Artificial neon glows or sci-fi elements
+❌ Generic stock photo poses
+❌ Unrealistic perfect lighting setups
+❌ AI-generated abstract patterns
+❌ Futuristic tech interfaces
+❌ Holographic or digital overlays
 
 REVO 1.5 EXCLUSIVE DESIGN STYLE SELECTION:
 Choose ONE of these 10 exclusive Revo 1.5 design styles (completely different from Revo 1.0):
@@ -1437,17 +2242,24 @@ export async function generateRevo15EnhancedDesign(
     const designPlan = await generateDesignPlan(enhancedInput);
     enhancementsApplied.push('Strategic Design Planning');
 
-    // Step 2: Always generate caption, hashtags, headlines, subheadlines, and CTAs for design
+    // Step 2: Generate content using Claude Sonnet 4 (PRIMARY AND ONLY SYSTEM - NO FALLBACKS)
+    console.log('🧠 [Revo 1.5] Generating content with Claude Sonnet 4...');
+
+    // Use GPT-4o for content generation (fallback)
     const contentResult = await generateCaptionAndHashtags(
       input.businessType,
       input.brandProfile.businessName || input.businessType,
       input.platform,
       designPlan,
       input.brandProfile,
-      input.useLocalLanguage === true, // Default to false if not specified
-      input.scheduledServices // NEW: Pass scheduled services to content generation
+      { trendingHashtags: [], currentEvents: [] },
+      input.useLocalLanguage === true,
+      input.scheduledServices
     );
-    enhancementsApplied.push('AI-Generated Content & Design Text');
+
+    enhancementsApplied.push('GPT-4o Content Generation (Fallback)');
+    console.log('✅ [Revo 1.5] GPT-4o content generation successful');
+    console.log('🎯 [Revo 1.5] CONTENT SYSTEM USED: GPT-4o (Fallback)');
 
     // Step 3: Generate final image with text elements on design (matching Revo 1.0 approach)
     const imageUrl = await generateFinalImage(enhancedInput, designPlan, contentResult);
@@ -1461,7 +2273,8 @@ export async function generateRevo15EnhancedDesign(
       processingTime: Date.now() - startTime,
       model: 'revo-1.5-enhanced (gemini-2.5-flash-image-preview)',
       planningModel: GEMINI_2_5_MODELS.FLASH,
-      generationModel: 'gemini-2.5-flash-image-preview', // Same model as Revo 1.0 and 2.0
+      generationModel: 'gemini-2.5-flash-image-preview', // Model that works with Revo 1.5 API key
+      // format: claudeResult.format,
       caption: contentResult.caption,
       hashtags: contentResult.hashtags,
       headline: contentResult.headline,

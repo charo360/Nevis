@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Calendar API Test</title>
+</head>
+<body>
+    <h1>Calendar Database Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        async function testCalendarAPI() {
+            const results = document.getElementById('results');
+            
+            try {
+                // Test 1: Create a scheduled service
+                results.innerHTML += '<h3>Test 1: Creating scheduled service...</h3>';
+                
+                const createResponse = await fetch('/api/calendar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        brandId: 'test-brand-123',
+                        serviceName: 'Test Service',
+                        date: '2024-01-15',
+                        contentType: 'post',
+                        platform: 'Instagram',
+                        notes: 'Test service for database integration'
+                    })
+                });
+                
+                if (createResponse.ok) {
+                    const created = await createResponse.json();
+                    results.innerHTML += `<p>✅ Created: ${JSON.stringify(created)}</p>`;
+                } else {
+                    results.innerHTML += `<p>❌ Create failed: ${createResponse.status}</p>`;
+                }
+                
+                // Test 2: Fetch scheduled services
+                results.innerHTML += '<h3>Test 2: Fetching scheduled services...</h3>';
+                
+                const fetchResponse = await fetch('/api/calendar?brandId=test-brand-123');
+                
+                if (fetchResponse.ok) {
+                    const services = await fetchResponse.json();
+                    results.innerHTML += `<p>✅ Fetched ${services.length} services: ${JSON.stringify(services)}</p>`;
+                } else {
+                    results.innerHTML += `<p>❌ Fetch failed: ${fetchResponse.status}</p>`;
+                }
+                
+                // Test 3: Test CalendarService integration
+                results.innerHTML += '<h3>Test 3: Testing CalendarService...</h3>';
+                results.innerHTML += '<p>⏳ This would require running the app...</p>';
+                
+            } catch (error) {
+                results.innerHTML += `<p>❌ Error: ${error.message}</p>`;
+            }
+        }
+        
+        // Run test when page loads
+        testCalendarAPI();
+    </script>
+</body>
+</html>

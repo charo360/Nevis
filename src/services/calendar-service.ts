@@ -3,7 +3,7 @@
  * Provides easy access to calendar data for AI generation systems
  */
 
-import { STORAGE_FEATURES, createBrandScopedStorage } from '@/lib/services/brand-scoped-storage';
+// Database-only calendar service - no localStorage dependency
 
 export interface ScheduledContent {
   id: string;
@@ -42,42 +42,31 @@ export interface CalendarContext {
 
 export class CalendarService {
   /**
-   * Get today's scheduled services for a brand
+   * Get today's scheduled services for a brand from database
    */
   static async getTodaysScheduledServices(brandId: string): Promise<ScheduledService[]> {
     try {
-      const scheduleStorage = createBrandScopedStorage(brandId, STORAGE_FEATURES.CONTENT_CALENDAR);
-
-      const allScheduledContent = scheduleStorage.getItem<ScheduledContent[]>() || [];
-      // Fix timezone issue: use local date instead of UTC conversion
       const now = new Date();
       const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-      console.log('🔍 [CalendarService] DETAILED DEBUG - getTodaysScheduledServices:', {
+      const response = await fetch(`/api/calendar?brandId=${brandId}&date=${today}`);
+      if (!response.ok) throw new Error('Failed to fetch calendar data');
+      
+      const allScheduledContent = await response.json();
+
+      console.log('🔍 [CalendarService] Database - getTodaysScheduledServices:', {
         brandId,
-        storageKey: `${brandId}_${STORAGE_FEATURES.CONTENT_CALENDAR}`,
         today,
         allScheduledContentCount: allScheduledContent.length,
-        allScheduledContentRaw: allScheduledContent,
-        allScheduledContentServices: allScheduledContent.map(item => ({
+        allScheduledContentServices: allScheduledContent.map((item: any) => ({
           date: item.date,
-          serviceName: item.serviceName,
+          serviceName: item.service_name,
           status: item.status,
           id: item.id
         }))
       });
 
-      const todaysContent = allScheduledContent.filter(item =>
-        item.date === today && item.status === 'scheduled'
-      );
-
-      console.log('🎯 [CalendarService] Today\'s filtered content:', {
-        todaysContentCount: todaysContent.length,
-        todaysContentServices: todaysContent.map(item => item.serviceName),
-        todaysContentRaw: todaysContent
-      });
-
-      const transformedServices = this.transformToScheduledServices(todaysContent, true);
+      const transformedServices = this.transformDatabaseToScheduledServices(allScheduledContent, true);
 
       console.log('✅ [CalendarService] Final transformed services:', {
         transformedServicesCount: transformedServices.length,
@@ -87,27 +76,29 @@ export class CalendarService {
       return transformedServices;
     } catch (error) {
       console.error('Error fetching today\'s scheduled services:', error);
+      // Database-only mode - never fallback to localStorage
       return [];
     }
   }
 
   /**
-   * Get upcoming scheduled services (next 7 days)
+   * Get upcoming scheduled services (next 7 days) from database
    */
   static async getUpcomingScheduledServices(brandId: string, days: number = 7): Promise<ScheduledService[]> {
     try {
-      const scheduleStorage = createBrandScopedStorage(brandId, STORAGE_FEATURES.CONTENT_CALENDAR);
-
-      const allScheduledContent = scheduleStorage.getItem<ScheduledContent[]>() || [];
+      const response = await fetch(`/api/calendar?brandId=${brandId}`);
+      if (!response.ok) throw new Error('Failed to fetch calendar data');
+      
+      const allScheduledContent = await response.json();
       const today = new Date();
       const futureDate = new Date(today.getTime() + (days * 24 * 60 * 60 * 1000));
 
-      const upcomingContent = allScheduledContent.filter(item => {
+      const upcomingContent = allScheduledContent.filter((item: any) => {
         const itemDate = new Date(item.date);
         return itemDate > today && itemDate <= futureDate && item.status === 'scheduled';
       });
 
-      return this.transformToScheduledServices(upcomingContent, false, true);
+      return this.transformDatabaseToScheduledServices(upcomingContent, false, true);
     } catch (error) {
       console.error('Error fetching upcoming scheduled services:', error);
       return [];
@@ -161,18 +152,15 @@ export class CalendarService {
   }
 
   /**
-   * Get scheduled services for a specific date
+   * Get scheduled services for a specific date from database
    */
   static async getScheduledServicesForDate(brandId: string, date: string): Promise<ScheduledService[]> {
     try {
-      const scheduleStorage = createBrandScopedStorage(brandId, STORAGE_FEATURES.CONTENT_CALENDAR);
-
-      const allScheduledContent = scheduleStorage.getItem<ScheduledContent[]>() || [];
-      const dateContent = allScheduledContent.filter(item =>
-        item.date === date && item.status === 'scheduled'
-      );
-
-      return this.transformToScheduledServices(dateContent);
+      const response = await fetch(`/api/calendar?brandId=${brandId}&date=${date}`);
+      if (!response.ok) throw new Error('Failed to fetch calendar data');
+      
+      const dateContent = await response.json();
+      return this.transformDatabaseToScheduledServices(dateContent);
     } catch (error) {
       console.error('Error fetching scheduled services for date:', error);
       return [];
@@ -180,26 +168,21 @@ export class CalendarService {
   }
 
   /**
-   * Mark scheduled content as generated
+   * Mark scheduled content as generated in database
    */
   static async markAsGenerated(brandId: string, contentId: string, generatedPostId?: string): Promise<boolean> {
     try {
-      const scheduleStorage = createBrandScopedStorage(brandId, STORAGE_FEATURES.CONTENT_CALENDAR);
-
-      const allScheduledContent = scheduleStorage.getItem<ScheduledContent[]>() || [];
-      const updatedContent = allScheduledContent.map(item => {
-        if (item.id === contentId) {
-          return {
-            ...item,
-            status: 'generated' as const,
-            ...(generatedPostId && { generatedPostId })
-          };
-        }
-        return item;
+      const response = await fetch('/api/calendar', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: contentId,
+          status: 'generated',
+          generatedPostId
+        })
       });
-
-      scheduleStorage.setItem(updatedContent);
-      return true;
+      
+      return response.ok;
     } catch (error) {
       console.error('Error marking content as generated:', error);
       return false;
@@ -223,7 +206,37 @@ export class CalendarService {
   }
 
   /**
-   * Transform ScheduledContent to ScheduledService format
+   * Transform database records to ScheduledService format
+   */
+  private static transformDatabaseToScheduledServices(
+    content: any[],
+    isToday: boolean = false,
+    isUpcoming: boolean = false
+  ): ScheduledService[] {
+    const today = new Date();
+
+    return content.map(item => {
+      const itemDate = new Date(item.date);
+      const daysUntil = Math.ceil((itemDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+      return {
+        serviceId: item.id.toString(),
+        serviceName: item.service_name,
+        description: item.notes,
+        contentType: item.content_type,
+        platform: item.platform,
+        notes: item.notes,
+        priority: this.determineDatabasePriority(item),
+        scheduledTime: item.date,
+        isToday,
+        isUpcoming,
+        daysUntil: daysUntil > 0 ? daysUntil : 0
+      };
+    });
+  }
+
+  /**
+   * Transform ScheduledContent to ScheduledService format (legacy)
    */
   private static transformToScheduledServices(
     content: ScheduledContent[],
@@ -253,7 +266,25 @@ export class CalendarService {
   }
 
   /**
-   * Determine priority based on content characteristics
+   * Determine priority based on database content characteristics
+   */
+  private static determineDatabasePriority(item: any): 'low' | 'medium' | 'high' {
+    // High priority for posts and ads
+    if (item.content_type === 'post' || item.content_type === 'ad') {
+      return 'high';
+    }
+
+    // Medium priority for reels
+    if (item.content_type === 'reel') {
+      return 'medium';
+    }
+
+    // Low priority for stories (temporary content)
+    return 'low';
+  }
+
+  /**
+   * Determine priority based on content characteristics (legacy)
    */
   private static determinePriority(item: ScheduledContent): 'low' | 'medium' | 'high' {
     // High priority for posts and ads

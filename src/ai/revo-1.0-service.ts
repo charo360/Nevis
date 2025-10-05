@@ -2775,6 +2775,7 @@ export async function generateRevo10Image(input: {
   };
   websiteUrl?: string;
   includePeople?: boolean; // NEW: People toggle parameter
+  scheduledServices?: ScheduledService[]; // NEW: Scheduled services for product-specific marketing
 }) {
   try {
 
@@ -2890,6 +2891,52 @@ ANTI-GENERIC REQUIREMENTS:
     // NEW: Enhanced product intelligence for contextual awareness
     const productIntelligence = getProductIntelligence(input.imageText, input.businessType);
 
+    // NEW: Product-specific marketing integration for scheduled services
+    let productMarketingInstructions = '';
+    if (input.scheduledServices && input.scheduledServices.length > 0) {
+      const todaysServices = input.scheduledServices.filter(s => s.isToday);
+      const upcomingServices = input.scheduledServices.filter(s => s.isUpcoming);
+      
+      productMarketingInstructions = `
+🎯 PRODUCT-SPECIFIC MARKETING REQUIREMENTS (HIGHEST PRIORITY):
+
+${todaysServices.length > 0 ? `
+⚡ TODAY'S FEATURED PRODUCTS (Create URGENT, product-focused visuals):
+${todaysServices.map(s => `- ${s.serviceName}: ${s.description || 'Available today'}`).join('\n')}
+
+URGENT VISUAL REQUIREMENTS:
+- PROMINENTLY display the specific product names in the design
+- Show the actual products (phones, laptops, etc.) in the visual
+- Use product-focused imagery and layouts
+- Create urgency with "TODAY ONLY", "Available Now", "Don't Miss Out"
+- Make the products the MAIN FOCAL POINT of the design
+- Use product-specific colors and styling
+- Include product specifications or key features visually
+` : ''}
+
+${upcomingServices.length > 0 ? `
+📅 UPCOMING PRODUCTS (Build anticipation with visual teasers):
+${upcomingServices.map(s => `- ${s.serviceName} (in ${s.daysUntil} days): ${s.description || 'Coming soon'}`).join('\n')}
+
+ANTICIPATION VISUAL REQUIREMENTS:
+- Create excitement for upcoming products
+- Use "Coming Soon", "Get Ready", "Reserve Your Spot" messaging
+- Show product previews or silhouettes
+- Build anticipation with countdown or "coming soon" styling
+` : ''}
+
+⚠️ CRITICAL VISUAL REQUIREMENTS:
+- The design MUST specifically feature and promote ONLY these scheduled products
+- DO NOT create generic business visuals or mention other products
+- Focus ENTIRELY on the scheduled products listed above
+- Use the EXACT product names in visual text and design elements
+- Make the products the HERO ELEMENTS of the design
+- Show actual product imagery, not generic business imagery
+- Create product-specific layouts and compositions
+- Use product-focused color schemes and styling
+`;
+    }
+
     let imagePrompt = `🎨 Create a visually stunning, modern ${designVariations.style.toLowerCase()} social media design for ${input.businessName} that stops scrolling and drives engagement.
 
 🚨 CRITICAL ANTI-AI INSTRUCTION: This must NOT look AI-generated! Avoid perfect symmetry, artificial-looking people with flawless faces, sterile aesthetics, and overly polished elements. Make it feel authentic, natural, and human-crafted with organic imperfections.
@@ -2928,6 +2975,8 @@ ${contentStructure.map(item => `- ${item}`).join('\n')}
 - High-quality visual elements that build trust
 
 ${productIntelligence}
+
+${productMarketingInstructions}
 
 VISUAL STYLE:
 - ${businessDesignDNA}

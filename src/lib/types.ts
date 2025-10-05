@@ -52,7 +52,7 @@ export type BrandProfile = {
   }>;
 
   // AI-trained descriptions of product images
-  productImageDescriptions?: {[key: string]: string};
+  productImageDescriptions?: { [key: string]: string };
 };
 
 export type ContentVariant = {
@@ -146,6 +146,8 @@ export type GeneratedPost = {
   targetAudience?: string;
   generationPrompt?: string;
   aiModel?: string;
+  // Content format (Revo 1.5 enforced content format)
+  format?: string;
   // Quality metrics
   qualityScore?: number;
   engagementPrediction?: number;

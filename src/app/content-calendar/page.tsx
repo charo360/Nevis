@@ -200,21 +200,22 @@ function ContentCalendarPageContent() {
       return;
     }
 
-    // Clear storage for brand isolation FIRST
-    const currentStorage = getScheduleStorage();
-    if (currentStorage) {
-      console.log('🧹 Clearing storage for brand switch');
-      currentStorage.removeItem();
-    }
-
-    // Clear any old brand data from localStorage
+    // FORCE CLEAR ALL CALENDAR DATA - Database mode only
+    console.log('🧹 FORCE CLEARING ALL localStorage calendar data for database mode');
     const allKeys = Object.keys(localStorage);
     allKeys.forEach(key => {
-      if (key.startsWith('content-calendar_') && !key.includes(brandId)) {
-        console.log('🗑️ Removing old brand calendar data:', key);
+      if (key.startsWith('content-calendar_')) {
+        console.log('🗑️ Removing localStorage calendar data:', key);
         localStorage.removeItem(key);
       }
     });
+
+    // Clear current storage
+    const currentStorage = getScheduleStorage();
+    if (currentStorage) {
+      console.log('🧹 Clearing current storage for database mode');
+      currentStorage.removeItem();
+    };
 
     // Use setTimeout to ensure storage clearing is complete before loading
     setTimeout(() => {
@@ -246,20 +247,25 @@ function ContentCalendarPageContent() {
             item.serviceId.startsWith(`${brandId}-`)
           );
 
-          // If no existing schedule, auto-distribute services
-          if (brandSpecificSchedule.length === 0) {
-            console.log('🎯 Auto-distributing services for new brand');
-            const autoScheduled = autoDistributeServices(serviceObjects);
-            setScheduledContent(autoScheduled);
-
-            // Save auto-distributed schedule
-            if (freshStorage) {
-              freshStorage.setItem(autoScheduled);
-            }
-          } else {
-            console.log('📅 Using existing schedule for brand');
-            setScheduledContent(brandSpecificSchedule);
+          // Database-only mode - no localStorage, no auto-distribution
+          console.log('📅 Database mode - loading from database only');
+          
+          // Force clear any localStorage remnants
+          if (freshStorage) {
+            freshStorage.removeItem();
           }
+          
+          // Load from database instead
+          fetch(`/api/calendar?brandId=${brandId}`)
+            .then(response => response.json())
+            .then(data => {
+              console.log('📊 Loaded from database:', data.length, 'items');
+              setScheduledContent(data || []);
+            })
+            .catch(error => {
+              console.error('❌ Database load failed:', error);
+              setScheduledContent([]);
+            });
         } else {
           console.log('❌ No services found for brand');
           setServices([]);

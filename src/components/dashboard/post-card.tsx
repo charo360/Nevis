@@ -263,7 +263,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
             // Handle other data URL formats (PNG, JPEG, etc.) directly
             const link = document.createElement('a');
             link.href = activeVariant.imageUrl;
-            link.download = `nevis-social-${post.id}-${activeTab}.${extension}`;
+            link.download = `crevo-social-${post.id}-${activeTab}.${extension}`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -292,7 +292,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
 
             const link = document.createElement('a');
             link.href = url;
-            link.download = `nevis-social-${post.id}-${activeTab}.${extension}`;
+            link.download = `crevo-social-${post.id}-${activeTab}.${extension}`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -353,7 +353,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
 
       const link = document.createElement('a');
       link.href = dataUrl;
-      link.download = `nevis-social-${post.id}-${activeTab}.png`;
+      link.download = `crevo-social-${post.id}-${activeTab}.png`;
       link.click();
 
       // Provide specific feedback based on content type
@@ -481,13 +481,9 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
                 )}
                 Regenerate Image
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleGenerateVideo} disabled={isGeneratingVideo}>
-                {isGeneratingVideo ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Video className="mr-2 h-4 w-4" />
-                )}
-                Generate Video
+              <DropdownMenuItem disabled>
+                <Video className="mr-2 h-4 w-4 text-muted-foreground" />
+                Generate Video (Coming Soon)
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleDownload}>
                 <Download className="mr-2 h-4 w-4" />

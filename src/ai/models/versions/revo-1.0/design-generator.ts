@@ -140,7 +140,9 @@ export class Revo10DesignGenerator implements IDesignGenerator {
           phone: request.brandProfile?.contactInfo?.phone,
           email: request.brandProfile?.contactInfo?.email
         },
-        websiteUrl: request.brandProfile?.websiteUrl || ''
+        websiteUrl: request.brandProfile?.websiteUrl || '',
+        // NEW: Pass scheduled services for product-specific marketing
+        scheduledServices: generationParams.scheduledServices || []
       });
 
       // Return the complete result with actual image URL
