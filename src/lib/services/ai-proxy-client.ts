@@ -37,9 +37,15 @@ interface QuotaResponse {
 
 class AIProxyClient {
   private baseUrl: string;
+  private enabled: boolean;
 
   constructor(baseUrl: string = process.env.AI_PROXY_URL || 'http://localhost:8000') {
     this.baseUrl = baseUrl;
+    this.enabled = process.env.AI_PROXY_ENABLED === 'true';
+  }
+
+  isEnabled(): boolean {
+    return this.enabled;
   }
 
   /**
@@ -48,7 +54,7 @@ class AIProxyClient {
   async generateImage(request: ProxyImageRequest): Promise<ProxyResponse> {
     try {
       console.log(`🔒 Proxy: Generating image with model ${request.model || 'gemini-2.5-flash-image-preview'}`);
-      
+
       const response = await fetch(`${this.baseUrl}/generate-image`, {
         method: 'POST',
         headers: {
@@ -71,7 +77,7 @@ class AIProxyClient {
       const result = await response.json();
       console.log(`✅ Proxy: Image generated successfully with ${result.model_used}`);
       console.log(`📊 Proxy: User quota: ${result.user_quota}/40`);
-      
+
       return result;
     } catch (error) {
       console.error('❌ Proxy: Image generation failed:', error);
@@ -85,7 +91,7 @@ class AIProxyClient {
   async generateText(request: ProxyTextRequest): Promise<ProxyResponse> {
     try {
       console.log(`🔒 Proxy: Generating text with model ${request.model || 'gemini-2.5-flash'}`);
-      
+
       const response = await fetch(`${this.baseUrl}/generate-text`, {
         method: 'POST',
         headers: {
@@ -108,7 +114,7 @@ class AIProxyClient {
       const result = await response.json();
       console.log(`✅ Proxy: Text generated successfully with ${result.model_used}`);
       console.log(`📊 Proxy: User quota: ${result.user_quota}/40`);
-      
+
       return result;
     } catch (error) {
       console.error('❌ Proxy: Text generation failed:', error);
@@ -122,7 +128,7 @@ class AIProxyClient {
   async getUserQuota(userId: string): Promise<QuotaResponse> {
     try {
       const response = await fetch(`${this.baseUrl}/quota/${userId}`);
-      
+
       if (!response.ok) {
         throw new Error(`Failed to get quota: ${response.statusText}`);
       }
