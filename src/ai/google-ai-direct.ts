@@ -94,46 +94,35 @@ export async function generateText(
       // DO NOT add direct Google AI fallback - it bypasses cost protection!
       // Only use cost-controlled methods (proxy + OpenRouter)
       throw new Error(`All cost-controlled AI generation methods failed: ${error}`);
-
-      console.log(`✅ [Google AI Direct] Text generation successful, length: ${text.length}`);
-      console.log(`🔍 [Google AI Direct] Response preview: ${text.substring(0, 200)}...`);
-      console.log(`🔍 [Google AI Direct] Finish reason: ${response.candidates?.[0]?.finishReason}`);
-      console.log(`🔍 [Google AI Direct] Safety ratings:`, response.candidates?.[0]?.safetyRatings);
-
-      return {
-        text,
-        finishReason: response.candidates?.[0]?.finishReason,
-        safetyRatings: response.candidates?.[0]?.safetyRatings,
-      };
-
-    } catch (error) {
-      console.error(`❌ [Google AI Direct] Text generation error:`, {
-        error: error instanceof Error ? error.message : error,
-        stack: error instanceof Error ? error.stack : 'No stack trace',
-        model: options.model || GEMINI_2_5_MODELS.FLASH
-      });
-
-      // Handle specific error types with user-friendly messages
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
-      if (errorMessage.includes('429') || errorMessage.includes('quota') || errorMessage.includes('Too Many Requests')) {
-        throw new Error('😅 Revo is experiencing high demand right now! Please try again in a few minutes or switch to Revo 2.0.');
-      }
-
-      if (errorMessage.includes('401') || errorMessage.includes('unauthorized') || errorMessage.includes('API key')) {
-        throw new Error('🔧 Revo is having a technical hiccup. Please try Revo 2.0 while we fix this!');
-      }
-
-      if (errorMessage.includes('403') || errorMessage.includes('forbidden')) {
-        throw new Error('🔧 Revo is having a technical hiccup. Please try Revo 2.0 while we fix this!');
-      }
-
-      if (errorMessage.includes('network') || errorMessage.includes('timeout') || errorMessage.includes('ECONNRESET')) {
-        throw new Error('🌐 Connection hiccup! Please try again in a moment.');
-      }
-
-      throw new Error('😅 Revo is having some trouble right now! Try Revo 2.0 for great results while we get things sorted out.');
     }
+
+  } catch (error) {
+    console.error(`❌ [Google AI Direct] Text generation error:`, {
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : 'No stack trace',
+      model: options.model || GEMINI_2_5_MODELS.FLASH
+    });
+
+    // Handle specific error types with user-friendly messages
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    if (errorMessage.includes('429') || errorMessage.includes('quota') || errorMessage.includes('Too Many Requests')) {
+      throw new Error('😅 Revo is experiencing high demand right now! Please try again in a few minutes or switch to Revo 2.0.');
+    }
+
+    if (errorMessage.includes('401') || errorMessage.includes('unauthorized') || errorMessage.includes('API key')) {
+      throw new Error('🔧 Revo is having a technical hiccup. Please try Revo 2.0 while we fix this!');
+    }
+
+    if (errorMessage.includes('403') || errorMessage.includes('forbidden')) {
+      throw new Error('🔧 Revo is having a technical hiccup. Please try Revo 2.0 while we fix this!');
+    }
+
+    if (errorMessage.includes('network') || errorMessage.includes('timeout') || errorMessage.includes('ECONNRESET')) {
+      throw new Error('🌐 Connection hiccup! Please try again in a moment.');
+    }
+
+    throw new Error('😅 Revo is having some trouble right now! Try Revo 2.0 for great results while we get things sorted out.');
   }
 }
 
