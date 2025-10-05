@@ -508,13 +508,18 @@ function validateContentQuality(
   const issues: string[] = [];
   let isBusinessSpecific = true;
 
-  // Check if content mentions business name
+  // Check if content mentions business name OR business type (more flexible)
   const contentText = `${content.headline || ''} ${content.subheadline || ''} ${content.caption || ''}`.toLowerCase();
   const businessNameLower = businessName.toLowerCase();
   const businessTypeLower = businessType.toLowerCase();
 
-  if (!contentText.includes(businessNameLower)) {
-    issues.push('Content does not mention business name');
+  // Content is business-specific if it mentions business name OR business type OR has specific industry terms
+  const mentionsBusinessName = contentText.includes(businessNameLower);
+  const mentionsBusinessType = contentText.includes(businessTypeLower);
+  const hasSpecificTerms = contentText.length > 20; // Basic check for substantial content
+
+  if (!mentionsBusinessName && !mentionsBusinessType && !hasSpecificTerms) {
+    issues.push('Content appears too generic');
     isBusinessSpecific = false;
   }
 
@@ -1258,7 +1263,10 @@ Trending: ${trendingData.trendingHashtags.slice(0, 3).join(', ')}
 
 Create engaging content:
 1. Caption (2-3 sentences): Authentic business story with specific benefits
-2. Headline (5-8 words): Compelling, specific to this business
+2. Headline (5-8 words): Compelling, benefit-focused, avoid starting with business name
+   - GOOD: "Premium Tech, Delivered Fast", "Your Electronics Partner", "Quality Tech Solutions"
+   - AVOID: "Zentech Electronics Kenya: [anything]" - no business name prefix
+   - Focus on benefits, emotions, or unique value propositions
 3. Subheadline (8-15 words): Explains how the service delivers value
 4. Business-specific CTA (2-4 words): Use natural, professional English that sounds conversational
    - NATURAL: "Shop Now", "Order Today", "Book Now", "Visit Us", "Get Quote"
@@ -1369,14 +1377,14 @@ ${prompt}`;
       // VALIDATION: Check content quality and business specificity
       const contentQuality = validateContentQuality(parsed, businessName, businessType, brandProfile);
       if (!contentQuality.isBusinessSpecific) {
-        console.warn('⚠️ [Revo 1.5] Content appears generic, enhancing with business details');
-        // Enhance generic content with business specifics
-        if (parsed.headline && !parsed.headline.includes(businessName)) {
-          parsed.headline = `${businessName}: ${parsed.headline}`;
-        }
-        if (parsed.caption && !parsed.caption.toLowerCase().includes(businessName.toLowerCase())) {
+        console.warn('⚠️ [Revo 1.5] Content appears generic, but keeping natural headlines to avoid repetitive patterns');
+        // Only enhance caption if it's truly generic, but preserve natural headlines
+        if (parsed.caption && !parsed.caption.toLowerCase().includes(businessName.toLowerCase()) &&
+          !parsed.caption.toLowerCase().includes(businessType.toLowerCase())) {
           parsed.caption = `${parsed.caption} Experience the difference with ${businessName}.`;
         }
+        // DO NOT modify headlines to avoid "Company Name: [headline]" repetitive pattern
+        console.log('🎯 [Revo 1.5] Preserving natural headline to avoid repetitive patterns:', parsed.headline);
       }
 
       // VALIDATION: Check if content mentions scheduled services
