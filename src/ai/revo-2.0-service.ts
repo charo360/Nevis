@@ -6,6 +6,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import OpenAI from 'openai';
 import type { BrandProfile, Platform } from '@/lib/types';
+import { aiProxyClient, getUserIdForProxy, getUserTierForProxy, shouldUseProxy } from '@/lib/services/ai-proxy-client';
 
 // Lazily initialize AI clients to avoid import-time failures when environment variables
 // (OPENAI_API_KEY, GEMINI_API_KEY, etc.) are not present. Clients are created only
@@ -39,6 +40,61 @@ function createSafeModel(modelName: string, config?: any) {
   }
 
   return model;
+}
+
+// Helper function to route AI calls through proxy when enabled
+async function generateContentWithProxy(promptOrParts: string | any[], modelName: string, isImageGeneration: boolean = false): Promise<any> {
+  if (shouldUseProxy()) {
+    console.log(`🔄 Revo 2.0: Using proxy for ${isImageGeneration ? 'image' : 'text'} generation with ${modelName}`);
+
+    try {
+      // Convert parts array to string for proxy (simplified for now)
+      const prompt = Array.isArray(promptOrParts)
+        ? promptOrParts.filter(part => typeof part === 'string').join(' ')
+        : promptOrParts;
+
+      if (isImageGeneration) {
+        const response = await aiProxyClient.generateImage({
+          prompt,
+          model: modelName,
+          user_id: getUserIdForProxy(),
+          user_tier: getUserTierForProxy()
+        });
+
+        // Mock the Google AI response structure for image generation
+        return {
+          response: {
+            candidates: [{
+              content: {
+                parts: [{
+                  inlineData: {
+                    mimeType: 'image/png',
+                    data: response.imageUrl.split(',')[1] || response.imageUrl
+                  }
+                }]
+              }
+            }]
+          }
+        };
+      } else {
+        const response = await aiProxyClient.generateText({
+          prompt,
+          model: modelName,
+          user_id: getUserIdForProxy(),
+          user_tier: getUserTierForProxy()
+        });
+        return { response: { text: () => response.content } };
+      }
+    } catch (error) {
+      console.error('❌ Proxy call failed, falling back to direct API:', error);
+      // Fall back to direct API call
+    }
+  }
+
+  // Direct API call (fallback or when proxy disabled)
+  console.log(`🔄 Revo 2.0: Using direct API for ${isImageGeneration ? 'image' : 'text'} generation with ${modelName}`);
+  const model = createSafeModel(modelName);
+  return await model.generateContent(promptOrParts);
 }
 
 function getOpenAIClient(): OpenAI {
@@ -239,7 +295,7 @@ async function generateCreativeConcept(options: Revo20GenerationOptions): Promis
 
     Return a brief creative concept (2-3 sentences) that will guide the visual design.`;
 
-    const result = await model.generateContent(conceptPrompt);
+    const result = await generateContentWithProxy(conceptPrompt, REVO_2_0_MODEL, false);
     const response = await result.response;
     const conceptText = response.text();
 
@@ -496,7 +552,7 @@ The client specifically requested their brand logo to be included. FAILURE TO IN
     }
 
     console.log('🔄 Revo 2.0: Generating image with Gemini 2.0 Flash Image Generation...');
-    const result = await model.generateContent(generationParts);
+    const result = await generateContentWithProxy(generationParts, REVO_2_0_MODEL, true);
     const response = await result.response;
 
     console.log('📊 Revo 2.0: Response received:', {
@@ -716,7 +772,7 @@ Format as JSON:
     // Add the text prompt to generation parts
     generationParts.push(contentPrompt);
 
-    const result = await model.generateContent(generationParts);
+    const result = await generateContentWithProxy(generationParts, REVO_2_0_MODEL, false);
     const response = await result.response;
     const content = response.text();
 
@@ -973,7 +1029,7 @@ export async function testRevo20Availability(): Promise<boolean> {
       console.error('❌ Guard: Tools detected on model initialization. Blocking to avoid search charges.');
       throw new Error('Guard: Tools are disabled for Gemini usage in this project.');
     }
-    const response = await model.generateContent('Create a simple test image with the text "Revo 2.0 Test" on a modern gradient background');
+    const response = await generateContentWithProxy('Create a simple test image with the text "Revo 2.0 Test" on a modern gradient background', REVO_2_0_MODEL, true);
 
     const result = await response.response;
     const candidates = result.candidates;
