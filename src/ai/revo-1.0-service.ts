@@ -3,7 +3,7 @@
  * Enhanced with Gemini 2.5 Flash Image Preview for enhanced quality and perfect text rendering
  */
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
+// Removed: GoogleGenerativeAI - All AI calls now go through proxy for cost control
 import { BrandProfile } from '@/lib/types';
 import { aiProxyClient, getUserIdForProxy, getUserTierForProxy, shouldUseProxy } from '@/lib/services/ai-proxy-client';
 import { revo10Config, revo10Prompts } from './models/versions/revo-1.0/config';
@@ -2046,79 +2046,78 @@ function generateLocalOpportunities(businessType: string, location: string): any
   return opportunities.slice(0, 2);
 }
 
-// Get Revo 1.0 specific API key
-const apiKey =
-  process.env.GEMINI_API_KEY_REVO_1_0 ||
-  process.env.GEMINI_API_KEY ||
-  process.env.GOOGLE_API_KEY ||
-  process.env.GOOGLE_GENAI_API_KEY ||
-  process.env.NEXT_PUBLIC_GEMINI_API_KEY ||
-  process.env.NEXT_PUBLIC_GOOGLE_API_KEY ||
-  process.env.NEXT_PUBLIC_GOOGLE_GENAI_API_KEY;
-
-if (!apiKey) {
-  throw new Error('Revo 1.0: No Gemini API key found. Please set GEMINI_API_KEY_REVO_1_0 or GEMINI_API_KEY in your environment variables.');
-}
-
-// Initialize Google GenAI client with Revo 1.0 configuration
-const ai = new GoogleGenerativeAI(apiKey);
+// Removed: Direct API key and client initialization - All AI calls now go through proxy for cost control
 
 // Revo 1.0 uses the configured Gemini model
 const REVO_1_0_MODEL = revo10Config.aiService;
 
-// Helper function to route AI calls through proxy when enabled
+// Helper function to route AI calls through proxy - PROXY ONLY, NO FALLBACK
 async function generateContentWithProxy(promptOrParts: string | any[], modelName: string, isImageGeneration: boolean = false): Promise<any> {
-  if (shouldUseProxy()) {
-    console.log(`🔄 Revo 1.0: Using proxy for ${isImageGeneration ? 'image' : 'text'} generation with ${modelName}`);
+  if (!shouldUseProxy()) {
+    throw new Error('🚫 Proxy is disabled. This system requires AI_PROXY_ENABLED=true for cost control and model management.');
+  }
 
-    try {
-      // Convert parts array to string for proxy (simplified for now)
-      const prompt = Array.isArray(promptOrParts)
-        ? promptOrParts.filter(part => typeof part === 'string').join(' ')
-        : promptOrParts;
+  console.log(`🔄 Revo 1.0: Using proxy for ${isImageGeneration ? 'image' : 'text'} generation with ${modelName}`);
 
-      if (isImageGeneration) {
-        const response = await aiProxyClient.generateImage({
-          prompt,
-          model: modelName,
-          user_id: getUserIdForProxy(),
-          user_tier: getUserTierForProxy()
-        });
+  // Handle multimodal requests (text + images) properly
+  let prompt: string;
+  let imageData: string | undefined;
 
-        // Mock the Google AI response structure for image generation
-        return {
-          response: {
-            candidates: [{
-              content: {
-                parts: [{
-                  inlineData: {
-                    mimeType: 'image/png',
-                    data: response.imageUrl.split(',')[1] || response.imageUrl
-                  }
-                }]
+  if (Array.isArray(promptOrParts)) {
+    // Extract text and image data from parts array
+    const textParts = promptOrParts.filter(part => typeof part === 'string' || part.text);
+    const imageParts = promptOrParts.filter(part => part.inlineData);
+
+    prompt = textParts.map(part => typeof part === 'string' ? part : part.text).join(' ');
+
+    if (imageParts.length > 0 && imageParts[0].inlineData) {
+      imageData = imageParts[0].inlineData.data;
+    }
+  } else {
+    prompt = promptOrParts;
+  }
+
+  try {
+    if (isImageGeneration) {
+      const response = await aiProxyClient.generateImage({
+        prompt,
+        model: modelName,
+        user_id: getUserIdForProxy(),
+        user_tier: getUserTierForProxy(),
+        max_tokens: 8192
+      });
+
+      // Return consistent structure with Revo 1.5 and 2.0
+      return {
+        candidates: [{
+          content: {
+            parts: [{
+              inlineData: {
+                mimeType: 'image/png',
+                data: response.imageUrl.includes('data:')
+                  ? response.imageUrl.split(',')[1]
+                  : response.imageUrl
               }
             }]
           }
-        };
-      } else {
-        const response = await aiProxyClient.generateText({
-          prompt,
-          model: modelName,
-          user_id: getUserIdForProxy(),
-          user_tier: getUserTierForProxy()
-        });
-        return { response: { text: () => response.content } };
-      }
-    } catch (error) {
-      console.error('❌ Proxy call failed, falling back to direct API:', error);
-      // Fall back to direct API call
-    }
-  }
+        }]
+      };
+    } else {
+      const response = await aiProxyClient.generateText({
+        prompt,
+        model: modelName,
+        user_id: getUserIdForProxy(),
+        user_tier: getUserTierForProxy(),
+        max_tokens: 8192,
+        image_data: imageData
+      });
 
-  // Direct API call (fallback or when proxy disabled)
-  console.log(`🔄 Revo 1.0: Using direct API for ${isImageGeneration ? 'image' : 'text'} generation with ${modelName}`);
-  const model = ai.getGenerativeModel({ model: modelName });
-  return await model.generateContent(promptOrParts);
+      return { response: { text: () => response.content } };
+    }
+  } catch (error) {
+    console.error('❌ [Revo 1.0] Proxy call failed:', error);
+    throw new Error(`Revo 1.0 proxy generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }
 
 /**
@@ -2285,15 +2284,7 @@ ${upcomingServices.map((s: any) => `- ${s.serviceName} (in ${s.daysUntil} days):
       console.log('🏢 [Revo 1.0] Using general brand services (no scheduled services)');
     }
 
-    const model = ai.getGenerativeModel({
-      model: REVO_1_0_MODEL,
-      generationConfig: {
-        temperature: revo10Config.promptSettings.temperature,
-        topP: revo10Config.promptSettings.topP,
-        topK: revo10Config.promptSettings.topK,
-        maxOutputTokens: revo10Config.promptSettings.maxTokens,
-      },
-    });
+    // Removed: Direct API model initialization - All AI calls now go through proxy
 
     // Debug logging for contact information
     console.log('🔍 [Revo 1.0] Contact Information Debug:', {
@@ -2732,15 +2723,7 @@ export async function generateRevo10Design(input: {
 }) {
   try {
 
-    const model = ai.getGenerativeModel({
-      model: REVO_1_0_MODEL,
-      generationConfig: {
-        temperature: revo10Config.promptSettings.temperature,
-        topP: revo10Config.promptSettings.topP,
-        topK: revo10Config.promptSettings.topK,
-        maxOutputTokens: revo10Config.promptSettings.maxTokens,
-      },
-    });
+    // Removed: Direct API model initialization - All AI calls now go through proxy
 
     // Build the design generation prompt
     const designPrompt = `Create a creative design concept for ${input.businessName} (${input.businessType}) that feels like it was imagined by a human designer.
@@ -2867,15 +2850,7 @@ ANTI-GENERIC REQUIREMENTS:
 
     }
 
-    const model = ai.getGenerativeModel({
-      model: REVO_1_0_MODEL,
-      generationConfig: {
-        temperature: revo10Config.promptSettings.temperature,
-        topP: revo10Config.promptSettings.topP,
-        topK: revo10Config.promptSettings.topK,
-        maxOutputTokens: revo10Config.promptSettings.maxTokens,
-      },
-    });
+    // Removed: Direct API model initialization - All AI calls now go through proxy
 
     // Build advanced professional design prompt
     const brandInfo = input.location ? ` based in ${input.location}` : '';
@@ -3434,7 +3409,7 @@ You MUST include the exact brand logo image that was provided above in your desi
  */
 export async function checkRevo10Health() {
   try {
-    const model = ai.getGenerativeModel({ model: REVO_1_0_MODEL });
+    // Removed: Direct API model initialization - All AI calls now go through proxy
     const result = await generateContentWithProxy('Hello', REVO_1_0_MODEL, false);
     const response = await result.response;
 

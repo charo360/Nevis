@@ -18,7 +18,7 @@ export const revo10Config: ModelConfig = {
   },
   promptSettings: {
     temperature: 0.7, // Increased for more human-like, natural language (was 0.3)
-    maxTokens: 4096, // Detailed prompts for clean instructions
+    maxTokens: 8192, // Increased for maximum flexibility (was 4096)
     topP: 0.8, // Increased variety for more natural, human-like responses (was 0.6)
     topK: 40 // More creative choices for human-like variety (was 25)
   }
