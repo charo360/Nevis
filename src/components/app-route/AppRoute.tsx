@@ -3,6 +3,9 @@
 import React, { Suspense } from 'react';
 import { usePathname } from 'next/navigation';
 
+// Import centralized routes
+import { AppRoutesPaths } from '@/lib/routes';
+
 // Explicit lazy imports for top-level app routes (keeps bundler friendly)
 const Dashboard = React.lazy(() => import('../../app/dashboard/page').then(m => ({ default: m.default })));
 const Settings = React.lazy(() => import('../../app/settings/page').then(m => ({ default: m.default })));
@@ -15,6 +18,14 @@ const CreativeStudio = React.lazy(() => import('../../app/creative-studio/page')
 const QuickContent = React.lazy(() => import('../../app/quick-content/page').then(m => ({ default: m.default })));
 const Showcase = React.lazy(() => import('../../app/showcase/page').then(m => ({ default: m.default })));
 const SocialConnect = React.lazy(() => import('../../app/social-connect/page').then(m => ({ default: m.default })));
+
+// Public pages
+const Features = React.lazy(() => import('../../app/features/page').then(m => ({ default: m.default })));
+const Pricing = React.lazy(() => import('../../app/pricing/page').then(m => ({ default: m.default })));
+const About = React.lazy(() => import('../../app/about/page').then(m => ({ default: m.default })));
+const Home = React.lazy(() => import('../../app/page').then(m => ({ default: m.default })));
+
+// Other pages
 const Success = React.lazy((): Promise<{ default: React.ComponentType<any> }> =>
   Promise.resolve({
     default: function SuccessPlaceholder(): JSX.Element {
@@ -28,7 +39,6 @@ const CancelPage = React.lazy(() => import('../../app/cancel/page').then(m => ({
 const CBrand = React.lazy(() => import('../../app/cbrand/page').then(m => ({ default: m.default })));
 const Artifacts = React.lazy(() => import('../../app/artifacts/page').then(m => ({ default: m.default })));
 const Auth = React.lazy(() => import('../../app/auth/page').then(m => ({ default: m.default })));
-const Home = React.lazy(() => import('../../app/page').then(m => ({ default: m.default })));
 
 const FullWidthSpinner: React.FC = () => (
   <div className="w-full min-h-screen flex items-center justify-center px-6 lg:px-12">
@@ -100,6 +110,13 @@ export function AppRoute() {
 
   // Map path prefixes to lazy components. Add or reorder as needed.
   const routes: { test: (p: string) => boolean; Component: React.LazyExoticComponent<React.ComponentType<any>> }[] = [
+    // Public pages - exact matches first
+    { test: p => p === AppRoutesPaths.home, Component: Home },
+    { test: p => p === AppRoutesPaths.features, Component: Features },
+    { test: p => p === AppRoutesPaths.pricing, Component: Pricing },
+    { test: p => p === AppRoutesPaths.about, Component: About },
+
+    // Dashboard and nested routes - prefix matches
     { test: p => p.startsWith('/dashboard'), Component: Dashboard },
     { test: p => p.startsWith('/settings'), Component: Settings },
     { test: p => p.startsWith('/profile'), Component: Profile },
@@ -111,6 +128,8 @@ export function AppRoute() {
     { test: p => p.startsWith('/quick-content'), Component: QuickContent },
     { test: p => p.startsWith('/showcase'), Component: Showcase },
     { test: p => p.startsWith('/social-connect'), Component: SocialConnect },
+
+    // Other app routes
     { test: p => p.startsWith('/success'), Component: Success },
     { test: p => p.startsWith('/test-openai'), Component: TestOpenAI },
     { test: p => p.startsWith('/debug-database'), Component: DebugDatabase },
@@ -118,7 +137,6 @@ export function AppRoute() {
     { test: p => p.startsWith('/cbrand'), Component: CBrand },
     { test: p => p.startsWith('/artifacts'), Component: Artifacts },
     { test: p => p.startsWith('/auth'), Component: Auth },
-    { test: p => p === '/' || p === '/home', Component: Home },
   ];
 
   const match = routes.find(r => r.test(pathname));
