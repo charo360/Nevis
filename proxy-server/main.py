@@ -142,6 +142,94 @@ def analyze_design_images(design_images: List[str]) -> Dict[str, Any]:
     logger.info(f"🎨 Unified color palette: {unified_palette}")
     return unified_palette
 
+def recommend_brand_archetype(website_content: str, business_name: str, business_type: str, description: str) -> Dict[str, Any]:
+    """
+    Analyze website content and recommend the most appropriate brand archetype
+    """
+    try:
+        # Combine all text for analysis
+        full_content = f"{business_name} {business_type} {description} {website_content}".lower()
+
+        # Score each archetype based on keyword matches
+        archetype_scores = {}
+
+        for archetype_id, archetype_data in BRAND_ARCHETYPES.items():
+            score = 0
+            matched_keywords = []
+
+            # Check for keyword matches
+            for keyword in archetype_data["keywords"]:
+                if keyword.lower() in full_content:
+                    score += 1
+                    matched_keywords.append(keyword)
+
+            # Bonus scoring for business type alignment
+            business_type_lower = business_type.lower()
+
+            # Special business type alignments
+            if archetype_id == "caregiver" and any(word in business_type_lower for word in ["health", "medical", "care", "nutrition", "food", "wellness", "hospital", "clinic"]):
+                score += 3
+            elif archetype_id == "sage" and any(word in business_type_lower for word in ["education", "consulting", "research", "technology", "software", "analytics"]):
+                score += 3
+            elif archetype_id == "creator" and any(word in business_type_lower for word in ["design", "creative", "art", "media", "marketing", "advertising"]):
+                score += 3
+            elif archetype_id == "explorer" and any(word in business_type_lower for word in ["travel", "adventure", "outdoor", "sports", "tourism"]):
+                score += 3
+            elif archetype_id == "ruler" and any(word in business_type_lower for word in ["luxury", "premium", "executive", "finance", "banking", "investment"]):
+                score += 3
+            elif archetype_id == "everyman" and any(word in business_type_lower for word in ["retail", "grocery", "convenience", "general", "everyday"]):
+                score += 3
+            elif archetype_id == "hero" and any(word in business_type_lower for word in ["fitness", "sports", "training", "coaching", "performance"]):
+                score += 3
+            elif archetype_id == "innocent" and any(word in business_type_lower for word in ["baby", "children", "family", "organic", "natural"]):
+                score += 3
+            elif archetype_id == "lover" and any(word in business_type_lower for word in ["beauty", "fashion", "jewelry", "cosmetics", "romance"]):
+                score += 3
+            elif archetype_id == "jester" and any(word in business_type_lower for word in ["entertainment", "gaming", "comedy", "fun", "party"]):
+                score += 3
+            elif archetype_id == "magician" and any(word in business_type_lower for word in ["technology", "innovation", "startup", "ai", "digital", "transformation"]):
+                score += 3
+            elif archetype_id == "outlaw" and any(word in business_type_lower for word in ["disruptive", "alternative", "rebel", "unconventional"]):
+                score += 3
+
+            archetype_scores[archetype_id] = {
+                "score": score,
+                "matched_keywords": matched_keywords,
+                "archetype_data": archetype_data
+            }
+
+        # Find the highest scoring archetype
+        best_archetype_id = max(archetype_scores.keys(), key=lambda x: archetype_scores[x]["score"])
+        best_archetype = archetype_scores[best_archetype_id]
+
+        # If no clear winner (score 0), default to everyman
+        if best_archetype["score"] == 0:
+            best_archetype_id = "everyman"
+            best_archetype = archetype_scores[best_archetype_id]
+
+        logger.info(f"🎯 Recommended archetype: {BRAND_ARCHETYPES[best_archetype_id]['name']} (score: {best_archetype['score']})")
+
+        return {
+            "recommendedArchetype": best_archetype_id,
+            "archetypeName": BRAND_ARCHETYPES[best_archetype_id]["name"],
+            "archetypeDescription": BRAND_ARCHETYPES[best_archetype_id]["description"],
+            "confidence": min(best_archetype["score"] * 20, 100),  # Convert to percentage, max 100%
+            "matchedKeywords": best_archetype["matched_keywords"][:5],  # Top 5 matches
+            "reasoning": f"Based on content analysis, this business aligns with {BRAND_ARCHETYPES[best_archetype_id]['name']} archetype due to keywords: {', '.join(best_archetype['matched_keywords'][:3])}"
+        }
+
+    except Exception as e:
+        logger.error(f"❌ Archetype recommendation failed: {e}")
+        # Default fallback
+        return {
+            "recommendedArchetype": "everyman",
+            "archetypeName": "The Everyman",
+            "archetypeDescription": "Belonging, common sense, and relatability. Values common sense and authentic relationships.",
+            "confidence": 50,
+            "matchedKeywords": [],
+            "reasoning": "Default recommendation due to analysis error"
+        }
+
 app = FastAPI(title="Nevis AI Proxy", description="Controlled AI model proxy to prevent unexpected costs")
 
 # In-memory credit tracking (credit-based system) - Updated with generous free credits
@@ -196,6 +284,82 @@ WEBSITE_ANALYSIS_MODELS = [
     "openai/gpt-4o-mini",            # Secondary: Most reliable, 70% cheaper
     "openai/gpt-3.5-turbo",          # Tertiary: Budget backup, 90% cheaper
 ]
+
+# Brand Archetypes for AI recommendation
+BRAND_ARCHETYPES = {
+    "innocent": {
+        "name": "The Innocent",
+        "description": "Pure, wholesome, and optimistic. Represents safety, happiness, and purity.",
+        "traits": ["Pure", "Optimistic", "Honest", "Wholesome", "Happy"],
+        "keywords": ["pure", "natural", "wholesome", "family", "simple", "honest", "safe", "happy", "clean", "fresh"]
+    },
+    "explorer": {
+        "name": "The Explorer",
+        "description": "Adventure, freedom, and discovery. Values freedom, adventure, and authentic experiences.",
+        "traits": ["Adventurous", "Independent", "Authentic", "Brave", "Free-spirited"],
+        "keywords": ["adventure", "explore", "freedom", "travel", "outdoor", "journey", "discover", "authentic", "experience", "wild"]
+    },
+    "sage": {
+        "name": "The Sage",
+        "description": "Wisdom, knowledge, and truth. Seeks truth and knowledge to understand the world.",
+        "traits": ["Wise", "Knowledgeable", "Thoughtful", "Expert", "Mentor"],
+        "keywords": ["knowledge", "wisdom", "expert", "education", "research", "insight", "learn", "teach", "understand", "analysis"]
+    },
+    "hero": {
+        "name": "The Hero",
+        "description": "Courage, determination, and triumph. Rises to challenges and overcomes obstacles.",
+        "traits": ["Courageous", "Determined", "Strong", "Inspiring", "Triumphant"],
+        "keywords": ["challenge", "overcome", "strong", "victory", "achieve", "excel", "champion", "leader", "power", "success"]
+    },
+    "caregiver": {
+        "name": "The Caregiver",
+        "description": "Compassion, care, and nurturing. Motivated by the desire to help others.",
+        "traits": ["Caring", "Compassionate", "Generous", "Nurturing", "Selfless"],
+        "keywords": ["care", "help", "support", "nurture", "protect", "heal", "comfort", "community", "family", "health"]
+    },
+    "creator": {
+        "name": "The Creator",
+        "description": "Innovation, creativity, and imagination. Driven to create something of enduring value.",
+        "traits": ["Creative", "Innovative", "Imaginative", "Artistic", "Original"],
+        "keywords": ["create", "design", "art", "innovative", "original", "craft", "build", "imagine", "express", "unique"]
+    },
+    "ruler": {
+        "name": "The Ruler",
+        "description": "Leadership, power, and responsibility. Takes control and assumes leadership.",
+        "traits": ["Authoritative", "Responsible", "Organized", "Successful", "Leader"],
+        "keywords": ["leader", "premium", "luxury", "exclusive", "authority", "control", "power", "elite", "prestige", "executive"]
+    },
+    "magician": {
+        "name": "The Magician",
+        "description": "Transformation, vision, and possibility. Makes dreams come true through transformation.",
+        "traits": ["Transformative", "Visionary", "Inspiring", "Innovative", "Magical"],
+        "keywords": ["transform", "magic", "vision", "possibility", "dream", "inspire", "change", "revolutionary", "breakthrough", "future"]
+    },
+    "everyman": {
+        "name": "The Everyman",
+        "description": "Belonging, common sense, and relatability. Values common sense and authentic relationships.",
+        "traits": ["Relatable", "Down-to-earth", "Friendly", "Practical", "Authentic"],
+        "keywords": ["everyday", "practical", "affordable", "reliable", "common", "friendly", "accessible", "real", "honest", "value"]
+    },
+    "lover": {
+        "name": "The Lover",
+        "description": "Passion, intimacy, and connection. Seeks and gives love, values relationships.",
+        "traits": ["Passionate", "Romantic", "Committed", "Intimate", "Sensual"],
+        "keywords": ["love", "passion", "romance", "beauty", "connection", "relationship", "intimate", "desire", "emotion", "heart"]
+    },
+    "jester": {
+        "name": "The Jester",
+        "description": "Fun, humor, and living in the moment. Brings joy and humor to the world.",
+        "traits": ["Playful", "Humorous", "Fun-loving", "Spontaneous", "Entertaining"],
+        "keywords": ["fun", "humor", "play", "laugh", "joy", "entertainment", "spontaneous", "lighthearted", "amusing", "cheerful"]
+    },
+    "outlaw": {
+        "name": "The Outlaw",
+        "description": "Revolution, disruption, and freedom. Breaks rules and challenges the status quo.",
+        "traits": ["Rebellious", "Free", "Authentic", "Disruptive", "Independent"],
+        "keywords": ["rebel", "disrupt", "challenge", "revolution", "break", "change", "independent", "bold", "unconventional", "freedom"]
+    }
+}
 
 # Alternative high-quality models for secondary fallback
 OPENROUTER_ALTERNATIVE_MODELS = {
@@ -659,6 +823,24 @@ ANALYSIS INSTRUCTIONS:
 11. Find any pricing information, service packages, or tiers mentioned
 12. Identify specific customer types, industries, or demographics they serve
 
+BRAND ARCHETYPE ANALYSIS:
+Based on the website content, business type, and overall brand personality, recommend the most appropriate brand archetype from these 12 options:
+
+1. **The Innocent** - Pure, wholesome, optimistic (family-friendly, natural, safe)
+2. **The Explorer** - Adventure, freedom, discovery (travel, outdoor, authentic experiences)
+3. **The Sage** - Wisdom, knowledge, truth (education, expertise, insights)
+4. **The Hero** - Courage, determination, triumph (fitness, achievement, overcoming challenges)
+5. **The Caregiver** - Compassion, care, nurturing (healthcare, support, community help)
+6. **The Creator** - Innovation, creativity, imagination (design, art, original solutions)
+7. **The Ruler** - Leadership, power, responsibility (luxury, premium, authority)
+8. **The Magician** - Transformation, vision, possibility (technology, innovation, dreams)
+9. **The Everyman** - Belonging, relatability, common sense (practical, accessible, everyday)
+10. **The Lover** - Passion, intimacy, connection (beauty, relationships, emotional appeal)
+11. **The Jester** - Fun, humor, living in the moment (entertainment, playful, lighthearted)
+12. **The Outlaw** - Revolution, disruption, freedom (challenging status quo, unconventional)
+
+Analyze the content for keywords, tone, messaging, and business focus to determine which archetype best fits this brand.
+
 Be extremely thorough and specific. Use their exact wording wherever possible. Extract comprehensive details, not generic summaries."""
 
             result = await call_website_analysis_api(model, enhanced_prompt, temperature, max_tokens)
@@ -675,7 +857,20 @@ Be extremely thorough and specific. Use their exact wording wherever possible. E
                     # Validate required fields
                     required_fields = ["businessName", "businessType", "description"]
                     if all(field in analysis_data for field in required_fields):
+                        # Generate archetype recommendation based on extracted data
+                        archetype_recommendation = recommend_brand_archetype(
+                            website_content,
+                            analysis_data.get("businessName", ""),
+                            analysis_data.get("businessType", ""),
+                            analysis_data.get("description", "")
+                        )
+
+                        # Add archetype recommendation to the analysis data
+                        analysis_data["archetypeRecommendation"] = archetype_recommendation
+
                         logger.info(f"✅ Website analysis successful with {model}")
+                        logger.info(f"🎯 Archetype recommended: {archetype_recommendation['archetypeName']} ({archetype_recommendation['confidence']}% confidence)")
+
                         return {
                             "success": True,
                             "data": analysis_data,

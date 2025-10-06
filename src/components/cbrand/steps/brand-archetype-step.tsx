@@ -5,7 +5,7 @@ import * as React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
+import {
   Crown,
   Heart,
   Compass,
@@ -314,18 +314,51 @@ interface BrandArchetypeStepProps {
   onPrevious: () => void;
 }
 
+interface ArchetypeRecommendation {
+  recommendedArchetype: string;
+  archetypeName: string;
+  archetypeDescription: string;
+  confidence: number;
+  matchedKeywords: string[];
+  reasoning: string;
+}
+
 export function BrandArchetypeStep({ brandProfile, onUpdate, onNext, onPrevious }: BrandArchetypeStepProps) {
   const [selectedArchetype, setSelectedArchetype] = React.useState<string | null>(
     brandProfile.brandArchetype || null
   );
   const [hoveredArchetype, setHoveredArchetype] = React.useState<string | null>(null);
 
+  // Get AI recommendation from brand profile (if available from website analysis)
+  const aiRecommendation = React.useMemo(() => {
+    // Check if there's an archetype recommendation from website analysis
+    const recommendation = (brandProfile as any).archetypeRecommendation as ArchetypeRecommendation | undefined;
+    console.log('🤖 BrandArchetypeStep: Checking for AI recommendation:', {
+      hasRecommendation: !!recommendation,
+      recommendation,
+      brandProfileKeys: Object.keys(brandProfile),
+      brandProfile
+    });
+
+
+
+    return recommendation;
+  }, [brandProfile]);
+
+  // Auto-select AI recommendation if no archetype is selected yet
+  React.useEffect(() => {
+    if (!selectedArchetype && aiRecommendation && aiRecommendation.recommendedArchetype) {
+      setSelectedArchetype(aiRecommendation.recommendedArchetype);
+      // Don't auto-update the profile yet - let user confirm the selection
+    }
+  }, [aiRecommendation, selectedArchetype]);
+
   const handleArchetypeSelect = (archetypeId: string) => {
     const archetype = BRAND_ARCHETYPES.find(a => a.id === archetypeId);
     if (!archetype) return;
 
     setSelectedArchetype(archetypeId);
-    
+
     // Update brand profile with archetype data
     onUpdate({
       brandArchetype: archetypeId,
@@ -337,7 +370,7 @@ export function BrandArchetypeStep({ brandProfile, onUpdate, onNext, onPrevious 
     });
   };
 
-  const selectedArchetypeData = selectedArchetype 
+  const selectedArchetypeData = selectedArchetype
     ? BRAND_ARCHETYPES.find(a => a.id === selectedArchetype)
     : null;
 
@@ -348,10 +381,57 @@ export function BrandArchetypeStep({ brandProfile, onUpdate, onNext, onPrevious 
           Choose Your Brand Archetype
         </h2>
         <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-          Brand archetypes help define your personality, voice, and how you connect with your audience. 
+          Brand archetypes help define your personality, voice, and how you connect with your audience.
           This will guide your content creation and marketing approach.
         </p>
       </div>
+
+      {/* AI Recommendation Banner */}
+      {aiRecommendation && (
+        <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Lightbulb className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="text-lg font-semibold text-blue-900">
+                    🤖 AI Recommendation
+                  </h3>
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                    {aiRecommendation.confidence}% confidence
+                  </Badge>
+                </div>
+                <p className="text-blue-800 mb-2">
+                  <strong>{aiRecommendation.archetypeName}</strong> - {aiRecommendation.archetypeDescription}
+                </p>
+                <p className="text-sm text-blue-700 mb-3">
+                  {aiRecommendation.reasoning}
+                </p>
+                {aiRecommendation.matchedKeywords.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    <span className="text-xs text-blue-600 mr-2">Keywords found:</span>
+                    {aiRecommendation.matchedKeywords.map(keyword => (
+                      <Badge key={keyword} variant="outline" className="text-xs border-blue-300 text-blue-700">
+                        {keyword}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {selectedArchetype === aiRecommendation.recommendedArchetype && (
+                <div className="flex items-center gap-2 text-green-600">
+                  <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                    <div className="w-3 h-3 bg-green-600 rounded-full" />
+                  </div>
+                  <span className="text-sm font-medium">Selected</span>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Archetype Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -359,7 +439,8 @@ export function BrandArchetypeStep({ brandProfile, onUpdate, onNext, onPrevious 
           const Icon = archetype.icon;
           const isSelected = selectedArchetype === archetype.id;
           const isHovered = hoveredArchetype === archetype.id;
-          
+          const isAIRecommended = aiRecommendation?.recommendedArchetype === archetype.id;
+
           return (
             <TooltipProvider key={archetype.id}>
               <Tooltip>
@@ -368,18 +449,28 @@ export function BrandArchetypeStep({ brandProfile, onUpdate, onNext, onPrevious 
                     className={cn(
                       'cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105',
                       isSelected && 'ring-2 ring-primary ring-offset-2 shadow-xl scale-105',
+                      isAIRecommended && !isSelected && 'ring-2 ring-blue-400 ring-offset-2 shadow-lg',
                       'h-48 relative overflow-hidden'
                     )}
                     onClick={() => handleArchetypeSelect(archetype.id)}
                     onMouseEnter={() => setHoveredArchetype(archetype.id)}
                     onMouseLeave={() => setHoveredArchetype(null)}
                   >
+                    {/* AI Recommendation Badge */}
+                    {isAIRecommended && (
+                      <div className="absolute top-2 right-2 z-10">
+                        <Badge className="bg-blue-500 text-white text-xs px-2 py-1">
+                          🤖 AI Pick
+                        </Badge>
+                      </div>
+                    )}
+
                     {/* Gradient Background */}
                     <div className={cn(
                       'absolute inset-0 bg-gradient-to-br opacity-10',
                       archetype.colorClass
                     )} />
-                    
+
                     <CardHeader className="pb-2">
                       <div className="flex items-center justify-between">
                         <div className={cn(
@@ -480,7 +571,7 @@ export function BrandArchetypeStep({ brandProfile, onUpdate, onNext, onPrevious 
                   </div>
                 </div>
               </div>
-              
+
               <div>
                 <h4 className="font-semibold mb-2 flex items-center gap-2">
                   <Sparkles className="h-4 w-4" />
@@ -498,7 +589,7 @@ export function BrandArchetypeStep({ brandProfile, onUpdate, onNext, onPrevious 
                 </div>
               </div>
             </div>
-            
+
             <div className="mt-4 p-4 bg-white/70 rounded-lg">
               <h4 className="font-semibold mb-2">Brand Examples:</h4>
               <div className="flex flex-wrap gap-2">
@@ -518,8 +609,8 @@ export function BrandArchetypeStep({ brandProfile, onUpdate, onNext, onPrevious 
         <Button variant="outline" onClick={onPrevious}>
           Previous
         </Button>
-        <Button 
-          onClick={onNext} 
+        <Button
+          onClick={onNext}
           disabled={!selectedArchetype}
           className="gap-2"
         >

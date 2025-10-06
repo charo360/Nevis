@@ -79,6 +79,16 @@ const AnalyzeBrandOutputSchema = z.object({
   contentStrategy: z.string().optional().describe('Insights into their content marketing strategy based on website content.'),
   callsToAction: z.array(z.string()).optional().describe('Common calls-to-action used throughout the website.'),
   valueProposition: z.string().optional().describe('The main value proposition or promise to customers.'),
+
+  // Brand Archetype Recommendation
+  archetypeRecommendation: z.object({
+    recommendedArchetype: z.string().describe('The recommended brand archetype ID (e.g., "caregiver", "hero", "sage").'),
+    archetypeName: z.string().describe('The human-readable name of the recommended archetype (e.g., "The Caregiver").'),
+    archetypeDescription: z.string().describe('Description of the recommended archetype.'),
+    confidence: z.number().describe('Confidence score (0-100) for the archetype recommendation.'),
+    matchedKeywords: z.array(z.string()).describe('Keywords from the content that matched this archetype.'),
+    reasoning: z.string().describe('Explanation of why this archetype was recommended.'),
+  }).optional().describe('AI-recommended brand archetype based on website content analysis.'),
 });
 export type BrandAnalysisResult = z.infer<typeof AnalyzeBrandOutputSchema>;
 
@@ -247,7 +257,10 @@ async function analyzeWebsiteWithProxy(
       callsToAction: Array.isArray(proxyData.callsToAction)
         ? proxyData.callsToAction
         : (proxyData.callsToAction ? [proxyData.callsToAction] : []),
-      valueProposition: proxyData.valueProposition
+      valueProposition: proxyData.valueProposition,
+
+      // Include archetype recommendation from proxy server
+      archetypeRecommendation: proxyData.archetypeRecommendation || undefined
     };
 
   } catch (error) {
