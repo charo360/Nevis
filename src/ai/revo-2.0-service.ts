@@ -626,90 +626,47 @@ async function generateCaptionAndHashtags(options: Revo20GenerationOptions, conc
     ];
     const selectedTheme = variationThemes[creativityBoost % variationThemes.length];
 
-    const contentPrompt = `Generate COMPLETELY UNIQUE social media content for ${brandProfile.businessName} (${businessType}) on ${platform}.
+    const contentPrompt = `Create engaging social media content for ${brandProfile.businessName} (${businessType}) on ${platform}.
 
-🚨 UNIQUENESS MANDATE (ID: ${uniqueId}):
-- This content must be 100% DIFFERENT from any previous generation
-- Use creativity level ${creativityBoost}/10 with theme: ${selectedTheme}
-- NEVER repeat previous headlines, subheadlines, or phrases
-- Create fresh, original content every single time
-- Variation theme: ${selectedTheme}
+🎯 BUSINESS CONTEXT:
+- Business: ${brandProfile.businessName}
+- Industry: ${businessType}
+- Location: ${brandProfile.location || 'Global'}
+- Platform: ${platform}
 
-🖼️ IMAGE CONTEXT: The visual design shows: ${concept.concept}
-📝 VISUAL ELEMENTS: ${imagePrompt.includes('office') ? 'Professional office/workspace setting' : imagePrompt.includes('market') ? 'Market/business environment' : 'Business-focused visual elements'}${serviceContentContext}${imageAnalysisContext}
+🖼️ VISUAL CONTEXT:
+The generated image shows: ${concept.concept}
+${imagePrompt ? `Image elements include: ${getDetailedVisualContext(imagePrompt, businessType)}` : ''}${serviceContentContext}${imageAnalysisContext}
 
-CREATIVE CONCEPT: ${concept.concept}
-LOCATION: ${brandProfile.location || 'Global'}
-BUSINESS FOCUS: ${businessType}
-PLATFORM: ${platform}
-THEME: ${selectedTheme}
+🎯 CONTENT ALIGNMENT REQUIREMENTS:
+- Caption MUST be relevant to the visual elements in the image
+- Write about what's actually shown in the design
+- Match the tone and context of the visual setting
+- Be specific about the business services that relate to the visual context
+${concept.featuredServices && concept.featuredServices.length > 0 ? `- Highlight today's featured service: "${concept.featuredServices[0].serviceName}"` : ''}
 
-🎯 CRITICAL ALIGNMENT REQUIREMENT:
-- The caption MUST match the visual elements described above
-- If the image shows office/workspace, write about office/workspace services
-- If the image shows market/business, write about market/business solutions
-- DO NOT write about markets if the image shows offices
-- DO NOT write about offices if the image shows markets
-- ENSURE perfect alignment between visual and text content
-${concept.featuredServices && concept.featuredServices.length > 0 ? `- MANDATORY: Feature today's service "${concept.featuredServices[0].serviceName}" prominently in the caption` : ''}
-${concept.featuredServices && concept.featuredServices.length > 0 ? `- Write as if promoting TODAY'S special service offering` : ''}
+📝 CONTENT REQUIREMENTS:
+1. HEADLINE (max 6 words): Catchy and relevant to the visual content
+2. SUBHEADLINE (max 25 words): Specific to the business and visual context
+3. CAPTION (50-100 words): Engaging, authentic, and directly related to the image
+4. CALL-TO-ACTION (2-4 words): Action-oriented and contextually appropriate
+5. HASHTAGS (EXACTLY ${hashtagCount}): ${platform === 'instagram' ? '5 hashtags for Instagram' : '3 hashtags for other platforms'}
 
-🚫 ANTI-REPETITION RULES (STRICTLY ENFORCED):
-- BANNED PHRASES: "Experience the excellence of", "Your trusted partner", "Innovation meets", "Transform your"
-- BANNED PATTERNS: "Ready to [verb]", "Discover why", "Join the [noun]", "Where [noun] meets [noun]"
-- NO generic business templates or corporate speak
-- NO repetitive sentence structures from previous generations
-- CREATE completely original headlines and subheadlines
-- USE unexpected angles and fresh perspectives
-- VARY sentence length, tone, and approach dramatically
-- MUST sound human, not AI-generated
+🎨 WRITING GUIDELINES:
+- Write in a conversational, authentic tone
+- Avoid generic corporate speak
+- Be specific about the business value proposition
+- Include relevant details about the location or services
+- Make it engaging and scroll-stopping
+- Ensure the content matches what's shown in the image
 
-✅ CONTENT REQUIREMENTS:
-1. HEADLINE (max 6 words): Catchy, ${selectedTheme}, NEVER used before
-2. SUBHEADLINE (max 25 words): Compelling, specific, completely original
-3. CAPTION (50-100 words): Engaging, authentic, conversational, UNIQUE
-4. CALL-TO-ACTION (2-4 words): Action-oriented, compelling, fresh
+🚨 CRITICAL: If the generated image contains text elements, your headline and subheadline should complement (not contradict) that text.
 
-🎯 HEADLINE VARIATION REQUIREMENTS:
-- Use different emotional triggers: urgency, curiosity, benefit, social proof
-- Vary formats: questions, statements, commands, exclamations
-- Theme-specific approach: ${selectedTheme}
-- Examples of variety: "Why [Business] Wins", "[Number] Game-Changers", "Behind [Service]", "[Location]'s Choice"
-
-🎯 SUBHEADLINE VARIATION REQUIREMENTS:
-- Different value propositions each time
-- Vary between features, benefits, outcomes, and social proof
-- Use specific numbers, locations, or unique selling points
-- Theme alignment: ${selectedTheme}
-
-🚨 CRITICAL TEXT ALIGNMENT:
-- If the image contains headline text, use EXACTLY that text
-- If the image contains subheadline text, use EXACTLY that text
-- DO NOT create different headlines/subheadlines than what appears in the image
-- The goal is perfect alignment between image text and metadata
-5. HASHTAGS (EXACTLY ${hashtagCount} - NO MORE, NO LESS): ${platform === 'instagram' ? 'Instagram gets EXACTLY 5 hashtags' : 'Other platforms get EXACTLY 3 hashtags'}
-
-🚨 CRITICAL HASHTAG REQUIREMENT:
-- You MUST generate EXACTLY ${hashtagCount} hashtags
-- Do NOT generate more than ${hashtagCount} hashtags
-- Do NOT generate fewer than ${hashtagCount} hashtags
-- Count your hashtags before responding
-
-🎨 CONTENT STYLE:
-- Write like a sophisticated marketer who understands ${brandProfile.location || 'the local market'}
-- Use persuasive, engaging language that drives interest
-- Be conversational and authentic, not corporate
-- Include specific benefits and value propositions
-- Make it feel personal and relatable
-- Use local cultural context when appropriate
-
-  📱 PLATFORM OPTIMIZATION:
-  - ${String(platform).toLowerCase() === 'instagram' ? 'Instagram: Visual storytelling, lifestyle focus, 5 strategic hashtags' : 'Other platforms: Professional tone, business focus, 3 targeted hashtags'}
-
-🌍 CULTURAL INTELLIGENCE:
-- Adapt tone for ${brandProfile.location || 'global audience'}
-- Use culturally relevant references when appropriate
-- Consider local business practices and communication styles
+🌍 PLATFORM & CULTURAL CONTEXT:
+- Platform: ${String(platform).toLowerCase() === 'instagram' ? 'Instagram - Visual storytelling with lifestyle focus' : 'Professional business platform'}
+- Location: ${brandProfile.location || 'Global'} - Use appropriate cultural context
+- Tone: Conversational and authentic, not corporate
+- Focus: Specific benefits and value propositions that relate to the visual content
 
 Format as JSON:
 {
@@ -781,23 +738,26 @@ Format as JSON:
 }
 
 /**
- * Generate unique fallback content to avoid repetition with service integration
+ * Generate contextually relevant fallback content based on visual and business context
  */
 function generateUniqueFallbackContent(brandProfile: any, businessType: string, platform: string, hashtagCount: number, creativityLevel: number, concept?: any) {
   // Check if we have today's featured service
   const todayService = concept?.featuredServices?.[0];
 
+  // Get visual context for better alignment
+  const visualContext = getVisualContextForBusiness(businessType, concept?.concept || '');
+
   const uniqueCaptions = todayService ? [
-    `Today's spotlight: ${todayService.serviceName} at ${brandProfile.businessName}. Experience excellence in ${businessType.toLowerCase()} like never before.`,
-    `Featuring today: ${todayService.serviceName}. ${brandProfile.businessName} brings you premium ${businessType.toLowerCase()} solutions in ${brandProfile.location || 'your area'}.`,
-    `Don't miss today's ${todayService.serviceName} from ${brandProfile.businessName}. Your trusted ${businessType.toLowerCase()} partner delivers again.`,
-    `Today we're highlighting ${todayService.serviceName}. See why ${brandProfile.businessName} leads in ${businessType.toLowerCase()} innovation.`,
-    `Special focus today: ${todayService.serviceName}. ${brandProfile.businessName} continues to set the standard in ${businessType.toLowerCase()}.`
+    `Spotlight on ${todayService.serviceName}! ${brandProfile.businessName} delivers exceptional ${businessType.toLowerCase()} services in ${brandProfile.location || 'your area'}.`,
+    `Today's feature: ${todayService.serviceName}. See why ${brandProfile.businessName} is your go-to choice for quality ${businessType.toLowerCase()} solutions.`,
+    `Highlighting ${todayService.serviceName} from ${brandProfile.businessName}. Professional ${businessType.toLowerCase()} services that make a difference.`,
+    `${todayService.serviceName} takes center stage today. ${brandProfile.businessName} brings you excellence in ${businessType.toLowerCase()}.`,
+    `Featured service: ${todayService.serviceName}. ${brandProfile.businessName} continues to lead in ${businessType.toLowerCase()} innovation.`
   ] : [
-    `Transform your ${businessType.toLowerCase()} experience with ${brandProfile.businessName}. We're redefining excellence in ${brandProfile.location || 'the industry'}.`,
-    `Ready to elevate your ${businessType.toLowerCase()} journey? ${brandProfile.businessName} brings innovation and expertise to ${brandProfile.location || 'every project'}.`,
-    `Discover why ${brandProfile.businessName} is the preferred choice for ${businessType.toLowerCase()} solutions in ${brandProfile.location || 'the market'}.`,
-    `Your success is our mission. ${brandProfile.businessName} delivers exceptional ${businessType.toLowerCase()} services with a personal touch.`,
+    `${brandProfile.businessName} brings you professional ${businessType.toLowerCase()} services in ${brandProfile.location || 'your area'}. Quality you can trust.`,
+    `Looking for reliable ${businessType.toLowerCase()} solutions? ${brandProfile.businessName} delivers excellence every time.`,
+    `${brandProfile.businessName}: Your partner for premium ${businessType.toLowerCase()} services. Experience the difference quality makes.`,
+    `Professional ${businessType.toLowerCase()} services from ${brandProfile.businessName}. Serving ${brandProfile.location || 'the community'} with dedication.`,
     `Innovation meets reliability at ${brandProfile.businessName}. Experience the future of ${businessType.toLowerCase()} today.`
   ];
 
@@ -833,6 +793,46 @@ function generateFallbackHashtags(brandProfile: any, businessType: string, platf
   const baseHashtags = platform.toLowerCase() === 'instagram' ? instagramHashtags : otherHashtags;
 
   return baseHashtags.slice(0, count);
+}
+
+/**
+ * Get detailed visual context from image prompt for better caption alignment
+ */
+function getDetailedVisualContext(imagePrompt: string, businessType: string): string {
+  const promptLower = imagePrompt.toLowerCase();
+  const businessLower = businessType.toLowerCase();
+
+  // Analyze the image prompt for specific visual elements
+  if (promptLower.includes('office') || promptLower.includes('workspace') || promptLower.includes('desk')) {
+    return 'Professional office/workspace setting with modern business aesthetics';
+  }
+
+  if (promptLower.includes('market') || promptLower.includes('shopping') || promptLower.includes('store')) {
+    return 'Market/retail business environment with customer-focused elements';
+  }
+
+  if (promptLower.includes('restaurant') || promptLower.includes('food') || promptLower.includes('kitchen') || promptLower.includes('dining')) {
+    return 'Restaurant/food service environment with culinary and hospitality elements';
+  }
+
+  if (promptLower.includes('tech') || promptLower.includes('computer') || promptLower.includes('digital') || promptLower.includes('software')) {
+    return 'Modern technology workspace with digital innovation elements';
+  }
+
+  if (promptLower.includes('health') || promptLower.includes('medical') || promptLower.includes('clinic') || promptLower.includes('hospital')) {
+    return 'Healthcare/medical environment with professional wellness aesthetics';
+  }
+
+  if (promptLower.includes('construction') || promptLower.includes('building') || promptLower.includes('tools')) {
+    return 'Construction/building environment with professional craftsmanship elements';
+  }
+
+  if (promptLower.includes('education') || promptLower.includes('school') || promptLower.includes('classroom')) {
+    return 'Educational environment with learning and development focus';
+  }
+
+  // Fallback to business type analysis
+  return getVisualContextForBusiness(businessType, imagePrompt);
 }
 
 /**
@@ -928,7 +928,7 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
     // Step 4: Generate caption and hashtags with timeout
     console.log('📱 Revo 2.0: Generating content...');
     const contentResult = await Promise.race([
-      generateCaptionAndHashtags(enhancedOptions, concept),
+      generateCaptionAndHashtags(enhancedOptions, concept, enhancedPrompt, imageResult.imageUrl),
       new Promise((_, reject) => setTimeout(() => reject(new Error('Content generation timeout')), 60000))
     ]);
     console.log('✅ Revo 2.0: Content generated');
