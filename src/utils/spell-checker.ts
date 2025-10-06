@@ -17,7 +17,6 @@ const BUSINESS_CORRECTIONS: Record<string, string> = {
   'experiance': 'experience',
   'expirience': 'experience',
   'servise': 'service',
-  'servises': 'services',
   'qualaty': 'quality',
   'quallity': 'quality',
   'custumer': 'customer',
@@ -103,15 +102,10 @@ const INDUSTRY_CORRECTIONS: Record<string, Record<string, string>> = {
     'restaraunt': 'restaurant',
     'cusine': 'cuisine',
     'apetizer': 'appetizer',
-    'apetizers': 'appetizers',
     'deserts': 'desserts',
     'recipie': 'recipe',
-    'recipies': 'recipes',
     'ingrediant': 'ingredient',
-    'ingrediants': 'ingredients',
-    'delicous': 'delicious',
-    'delicous': 'delicious',
-    'restraunt': 'restaurant'
+    'delicous': 'delicious'
   },
   'technology': {
     'technolgy': 'technology',
@@ -138,14 +132,10 @@ const INDUSTRY_CORRECTIONS: Record<string, Record<string, string>> = {
     'medecine': 'medicine',
     'medecal': 'medical',
     'treatement': 'treatment',
-    'treatements': 'treatments',
     'patiant': 'patient',
-    'patiants': 'patients',
     'symtom': 'symptom',
-    'symtoms': 'symptoms',
     'diagnose': 'diagnosis',
     'perscription': 'prescription',
-    'perscriptions': 'prescriptions',
     'theraphy': 'therapy',
     'wellnes': 'wellness'
   },
@@ -188,33 +178,37 @@ const INDUSTRY_CORRECTIONS: Record<string, Record<string, string>> = {
 
 // Common word patterns that are often misspelled
 const PATTERN_CORRECTIONS: Array<{ pattern: RegExp; replacement: string }> = [
-  { pattern: /\b(\w+)ing\b/g, replacement: (match, word) => {
-    // Handle double consonants before -ing
-    if (word.endsWith('nn') || word.endsWith('mm') || word.endsWith('pp') || word.endsWith('tt')) {
-      return match;
+  {
+    pattern: /\b(\w+)ing\b/g, replacement: (match, word) => {
+      // Handle double consonants before -ing
+      if (word.endsWith('nn') || word.endsWith('mm') || word.endsWith('pp') || word.endsWith('tt')) {
+        return match;
+      }
+      // Common -ing corrections
+      const corrections: Record<string, string> = {
+        'runing': 'running',
+        'stoping': 'stopping',
+        'geting': 'getting',
+        'puting': 'putting',
+        'writting': 'writing',
+        'planing': 'planning',
+        'begining': 'beginning',
+        'comming': 'coming'
+      };
+      return corrections[match] || match;
     }
-    // Common -ing corrections
-    const corrections: Record<string, string> = {
-      'runing': 'running',
-      'stoping': 'stopping',
-      'geting': 'getting',
-      'puting': 'putting',
-      'writting': 'writing',
-      'planing': 'planning',
-      'begining': 'beginning',
-      'comming': 'coming'
-    };
-    return corrections[match] || match;
-  }},
-  { pattern: /\b(\w+)tion\b/g, replacement: (match, word) => {
-    // Common -tion corrections
-    const corrections: Record<string, string> = {
-      'recomendation': 'recommendation',
-      'seperation': 'separation',
-      'accomodation': 'accommodation'
-    };
-    return corrections[match] || match;
-  }}
+  },
+  {
+    pattern: /\b(\w+)tion\b/g, replacement: (match, word) => {
+      // Common -tion corrections
+      const corrections: Record<string, string> = {
+        'recomendation': 'recommendation',
+        'seperation': 'separation',
+        'accomodation': 'accommodation'
+      };
+      return corrections[match] || match;
+    }
+  }
 ];
 
 export interface SpellCheckResult {
@@ -237,52 +231,65 @@ export class SpellChecker {
   static checkSpelling(text: string, businessType?: string): SpellCheckResult {
     let correctedText = text;
     const corrections: SpellCheckResult['corrections'] = [];
-    
-    // 1. Apply business-specific corrections
+
+    // 1. Apply business-specific corrections with plural validation
     for (const [wrong, correct] of Object.entries(BUSINESS_CORRECTIONS)) {
       const regex = new RegExp(`\\b${wrong}\\b`, 'gi');
       const matches = [...text.matchAll(regex)];
-      
+
       for (const match of matches) {
         if (match.index !== undefined) {
-          corrections.push({
-            original: match[0],
-            corrected: correct,
-            position: match.index,
-            type: 'business'
-          });
+          // Validate that this is actually a misspelling, not a correct plural
+          const matchedWord = match[0];
+          if (this.isActualMisspelling(matchedWord, correct)) {
+            corrections.push({
+              original: matchedWord,
+              corrected: this.preserveCase(matchedWord, correct),
+              position: match.index,
+              type: 'business'
+            });
+          }
         }
       }
-      
-      correctedText = correctedText.replace(regex, correct);
+
+      // Only replace if it's an actual misspelling
+      correctedText = correctedText.replace(regex, (match) => {
+        return this.isActualMisspelling(match, correct) ? this.preserveCase(match, correct) : match;
+      });
     }
-    
-    // 2. Apply industry-specific corrections
+
+    // 2. Apply industry-specific corrections with plural validation
     if (businessType) {
       const industryKey = this.getIndustryKey(businessType);
       const industryCorrections = INDUSTRY_CORRECTIONS[industryKey];
-      
+
       if (industryCorrections) {
         for (const [wrong, correct] of Object.entries(industryCorrections)) {
           const regex = new RegExp(`\\b${wrong}\\b`, 'gi');
           const matches = [...text.matchAll(regex)];
-          
+
           for (const match of matches) {
             if (match.index !== undefined) {
-              corrections.push({
-                original: match[0],
-                corrected: correct,
-                position: match.index,
-                type: 'industry'
-              });
+              const matchedWord = match[0];
+              if (this.isActualMisspelling(matchedWord, correct)) {
+                corrections.push({
+                  original: matchedWord,
+                  corrected: this.preserveCase(matchedWord, correct),
+                  position: match.index,
+                  type: 'industry'
+                });
+              }
             }
           }
-          
-          correctedText = correctedText.replace(regex, correct);
+
+          // Only replace if it's an actual misspelling
+          correctedText = correctedText.replace(regex, (match) => {
+            return this.isActualMisspelling(match, correct) ? this.preserveCase(match, correct) : match;
+          });
         }
       }
     }
-    
+
     // 3. Apply pattern-based corrections
     for (const { pattern, replacement } of PATTERN_CORRECTIONS) {
       if (typeof replacement === 'function') {
@@ -291,10 +298,10 @@ export class SpellChecker {
         correctedText = correctedText.replace(pattern, replacement);
       }
     }
-    
+
     // 4. Calculate confidence score
     const confidence = this.calculateConfidence(text, correctedText, corrections);
-    
+
     return {
       originalText: text,
       correctedText,
@@ -303,41 +310,41 @@ export class SpellChecker {
       confidence
     };
   }
-  
+
   /**
    * Quick spell check for headlines specifically
    */
   static checkHeadline(headline: string, businessType?: string): SpellCheckResult {
     return this.checkSpelling(headline, businessType);
   }
-  
+
   /**
    * Quick spell check for subheadlines specifically
    */
   static checkSubheadline(subheadline: string, businessType?: string): SpellCheckResult {
     return this.checkSpelling(subheadline, businessType);
   }
-  
+
   /**
    * Batch check multiple text elements
    */
   static checkMultiple(texts: { text: string; type: 'headline' | 'subheadline' | 'caption' }[], businessType?: string): Record<string, SpellCheckResult> {
     const results: Record<string, SpellCheckResult> = {};
-    
+
     texts.forEach((item, index) => {
       const key = `${item.type}_${index}`;
       results[key] = this.checkSpelling(item.text, businessType);
     });
-    
+
     return results;
   }
-  
+
   /**
    * Get industry key for corrections
    */
   private static getIndustryKey(businessType: string): string {
     const type = businessType.toLowerCase();
-    
+
     if (type.includes('restaurant') || type.includes('food') || type.includes('cafe') || type.includes('dining')) {
       return 'restaurant';
     }
@@ -353,30 +360,137 @@ export class SpellChecker {
     if (type.includes('retail') || type.includes('shop') || type.includes('store') || type.includes('sales')) {
       return 'retail';
     }
-    
+
     return 'general';
   }
-  
+
   /**
    * Calculate confidence score based on corrections made
    */
   private static calculateConfidence(original: string, corrected: string, corrections: SpellCheckResult['corrections']): number {
     if (corrections.length === 0) return 100;
-    
+
     const totalWords = original.split(/\s+/).length;
     const errorRate = corrections.length / totalWords;
-    
+
     // Higher confidence for fewer errors
     const confidence = Math.max(0, 100 - (errorRate * 100));
-    
+
     return Math.round(confidence);
   }
-  
+
   /**
    * Validate that text doesn't contain obvious spelling errors
    */
   static validateText(text: string, businessType?: string): boolean {
     const result = this.checkSpelling(text, businessType);
     return !result.hasErrors || result.confidence > 80;
+  }
+
+  /**
+   * Check if a word is actually misspelled or just a valid plural/variant
+   */
+  private static isActualMisspelling(word: string, correction: string): boolean {
+    const lowerWord = word.toLowerCase();
+    const lowerCorrection = correction.toLowerCase();
+
+    // List of correctly spelled words that should NOT be corrected
+    const validWords = new Set([
+      'services', 'businesses', 'experiences', 'qualities', 'customers',
+      'products', 'recipes', 'ingredients', 'treatments', 'patients',
+      'investments', 'expenses', 'databases', 'algorithms', 'technologies'
+    ]);
+
+    // If the word is in our valid words list, don't correct it
+    if (validWords.has(lowerWord)) {
+      return false;
+    }
+
+    // Check if it's a valid plural form of the correction
+    if (this.isValidPlural(lowerWord, lowerCorrection)) {
+      return false;
+    }
+
+    // Check if it's a valid variant (like British vs American spelling)
+    if (this.isValidVariant(lowerWord, lowerCorrection)) {
+      return false;
+    }
+
+    // If none of the above, it's likely a misspelling
+    return true;
+  }
+
+  /**
+   * Check if a word is a valid plural form
+   */
+  private static isValidPlural(word: string, singular: string): boolean {
+    // Standard plural rules
+    if (word === singular + 's') return true;
+    if (word === singular + 'es') return true;
+
+    // Words ending in 'y' -> 'ies'
+    if (singular.endsWith('y') && word === singular.slice(0, -1) + 'ies') return true;
+
+    // Words ending in 'f' or 'fe' -> 'ves'
+    if (singular.endsWith('f') && word === singular.slice(0, -1) + 'ves') return true;
+    if (singular.endsWith('fe') && word === singular.slice(0, -2) + 'ves') return true;
+
+    // Irregular plurals we want to preserve
+    const irregularPlurals: Record<string, string> = {
+      'child': 'children',
+      'person': 'people',
+      'man': 'men',
+      'woman': 'women',
+      'foot': 'feet',
+      'tooth': 'teeth',
+      'mouse': 'mice',
+      'goose': 'geese'
+    };
+
+    return irregularPlurals[singular] === word;
+  }
+
+  /**
+   * Check if a word is a valid variant (British vs American, etc.)
+   */
+  private static isValidVariant(word: string, standard: string): boolean {
+    // British vs American spelling variants we should preserve
+    const variants: Record<string, string[]> = {
+      'color': ['colour'],
+      'honor': ['honour'],
+      'favor': ['favour'],
+      'center': ['centre'],
+      'theater': ['theatre'],
+      'organize': ['organise'],
+      'realize': ['realise'],
+      'analyze': ['analyse']
+    };
+
+    // Check if word is a valid variant of the standard
+    const validVariants = variants[standard] || [];
+    return validVariants.includes(word);
+  }
+
+  /**
+   * Preserve the original case pattern when making corrections
+   */
+  private static preserveCase(original: string, correction: string): string {
+    // If original is all uppercase
+    if (original === original.toUpperCase()) {
+      return correction.toUpperCase();
+    }
+
+    // If original is title case (first letter uppercase)
+    if (original[0] === original[0].toUpperCase() && original.slice(1) === original.slice(1).toLowerCase()) {
+      return correction.charAt(0).toUpperCase() + correction.slice(1).toLowerCase();
+    }
+
+    // If original is all lowercase
+    if (original === original.toLowerCase()) {
+      return correction.toLowerCase();
+    }
+
+    // For mixed case, return correction as-is
+    return correction;
   }
 }
