@@ -39,7 +39,326 @@ function extractTextFromProxyResponse(response: any): string {
   return '';
 }
 
-// Helper function to route AI calls through proxy - PROXY ONLY, NO FALLBACK
+/**
+ * Get cultural context for engaging designs based on location
+ */
+function getCulturalContextForLocation(location: string): string {
+  const culturalContexts: Record<string, string> = {
+    'kenya': 'Warm, community-focused culture with emphasis on relationships and Ubuntu philosophy. Use earth tones, community imagery, and authentic local elements.',
+    'nigeria': 'Vibrant, entrepreneurial culture with strong community bonds. Incorporate bold colors, dynamic energy, and celebration of success.',
+    'south africa': 'Diverse, multicultural society with emphasis on unity and progress. Use inclusive imagery and rainbow nation elements.',
+    'ghana': 'Rich cultural heritage with emphasis on hospitality and community. Incorporate traditional patterns, warm colors, and welcoming imagery.',
+    'uganda': 'Community-centered culture with emphasis on family and togetherness. Use natural elements, warm tones, and authentic representation.',
+    'tanzania': 'Coastal influences with Swahili culture, emphasis on harmony and community. Incorporate natural textures and coastal elements.',
+    'ethiopia': 'Ancient culture with strong traditions and community values. Use earth tones, traditional elements, and authentic representation.',
+    'rwanda': 'Culture of unity and progress with emphasis on community development. Use clean, modern elements with traditional touches.',
+    'india': 'Diverse, colorful culture with emphasis on family, festivals, and traditions. Use vibrant colors, cultural patterns, and inclusive imagery.',
+    'canada': 'Multicultural, friendly society with emphasis on inclusivity and nature. Use clean, modern design with natural elements.',
+    'usa': 'Diverse, dynamic culture with emphasis on innovation and opportunity. Use bold, modern elements with inclusive representation.',
+    'uk': 'Traditional yet modern culture with emphasis on quality and heritage. Use classic elements with contemporary touches.',
+    'default': 'Universal appeal with authentic, engaging elements that connect with diverse audiences through quality and professionalism.'
+  };
+
+  const locationKey = location.toLowerCase();
+  for (const [key, context] of Object.entries(culturalContexts)) {
+    if (locationKey.includes(key)) {
+      return context;
+    }
+  }
+  return culturalContexts['default'];
+}
+
+/**
+ * Get local language elements for authentic cultural integration
+ */
+function getLocalLanguageElements(location: string): string | null {
+  const languageElements: Record<string, string> = {
+    'kenya': 'Swahili greetings (Jambo, Karibu, Asante), phrases like "Hakuna Matata" for positive messaging',
+    'nigeria': 'Pidgin English elements, greetings like "How far?", "Wetin dey happen?", celebratory phrases',
+    'south africa': 'Afrikaans/Zulu greetings (Sawubona, Dumela), phrases like "Ubuntu" for community connection',
+    'ghana': 'Twi greetings (Akwaaba - welcome), local expressions for hospitality and community',
+    'uganda': 'Luganda greetings (Oli otya), local expressions for community and togetherness',
+    'tanzania': 'Swahili greetings (Hujambo, Karibu), coastal expressions and community phrases',
+    'ethiopia': 'Amharic greetings (Selam), traditional expressions for community and respect',
+    'rwanda': 'Kinyarwanda greetings (Muraho), expressions of unity and progress',
+    'india': 'Hindi/regional greetings (Namaste, Dhanyawad), festival references, family-oriented phrases',
+    'canada': 'French-English mix where appropriate, friendly Canadian expressions ("eh", "beauty")',
+    'usa': 'Regional slang and expressions, diverse cultural references',
+    'uk': 'British expressions, regional dialects where appropriate'
+  };
+
+  const locationKey = location.toLowerCase();
+  for (const [key, elements] of Object.entries(languageElements)) {
+    if (locationKey.includes(key)) {
+      return elements;
+    }
+  }
+  return null;
+}
+
+/**
+ * Generate dynamic fallback captions with cultural elements and variety
+ */
+function generateDynamicFallbackCaption(
+  businessName: string,
+  businessType: string,
+  location: string,
+  useLocalLanguage: boolean
+): string {
+  // Use more random seed to ensure better variety
+  const captionSeed = Date.now() + Math.random() * 10000 + Math.floor(Math.random() * 1000);
+  const varietyIndex = Math.floor(captionSeed % 18); // 18 different caption patterns for more variety
+
+  // Only use greeting 20% of the time when local language is enabled
+  const shouldUseGreeting = useLocalLanguage && Math.random() < 0.2; // Reduced from always using greeting
+  const localGreeting = shouldUseGreeting ? getLocalGreeting(location) : '';
+
+  const captionPatterns = [
+    // Story-driven (no greeting)
+    `At ${businessName}, every client's success story matters. We're transforming ${businessType.toLowerCase()} experiences in ${location} one customer at a time.`,
+
+    // Community-focused (no greeting)
+    `Proudly serving the ${location} community with exceptional ${businessType.toLowerCase()} services. Your local success is our mission.`,
+
+    // Problem-solution (no greeting)
+    `Tired of unreliable ${businessType.toLowerCase()} services? ${businessName} delivers the quality and consistency you deserve in ${location}.`,
+
+    // Value-proposition (no greeting)
+    `Why choose ${businessName}? Because your ${businessType.toLowerCase()} needs deserve more than ordinary. Experience the difference in ${location}.`,
+
+    // Behind-the-scenes (no greeting)
+    `Behind every great ${businessType.toLowerCase()} service is a team that cares. Meet ${businessName} - your trusted partner in ${location}.`,
+
+    // Results-focused (no greeting)
+    `Real results, real impact. ${businessName} is changing how ${location} experiences ${businessType.toLowerCase()} services.`,
+
+    // Educational/Expert (no greeting)
+    `Years of expertise, countless satisfied clients. ${businessName} brings professional ${businessType.toLowerCase()} excellence to ${location}.`,
+
+    // Seasonal/Timely (no greeting)
+    `This is the perfect time to experience premium ${businessType.toLowerCase()} services. ${businessName} is ready to serve ${location}.`,
+
+    // Trust-building (no greeting)
+    `Building trust through exceptional service. ${businessName} has become ${location}'s go-to choice for ${businessType.toLowerCase()}.`,
+
+    // Innovation-focused (no greeting)
+    `Innovation meets reliability at ${businessName}. Discover modern ${businessType.toLowerCase()} solutions designed for ${location}.`,
+
+    // Customer-centric (no greeting)
+    `Your satisfaction drives everything we do. ${businessName} puts ${location} customers first in every ${businessType.toLowerCase()} interaction.`,
+
+    // Achievement-focused (no greeting)
+    `Celebrating another milestone in ${businessType.toLowerCase()} excellence. ${businessName} continues to raise the bar in ${location}.`,
+
+    // NEW: Direct approach patterns (no greeting)
+    `${businessName} delivers exceptional ${businessType.toLowerCase()} services that exceed expectations. Quality you can trust in ${location}.`,
+
+    `Looking for reliable ${businessType.toLowerCase()} services in ${location}? ${businessName} combines expertise with genuine care for every client.`,
+
+    `${businessName} stands out in ${location}'s ${businessType.toLowerCase()} industry. Professional service, personal attention, proven results.`,
+
+    `Quality ${businessType.toLowerCase()} services shouldn't be hard to find. ${businessName} makes excellence accessible in ${location}.`,
+
+    // Greeting patterns (only when shouldUseGreeting is true)
+    `${localGreeting}Meet ${businessName}, transforming ${businessType.toLowerCase()} experiences in ${location} with personalized service and proven expertise.`,
+
+    `${localGreeting}Discover why ${location} trusts ${businessName} for premium ${businessType.toLowerCase()} services. Quality that speaks for itself.`
+  ];
+
+  return captionPatterns[varietyIndex].trim();
+}
+
+/**
+ * Get local greeting based on location for authentic cultural touch
+ * Made more varied to avoid repetitive "Jambo!" starts
+ */
+function getLocalGreeting(location: string): string {
+  const greetings: Record<string, string[]> = {
+    'kenya': ['Jambo! ', 'Karibu! ', 'Habari! ', 'Hey! ', 'Hello! ', '', '', '', ''], // More empty strings for variety
+    'nigeria': ['How far! ', 'Wetin dey happen! ', 'Good day! ', 'Hey! ', 'Hello! ', '', '', ''],
+    'south africa': ['Sawubona! ', 'Hello! ', 'Good day! ', 'Hey! ', '', '', ''],
+    'ghana': ['Akwaaba! ', 'Hello! ', 'Good morning! ', 'Hey! ', '', '', ''],
+    'uganda': ['Oli otya! ', 'Hello! ', 'Good day! ', 'Hey! ', '', '', ''],
+    'tanzania': ['Hujambo! ', 'Karibu! ', 'Habari! ', 'Hello! ', 'Hey! ', '', '', ''],
+    'ethiopia': ['Selam! ', 'Hello! ', 'Good day! ', 'Hey! ', '', '', ''],
+    'rwanda': ['Muraho! ', 'Hello! ', 'Good day! ', 'Hey! ', '', '', ''],
+    'india': ['Namaste! ', 'Hello! ', 'Good day! ', 'Hey! ', '', '', ''],
+    'canada': ['Hey there! ', 'Good day! ', 'Hello! ', '', '', ''],
+    'usa': ['Hey! ', 'Hello! ', 'Good day! ', '', '', ''],
+    'uk': ['Hello! ', 'Good day! ', 'Cheers! ', '', '', '']
+  };
+
+  const locationKey = location.toLowerCase();
+  for (const [key, greetingList] of Object.entries(greetings)) {
+    if (locationKey.includes(key)) {
+      // Random selection with higher chance of no greeting (more empty strings in arrays)
+      const randomGreeting = greetingList[Math.floor(Math.random() * greetingList.length)];
+      return randomGreeting;
+    }
+  }
+
+  // Default: 15% chance for generic greeting (reduced from 25%)
+  return Math.random() < 0.15 ? 'Hello! ' : '';
+}
+
+/**
+ * Get cultural design elements for visual authenticity
+ */
+function getCulturalDesignElements(location: string, useLocalLanguage: boolean): string {
+  if (!useLocalLanguage) return '';
+
+  const designElements: Record<string, string> = {
+    'kenya': 'Subtle Maasai patterns, warm earth tones, acacia tree silhouettes, traditional geometric patterns',
+    'nigeria': 'Vibrant Ankara patterns, bold geometric designs, traditional motifs, energetic color combinations',
+    'south africa': 'Rainbow nation colors, traditional beadwork patterns, diverse cultural symbols, ubuntu elements',
+    'ghana': 'Kente cloth patterns, Adinkra symbols, traditional gold accents, cultural geometric designs',
+    'uganda': 'Traditional bark cloth textures, natural patterns, cultural symbols, earth tone accents',
+    'tanzania': 'Swahili coastal patterns, traditional textiles, cultural motifs, natural textures',
+    'ethiopia': 'Traditional cross patterns, ancient script elements, cultural symbols, earth tone designs',
+    'rwanda': 'Traditional basket weaving patterns, unity symbols, cultural geometric designs, natural elements',
+    'india': 'Mandala patterns, traditional motifs, festival colors, cultural geometric designs, paisley elements',
+    'canada': 'Maple leaf elements, natural textures, multicultural symbols, clean modern designs',
+    'usa': 'Stars and stripes elements, diverse cultural symbols, modern geometric patterns',
+    'uk': 'Traditional patterns, heritage elements, classic design motifs, royal colors'
+  };
+
+  const locationKey = location.toLowerCase();
+  for (const [key, elements] of Object.entries(designElements)) {
+    if (locationKey.includes(key)) {
+      return elements;
+    }
+  }
+
+  return 'Subtle cultural patterns and authentic local design elements';
+}
+
+/**
+ * Simple CTA cleanup - remove obvious problems without over-correcting
+ */
+function cleanupCTA(cta: string, businessName: string, businessType: string): string {
+  if (!cta) return cta;
+
+  let cleaned = cta.trim();
+
+  // Remove business name from CTA
+  const businessNamePattern = new RegExp(businessName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+  cleaned = cleaned.replace(businessNamePattern, '').trim();
+
+  // Remove awkward prepositions at the end
+  cleaned = cleaned.replace(/\s+(at|with|from)\s*$/i, '');
+
+  // Remove extra spaces and clean up
+  cleaned = cleaned.replace(/\s+/g, ' ').trim();
+
+  // Ensure proper capitalization
+  if (cleaned) {
+    cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+  }
+
+  return cleaned;
+}
+
+/**
+ * Check if CTA has obvious problems
+ */
+function isProblematicCTA(cta: string, businessName: string): boolean {
+  if (!cta || cta.length < 2) return true;
+
+  const ctaLower = cta.toLowerCase();
+  const businessNameLower = businessName.toLowerCase();
+
+  // Check for business name in CTA
+  if (ctaLower.includes(businessNameLower)) return true;
+
+  // Check for awkward constructions
+  const awkwardPatterns = [
+    /shop\s+at\s*$/i,
+    /visit\s+at\s*$/i,
+    /book\s+with\s*$/i,
+    /dine\s+at\s*$/i,
+    /experience\s+the/i,
+    /discover\s+the/i,
+    /transform\s+your/i
+  ];
+
+  return awkwardPatterns.some(pattern => pattern.test(cta));
+}
+
+/**
+ * Generate smart contextual CTA with cultural elements
+ */
+function generateSmartContextualCTA(businessType: string, businessName: string, location: string, useLocalLanguage: boolean): string {
+  const type = businessType.toLowerCase();
+
+  // Get cultural CTA if local language is enabled
+  if (useLocalLanguage) {
+    const culturalCTA = getCulturalCTA(location, type);
+    if (culturalCTA && Math.random() < 0.3) { // 30% chance for cultural CTA
+      return culturalCTA;
+    }
+  }
+
+  // Business-specific CTAs
+  const ctaMap: Record<string, string[]> = {
+    restaurant: ['Order Now', 'Book Table', 'Dine Today', 'Reserve Now'],
+    food: ['Order Now', 'Taste Today', 'Try Now', 'Get Fresh'],
+    cafe: ['Visit Today', 'Try Now', 'Order Fresh', 'Taste Coffee'],
+    retail: ['Shop Now', 'Browse Store', 'Buy Today', 'View Products'],
+    store: ['Shop Now', 'Visit Store', 'Browse Now', 'Buy Today'],
+    electronics: ['Shop Tech', 'View Products', 'Buy Now', 'Compare Now'],
+    fashion: ['Shop Style', 'Browse Fashion', 'Buy Now', 'View Collection'],
+    salon: ['Book Now', 'Schedule Today', 'Reserve Spot', 'Book Beauty'],
+    spa: ['Book Now', 'Relax Today', 'Schedule Spa', 'Reserve Now'],
+    fitness: ['Join Now', 'Start Today', 'Book Session', 'Try Free'],
+    gym: ['Join Now', 'Start Fitness', 'Book Now', 'Try Today'],
+    medical: ['Book Now', 'Schedule Visit', 'Get Care', 'Call Now'],
+    dental: ['Book Now', 'Schedule Check', 'Call Today', 'Get Care'],
+    consulting: ['Get Quote', 'Contact Us', 'Schedule Call', 'Learn More'],
+    finance: ['Get Quote', 'Apply Now', 'Learn More', 'Contact Us'],
+    tech: ['Get Started', 'Try Now', 'Contact Us', 'Learn More'],
+    education: ['Enroll Now', 'Learn More', 'Join Today', 'Start Learning'],
+    automotive: ['Book Service', 'Get Quote', 'Visit Today', 'Call Now'],
+    real_estate: ['View Homes', 'Contact Us', 'Schedule Tour', 'Get Info'],
+    beauty: ['Book Now', 'Schedule Today', 'Try Beauty', 'Reserve Spot'],
+    healthcare: ['Book Now', 'Get Care', 'Schedule Visit', 'Call Today']
+  };
+
+  // Find matching business type
+  for (const [key, ctas] of Object.entries(ctaMap)) {
+    if (type.includes(key)) {
+      return ctas[Math.floor(Math.random() * ctas.length)];
+    }
+  }
+
+  // Default professional CTAs
+  const defaultCTAs = ['Get Started', 'Contact Us', 'Learn More', 'Book Now', 'Get Quote'];
+  return defaultCTAs[Math.floor(Math.random() * defaultCTAs.length)];
+}
+
+/**
+ * Get cultural CTA based on location
+ */
+function getCulturalCTA(location: string, businessType: string): string | null {
+  const locationKey = location.toLowerCase();
+
+  const culturalCTAs: Record<string, string[]> = {
+    kenya: ['Karibu', 'Twende', 'Haya', 'Njoo'],
+    nigeria: ['Come Now', 'Make We Go', 'No Delay', 'Come Try'],
+    ghana: ['Akwaaba', 'Come Try', 'Visit Us', 'Come Now'],
+    india: ['Aao', 'Chalo', 'Jaldi', 'Come Now'],
+    south_africa: ['Come Now', 'Try Today', 'Visit Us', 'Join Us']
+  };
+
+  for (const [key, ctas] of Object.entries(culturalCTAs)) {
+    if (locationKey.includes(key)) {
+      return ctas[Math.floor(Math.random() * ctas.length)];
+    }
+  }
+
+  return null;
+}
+
+// Helper function to route AI calls through proxy - WITH CREDIT EXHAUSTION FALLBACK
 async function generateContentWithProxy(promptOrParts: string | any[], modelName: string, isImageGeneration: boolean = false): Promise<any> {
   if (!shouldUseProxy()) {
     throw new Error('🚫 Proxy is disabled. This system requires AI_PROXY_ENABLED=true for cost control and model management.');
@@ -153,6 +472,14 @@ async function generateContentWithProxy(promptOrParts: string | any[], modelName
     }
   } catch (error) {
     console.error(`❌ Revo 1.5: Proxy ${isImageGeneration ? 'image' : 'text'} generation failed:`, error);
+
+    // Check if it's a credit exhaustion error
+    const errorMessage = error instanceof Error ? error.message : '';
+    if (errorMessage.includes('No credits remaining') || errorMessage.includes('credits left')) {
+      console.log('💳 [Revo 1.5] Credits exhausted - triggering fallback system');
+      throw new Error('CREDITS_EXHAUSTED');
+    }
+
     throw error;
   }
 }
@@ -1011,14 +1338,29 @@ ${prompt}`;
     const validatedHeadline = this.validateWordCount(parsed.headline || `${businessName} Excellence`, 6);
     const validatedSubheadline = this.validateWordCount(parsed.subheadline || `Quality ${businessType.toLowerCase()} services you can trust`, 14);
 
+    // Generate dynamic fallback caption if needed
+    let fallbackCaption;
+    try {
+      fallbackCaption = parsed.caption || generateDynamicFallbackCaption(
+        businessName,
+        businessType,
+        brandProfile.location || '',
+        useLocalLanguage
+      );
+      console.log('✅ [Revo 1.5] Fallback caption generated successfully');
+    } catch (fallbackError) {
+      console.error('❌ [Revo 1.5] Fallback caption generation failed:', fallbackError);
+      fallbackCaption = `${businessName} provides quality ${businessType.toLowerCase()} services. Contact us today.`;
+    }
+
     return {
-      caption: parsed.caption || `${businessName} provides excellent ${businessType.toLowerCase()} services. Contact us to learn more about what we can do for you.`,
+      caption: fallbackCaption,
       hashtags: parsed.hashtags || [`#${businessType.toLowerCase().replace(/\s+/g, '')}`, '#local', '#business'].slice(0, hashtagCount),
       headline: validatedHeadline,
       subheadline: validatedSubheadline,
       callToAction: parsed.callToAction ?
-        fixCTAGrammar(parsed.callToAction, businessName, businessType, brandProfile.location || '') :
-        generateContextualCTA(businessType, businessName, brandProfile.location || '')
+        cleanupCTA(parsed.callToAction, businessName, businessType) :
+        generateSmartContextualCTA(businessType, businessName, brandProfile.location || '', useLocalLanguage)
     };
 
   } catch (error) {
@@ -1148,7 +1490,17 @@ async function generateCaptionAndHashtags(
       businessType,
       platform,
       location: brandProfile.location || 'Local area',
-      designConcept: designPlan?.concept || 'Professional business content'
+      designConcept: designPlan?.concept || 'Professional business content',
+      useLocalLanguage: useLocalLanguage
+    });
+
+    console.log('🔍 [Revo 1.5] Function parameters check:', {
+      hasBusinessName: !!businessName,
+      hasBusinessType: !!businessType,
+      hasPlatform: !!platform,
+      hasDesignPlan: !!designPlan,
+      hasBrandProfile: !!brandProfile,
+      useLocalLanguageType: typeof useLocalLanguage
     });
 
     // Fetch trending data for current, relevant content
@@ -1222,7 +1574,7 @@ async function generateCaptionAndHashtags(
       headlines: [`${businessName} Excellence`, `Professional ${businessType} Services`, `Quality ${businessType} Solutions`],
       subheadlines: [`Quality service you can trust`, `Professional results delivered`, `Expert ${businessType} services`],
       ctas: [
-        generateContextualCTA(businessType, businessName, brandProfile.location || ''),
+        generateSmartContextualCTA(businessType, businessName, brandProfile.location || '', useLocalLanguage),
         'Contact Us',
         'Learn More',
         'Get Started'
@@ -1266,6 +1618,28 @@ async function generateCaptionAndHashtags(
     // Platform-specific hashtag count
     const hashtagCount = platform.toLowerCase() === 'instagram' ? 5 : 3;
 
+    // Generate dynamic caption variety seed for uniqueness
+    const captionSeed = Date.now() + Math.random() * 10000 + Math.floor(Math.random() * 1000);
+    const captionVariety = Math.floor(captionSeed % 8) + 1; // 8 different caption styles
+
+    // Cultural context for engaging designs and local language
+    const culturalContext = getCulturalContextForLocation(brandProfile.location || '');
+    const localLanguageElements = useLocalLanguage ? getLocalLanguageElements(brandProfile.location || '') : null;
+
+    // Dynamic caption style instructions based on variety seed
+    const captionStyles = [
+      "Story-driven: Share a brief success story or customer transformation",
+      "Problem-solution: Address a common pain point and how you solve it",
+      "Behind-the-scenes: Give insight into your process or expertise",
+      "Community-focused: Highlight your connection to the local community",
+      "Value-proposition: Emphasize unique benefits and competitive advantages",
+      "Seasonal/timely: Connect to current events, seasons, or trending topics",
+      "Educational: Share a helpful tip or industry insight",
+      "Testimonial-style: Reference customer satisfaction or results"
+    ];
+
+    const selectedCaptionStyle = captionStyles[captionVariety % captionStyles.length];
+
     const prompt = `Create engaging ${platform} content for ${businessName}, a ${businessType} business in ${brandProfile.location || 'the local area'}.
 
 Business Context:
@@ -1273,6 +1647,8 @@ Business Context:
 - Target: ${brandProfile.targetAudience || 'General audience'}
 - Approach: ${businessAnalysis.contentApproach}
 ${languageInstruction}
+- Cultural Context: ${culturalContext}
+${localLanguageElements ? `- Local Language Elements: ${localLanguageElements}` : ''}
 
 Key Messages: ${businessAnalysis.keyMessages?.slice(0, 2).join(', ') || 'Professional service, customer satisfaction'}
 Pain Points: ${businessAnalysis.targetPainPoints?.slice(0, 2).join(', ') || 'Common industry challenges'}
@@ -1283,28 +1659,62 @@ Services Focus: ${scheduledServices.map(s => s.serviceName).join(', ')}` : ''}
 
 Trending: ${trendingData.trendingHashtags.slice(0, 3).join(', ')}
 
-Create engaging content:
-1. Caption (2-3 sentences): Authentic business story with specific benefits
+CAPTION STYLE FOR THIS POST: ${selectedCaptionStyle}
+
+Create engaging content with cultural authenticity:
+1. Caption (2-3 sentences): Use the ${selectedCaptionStyle.split(':')[0]} approach. Make it UNIQUE and engaging.
+   - VARY THE OPENING: Don't always start with greetings. Mix different opening styles:
+     * Direct statements: "At [Business], we believe..."
+     * Questions: "Looking for reliable [service]?"
+     * Stories: "Meet Sarah, who transformed her business..."
+     * Facts: "Quality [service] shouldn't be hard to find."
+   ${useLocalLanguage ? `- OCCASIONAL local language: Use local greetings/phrases SPARINGLY (only 20% of the time) for ${brandProfile.location}` : ''}
+   - Avoid generic phrases like "Experience the excellence" or "Quality service you can trust"
+   - Make it conversational, authentic, and specific to this business
+   - Include cultural elements that resonate with the local community
+   - IMPORTANT: Create variety in how captions begin - not every caption should start the same way
+
 2. Headline (5-8 words): Compelling, benefit-focused, avoid starting with business name
    - GOOD: "Premium Tech, Delivered Fast", "Your Electronics Partner", "Quality Tech Solutions"
    - AVOID: "Zentech Electronics Kenya: [anything]" - no business name prefix
    - Focus on benefits, emotions, or unique value propositions
+   ${useLocalLanguage ? `- Can include subtle local language elements if natural` : ''}
+
 3. Subheadline (8-15 words): Explains how the service delivers value
-4. Business-specific CTA (2-4 words): Use natural, professional English that sounds conversational
-   - NATURAL: "Shop Now", "Order Today", "Book Now", "Visit Us", "Get Quote"
-   - AVOID: Awkward constructions like "Shop [Business Name]" or forced prepositions
-   - Examples by business type:
-     * Retail/Store: "Shop Now", "Browse Store", "View Products", "Explore"
-     * Restaurant: "Order Now", "Reserve Table", "Dine Today", "Book Now"
-     * Services: "Book Now", "Schedule Today", "Get Quote", "Contact Us"
-     * Professional: "Learn More", "Contact Us", "Get Started", "Schedule Call"
+   ${useLocalLanguage ? `- May include local language elements for authenticity` : ''}
+
+4. Business-specific CTA (2-4 words): Generate a SIMPLE, NATURAL call-to-action
+   - MUST BE SIMPLE: Use only 2-4 words maximum
+   - MUST BE NATURAL: Sound like normal conversation, not marketing jargon
+   - MUST BE DIRECT: Clear action words that people actually use
+
+   PERFECT EXAMPLES:
+   * Retail/Store: "Shop Now", "Browse Store", "View Products", "Buy Today"
+   * Restaurant: "Order Now", "Book Table", "Dine Today", "Reserve Now"
+   * Services: "Book Now", "Get Quote", "Schedule Today", "Call Now"
+   * Professional: "Learn More", "Contact Us", "Get Started", "Book Call"
+   * Beauty/Salon: "Book Now", "Schedule Today", "Reserve Spot"
+   * Fitness/Gym: "Join Now", "Start Today", "Book Session", "Try Free"
+
+   ABSOLUTELY AVOID:
+   - Business names in CTAs: NO "Shop [Business Name]", NO "Visit [Business Name]"
+   - Awkward prepositions: NO "Shop at", NO "Dine at", NO "Book with"
+   - Long phrases: NO "Experience the excellence", NO "Discover the difference"
+   - Generic marketing speak: NO "Transform your experience"
+
+   ${useLocalLanguage ? `CULTURAL CTAs (when appropriate):
+   - Kenyan: "Karibu" (Welcome), "Twende" (Let's go), "Haya" (Come on)
+   - Nigerian: "Come Now", "Make We Go", "No Delay"
+   - Indian: "Aao" (Come), "Chalo" (Let's go), "Jaldi" (Quickly)
+   - Use sparingly and only when it feels natural` : ''}
+
 5. ${hashtagCount} relevant hashtags for ${platform}
 
-
+IMPORTANT: Make each element unique and avoid repetitive patterns. Use the cultural context to create authentic, engaging content.
 
 Format as JSON:
 {
-  "caption": "Your engaging caption here",
+  "caption": "Your unique, engaging caption here",
   "headline": "Your compelling headline here",
   "subheadline": "Your supporting subheadline here",
   "callToAction": "Your strong CTA here",
@@ -1320,7 +1730,9 @@ ${prompt}`;
     console.log('📝 [Revo 1.5] Content generation prompt length:', fullPrompt.length);
     console.log('📝 [Revo 1.5] Content generation prompt preview:', fullPrompt.substring(0, 300) + '...');
 
+    console.log('🔄 [Revo 1.5] Calling proxy with Claude Sonnet 4.5...');
     const response = await generateContentWithProxy(fullPrompt, 'claude-sonnet-4.5', false);
+    console.log('✅ [Revo 1.5] Proxy response received successfully');
 
     console.log('✅ [Revo 1.5] Proxy response received for content generation (headlines, captions, hashtags, CTAs)');
     console.log('🔍 [Revo 1.5] Full response object:', JSON.stringify(response, null, 2));
@@ -1426,25 +1838,26 @@ ${prompt}`;
         }
       }
 
-      // Fix CTA grammar and validate appropriateness
-      let finalCTA = parsed.callToAction || 'Get Started';
+      // Simplified CTA processing - let Claude generate good CTAs, minimal post-processing
+      let finalCTA = parsed.callToAction || generateSmartContextualCTA(businessType, businessName, brandProfile.location || '', useLocalLanguage);
 
-      // Apply grammar fixes to correct common issues
+      // Only apply minimal fixes for obvious issues
       if (finalCTA) {
         const originalCTA = finalCTA;
-        finalCTA = fixCTAGrammar(finalCTA, businessName, businessType, brandProfile.location || '');
 
-        // If CTA is still inappropriate after grammar fix, generate a contextual one
-        if (!isBusinessAppropriateCTA(finalCTA, businessType)) {
-          console.log('⚠️ [Revo 1.5] CTA not appropriate for business type, generating contextual CTA');
-          finalCTA = generateContextualCTA(businessType, businessName, brandProfile.location || '');
+        // Simple cleanup - remove business names and awkward constructions
+        finalCTA = cleanupCTA(finalCTA, businessName, businessType);
+
+        // If CTA is still problematic, use smart contextual generation
+        if (isProblematicCTA(finalCTA, businessName)) {
+          console.log('⚠️ [Revo 1.5] CTA needs replacement, using smart contextual CTA');
+          finalCTA = generateSmartContextualCTA(businessType, businessName, brandProfile.location || '', useLocalLanguage);
         }
 
         console.log('🎯 [Revo 1.5] CTA Processing:', {
           original: originalCTA,
-          grammarFixed: finalCTA,
-          businessType: businessType,
-          isAppropriate: isBusinessAppropriateCTA(finalCTA, businessType)
+          final: finalCTA,
+          businessType: businessType
         });
       }
 
@@ -1472,8 +1885,36 @@ ${prompt}`;
     console.error('❌ [Revo 1.5] Error type:', error instanceof Error ? error.constructor.name : typeof error);
     console.error('❌ [Revo 1.5] Error message:', error instanceof Error ? error.message : String(error));
 
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    // Handle credit exhaustion specifically
+    if (errorMessage === 'CREDITS_EXHAUSTED') {
+      console.log('💳 [Revo 1.5] Credits exhausted in content generation - using fallback content');
+
+      // Generate fallback content using the dynamic fallback system
+      const fallbackCaption = generateDynamicFallbackCaption(
+        businessName,
+        businessType,
+        brandProfile.location || '',
+        useLocalLanguage
+      );
+
+      const fallbackHashtags = [`#${businessType.toLowerCase().replace(/\s+/g, '')}`, '#business', '#quality', '#professional', '#local'];
+      const fallbackHeadline = `${businessName} Excellence`;
+      const fallbackSubheadline = `Professional ${businessType.toLowerCase()} services you can trust`;
+      const fallbackCTA = generateSmartContextualCTA(businessType, businessName, brandProfile.location || '', useLocalLanguage);
+
+      return {
+        caption: fallbackCaption,
+        hashtags: fallbackHashtags.slice(0, 5), // Limit to 5 hashtags
+        headline: fallbackHeadline,
+        subheadline: fallbackSubheadline,
+        callToAction: fallbackCTA
+      };
+    }
+
     // Main content generation must work with proxy system
-    throw new Error(`🚫 [Revo 1.5] Main content generation failed with proxy system. Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(`🚫 [Revo 1.5] Main content generation failed with proxy system. Error: ${errorMessage}`);
   }
 }
 
@@ -1575,6 +2016,10 @@ export async function generateDesignPlan(
     ? `- Location: ${input.brandProfile.location}`
     : '';
 
+  // Get cultural context for design planning
+  const culturalDesignContext = getCulturalContextForLocation(input.brandProfile.location || '');
+  const useLocalLanguage = (input as any).useLocalLanguage === true;
+
   const designPlanningPrompt = `Create a design plan for ${input.businessType} business "${input.brandProfile.businessName}" on ${input.platform}.
 
 Business: ${input.brandProfile.businessName} (${input.businessType})
@@ -1582,6 +2027,9 @@ Colors: ${input.brandProfile.primaryColor || '#000000'}, ${input.brandProfile.ac
 Style: ${input.visualStyle}
 Aspect: ${(input as any).aspectRatio || getPlatformAspectRatio(input.platform)}
 Logo: ${(input.brandProfile.logoDataUrl || input.brandProfile.logoUrl) ? 'Available - integrate prominently' : 'None - focus on typography'}
+Location: ${input.brandProfile.location || 'Global'}
+Cultural Context: ${culturalDesignContext}
+${useLocalLanguage ? `Local Language Elements: Include subtle cultural design elements appropriate for ${input.brandProfile.location}` : ''}
 
 Create a brief plan with:
 1. Layout approach and composition
@@ -1590,6 +2038,9 @@ Create a brief plan with:
 4. Visual elements to include
 5. Brand integration approach
 6. Overall mood and style
+${useLocalLanguage ? '7. Cultural design elements that resonate with local audience' : ''}
+
+${useLocalLanguage ? 'IMPORTANT: Include authentic cultural design elements that feel natural and engaging for the local community.' : ''}
 
 Keep it concise and actionable.`;
 
@@ -1603,7 +2054,19 @@ Keep it concise and actionable.`;
     };
 
   } catch (error) {
-    throw new Error(`Design planning failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    // Handle credit exhaustion specifically
+    if (errorMessage === 'CREDITS_EXHAUSTED') {
+      console.log('💳 [Revo 1.5] Credits exhausted in design planning - using fallback plan');
+      return {
+        plan: 'Simple, professional design with clean layout and modern typography. Focus on clear messaging and brand consistency.',
+        brandColors: ['#2563eb', '#1e40af', '#3b82f6'], // Default blue theme
+        timestamp: Date.now()
+      };
+    }
+
+    throw new Error(`Design planning failed: ${errorMessage}`);
   }
 }
 
@@ -1837,6 +2300,15 @@ You MUST include the exact brand logo image that was provided above in your desi
       lastError = error;
       console.error(`❌ [Revo 1.5] Attempt ${attempt} failed:`, error.message);
 
+      // Check for credit exhaustion specifically
+      const errorMessage = error instanceof Error ? error.message : '';
+      if (errorMessage === 'CREDITS_EXHAUSTED' || errorMessage.includes('No credits remaining') || errorMessage.includes('credits left')) {
+        console.log('💳 [Revo 1.5] Credits exhausted in image generation - using fallback image');
+
+        // Return a placeholder image URL for fallback
+        return '/api/placeholder/992/1056';
+      }
+
       // Check if it's a 503 error and we have retries left
       if (error.message && error.message.includes('503') && attempt < maxRetries) {
         const waitTime = Math.pow(2, attempt) * 1000; // Exponential backoff
@@ -1852,7 +2324,13 @@ You MUST include the exact brand logo image that was provided above in your desi
     }
   }
 
-  // If we get here, all retries failed
+  // If we get here, all retries failed - check for credit exhaustion one more time
+  const finalErrorMessage = lastError instanceof Error ? lastError.message : '';
+  if (finalErrorMessage === 'CREDITS_EXHAUSTED' || finalErrorMessage.includes('No credits remaining') || finalErrorMessage.includes('credits left')) {
+    console.log('💳 [Revo 1.5] Credits exhausted in image generation (final check) - using fallback image');
+    return '/api/placeholder/992/1056';
+  }
+
   if (lastError?.message?.includes('503')) {
     throw new Error('Oops! Revo 1.5 is taking a quick break due to high demand. 😅 Try Revo 2.0 instead - it\'s working great right now!');
   }
@@ -1996,14 +2474,19 @@ ${languageInstruction}
   };
 
   // Apply Cultural Intelligence for Visual Adaptation
+  const useLocalLanguage = (input as any).useLocalLanguage === true;
+  const culturalDesignElements = getCulturalDesignElements(input.brandProfile.location || '', useLocalLanguage);
+
   const visualInstructions = `
 CULTURAL VISUAL ADAPTATION FOR ${(input.brandProfile.location || 'USA').toUpperCase()}:
 - People: Professional representation appropriate for ${input.brandProfile.location || 'USA'}
-- Settings: Modern business environments
-- Colors: Professional color schemes
+- Settings: Modern business environments with ${useLocalLanguage ? 'authentic local cultural elements' : 'universal appeal'}
+- Colors: Professional color schemes ${useLocalLanguage ? 'with subtle cultural color influences' : ''}
 - Business Context: ${input.businessType} professionals
 - Trust Elements: Professional credentials and quality indicators
 - Cultural Values: Professional excellence and quality service
+${useLocalLanguage ? `- Cultural Design Elements: ${culturalDesignElements}` : ''}
+${useLocalLanguage ? `- Local Authenticity: Include subtle design elements that resonate with ${input.brandProfile.location} culture` : ''}
 `;
 
   const targetMarketInstructions = getTargetMarketInstructions(
