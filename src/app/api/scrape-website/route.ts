@@ -3,7 +3,30 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    const { url } = await request.json();
+    // Debug: Log the raw request body to see what's being sent
+    const rawBody = await request.text();
+    console.log('🔍 Raw request body:', rawBody);
+    console.log('🔍 Raw body length:', rawBody.length);
+    console.log('🔍 Raw body first 50 chars:', rawBody.substring(0, 50));
+
+    // Try to parse the JSON
+    let parsedBody;
+    try {
+      parsedBody = JSON.parse(rawBody);
+    } catch (parseError) {
+      console.error('❌ JSON parse error:', parseError);
+      console.error('❌ Failed to parse body:', rawBody);
+      return NextResponse.json(
+        {
+          error: 'Invalid JSON in request body',
+          errorType: 'invalid_json',
+          details: parseError.message
+        },
+        { status: 400 }
+      );
+    }
+
+    const { url } = parsedBody;
 
     if (!url) {
       return NextResponse.json(
@@ -37,7 +60,7 @@ export async function POST(request: NextRequest) {
     if (!response.ok) {
       if (response.status === 403) {
         return NextResponse.json(
-          { 
+          {
             error: 'Website blocks automated access. This is common for security reasons.',
             errorType: 'blocked'
           },
@@ -45,7 +68,7 @@ export async function POST(request: NextRequest) {
         );
       } else if (response.status === 404) {
         return NextResponse.json(
-          { 
+          {
             error: 'Website not found. Please check the URL is correct.',
             errorType: 'not_found'
           },
@@ -53,7 +76,7 @@ export async function POST(request: NextRequest) {
         );
       } else {
         return NextResponse.json(
-          { 
+          {
             error: `Failed to access website (HTTP ${response.status})`,
             errorType: 'http_error'
           },
@@ -156,14 +179,21 @@ export async function POST(request: NextRequest) {
       structuredContent = structuredContent.substring(0, 15000) + '...';
     }
 
-    if (!structuredContent || structuredContent.length < 100) {
+    // Allow analysis of all websites, even with minimal content
+    if (!structuredContent || structuredContent.length < 10) {
+      // Only reject if there's absolutely no content at all
       return NextResponse.json(
-        { 
-          error: 'Unable to extract meaningful content from the website. The website may be JavaScript-heavy or have content protection.',
+        {
+          error: 'Unable to extract any content from the website. The website may be completely empty or have content protection.',
           errorType: 'no_content'
         },
         { status: 422 }
       );
+    }
+
+    // For websites with minimal content, add a helpful note
+    if (structuredContent.length < 100) {
+      structuredContent = `[NOTE: This website has minimal content - analysis will be basic]\n\n${structuredContent}`;
     }
 
     return NextResponse.json({
@@ -174,12 +204,12 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Website scraping error:', error);
-    
+
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
+
     if (errorMessage.includes('fetch') || errorMessage.includes('network') || errorMessage.includes('timeout')) {
       return NextResponse.json(
-        { 
+        {
           error: 'Unable to connect to the website. Please check the URL and try again.',
           errorType: 'network'
         },
@@ -187,7 +217,7 @@ export async function POST(request: NextRequest) {
       );
     } else if (errorMessage.includes('blocked') || errorMessage.includes('403')) {
       return NextResponse.json(
-        { 
+        {
           error: 'Website blocks automated access. This is common for security reasons.',
           errorType: 'blocked'
         },
@@ -195,7 +225,7 @@ export async function POST(request: NextRequest) {
       );
     } else {
       return NextResponse.json(
-        { 
+        {
           error: `Failed to scrape website: ${errorMessage}`,
           errorType: 'error'
         },

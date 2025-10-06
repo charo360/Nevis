@@ -1,0 +1,9 @@
+{
+  "website_content": "Welcome to TechCorp - We provide innovative technology solutions for businesses. Our services include web development, mobile apps, and cloud consulting. Contact us at info@techcorp.com or call 555-0123.",
+  "website_url": "https://techcorp.com",
+  "user_id": "test_user",
+  "user_tier": "free",
+  "design_images": null,
+  "temperature": 0.3,
+  "max_tokens": 8192
+}

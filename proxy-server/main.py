@@ -6,8 +6,13 @@ from collections import defaultdict
 from datetime import datetime
 import json
 import logging
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Any, Tuple, List
 from dotenv import load_dotenv
+import base64
+from io import BytesIO
+from PIL import Image
+import colorsys
+from collections import Counter
 
 # Load environment variables from .env file
 load_dotenv()
@@ -15,6 +20,127 @@ load_dotenv()
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+def extract_colors_from_image(image_data_uri: str, num_colors: int = 5) -> Dict[str, Any]:
+    """
+    Extract dominant colors from a base64 encoded image
+    Returns a dictionary with primary, secondary, accent colors and description
+    """
+    try:
+        # Parse the data URI
+        if not image_data_uri.startswith('data:image/'):
+            return None
+
+        # Extract base64 data
+        header, encoded = image_data_uri.split(',', 1)
+        image_data = base64.b64decode(encoded)
+
+        # Open image with PIL
+        image = Image.open(BytesIO(image_data))
+
+        # Convert to RGB if necessary
+        if image.mode != 'RGB':
+            image = image.convert('RGB')
+
+        # Resize image for faster processing (max 200x200)
+        image.thumbnail((200, 200), Image.Resampling.LANCZOS)
+
+        # Get all pixels
+        pixels = list(image.getdata())
+
+        # Count color frequencies
+        color_counts = Counter(pixels)
+
+        # Get most common colors
+        most_common = color_counts.most_common(num_colors * 3)  # Get more to filter out grays/whites
+
+        # Filter out very light colors (whites/grays) and very dark colors (blacks)
+        filtered_colors = []
+        for color, count in most_common:
+            r, g, b = color
+            # Convert to HSV to check saturation and brightness
+            h, s, v = colorsys.rgb_to_hsv(r/255.0, g/255.0, b/255.0)
+
+            # Skip colors that are too light (whites), too dark (blacks), or too gray (low saturation)
+            if v > 0.2 and v < 0.95 and s > 0.1:  # Good brightness and saturation
+                filtered_colors.append((color, count))
+
+            if len(filtered_colors) >= num_colors:
+                break
+
+        # If we don't have enough colors after filtering, add some of the original colors
+        if len(filtered_colors) < 3:
+            for color, count in most_common:
+                if (color, count) not in filtered_colors:
+                    filtered_colors.append((color, count))
+                if len(filtered_colors) >= 3:
+                    break
+
+        # Convert to hex colors
+        hex_colors = []
+        for color, count in filtered_colors[:num_colors]:
+            r, g, b = color
+            hex_color = f"#{r:02x}{g:02x}{b:02x}".upper()
+            hex_colors.append(hex_color)
+
+        # Ensure we have at least 3 colors
+        while len(hex_colors) < 3:
+            hex_colors.append("#3B82F6")  # Default blue
+
+        # Create color palette object
+        color_palette = {
+            "primary": hex_colors[0] if len(hex_colors) > 0 else "#3B82F6",
+            "secondary": hex_colors[1] if len(hex_colors) > 1 else "#10B981",
+            "accent": hex_colors[2] if len(hex_colors) > 2 else "#8B5CF6",
+            "description": f"Color palette extracted from design image with {len(hex_colors)} dominant colors: {', '.join(hex_colors[:3])}"
+        }
+
+        logger.info(f"🎨 Extracted colors from image: {color_palette}")
+        return color_palette
+
+    except Exception as e:
+        logger.error(f"❌ Color extraction failed: {e}")
+        return None
+
+def analyze_design_images(design_images: List[str]) -> Dict[str, Any]:
+    """
+    Analyze multiple design images and extract a unified color palette
+    """
+    if not design_images:
+        return None
+
+    all_colors = []
+    successful_extractions = 0
+
+    for i, image_uri in enumerate(design_images):
+        logger.info(f"🎨 Analyzing design image {i+1}/{len(design_images)}")
+        color_data = extract_colors_from_image(image_uri)
+        if color_data:
+            all_colors.extend([color_data["primary"], color_data["secondary"], color_data["accent"]])
+            successful_extractions += 1
+
+    if successful_extractions == 0:
+        logger.warning("⚠️ No colors could be extracted from design images")
+        return None
+
+    # Remove duplicates and get most common colors
+    color_counts = Counter(all_colors)
+    most_common_colors = [color for color, count in color_counts.most_common(5)]
+
+    # Ensure we have at least 3 unique colors
+    unique_colors = list(dict.fromkeys(most_common_colors))  # Remove duplicates while preserving order
+    while len(unique_colors) < 3:
+        unique_colors.append("#3B82F6")  # Add default colors if needed
+
+    unified_palette = {
+        "primary": unique_colors[0],
+        "secondary": unique_colors[1],
+        "accent": unique_colors[2],
+        "description": f"Unified color palette extracted from {successful_extractions} design images. Primary colors: {', '.join(unique_colors[:3])}"
+    }
+
+    logger.info(f"🎨 Unified color palette: {unified_palette}")
+    return unified_palette
 
 app = FastAPI(title="Nevis AI Proxy", description="Controlled AI model proxy to prevent unexpected costs")
 
@@ -64,6 +190,13 @@ OPENROUTER_MODEL_MAPPING = {
     "gemini-1.5-flash": "google/gemini-1.5-flash",
 }
 
+# Website Analysis Models (Best → Budget fallback order)
+WEBSITE_ANALYSIS_MODELS = [
+    "anthropic/claude-3-haiku",      # Primary: Best for website analysis, 85% cheaper
+    "openai/gpt-4o-mini",            # Secondary: Most reliable, 70% cheaper
+    "openai/gpt-3.5-turbo",          # Tertiary: Budget backup, 90% cheaper
+]
+
 # Alternative high-quality models for secondary fallback
 OPENROUTER_ALTERNATIVE_MODELS = {
     # For text generation, use Claude as high-quality alternative
@@ -103,6 +236,15 @@ class TextRequest(BaseModel):
     revo_version: Optional[str] = None  # "1.0", "1.5", or "2.0" for API key selection
     max_tokens: Optional[int] = 8192
     temperature: Optional[float] = 0.7
+
+class WebsiteAnalysisRequest(BaseModel):
+    website_content: str
+    website_url: str
+    user_id: str
+    user_tier: Optional[str] = "free"
+    design_images: Optional[List[str]] = None  # Base64 encoded images
+    max_tokens: Optional[int] = 8192
+    temperature: Optional[float] = 0.3  # Lower temperature for more consistent analysis
 
 def validate_model(model: str) -> str:
     """Validate that the requested model is allowed"""
@@ -343,6 +485,225 @@ async def call_openrouter_api(model: str, payload: Dict[str, Any]) -> Dict[str, 
             logger.error(error_msg)
             raise Exception(error_msg)
 
+async def call_website_analysis_api(model: str, prompt: str, temperature: float = 0.3, max_tokens: int = 8192) -> dict:
+    """Call OpenRouter API specifically for website analysis with structured output"""
+    try:
+        logger.info(f"🌐 Website Analysis: Using {model}")
+
+        # Structured prompt for website analysis
+        system_prompt = """You are an expert brand strategist and business analyst with deep expertise in extracting comprehensive, specific business intelligence from website content. Your task is to perform a thorough analysis and extract detailed, company-specific information.
+
+CRITICAL INSTRUCTIONS:
+1. Extract ONLY information explicitly mentioned on the website
+2. Use the company's exact wording and terminology wherever possible
+3. Be extremely specific and detailed - avoid generic descriptions
+4. Search the entire website content thoroughly
+5. Return ONLY valid JSON in the exact format specified below
+
+REQUIRED JSON FORMAT:
+{
+  "businessName": "The EXACT business name, company name, or brand name as it appears on the website. This should be the PROPER NAME like 'Apple Inc.', 'Microsoft Corporation', 'Joe's Pizza', NOT a description of what they do. Look for the company name in headers, logos, titles, 'About Us' sections, or anywhere the business identifies itself. Extract the precise name they use, not their business type or industry.",
+
+  "description": "A comprehensive, detailed summary of the business that includes: what they do, how they do it, their mission/values, their approach, their history, and what makes them unique. Combine information from multiple website sections to create a thorough description. Minimum 3-4 sentences using the company's own words.",
+
+  "businessType": "The specific type/category of business like 'Software Company', 'Restaurant', 'Consulting Firm', 'E-commerce Store' - this describes WHAT they do, not WHO they are. This is different from the business name.",
+
+  "targetAudience": "DETAILED description of the specific target audience, customer base, client types, demographics, business types, industries, or customer characteristics this company mentions they serve. Be very specific and comprehensive. Include customer examples, business sizes, industries, or any specific customer details mentioned on the website.",
+
+  "services": ["Service 1: Detailed description as written on their website including features, benefits, what's included", "Service 2: Detailed description...", "Service 3: Detailed description..."],
+
+  "keyFeatures": ["Feature 1: Specific benefit or capability they highlight", "Feature 2: Another key feature...", "Feature 3: Additional feature..."],
+
+  "competitiveAdvantages": "What THIS specific company says makes them different from competitors. Extract their own competitive claims and differentiators, not generic industry advantages. Use their exact wording.",
+
+  "visualStyle": "A detailed description of THIS company's specific visual style based on their actual website design. Describe the exact colors, typography, layout patterns, imagery style, and aesthetic choices THEY use. Reference specific design elements visible on their website.",
+
+  "writingTone": "The SPECIFIC writing tone and voice THIS company uses in their actual website content. Analyze their actual text, headlines, and copy to describe their unique communication style. Use examples from their content.",
+
+  "contentThemes": "The SPECIFIC themes, topics, and messaging patterns THIS company focuses on in their actual content. Extract the exact topics they discuss and how they position themselves.",
+
+  "brandPersonality": "THIS company's specific brand personality as expressed through their actual content and design choices. Base this on their real communications, not generic assumptions.",
+
+  "colorPalette": {
+    "primary": "#HEXCODE - Primary brand color if visible on website",
+    "secondary": "#HEXCODE - Secondary brand color if visible",
+    "accent": "#HEXCODE - Accent color if visible",
+    "description": "Detailed description of the overall color scheme and palette used on the website"
+  },
+
+  "typography": {
+    "style": "Typography style observed on the website (e.g., modern, classic, playful, professional)",
+    "characteristics": "Font characteristics and typography choices observed on the website"
+  },
+
+  "contactInfo": {
+    "phone": "Main contact phone number if found",
+    "email": "Main contact email address if found",
+    "address": "Physical business address if mentioned",
+    "website": "Additional website URLs or domains mentioned",
+    "hours": "Business hours if mentioned on the website"
+  },
+
+  "socialMedia": {
+    "facebook": "Facebook page URL if found on the website",
+    "instagram": "Instagram profile URL if found on the website",
+    "twitter": "Twitter profile URL if found on the website",
+    "linkedin": "LinkedIn profile URL if found on the website",
+    "youtube": "YouTube channel URL if found on the website",
+    "other": ["Other social media URLs found"]
+  },
+
+  "location": "Geographic location or service area of the business",
+  "establishedYear": "Year the business was established if mentioned",
+  "teamSize": "Information about team size or company size if mentioned",
+  "certifications": ["Professional certifications, awards, or credentials mentioned"],
+  "contentStrategy": "Insights into their content marketing strategy based on website content",
+  "callsToAction": ["CTA1", "CTA2", "CTA3"],
+  "valueProposition": "The main value proposition or promise to customers"
+}
+
+ANALYSIS REQUIREMENTS:
+- Extract comprehensive, specific details - not generic information
+- Use the company's exact terminology and phrasing
+- Include pricing, packages, service tiers, features when mentioned
+- Look for testimonials, case studies, specific client examples
+- Identify unique selling propositions and competitive differentiators
+- Extract specific industry terminology and technical details
+- Include any certifications, awards, partnerships mentioned
+- Capture the company's own voice and communication style
+- Be thorough - don't miss any services or important details"""
+
+        openai_payload = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Analyze this website content:\n\n{prompt}"}
+            ],
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "response_format": {"type": "json_object"} if "gpt" in model else None
+        }
+
+        headers = {
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "http://localhost:8000",
+            "X-Title": "Nevis AI Website Analysis"
+        }
+
+        async with httpx.AsyncClient(timeout=90.0) as client:  # Longer timeout for analysis
+            response = await client.post(
+                f"{OPENROUTER_BASE_URL}/chat/completions",
+                json=openai_payload,
+                headers=headers
+            )
+
+            if response.status_code == 200:
+                openrouter_response = response.json()
+                logger.info(f"✅ Website Analysis successful with {model}")
+                return openrouter_response
+            else:
+                logger.error(f"❌ Website Analysis failed with {model}: {response.status_code} - {response.text}")
+                raise Exception(f"Website Analysis API error: {response.status_code}")
+
+    except Exception as e:
+        logger.error(f"❌ Website Analysis error with {model}: {e}")
+        raise
+
+async def analyze_website_with_fallback(website_content: str, website_url: str, design_images: List[str] = None, temperature: float = 0.3, max_tokens: int = 8192) -> dict:
+    """Analyze website using multi-model fallback: Claude 3 Haiku → GPT-4o-mini → GPT-3.5-turbo"""
+
+    # Extract colors from design images if provided
+    extracted_colors = None
+    if design_images:
+        logger.info(f"🎨 Processing {len(design_images)} design images for color extraction")
+        extracted_colors = analyze_design_images(design_images)
+
+    for i, model in enumerate(WEBSITE_ANALYSIS_MODELS):
+        try:
+            logger.info(f"🌐 Attempting website analysis with {model} (attempt {i+1}/{len(WEBSITE_ANALYSIS_MODELS)})")
+
+            # Prepare enhanced prompt with URL context and design image analysis
+            design_context = ""
+            if extracted_colors:
+                design_context = f"""
+DESIGN IMAGE ANALYSIS:
+The user has provided design examples, and we've extracted the following color palette:
+- Primary Color: {extracted_colors['primary']}
+- Secondary Color: {extracted_colors['secondary']}
+- Accent Color: {extracted_colors['accent']}
+- Description: {extracted_colors['description']}
+
+Use these extracted colors in the colorPalette section of your response instead of guessing from the website.
+"""
+
+            enhanced_prompt = f"""WEBSITE ANALYSIS TASK:
+Analyze the following website content and extract comprehensive, detailed business information. Focus on company-specific details, not generic industry information.
+
+Website URL: {website_url}
+{design_context}
+WEBSITE CONTENT TO ANALYZE:
+{website_content}
+
+ANALYSIS INSTRUCTIONS:
+1. Read through ALL the website content carefully
+2. Extract the EXACT business name (not a description of what they do)
+3. Find comprehensive service descriptions with specific features and benefits
+4. Identify the specific target audience they mention serving
+5. Look for unique competitive advantages they claim
+6. Extract their specific writing tone and brand voice from the actual content
+7. Find contact information, social media links, and business details
+8. Identify specific calls-to-action used throughout the site
+9. Extract their value proposition and what makes them unique
+10. Look for certifications, awards, partnerships, or credentials mentioned
+11. Find any pricing information, service packages, or tiers mentioned
+12. Identify specific customer types, industries, or demographics they serve
+
+Be extremely thorough and specific. Use their exact wording wherever possible. Extract comprehensive details, not generic summaries."""
+
+            result = await call_website_analysis_api(model, enhanced_prompt, temperature, max_tokens)
+
+            # Extract the JSON content from the response
+            if "choices" in result and len(result["choices"]) > 0:
+                content = result["choices"][0]["message"]["content"]
+
+                # Try to parse JSON response
+                try:
+                    import json
+                    analysis_data = json.loads(content)
+
+                    # Validate required fields
+                    required_fields = ["businessName", "businessType", "description"]
+                    if all(field in analysis_data for field in required_fields):
+                        logger.info(f"✅ Website analysis successful with {model}")
+                        return {
+                            "success": True,
+                            "data": analysis_data,
+                            "model_used": model,
+                            "provider_used": "openrouter",
+                            "attempt": i + 1
+                        }
+                    else:
+                        logger.warning(f"⚠️ {model} returned incomplete data, trying next model")
+                        continue
+
+                except json.JSONDecodeError as e:
+                    logger.warning(f"⚠️ {model} returned invalid JSON: {e}, trying next model")
+                    continue
+            else:
+                logger.warning(f"⚠️ {model} returned unexpected response format, trying next model")
+                continue
+
+        except Exception as e:
+            logger.warning(f"⚠️ {model} failed: {e}")
+            if i == len(WEBSITE_ANALYSIS_MODELS) - 1:  # Last model
+                logger.error("❌ All website analysis models failed")
+                raise Exception(f"All website analysis models failed. Last error: {e}")
+            continue
+
+    # This should never be reached, but just in case
+    raise Exception("Website analysis failed with all models")
+
 async def call_google_api(endpoint: str, payload: Dict[str, Any], api_key: str) -> Dict[str, Any]:
     """Make controlled call to Google API with exact model specified"""
 
@@ -521,13 +882,74 @@ async def generate_text(request: TextRequest):
         logger.error(f"Text generation failed on both providers: {str(e)}")
         raise HTTPException(status_code=503, detail=f"Text generation failed: {str(e)}")
 
+@app.post("/analyze-website")
+async def analyze_website_endpoint(request: WebsiteAnalysisRequest):
+    """Analyze website content using multi-model fallback system"""
+    try:
+        logger.info(f"🌐 Website analysis request from user: {request.user_id}")
+        logger.info(f"📄 Content length: {len(request.website_content)} characters")
+        logger.info(f"🔗 Website URL: {request.website_url}")
+
+        # Check user has enough credits (website analysis costs 2 credits due to complexity)
+        check_user_credits(request.user_id, request.user_tier)
+
+        # Validate content length
+        if len(request.website_content) < 100:
+            raise HTTPException(
+                status_code=400,
+                detail="Website content too short. Minimum 100 characters required."
+            )
+
+        if len(request.website_content) > 50000:
+            # Truncate content to prevent token limit issues
+            request.website_content = request.website_content[:50000] + "..."
+            logger.info("📄 Content truncated to 50,000 characters")
+
+        # Perform website analysis with multi-model fallback
+        result = await analyze_website_with_fallback(
+            request.website_content,
+            request.website_url,
+            request.design_images,
+            request.temperature,
+            request.max_tokens
+        )
+
+        if result["success"]:
+            # Deduct credits (2 credits for website analysis - deduct twice)
+            deduct_user_credit(request.user_id, request.user_tier, "website_analysis")
+            deduct_user_credit(request.user_id, request.user_tier, "website_analysis")
+
+            logger.info(f"✅ Website analysis completed successfully")
+            logger.info(f"🤖 Model used: {result['model_used']}")
+            logger.info(f"🔧 Provider: {result['provider_used']}")
+
+            return {
+                "success": True,
+                "data": result["data"],
+                "model_used": result["model_used"],
+                "provider_used": result["provider_used"],
+                "attempt": result["attempt"],
+                "user_credits": user_credits[request.user_id]["credits"],
+                "analysis_type": "website_analysis"
+            }
+        else:
+            raise HTTPException(status_code=503, detail="Website analysis failed")
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Website analysis failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Website analysis failed: {str(e)}")
+
 @app.get("/health")
 async def health():
     return {
         "status": "healthy",
         "allowed_models": list(ALLOWED_MODELS.keys()),
         "openrouter_configured": bool(OPENROUTER_API_KEY),
-        "fallback_models": list(OPENROUTER_MODEL_MAPPING.keys())
+        "fallback_models": list(OPENROUTER_MODEL_MAPPING.keys()),
+        "website_analysis_models": WEBSITE_ANALYSIS_MODELS,
+        "website_analysis_enabled": bool(OPENROUTER_API_KEY)
     }
 
 @app.get("/credits/{user_id}")

@@ -71,7 +71,7 @@ const AnalyzeBrandOutputSchema = z.object({
 
   // Additional Business Details
   location: z.string().optional().describe('Geographic location or service area of the business.'),
-  establishedYear: z.string().optional().describe('Year the business was established if mentioned.'),
+  establishedYear: z.union([z.string(), z.number()]).optional().describe('Year the business was established if mentioned.'),
   teamSize: z.string().optional().describe('Information about team size or company size if mentioned.'),
   certifications: z.array(z.string()).optional().describe('Professional certifications, awards, or credentials mentioned.'),
 
@@ -86,139 +86,7 @@ export async function analyzeBrand(input: AnalyzeBrandInput): Promise<BrandAnaly
   return analyzeBrandFlow(input);
 }
 
-const analyzeBrandPrompt = ai.definePrompt({
-  name: 'analyzeBrandPrompt',
-  input: { schema: AnalyzeBrandInputSchema },
-  output: { schema: AnalyzeBrandOutputSchema },
-  prompt: `You are an expert brand strategist, business analyst, and design consultant with deep expertise in brand identity, visual design, and digital marketing. Your task is to perform an extremely comprehensive and detailed analysis of THIS SPECIFIC BUSINESS based on its website and design examples.
-
-  **CRITICAL INSTRUCTION: BE COMPANY-SPECIFIC, NOT GENERIC**
-  - Extract ONLY information that is specifically mentioned on THIS company's website
-  - Use the EXACT wording and terminology that THIS company uses
-  - Do NOT provide generic industry descriptions or assumptions
-  - Focus on what makes THIS specific business unique and different
-  - Extract the company's OWN words about their services, not generic descriptions
-
-  **Source Information:**
-  - Website URL: {{{websiteUrl}}}
-  - Website Content: {{{websiteContent}}}
-  - Design Examples: These are crucial for understanding visual style, color palette, typography, and brand aesthetic.
-  {{#each designImageUris}}
-  Design Example: {{media url=this}}
-  {{/each}}
-
-  **COMPANY-SPECIFIC ANALYSIS REQUIREMENTS:**
-
-  **🏢 THIS COMPANY'S BUSINESS DETAILS (Extract from Website Content Above):**
-  1. **Business Name:** Extract the EXACT business name, company name, or brand name as it appears on the website. Look for the company name in headers, logos, page titles, "About Us" sections, contact information, or anywhere the business identifies itself. Extract the precise name they use - this is critical for brand identity.
-  2. **Business Description:** Find and extract a COMPREHENSIVE and DETAILED description of this company from the website content. Look for "About Us", "Who We Are", "Our Story", "Mission", "Vision" sections. Combine multiple sections to create a thorough description that includes: what they do, how they do it, their mission/values, their history, their approach, and what makes them unique. Use their own words but create a complete picture. Minimum 3-4 sentences.
-  3. **Business Type & Industry:** Use the SPECIFIC terms this company uses in their website content to describe their business type and industry. Be precise and specific.
-  4. **Target Audience:** This is CRITICAL - Extract EXACTLY who this company says they serve from the website content. Look for "Who We Serve", "Our Clients", "Target Market", "Perfect For", "Ideal Customers", "We Help" sections. Also look for customer testimonials, case studies, or examples that indicate their target market. Include demographics, business types, industries, or specific customer characteristics they mention. Be very detailed and specific.
-  5. **Services/Products:** Extract EVERY service and product this company specifically offers from the website content. Look in "Services", "What We Do", "Products", "Solutions", "Offerings", "Packages", "Plans", "Pricing" sections. Use their EXACT service names and descriptions as written. Include ALL services, packages, tiers, or offerings mentioned. Format as "Service Name: Detailed description as written on their website" on separate lines. Don't miss any services.
-  6. **Key Features & Benefits:** Extract ALL the SPECIFIC features and benefits this company highlights about their offerings from the website content. Look in "Features", "Benefits", "Why Choose Us" sections. Use their exact wording and claims. Be comprehensive.
-  7. **Competitive Advantages:** Extract what THIS company specifically says makes them different or better from the website content. Look for "Why Choose Us", "What Makes Us Different", "Our Advantage", "Why We're Better" sections. Use their own competitive claims and differentiators.
-  8. **Value Proposition:** Extract the EXACT value proposition or promises this company makes to their customers from the website content. What do they promise to deliver?
-
-  **🎨 VISUAL DESIGN DEEP ANALYSIS (Analyze the Design Examples Carefully):**
-  8. **Visual Style:** Provide a detailed analysis of the overall visual aesthetic, design approach, imagery style, layout patterns, and visual hierarchy. Base this primarily on the design examples provided. Describe the specific design elements you can see in the uploaded images.
-  9. **Color Palette Analysis - CRITICAL:**
-     - CAREFULLY examine each design example image to identify the EXACT colors used
-     - Extract specific colors in hex format from the designs (look at backgrounds, text, buttons, accents, logos)
-     - Identify the primary brand color (most prominent color in the designs)
-     - Identify secondary colors and accent colors used in the designs
-     - Describe the overall color scheme and mood it creates
-     - Be very specific about the colors you can see in the uploaded design examples
-  10. **Typography Analysis:**
-     - Examine the design examples to describe the actual font styles and typography choices used
-     - Identify if fonts are modern, classic, playful, professional, etc. based on what you see in the images
-     - Note any distinctive typographic elements visible in the design examples
-
-  **✍️ BRAND VOICE & CONTENT ANALYSIS:**
-  11. **Writing Tone:** Analyze the brand's communication style in detail (formal, casual, witty, professional, friendly, authoritative, conversational, etc.).
-  12. **Content Themes:** Identify recurring themes, topics, and messaging patterns throughout the website and designs.
-  13. **Brand Personality:** Describe the overall brand character and personality as expressed through content and design.
-  14. **Content Strategy:** Analyze their approach to content marketing and communication.
-  15. **Calls to Action:** Extract common CTAs and action-oriented language used.
-
-  **📞 CONTACT & BUSINESS DETAILS:**
-  16. **Complete Contact Information:** Extract phone numbers, email addresses, physical addresses, business hours, and any additional contact methods.
-  17. **Location & Service Area:** Identify geographic location and areas they serve.
-  18. **Business Details:** Look for establishment year, team size, company history, certifications, awards, or credentials.
-
-  **🌐 DIGITAL PRESENCE ANALYSIS:**
-  19. **Social Media Presence:** Extract ALL social media URLs found (Facebook, Instagram, Twitter, LinkedIn, YouTube, TikTok, etc.).
-  20. **Additional Websites:** Note any additional domains, subdomains, or related websites mentioned.
-
-  **CRITICAL ANALYSIS INSTRUCTIONS - COMPANY-SPECIFIC EXTRACTION:**
-
-  **FOR SERVICES/PRODUCTS (Search ALL Sections in Website Content Above):**
-  - Search the website content for "Services", "What We Do", "Our Services", "Products", "Solutions", "Offerings", "Packages", "Plans", "Pricing" sections
-  - Extract EVERY service name as the company lists them in their website content - don't miss any
-  - Include the company's OWN descriptions of each service from their website text
-  - Look for pricing information, package details, service tiers, features included in each service
-  - Look in multiple sections - services might be mentioned in different parts of the website
-  - Format as: "Service Name: Company's exact description of what this service includes, features, benefits, etc."
-  - Include any pricing tiers, packages, or service levels mentioned in the content
-  - Be comprehensive - extract ALL services, not just the main ones
-
-  **FOR TARGET AUDIENCE (Search ALL Sections for Customer Information):**
-  - Search the website content for "Who We Serve", "Our Clients", "Target Market", "Perfect For", "Ideal Customers", "We Help", "Client Types" sections
-  - Look for customer testimonials, case studies, or examples that indicate their target market
-  - Extract specific demographics, business types, industries, company sizes, or customer characteristics they mention
-  - Look for phrases like "small businesses", "enterprise clients", "startups", "restaurants", "healthcare providers", etc.
-  - Include any specific customer examples or client types mentioned
-  - Be very detailed and specific about who they serve
-
-  **FOR BUSINESS DESCRIPTION (Create Comprehensive Description):**
-  - Search the website content for "About Us", "Who We Are", "Our Story", "Mission", "Vision", "Company" sections
-  - Combine information from multiple sections to create a thorough, detailed description
-  - Include what they do, how they do it, their mission/values, their approach, their history, what makes them unique
-  - Use their own words but create a complete, comprehensive picture
-  - Make it detailed and informative - minimum 3-4 sentences
-
-  **FOR TARGET AUDIENCE:**
-  - Look for "Who We Serve", "Our Clients", "Target Market" information
-  - Extract the SPECIFIC customer types they mention
-  - Use their exact terminology for their customer base
-
-  **FOR COMPETITIVE ADVANTAGES:**
-  - Find "Why Choose Us", "What Makes Us Different", "Our Advantage" sections
-  - Extract their SPECIFIC claims about what makes them unique
-  - Use their exact competitive positioning statements
-
-  **GENERAL EXTRACTION RULES:**
-  - Be extremely thorough and detailed in your analysis
-  - Extract every piece of relevant information you can find
-  - For design analysis, pay close attention to the uploaded design examples
-  - Look for subtle details like color codes, font choices, layout patterns
-  - Extract contact information from headers, footers, contact pages, and anywhere else it appears
-  - Look for social media links in headers, footers, and throughout the site
-  - If information is not available, leave those fields empty rather than guessing
-  - NEVER use generic industry descriptions - only use company-specific information
-  - Quote the company's exact wording whenever possible
-
-  **FINAL REQUIREMENTS:**
-  - Be EXTREMELY thorough and comprehensive in your analysis
-  - Extract EVERY piece of relevant information from the website content
-  - Don't miss any services, features, or customer details
-  - Analyze the design examples carefully for exact colors
-  - Create detailed, informative descriptions using the company's own words
-  - Target audience description must be specific and detailed
-  - Services list must be comprehensive and complete
-  - Color analysis must be based on actual colors visible in the design examples
-
-  **CRITICAL OUTPUT REQUIREMENTS:**
-  - You MUST provide ACTUAL EXTRACTED CONTENT, not schema definitions
-  - Do NOT return any JSON schema information or field descriptions
-  - Do NOT include any text like "type": "string" or "description": "ALL the SPECIFIC..."
-  - Every field must contain REAL EXTRACTED DATA from the website and design examples
-  - If you cannot extract specific information, provide a reasonable interpretation or leave empty
-  - Your response must be actual business analysis data, not technical schema information
-
-  **OUTPUT FORMAT:**
-  Provide a complete, detailed analysis with REAL EXTRACTED CONTENT in valid JSON format. Return actual business information, not schema definitions.
-  `,
-});
+// Old Genkit prompt removed - now using multi-model proxy system
 
 // Website scraping function using server-side API
 async function scrapeWebsiteContent(url: string): Promise<string> {
@@ -264,6 +132,130 @@ async function scrapeWebsiteContent(url: string): Promise<string> {
   }
 }
 
+// New proxy-based website analysis function
+async function analyzeWebsiteWithProxy(
+  websiteContent: string,
+  websiteUrl: string,
+  designImageUris: string[] = []
+): Promise<BrandAnalysisResult> {
+  try {
+    const proxyUrl = process.env.NEXT_PUBLIC_PROXY_URL || 'http://localhost:8000';
+
+    console.log('🌐 Using new multi-model website analysis system...');
+    console.log(`📄 Content length: ${websiteContent.length} characters`);
+
+    const payload = {
+      website_content: websiteContent,
+      website_url: websiteUrl,
+      user_id: 'website_analysis_user',
+      user_tier: 'free',
+      design_images: designImageUris,
+      temperature: 0.3,
+      max_tokens: 8192
+    };
+
+    console.log(`🔗 Making request to: ${proxyUrl}/analyze-website`);
+
+    const response = await fetch(`${proxyUrl}/analyze-website`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    console.log(`📡 Proxy response status: ${response.status}`);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ Proxy error response: ${errorText}`);
+      throw new Error(`Proxy analysis failed: ${response.status} - ${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log(`📊 Proxy result keys: ${Object.keys(result).join(', ')}`);
+
+    if (!result.success || !result.data) {
+      console.error(`❌ Invalid proxy result:`, result);
+      throw new Error('Proxy analysis returned no data');
+    }
+
+    console.log(`✅ Website analysis successful with ${result.model_used} (${result.provider_used})`);
+    console.log(`🔄 Completed in attempt ${result.attempt}/3`);
+
+    // Map proxy response to our expected schema
+    const proxyData = result.data;
+
+    return {
+      businessName: proxyData.businessName || 'Unknown Business',
+      description: proxyData.description || 'Professional services company',
+      businessType: proxyData.businessType,
+      industry: proxyData.businessType,
+      targetAudience: proxyData.targetAudience || 'General business customers',
+      services: Array.isArray(proxyData.services)
+        ? proxyData.services.join('\n')
+        : (proxyData.services || 'Professional services'),
+      keyFeatures: Array.isArray(proxyData.keyFeatures)
+        ? proxyData.keyFeatures.join('\n')
+        : (proxyData.keyFeatures || 'Quality features'),
+      competitiveAdvantages: proxyData.competitiveAdvantages,
+      visualStyle: proxyData.visualStyle || 'Modern and professional design approach',
+      writingTone: proxyData.writingTone || 'Professional and customer-focused',
+      contentThemes: proxyData.contentThemes || proxyData.contentStrategy || 'Quality and professionalism',
+      brandPersonality: proxyData.brandPersonality || 'Professional and reliable',
+      colorPalette: proxyData.colorPalette || {
+        primary: '#3B82F6',
+        secondary: '#10B981',
+        accent: '#8B5CF6',
+        description: 'Professional color scheme'
+      },
+      typography: proxyData.typography || {
+        style: 'Modern and clean',
+        characteristics: 'Professional typography'
+      },
+      contactInfo: typeof proxyData.contactInfo === 'object'
+        ? proxyData.contactInfo
+        : {
+          phone: '',
+          email: '',
+          address: proxyData.location || '',
+          website: websiteUrl,
+          hours: ''
+        },
+      socialMedia: typeof proxyData.socialMedia === 'object'
+        ? {
+          facebook: proxyData.socialMedia?.facebook || '',
+          instagram: proxyData.socialMedia?.instagram || '',
+          twitter: proxyData.socialMedia?.twitter || '',
+          linkedin: proxyData.socialMedia?.linkedin || '',
+          youtube: proxyData.socialMedia?.youtube || '',
+          other: proxyData.socialMedia?.other || []
+        }
+        : {
+          facebook: '',
+          instagram: '',
+          twitter: '',
+          linkedin: '',
+          youtube: '',
+          other: []
+        },
+      location: proxyData.location,
+      establishedYear: proxyData.establishedYear ? String(proxyData.establishedYear) : '',
+      teamSize: proxyData.teamSize || '',
+      certifications: proxyData.certifications || [],
+      contentStrategy: proxyData.contentStrategy,
+      callsToAction: Array.isArray(proxyData.callsToAction)
+        ? proxyData.callsToAction
+        : (proxyData.callsToAction ? [proxyData.callsToAction] : []),
+      valueProposition: proxyData.valueProposition
+    };
+
+  } catch (error) {
+    console.error('❌ Proxy website analysis failed:', error);
+    throw error;
+  }
+}
+
 const analyzeBrandFlow = ai.defineFlow(
   {
     name: 'analyzeBrandFlow',
@@ -275,73 +267,38 @@ const analyzeBrandFlow = ai.defineFlow(
       // First, scrape the website content
       const websiteContent = await scrapeWebsiteContent(input.websiteUrl);
 
-      // Create enhanced input with website content
-      const enhancedInput = {
-        ...input,
-        websiteContent
-      };
+      console.log('🔍 Analyzing brand with new multi-model system...');
 
-      console.log('🔍 Analyzing brand with enhanced input...');
-      const { output } = await analyzeBrandPrompt(enhancedInput);
-      
-      // Log raw output for debugging (only first 500 chars to avoid log spam)
-      const outputPreview = JSON.stringify(output).substring(0, 500);
-      console.log('🤖 AI Raw Output Preview:', outputPreview);
-      
-      // Validate output is not schema or error response
+      // Use the new proxy-based analysis instead of Genkit
+      const output = await analyzeWebsiteWithProxy(
+        websiteContent,
+        input.websiteUrl,
+        input.designImageUris
+      );
+
+      // Validate the proxy response
       if (!output || typeof output !== 'object') {
-        console.error('❌ Invalid AI response format:', typeof output);
-        throw new Error('Invalid AI response format');
+        console.error('❌ Invalid proxy response format:', typeof output);
+        throw new Error('Invalid proxy response format');
       }
 
-      // Check if the response contains schema information (production bug)
-      const outputStr = JSON.stringify(output);
-      const schemaIndicators = [
-        '"type": "string"',
-        '"description": "ALL the SPECIFIC',
-        'services."',
-        'keyFeatures": { "type": "string"',
-        '"enum":',
-        '"required":',
-        '"properties":'
-      ];
-      
-      const hasSchemaContent = schemaIndicators.some(indicator => outputStr.includes(indicator));
-      
-      if (hasSchemaContent) {
-        console.error('❌ AI returned schema instead of analysis. Schema indicators found:', 
-          schemaIndicators.filter(indicator => outputStr.includes(indicator)));
-        throw new Error('AI returned schema format instead of analysis');
-      }
-
-      // Validate required fields are present and not empty
-      if (!output.businessName || !output.description || 
-          output.businessName.includes('"type"') || 
-          output.description.includes('"description"') ||
-          output.businessName.length < 2 ||
-          output.description.length < 10) {
-        console.error('❌ AI returned invalid or incomplete analysis:', {
+      // Validate required fields are present
+      if (!output.businessName || !output.description ||
+        output.businessName.length < 2 ||
+        output.description.length < 10) {
+        console.error('❌ Proxy returned invalid or incomplete analysis:', {
           businessName: output.businessName,
           descriptionLength: output.description?.length || 0
         });
-        throw new Error('AI returned incomplete or invalid analysis');
+        throw new Error('Proxy returned incomplete or invalid analysis');
       }
 
-      // Final validation: ensure the output matches our expected schema structure
-      const requiredFields = ['businessName', 'description', 'businessType'];
-      const missingFields = requiredFields.filter(field => !output[field]);
-      
-      if (missingFields.length > 0) {
-        console.error('❌ Missing required fields in AI response:', missingFields);
-        throw new Error(`AI response missing required fields: ${missingFields.join(', ')}`);
-      }
-
-      console.log('✅ AI analysis validation passed');
+      console.log('✅ Multi-model website analysis completed successfully');
       return output;
     } catch (error) {
       // Enhanced fallback analysis with better error handling
       console.warn('Brand analysis failed, returning enhanced fallback analysis:', error);
-      
+
       // Try to extract basic info from URL if possible
       let businessName = 'New Business';
       try {

@@ -42,6 +42,12 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'v3b.fal.media',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
   // Additional webpack configuration to handle chunk loading issues and server-side modules

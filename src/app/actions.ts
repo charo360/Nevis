@@ -131,17 +131,24 @@ export async function analyzeBrandAction(
       const html = await response.text();
       // Simple text extraction from HTML (remove basic tags)
       scrapedContent = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-                           .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-                           .replace(/<[^>]+>/g, ' ')
-                           .replace(/\s+/g, ' ')
-                           .trim();
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
 
-      if (!scrapedContent || scrapedContent.length < 100) {
+      // Allow analysis of all websites, even with minimal content
+      if (!scrapedContent || scrapedContent.length < 10) {
+        // Only reject if there's absolutely no content at all
         return {
           success: false,
-          error: "Unable to extract sufficient content from the website. It may be protected or have minimal text.",
+          error: "Unable to extract any content from the website. The website may be completely empty or have content protection.",
           errorType: 'error'
         };
+      }
+
+      // For websites with minimal content, add a helpful note
+      if (scrapedContent.length < 100) {
+        scrapedContent = `[NOTE: This website has minimal content - analysis will be basic]\n\n${scrapedContent}`;
       }
     } catch (scrapeError: any) {
       if (scrapeError.name === 'AbortError') {
