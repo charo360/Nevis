@@ -10,6 +10,8 @@ export const AppRoutesPaths = {
   features: "/features",
   pricing: "/pricing",
   about: "/about",
+  privacy: "/privacy",
+  terms: "/terms",
 
   // Authentication routes
   auth: "/auth",
