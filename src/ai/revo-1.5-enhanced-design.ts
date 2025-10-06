@@ -9,6 +9,36 @@ import { RegionalSocialTrendsService } from '@/services/regional-social-trends-s
 import type { ScheduledService } from '@/services/calendar-service';
 import { aiProxyClient, getUserIdForProxy, getUserTierForProxy, shouldUseProxy } from '@/lib/services/ai-proxy-client';
 
+// Helper function to extract text from proxy response (handles both Claude and Google formats)
+function extractTextFromProxyResponse(response: any): string {
+  console.log('🔍 [Revo 1.5] Extracting text from proxy response:', JSON.stringify(response, null, 2));
+
+  // Handle Claude response format (from our proxy conversion)
+  if (response.response && response.response.candidates && response.response.candidates[0] &&
+    response.response.candidates[0].content && response.response.candidates[0].content.parts) {
+    const text = response.response.candidates[0].content.parts[0].text;
+    console.log('✅ [Revo 1.5] Extracted text from Claude format:', text?.substring(0, 200) + '...');
+    return text || '';
+  }
+
+  // Handle Google response format (legacy)
+  if (response.response && typeof response.response.text === 'function') {
+    const rawResponse = response.response.text();
+    if (typeof rawResponse === 'string') {
+      console.log('✅ [Revo 1.5] Extracted text from Google format (string):', rawResponse.substring(0, 200) + '...');
+      return rawResponse;
+    } else if (rawResponse && rawResponse.candidates && rawResponse.candidates[0] &&
+      rawResponse.candidates[0].content && rawResponse.candidates[0].content.parts) {
+      const text = rawResponse.candidates[0].content.parts[0].text || '';
+      console.log('✅ [Revo 1.5] Extracted text from Google format (object):', text.substring(0, 200) + '...');
+      return text;
+    }
+  }
+
+  console.log('⚠️ [Revo 1.5] Could not extract text from response, returning empty string');
+  return '';
+}
+
 // Helper function to route AI calls through proxy - PROXY ONLY, NO FALLBACK
 async function generateContentWithProxy(promptOrParts: string | any[], modelName: string, isImageGeneration: boolean = false): Promise<any> {
   if (!shouldUseProxy()) {
@@ -303,25 +333,17 @@ EXAMPLE RESPONSE FORMAT:
 
 Return ONLY valid JSON in this exact format:`;
 
-    console.log('🧠 [Revo 1.5] Using Gemini 2.5 Flash for business analysis and strategy planning');
+    console.log('🧠 [Revo 1.5] Using Claude Sonnet 4.5 for business analysis and strategy planning');
     console.log('📝 [Revo 1.5] Analysis prompt length:', analysisPrompt.length);
     console.log('📝 [Revo 1.5] Analysis prompt preview:', analysisPrompt.substring(0, 200) + '...');
 
-    const response = await generateContentWithProxy(analysisPrompt, 'gemini-2.5-flash', false);
+    const response = await generateContentWithProxy(analysisPrompt, 'claude-sonnet-4.5', false);
 
     console.log('🔍 [Revo 1.5] Raw proxy response for business analysis:', response);
     console.log('🔍 [Revo 1.5] Response type:', typeof response);
 
     // Extract text from proxy response format
-    let responseText = '';
-    if (response.response && typeof response.response.text === 'function') {
-      const rawResponse = response.response.text();
-      if (typeof rawResponse === 'string') {
-        responseText = rawResponse;
-      } else if (rawResponse && rawResponse.candidates && rawResponse.candidates[0] && rawResponse.candidates[0].content && rawResponse.candidates[0].content.parts) {
-        responseText = rawResponse.candidates[0].content.parts[0].text || '';
-      }
-    }
+    const responseText = extractTextFromProxyResponse(response);
 
     console.log('🔍 [Revo 1.5] Extracted response text:', responseText);
 
@@ -951,8 +973,8 @@ STRICT RULES:
 
 ${prompt}`;
 
-    const response = await generateContentWithProxy(fullPrompt, 'gemini-2.5-flash', false);
-    let responseContent = response.response.text() || '{}';
+    const response = await generateContentWithProxy(fullPrompt, 'claude-sonnet-4.5', false);
+    let responseContent = extractTextFromProxyResponse(response) || '{}';
 
     // Clean up response
     if (responseContent.includes('```json')) {
@@ -1298,7 +1320,7 @@ ${prompt}`;
     console.log('📝 [Revo 1.5] Content generation prompt length:', fullPrompt.length);
     console.log('📝 [Revo 1.5] Content generation prompt preview:', fullPrompt.substring(0, 300) + '...');
 
-    const response = await generateContentWithProxy(fullPrompt, 'gemini-2.5-flash', false);
+    const response = await generateContentWithProxy(fullPrompt, 'claude-sonnet-4.5', false);
 
     console.log('✅ [Revo 1.5] Proxy response received for content generation (headlines, captions, hashtags, CTAs)');
     console.log('🔍 [Revo 1.5] Full response object:', JSON.stringify(response, null, 2));
@@ -1306,26 +1328,7 @@ ${prompt}`;
     let responseContent = '';
     try {
       // Extract text from proxy response format
-      if (response.response && typeof response.response.text === 'function') {
-        const rawResponse = response.response.text();
-        console.log('🔍 [Revo 1.5] Raw response from text():', rawResponse);
-        console.log('🔍 [Revo 1.5] Raw response type:', typeof rawResponse);
-
-        if (typeof rawResponse === 'string') {
-          responseContent = rawResponse;
-        } else if (rawResponse && rawResponse.candidates && rawResponse.candidates[0] && rawResponse.candidates[0].content && rawResponse.candidates[0].content.parts) {
-          responseContent = rawResponse.candidates[0].content.parts[0].text || '{}';
-        } else {
-          console.log('🔍 [Revo 1.5] Raw response structure:', JSON.stringify(rawResponse, null, 2));
-          responseContent = '{}';
-        }
-      } else {
-        console.log('🔍 [Revo 1.5] Response structure issue:', {
-          hasResponse: !!response.response,
-          textType: typeof response.response?.text
-        });
-        responseContent = '{}';
-      }
+      responseContent = extractTextFromProxyResponse(response) || '{}';
 
       console.log('🔍 [Revo 1.5] Raw proxy response:', responseContent.substring(0, 500));
 
@@ -1575,10 +1578,10 @@ Create a brief plan with:
 Keep it concise and actionable.`;
 
   try {
-    const planResponse = await generateContentWithProxy(designPlanningPrompt, 'gemini-2.5-flash', false);
+    const planResponse = await generateContentWithProxy(designPlanningPrompt, 'claude-sonnet-4.5', false);
 
     return {
-      plan: planResponse.response.text(),
+      plan: extractTextFromProxyResponse(planResponse),
       brandColors,
       timestamp: Date.now()
     };
@@ -2223,7 +2226,7 @@ export async function generateRevo15EnhancedDesign(
 
   const enhancementsApplied: string[] = [
     'Two-Step Design Process',
-    'Gemini 2.5 Flash Planning',
+    'Claude Sonnet 4.5 Planning & Content Generation',
     'Gemini 2.5 Flash Image Preview Generation',
     'Advanced Design Strategy',
     'Premium Visual Quality',
@@ -2235,7 +2238,7 @@ export async function generateRevo15EnhancedDesign(
 
   try {
 
-    // Step 1: Generate design plan with Gemini 2.5 Flash
+    // Step 1: Generate design plan with Claude Sonnet 4.5
     const designPlan = await generateDesignPlan(enhancedInput);
     enhancementsApplied.push('Strategic Design Planning');
 
@@ -2256,7 +2259,7 @@ export async function generateRevo15EnhancedDesign(
 
     enhancementsApplied.push('Proxy Content Generation');
     console.log('✅ [Revo 1.5] Proxy content generation successful');
-    console.log('🎯 [Revo 1.5] CONTENT SYSTEM USED: Proxy (gemini-2.5-flash)');
+    console.log('🎯 [Revo 1.5] CONTENT SYSTEM USED: Proxy (claude-sonnet-4.5)');
 
     // Step 3: Generate final image with text elements on design (matching Revo 1.0 approach)
     const imageUrl = await generateFinalImage(enhancedInput, designPlan, contentResult);
@@ -2268,8 +2271,9 @@ export async function generateRevo15EnhancedDesign(
       qualityScore: 9.8, // Higher quality score for two-step process
       enhancementsApplied,
       processingTime: Date.now() - startTime,
-      model: 'revo-1.5-enhanced (gemini-2.5-flash-image-preview)',
-      planningModel: 'gemini-2.5-flash',
+      model: 'revo-1.5-enhanced (claude-sonnet-4.5 + gemini-2.5-flash-image-preview)',
+      planningModel: 'claude-sonnet-4.5',
+      contentModel: 'claude-sonnet-4.5',
       generationModel: 'gemini-2.5-flash-image-preview', // Model that works with Revo 1.5 API key
       // format: claudeResult.format,
       caption: contentResult.caption,

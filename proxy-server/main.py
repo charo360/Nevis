@@ -258,6 +258,10 @@ ALLOWED_MODELS = {
     "gemini-2.5-flash": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
     "gemini-2.5-flash-lite": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent",
 
+    # Claude models for enhanced content generation
+    "claude-sonnet-4.5": "anthropic",  # Primary content generation for Revo 1.5
+    "claude-3.5-sonnet": "anthropic",  # Fallback content generation
+
     # Legacy models (only if absolutely needed for fallback)
     "gemini-1.5-flash": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
 
@@ -276,6 +280,10 @@ OPENROUTER_MODEL_MAPPING = {
     "gemini-2.5-flash": "google/gemini-2.5-flash",
     "gemini-2.5-flash-lite": "google/gemini-2.5-flash-lite",
     "gemini-1.5-flash": "google/gemini-1.5-flash",
+
+    # Claude model equivalents on OpenRouter
+    "claude-sonnet-4.5": "anthropic/claude-3.5-sonnet",  # Map to available Claude 3.5 Sonnet on OpenRouter
+    "claude-3.5-sonnet": "anthropic/claude-3.5-sonnet"
 }
 
 # Website Analysis Models (Best → Budget fallback order)
@@ -418,6 +426,11 @@ def validate_model(model: str) -> str:
             status_code=400,
             detail=f"Model '{model}' not allowed. Allowed models: {list(ALLOWED_MODELS.keys())}"
         )
+
+    # For Claude models, return a placeholder since they don't use Google-style endpoints
+    if model.startswith("claude"):
+        return "anthropic"
+
     return ALLOWED_MODELS[model]
 
 def validate_tier_model_access(tier: str, model: str) -> bool:
@@ -522,6 +535,10 @@ def get_default_key_for_model(model: str) -> str:
         # Revo 1.5 models - Content generation (Text-focused models)
         "gemini-2.5-flash": "GOOGLE_API_KEY_REVO_1_5",
         "gemini-2.5-flash-lite": "GOOGLE_API_KEY_REVO_1_5",
+
+        # Claude models - Primary content generation for Revo 1.5
+        "claude-sonnet-4.5": "ANTHROPIC_API_KEY",
+        "claude-3.5-sonnet": "ANTHROPIC_API_KEY",
 
         # Legacy models - Fallback only
         "gemini-1.5-flash": "GOOGLE_API_KEY"
@@ -899,6 +916,63 @@ Be extremely thorough and specific. Use their exact wording wherever possible. E
     # This should never be reached, but just in case
     raise Exception("Website analysis failed with all models")
 
+async def call_claude_api(model: str, prompt: str, api_key: str, max_tokens: int = 8192, temperature: float = 0.7) -> Dict[str, Any]:
+    """Make controlled call to Claude API"""
+
+    # Map our model names to Anthropic's API model names
+    anthropic_model_mapping = {
+        "claude-sonnet-4.5": "claude-3-5-sonnet-20241022",  # Latest Claude 3.5 Sonnet
+        "claude-3.5-sonnet": "claude-3-5-sonnet-20241022"
+    }
+
+    api_model = anthropic_model_mapping.get(model, "claude-3-5-sonnet-20241022")
+
+    logger.info(f"🔄 Making Claude API request with model: {api_model}")
+
+    headers = {
+        "Content-Type": "application/json",
+        "x-api-key": api_key,
+        "anthropic-version": "2023-06-01"
+    }
+
+    payload = {
+        "model": api_model,
+        "max_tokens": max_tokens,
+        "temperature": temperature,
+        "messages": [
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+    }
+
+    logger.info(f"🔍 Claude API payload: {json.dumps(payload, indent=2)}")
+
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        response = await client.post("https://api.anthropic.com/v1/messages", json=payload, headers=headers)
+
+        if response.status_code == 200:
+            result = response.json()
+            logger.info(f"✅ Claude API success: {response.status_code}")
+
+            # Convert Claude response format to match Google API format for compatibility
+            claude_response = {
+                "candidates": [{
+                    "content": {
+                        "parts": [{
+                            "text": result["content"][0]["text"]
+                        }]
+                    }
+                }]
+            }
+
+            return {"success": True, "data": claude_response, "provider": "claude"}
+        else:
+            error_msg = f"Claude API error {response.status_code}: {response.text}"
+            logger.error(error_msg)
+            raise Exception(error_msg)
+
 async def call_google_api(endpoint: str, payload: Dict[str, Any], api_key: str) -> Dict[str, Any]:
     """Make controlled call to Google API with exact model specified"""
 
@@ -1050,18 +1124,26 @@ async def generate_text(request: TextRequest):
 
     # Get model-specific API key (with Revo version support)
     api_key = get_api_key_for_model(request.model, request.revo_version)
-    
-    # Prepare payload with strict model specification
-    payload = {
-        "contents": [{"parts": [{"text": request.prompt}]}],
-        "generationConfig": {
-            "temperature": request.temperature,
-            "maxOutputTokens": request.max_tokens
-        }
-    }
-    
+
     try:
-        result, provider_used = await call_primary_api_with_fallback(endpoint, payload, api_key, request.model)
+        # Handle Claude models differently
+        if request.model.startswith("claude"):
+            logger.info(f"🤖 Using Claude API for model: {request.model}")
+            result = await call_claude_api(request.model, request.prompt, api_key, request.max_tokens, request.temperature)
+            provider_used = "claude"
+            endpoint_used = "anthropic"
+        else:
+            # Handle Google models with fallback
+            payload = {
+                "contents": [{"parts": [{"text": request.prompt}]}],
+                "generationConfig": {
+                    "temperature": request.temperature,
+                    "maxOutputTokens": request.max_tokens
+                }
+            }
+            result, provider_used = await call_primary_api_with_fallback(endpoint, payload, api_key, request.model)
+            endpoint_used = endpoint if provider_used == "google" else "openrouter"
+
         deduct_user_credit(request.user_id, request.user_tier, "text")
 
         return {
@@ -1069,12 +1151,12 @@ async def generate_text(request: TextRequest):
             "data": result["data"],
             "model_used": request.model,
             "provider_used": provider_used,
-            "endpoint_used": endpoint if provider_used == "google" else "openrouter",
+            "endpoint_used": endpoint_used,
             "user_credits": user_credits[request.user_id]["credits"]
         }
 
     except Exception as e:
-        logger.error(f"Text generation failed on both providers: {str(e)}")
+        logger.error(f"Text generation failed: {str(e)}")
         raise HTTPException(status_code=503, detail=f"Text generation failed: {str(e)}")
 
 @app.post("/analyze-website")
