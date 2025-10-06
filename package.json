@@ -65,6 +65,7 @@
     "micro": "^10.0.1",
     "next": "15.3.3",
     "next-auth": "^4.24.11",
+    "next-intl": "^4.3.9",
     "node-fetch": "^3.3.2",
     "openai": "^5.12.2",
     "os-browserify": "^0.3.0",

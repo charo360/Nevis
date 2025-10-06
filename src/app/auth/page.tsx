@@ -64,6 +64,28 @@ export default function AuthPage() {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Client-side password validation
+    if (!signInData.password || signInData.password.length < 6) {
+      toast({
+        variant: "destructive",
+        title: "Invalid password",
+        description: "Password must be at least 6 characters long.",
+      });
+      return;
+    }
+
+    // Check for common weak passwords (basic check)
+    const weakPasswords = ['password', '123456', '123456789', 'qwerty', 'abc123', 'password123'];
+    if (weakPasswords.includes(signInData.password.toLowerCase())) {
+      toast({
+        variant: "destructive",
+        title: "Weak password",
+        description: "Please choose a stronger password.",
+      });
+      return;
+    }
+
     try {
       console.log('🔐 Starting login process...');
       await signIn(signInData.email, signInData.password);

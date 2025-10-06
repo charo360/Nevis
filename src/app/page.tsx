@@ -1,6 +1,4 @@
-// src/app/page.tsx
 "use client";
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -31,12 +29,13 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AppRoutesPaths } from '@/lib/routes';
+import { Navbar } from '@/components/layout/navbar';
+import { Footer } from '@/components/layout/footer';
 
 export default function HomePage() {
   const router = useRouter();
   const [isVisible, setIsVisible] = useState(false);
   const { user, signOut, loading, getAccessToken } = useAuth();
-  const [sessionActive, setSessionActive] = useState<boolean>(false);
   const { toast } = useToast();
 
   // Typewriter animation for "AI Designer"
@@ -105,11 +104,7 @@ export default function HomePage() {
 
     // Simplified session management for Supabase auth
     // Supabase handles session management automatically
-    if (user && user.userId) {
-      setSessionActive(true);
-    } else {
-      setSessionActive(false);
-    }
+    // Session state is now managed by the Navbar component
 
 
     return () => { mounted = false; if (interval) clearInterval(interval); };
@@ -199,46 +194,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 overflow-hidden">
       {/* Navigation */}
-      <nav className="relative z-50 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-              <Sparkles className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Crevo
-            </span>
-          </div>
-
-          <div className="hidden md:flex items-center gap-8">
-            <Link href={AppRoutesPaths.home} className="text-gray-600 hover:text-gray-900 transition-colors">Home</Link>
-            <Link href={AppRoutesPaths.features} className="text-gray-600 hover:text-gray-900 transition-colors">Features</Link>
-            <Link href={AppRoutesPaths.pricing} className="text-gray-600 hover:text-gray-900 transition-colors">Pricing</Link>
-            <Link href={AppRoutesPaths.about} className="text-gray-600 hover:text-gray-900 transition-colors">About</Link>
-            {sessionActive ? (
-              <Button onClick={() => router.push(AppRoutesPaths.dashboard.root)} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
-                Dashboard
-              </Button>
-            ) : (
-              <>
-                <Button
-                  onClick={handleSignIn}
-                  variant="outline"
-                  className="border-gray-300  text-black cursor-pointer z-10 relative"
-                >
-                  Sign In
-                </Button>
-                <Button
-                  onClick={() => handleGetStarted()}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 cursor-pointer z-10 relative"
-                >
-                  Get Started
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-      </nav>
+      <Navbar currentPage="home" />
 
       {/* Hero Section */}
       <section className="relative px-6 py-20">
@@ -1180,72 +1136,7 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white px-6 py-16">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8 mb-12">
-            {/* Brand */}
-            <div className="md:col-span-1">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-                  <Sparkles className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-2xl font-bold">Crevo</span>
-              </div>
-              <p className="text-gray-400 leading-relaxed">
-                AI-powered content creation platform that helps businesses and creators generate stunning social media content in seconds.
-              </p>
-            </div>
-
-            {/* Product */}
-            <div>
-              <h3 className="font-semibold mb-4">Product</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link href="#features" className="hover:text-white transition-colors">Features</Link></li>
-                <li><Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
-                <li><Link href="/templates" className="hover:text-white transition-colors">Templates</Link></li>
-                <li><Link href="/api" className="hover:text-white transition-colors">API</Link></li>
-              </ul>
-            </div>
-
-            {/* Company */}
-            <div>
-              <h3 className="font-semibold mb-4">Company</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link href="/about" className="hover:text-white transition-colors">About</Link></li>
-                <li><Link href="/blog" className="hover:text-white transition-colors">Blog</Link></li>
-                <li><Link href="/careers" className="hover:text-white transition-colors">Careers</Link></li>
-                <li><Link href="/contact" className="hover:text-white transition-colors">Contact</Link></li>
-              </ul>
-            </div>
-
-            {/* Support */}
-            <div>
-              <h3 className="font-semibold mb-4">Support</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link href="/help" className="hover:text-white transition-colors">Help Center</Link></li>
-                <li><Link href="/docs" className="hover:text-white transition-colors">Documentation</Link></li>
-                <li><Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
-                <li><Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-400">© 2024 Crevo. All rights reserved.</p>
-            <div className="flex items-center gap-6 mt-4 md:mt-0">
-              <a href="#" onClick={(e)=>e.preventDefault()} className="text-gray-400 hover:text-white transition-colors">
-                <Users className="w-5 h-5" />
-              </a>
-              <a href="#" onClick={(e)=>e.preventDefault()} className="text-gray-400 hover:text-white transition-colors">
-                <Globe className="w-5 h-5" />
-              </a>
-              <a href="#" onClick={(e)=>e.preventDefault()} className="text-gray-400 hover:text-white transition-colors">
-                <TrendingUp className="w-5 h-5" />
-              </a>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
