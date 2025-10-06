@@ -5,6 +5,7 @@
 
 import type { BrandProfile, Platform } from '@/lib/types';
 import { aiProxyClient, getUserIdForProxy, getUserTierForProxy, shouldUseProxy } from '@/lib/services/ai-proxy-client';
+import { ContentQualityEnhancer } from '@/utils/content-quality-enhancer';
 
 // All AI calls now go through the proxy system for cost control and model management
 
@@ -935,6 +936,50 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
 
     const processingTime = Date.now() - startTime;
 
+    // 🔤 SPELL CHECK: Ensure headlines and subheadlines are spell-checked before final result
+    let finalContentResult = contentResult;
+    try {
+      console.log('🔤 [Revo 2.0] Running spell check on headlines and subheadlines...');
+
+      const spellCheckedContent = await ContentQualityEnhancer.enhanceGeneratedContent({
+        headline: contentResult.headline,
+        subheadline: contentResult.subheadline,
+        caption: contentResult.caption,
+        callToAction: contentResult.cta
+      }, options.businessType, {
+        autoCorrect: true,
+        logCorrections: true,
+        validateQuality: true
+      });
+
+      // Update content with spell-checked versions
+      if (spellCheckedContent.headline !== contentResult.headline) {
+        console.log(`🔤 [Revo 2.0] Headline corrected: "${contentResult.headline}" → "${spellCheckedContent.headline}"`);
+      }
+
+      if (spellCheckedContent.subheadline !== contentResult.subheadline) {
+        console.log(`🔤 [Revo 2.0] Subheadline corrected: "${contentResult.subheadline}" → "${spellCheckedContent.subheadline}"`);
+      }
+
+      finalContentResult = {
+        caption: spellCheckedContent.caption || contentResult.caption,
+        hashtags: contentResult.hashtags,
+        headline: spellCheckedContent.headline || contentResult.headline,
+        subheadline: spellCheckedContent.subheadline || contentResult.subheadline,
+        cta: spellCheckedContent.callToAction || contentResult.cta,
+        captionVariations: contentResult.captionVariations
+      };
+
+      // Add quality report if available
+      if (spellCheckedContent.qualityReport) {
+        console.log(`🔤 [Revo 2.0] Content quality score: ${spellCheckedContent.qualityReport.overallQuality.score}/100`);
+      }
+
+    } catch (error) {
+      console.warn('🔤 [Revo 2.0] Spell check failed, using original content:', error);
+      finalContentResult = contentResult;
+    }
+
     return {
       imageUrl: imageResult.imageUrl,
       model: 'Revo 2.0 (Gemini 2.5 Flash Image Preview)',
@@ -949,12 +994,12 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
         'Cultural relevance integration',
         'Advanced visual storytelling'
       ],
-      caption: contentResult.caption,
-      hashtags: contentResult.hashtags,
-      headline: contentResult.headline,
-      subheadline: contentResult.subheadline,
-      cta: contentResult.cta,
-      captionVariations: contentResult.captionVariations,
+      caption: finalContentResult.caption,
+      hashtags: finalContentResult.hashtags,
+      headline: finalContentResult.headline,
+      subheadline: finalContentResult.subheadline,
+      cta: finalContentResult.cta,
+      captionVariations: finalContentResult.captionVariations,
       businessIntelligence: {
         concept: concept.concept,
         visualTheme: concept.visualTheme,

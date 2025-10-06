@@ -12,6 +12,7 @@ import { advancedContentGenerator, BusinessProfile } from './advanced-content-ge
 import { CircuitBreakerManager } from './utils/circuit-breaker';
 import { performanceAnalyzer } from './content-performance-analyzer';
 import { trendingEnhancer } from './trending-content-enhancer';
+import { ContentQualityEnhancer } from '@/utils/content-quality-enhancer';
 import {
   generateCreativeHeadline,
   generateCreativeSubheadline,
@@ -2699,6 +2700,58 @@ ${realTimeContext.highRelevanceData.map((item: any) => {
 
     } catch (error) {
       console.warn('Content cohesion analysis failed:', error);
+    }
+
+    // 🔤 SPELL CHECK: Ensure headlines and subheadlines are spell-checked before image generation
+    try {
+      console.log('🔤 [Revo 1.0] Running spell check on headlines and subheadlines...');
+
+      const spellCheckedContent = await ContentQualityEnhancer.enhanceGeneratedContent({
+        headline: finalContent.headline,
+        subheadline: finalContent.subheadline,
+        caption: finalContent.content,
+        catchyWords: finalContent.catchyWords,
+        callToAction: finalContent.callToAction
+      }, input.businessType, {
+        autoCorrect: true,
+        logCorrections: true,
+        validateQuality: true
+      });
+
+      // Update finalContent with spell-checked versions
+      if (spellCheckedContent.headline !== finalContent.headline) {
+        console.log(`🔤 [Revo 1.0] Headline corrected: "${finalContent.headline}" → "${spellCheckedContent.headline}"`);
+        finalContent.headline = spellCheckedContent.headline;
+      }
+
+      if (spellCheckedContent.subheadline !== finalContent.subheadline) {
+        console.log(`🔤 [Revo 1.0] Subheadline corrected: "${finalContent.subheadline}" → "${spellCheckedContent.subheadline}"`);
+        finalContent.subheadline = spellCheckedContent.subheadline;
+      }
+
+      if (spellCheckedContent.caption !== finalContent.content) {
+        console.log(`🔤 [Revo 1.0] Caption corrected`);
+        finalContent.content = spellCheckedContent.caption;
+      }
+
+      if (spellCheckedContent.catchyWords !== finalContent.catchyWords) {
+        console.log(`🔤 [Revo 1.0] Catchy words corrected`);
+        finalContent.catchyWords = spellCheckedContent.catchyWords;
+      }
+
+      if (spellCheckedContent.callToAction !== finalContent.callToAction) {
+        console.log(`🔤 [Revo 1.0] Call-to-action corrected`);
+        finalContent.callToAction = spellCheckedContent.callToAction;
+      }
+
+      // Add quality report if available
+      if (spellCheckedContent.qualityReport) {
+        finalContent.qualityReport = spellCheckedContent.qualityReport;
+        console.log(`🔤 [Revo 1.0] Content quality score: ${spellCheckedContent.qualityReport.overallQuality.score}/100`);
+      }
+
+    } catch (error) {
+      console.warn('🔤 [Revo 1.0] Spell check failed, using original content:', error);
     }
 
     return finalContent;

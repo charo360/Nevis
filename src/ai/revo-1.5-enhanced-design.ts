@@ -8,6 +8,7 @@ import { TrendingHashtagsService } from '@/services/trending-hashtags-service';
 import { RegionalSocialTrendsService } from '@/services/regional-social-trends-service';
 import type { ScheduledService } from '@/services/calendar-service';
 import { aiProxyClient, getUserIdForProxy, getUserTierForProxy, shouldUseProxy } from '@/lib/services/ai-proxy-client';
+import { ContentQualityEnhancer } from '@/utils/content-quality-enhancer';
 
 // Helper function to extract text from proxy response (handles both Claude and Google formats)
 function extractTextFromProxyResponse(response: any): string {
@@ -2764,6 +2765,49 @@ export async function generateRevo15EnhancedDesign(
     const imageUrl = await generateFinalImage(enhancedInput, designPlan, contentResult);
     enhancementsApplied.push('Premium Image Generation with Text Elements');
 
+    // 🔤 SPELL CHECK: Ensure headlines and subheadlines are spell-checked before final result
+    let finalContentResult = contentResult;
+    try {
+      console.log('🔤 [Revo 1.5] Running spell check on headlines and subheadlines...');
+
+      const spellCheckedContent = await ContentQualityEnhancer.enhanceGeneratedContent({
+        headline: contentResult.headline,
+        subheadline: contentResult.subheadline,
+        caption: contentResult.caption,
+        callToAction: contentResult.callToAction
+      }, input.businessType, {
+        autoCorrect: true,
+        logCorrections: true,
+        validateQuality: true
+      });
+
+      // Update content with spell-checked versions
+      if (spellCheckedContent.headline !== contentResult.headline) {
+        console.log(`🔤 [Revo 1.5] Headline corrected: "${contentResult.headline}" → "${spellCheckedContent.headline}"`);
+      }
+
+      if (spellCheckedContent.subheadline !== contentResult.subheadline) {
+        console.log(`🔤 [Revo 1.5] Subheadline corrected: "${contentResult.subheadline}" → "${spellCheckedContent.subheadline}"`);
+      }
+
+      finalContentResult = {
+        caption: spellCheckedContent.caption || contentResult.caption,
+        hashtags: contentResult.hashtags,
+        headline: spellCheckedContent.headline || contentResult.headline,
+        subheadline: spellCheckedContent.subheadline || contentResult.subheadline,
+        callToAction: spellCheckedContent.callToAction || contentResult.callToAction
+      };
+
+      // Add quality report if available
+      if (spellCheckedContent.qualityReport) {
+        console.log(`🔤 [Revo 1.5] Content quality score: ${spellCheckedContent.qualityReport.overallQuality.score}/100`);
+      }
+
+    } catch (error) {
+      console.warn('🔤 [Revo 1.5] Spell check failed, using original content:', error);
+      finalContentResult = contentResult;
+    }
+
     const result: Revo15DesignResult = {
       imageUrl,
       designSpecs: designPlan,
@@ -2775,11 +2819,11 @@ export async function generateRevo15EnhancedDesign(
       contentModel: 'claude-sonnet-4.5',
       generationModel: 'gemini-2.5-flash-image-preview', // Model that works with Revo 1.5 API key
       // format: claudeResult.format,
-      caption: contentResult.caption,
-      hashtags: contentResult.hashtags,
-      headline: contentResult.headline,
-      subheadline: contentResult.subheadline,
-      callToAction: contentResult.callToAction
+      caption: finalContentResult.caption,
+      hashtags: finalContentResult.hashtags,
+      headline: finalContentResult.headline,
+      subheadline: finalContentResult.subheadline,
+      callToAction: finalContentResult.callToAction
     };
 
     return result;
