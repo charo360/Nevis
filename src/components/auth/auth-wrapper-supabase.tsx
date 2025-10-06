@@ -27,7 +27,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
     if (!loading && mounted) {
       // Public routes that don't require authentication
       // Treat any route that starts with /billing as public so billing redirects don't force the dashboard.
-  const publicRoutes = ['/', '/auth', '/auth/forgot-password'];
+  const publicRoutes = ['/', '/auth', '/auth/forgot-password', '/features', '/pricing', '/about', '/privacy', '/terms'];
   const currentPath = pathname ?? '';
   const isPublicRoute = publicRoutes.includes(currentPath) || currentPath.startsWith('/billing');
 
@@ -84,7 +84,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
   }
 
   // Public routes - render without auth check
-  const publicRoutes = ['/', '/auth', '/auth/forgot-password'];
+  const publicRoutes = ['/', '/auth', '/auth/forgot-password', '/features', '/pricing', '/about', '/privacy', '/terms'];
   const currentPath = pathname ?? '';
   const isPublicRoute = publicRoutes.includes(currentPath) || currentPath.startsWith('/billing');
 
