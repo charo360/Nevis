@@ -2673,6 +2673,22 @@ CLEAN, DIVERSE PEOPLE REQUIREMENTS (WITH PEOPLE):
 - AVOID: Overly complex backgrounds, cluttered scenes, or distracting elements
 - GOAL: Clean, diverse design that looks like a high-quality Canva template`}
 
+🔤 **CRITICAL SPELLING & TEXT QUALITY REQUIREMENTS:**
+- **PERFECT SPELLING**: Every single word MUST be spelled correctly
+- **NO MISSPELLINGS**: Double-check all text for spelling errors before generating
+- **PROFESSIONAL LANGUAGE**: Use proper business English throughout
+- **SPELL CHECK MANDATORY**: All text must pass professional spell-check standards
+- **COMMON ERROR PREVENTION**: Avoid common misspellings like:
+  * "bussiness" → Use "business"
+  * "servises" → Use "services"
+  * "profesional" → Use "professional"
+  * "experiance" → Use "experience"
+  * "qualaty" → Use "quality"
+- **INDUSTRY TERMS**: Use correct spelling for industry-specific terms
+- **PLURAL VALIDATION**: Ensure plurals are spelled correctly (services, products, experiences)
+- **PROOFREADING**: Review all text content for spelling accuracy before finalizing
+- **CREDIBILITY**: Spelling errors destroy professional credibility - avoid at all costs
+
 Generate a stunning, cutting-edge design that represents the pinnacle of ${input.platform} visual content using Revo 1.5's exclusive design system.`;
 }
 

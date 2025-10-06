@@ -3125,6 +3125,22 @@ WHAT TO INCLUDE:
 - **STYLE-SPECIFIC AUTHENTICITY**: Make ${designVariations.style} feel genuinely handcrafted
 - **EMOTIONAL CONNECTION**: Designs that feel relatable and human
 
+🔤 **CRITICAL SPELLING & TEXT QUALITY REQUIREMENTS:**
+- **PERFECT SPELLING**: Every single word MUST be spelled correctly
+- **NO MISSPELLINGS**: Double-check all text for spelling errors before generating
+- **PROFESSIONAL LANGUAGE**: Use proper business English throughout
+- **SPELL CHECK MANDATORY**: All text must pass professional spell-check standards
+- **COMMON ERROR PREVENTION**: Avoid common misspellings like:
+  * "bussiness" → Use "business"
+  * "servises" → Use "services"
+  * "profesional" → Use "professional"
+  * "experiance" → Use "experience"
+  * "qualaty" → Use "quality"
+- **INDUSTRY TERMS**: Use correct spelling for industry-specific terms
+- **PLURAL VALIDATION**: Ensure plurals are spelled correctly (services, products, experiences)
+- **PROOFREADING**: Review all text content for spelling accuracy before finalizing
+- **CREDIBILITY**: Spelling errors destroy professional credibility - avoid at all costs
+
 TECHNICAL REQUIREMENTS:
 - Resolution: 992x1056 pixels HD (Mobile-optimized)
 - Format: 992x1056px - Perfect for all mobile devices
