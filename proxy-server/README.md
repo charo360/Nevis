@@ -1,25 +1,95 @@
 # Nevis AI Proxy Server
 
-A controlled proxy server for AI model access that prevents unexpected model calls and manages costs.
+A controlled proxy server for AI model access that prevents unexpected model calls and manages costs with OpenRouter fallback system.
 
 ## 🎯 Purpose
 
 This proxy server ensures that:
 - ✅ Only specified models are called (no unexpected model invocations)
-- ✅ User quotas are enforced (40 requests/month per user)
+- ✅ User quotas are enforced (credit-based system)
 - ✅ All API calls are logged and monitored
 - ✅ Costs are controlled and predictable
-- ✅ Fallback mechanisms are available
+- ✅ **OpenRouter fallback system for high availability**
+- ✅ Automatic failover when Google API is unavailable
+
+## 🔄 OpenRouter Fallback System
+
+The proxy now includes an intelligent fallback system that automatically switches to OpenRouter when Google API fails:
+
+### Fallback Triggers
+- **429 Quota Exceeded**: When Google API quota is exhausted
+- **503 Service Unavailable**: When Google services are down
+- **500 Internal Server Error**: When Google API has internal issues
+- **Timeout Errors**: When Google API doesn't respond in time
+- **Connection Errors**: When Google API is unreachable
+
+### Model Mapping
+| Google Model | OpenRouter Equivalent |
+|--------------|----------------------|
+| `gemini-2.5-flash` | `google/gemini-2.5-flash` |
+| `gemini-2.5-flash-image-preview` | `google/gemini-2.5-flash-image-preview` |
+| `gemini-2.5-flash-lite` | `google/gemini-2.5-flash-lite` |
+| `gemini-1.5-flash` | `google/gemini-1.5-flash` |
+
+### Alternative Models
+- **Text Generation**: `anthropic/claude-3.5-sonnet` (high-quality alternative)
+- **Image Generation**: Continues with Google models on OpenRouter
+
+## 📊 API Response Format
+
+The proxy maintains consistent response format regardless of which provider is used:
+
+```json
+{
+  "success": true,
+  "data": { /* Google API format response */ },
+  "model_used": "gemini-2.5-flash",
+  "provider_used": "openrouter",  // "google" or "openrouter"
+  "endpoint_used": "openrouter",  // or original Google endpoint
+  "user_credits": 95
+}
+```
+
+## 📝 Logging and Monitoring
+
+The system provides detailed logging for debugging and monitoring:
+
+```
+🎯 Attempting Google API for model: gemini-2.5-flash
+⚠️ Google API failed for gemini-2.5-flash: 429 - Quota exceeded
+🔄 Falling back to OpenRouter for model: gemini-2.5-flash
+✅ OpenRouter API successful with model: google/gemini-2.5-flash
+```
+
+### Log Levels
+- **INFO**: Normal operations, successful requests
+- **WARNING**: Fallback triggers, quota warnings
+- **ERROR**: Failed requests on both providers
 
 ## 🚀 Quick Start
 
-### 1. Local Development
+### 1. Environment Setup
+
+Ensure you have the following environment variables configured:
+
+```bash
+# Google API Keys (Primary)
+GEMINI_API_KEY_REVO_1_0=your_revo_1_0_key
+GEMINI_API_KEY_REVO_1_5=your_revo_1_5_key
+GEMINI_API_KEY_REVO_2_0=your_revo_2_0_key
+GEMINI_API_KEY=your_fallback_key
+
+# OpenRouter API Key (Fallback)
+OPENROUTER_API_KEY=your_openrouter_key
+```
+
+### 2. Local Development
 
 ```bash
 # Install dependencies
 pip install -r requirements.txt
 
-# Copy environment file
+# Copy environment file (if using .env)
 cp .env.example .env
 
 # Edit .env with your API keys
@@ -29,7 +99,20 @@ nano .env
 uvicorn main:app --reload --port 8000
 ```
 
-### 2. Docker Deployment
+### 3. Testing the Fallback System
+
+```bash
+# Test basic functionality
+python test_fallback.py
+
+# Test fallback scenarios
+python test_fallback_scenarios.py
+
+# Check health endpoint
+curl http://localhost:8000/health
+```
+
+### 4. Docker Deployment
 
 ```bash
 # Build and run with Docker Compose

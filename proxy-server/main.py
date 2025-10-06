@@ -6,7 +6,7 @@ from collections import defaultdict
 from datetime import datetime
 import json
 import logging
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Tuple
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -55,6 +55,27 @@ ALLOWED_MODELS = {
     # - gemini-2.0-flash (legacy)
 }
 
+# OpenRouter model mapping for fallback system
+OPENROUTER_MODEL_MAPPING = {
+    # Direct Google model equivalents on OpenRouter
+    "gemini-2.5-flash-image-preview": "google/gemini-2.5-flash-image-preview",
+    "gemini-2.5-flash": "google/gemini-2.5-flash",
+    "gemini-2.5-flash-lite": "google/gemini-2.5-flash-lite",
+    "gemini-1.5-flash": "google/gemini-1.5-flash",
+}
+
+# Alternative high-quality models for secondary fallback
+OPENROUTER_ALTERNATIVE_MODELS = {
+    # For text generation, use Claude as high-quality alternative
+    "text": "anthropic/claude-3.5-sonnet",
+    # For image generation, keep trying Google models
+    "image": "google/gemini-2.5-flash-image-preview"
+}
+
+# OpenRouter configuration
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY')
+
 # Tier-based model access (updated - free tier gets same access as paid)
 TIER_MODELS = {
     "free": list(ALLOWED_MODELS.keys()),  # All approved models (same as paid)
@@ -69,6 +90,7 @@ class ImageRequest(BaseModel):
     user_id: str
     user_tier: Optional[str] = "free"  # User's subscription tier
     model: Optional[str] = "gemini-2.5-flash-image-preview"
+    revo_version: Optional[str] = None  # "1.0", "1.5", or "2.0" for API key selection
     max_tokens: Optional[int] = 8192
     temperature: Optional[float] = 0.7
     logoImage: Optional[str] = None  # Logo image data URL for brand integration
@@ -78,6 +100,7 @@ class TextRequest(BaseModel):
     user_id: str
     user_tier: Optional[str] = "free"  # User's subscription tier
     model: Optional[str] = "gemini-2.5-flash"
+    revo_version: Optional[str] = None  # "1.0", "1.5", or "2.0" for API key selection
     max_tokens: Optional[int] = 8192
     temperature: Optional[float] = 0.7
 
@@ -152,16 +175,45 @@ def deduct_user_credit(user_id: str, tier: str = "free", generation_type: str = 
 
     logger.info(f"User {user_id} ({tier} tier) used 1 credit ({generation_type}). Cost: ${actual_cost:.5f}. Remaining: {user_data['credits']}")
 
-def get_api_key_for_model(model: str) -> str:
-    """Get the appropriate API key based on the model being used"""
+def get_api_key_for_model(model: str, revo_version: str = None) -> str:
+    """Get the appropriate API key based on the model and Revo version being used"""
 
+    # Handle Revo version-specific routing for shared models
+    if revo_version:
+        if revo_version == "2.0" and model == "gemini-2.5-flash-image-preview":
+            # Revo 2.0 uses its own API key for image generation
+            key_env_name = "GOOGLE_API_KEY_REVO_2_0"
+        elif revo_version == "1.0" and model == "gemini-2.5-flash-image-preview":
+            # Revo 1.0 uses its own API key for image generation
+            key_env_name = "GOOGLE_API_KEY_REVO_1_0"
+        else:
+            # Use default mapping for other cases
+            key_env_name = get_default_key_for_model(model)
+    else:
+        # Use default mapping when no Revo version specified
+        key_env_name = get_default_key_for_model(model)
+
+    api_key = os.environ.get(key_env_name)
+
+    if not api_key:
+        logger.error(f"API key {key_env_name} not found for model {model} (Revo {revo_version})")
+        raise HTTPException(
+            status_code=500,
+            detail=f"API key not configured for model {model}"
+        )
+
+    logger.info(f"Using API key {key_env_name} for model {model}")
+    return api_key
+
+def get_default_key_for_model(model: str) -> str:
+    """Get the default API key mapping for a model"""
     # Map models to specific API keys based on Nevis configuration
     # ONLY COST-EFFECTIVE MODELS ALLOWED
     model_to_key_mapping = {
-        # Revo 1.0 models - Main image generation
+        # Revo 1.0 models - Main image generation (Enhanced with Gemini 2.5 Flash Image Preview)
         "gemini-2.5-flash-image-preview": "GOOGLE_API_KEY_REVO_1_0",
 
-        # Revo 1.5 models - Content generation
+        # Revo 1.5 models - Content generation (Text-focused models)
         "gemini-2.5-flash": "GOOGLE_API_KEY_REVO_1_5",
         "gemini-2.5-flash-lite": "GOOGLE_API_KEY_REVO_1_5",
 
@@ -174,9 +226,7 @@ def get_api_key_for_model(model: str) -> str:
         # - All thinking-exp models (POTENTIALLY EXPENSIVE)
     }
 
-    # Get the specific API key for this model
-    key_env_name = model_to_key_mapping.get(model, "GOOGLE_API_KEY")
-    api_key = os.environ.get(key_env_name)
+    return model_to_key_mapping.get(model, "GOOGLE_API_KEY")
 
     # Fallback to general Google API key if specific key not found
     if not api_key:
@@ -189,13 +239,117 @@ def get_api_key_for_model(model: str) -> str:
     logger.info(f"Using API key {key_env_name} for model {model}")
     return api_key
 
+def convert_google_to_openai_format(payload: Dict[str, Any], model: str) -> Dict[str, Any]:
+    """Convert Google API format to OpenAI-compatible format for OpenRouter"""
+
+    # Extract the prompt from Google format
+    content_parts = payload.get("contents", [{}])[0].get("parts", [])
+    messages = []
+
+    for part in content_parts:
+        if "text" in part:
+            messages.append({"role": "user", "content": part["text"]})
+        elif "inlineData" in part:
+            # Handle image data for multimodal requests
+            messages.append({
+                "role": "user",
+                "content": [
+                    {"type": "image_url", "image_url": {"url": f"data:{part['inlineData']['mimeType']};base64,{part['inlineData']['data']}"}}
+                ]
+            })
+
+    # Convert generation config
+    generation_config = payload.get("generationConfig", {})
+    openai_payload = {
+        "model": OPENROUTER_MODEL_MAPPING.get(model, model),
+        "messages": messages,
+        "temperature": generation_config.get("temperature", 0.7),
+        "max_tokens": generation_config.get("maxOutputTokens", 8192)
+    }
+
+    # Add image generation specific parameters
+    if "image" in model:
+        openai_payload["modalities"] = ["image", "text"]
+
+    return openai_payload
+
+def convert_openai_to_google_format(openai_response: Dict[str, Any]) -> Dict[str, Any]:
+    """Convert OpenAI/OpenRouter response back to Google API format"""
+
+    choices = openai_response.get("choices", [])
+    if not choices:
+        return {"candidates": []}
+
+    choice = choices[0]
+    message = choice.get("message", {})
+    content = message.get("content", "")
+
+    # Handle different content types
+    parts = []
+    if isinstance(content, str):
+        parts.append({"text": content})
+    elif isinstance(content, list):
+        for item in content:
+            if item.get("type") == "text":
+                parts.append({"text": item.get("text", "")})
+            elif item.get("type") == "image_url":
+                # Handle image responses
+                image_url = item.get("image_url", {}).get("url", "")
+                if image_url.startswith("data:"):
+                    # Extract base64 data
+                    parts.append({"inlineData": {"data": image_url.split(",")[1], "mimeType": "image/jpeg"}})
+
+    return {
+        "candidates": [{
+            "content": {"parts": parts},
+            "finishReason": choice.get("finish_reason", "STOP"),
+            "index": 0
+        }],
+        "usageMetadata": openai_response.get("usage", {})
+    }
+
+async def call_openrouter_api(model: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Make API call to OpenRouter with format conversion"""
+
+    if not OPENROUTER_API_KEY:
+        raise Exception("OpenRouter API key not configured")
+
+    # Convert Google format to OpenAI format
+    openai_payload = convert_google_to_openai_format(payload, model)
+
+    logger.info(f"🔄 Making OpenRouter request with model: {openai_payload['model']}")
+    logger.info(f"🔄 OpenRouter payload: {json.dumps(openai_payload, indent=2)}")
+
+    async with httpx.AsyncClient(timeout=45.0) as client:
+        response = await client.post(
+            f"{OPENROUTER_BASE_URL}/chat/completions",
+            headers={
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://nevis.ai",  # Optional: for OpenRouter analytics
+                "X-Title": "Nevis AI Platform"  # Optional: for OpenRouter analytics
+            },
+            json=openai_payload
+        )
+
+        if response.status_code == 200:
+            openai_result = response.json()
+            # Convert back to Google format
+            google_result = convert_openai_to_google_format(openai_result)
+            logger.info(f"✅ OpenRouter API successful with model: {openai_payload['model']}")
+            return {"success": True, "data": google_result, "provider": "openrouter"}
+        else:
+            error_msg = f"OpenRouter API failed: {response.status_code} - {response.text}"
+            logger.error(error_msg)
+            raise Exception(error_msg)
+
 async def call_google_api(endpoint: str, payload: Dict[str, Any], api_key: str) -> Dict[str, Any]:
     """Make controlled call to Google API with exact model specified"""
-    
+
     # Log the exact request being made
-    logger.info(f"Making request to: {endpoint}")
-    logger.info(f"Payload model check: {payload}")
-    
+    logger.info(f"🔄 Making Google API request to: {endpoint}")
+    logger.info(f"🔍 Google API payload: {json.dumps(payload, indent=2)}")
+
     async with httpx.AsyncClient(timeout=30.0) as client:
         response = await client.post(
             endpoint,
@@ -205,15 +359,60 @@ async def call_google_api(endpoint: str, payload: Dict[str, Any], api_key: str) 
             },
             json=payload
         )
-        
+
         if response.status_code == 200:
             result = response.json()
-            logger.info(f"Successful response from {endpoint}")
-            return {"success": True, "data": result}
+            logger.info(f"✅ Google API successful from {endpoint}")
+            return {"success": True, "data": result, "provider": "google"}
         else:
             error_msg = f"Google API failed: {response.status_code} - {response.text}"
             logger.error(error_msg)
             raise Exception(error_msg)
+
+async def call_primary_api_with_fallback(endpoint: str, payload: Dict[str, Any], api_key: str, model: str) -> Tuple[Dict[str, Any], str]:
+    """
+    Call Google API first, fallback to OpenRouter on failure
+    Returns: (response_data, provider_used)
+    """
+
+    # Define error conditions that trigger fallback
+    fallback_conditions = [429, 503, 500]  # Quota exceeded, unavailable, internal error
+
+    try:
+        # Try Google API first
+        logger.info(f"🎯 Attempting Google API for model: {model}")
+        result = await call_google_api(endpoint, payload, api_key)
+        return result, "google"
+
+    except Exception as google_error:
+        logger.warning(f"⚠️ Google API failed for {model}: {str(google_error)}")
+
+        # Check if we should fallback to OpenRouter
+        should_fallback = True
+        error_str = str(google_error).lower()
+
+        # Always fallback on these conditions
+        if any(str(code) in str(google_error) for code in fallback_conditions):
+            should_fallback = True
+        elif "timeout" in error_str or "connection" in error_str:
+            should_fallback = True
+        elif "quota" in error_str or "limit" in error_str:
+            should_fallback = True
+
+        if should_fallback and model in OPENROUTER_MODEL_MAPPING:
+            try:
+                logger.info(f"🔄 Falling back to OpenRouter for model: {model}")
+                result = await call_openrouter_api(model, payload)
+                return result, "openrouter"
+
+            except Exception as openrouter_error:
+                logger.error(f"❌ OpenRouter fallback also failed: {str(openrouter_error)}")
+                # If both fail, raise the original Google error
+                raise google_error
+        else:
+            # No fallback available or not configured
+            logger.error(f"❌ No fallback available for model: {model}")
+            raise google_error
 
 @app.post("/generate-image")
 async def generate_image(request: ImageRequest):
@@ -228,8 +427,8 @@ async def generate_image(request: ImageRequest):
     # Check user has enough credits
     check_user_credits(request.user_id, request.user_tier)
 
-    # Get model-specific API key
-    api_key = get_api_key_for_model(request.model)
+    # Get model-specific API key (with Revo version support)
+    api_key = get_api_key_for_model(request.model, request.revo_version)
     
     # Prepare payload with strict model specification
     parts = [{"text": request.prompt}]
@@ -264,19 +463,20 @@ async def generate_image(request: ImageRequest):
     }
     
     try:
-        result = await call_google_api(endpoint, payload, api_key)
+        result, provider_used = await call_primary_api_with_fallback(endpoint, payload, api_key, request.model)
         deduct_user_credit(request.user_id, request.user_tier, "image")
-        
+
         return {
             "success": True,
             "data": result["data"],
             "model_used": request.model,
-            "endpoint_used": endpoint,
+            "provider_used": provider_used,
+            "endpoint_used": endpoint if provider_used == "google" else "openrouter",
             "user_credits": user_credits[request.user_id]["credits"]
         }
-        
+
     except Exception as e:
-        logger.error(f"Image generation failed: {str(e)}")
+        logger.error(f"Image generation failed on both providers: {str(e)}")
         raise HTTPException(status_code=503, detail=f"Image generation failed: {str(e)}")
 
 @app.post("/generate-text")
@@ -292,8 +492,8 @@ async def generate_text(request: TextRequest):
     # Check user has enough credits
     check_user_credits(request.user_id, request.user_tier)
 
-    # Get model-specific API key
-    api_key = get_api_key_for_model(request.model)
+    # Get model-specific API key (with Revo version support)
+    api_key = get_api_key_for_model(request.model, request.revo_version)
     
     # Prepare payload with strict model specification
     payload = {
@@ -305,24 +505,30 @@ async def generate_text(request: TextRequest):
     }
     
     try:
-        result = await call_google_api(endpoint, payload, api_key)
+        result, provider_used = await call_primary_api_with_fallback(endpoint, payload, api_key, request.model)
         deduct_user_credit(request.user_id, request.user_tier, "text")
-        
+
         return {
             "success": True,
             "data": result["data"],
             "model_used": request.model,
-            "endpoint_used": endpoint,
+            "provider_used": provider_used,
+            "endpoint_used": endpoint if provider_used == "google" else "openrouter",
             "user_credits": user_credits[request.user_id]["credits"]
         }
-        
+
     except Exception as e:
-        logger.error(f"Text generation failed: {str(e)}")
+        logger.error(f"Text generation failed on both providers: {str(e)}")
         raise HTTPException(status_code=503, detail=f"Text generation failed: {str(e)}")
 
 @app.get("/health")
 async def health():
-    return {"status": "healthy", "allowed_models": list(ALLOWED_MODELS.keys())}
+    return {
+        "status": "healthy",
+        "allowed_models": list(ALLOWED_MODELS.keys()),
+        "openrouter_configured": bool(OPENROUTER_API_KEY),
+        "fallback_models": list(OPENROUTER_MODEL_MAPPING.keys())
+    }
 
 @app.get("/credits/{user_id}")
 async def get_user_credits(user_id: str):
@@ -419,6 +625,11 @@ async def get_stats():
         "total_actual_ai_cost": f"${total_actual_cost:.4f}",
         "allowed_models": list(ALLOWED_MODELS.keys()),
         "blocked_models": ["gemini-2.5-pro", "all experimental models"],
+        "openrouter_fallback": {
+            "configured": bool(OPENROUTER_API_KEY),
+            "model_mappings": OPENROUTER_MODEL_MAPPING,
+            "alternative_models": OPENROUTER_ALTERNATIVE_MODELS
+        },
         "generation_costs": {
             "text_only": f"${GENERATION_COSTS['text']:.5f}",
             "image_only": f"${GENERATION_COSTS['image']:.5f}",
