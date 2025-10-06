@@ -1339,6 +1339,22 @@ ${prompt}`;
         responseContent = responseContent.split('```')[1] || responseContent;
       }
 
+      // Handle Claude's multiple JSON objects response format
+      if (responseContent.includes('Alternative version:') || responseContent.includes('Both versions')) {
+        // Extract the first JSON object only
+        const firstJsonMatch = responseContent.match(/\{[\s\S]*?\}(?=\s*\n\s*(?:Alternative|Both|$))/);
+        if (firstJsonMatch) {
+          responseContent = firstJsonMatch[0];
+          console.log('🔧 [Revo 1.5] Extracted first JSON from multiple objects');
+        }
+      }
+
+      // Additional cleanup for any trailing text after JSON
+      const jsonEndMatch = responseContent.match(/(\{[\s\S]*?\})/);
+      if (jsonEndMatch) {
+        responseContent = jsonEndMatch[1];
+      }
+
       console.log('🧹 [Revo 1.5] Cleaned response:', responseContent.substring(0, 300));
       let parsed = JSON.parse(responseContent);
 
