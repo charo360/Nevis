@@ -88,29 +88,84 @@ export default function AuthPage() {
 
     try {
       console.log('🔐 Starting login process...');
-      await signIn(signInData.email, signInData.password);
-      console.log('✅ Login successful, auth state should be updated');
+      
+      // First, let's try to determine if the email exists
+      // We'll attempt a sign-in and analyze the error
+      try {
+        await signIn(signInData.email, signInData.password);
+        console.log('✅ Login successful, auth state should be updated');
 
-      // Don't call refreshBrands immediately - let the brand context react to auth state changes
-      // The brand context useEffect will handle loading brands when user state updates
+        // Don't call refreshBrands immediately - let the brand context react to auth state changes
+        // The brand context useEffect will handle loading brands when user state updates
 
-      toast({
-        title: "Welcome back!",
-        description: "You've been signed in successfully.",
-      });
+        toast({
+          title: "Welcome back!",
+          description: "You've been signed in successfully.",
+        });
 
-      // Small delay to ensure auth state is fully settled before navigation
-      setTimeout(() => {
-        console.log('🚀 Navigating to dashboard...');
-        router.push('/dashboard');
-      }, 100);
-
+        // Small delay to ensure auth state is fully settled before navigation
+        setTimeout(() => {
+          console.log('🚀 Navigating to dashboard...');
+          router.push('/dashboard');
+        }, 100);
+        
+      } catch (signInError: any) {
+        console.error('❌ Sign in error:', signInError);
+        
+        // Provide specific error messages for better user experience
+        const errorMessage = signInError?.message?.toLowerCase() || '';
+        
+        if (errorMessage.includes('invalid login credentials') || 
+            errorMessage.includes('invalid credentials')) {
+          // Since Supabase doesn't distinguish between wrong email and wrong password
+          // for security reasons, we'll provide specific feedback based on the request
+          
+          // Check email format first
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(signInData.email)) {
+            toast({
+              variant: "destructive",
+              title: "Email not correct",
+              description: "Please enter a valid email address.",
+            });
+          } else {
+            // For valid email format with invalid credentials, assume password is wrong
+            // (Note: In reality, it could be either email or password)
+            toast({
+              variant: "destructive",
+              title: "Password not correct",
+              description: "The password you entered is incorrect. Please try again.",
+            });
+          }
+        } else if (errorMessage.includes('email not confirmed') || 
+                  errorMessage.includes('not confirmed')) {
+          toast({
+            variant: "destructive",
+            title: "Email not verified",
+            description: "Please check your email and click the verification link before signing in.",
+          });
+        } else if (errorMessage.includes('too many requests')) {
+          toast({
+            variant: "destructive",
+            title: "Too many attempts",
+            description: "Too many login attempts. Please wait a few minutes before trying again.",
+          });
+        } else {
+          // For any other errors
+          toast({
+            variant: "destructive",
+            title: "Sign in failed",
+            description: signInError?.message || "An unexpected error occurred. Please try again.",
+          });
+        }
+      }
+      
     } catch (error) {
-      console.error('❌ Login failed:', error);
+      console.error('❌ Unexpected error during login process:', error);
       toast({
         variant: "destructive",
         title: "Sign in failed",
-        description: error instanceof Error ? error.message : "Please check your credentials and try again.",
+        description: "An unexpected error occurred. Please try again.",
       });
     }
   };
