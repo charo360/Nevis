@@ -14,8 +14,9 @@ from PIL import Image
 import colorsys
 from collections import Counter
 
-# Load environment variables from .env file
-load_dotenv()
+# Load environment variables from .env.local file in parent directory
+load_dotenv('../.env.local')
+load_dotenv()  # Also load from current directory if exists
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -494,54 +495,106 @@ def deduct_user_credit(user_id: str, tier: str = "free", generation_type: str = 
 
     logger.info(f"User {user_id} ({tier} tier) used 1 credit ({generation_type}). Cost: ${actual_cost:.5f}. Remaining: {user_data['credits']}")
 
-def get_api_key_for_model(model: str, revo_version: str = None) -> str:
-    """Get the appropriate API key based on the model and Revo version being used"""
+def get_api_keys_for_model(model: str, revo_version: str = None) -> List[str]:
+    """Get all available API keys for a model in priority order (primary, secondary, tertiary)"""
 
     # Handle Revo version-specific routing for shared models
     if revo_version:
-        if revo_version == "2.0" and model == "gemini-2.5-flash-image-preview":
-            # Revo 2.0 uses its own API key for image generation
-            key_env_name = "GOOGLE_API_KEY_REVO_2_0"
-        elif revo_version == "1.0" and model == "gemini-2.5-flash-image-preview":
-            # Revo 1.0 uses its own API key for image generation
-            key_env_name = "GOOGLE_API_KEY_REVO_1_0"
+        if revo_version == "2.0":
+            key_env_names = [
+                "GEMINI_API_KEY_REVO_2_0_PRIMARY",
+                "GEMINI_API_KEY_REVO_2_0_SECONDARY",
+                "GEMINI_API_KEY_REVO_2_0_TERTIARY"
+            ]
+        elif revo_version == "1.5":
+            key_env_names = [
+                "GEMINI_API_KEY_REVO_1_5_PRIMARY",
+                "GEMINI_API_KEY_REVO_1_5_SECONDARY",
+                "GEMINI_API_KEY_REVO_1_5_TERTIARY"
+            ]
+        elif revo_version == "1.0":
+            key_env_names = [
+                "GEMINI_API_KEY_REVO_1_0_PRIMARY",
+                "GEMINI_API_KEY_REVO_1_0_SECONDARY",
+                "GEMINI_API_KEY_REVO_1_0_TERTIARY"
+            ]
         else:
             # Use default mapping for other cases
-            key_env_name = get_default_key_for_model(model)
+            key_env_names = get_default_keys_for_model(model)
     else:
         # Use default mapping when no Revo version specified
-        key_env_name = get_default_key_for_model(model)
+        key_env_names = get_default_keys_for_model(model)
 
-    api_key = os.environ.get(key_env_name)
+    # Get actual API keys from environment
+    api_keys = []
+    for key_env_name in key_env_names:
+        api_key = os.environ.get(key_env_name)
+        if api_key:
+            api_keys.append(api_key)
+            logger.info(f"Found API key {key_env_name} for model {model}")
+        else:
+            logger.warning(f"API key {key_env_name} not found for model {model}")
 
-    if not api_key:
-        logger.error(f"API key {key_env_name} not found for model {model} (Revo {revo_version})")
+    # Fallback to legacy keys if new keys not available
+    if not api_keys and revo_version:
+        legacy_key_name = f"GEMINI_API_KEY_REVO_{revo_version.replace('.', '_')}"
+        legacy_key = os.environ.get(legacy_key_name)
+        if legacy_key:
+            api_keys.append(legacy_key)
+            logger.info(f"Using legacy API key {legacy_key_name} for model {model}")
+
+    # Final fallback to general keys
+    if not api_keys:
+        general_key = os.environ.get('GEMINI_API_KEY') or os.environ.get('GOOGLE_API_KEY')
+        if general_key:
+            api_keys.append(general_key)
+            logger.info(f"Using general API key for model {model}")
+
+    if not api_keys:
+        logger.error(f"No API keys found for model {model} (Revo {revo_version})")
         raise HTTPException(
             status_code=500,
-            detail=f"API key not configured for model {model}"
+            detail=f"No API keys configured for model {model}"
         )
 
-    logger.info(f"Using API key {key_env_name} for model {model}")
-    return api_key
+    logger.info(f"Found {len(api_keys)} API keys for model {model} (Revo {revo_version})")
+    return api_keys
 
-def get_default_key_for_model(model: str) -> str:
-    """Get the default API key mapping for a model"""
-    # Map models to specific API keys based on Nevis configuration
+def get_api_key_for_model(model: str, revo_version: str = None) -> str:
+    """Get the primary API key for a model (backward compatibility)"""
+    api_keys = get_api_keys_for_model(model, revo_version)
+    return api_keys[0] if api_keys else None
+
+def get_default_keys_for_model(model: str) -> List[str]:
+    """Get the default API key mappings for a model (returns list for fallback)"""
+    # Map models to specific API key environment variable names
     # ONLY COST-EFFECTIVE MODELS ALLOWED
     model_to_key_mapping = {
         # Revo 1.0 models - Main image generation (Enhanced with Gemini 2.5 Flash Image Preview)
-        "gemini-2.5-flash-image-preview": "GOOGLE_API_KEY_REVO_1_0",
+        "gemini-2.5-flash-image-preview": [
+            "GEMINI_API_KEY_REVO_1_0_PRIMARY",
+            "GEMINI_API_KEY_REVO_1_0_SECONDARY",
+            "GEMINI_API_KEY_REVO_1_0_TERTIARY"
+        ],
 
         # Revo 1.5 models - Content generation (Text-focused models)
-        "gemini-2.5-flash": "GOOGLE_API_KEY_REVO_1_5",
-        "gemini-2.5-flash-lite": "GOOGLE_API_KEY_REVO_1_5",
+        "gemini-2.5-flash": [
+            "GEMINI_API_KEY_REVO_1_5_PRIMARY",
+            "GEMINI_API_KEY_REVO_1_5_SECONDARY",
+            "GEMINI_API_KEY_REVO_1_5_TERTIARY"
+        ],
+        "gemini-2.5-flash-lite": [
+            "GEMINI_API_KEY_REVO_1_5_PRIMARY",
+            "GEMINI_API_KEY_REVO_1_5_SECONDARY",
+            "GEMINI_API_KEY_REVO_1_5_TERTIARY"
+        ],
 
         # Claude models - Primary content generation for Revo 1.5
-        "claude-sonnet-4.5": "ANTHROPIC_API_KEY",
-        "claude-3.5-sonnet": "ANTHROPIC_API_KEY",
+        "claude-sonnet-4.5": ["ANTHROPIC_API_KEY"],
+        "claude-3.5-sonnet": ["ANTHROPIC_API_KEY"],
 
         # Legacy models - Fallback only
-        "gemini-1.5-flash": "GOOGLE_API_KEY"
+        "gemini-1.5-flash": ["GEMINI_API_KEY", "GOOGLE_API_KEY"]
 
         # REMOVED ALL EXPENSIVE/EXPERIMENTAL MODELS:
         # - gemini-2.5-pro (TOO EXPENSIVE)
@@ -549,18 +602,12 @@ def get_default_key_for_model(model: str) -> str:
         # - All thinking-exp models (POTENTIALLY EXPENSIVE)
     }
 
-    return model_to_key_mapping.get(model, "GOOGLE_API_KEY")
+    return model_to_key_mapping.get(model, ["GEMINI_API_KEY", "GOOGLE_API_KEY"])
 
-    # Fallback to general Google API key if specific key not found
-    if not api_key:
-        api_key = os.environ.get('GOOGLE_API_KEY') or os.environ.get('GEMINI_API_KEY')
-
-    if not api_key:
-        logger.error(f"No API key found for model {model}. Tried {key_env_name}, GOOGLE_API_KEY, GEMINI_API_KEY")
-        raise HTTPException(status_code=500, detail=f"API key not configured for model {model}")
-
-    logger.info(f"Using API key {key_env_name} for model {model}")
-    return api_key
+def get_default_key_for_model(model: str) -> str:
+    """Get the default API key mapping for a model (backward compatibility)"""
+    keys = get_default_keys_for_model(model)
+    return keys[0] if keys else "GEMINI_API_KEY"
 
 def convert_google_to_openai_format(payload: Dict[str, Any], model: str) -> Dict[str, Any]:
     """Convert Google API format to OpenAI-compatible format for OpenRouter"""
@@ -999,50 +1046,82 @@ async def call_google_api(endpoint: str, payload: Dict[str, Any], api_key: str) 
             logger.error(error_msg)
             raise Exception(error_msg)
 
-async def call_primary_api_with_fallback(endpoint: str, payload: Dict[str, Any], api_key: str, model: str) -> Tuple[Dict[str, Any], str]:
+async def call_enhanced_api_with_fallback(endpoint: str, payload: Dict[str, Any], model: str, revo_version: str = None) -> Tuple[Dict[str, Any], str]:
     """
-    Call Google API first, fallback to OpenRouter on failure
+    Enhanced 3-tier Google API fallback system with OpenRouter as 4th fallback
     Returns: (response_data, provider_used)
     """
 
-    # Define error conditions that trigger fallback
+    # Define error conditions that trigger fallback to next API key
     fallback_conditions = [429, 503, 500]  # Quota exceeded, unavailable, internal error
 
+    # Get all available API keys for this model
     try:
-        # Try Google API first
-        logger.info(f"🎯 Attempting Google API for model: {model}")
-        result = await call_google_api(endpoint, payload, api_key)
-        return result, "google"
+        api_keys = get_api_keys_for_model(model, revo_version)
+    except Exception as e:
+        logger.error(f"❌ Failed to get API keys for model {model}: {e}")
+        raise
 
-    except Exception as google_error:
-        logger.warning(f"⚠️ Google API failed for {model}: {str(google_error)}")
+    logger.info(f"🔄 Starting enhanced fallback for {model} with {len(api_keys)} Google API keys + OpenRouter")
 
-        # Check if we should fallback to OpenRouter
-        should_fallback = True
-        error_str = str(google_error).lower()
+    # Try each Google API key in sequence
+    last_google_error = None
+    for i, api_key in enumerate(api_keys):
+        try:
+            logger.info(f"🎯 Attempting Google API key {i+1}/{len(api_keys)} for model: {model}")
+            result = await call_google_api(endpoint, payload, api_key)
+            logger.info(f"✅ Success with Google API key {i+1}/{len(api_keys)}")
+            return result, f"google-key-{i+1}"
 
-        # Always fallback on these conditions
-        if any(str(code) in str(google_error) for code in fallback_conditions):
-            should_fallback = True
-        elif "timeout" in error_str or "connection" in error_str:
-            should_fallback = True
-        elif "quota" in error_str or "limit" in error_str:
-            should_fallback = True
+        except Exception as google_error:
+            last_google_error = google_error
+            error_str = str(google_error).lower()
 
-        if should_fallback and model in OPENROUTER_MODEL_MAPPING:
-            try:
-                logger.info(f"🔄 Falling back to OpenRouter for model: {model}")
-                result = await call_openrouter_api(model, payload)
-                return result, "openrouter"
+            logger.warning(f"⚠️ Google API key {i+1}/{len(api_keys)} failed for {model}: {str(google_error)}")
 
-            except Exception as openrouter_error:
-                logger.error(f"❌ OpenRouter fallback also failed: {str(openrouter_error)}")
-                # If both fail, raise the original Google error
-                raise google_error
-        else:
-            # No fallback available or not configured
-            logger.error(f"❌ No fallback available for model: {model}")
-            raise google_error
+            # Check if we should try the next key or skip to OpenRouter
+            should_try_next_key = True
+
+            # Always try next key on these conditions
+            if any(str(code) in str(google_error) for code in fallback_conditions):
+                should_try_next_key = True
+            elif "timeout" in error_str or "connection" in error_str:
+                should_try_next_key = True
+            elif "quota" in error_str or "limit" in error_str:
+                should_try_next_key = True
+            elif "rate" in error_str:
+                should_try_next_key = True
+
+            if should_try_next_key and i < len(api_keys) - 1:
+                logger.info(f"🔄 Trying next Google API key ({i+2}/{len(api_keys)})")
+                continue
+            else:
+                logger.warning(f"⚠️ All Google API keys exhausted or non-retryable error")
+                break
+
+    # All Google API keys failed, try OpenRouter as final fallback
+    if model in OPENROUTER_MODEL_MAPPING:
+        try:
+            logger.info(f"🔄 Final fallback to OpenRouter for model: {model}")
+            result = await call_openrouter_api(model, payload)
+            logger.info(f"✅ Success with OpenRouter fallback")
+            return result, "openrouter"
+
+        except Exception as openrouter_error:
+            logger.error(f"❌ OpenRouter fallback also failed: {str(openrouter_error)}")
+            # If everything fails, raise the last Google error
+            raise last_google_error or openrouter_error
+    else:
+        # No OpenRouter fallback available
+        logger.error(f"❌ No OpenRouter fallback available for model: {model}")
+        raise last_google_error or Exception(f"All API keys failed for model {model}")
+
+# Backward compatibility function
+async def call_primary_api_with_fallback(endpoint: str, payload: Dict[str, Any], api_key: str, model: str) -> Tuple[Dict[str, Any], str]:
+    """
+    Legacy function for backward compatibility - uses enhanced fallback system
+    """
+    return await call_enhanced_api_with_fallback(endpoint, payload, model)
 
 @app.post("/generate-image")
 async def generate_image(request: ImageRequest):
@@ -1093,7 +1172,8 @@ async def generate_image(request: ImageRequest):
     }
     
     try:
-        result, provider_used = await call_primary_api_with_fallback(endpoint, payload, api_key, request.model)
+        # Use enhanced fallback system with 3-tier Google API keys + OpenRouter
+        result, provider_used = await call_enhanced_api_with_fallback(endpoint, payload, request.model, request.revo_version)
         deduct_user_credit(request.user_id, request.user_tier, "image")
 
         return {
@@ -1101,12 +1181,13 @@ async def generate_image(request: ImageRequest):
             "data": result["data"],
             "model_used": request.model,
             "provider_used": provider_used,
-            "endpoint_used": endpoint if provider_used == "google" else "openrouter",
-            "user_credits": user_credits[request.user_id]["credits"]
+            "endpoint_used": endpoint if provider_used.startswith("google") else "openrouter",
+            "user_credits": user_credits[request.user_id]["credits"],
+            "fallback_level": provider_used  # Shows which API key or provider was used
         }
 
     except Exception as e:
-        logger.error(f"Image generation failed on both providers: {str(e)}")
+        logger.error(f"Image generation failed on all providers: {str(e)}")
         raise HTTPException(status_code=503, detail=f"Image generation failed: {str(e)}")
 
 @app.post("/generate-text")
@@ -1133,7 +1214,7 @@ async def generate_text(request: TextRequest):
             provider_used = "claude"
             endpoint_used = "anthropic"
         else:
-            # Handle Google models with fallback
+            # Handle Google models with enhanced fallback system
             payload = {
                 "contents": [{"parts": [{"text": request.prompt}]}],
                 "generationConfig": {
@@ -1141,8 +1222,8 @@ async def generate_text(request: TextRequest):
                     "maxOutputTokens": request.max_tokens
                 }
             }
-            result, provider_used = await call_primary_api_with_fallback(endpoint, payload, api_key, request.model)
-            endpoint_used = endpoint if provider_used == "google" else "openrouter"
+            result, provider_used = await call_enhanced_api_with_fallback(endpoint, payload, request.model, request.revo_version)
+            endpoint_used = endpoint if provider_used.startswith("google") else "openrouter"
 
         deduct_user_credit(request.user_id, request.user_tier, "text")
 
@@ -1152,7 +1233,8 @@ async def generate_text(request: TextRequest):
             "model_used": request.model,
             "provider_used": provider_used,
             "endpoint_used": endpoint_used,
-            "user_credits": user_credits[request.user_id]["credits"]
+            "user_credits": user_credits[request.user_id]["credits"],
+            "fallback_level": provider_used  # Shows which API key or provider was used
         }
 
     except Exception as e:
@@ -1220,13 +1302,36 @@ async def analyze_website_endpoint(request: WebsiteAnalysisRequest):
 
 @app.get("/health")
 async def health():
+    # Check API key availability for each Revo version
+    revo_key_status = {}
+    for version in ["1.0", "1.5", "2.0"]:
+        version_key = version.replace(".", "_")
+        primary_key = os.environ.get(f"GEMINI_API_KEY_REVO_{version_key}_PRIMARY")
+        secondary_key = os.environ.get(f"GEMINI_API_KEY_REVO_{version_key}_SECONDARY")
+        tertiary_key = os.environ.get(f"GEMINI_API_KEY_REVO_{version_key}_TERTIARY")
+
+        revo_key_status[f"revo_{version}"] = {
+            "primary_configured": bool(primary_key),
+            "secondary_configured": bool(secondary_key),
+            "tertiary_configured": bool(tertiary_key),
+            "total_keys": sum([bool(primary_key), bool(secondary_key), bool(tertiary_key)])
+        }
+
     return {
         "status": "healthy",
+        "fallback_system": "enhanced_3_tier_plus_openrouter",
         "allowed_models": list(ALLOWED_MODELS.keys()),
         "openrouter_configured": bool(OPENROUTER_API_KEY),
         "fallback_models": list(OPENROUTER_MODEL_MAPPING.keys()),
         "website_analysis_models": WEBSITE_ANALYSIS_MODELS,
-        "website_analysis_enabled": bool(OPENROUTER_API_KEY)
+        "website_analysis_enabled": bool(OPENROUTER_API_KEY),
+        "api_key_status": revo_key_status,
+        "fallback_levels": [
+            "Google API Key 1 (Primary)",
+            "Google API Key 2 (Secondary)",
+            "Google API Key 3 (Tertiary)",
+            "OpenRouter (Final Fallback)"
+        ]
     }
 
 @app.get("/credits/{user_id}")
