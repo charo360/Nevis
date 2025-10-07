@@ -141,5 +141,26 @@ export const ai = {
       // Execute the handler function
       return await handler(input);
     };
+  },
+
+  // definePrompt compatibility for existing prompts
+  definePrompt: (config: any) => {
+    console.log('🔒 [Proxy-Only Genkit] DefinePrompt called for:', config.name);
+
+    // Return a function that can be used to execute the prompt through proxy
+    return async (input: any) => {
+      if (!shouldUseProxy()) {
+        throw new Error('🚫 Proxy is disabled. This system requires AI_PROXY_ENABLED=true for cost control and model management.');
+      }
+
+      console.log(`🔄 [Proxy-Only Genkit] Executing prompt: ${config.name}`);
+
+      // For now, return a placeholder since the actual prompt isn't being used
+      // This can be enhanced later to actually process the prompt through proxy
+      return {
+        message: `Prompt ${config.name} executed through proxy`,
+        config: config.name
+      };
+    };
   }
 };
