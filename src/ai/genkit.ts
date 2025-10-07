@@ -1,86 +1,111 @@
-import { genkit } from 'genkit';
-import { googleAI } from '@genkit-ai/googleai';
+/**
+ * PROXY-ONLY Genkit Replacement
+ * ENFORCES proxy-only architecture for cost control and centralized AI request management
+ * NO DIRECT API CALLS - ALL REQUESTS ROUTE THROUGH PROXY
+ */
 
-// Runtime guard to ensure no paid search/grounding tools are enabled
-function assertNoSearchToolsEnabled(options: any) {
-  if (!options) return;
-  const tools = (options.tools || options.tool || []).map((t: any) => (typeof t === 'string' ? t : t?.name)).join(',');
-  const model = options.model || options?.generate?.model || options?.modelId;
-  if (/search|ground/i.test(tools)) {
-    const message = `Guard: Attempted to enable Gemini search/grounding tools (tools=[${tools}]) on model ${model}. This is blocked to prevent per-query search charges.`;
-    console.error('❌', message);
-    throw new Error(message);
+import { aiProxyClient, getUserIdForProxy, getUserTierForProxy, shouldUseProxy } from '@/lib/services/ai-proxy-client';
+
+// Helper function to route AI calls through proxy - PROXY ONLY, NO FALLBACK
+async function generateContentWithProxy(promptOrParts: string | any[], modelName: string = 'gemini-2.5-flash', isImageGeneration: boolean = false): Promise<any> {
+  if (!shouldUseProxy()) {
+    throw new Error('🚫 Proxy is disabled. This system requires AI_PROXY_ENABLED=true for cost control and model management.');
+  }
+
+  console.log(`🔄 Proxy-Only Genkit: Using proxy for ${isImageGeneration ? 'image' : 'text'} generation with ${modelName}`);
+
+  // Handle multimodal requests (text + images) properly
+  let prompt: string;
+  let imageData: string | undefined;
+
+  if (Array.isArray(promptOrParts)) {
+    // Extract text and image data from parts
+    const textParts = promptOrParts.filter(part => typeof part === 'string' || part.text);
+    const imageParts = promptOrParts.filter(part => part.inlineData);
+
+    prompt = textParts.map(part => typeof part === 'string' ? part : part.text).join('\n');
+
+    if (imageParts.length > 0) {
+      imageData = imageParts[0].inlineData.data;
+    }
+  } else {
+    prompt = promptOrParts;
+  }
+
+  try {
+    const userId = getUserIdForProxy();
+    const userTier = getUserTierForProxy();
+
+    if (isImageGeneration) {
+      const response = await aiProxyClient.generateImage({
+        prompt,
+        user_id: userId,
+        user_tier: userTier,
+        model: modelName,
+        image_data: imageData
+      });
+
+      return {
+        response: {
+          candidates: [{
+            content: {
+              parts: [{
+                inlineData: {
+                  data: response.data,
+                  mimeType: 'image/png'
+                }
+              }]
+            },
+            finishReason: 'STOP'
+          }]
+        }
+      };
+    } else {
+      const response = await aiProxyClient.generateText({
+        prompt,
+        user_id: userId,
+        user_tier: userTier,
+        model: modelName,
+        temperature: 0.7,
+        max_tokens: 2048
+      });
+
+      return {
+        response: {
+          text: () => response.content,
+          candidates: [{
+            content: { parts: [{ text: response.content }] },
+            finishReason: 'STOP'
+          }]
+        }
+      };
+    }
+  } catch (error) {
+    console.error(`❌ Proxy-Only Genkit: ${isImageGeneration ? 'Image' : 'Text'} generation failed:`, error);
+    throw error;
   }
 }
 
-// Lazy initialization helper so missing env doesn't throw during module import.
-function createGenkitInstance() {
-  const apiKey =
-    process.env.GEMINI_API_KEY_REVO_1_0?.trim() ||
-    process.env.GEMINI_API_KEY?.trim() ||
-    process.env.GOOGLE_API_KEY?.trim() ||
-    process.env.GOOGLE_GENAI_API_KEY?.trim();
+// Proxy-only AI interface that mimics Genkit's API but routes through proxy
+export const ai = {
+  generate: async (options: any) => {
+    console.log('🔒 [Proxy-Only Genkit] Generate called - routing through proxy');
 
-  if (!apiKey) {
-    // Defer throwing until consumer actually tries to use `ai` so the app can boot in dev
-    console.error('❌ [Genkit] No API key found. Please set GEMINI_API_KEY_REVO_1_0 or GEMINI_API_KEY environment variable.');
-    return null;
+    const prompt = options.prompt || options.input || '';
+    const model = options.model || 'gemini-2.5-flash';
+    const isImageGeneration = model.includes('image') || options.outputType === 'image';
+
+    return await generateContentWithProxy(prompt, model, isImageGeneration);
+  },
+
+  // Compatibility methods for existing code
+  generateText: async (prompt: string, options: any = {}) => {
+    const model = options.model || 'gemini-2.5-flash';
+    return await generateContentWithProxy(prompt, model, false);
+  },
+
+  generateImage: async (prompt: string, options: any = {}) => {
+    const model = options.model || 'gemini-2.5-flash-image-preview';
+    return await generateContentWithProxy(prompt, model, true);
   }
-
-  const instance = genkit({
-    plugins: [googleAI({ 
-      apiKey,
-      // FORCE Flash model to prevent Pro charges
-      defaultModel: 'gemini-2.5-flash'
-    })],
-    model: 'googleai/gemini-2.5-flash', // Using Gemini 2.5 Flash (supports JSON mode)
-  });
-
-  // Wrap generate to enforce guard centrally
-  const originalGenerate = (instance as any).generate?.bind(instance);
-  if (originalGenerate) {
-    (instance as any).generate = async (opts: any) => {
-      assertNoSearchToolsEnabled(opts);
-      return originalGenerate(opts);
-    };
-  }
-
-  return instance;
-}
-
-let _instance: any = null;
-const ensureInstance = () => {
-  if (_instance === null) {
-    _instance = createGenkitInstance();
-  }
-  return _instance;
 };
-
-// Export a Proxy that lazily initializes genkit. This keeps the `ai` export shape
-// stable for existing imports, but throws a clear error only when code actually
-// tries to use the AI functionality.
-export const ai: any = new Proxy(
-  {},
-  {
-    get(_target, prop) {
-      const inst = ensureInstance();
-      if (!inst) {
-        throw new Error(
-          'Genkit: Gemini API key is required. Set GEMINI_API_KEY_REVO_1_0 or GEMINI_API_KEY (or GOOGLE_API_KEY / GOOGLE_GENAI_API_KEY).'
-        );
-      }
-      const value = inst[prop as keyof typeof inst];
-      if (typeof value === 'function') return value.bind(inst);
-      return value;
-    },
-    apply(_target, thisArg, args) {
-      const inst = ensureInstance();
-      if (!inst) {
-        throw new Error(
-          'Genkit: Gemini API key is required. Set GEMINI_API_KEY_REVO_1_0 or GEMINI_API_KEY (or GOOGLE_API_KEY / GOOGLE_GENAI_API_KEY).'
-        );
-      }
-      return (inst as any).apply(thisArg, args);
-    },
-  }
-);

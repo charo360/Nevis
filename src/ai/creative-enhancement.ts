@@ -1,9 +1,10 @@
 /**
  * Enhanced Business Intelligence & Strategic Content Generation System
+ * PROXY-ONLY VERSION - All AI calls route through proxy for cost control
  * Replaces generic templates with business-specific insights and strategic planning
  */
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { aiProxyClient, getUserIdForProxy, getUserTierForProxy, shouldUseProxy } from '@/lib/services/ai-proxy-client';
 import { viralHashtagEngine } from './viral-hashtag-engine';
 import { dynamicCTAGenerator } from './dynamic-cta-generator';
 
@@ -124,24 +125,84 @@ function enhanceSubheadlineQuality(subheadline: string, businessType: string, lo
   return enhanced;
 }
 
-// Shared AI initialization to avoid duplicate variable names
-function initializeAI() {
-  // Use Revo 1.0 API key for creative enhancement (since it's part of Revo 1.0 pipeline)
-  const geminiApiKey = process.env.GEMINI_API_KEY_REVO_1_0 || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
-  if (!geminiApiKey) {
-    throw new Error('Creative Enhancement: No Gemini API key found. Please set GEMINI_API_KEY_REVO_1_0 or GEMINI_API_KEY in your environment variables.');
+// Helper function to route AI calls through proxy - PROXY ONLY, NO FALLBACK
+async function generateContentWithProxy(promptOrParts: string | any[], modelName: string = 'gemini-2.5-flash-image-preview', isImageGeneration: boolean = false): Promise<any> {
+  if (!shouldUseProxy()) {
+    throw new Error('🚫 Proxy is disabled. This system requires AI_PROXY_ENABLED=true for cost control and model management.');
   }
-  const genAI = new GoogleGenerativeAI(geminiApiKey);
-  // Use the same model as Revo 1.0 service for consistency
-  return genAI.getGenerativeModel({
-    model: 'gemini-2.5-flash-image-preview',
-    generationConfig: {
-      temperature: 0.9, // Higher temperature for more creative, varied responses
-      topP: 0.95,
-      topK: 40,
-      maxOutputTokens: 4096,
+
+  console.log(`🔄 Creative Enhancement: Using proxy for ${isImageGeneration ? 'image' : 'text'} generation with ${modelName}`);
+
+  // Handle multimodal requests (text + images) properly
+  let prompt: string;
+  let imageData: string | undefined;
+
+  if (Array.isArray(promptOrParts)) {
+    // Extract text and image data from parts
+    const textParts = promptOrParts.filter(part => typeof part === 'string' || part.text);
+    const imageParts = promptOrParts.filter(part => part.inlineData);
+
+    prompt = textParts.map(part => typeof part === 'string' ? part : part.text).join('\n');
+
+    if (imageParts.length > 0) {
+      imageData = imageParts[0].inlineData.data;
     }
-  });
+  } else {
+    prompt = promptOrParts;
+  }
+
+  try {
+    const userId = getUserIdForProxy();
+    const userTier = getUserTierForProxy();
+
+    if (isImageGeneration) {
+      const response = await aiProxyClient.generateImage({
+        prompt,
+        user_id: userId,
+        user_tier: userTier,
+        model: modelName,
+        image_data: imageData
+      });
+
+      return {
+        response: {
+          candidates: [{
+            content: {
+              parts: [{
+                inlineData: {
+                  data: response.data,
+                  mimeType: 'image/png'
+                }
+              }]
+            },
+            finishReason: 'STOP'
+          }]
+        }
+      };
+    } else {
+      const response = await aiProxyClient.generateText({
+        prompt,
+        user_id: userId,
+        user_tier: userTier,
+        model: modelName,
+        temperature: 0.9, // Higher temperature for more creative, varied responses
+        max_tokens: 4096
+      });
+
+      return {
+        response: {
+          text: () => response.content,
+          candidates: [{
+            content: { parts: [{ text: response.content }] },
+            finishReason: 'STOP'
+          }]
+        }
+      };
+    }
+  } catch (error) {
+    console.error(`❌ Creative Enhancement: ${isImageGeneration ? 'Image' : 'Text'} generation failed:`, error);
+    throw error;
+  }
 }
 
 // Dynamic approach instructions to force variety
@@ -493,8 +554,7 @@ export async function generateBusinessSpecificHeadline(
   const industry = BUSINESS_INTELLIGENCE_SYSTEM.industryInsights[businessType.toLowerCase()] ||
     BUSINESS_INTELLIGENCE_SYSTEM.industryInsights['retail'];
 
-  // Initialize AI generation capability
-  const model = initializeAI();
+  // REMOVED: Direct AI initialization - All AI calls now go through proxy for cost control
 
   // Create dynamic AI prompt for headline generation with RSS trends and regional marketing intelligence
   const trendingKeywords = trendingData?.keywords?.slice(0, 5) || [];
@@ -735,7 +795,7 @@ Remember: Just write ONE amazing headline that captures the essence of what make
     - If you write "now now" or "the the" or any repeated word, remove the duplicate
     - Read your output carefully to ensure no word appears twice in a row`;
 
-    const result = await model.generateContent(prompt + uniqueContext);
+    const result = await generateContentWithProxy(prompt + uniqueContext, 'gemini-2.5-flash-image-preview', false);
     let headline = result.response.text().trim();
 
     // Post-process to remove word repetitions
@@ -876,7 +936,7 @@ Generate ONE unique headline that makes people instantly want to try the service
 `;
 
       try {
-        const result = await model.generateContent(dynamicPrompt);
+        const result = await generateContentWithProxy(dynamicPrompt, 'gemini-2.5-flash-image-preview', false);
         let dynamicHeadline = result.response.text().trim();
 
         // Clean up the dynamic headline
@@ -950,7 +1010,7 @@ Just return the headline, nothing else.`;
       const headlineRetryContext = `\n\nUNIQUE HEADLINE RETRY CONTEXT: ${Date.now()}-${Math.random().toString(36).substr(2, 9)}
       This headline retry must be completely different and avoid repetitive patterns.`;
 
-      const retryResult = await model.generateContent(simplifiedHeadlinePrompt + headlineRetryContext);
+      const retryResult = await generateContentWithProxy(simplifiedHeadlinePrompt + headlineRetryContext, 'gemini-2.5-flash-image-preview', false);
       const retryHeadline = retryResult.response.text().trim();
 
 
@@ -976,7 +1036,7 @@ CRITICAL ANTI-REPETITION RULES:
         const headlineEmergencyContext = `\n\nUNIQUE HEADLINE EMERGENCY CONTEXT: ${Date.now()}-${Math.random().toString(36).substr(2, 9)}
         This emergency headline must be completely different and avoid repetitive patterns.`;
 
-        const emergencyResult = await model.generateContent(emergencyPrompt + headlineEmergencyContext);
+        const emergencyResult = await generateContentWithProxy(emergencyPrompt + headlineEmergencyContext, 'gemini-2.5-flash-image-preview', false);
         const emergencyHeadline = emergencyResult.response.text().trim();
 
 
@@ -1022,8 +1082,7 @@ export async function generateBusinessSpecificSubheadline(
   const industry = BUSINESS_INTELLIGENCE_SYSTEM.industryInsights[businessType.toLowerCase()] ||
     BUSINESS_INTELLIGENCE_SYSTEM.industryInsights['retail'];
 
-  // Initialize AI generation capability
-  const model = initializeAI();
+  // REMOVED: Direct AI initialization - All AI calls now go through proxy for cost control
 
   // Create marketing-focused AI prompt for subheadline generation with trending intelligence
   const trendingKeywords = trendingData?.keywords?.slice(0, 5) || [];
@@ -1223,7 +1282,7 @@ CRITICAL: If your first instinct is to use any banned word or pattern, immediate
     - If you write "now now" or "the the" or any repeated word, remove the duplicate
     - Read your output carefully to ensure no word appears twice in a row`;
 
-    const result = await model.generateContent(prompt + uniqueContext);
+    const result = await generateContentWithProxy(prompt + uniqueContext, 'gemini-2.5-flash-image-preview', false);
     let subheadline = result.response.text().trim();
 
     // Post-process to remove word repetitions
@@ -1357,8 +1416,7 @@ export async function generateUnifiedContent(
   const industry = BUSINESS_INTELLIGENCE_SYSTEM.industryInsights[businessType.toLowerCase()] ||
     BUSINESS_INTELLIGENCE_SYSTEM.industryInsights['retail'];
 
-  // Initialize AI generation capability
-  const model = initializeAI();
+  // REMOVED: Direct AI initialization - All AI calls now go through proxy for cost control
 
   // Create marketing-focused AI prompt for unified content generation
   const trendingKeywords = trendingData?.keywords?.slice(0, 8) || [];
@@ -1767,7 +1825,7 @@ IMPORTANT:
     - If you write "now now" or "the the" or any repeated word, remove the duplicate
     - Read your output carefully to ensure no word appears twice in a row`;
 
-    const result = await model.generateContent(unifiedPrompt + uniqueContext);
+    const result = await generateContentWithProxy(unifiedPrompt + uniqueContext, 'gemini-2.5-flash-image-preview', false);
     let response = result.response.text().trim();
 
     // Post-process to remove word repetitions from the entire response
@@ -2150,7 +2208,7 @@ Generate ONE unique headline that makes people instantly want to try the service
 `;
 
         try {
-          const result = await model.generateContent(dynamicPrompt);
+          const result = await generateContentWithProxy(dynamicPrompt, 'gemini-2.5-flash-image-preview', false);
           let dynamicHeadline = result.response.text().trim();
 
           // Clean up the dynamic headline
@@ -2319,7 +2377,7 @@ Do NOT write "Here are captions" or provide lists.`;
       - If you write "now now" or "the the" or any repeated word, remove the duplicate
       - Read your output carefully to ensure no word appears twice in a row`;
 
-    const retryResult = await model.generateContent(simplifiedPrompt + retryUniqueContext);
+    const retryResult = await generateContentWithProxy(simplifiedPrompt + retryUniqueContext, 'gemini-2.5-flash-image-preview', false);
     let retryResponse = retryResult.response.text().trim();
 
     // Post-process to remove word repetitions from retry response
@@ -2383,7 +2441,7 @@ Do NOT write "Here are posts" or provide multiple options. Write ONE post only.`
         - If you write "now now" or "the the" or any repeated word, remove the duplicate
         - Read your output carefully to ensure no word appears twice in a row`;
 
-      const emergencyResult = await model.generateContent(emergencyPrompt + emergencyUniqueContext);
+      const emergencyResult = await generateContentWithProxy(emergencyPrompt + emergencyUniqueContext, 'gemini-2.5-flash-image-preview', false);
       let emergencyResponse = emergencyResult.response.text().trim();
 
       // Post-process to remove word repetitions from emergency response

@@ -1,27 +1,20 @@
 /**
- * Direct Google AI API Service for Gemini 2.5
- * Bypasses Genkit to access latest Gemini 2.5 models directly
+ * Proxy-Only Google AI Service for Gemini Models
+ * ENFORCES proxy-only architecture for cost control and centralized AI request management
+ * NO DIRECT API CALLS - ALL REQUESTS ROUTE THROUGH PROXY
  */
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { aiProxyClient, getUserIdForProxy, getUserTierForProxy, shouldUseProxy } from '@/lib/services/ai-proxy-client';
 
-// Initialize Google AI with API key - Use Revo 1.5 specific key
-const apiKey = process.env.GEMINI_API_KEY_REVO_1_5 || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
+// REMOVED: Direct GoogleGenerativeAI instantiation - ALL AI calls now go through proxy for cost control
+// REMOVED: Direct API key usage - proxy handles authentication and routing
 
-if (!apiKey) {
-  console.error('❌ [Google AI Direct] No API key found. Please set GEMINI_API_KEY_REVO_1_5 or GEMINI_API_KEY environment variable.');
-  throw new Error('Google AI API key is required for Revo 1.5');
-}
-
-const genAI = new GoogleGenerativeAI(apiKey!);
-
-// Available Gemini 2.5 models
+// Available Gemini models (routed through proxy)
 export const GEMINI_2_5_MODELS = {
   FLASH: 'gemini-2.5-flash',
   PRO: 'gemini-2.5-pro',
   FLASH_LITE: 'gemini-2.5-flash-lite',
-  FLASH_IMAGE_PREVIEW: 'gemini-2.0-flash-exp-image-generation'
+  FLASH_IMAGE_PREVIEW: 'gemini-2.5-flash-image-preview'
 } as const;
 
 export type Gemini25Model = typeof GEMINI_2_5_MODELS[keyof typeof GEMINI_2_5_MODELS];
@@ -47,8 +40,88 @@ export interface Gemini25ImageResponse {
   safetyRatings?: any[];
 }
 
+// Helper function to route AI calls through proxy - PROXY ONLY, NO FALLBACK
+async function generateContentWithProxy(promptOrParts: string | any[], modelName: string, isImageGeneration: boolean = false): Promise<any> {
+  if (!shouldUseProxy()) {
+    throw new Error('🚫 Proxy is disabled. This system requires AI_PROXY_ENABLED=true for cost control and model management.');
+  }
+
+  console.log(`🔄 Proxy-Only Google AI: Using proxy for ${isImageGeneration ? 'image' : 'text'} generation with ${modelName}`);
+
+  // Handle multimodal requests (text + images) properly
+  let prompt: string;
+  let imageData: string | undefined;
+
+  if (Array.isArray(promptOrParts)) {
+    // Extract text and image data from parts
+    const textParts = promptOrParts.filter(part => typeof part === 'string' || part.text);
+    const imageParts = promptOrParts.filter(part => part.inlineData);
+
+    prompt = textParts.map(part => typeof part === 'string' ? part : part.text).join('\n');
+
+    if (imageParts.length > 0) {
+      imageData = imageParts[0].inlineData.data;
+    }
+  } else {
+    prompt = promptOrParts;
+  }
+
+  try {
+    const userId = getUserIdForProxy();
+    const userTier = getUserTierForProxy();
+
+    if (isImageGeneration) {
+      const response = await aiProxyClient.generateImage({
+        prompt,
+        user_id: userId,
+        user_tier: userTier,
+        model: modelName,
+        image_data: imageData
+      });
+
+      return {
+        response: {
+          candidates: [{
+            content: {
+              parts: [{
+                inlineData: {
+                  data: response.data,
+                  mimeType: 'image/png'
+                }
+              }]
+            },
+            finishReason: 'STOP'
+          }]
+        }
+      };
+    } else {
+      const response = await aiProxyClient.generateText({
+        prompt,
+        user_id: userId,
+        user_tier: userTier,
+        model: modelName,
+        temperature: 0.7,
+        max_tokens: 2048
+      });
+
+      return {
+        response: {
+          text: () => response.content,
+          candidates: [{
+            content: { parts: [{ text: response.content }] },
+            finishReason: 'STOP'
+          }]
+        }
+      };
+    }
+  } catch (error) {
+    console.error(`❌ Proxy-Only Google AI: ${isImageGeneration ? 'Image' : 'Text'} generation failed:`, error);
+    throw error;
+  }
+}
+
 /**
- * Generate text using Gemini 2.5 models
+ * Generate text using Gemini models (PROXY ONLY)
  */
 export async function generateText(
   prompt: string,
@@ -59,57 +132,15 @@ export async function generateText(
       model = GEMINI_2_5_MODELS.FLASH,
       temperature = 0.7,
       maxOutputTokens = 2048,
-      topK = 40,
-      topP = 0.95
     } = options;
 
-    console.log(`🔍 [Google AI Direct] Generating text with model: ${model}`);
+    console.log(`🔍 [Proxy-Only Google AI] Generating text with model: ${model}`);
 
-    // Check if proxy should be used
-    if (shouldUseProxy()) {
-      console.log(`🔄 Revo 1.5: Using proxy for text generation with ${model}`);
-
-      try {
-        const response = await aiProxyClient.generateText({
-          prompt,
-          model,
-          user_id: getUserIdForProxy(),
-          user_tier: getUserTierForProxy()
-        });
-
-        return {
-          text: response.content,
-          finishReason: 'STOP'
-        };
-      } catch (error) {
-        console.error('❌ Proxy call failed, falling back to direct API:', error);
-        // Fall through to direct API call
-      }
-    }
-
-    // Direct API call (fallback or when proxy disabled)
-    console.log(`🔄 Revo 1.5: Using direct API for text generation with ${model}`);
-    console.log(`🔍 [Google AI Direct] API Key available: ${!!apiKey}`);
-    console.log(`🔍 [Google AI Direct] API Key prefix: ${apiKey?.substring(0, 10)}...`);
-
-    const geminiModel = genAI.getGenerativeModel({
-      model,
-      generationConfig: {
-        temperature,
-        maxOutputTokens,
-        topK,
-        topP,
-      },
-    });
-
-    const result = await geminiModel.generateContent(prompt);
+    const result = await generateContentWithProxy(prompt, model, false);
     const response = await result.response;
     const text = response.text();
 
-    console.log(`✅ [Google AI Direct] Text generation successful, length: ${text.length}`);
-    console.log(`🔍 [Google AI Direct] Response preview: ${text.substring(0, 200)}...`);
-    console.log(`🔍 [Google AI Direct] Finish reason: ${response.candidates?.[0]?.finishReason}`);
-    console.log(`🔍 [Google AI Direct] Safety ratings:`, response.candidates?.[0]?.safetyRatings);
+    console.log(`✅ [Proxy-Only Google AI] Text generation successful, length: ${text.length}`);
 
     return {
       text,
@@ -118,37 +149,26 @@ export async function generateText(
     };
 
   } catch (error) {
-    console.error(`❌ [Google AI Direct] Text generation error:`, {
-      error: error instanceof Error ? error.message : error,
-      stack: error instanceof Error ? error.stack : 'No stack trace',
-      model: options.model || GEMINI_2_5_MODELS.FLASH
-    });
-
-    // Handle specific error types with user-friendly messages
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
-    if (errorMessage.includes('429') || errorMessage.includes('quota') || errorMessage.includes('Too Many Requests')) {
-      throw new Error('😅 Revo is experiencing high demand right now! Please try again in a few minutes or switch to Revo 2.0.');
-    }
-
-    if (errorMessage.includes('401') || errorMessage.includes('unauthorized') || errorMessage.includes('API key')) {
-      throw new Error('🔧 Revo is having a technical hiccup. Please try Revo 2.0 while we fix this!');
-    }
-
-    if (errorMessage.includes('403') || errorMessage.includes('forbidden')) {
-      throw new Error('🔧 Revo is having a technical hiccup. Please try Revo 2.0 while we fix this!');
-    }
-
-    if (errorMessage.includes('network') || errorMessage.includes('timeout') || errorMessage.includes('ECONNRESET')) {
-      throw new Error('🌐 Connection hiccup! Please try again in a moment.');
-    }
-
-    throw new Error('😅 Revo is having some trouble right now! Try Revo 2.0 for great results while we get things sorted out.');
+    console.error('❌ [Proxy-Only Google AI] Text generation failed:', error);
+    throw new Error(`Proxy-only Google AI text generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
 /**
- * Generate image using Gemini 2.5 models (when image generation is available)
+ * Test connection to Google AI API (through proxy)
+ */
+export async function testConnection(): Promise<boolean> {
+  try {
+    const response = await generateText('Test connection', { maxOutputTokens: 10 });
+    return response.text.length > 0;
+  } catch (error) {
+    console.error('❌ [Proxy-Only Google AI] Connection test failed:', error);
+    return false;
+  }
+}
+
+/**
+ * Generate image using Gemini models (PROXY ONLY)
  */
 export async function generateImage(
   prompt: string,
@@ -156,88 +176,41 @@ export async function generateImage(
 ): Promise<Gemini25ImageResponse> {
   try {
     const {
-      model = GEMINI_2_5_MODELS.FLASH,
+      model = GEMINI_2_5_MODELS.FLASH_IMAGE_PREVIEW,
       temperature = 0.8,
       maxOutputTokens = 1024,
     } = options;
 
+    console.log(`🔍 [Proxy-Only Google AI] Generating image with model: ${model}`);
 
-    const geminiModel = genAI.getGenerativeModel({
-      model,
-      generationConfig: {
-        temperature,
-        maxOutputTokens,
-      },
-    });
+    const result = await generateContentWithProxy(prompt, model, true);
+    const response = await result.response;
 
-    // For now, Gemini 2.5 doesn't have direct image generation
-    // This is a placeholder for when it becomes available
-    // We'll use text generation to create detailed design specifications
-    const designPrompt = `Create a detailed visual design specification for: ${prompt}
-
-Please provide:
-1. Color palette (specific hex codes)
-2. Layout composition details
-3. Typography specifications
-4. Visual elements and their positioning
-5. Style and mood descriptors
-6. Technical implementation details
-
-Format as JSON for easy parsing.`;
-
-    // Check if proxy should be used
-    if (shouldUseProxy()) {
-      console.log(`🔄 Revo 1.5: Using proxy for image generation with ${model}`);
-
-      try {
-        const response = await aiProxyClient.generateText({
-          prompt: designPrompt,
-          model,
-          user_id: getUserIdForProxy(),
-          user_tier: getUserTierForProxy()
-        });
-
-        return {
-          imageData: Buffer.from(response.content).toString('base64'),
-          mimeType: 'application/json',
-          finishReason: 'STOP'
-        };
-      } catch (error) {
-        console.error('❌ Proxy call failed, falling back to direct API:', error);
-        // Fall through to direct API call
+    // Extract image data from proxy response
+    const candidates = response.candidates;
+    if (candidates && candidates.length > 0) {
+      const parts = candidates[0].content.parts;
+      for (const part of parts) {
+        if (part.inlineData) {
+          return {
+            imageData: part.inlineData.data,
+            mimeType: part.inlineData.mimeType || 'image/png',
+            finishReason: candidates[0].finishReason
+          };
+        }
       }
     }
 
-    // Direct API call (fallback or when proxy disabled)
-    console.log(`🔄 Revo 1.5: Using direct API for image generation with ${model}`);
-
-    const result = await geminiModel.generateContent(designPrompt);
-    const response = await result.response;
-    const designSpecs = response.text();
-
-
-    // Return design specifications as "image data" for now
-    // This will be used to generate actual images via other services
-    return {
-      imageData: Buffer.from(designSpecs).toString('base64'),
-      mimeType: 'application/json',
-      finishReason: response.candidates?.[0]?.finishReason,
-      safetyRatings: response.candidates?.[0]?.safetyRatings,
-    };
+    throw new Error('No image data found in proxy response');
 
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
-    if (errorMessage.includes('429') || errorMessage.includes('quota') || errorMessage.includes('Too Many Requests')) {
-      throw new Error('😅 Revo is experiencing high demand right now! Please try again in a few minutes or switch to Revo 2.0.');
-    }
-
-    throw new Error('😅 Revo is having some trouble right now! Try Revo 2.0 for great results while we get things sorted out.');
+    console.error('❌ [Proxy-Only Google AI] Image generation failed:', error);
+    throw new Error(`Proxy-only Google AI image generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
 /**
- * Generate multimodal content (text + image analysis)
+ * Generate multimodal content (text + image analysis) - PROXY ONLY
  */
 export async function generateMultimodal(
   textPrompt: string,
@@ -251,57 +224,22 @@ export async function generateMultimodal(
       maxOutputTokens = 2048,
     } = options;
 
-    // Check if proxy should be used
-    if (shouldUseProxy()) {
-      console.log(`🔄 Revo 1.5: Using proxy for multimodal generation with ${model}`);
+    console.log(`🔍 [Proxy-Only Google AI] Generating multimodal content with model: ${model}`);
 
-      try {
-        // For multimodal, we'll use text generation through proxy for now
-        // (Image analysis through proxy would need additional implementation)
-        const response = await aiProxyClient.generateText({
-          prompt: textPrompt,
-          model,
-          user_id: getUserIdForProxy(),
-          user_tier: getUserTierForProxy()
-        });
-
-        return {
-          text: response.content,
-          finishReason: 'STOP'
-        };
-      } catch (error) {
-        console.error('❌ Proxy call failed, falling back to direct API:', error);
-        // Fall through to direct API call
-      }
-    }
-
-    // Direct API call (fallback or when proxy disabled)
-    console.log(`🔄 Revo 1.5: Using direct API for multimodal generation with ${model}`);
-
-    const geminiModel = genAI.getGenerativeModel({
-      model,
-      generationConfig: {
-        temperature,
-        maxOutputTokens,
-      },
-    });
-
-    let parts: any[] = [{ text: textPrompt }];
-
-    // Add image if provided
+    // Prepare multimodal parts for proxy
+    let parts: any[] = [textPrompt];
     if (imageData) {
       parts.push({
         inlineData: {
-          mimeType: 'image/jpeg', // Assume JPEG for now
+          mimeType: 'image/jpeg',
           data: imageData
         }
       });
     }
 
-    const result = await geminiModel.generateContent(parts);
+    const result = await generateContentWithProxy(parts, model, false);
     const response = await result.response;
     const text = response.text();
-
 
     return {
       text,
@@ -310,63 +248,38 @@ export async function generateMultimodal(
     };
 
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
-    if (errorMessage.includes('429') || errorMessage.includes('quota') || errorMessage.includes('Too Many Requests')) {
-      throw new Error('😅 Revo is experiencing high demand right now! Please try again in a few minutes or switch to Revo 2.0.');
-    }
-
-    throw new Error('😅 Revo is having some trouble right now! Try Revo 2.0 for great results while we get things sorted out.');
+    console.error('❌ [Proxy-Only Google AI] Multimodal generation failed:', error);
+    throw new Error(`Proxy-only Google AI multimodal generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
 /**
- * Test connection to Gemini 2.5 API
- */
-export async function testConnection(): Promise<boolean> {
-  try {
-
-    const response = await generateText('Hello, this is a test message. Please respond with "Connection successful!"', {
-      model: GEMINI_2_5_MODELS.FLASH,
-      maxOutputTokens: 50
-    });
-
-    const isSuccessful = response.text.toLowerCase().includes('connection successful') ||
-      response.text.toLowerCase().includes('hello') ||
-      response.text.length > 0;
-
-    if (isSuccessful) {
-      return true;
-    } else {
-      return false;
-    }
-
-  } catch (error) {
-    return false;
-  }
-}
-
-/**
- * Get available models and their capabilities
+ * Get available models and their capabilities (routed through proxy)
  */
 export function getAvailableModels() {
   return {
     models: GEMINI_2_5_MODELS,
+    architecture: 'PROXY-ONLY - All requests route through AI proxy for cost control',
     capabilities: {
       [GEMINI_2_5_MODELS.FLASH]: {
-        description: 'Fast and efficient for most tasks',
+        description: 'Fast and efficient for most tasks (via proxy)',
         bestFor: ['content generation', 'design specifications', 'quick responses'],
         costEfficiency: 'high'
       },
       [GEMINI_2_5_MODELS.PRO]: {
-        description: 'Most capable but expensive - AVOID for cost efficiency',
+        description: 'Most capable but expensive - BLOCKED by proxy for cost control',
         bestFor: ['complex analysis', 'detailed design planning', 'sophisticated content'],
-        costEfficiency: 'LOW - USE FLASH INSTEAD'
+        costEfficiency: 'BLOCKED - Proxy prevents usage to control costs'
       },
       [GEMINI_2_5_MODELS.FLASH_LITE]: {
-        description: 'Lightweight and cost-effective',
+        description: 'Lightweight and cost-effective (via proxy)',
         bestFor: ['simple tasks', 'quick responses', 'high-volume requests'],
         costEfficiency: 'very high'
+      },
+      [GEMINI_2_5_MODELS.FLASH_IMAGE_PREVIEW]: {
+        description: 'Image generation model (via proxy)',
+        bestFor: ['image generation', 'visual content creation'],
+        costEfficiency: 'controlled via proxy'
       }
     }
   };

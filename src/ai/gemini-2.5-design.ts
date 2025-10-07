@@ -1,6 +1,6 @@
 /**
  * Gemini 2.5 Enhanced Design Generation Service
- * Uses direct Google AI API for superior design capabilities
+ * PROXY-ONLY VERSION - All AI calls route through proxy for cost control
  */
 
 import { generateText, generateMultimodal, GEMINI_2_5_MODELS } from './google-ai-direct';

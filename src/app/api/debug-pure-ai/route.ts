@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     // Test 1: Check API Keys
     console.log('🧪 [Debug Pure AI] Test 1: Checking API keys...');
     const geminiKey = process.env.GEMINI_API_KEY_REVO_1_5 || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
-    
+
     if (!geminiKey) {
       diagnostics.errors.push('❌ No Gemini API key found');
       diagnostics.tests.push({
@@ -56,26 +56,26 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Test 2: Test Google AI Direct Service
-    console.log('🧪 [Debug Pure AI] Test 2: Testing Google AI Direct service...');
+    // Test 2: Test Proxy-Only Google AI Service
+    console.log('🧪 [Debug Pure AI] Test 2: Testing Proxy-Only Google AI service...');
     try {
       const { generateText } = await import('@/ai/google-ai-direct');
-      
-      const testResponse = await generateText('Test prompt: respond with "GEMINI_OK"', {
+
+      const testResponse = await generateText('Test prompt: respond with "PROXY_OK"', {
         temperature: 0.1,
         maxOutputTokens: 50
       });
 
       diagnostics.tests.push({
-        test: 'Google AI Direct',
+        test: 'Proxy-Only Google AI',
         status: 'PASSED',
         response: testResponse.text.substring(0, 100),
         responseLength: testResponse.text.length
       });
     } catch (googleAIError) {
-      diagnostics.errors.push(`❌ Google AI Direct failed: ${googleAIError instanceof Error ? googleAIError.message : 'Unknown error'}`);
+      diagnostics.errors.push(`❌ Proxy-Only Google AI failed: ${googleAIError instanceof Error ? googleAIError.message : 'Unknown error'}`);
       diagnostics.tests.push({
-        test: 'Google AI Direct',
+        test: 'Proxy-Only Google AI',
         status: 'FAILED',
         error: googleAIError instanceof Error ? googleAIError.message : 'Unknown error'
       });
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
     try {
       console.log('🧠 [Debug Pure AI] Attempting Pure AI Gemini generation...');
       const pureAIResult = await SimpleV2PureAIContentGenerator.generateContent(pureAIRequest);
-      
+
       diagnostics.tests.push({
         test: 'Pure AI Gemini',
         status: 'PASSED',
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
         try {
           console.log('🧠 [Debug Pure AI] Attempting Pure AI OpenAI fallback...');
           const openAIResult = await SimpleV2PureAIContentGenerator.generateContent(pureAIRequest);
-          
+
           diagnostics.tests.push({
             test: 'Pure AI OpenAI',
             status: 'PASSED',
@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
 
     // Analysis and Recommendations
     const recommendations = [];
-    
+
     if (diagnostics.errors.length === 0) {
       recommendations.push('✅ Pure AI system is working correctly');
     } else {
