@@ -6,6 +6,23 @@
 
 import { aiProxyClient, getUserIdForProxy, getUserTierForProxy, shouldUseProxy } from '@/lib/services/ai-proxy-client';
 
+// Proxy-compatible type definitions for genkit compatibility
+export interface MediaPart {
+  media?: {
+    url?: string;
+    contentType?: string;
+  };
+  data?: string;
+  mimeType?: string;
+}
+
+export interface GenerateRequest {
+  prompt?: string;
+  input?: string;
+  model?: string;
+  config?: any;
+}
+
 // Helper function to route AI calls through proxy - PROXY ONLY, NO FALLBACK
 async function generateContentWithProxy(promptOrParts: string | any[], modelName: string = 'gemini-2.5-flash', isImageGeneration: boolean = false): Promise<any> {
   if (!shouldUseProxy()) {
@@ -107,5 +124,22 @@ export const ai = {
   generateImage: async (prompt: string, options: any = {}) => {
     const model = options.model || 'gemini-2.5-flash-image-preview';
     return await generateContentWithProxy(prompt, model, true);
+  },
+
+  // defineFlow compatibility for existing flows
+  defineFlow: (config: any, handler: any) => {
+    console.log('🔒 [Proxy-Only Genkit] DefineFlow called for:', config.name);
+
+    // Return a function that wraps the handler with proxy-only enforcement
+    return async (input: any) => {
+      if (!shouldUseProxy()) {
+        throw new Error('🚫 Proxy is disabled. This system requires AI_PROXY_ENABLED=true for cost control and model management.');
+      }
+
+      console.log(`🔄 [Proxy-Only Genkit] Executing flow: ${config.name}`);
+
+      // Execute the handler function
+      return await handler(input);
+    };
   }
 };

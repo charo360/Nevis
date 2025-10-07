@@ -7,11 +7,9 @@
  * based on a user's prompt, an optional reference image, and brand profile settings.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, MediaPart, GenerateRequest } from '@/ai/genkit';
 import { z } from 'zod';
 import type { BrandProfile } from '@/lib/types';
-import { MediaPart } from 'genkit';
-import { GenerateRequest } from 'genkit/generate';
 import {
     ADVANCED_DESIGN_PRINCIPLES,
     PLATFORM_SPECIFIC_GUIDELINES,
@@ -1022,7 +1020,7 @@ Ensure the text is readable and well-composed.`
                         };
 
                         modelToUse = modelMapping[input.preferredModel] || 'googleai/gemini-2.5-flash-image-preview';
-                        
+
                         // BLOCK Pro models to prevent expensive charges
                         if (modelToUse.includes('pro')) {
                             console.warn('🚫 BLOCKED Pro model to prevent charges, using Flash instead');
@@ -1193,33 +1191,33 @@ Ensure the text is readable and well-composed.`
         } catch (e: any) {
             // Ensure a user-friendly error is thrown
             const message = e.message || "An unknown error occurred during asset generation.";
-            
+
             // Handle specific error types with user-friendly messages
             if (message.includes('429') || message.includes('quota') || message.includes('Too Many Requests')) {
                 throw new Error('😅 Creative Studio is experiencing high demand right now! Please try again in a few minutes or switch to Revo 2.0.');
             }
-            
+
             if (message.includes('401') || message.includes('unauthorized') || message.includes('API key')) {
                 throw new Error('🔧 Creative Studio is having a technical hiccup. Please try Revo 2.0 while we fix this!');
             }
-            
+
             if (message.includes('403') || message.includes('forbidden')) {
                 throw new Error('🔧 Creative Studio is having a technical hiccup. Please try Revo 2.0 while we fix this!');
             }
-            
+
             if (message.includes('network') || message.includes('timeout') || message.includes('ECONNRESET')) {
                 throw new Error('🌐 Connection hiccup! Please try again in a moment.');
             }
-            
+
             if (message.toLowerCase().includes('internal error')) {
                 throw new Error('😅 Creative Studio is having some trouble right now! Try Revo 2.0 for great results while we get things sorted out.');
             }
-            
+
             // If it's already a friendly message, pass it through
             if (message.includes('😅') || message.includes('🔧') || message.includes('🌐')) {
                 throw new Error(message);
             }
-            
+
             throw new Error('😅 Creative Studio is having some trouble right now! Try Revo 2.0 for great results while we get things sorted out.');
         }
     }

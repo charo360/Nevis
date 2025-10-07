@@ -9,7 +9,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 
 const AnalyzeBrandInputSchema = z.object({
   websiteUrl: z.string().describe('The URL of the brand\'s website to analyze.'),

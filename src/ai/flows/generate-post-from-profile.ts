@@ -10,8 +10,7 @@
  * @exports GeneratePostFromProfileOutput - The output type for the generation flow.
  */
 
-import { ai } from '@/ai/genkit';
-import { GenerateRequest } from 'genkit/generate';
+import { ai, GenerateRequest } from '@/ai/genkit';
 import { z } from 'zod';
 import { getEnhancedEventsTool, getEnhancedWeatherTool } from '@/ai/tools/enhanced-local-data';
 import { ENHANCED_CAPTION_PROMPT, PLATFORM_SPECIFIC_OPTIMIZATIONS } from '@/ai/prompts/enhanced-caption-prompt';

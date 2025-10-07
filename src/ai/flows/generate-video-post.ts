@@ -8,10 +8,8 @@
  * local context, and specific post details.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
-import { MediaPart } from 'genkit';
-import { GenerateRequest } from 'genkit/generate';
+import { ai, MediaPart, GenerateRequest } from '@/ai/genkit';
+import { z } from 'zod';
 
 // Define the input schema for the video generation flow.
 const GenerateVideoInputSchema = z.object({
@@ -42,49 +40,49 @@ export async function generateVideoPost(input: GenerateVideoInput): Promise<Gene
  * Helper function to download video and convert to data URI
  */
 async function videoToDataURI(videoPart: MediaPart): Promise<string> {
-    if (!videoPart.media || !videoPart.media.url) {
-        throw new Error('Media URL not found in video part.');
-    }
+  if (!videoPart.media || !videoPart.media.url) {
+    throw new Error('Media URL not found in video part.');
+  }
 
-    const fetch = (await import('node-fetch')).default;
-    // Add API key before fetching the video.
-    const videoDownloadResponse = await fetch(
-        `${videoPart.media.url}&key=${process.env.GEMINI_API_KEY}`
-    );
+  const fetch = (await import('node-fetch')).default;
+  // Add API key before fetching the video.
+  const videoDownloadResponse = await fetch(
+    `${videoPart.media.url}&key=${process.env.GEMINI_API_KEY}`
+  );
 
-    if (!videoDownloadResponse.ok) {
-        throw new Error(`Failed to download video: ${videoDownloadResponse.statusText}`);
-    }
+  if (!videoDownloadResponse.ok) {
+    throw new Error(`Failed to download video: ${videoDownloadResponse.statusText}`);
+  }
 
-    const videoBuffer = await videoDownloadResponse.arrayBuffer();
-    const base64Video = Buffer.from(videoBuffer).toString('base64');
-    // Default to video/mp4 if contentType is not provided
-    const contentType = videoPart.media.contentType || 'video/mp4';
+  const videoBuffer = await videoDownloadResponse.arrayBuffer();
+  const base64Video = Buffer.from(videoBuffer).toString('base64');
+  // Default to video/mp4 if contentType is not provided
+  const contentType = videoPart.media.contentType || 'video/mp4';
 
-    return `data:${contentType};base64,${base64Video}`;
+  return `data:${contentType};base64,${base64Video}`;
 }
 
 /**
  * Wraps ai.generate with retry logic for 503 errors.
  */
 async function generateWithRetry(request: GenerateRequest, retries = 3, delay = 1000) {
-    for (let i = 0; i < retries; i++) {
-        try {
-            const result = await ai.generate(request);
-            return result;
-        } catch (e: any) {
-            if (e.message && e.message.includes('503') && i < retries - 1) {
-                await new Promise(resolve => setTimeout(resolve, delay));
-            } else {
-                if (e.message && e.message.includes('503')) {
-                    throw new Error("The AI model is currently overloaded. Please try again in a few moments.");
-                }
-                throw e; // Rethrow other errors immediately
-            }
+  for (let i = 0; i < retries; i++) {
+    try {
+      const result = await ai.generate(request);
+      return result;
+    } catch (e: any) {
+      if (e.message && e.message.includes('503') && i < retries - 1) {
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        if (e.message && e.message.includes('503')) {
+          throw new Error("The AI model is currently overloaded. Please try again in a few moments.");
         }
+        throw e; // Rethrow other errors immediately
+      }
     }
-    // This line should not be reachable if retries are configured, but as a fallback:
-    throw new Error("The AI model is currently overloaded after multiple retries. Please try again later.");
+  }
+  // This line should not be reachable if retries are configured, but as a fallback:
+  throw new Error("The AI model is currently overloaded after multiple retries. Please try again later.");
 }
 
 /**
@@ -115,33 +113,33 @@ Generate a video that is cinematically interesting, has relevant sound, and capt
       let operation = result.operation;
 
       if (!operation) {
-          throw new Error('Expected the model to return an operation');
+        throw new Error('Expected the model to return an operation');
       }
 
       // Poll for completion
       while (!operation.done) {
-          await new Promise(resolve => setTimeout(resolve, 5000)); // wait 5s
-          operation = await ai.checkOperation(operation);
+        await new Promise(resolve => setTimeout(resolve, 5000)); // wait 5s
+        operation = await ai.checkOperation(operation);
       }
 
       if (operation.error) {
-          throw new Error(`Video generation failed. Please try again. Error: ${operation.error.message}`);
+        throw new Error(`Video generation failed. Please try again. Error: ${operation.error.message}`);
       }
 
       // Relaxed check for the video part
       const videoPart = operation.output?.message?.content.find(p => !!p.media);
-      
+
       if (!videoPart || !videoPart.media) {
-          throw new Error('No video was generated in the operation result.');
+        throw new Error('No video was generated in the operation result.');
       }
-      
+
       const videoDataUrl = await videoToDataURI(videoPart);
 
       return {
-        videoUrl: videoDataUrl, 
+        videoUrl: videoDataUrl,
       };
     } catch (e: any) {
-        throw new Error(e.message || "Video generation failed. The model may be overloaded. Please try again in a few moments.");
+      throw new Error(e.message || "Video generation failed. The model may be overloaded. Please try again in a few moments.");
     }
   }
 );
