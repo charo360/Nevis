@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { 
+import {
   Calendar as CalendarIcon,
   Clock,
   TrendingUp,
@@ -65,7 +65,7 @@ export default function SmartCalendarPage() {
   const { user } = useAuth();
   const { currentBrand } = useUnifiedBrand();
   const { toast } = useToast();
-  
+
   const [isLoading, setIsLoading] = React.useState(true);
   const [contentSlots, setContentSlots] = React.useState<ContentSlot[]>([]);
   const [selectedDate, setSelectedDate] = React.useState<Date>(new Date());
@@ -115,24 +115,24 @@ export default function SmartCalendarPage() {
     const slots: ContentSlot[] = [];
     const platforms = ['Instagram', 'LinkedIn', 'Facebook', 'Twitter'];
     const contentTypes: ContentSlot['contentType'][] = ['post', 'story', 'reel', 'carousel'];
-    
+
     // Generate 30 days of content
     for (let i = 0; i < 30; i++) {
       const date = new Date();
       date.setDate(date.getDate() + i);
-      
+
       // Skip weekends for LinkedIn
       if (date.getDay() === 0 || date.getDay() === 6) {
         continue;
       }
-      
+
       // Generate 1-3 posts per day
       const postsPerDay = Math.floor(Math.random() * 3) + 1;
-      
+
       for (let j = 0; j < postsPerDay; j++) {
         const platform = platforms[Math.floor(Math.random() * platforms.length)];
         const contentType = contentTypes[Math.floor(Math.random() * contentTypes.length)];
-        
+
         // Optimal posting times by platform
         const optimalTimes = {
           Instagram: ['9:00 AM', '1:00 PM', '6:00 PM'],
@@ -140,10 +140,10 @@ export default function SmartCalendarPage() {
           Facebook: ['9:00 AM', '1:00 PM', '3:00 PM'],
           Twitter: ['8:00 AM', '12:00 PM', '5:00 PM', '7:00 PM']
         };
-        
+
         const times = optimalTimes[platform as keyof typeof optimalTimes];
         const time = times[Math.floor(Math.random() * times.length)];
-        
+
         slots.push({
           id: `slot-${i}-${j}`,
           date: date.toISOString().split('T')[0],
@@ -160,7 +160,7 @@ export default function SmartCalendarPage() {
         });
       }
     }
-    
+
     return slots.slice(0, 20); // Return first 20 slots
   };
 
@@ -175,7 +175,7 @@ export default function SmartCalendarPage() {
         ],
         story: [
           'Quick tip of the day for entrepreneurs',
-          'Team member spotlight and their journey',
+          'Team member spotlight and their story',
           'Before/after transformation showcase'
         ],
         reel: [
@@ -212,10 +212,10 @@ export default function SmartCalendarPage() {
         ]
       }
     };
-    
+
     const typeIdeas = ideas[businessType as keyof typeof ideas] || ideas.business;
     const contentIdeas = typeIdeas[contentType] || typeIdeas.post;
-    
+
     return contentIdeas[Math.floor(Math.random() * contentIdeas.length)];
   };
 
@@ -225,7 +225,7 @@ export default function SmartCalendarPage() {
       restaurant: ['#FreshFood', '#LocallySourced', '#ChefSpecial', '#Foodie', '#DineLocal'],
       fitness: ['#FitnessGoals', '#HealthyLiving', '#Workout', '#Wellness', '#Motivation']
     };
-    
+
     return hashtagSets[businessType as keyof typeof hashtagSets] || hashtagSets.business;
   };
 
@@ -236,13 +236,13 @@ export default function SmartCalendarPage() {
         title: "Generating Smart Calendar",
         description: "AI is creating your 30-day content strategy..."
       });
-      
+
       // Simulate AI calendar generation
       await new Promise(resolve => setTimeout(resolve, 3000));
-      
+
       const newSlots = generateMockCalendarSlots();
       setContentSlots(newSlots);
-      
+
       toast({
         title: "Smart Calendar Generated! 🗓️",
         description: `Generated ${newSlots.length} optimized content slots for the next 30 days.`
@@ -261,19 +261,19 @@ export default function SmartCalendarPage() {
   const handleSlotAction = async (slotId: string, action: 'generate' | 'edit' | 'approve') => {
     const slot = contentSlots.find(s => s.id === slotId);
     if (!slot) return;
-    
+
     if (action === 'generate') {
       // Update slot status to generating
-      setContentSlots(prev => prev.map(s => 
+      setContentSlots(prev => prev.map(s =>
         s.id === slotId ? { ...s, status: 'generating' } : s
       ));
-      
+
       // Simulate content generation
       setTimeout(() => {
-        setContentSlots(prev => prev.map(s => 
+        setContentSlots(prev => prev.map(s =>
           s.id === slotId ? { ...s, status: 'draft' } : s
         ));
-        
+
         toast({
           title: "Content Generated!",
           description: `${slot.platform} ${slot.contentType} ready for review.`
@@ -355,12 +355,12 @@ export default function SmartCalendarPage() {
                 <Label>Auto-Generate</Label>
                 <Switch
                   checked={settings.autoGenerate}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     setSettings(prev => ({ ...prev, autoGenerate: checked }))
                   }
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label>Posts per Week: {settings.frequency}</Label>
                 <input
@@ -368,13 +368,13 @@ export default function SmartCalendarPage() {
                   min="1"
                   max="10"
                   value={settings.frequency}
-                  onChange={(e) => 
+                  onChange={(e) =>
                     setSettings(prev => ({ ...prev, frequency: parseInt(e.target.value) }))
                   }
                   className="w-full"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label>Platforms</Label>
                 <div className="grid grid-cols-2 gap-2">
@@ -405,22 +405,22 @@ export default function SmartCalendarPage() {
                   ))}
                 </div>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <Label>Optimal Times Only</Label>
                 <Switch
                   checked={settings.optimalTimesOnly}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     setSettings(prev => ({ ...prev, optimalTimesOnly: checked }))
                   }
                 />
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <Label>Include Trending Topics</Label>
                 <Switch
                   checked={settings.includeTrending}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     setSettings(prev => ({ ...prev, includeTrending: checked }))
                   }
                 />
@@ -503,9 +503,9 @@ export default function SmartCalendarPage() {
                           <Badge variant="secondary">{slot.contentType}</Badge>
                           <span className="text-sm text-muted-foreground">{slot.time}</span>
                         </div>
-                        
+
                         <p className="text-sm font-medium">{slot.contentIdea}</p>
-                        
+
                         <div className="flex items-center gap-4 text-xs text-muted-foreground">
                           <div className="flex items-center gap-1">
                             <Users className="h-3 w-3" />
@@ -516,7 +516,7 @@ export default function SmartCalendarPage() {
                             {slot.confidenceScore}% confidence
                           </div>
                         </div>
-                        
+
                         <div className="flex flex-wrap gap-1">
                           {slot.hashtags.slice(0, 3).map(tag => (
                             <Badge key={tag} variant="outline" className="text-xs">
@@ -525,7 +525,7 @@ export default function SmartCalendarPage() {
                           ))}
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center gap-2">
                         {slot.status === 'scheduled' && (
                           <Button
@@ -551,9 +551,9 @@ export default function SmartCalendarPage() {
                   <div className="text-center py-8 text-muted-foreground">
                     <CalendarIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p>No content scheduled for this date</p>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="mt-2"
                       onClick={handleGenerateCalendar}
                     >
