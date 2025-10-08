@@ -112,12 +112,12 @@ export default function SuccessPage() {
                   </div>
                 )}
 
-                <div className="text-xs text-gray-500 space-y-1">
+                {/* <div className="text-xs text-gray-500 space-y-1">
                   <p>Session ID:</p>
                   <div className="break-all text-xs font-mono bg-gray-100 p-2 rounded text-gray-700">
                     {sessionId}
                   </div>
-                </div>
+                </div> */}
               </div>
             )}
           </div>

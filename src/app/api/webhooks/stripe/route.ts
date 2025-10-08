@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
-import { getPlanById } from '@/lib/pricing-data';
+import { getPlanById } from '@/lib/secure-pricing';
 import { SubscriptionService } from '@/lib/subscription/subscription-service';
 
 const supabase = createClient(
@@ -55,21 +55,36 @@ export async function POST(req: NextRequest) {
     object_id: event.data.object.id,
     created: event.created
   });
+  
+  // Enhanced debugging for payment events
+  if (event.type.startsWith('payment_intent') || event.type.includes('session.completed')) {
+    const obj = event.data.object as any;
+    console.log('💳 Payment Event Debug:', {
+      payment_intent_id: obj.id,
+      session_id: obj.id,
+      metadata: obj.metadata,
+      status: obj.status,
+      amount: obj.amount_total || obj.amount
+    });
+  }
 
   try {
     switch (event.type) {
       case 'checkout.session.completed':
+        console.log('🎉 Processing checkout session completed');
         await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session);
         break;
 
-      case 'payment_intent.succeeded':
-        console.log('💰 Payment succeeded:', event.data.object.id);
-        await handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent);
+      case 'payment_intent.payment_failed':
+        console.error('❌ Payment failed, updating status');
+        await handlePaymentIntentFailed(event.data.object as Stripe.PaymentIntent);
         break;
 
-      case 'payment_intent.payment_failed':
-        console.error('❌ Payment failed:', event.data.object);
-        await handlePaymentIntentFailed(event.data.object as Stripe.PaymentIntent);
+      // Note: We only handle checkout.session.completed for payment success
+      // because it contains all the metadata we need. payment_intent.succeeded
+      // is fired before checkout.session.completed but lacks session metadata
+      case 'payment_intent.succeeded':
+        console.log('💰 Payment intent succeeded (handled by checkout.session.completed)');
         break;
 
       default:
@@ -85,15 +100,28 @@ export async function POST(req: NextRequest) {
 
 async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
   console.log('🎉 Processing completed checkout session:', session.id);
+  console.log('📋 Session data:', {
+    client_reference_id: session.client_reference_id,
+    metadata: session.metadata,
+    amount_total: session.amount_total,
+    currency: session.currency,
+    payment_status: session.payment_status
+  });
 
-  const { client_reference_id: userId, metadata } = session;
+  // Try to get userId from client_reference_id or metadata
+  const userId = session.client_reference_id || session.metadata?.userId;
+  const planId = session.metadata?.planId;
 
-  if (!userId || !metadata?.planId) {
-    console.error('❌ Missing userId or planId in session metadata');
+  if (!userId) {
+    console.error('❌ Missing userId in session. client_reference_id:', session.client_reference_id, 'metadata.userId:', session.metadata?.userId);
     return;
   }
 
-  const planId = metadata.planId;
+  if (!planId) {
+    console.error('❌ Missing planId in session metadata:', session.metadata);
+    return;
+  }
+
   const plan = getPlanById(planId);
 
   if (!plan) {
@@ -101,75 +129,74 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     return;
   }
 
+  console.log('✅ Found plan:', { planId, credits: plan.credits, name: plan.name });
+
   try {
-    // Check if payment already processed (idempotency)
-    const { data: existingPayment } = await supabase
+    // Check if payment already processed (idempotency) - critical for preventing duplicates
+    const { data: existingPayment, error: existingError } = await supabase
       .from('payment_transactions')
-      .select('id, status')
+      .select('id, status, credits_added')
       .eq('stripe_session_id', session.id)
+      .maybeSingle();
+
+    if (existingError) {
+      console.error('❌ Error checking existing payment:', existingError);
+    }
+
+    if (existingPayment) {
+      if (existingPayment.status === 'completed') {
+        console.log('⚠️ Payment already completed, skipping:', session.id);
+        return;
+      } else {
+        console.log('📝 Found pending payment, updating to completed:', existingPayment.id);
+        // Update existing pending payment to completed
+        const { error: updateError } = await supabase
+          .from('payment_transactions')
+          .update({ 
+            status: 'completed',
+            credits_added: plan.credits
+          })
+          .eq('id', existingPayment.id);
+
+        if (updateError) {
+          console.error('❌ Failed to update existing payment:', updateError);
+          return;
+        }
+
+        console.log('✅ Updated existing payment to completed:', existingPayment.id);
+        await updateUserCredits(userId, plan.credits);
+        return;
+      }
+    }
+
+    // If no existing payment found, create new one
+    console.log('💳 Creating new payment transaction for session:', session.id);
+
+    // First update user credits
+    await updateUserCredits(userId, plan.credits);
+
+    // Then create the payment transaction record
+    const { data: newPayment, error: createError } = await supabase
+      .from('payment_transactions')
+      .insert({
+        user_id: userId,
+        plan_id: planId,
+        amount: (session.amount_total || 0) / 100, // Convert from cents
+        status: 'completed', // Mark as completed immediately
+        stripe_session_id: session.id,
+        stripe_payment_intent_id: session.payment_intent as string,
+        credits_added: plan.credits,
+        created_at: new Date().toISOString()
+      })
+      .select()
       .single();
 
-    if (existingPayment && existingPayment.status === 'completed') {
-      console.log('⚠️ Payment already processed:', session.id);
+    if (createError) {
+      console.error('❌ Failed to create payment transaction:', createError);
       return;
     }
 
-    // Get current user credits
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('total_credits, used_credits, remaining_credits')
-      .eq('user_id', userId)
-      .single();
-
-    if (userError || !user) {
-      console.error('❌ User not found:', userId, userError);
-      return;
-    }
-
-    const currentTotal = user.total_credits || 0;
-    const currentUsed = user.used_credits || 0;
-    const currentRemaining = user.remaining_credits || 0;
-
-    const newTotal = currentTotal + plan.credits;
-    const newRemaining = currentRemaining + plan.credits;
-
-    // Start transaction
-    const { error: transactionError } = await supabase.rpc('process_payment_transaction', {
-      p_user_id: userId,
-      p_stripe_session_id: session.id,
-      p_plan_id: planId,
-      p_amount: (session.amount_total || 0) / 100, // Convert from cents
-      p_currency: session.currency || 'usd',
-      p_credits_added: plan.credits,
-      p_payment_method: session.payment_method_types?.[0] || 'card',
-      p_new_total_credits: newTotal,
-      p_new_remaining_credits: newRemaining,
-      p_balance_before: currentRemaining
-    });
-
-    if (transactionError) {
-      console.error('❌ Transaction failed:', transactionError);
-      return;
-    }
-
-    console.log('✅ Payment processed successfully:', {
-      userId,
-      planId,
-      creditsAdded: plan.credits,
-      newTotal,
-      newRemaining
-    });
-
-    // Also update the payment_transactions row (created when the checkout session was started)
-    try {
-      await supabase
-        .from('payment_transactions')
-        .update({ status: 'completed', credits_added: plan.credits })
-        .eq('stripe_session_id', session.id);
-      console.log('✅ payment_transactions updated for session:', session.id);
-    } catch (updateErr) {
-      console.warn('⚠️ Failed to update payment_transactions for session:', session.id, updateErr);
-    }
+    console.log('✅ Payment transaction created successfully:', newPayment)
 
   } catch (error: any) {
     console.error('❌ Error processing payment:', error);
@@ -264,4 +291,48 @@ async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
     console.error('❌ Error processing payment intent failure:', error);
     throw error;
   }
+}
+
+async function updateUserCredits(userId: string, creditsToAdd: number) {
+  console.log('💳 Updating user credits:', { userId, creditsToAdd });
+
+  // Get current user credits
+  const { data: user, error: userError } = await supabase
+    .from('users')
+    .select('total_credits, remaining_credits')
+    .eq('user_id', userId)
+    .single();
+
+  if (userError || !user) {
+    console.error('❌ User not found for credit update:', userId, userError);
+    throw new Error(`User not found: ${userId}`);
+  }
+
+  const currentTotal = user.total_credits || 0;
+  const currentRemaining = user.remaining_credits || 0;
+
+  const newTotal = currentTotal + creditsToAdd;
+  const newRemaining = currentRemaining + creditsToAdd;
+
+  // Update user credits
+  const { error: updateError } = await supabase
+    .from('users')
+    .update({
+      total_credits: newTotal,
+      remaining_credits: newRemaining,
+      last_payment_at: new Date().toISOString()
+    })
+    .eq('user_id', userId);
+
+  if (updateError) {
+    console.error('❌ Failed to update user credits:', updateError);
+    throw updateError;
+  }
+
+  console.log('✅ User credits updated successfully:', {
+    userId,
+    creditsAdded: creditsToAdd,
+    newTotal,
+    newRemaining
+  });
 }
