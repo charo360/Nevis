@@ -1142,11 +1142,11 @@ Ensure the text is readable and well-composed.`
                     let modelToUse = 'googleai/gemini-2.5-flash-image-preview'; // Default
 
                     if (input.preferredModel) {
-                        // Map Gemini model names to Genkit model identifiers - ONLY FLASH MODELS
+                        // Map Gemini model names to Genkit model identifiers - ONLY AUTHORIZED MODELS
                         const modelMapping: Record<string, string> = {
                             'gemini-2.5-flash-image-preview': 'googleai/gemini-2.5-flash-image-preview',
-                            'gemini-2.5-flash': 'googleai/gemini-2.5-flash',
-                            'gemini-2.0-flash': 'googleai/gemini-2.0-flash'
+                            'gemini-2.5-flash': 'googleai/gemini-2.5-flash'
+                            // REMOVED: 'gemini-2.0-flash' - NOT AUTHORIZED, CAUSES UNEXPECTED BILLING
                         };
 
                         modelToUse = modelMapping[input.preferredModel] || 'googleai/gemini-2.5-flash-image-preview';
@@ -1183,28 +1183,10 @@ Ensure the text is readable and well-composed.`
                         const msg = (err?.message || '').toLowerCase();
                         const isInternalError = msg.includes('500') || msg.includes('internal error');
 
-                        // Fallback 1: try an alternative Google image model once
-                        if (isInternalError) {
-                            try {
-                                const altModel = 'googleai/gemini-2.0-flash-exp-image-generation';
-                                const logoDataUrl = input.useBrandProfile && input.brandProfile?.logoDataUrl
-                                    ? input.brandProfile.logoDataUrl
-                                    : undefined;
-                                const { media: altMedia } = await generateWithRetry({
-                                    model: altModel,
-                                    prompt: promptParts,
-                                    config: { responseModalities: ['TEXT', 'IMAGE'] },
-                                }, logoDataUrl);
-                                imageUrl = altMedia?.url ?? null;
-                                modelToUse = altModel; // note which model succeeded
-                            } catch (altErr: any) {
-                                // Defer to final fallback below if this also fails
-                                imageUrl = null;
-                            }
-                        } else {
-                            // Non-internal error: rethrow to surface a clear message
-                            throw err;
-                        }
+                        // REMOVED: Unauthorized fallback model that causes unexpected billing
+                        // Previously used 'googleai/gemini-2.0-flash-exp-image-generation' which is NOT AUTHORIZED
+                        // Instead, rethrow the error to surface clear message and prevent unauthorized model usage
+                        throw err;
                     }
 
                     if (!imageUrl) {
