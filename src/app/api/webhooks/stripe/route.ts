@@ -15,6 +15,16 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
+// GET handler for webhook health check
+export async function GET(req: NextRequest) {
+  return NextResponse.json({ 
+    status: 'active',
+    message: 'Stripe webhook endpoint is operational',
+    timestamp: new Date().toISOString(),
+    webhook_configured: !!webhookSecret
+  });
+}
+
 export async function POST(req: NextRequest) {
   if (!webhookSecret) {
     console.error('❌ STRIPE_WEBHOOK_SECRET is not configured');
@@ -39,6 +49,12 @@ export async function POST(req: NextRequest) {
   }
 
   console.log('🎯 Received Stripe webhook:', event.type);
+  console.log('📋 Event data preview:', {
+    id: event.id,
+    type: event.type,
+    object_id: event.data.object.id,
+    created: event.created
+  });
 
   try {
     switch (event.type) {
@@ -48,10 +64,12 @@ export async function POST(req: NextRequest) {
 
       case 'payment_intent.succeeded':
         console.log('💰 Payment succeeded:', event.data.object.id);
+        await handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent);
         break;
 
       case 'payment_intent.payment_failed':
         console.error('❌ Payment failed:', event.data.object);
+        await handlePaymentIntentFailed(event.data.object as Stripe.PaymentIntent);
         break;
 
       default:
@@ -155,6 +173,95 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
 
   } catch (error: any) {
     console.error('❌ Error processing payment:', error);
+    throw error;
+  }
+}
+
+async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
+  console.log('💰 Processing payment intent succeeded:', paymentIntent.id);
+
+  try {
+    // Find the payment transaction by payment intent ID or session ID
+    let { data: transaction, error: transactionError } = await supabase
+      .from('payment_transactions')
+      .select('*')
+      .eq('stripe_payment_intent_id', paymentIntent.id)
+      .single();
+
+    // If not found by payment intent ID, try to find by session ID from metadata
+    if (transactionError || !transaction) {
+      const sessionId = paymentIntent.metadata?.session_id;
+      if (sessionId) {
+        const { data: sessionTransaction, error: sessionError } = await supabase
+          .from('payment_transactions')
+          .select('*')
+          .eq('stripe_session_id', sessionId)
+          .single();
+
+        if (!sessionError && sessionTransaction) {
+          transaction = sessionTransaction;
+          // Update the transaction with the payment intent ID
+          await supabase
+            .from('payment_transactions')
+            .update({ stripe_payment_intent_id: paymentIntent.id })
+            .eq('id', transaction.id);
+        }
+      }
+    }
+
+    if (!transaction) {
+      console.error('❌ No transaction found for payment intent:', paymentIntent.id);
+      return;
+    }
+
+    if (transaction.status === 'completed') {
+      console.log('⚠️ Payment already processed for intent:', paymentIntent.id);
+      return;
+    }
+
+    // Update payment status to completed
+    const { error: updateError } = await supabase
+      .from('payment_transactions')
+      .update({ 
+        status: 'completed',
+        stripe_payment_intent_id: paymentIntent.id
+      })
+      .eq('id', transaction.id);
+
+    if (updateError) {
+      console.error('❌ Failed to update payment status:', updateError);
+      return;
+    }
+
+    console.log('✅ Payment status updated to completed for intent:', paymentIntent.id);
+
+  } catch (error: any) {
+    console.error('❌ Error processing payment intent:', error);
+    throw error;
+  }
+}
+
+async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
+  console.log('❌ Processing payment intent failed:', paymentIntent.id);
+
+  try {
+    // Update payment transaction status to failed
+    const { error: updateError } = await supabase
+      .from('payment_transactions')
+      .update({ 
+        status: 'failed',
+        stripe_payment_intent_id: paymentIntent.id
+      })
+      .or(`stripe_payment_intent_id.eq.${paymentIntent.id},stripe_session_id.eq.${paymentIntent.metadata?.session_id || 'null'}`);
+
+    if (updateError) {
+      console.error('❌ Failed to update payment transaction status to failed:', updateError);
+    } else {
+      console.log('✅ Payment transaction marked as failed for payment intent:', paymentIntent.id);
+    }
+
+  } catch (error: any) {
+    console.error('❌ Error processing payment intent failure:', error);
     throw error;
   }
 }
