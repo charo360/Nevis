@@ -24,6 +24,170 @@ export function useAuth() {
     error: null,
   });
 
+  // Session timeout management
+  const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
+  const [lastActivityTime, setLastActivityTime] = useState<number>(Date.now());
+  const [sessionTimeoutId, setSessionTimeoutId] = useState<NodeJS.Timeout | null>(null);
+  const [idleTimeoutId, setIdleTimeoutId] = useState<NodeJS.Timeout | null>(null);
+
+  // Constants for timeouts (in milliseconds)
+  const SESSION_DURATION = 12 * 60 * 60 * 1000; // 12 hours
+  const IDLE_TIMEOUT = 60 * 60 * 1000; // 1 hour
+
+  // Update last activity time
+  const updateActivity = useCallback(() => {
+    setLastActivityTime(Date.now());
+  }, []);
+
+  // Clear all timeouts
+  const clearTimeouts = useCallback(() => {
+    if (sessionTimeoutId) {
+      clearTimeout(sessionTimeoutId);
+      setSessionTimeoutId(null);
+    }
+    if (idleTimeoutId) {
+      clearTimeout(idleTimeoutId);
+      setIdleTimeoutId(null);
+    }
+  }, [sessionTimeoutId, idleTimeoutId]);
+
+  // Set up session and idle timeouts
+  const setupTimeouts = useCallback(() => {
+    clearTimeouts();
+
+    if (!authState.user) return;
+
+    const now = Date.now();
+
+    // Set session start time if not set
+    if (!sessionStartTime) {
+      setSessionStartTime(now);
+    }
+
+    // Calculate remaining time for session timeout (12 hours from login)
+    const sessionStart = sessionStartTime || now;
+    const sessionRemaining = SESSION_DURATION - (now - sessionStart);
+
+    if (sessionRemaining > 0) {
+      const sessionId = setTimeout(() => {
+        console.log('⏰ Session expired (12 hours), signing out...');
+        signOut();
+      }, sessionRemaining);
+      setSessionTimeoutId(sessionId);
+    } else {
+      // Session already expired
+      console.log('⏰ Session already expired on load, signing out...');
+      signOut();
+      return;
+    }
+
+    // Set idle timeout (1 hour from last activity)
+    const idleId = setTimeout(() => {
+      console.log('⏰ User idle for 1 hour, signing out...');
+      signOut();
+    }, IDLE_TIMEOUT);
+    setIdleTimeoutId(idleId);
+
+  }, [authState.user, sessionStartTime]);
+
+  // Set up activity listeners and timeouts
+  useEffect(() => {
+    if (!authState.user) {
+      // Clear all timeouts when user logs out
+      if (sessionTimeoutId) {
+        clearTimeout(sessionTimeoutId);
+        setSessionTimeoutId(null);
+      }
+      if (idleTimeoutId) {
+        clearTimeout(idleTimeoutId);
+        setIdleTimeoutId(null);
+      }
+      return;
+    }
+
+    // Activity events to track
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+
+    const handleActivity = () => {
+      setLastActivityTime(Date.now());
+    };
+
+    // Add event listeners
+    events.forEach(event => {
+      document.addEventListener(event, handleActivity, true);
+    });
+
+    // Set initial activity time
+    setLastActivityTime(Date.now());
+
+    // Cleanup
+    return () => {
+      events.forEach(event => {
+        document.removeEventListener(event, handleActivity, true);
+      });
+      if (sessionTimeoutId) {
+        clearTimeout(sessionTimeoutId);
+        setSessionTimeoutId(null);
+      }
+      if (idleTimeoutId) {
+        clearTimeout(idleTimeoutId);
+        setIdleTimeoutId(null);
+      }
+    };
+  }, [authState.user]);
+
+  // Set up session timeout when user logs in
+  useEffect(() => {
+    if (!authState.user || !sessionStartTime) return;
+
+    const now = Date.now();
+    const sessionStart = sessionStartTime;
+    const sessionRemaining = SESSION_DURATION - (now - sessionStart);
+
+    if (sessionRemaining > 0) {
+      const sessionId = setTimeout(() => {
+        console.log('⏰ Session expired (12 hours), signing out...');
+        signOut();
+      }, sessionRemaining);
+      setSessionTimeoutId(sessionId);
+    } else {
+      // Session already expired
+      console.log('⏰ Session already expired on load, signing out...');
+      signOut();
+    }
+
+    return () => {
+      if (sessionTimeoutId) {
+        clearTimeout(sessionTimeoutId);
+        setSessionTimeoutId(null);
+      }
+    };
+  }, [authState.user, sessionStartTime]);
+
+  // Set up idle timeout and reset when activity occurs
+  useEffect(() => {
+    if (!authState.user) return;
+
+    // Clear existing idle timeout
+    if (idleTimeoutId) {
+      clearTimeout(idleTimeoutId);
+    }
+
+    // Set new idle timeout
+    const idleId = setTimeout(() => {
+      console.log('⏰ User idle for 1 hour, signing out...');
+      signOut();
+    }, IDLE_TIMEOUT);
+    setIdleTimeoutId(idleId);
+
+    return () => {
+      if (idleTimeoutId) {
+        clearTimeout(idleTimeoutId);
+        setIdleTimeoutId(null);
+      }
+    };
+  }, [lastActivityTime, authState.user]);
+
   // Convert Supabase user to our AuthUser format
   const convertUser = useCallback((user: User): AuthUser => {
     return {
@@ -83,11 +247,25 @@ export function useAuth() {
         console.log('Auth state changed:', event, session?.user?.id);
         
         if (mounted) {
+          const hasUser = !!session?.user;
           setAuthState({
-            user: session?.user ? convertUser(session.user) : null,
+            user: hasUser ? convertUser(session.user) : null,
             loading: false,
             error: null,
           });
+
+          // Set session start time when user signs in or session is restored
+          if (hasUser && event === 'SIGNED_IN') {
+            setSessionStartTime(Date.now());
+            setLastActivityTime(Date.now());
+          }
+
+          // Clear session state when user signs out
+          if (!hasUser && event === 'SIGNED_OUT') {
+            setSessionStartTime(null);
+            setLastActivityTime(Date.now());
+            clearTimeouts();
+          }
         }
       }
     );
@@ -210,6 +388,10 @@ export function useAuth() {
           loading: false,
           error: null,
         });
+
+        // Set session start time for timeout management
+        setSessionStartTime(Date.now());
+        setLastActivityTime(Date.now());
       } else {
         console.log('⚠️ SignIn: No error but no user either');
         throw new Error('Authentication failed - no user returned');
@@ -311,6 +493,10 @@ export function useAuth() {
           loading: false,
           error: null,
         });
+
+        // Set session start time for timeout management
+        setSessionStartTime(Date.now());
+        setLastActivityTime(Date.now());
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Anonymous login failed';
@@ -327,6 +513,13 @@ export function useAuth() {
   const signOut = async (): Promise<void> => {
     try {
       console.log('🚺 Signing out user...');
+      
+      // Clear timeouts first
+      clearTimeouts();
+      
+      // Reset session state
+      setSessionStartTime(null);
+      setLastActivityTime(Date.now());
       
       // Clear local data first
       clearAllUserData();

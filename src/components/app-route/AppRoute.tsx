@@ -23,6 +23,8 @@ const SocialConnect = React.lazy(() => import('../../app/social-connect/page').t
 const Features = React.lazy(() => import('../../app/features/page').then(m => ({ default: m.default })));
 const Pricing = React.lazy(() => import('../../app/pricing/page').then(m => ({ default: m.default })));
 const About = React.lazy(() => import('../../app/about/page').then(m => ({ default: m.default })));
+const Privacy = React.lazy(() => import('../../app/privacy/page').then(m => ({ default: m.default })));
+const Terms = React.lazy(() => import('../../app/terms/page').then(m => ({ default: m.default })));
 const Home = React.lazy(() => import('../../app/page').then(m => ({ default: m.default })));
 
 // Other pages
@@ -115,6 +117,8 @@ export function AppRoute() {
     { test: p => p === AppRoutesPaths.features, Component: Features },
     { test: p => p === AppRoutesPaths.pricing, Component: Pricing },
     { test: p => p === AppRoutesPaths.about, Component: About },
+    { test: p => p === AppRoutesPaths.privacy, Component: Privacy },
+    { test: p => p === AppRoutesPaths.terms, Component: Terms },
 
     // Dashboard and nested routes - prefix matches
     { test: p => p.startsWith('/dashboard'), Component: Dashboard },
