@@ -826,7 +826,7 @@ MARKETING APPEAL STRATEGY FOR LAPTOPS:
 MARKETING APPEAL STRATEGY FOR CARS:
 - Focus on: Performance, luxury, reliability, fuel efficiency, safety, status
 - Visual elements: Show car in motion, highlight design features, emphasize interior/exterior
-- Emotional triggers: "Freedom to explore", "Luxury experience", "Safe journey", "Adventure awaits"
+- Emotional triggers: "Freedom to explore", "Luxury experience", "Safe travels", "Adventure awaits"
 - Target audience: Families, professionals, adventure seekers, luxury buyers
 - Design approach: Dynamic, aspirational, lifestyle-focused with motion and energy`;
   }
@@ -1252,7 +1252,7 @@ function getBusinessIntelligenceEngine(businessType: string, location: string): 
         contentStrategies: [
           'Local tech success stories',
           'Innovation case studies',
-          'Digital transformation journeys',
+          'Digital transformation stories',
           'Tech talent development',
           'Local startup ecosystem',
           'Government tech partnerships',
@@ -1330,7 +1330,7 @@ function getBusinessIntelligenceEngine(businessType: string, location: string): 
           'Health awareness and wellness trends'
         ],
         localPhrases: [
-          'Your fitness journey starts here',
+          'Your fitness transformation starts here',
           'Stronger [location] community',
           'Local fitness excellence',
           'Your wellness partner',
@@ -1423,7 +1423,7 @@ function getBusinessIntelligenceEngine(businessType: string, location: string): 
         ],
         localPhrases: [
           'Learning excellence in [location]',
-          'Your educational journey',
+          'Your educational path forward',
           'Local learning excellence',
           'Community education partner',
           'Your learning success',

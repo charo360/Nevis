@@ -192,7 +192,7 @@ export class ContentGenerationEngine {
         ],
         'customer-spotlight': [
           "Meet {customerName}, who came to {businessName} looking for {need}. Today, {result}. {celebration}",
-          "Stories like {customerName}'s remind us why we do what we do at {businessName}. {journey}",
+          "Stories like {customerName}'s remind us why we do what we do at {businessName}. {transformation}",
           "When {customerName} first walked into {businessName}, {situation}. Now, {transformation}. {gratitude}"
         ]
       },
@@ -290,7 +290,7 @@ export class ContentGenerationEngine {
       .replace('{result}', dynamicContent.result)
       .replace('{situation}', dynamicContent.situation)
       .replace('{transformation}', dynamicContent.transformation)
-      .replace('{journey}', dynamicContent.journey)
+      .replace('{story}', dynamicContent.story)
       .replace('{fact}', dynamicContent.fact)
       .replace('{explanation}', dynamicContent.explanation)
       .replace('{topic}', dynamicContent.topic)
@@ -341,7 +341,7 @@ export class ContentGenerationEngine {
         result: this.getRandomResult(),
         situation: this.getRandomSituation(),
         transformation: this.getRandomTransformation(),
-        journey: this.getRandomJourney(),
+        story: this.getRandomStory(),
         gratitude: this.getRandomGratitude()
       })
     };
@@ -487,7 +487,7 @@ export class ContentGenerationEngine {
   private getRandomResult(): string { return 'they found exactly what they were looking for'; }
   private getRandomSituation(): string { return 'they were unsure about their options'; }
   private getRandomTransformation(): string { return 'they\'re now our biggest advocate'; }
-  private getRandomJourney(): string { return 'it\'s been amazing to see their progress'; }
+  private getRandomStory(): string { return 'it\'s been amazing to see their progress'; }
   private getRandomGratitude(): string { return 'we\'re so grateful for customers like this'; }
   private getRandomYears(): string { return 'over 5 years'; }
   private getVisualElement(category: string): string { return 'our team in action'; }

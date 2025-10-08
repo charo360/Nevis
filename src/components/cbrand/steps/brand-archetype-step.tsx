@@ -90,7 +90,7 @@ export const BRAND_ARCHETYPES: BrandArchetype[] = [
     examples: ['The North Face', 'Patagonia', 'Jeep', 'National Geographic', 'REI'],
     contentStyle: {
       visualStyle: 'natural landscapes, adventure scenes, earth tones, dynamic imagery',
-      contentThemes: ['Adventure stories', 'Travel inspiration', 'Outdoor activities', 'Personal journeys', 'Discovery'],
+      contentThemes: ['Adventure stories', 'Travel inspiration', 'Outdoor activities', 'Personal experiences', 'Discovery'],
       writingTone: 'inspiring, bold, authentic'
     },
     target: 'Adventure seekers, outdoor enthusiasts, independent thinkers'
