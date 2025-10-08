@@ -58,39 +58,79 @@ function CreativeStudioPageContent() {
     }
   });
 
-  // Convert CompleteBrandProfile to BrandProfile for compatibility
-  const brandProfile: BrandProfile | null = currentBrand ? {
-    businessName: currentBrand.businessName,
-    businessType: currentBrand.businessType,
-    location: typeof currentBrand.location === 'string'
-      ? currentBrand.location
-      : currentBrand.location
-        ? `${currentBrand.location.city || ''}, ${currentBrand.location.country || ''}`.replace(/^,\s*/, '').replace(/,\s*$/, '') || 'Location'
-        : 'Location',
-    description: currentBrand.description,
-    targetAudience: currentBrand.targetAudience,
-    keyFeatures: currentBrand.keyFeatures,
-    competitiveAdvantages: currentBrand.competitiveAdvantages,
-    visualStyle: currentBrand.visualStyle,
-    writingTone: currentBrand.writingTone,
-    contentThemes: currentBrand.contentThemes,
-    primaryColor: currentBrand.primaryColor,
-    accentColor: currentBrand.accentColor,
-    backgroundColor: currentBrand.backgroundColor,
-    logoDataUrl: currentBrand.logoUrl,
-    websiteUrl: currentBrand.websiteUrl,
-    socialMedia: {
-      facebook: currentBrand.facebookUrl,
-      instagram: currentBrand.instagramUrl,
-      twitter: currentBrand.twitterUrl,
-      linkedin: currentBrand.linkedinUrl,
-    },
-    contactInfo: {
-      phone: currentBrand.contactPhone,
-      email: currentBrand.contactEmail,
-      address: currentBrand.contactAddress,
-    },
-  } : null;
+  // State for converted brand profile with logo data URL
+  const [brandProfile, setBrandProfile] = useState<BrandProfile | null>(null);
+
+  // Convert CompleteBrandProfile to BrandProfile and handle logo URL conversion
+  useEffect(() => {
+    const convertBrandProfile = async () => {
+      if (!currentBrand) {
+        setBrandProfile(null);
+        return;
+      }
+
+      let logoDataUrl = currentBrand.logoUrl;
+
+      // Convert Supabase storage URL to base64 data URL for AI processing
+      if (currentBrand.logoUrl && currentBrand.logoUrl.startsWith('http')) {
+        try {
+          console.log('🔄 Converting logo URL to data URL for AI processing:', currentBrand.logoUrl);
+          const response = await fetch(currentBrand.logoUrl);
+          const blob = await response.blob();
+
+          // Convert blob to base64 data URL
+          const reader = new FileReader();
+          logoDataUrl = await new Promise<string>((resolve) => {
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(blob);
+          });
+
+          console.log('✅ Logo converted to data URL for AI processing');
+        } catch (error) {
+          console.warn('⚠️ Failed to convert logo URL to data URL:', error);
+          // Keep original URL as fallback
+          logoDataUrl = currentBrand.logoUrl;
+        }
+      }
+
+      const convertedProfile: BrandProfile = {
+        businessName: currentBrand.businessName,
+        businessType: currentBrand.businessType,
+        location: typeof currentBrand.location === 'string'
+          ? currentBrand.location
+          : currentBrand.location
+            ? `${currentBrand.location.city || ''}, ${currentBrand.location.country || ''}`.replace(/^,\s*/, '').replace(/,\s*$/, '') || 'Location'
+            : 'Location',
+        description: currentBrand.description,
+        targetAudience: currentBrand.targetAudience,
+        keyFeatures: currentBrand.keyFeatures,
+        competitiveAdvantages: currentBrand.competitiveAdvantages,
+        visualStyle: currentBrand.visualStyle,
+        writingTone: currentBrand.writingTone,
+        contentThemes: currentBrand.contentThemes,
+        primaryColor: currentBrand.primaryColor,
+        accentColor: currentBrand.accentColor,
+        backgroundColor: currentBrand.backgroundColor,
+        logoDataUrl: logoDataUrl, // Now properly converted to data URL
+        websiteUrl: currentBrand.websiteUrl,
+        socialMedia: {
+          facebook: currentBrand.facebookUrl,
+          instagram: currentBrand.instagramUrl,
+          twitter: currentBrand.twitterUrl,
+          linkedin: currentBrand.linkedinUrl,
+        },
+        contactInfo: {
+          phone: currentBrand.contactPhone,
+          email: currentBrand.contactEmail,
+          address: currentBrand.contactAddress,
+        },
+      };
+
+      setBrandProfile(convertedProfile);
+    };
+
+    convertBrandProfile();
+  }, [currentBrand]);
 
   return (
     <SidebarInset fullWidth>

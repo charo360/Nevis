@@ -7,6 +7,110 @@ import type { BrandProfile, Platform } from '@/lib/types';
 import { aiProxyClient, getUserIdForProxy, getUserTierForProxy, shouldUseProxy } from '@/lib/services/ai-proxy-client';
 import { ContentQualityEnhancer } from '@/utils/content-quality-enhancer';
 
+// Direct API fallback function when proxy is not available
+async function generateContentDirect(promptOrParts: string | any[], modelName: string, isImageGeneration: boolean): Promise<any> {
+  console.log('🔄 Revo 2.0: Using direct Google AI API fallback');
+
+  // Get API key from environment
+  const apiKey = process.env.GEMINI_API_KEY_REVO_2_0 || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  if (!apiKey) {
+    throw new Error('🚫 No Google API key found for Revo 2.0. Please set GEMINI_API_KEY_REVO_2_0 or GEMINI_API_KEY in your environment variables.');
+  }
+
+  // Prepare prompt
+  let prompt: string;
+  if (Array.isArray(promptOrParts)) {
+    const textParts = promptOrParts.filter(part => typeof part === 'string');
+    prompt = textParts.join(' ');
+  } else {
+    prompt = promptOrParts;
+  }
+
+  // Prepare payload
+  const parts = [{ text: prompt }];
+
+  const payload = {
+    contents: [{ parts }],
+    generationConfig: {
+      temperature: 0.7,
+      maxOutputTokens: 8192,
+      ...(isImageGeneration && { responseModalities: ['IMAGE'] })
+    }
+  };
+
+  // Determine endpoint based on model
+  const cleanModelName = modelName.replace(/^(googleai\/|anthropic\/|openai\/)/, '');
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${cleanModelName}:generateContent`;
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'x-goog-api-key': apiKey,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Google API error: ${response.status} - ${errorText}`);
+    }
+
+    const result = await response.json();
+
+    if (isImageGeneration) {
+      // Extract image data
+      const candidates = result.candidates;
+      if (!candidates || !candidates[0]?.content?.parts?.[0]?.inlineData?.data) {
+        throw new Error('Invalid image response from Google API');
+      }
+
+      const base64Data = candidates[0].content.parts[0].inlineData.data;
+      const imageDataUrl = `data:image/png;base64,${base64Data}`;
+
+      return {
+        response: {
+          candidates: [{
+            content: {
+              parts: [{
+                inlineData: {
+                  data: base64Data,
+                  mimeType: 'image/png'
+                }
+              }]
+            },
+            finishReason: 'STOP'
+          }]
+        },
+        media: {
+          url: imageDataUrl,
+          contentType: 'image/png'
+        }
+      };
+    } else {
+      // Extract text content
+      const candidates = result.candidates;
+      if (!candidates || !candidates[0]?.content?.parts?.[0]?.text) {
+        throw new Error('Invalid text response from Google API');
+      }
+
+      return {
+        response: {
+          text: () => candidates[0].content.parts[0].text,
+          candidates: [{
+            content: { parts: [{ text: candidates[0].content.parts[0].text }] },
+            finishReason: 'STOP'
+          }]
+        }
+      };
+    }
+  } catch (error) {
+    console.error('❌ Revo 2.0 Direct API generation failed:', error);
+    throw error;
+  }
+}
+
 // All AI calls now go through the proxy system for cost control and model management
 
 // Note: All AI calls now go through proxy for cost control and model management
@@ -14,7 +118,8 @@ import { ContentQualityEnhancer } from '@/utils/content-quality-enhancer';
 // Helper function to route AI calls through proxy - PROXY ONLY, NO FALLBACK
 async function generateContentWithProxy(promptOrParts: string | any[], modelName: string, isImageGeneration: boolean = false): Promise<any> {
   if (!shouldUseProxy()) {
-    throw new Error('🚫 Proxy is disabled. This system requires AI_PROXY_ENABLED=true to function.');
+    console.log('🔄 Revo 2.0: Proxy disabled, using direct API fallback');
+    return await generateContentDirect(promptOrParts, modelName, isImageGeneration);
   }
 
   console.log(`🔄 Revo 2.0: Using proxy for ${isImageGeneration ? 'image' : 'text'} generation with ${modelName}`);
@@ -44,52 +149,72 @@ async function generateContentWithProxy(promptOrParts: string | any[], modelName
     prompt = promptOrParts;
   }
 
-  if (isImageGeneration) {
-    const response = await aiProxyClient.generateImage({
-      prompt,
-      model: modelName,
-      user_id: getUserIdForProxy(),
-      user_tier: getUserTierForProxy(),
-      // Include logo image data if available
-      ...(imageData && { logoImage: imageData })
-    });
+  try {
+    if (isImageGeneration) {
+      const response = await aiProxyClient.generateImage({
+        prompt,
+        model: modelName,
+        user_id: getUserIdForProxy(),
+        user_tier: getUserTierForProxy(),
+        // Include logo image data if available
+        ...(imageData && { logoImage: imageData })
+      });
 
-    // Extract image data from proxy response
-    const candidates = response.data?.candidates;
-    if (!candidates || !candidates[0]?.content?.parts?.[0]?.inlineData?.data) {
-      throw new Error('Invalid image response from proxy - no image data found');
-    }
-
-    // Mock the Google AI response structure for image generation
-    return {
-      response: {
-        candidates: [{
-          content: {
-            parts: [{
-              inlineData: {
-                mimeType: 'image/png',
-                data: candidates[0].content.parts[0].inlineData.data
-              }
-            }]
-          }
-        }]
+      // Extract image data from proxy response
+      const candidates = response.data?.candidates;
+      if (!candidates || !candidates[0]?.content?.parts?.[0]?.inlineData?.data) {
+        throw new Error('Invalid image response from proxy - no image data found');
       }
-    };
-  } else {
-    const response = await aiProxyClient.generateText({
-      prompt,
-      model: modelName,
-      user_id: getUserIdForProxy(),
-      user_tier: getUserTierForProxy()
-    });
 
-    // Extract text content from proxy response
-    const candidates = response.data?.candidates;
-    if (!candidates || !candidates[0]?.content?.parts?.[0]?.text) {
-      throw new Error('Invalid text response from proxy - no text content found');
+      // Mock the Google AI response structure for image generation
+      return {
+        response: {
+          candidates: [{
+            content: {
+              parts: [{
+                inlineData: {
+                  mimeType: 'image/png',
+                  data: candidates[0].content.parts[0].inlineData.data
+                }
+              }]
+            }
+          }]
+        }
+      };
+    } else {
+      const response = await aiProxyClient.generateText({
+        prompt,
+        model: modelName,
+        user_id: getUserIdForProxy(),
+        user_tier: getUserTierForProxy()
+      });
+
+      // Extract text content from proxy response
+      const candidates = response.data?.candidates;
+      if (!candidates || !candidates[0]?.content?.parts?.[0]?.text) {
+        throw new Error('Invalid text response from proxy - no text content found');
+      }
+
+      return { response: { text: () => candidates[0].content.parts[0].text } };
+    }
+  } catch (error) {
+    console.error('❌ Revo 2.0: Proxy call failed:', error);
+
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    // If proxy fails and we should be using it, try direct API fallback
+    if (shouldUseProxy()) {
+      console.log('🔄 Revo 2.0: Proxy failed, attempting direct API fallback...');
+      try {
+        return await generateContentDirect(promptOrParts, modelName, isImageGeneration);
+      } catch (fallbackError) {
+        console.error('❌ Revo 2.0: Direct API fallback also failed:', fallbackError);
+        const fallbackErrorMessage = fallbackError instanceof Error ? fallbackError.message : 'Unknown error';
+        throw new Error(`Both proxy and direct API failed. Proxy error: ${errorMessage}. Direct API error: ${fallbackErrorMessage}`);
+      }
     }
 
-    return { response: { text: () => candidates[0].content.parts[0].text } };
+    throw new Error(`Revo 2.0 proxy generation failed: ${errorMessage}`);
   }
 }
 

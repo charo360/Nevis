@@ -1,0 +1,16 @@
+{
+  "prompt": "create a design",
+  "outputType": "image",
+  "preferredModel": "gemini-2.5-flash-image-preview",
+  "useBrandProfile": true,
+  "brandProfile": {
+    "businessName": "Paya",
+    "businessType": "Financial Technology Company",
+    "location": "Kenya",
+    "visualStyle": "professional",
+    "writingTone": "professional",
+    "contentThemes": "Banking\nPayments\nBNPL",
+    "logoDataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg=="
+  }
+}
+

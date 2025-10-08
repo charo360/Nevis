@@ -7,7 +7,8 @@
  * based on a user's prompt, an optional reference image, and brand profile settings.
  */
 
-import { ai, MediaPart, GenerateRequest } from '@/ai/genkit';
+import { ai, MediaPart, GenerateRequest, generateContentWithProxy } from '@/ai/genkit';
+import { aiProxyClient, getUserIdForProxy, getUserTierForProxy } from '@/lib/services/ai-proxy-client';
 import { z } from 'zod';
 import type { BrandProfile } from '@/lib/types';
 import {
@@ -271,14 +272,126 @@ const extractQuotedText = (prompt: string): { imageText: string | null; remainin
 };
 
 /**
- * Wraps ai.generate with retry logic for 503 errors.
+ * Wraps ai.generate with retry logic for 503 errors and explicit logo handling.
  */
-async function generateWithRetry(request: GenerateRequest, retries = 3, delay = 1000) {
+async function generateWithRetry(request: GenerateRequest, logoDataUrl?: string, retries = 3, delay = 1000) {
+    console.log('🔍 [DEBUG] generateWithRetry called with:', {
+        hasLogo: !!logoDataUrl,
+        model: request.model,
+        promptLength: Array.isArray(request.prompt) ? request.prompt.length : 1
+    });
+
     for (let i = 0; i < retries; i++) {
         try {
-            const result = await ai.generate(request);
-            return result;
+            // If we have a logo, use the proxy-aware approach
+            if (logoDataUrl && request.model?.includes('image')) {
+                console.log('🔍 [DEBUG] Using proxy-aware approach with logo');
+                const { generateContentWithProxy } = await import('@/ai/genkit');
+
+                // Extract text prompt from request
+                let textPrompt = '';
+                const nonLogoMediaParts: any[] = [];
+
+                if (Array.isArray(request.prompt)) {
+                    for (const part of request.prompt) {
+                        if (typeof part === 'string') {
+                            textPrompt += part;
+                        } else if (part.text) {
+                            textPrompt += part.text;
+                        } else if (part.media && part.media.url !== logoDataUrl) {
+                            // This is a non-logo media part (e.g., reference image)
+                            nonLogoMediaParts.push(part);
+                        }
+                    }
+                } else if (typeof request.prompt === 'string') {
+                    textPrompt = request.prompt;
+                }
+
+                // Prepare parts for proxy call
+                const proxyParts: any[] = [textPrompt];
+
+                // Add non-logo media parts
+                nonLogoMediaParts.forEach(part => {
+                    if (part.media?.url) {
+                        const base64Match = part.media.url.match(/^data:[^;]+;base64,(.+)$/);
+                        if (base64Match) {
+                            proxyParts.push({
+                                inlineData: {
+                                    data: base64Match[1],
+                                    mimeType: part.media.contentType || 'image/png'
+                                }
+                            });
+                        }
+                    }
+                });
+
+                // Add logo integration prompt
+                const logoPrompt = `\n\n🎯 CRITICAL LOGO REQUIREMENT - THIS IS MANDATORY:
+You MUST include the exact brand logo image that was provided via logoImage parameter in your design. This is not optional.
+- Integrate the logo naturally into the layout - do not create a new logo
+- The logo should be prominently displayed but not overwhelming the design
+- Position the logo in a professional manner (top-left, top-right, or center as appropriate)
+- Maintain the logo's aspect ratio and clarity
+- Ensure the logo is clearly visible against the background
+
+The client specifically requested their brand logo to be included. FAILURE TO INCLUDE THE LOGO IS UNACCEPTABLE.`;
+
+                proxyParts[0] = textPrompt + logoPrompt;
+
+                // Call proxy with explicit logo
+                const modelName = request.model?.replace('googleai/', '') || 'gemini-2.5-flash-image-preview';
+                console.log('🔍 [DEBUG] About to call proxy generateImage directly with:', { modelName, hasLogo: !!logoDataUrl });
+                const userId = getUserIdForProxy();
+                const userTier = getUserTierForProxy();
+                const textOnlyPrompt = typeof proxyParts[0] === 'string' ? proxyParts[0] : (typeof textPrompt === 'string' ? textPrompt : '');
+
+                const proxyResp = await aiProxyClient.generateImage({
+                    prompt: textOnlyPrompt,
+                    user_id: userId,
+                    user_tier: userTier,
+                    model: modelName,
+                    logoImage: logoDataUrl
+                });
+
+                // Extract image data URL or file URI from proxy response
+                const candidates = proxyResp?.data?.candidates || [];
+                let imageUrlFromProxy: string | null = null;
+                let imageContentType: string = 'image/png';
+                for (const cand of candidates) {
+                    const parts = cand?.content?.parts || [];
+                    for (const part of parts) {
+                        if (part?.inlineData?.data) {
+                            imageContentType = part?.inlineData?.mimeType || 'image/png';
+                            imageUrlFromProxy = `data:${imageContentType};base64,${part.inlineData.data}`;
+                            break;
+                        }
+                        if (part?.fileData?.fileUri) {
+                            imageContentType = part?.fileData?.mimeType || 'image/png';
+                            imageUrlFromProxy = part.fileData.fileUri;
+                            break;
+                        }
+                    }
+                    if (imageUrlFromProxy) break;
+                }
+
+                if (!imageUrlFromProxy) {
+                    throw new Error('Proxy returned no image data');
+                }
+
+                console.log('🔍 [DEBUG] Proxy image generated successfully');
+                return { media: { url: imageUrlFromProxy, contentType: imageContentType } } as any;
+            } else {
+                // Fallback to original ai.generate for non-logo cases
+                const result = await ai.generate(request);
+                return result;
+            }
         } catch (e: any) {
+            console.error('❌ [DEBUG] generateContentWithProxy failed:', (e && e.message) ? e.message : e);
+            // Handle proxy not available error
+            if (e.message && e.message.includes('Proxy is disabled')) {
+                throw new Error("🚫 AI Proxy is not configured. Please set up your API keys in .env.local and start the proxy server. See the setup instructions for details.");
+            }
+
             if (e.message && e.message.includes('503') && i < retries - 1) {
                 await new Promise(resolve => setTimeout(resolve, delay));
             } else {
@@ -287,6 +400,9 @@ async function generateWithRetry(request: GenerateRequest, retries = 3, delay = 
                 }
                 if (e.message && e.message.includes('429')) {
                     throw new Error("You've exceeded your request limit for the AI model. Please check your plan or try again later.");
+                }
+                if (e.message && e.message.includes('500')) {
+                    throw new Error("🔧 Creative Studio is experiencing technical difficulties. Please check if the AI proxy server is running and your API keys are configured correctly.");
                 }
                 throw e; // Rethrow other errors immediately
             }
@@ -495,9 +611,9 @@ Transform the uploaded image into a professional marketing design by enhancing i
 
                 if (bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
                     promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
-                    brandGuidelines += ` Create a complete marketing design that uses the uploaded image as the main design element. If a brand logo is provided, integrate it as a small brand identifier within the larger marketing composition - focus on creating a full marketing design, not a logo-centric layout.`
+                    brandGuidelines += ` 🚨 MANDATORY LOGO INTEGRATION: You MUST prominently include the provided brand logo in your design. The logo should be clearly visible, properly sized (at least 10% of design area), and naturally integrated into the composition. Create a complete marketing design that uses the uploaded image as the main design element while ensuring the brand logo is a prominent, unmistakable part of the final design.`
                 } else if (bp.logoDataUrl && bp.logoDataUrl.includes('image/svg+xml')) {
-                    brandGuidelines += ` Create a comprehensive marketing design that represents the brand identity while prominently featuring the uploaded image as the main visual element.`
+                    brandGuidelines += ` Create a comprehensive marketing design that represents the brand identity while prominently featuring the uploaded image as the main visual element. Note: SVG logo format detected - represent the brand identity through design elements.`
                 }
 
                 // Use design-specific colors if provided, otherwise fall back to brand colors
@@ -833,11 +949,18 @@ ${designDNA}`;
                 if (noPeopleRequirement) {
                     onBrandPrompt += `\n- **PEOPLE EXCLUSION (MANDATORY):** Do NOT include people, faces, silhouettes, or human-like figures in any part of the design.`;
                 }
-                onBrandPrompt += `\n- **Brand Integration:** ${bp.logoDataUrl ? 'If a logo is provided, integrate it as a small brand element within the design - focus on enhancing the uploaded image with brand elements' : 'Create a design that represents the brand identity while focusing on the uploaded image'}.`;
+                onBrandPrompt += `\n- **🚨 MANDATORY BRAND LOGO INTEGRATION:** ${bp.logoDataUrl ? 'You MUST prominently include the provided brand logo in your design. The logo should be clearly visible, well-positioned, and properly sized (minimum 10% of design area). This is a critical requirement - the logo must be unmistakably present in the final design.' : 'Create a design that represents the brand identity while focusing on the uploaded image'}.`;
                 onBrandPrompt += `\n- **Design Completeness:** ${hasUploadedImage ? 'Enhance the uploaded image with professional text layouts, color treatments, and design elements - use ONLY the uploaded image as the visual foundation' : 'Generate a full marketing design with backgrounds, graphics, text layouts, and visual elements - NOT just a logo or simple graphic.'}`;
                 onBrandPrompt += `\n- **Critical Language Rule:** ALL text must be in clear, readable ENGLISH only. Never use foreign languages, corrupted text, or unreadable symbols.`;
 
                 if (bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
+                    // Add logo with strong integration instructions
+                    onBrandPrompt += `\n\n🎯 **CRITICAL LOGO REQUIREMENT:**
+- The brand logo image provided below MUST be prominently featured in your design
+- Logo should be clearly visible and well-integrated into the composition
+- Minimum logo size: 10% of total design area
+- Logo placement should be natural but unmistakable
+- This is a mandatory requirement - the logo MUST appear in the final design`;
                     promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
                 }
                 textPrompt = onBrandPrompt;
@@ -869,10 +992,15 @@ ${designDNA}`;
 
                 if (bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
                     onBrandPrompt += `\n- **COMPLETE MARKETING DESIGN:** Create a full marketing video with comprehensive visual storytelling - NOT just logo animation. Include backgrounds, graphics, text elements, and complete scene composition.`;
-                    onBrandPrompt += `\n- **Brand Element Integration:** If a logo is provided, integrate it as a small brand element within the complete marketing video - focus on creating a full marketing story, not logo-centric content.`;
+                    onBrandPrompt += `\n- **🚨 MANDATORY LOGO INTEGRATION:** You MUST prominently feature the provided brand logo throughout the video. The logo should be clearly visible, well-positioned, and consistently present. This is a critical requirement - the logo must be unmistakably present in the final video.`;
+                    onBrandPrompt += `\n\n🎯 **CRITICAL LOGO REQUIREMENT FOR VIDEO:**
+- The brand logo image provided below MUST be prominently featured throughout the video
+- Logo should be clearly visible and consistently present during key moments
+- Logo integration should feel natural but unmistakable
+- This is a mandatory requirement - the logo MUST appear in the final video`;
                     promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
                 } else if (bp.logoDataUrl && bp.logoDataUrl.includes('image/svg+xml')) {
-                    onBrandPrompt += `\n- **COMPREHENSIVE MARKETING VIDEO:** Create a complete marketing video that represents the brand identity with full scene composition, storytelling, and visual elements.`;
+                    onBrandPrompt += `\n- **COMPREHENSIVE MARKETING VIDEO:** Create a complete marketing video that represents the brand identity with full scene composition, storytelling, and visual elements. Note: SVG logo format detected - represent the brand identity through design elements.`;
                 }
 
                 // Add selected design examples as reference
@@ -991,15 +1119,17 @@ Ensure the text is readable and well-composed.`
             }
         }
 
-        const aiExplanationPrompt = ai.definePrompt({
-            name: 'creativeAssetExplanationPrompt',
-            prompt: `Based on the generated ${input.outputType}, write a very brief, one-sentence explanation of the creative choices made. For example: "I created a modern, vibrant image of a coffee shop, using your brand's primary color for the logo."`
-        });
+        // Temporarily disable explanation prompt to debug the issue
+        // const aiExplanationPrompt = ai.definePrompt({
+        //     name: 'creativeAssetExplanationPrompt',
+        //     prompt: `Based on the generated ${input.outputType}, write a very brief, one-sentence explanation of the creative choices made. ${input.useBrandProfile && input.brandProfile?.logoDataUrl ? 'Make sure to mention how the brand logo was integrated into the design.' : ''} For example: "I created a modern, vibrant image of a coffee shop, using your brand's primary color and prominently featuring your logo in the top-right corner."`
+        // });
 
-        const explanationResult = await aiExplanationPrompt();
+        console.log('🔍 [DEBUG] About to start image/video generation logic');
 
         try {
             if (input.outputType === 'image') {
+                console.log('🔍 [DEBUG] Starting image generation logic');
                 // Generate image with quality validation
                 let finalImageUrl: string | null = null;
                 let attempts = 0;
@@ -1031,15 +1161,24 @@ Ensure the text is readable and well-composed.`
                     let imageUrl: string | null = null;
 
                     try {
+                        console.log('🔍 [DEBUG] About to extract logo and call generateWithRetry');
+                        // Extract logo data URL for explicit passing
+                        const logoDataUrl = input.useBrandProfile && input.brandProfile?.logoDataUrl
+                            ? input.brandProfile.logoDataUrl
+                            : undefined;
+                        console.log('🔍 [DEBUG] Logo extracted:', logoDataUrl ? 'Logo found' : 'No logo');
+
                         const { media } = await generateWithRetry({
                             model: modelToUse,
                             prompt: promptParts,
                             config: {
                                 responseModalities: ['TEXT', 'IMAGE'],
                             },
-                        });
+                        }, logoDataUrl);
 
+                        console.log('🔍 [DEBUG] generateWithRetry returned successfully, media:', media ? 'Media found' : 'No media');
                         imageUrl = media?.url ?? null;
+                        console.log('🔍 [DEBUG] imageUrl extracted:', imageUrl ? 'URL found' : 'No URL');
                     } catch (err: any) {
                         const msg = (err?.message || '').toLowerCase();
                         const isInternalError = msg.includes('500') || msg.includes('internal error');
@@ -1048,11 +1187,14 @@ Ensure the text is readable and well-composed.`
                         if (isInternalError) {
                             try {
                                 const altModel = 'googleai/gemini-2.0-flash-exp-image-generation';
+                                const logoDataUrl = input.useBrandProfile && input.brandProfile?.logoDataUrl
+                                    ? input.brandProfile.logoDataUrl
+                                    : undefined;
                                 const { media: altMedia } = await generateWithRetry({
                                     model: altModel,
                                     prompt: promptParts,
                                     config: { responseModalities: ['TEXT', 'IMAGE'] },
-                                });
+                                }, logoDataUrl);
                                 imageUrl = altMedia?.url ?? null;
                                 modelToUse = altModel; // note which model succeeded
                             } catch (altErr: any) {
@@ -1121,7 +1263,9 @@ Ensure the text is readable and well-composed.`
 
                                 // Add improvement instructions to prompt
                                 const improvementInstructions = generateImprovementPrompt(quality);
-                                const improvedPrompt = `${promptParts[0].text}\n\n${improvementInstructions}`;
+                                const firstPart = promptParts[0];
+                                const currentText = typeof firstPart === 'string' ? firstPart : (firstPart as any).text || '';
+                                const improvedPrompt = `${currentText}\n\n${improvementInstructions}`;
                                 promptParts[0] = { text: improvedPrompt };
                                 continue;
                             } else {
@@ -1138,10 +1282,13 @@ Ensure the text is readable and well-composed.`
                     }
                 }
 
+                // Use default explanation for now (explanation prompt disabled for debugging)
+                const aiExplanation = `Here is your generated ${input.outputType} with ${input.useBrandProfile && input.brandProfile?.logoDataUrl ? 'your brand logo integrated' : 'your design elements'}.`;
+
                 return {
                     imageUrl: finalImageUrl,
                     videoUrl: null,
-                    aiExplanation: explanationResult.output ?? "Here is the generated image based on your prompt."
+                    aiExplanation
                 };
             } else { // Video generation
                 const isVertical = input.aspectRatio === '9:16';
@@ -1153,11 +1300,16 @@ Ensure the text is readable and well-composed.`
                     config.durationSeconds = 8;
                 }
 
+                // Extract logo data URL for video generation (though videos may not use logos the same way)
+                const logoDataUrl = input.useBrandProfile && input.brandProfile?.logoDataUrl
+                    ? input.brandProfile.logoDataUrl
+                    : undefined;
+
                 const result = await generateWithRetry({
                     model,
                     prompt: promptParts,
                     config,
-                });
+                }, logoDataUrl);
 
                 let operation = result.operation;
 
@@ -1182,15 +1334,19 @@ Ensure the text is readable and well-composed.`
 
                 const videoDataUrl = await videoToDataURI(videoPart);
 
+                // Use default explanation for now (explanation prompt disabled for debugging)
+                const aiExplanation = `Here is your generated ${input.outputType} with ${input.useBrandProfile && input.brandProfile?.logoDataUrl ? 'your brand logo integrated' : 'your design elements'}.`;
+
                 return {
                     imageUrl: null,
                     videoUrl: videoDataUrl,
-                    aiExplanation: explanationResult.output ?? "Here is the generated video based on your prompt."
+                    aiExplanation
                 };
             }
         } catch (e: any) {
             // Ensure a user-friendly error is thrown
             const message = e.message || "An unknown error occurred during asset generation.";
+            console.error('❌ [Creative Studio Flow] Caught error:', message, e);
 
             // Handle specific error types with user-friendly messages
             if (message.includes('429') || message.includes('quota') || message.includes('Too Many Requests')) {

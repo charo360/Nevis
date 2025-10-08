@@ -38,6 +38,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'nrfceylvtiwpqsoxurrv.supabase.co',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
   async headers() {

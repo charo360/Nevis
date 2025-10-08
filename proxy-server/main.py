@@ -263,8 +263,7 @@ ALLOWED_MODELS = {
     "claude-sonnet-4.5": "anthropic",  # Primary content generation for Revo 1.5
     "claude-3.5-sonnet": "anthropic",  # Fallback content generation
 
-    # Legacy models (only if absolutely needed for fallback)
-    "gemini-1.5-flash": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+    # Legacy models removed - gemini-1.5-flash no longer exists in Google API
 
     # REMOVED ALL EXPERIMENTAL MODELS - POTENTIAL HIGH COSTS:
     # - gemini-2.0-flash-exp-image-generation
@@ -280,7 +279,7 @@ OPENROUTER_MODEL_MAPPING = {
     "gemini-2.5-flash-image-preview": "google/gemini-2.5-flash-image-preview",
     "gemini-2.5-flash": "google/gemini-2.5-flash",
     "gemini-2.5-flash-lite": "google/gemini-2.5-flash-lite",
-    "gemini-1.5-flash": "google/gemini-1.5-flash",
+    # "gemini-1.5-flash": "google/gemini-1.5-flash",  # Removed - model no longer exists
 
     # Claude model equivalents on OpenRouter
     "claude-sonnet-4.5": "anthropic/claude-3.5-sonnet",  # Map to available Claude 3.5 Sonnet on OpenRouter
@@ -593,8 +592,8 @@ def get_default_keys_for_model(model: str) -> List[str]:
         "claude-sonnet-4.5": ["ANTHROPIC_API_KEY"],
         "claude-3.5-sonnet": ["ANTHROPIC_API_KEY"],
 
-        # Legacy models - Fallback only
-        "gemini-1.5-flash": ["GEMINI_API_KEY", "GOOGLE_API_KEY"]
+        # Legacy models removed - gemini-1.5-flash no longer exists in Google API
+        # "gemini-1.5-flash": ["GEMINI_API_KEY", "GOOGLE_API_KEY"]
 
         # REMOVED ALL EXPENSIVE/EXPERIMENTAL MODELS:
         # - gemini-2.5-pro (TOO EXPENSIVE)
