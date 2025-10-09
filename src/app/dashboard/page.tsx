@@ -48,7 +48,21 @@ export default function DashboardPage() {
       }
     }
   }, [authLoading, user, router]);
-  const { currentBrand, brands } = useUnifiedBrand();
+
+  // Temporarily disable brand context to ensure dashboard renders
+  let currentBrand = null;
+  let brands: any[] = [];
+  let brandContextError = null;
+
+  // TODO: Re-enable brand context once authentication is stable
+  // try {
+  //   const brandContext = useUnifiedBrand();
+  //   currentBrand = brandContext.currentBrand;
+  //   brands = brandContext.brands;
+  // } catch (error: any) {
+  //   console.warn('Brand context error:', error.message);
+  //   brandContextError = error.message;
+  // }
   const brandLabel = currentBrand?.businessName ?? (currentBrand as unknown as { name?: string })?.name ?? 'Unnamed Brand';
   const hasBrands = brands.length > 0;
   const brandCount = brands.length;
@@ -215,6 +229,35 @@ export default function DashboardPage() {
     } catch (err: any) {
       toast({ variant: 'destructive', title: 'Checkout failed', description: String(err.message || err) })
     }
+  }
+
+  // Show error message if brand context failed to load
+  if (brandContextError) {
+    return (
+      <SidebarInset>
+        <div className="flex-1 w-full max-w-[100vw] overflow-x-hidden space-y-6 px-6 py-6 lg:py-10 lg:px-12">
+          <Card className="border-orange-200 bg-orange-50">
+            <CardContent className="pt-6">
+              <div className="text-center space-y-4">
+                <div className="text-orange-600 text-lg font-medium">
+                  Loading your brand information...
+                </div>
+                <div className="text-orange-700 text-sm">
+                  Please wait a moment while we set up your account.
+                </div>
+                <Button 
+                  onClick={() => window.location.reload()} 
+                  variant="outline"
+                  className="mt-4"
+                >
+                  Refresh Page
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </SidebarInset>
+    );
   }
 
   return (

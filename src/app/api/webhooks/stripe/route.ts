@@ -2,32 +2,46 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import { getPlanById } from '@/lib/secure-pricing';
-import { SubscriptionService } from '@/lib/subscription/subscription-service';
+import { getStripeConfig } from '@/lib/stripe-config';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-07-30.basil'
+// Get environment-aware Stripe configuration
+const stripeConfig = getStripeConfig();
+
+// Initialize Stripe with environment-appropriate keys  
+const stripe = new Stripe(stripeConfig.secretKey, {
+  apiVersion: '2025-09-30' as Stripe.LatestApiVersion
 });
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+const webhookSecret = stripeConfig.webhookSecret;
 
 // GET handler for webhook health check
 export async function GET(req: NextRequest) {
+  const secretPrefix = webhookSecret ? webhookSecret.substring(0, 8) + '...' : 'NOT_SET';
+  
   return NextResponse.json({ 
     status: 'active',
     message: 'Stripe webhook endpoint is operational',
     timestamp: new Date().toISOString(),
-    webhook_configured: !!webhookSecret
+    environment: stripeConfig.environment,
+    isLive: stripeConfig.isLive,
+    webhook_configured: !!webhookSecret,
+    webhook_secret_prefix: secretPrefix,
+    secret_key_prefix: stripeConfig.secretKey.substring(0, 8) + '...'
   });
 }
 
 export async function POST(req: NextRequest) {
+  console.log(`🔧 Webhook Request - Environment: ${stripeConfig.environment} (${stripeConfig.isLive ? 'LIVE' : 'TEST'})`);
+  console.log(`🔑 Webhook Secret Status: ${webhookSecret ? 'CONFIGURED' : 'MISSING'} (${webhookSecret?.length || 0} chars)`);
+
   if (!webhookSecret) {
-    console.error('❌ STRIPE_WEBHOOK_SECRET is not configured');
+    console.error(`❌ Webhook secret not configured for ${stripeConfig.environment} environment`);
+    console.error(`Expected environment variable: ${stripeConfig.environment === 'production' ? 'STRIPE_WEBHOOK_SECRET_LIVE' : 'STRIPE_WEBHOOK_SECRET_TEST'}`);
     return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 });
   }
 
@@ -43,16 +57,30 @@ export async function POST(req: NextRequest) {
 
   try {
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    console.log('✅ Webhook signature verified successfully');
   } catch (err: any) {
-    console.error('❌ Webhook signature verification failed:', err.message);
-    return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
+    console.error('❌ Webhook signature verification failed:', {
+      error: err.message,
+      signature_provided: !!signature,
+      webhook_secret_configured: !!webhookSecret,
+      webhook_secret_prefix: webhookSecret ? webhookSecret.substring(0, 12) + '...' : 'NOT_SET',
+      body_length: body.length,
+      environment: stripeConfig.environment
+    });
+    return NextResponse.json({ 
+      error: 'Invalid signature',
+      debug: process.env.NODE_ENV === 'development' ? {
+        webhook_secret_prefix: webhookSecret ? webhookSecret.substring(0, 12) + '...' : 'NOT_SET',
+        environment: stripeConfig.environment
+      } : undefined
+    }, { status: 400 });
   }
 
   console.log('🎯 Received Stripe webhook:', event.type);
   console.log('📋 Event data preview:', {
     id: event.id,
     type: event.type,
-    object_id: event.data.object.id,
+    object_id: (event.data.object as any).id,
     created: event.created
   });
   
@@ -133,11 +161,21 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
 
   try {
     // Check if payment already processed (idempotency) - critical for preventing duplicates
+    console.log('🔍 Searching for existing payment with session_id:', session.id);
+    
     const { data: existingPayment, error: existingError } = await supabase
       .from('payment_transactions')
-      .select('id, status, credits_added')
+      .select('id, status, credits_added, stripe_session_id, created_at')
       .eq('stripe_session_id', session.id)
       .maybeSingle();
+      
+    console.log('📊 Database search result:', {
+      found: !!existingPayment,
+      error: !!existingError,
+      payment_id: existingPayment?.id,
+      current_status: existingPayment?.status,
+      created_at: existingPayment?.created_at
+    });
 
     if (existingError) {
       console.error('❌ Error checking existing payment:', existingError);
@@ -169,34 +207,44 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       }
     }
 
-    // If no existing payment found, create new one
-    console.log('💳 Creating new payment transaction for session:', session.id);
-
-    // First update user credits
-    await updateUserCredits(userId, plan.credits);
-
-    // Then create the payment transaction record
-    const { data: newPayment, error: createError } = await supabase
+    // If no existing payment found, this is an error - payments should always be created during checkout
+    console.error('❌ No existing payment transaction found for session:', session.id);
+    console.error('💡 This indicates a problem with the checkout flow - payment should be created before webhook');
+    
+    // Let's try to find it by different criteria
+    console.log('🔍 Searching for payment by payment_intent_id:', session.payment_intent);
+    
+    const { data: paymentByIntent, error: intentError } = await supabase
       .from('payment_transactions')
-      .insert({
-        user_id: userId,
-        plan_id: planId,
-        amount: (session.amount_total || 0) / 100, // Convert from cents
-        status: 'completed', // Mark as completed immediately
-        stripe_session_id: session.id,
-        stripe_payment_intent_id: session.payment_intent as string,
-        credits_added: plan.credits,
-        created_at: new Date().toISOString()
-      })
-      .select()
-      .single();
+      .select('*')
+      .eq('stripe_payment_intent_id', session.payment_intent)
+      .maybeSingle();
 
-    if (createError) {
-      console.error('❌ Failed to create payment transaction:', createError);
+    if (paymentByIntent) {
+      console.log('✅ Found payment by payment_intent_id, updating:', paymentByIntent.id);
+      
+      const { error: updateError } = await supabase
+        .from('payment_transactions')
+        .update({ 
+          status: 'completed',
+          credits_added: plan.credits,
+          stripe_session_id: session.id  // Update with correct session ID
+        })
+        .eq('id', paymentByIntent.id);
+
+      if (updateError) {
+        console.error('❌ Failed to update payment by intent ID:', updateError);
+        return;
+      }
+
+      console.log('✅ Updated payment via payment_intent_id');
+      await updateUserCredits(userId, plan.credits);
       return;
     }
-
-    console.log('✅ Payment transaction created successfully:', newPayment)
+    
+    console.error('❌ Could not find payment transaction by session_id OR payment_intent_id');
+    console.error('🚨 This should never happen - investigate checkout flow!');
+    return;
 
   } catch (error: any) {
     console.error('❌ Error processing payment:', error);
@@ -296,43 +344,43 @@ async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
 async function updateUserCredits(userId: string, creditsToAdd: number) {
   console.log('💳 Updating user credits:', { userId, creditsToAdd });
 
-  // Get current user credits
-  const { data: user, error: userError } = await supabase
-    .from('users')
-    .select('total_credits, remaining_credits')
-    .eq('user_id', userId)
-    .single();
+  try {
+    // Use the database function to add credits to user account
+    const { data, error } = await supabase.rpc('add_credits_to_user', {
+      p_user_id: userId,
+      p_credits_to_add: creditsToAdd,
+      p_payment_amount: 1 // Indicates this is from a payment
+    });
 
-  if (userError || !user) {
-    console.error('❌ User not found for credit update:', userId, userError);
-    throw new Error(`User not found: ${userId}`);
+    if (error) {
+      console.error('❌ Failed to add credits to user:', error);
+      throw error;
+    }
+
+    console.log('✅ User credits updated successfully via database function:', {
+      userId,
+      creditsAdded: creditsToAdd
+    });
+
+    // Verify the update by fetching current credits
+    const { data: updatedCredits, error: fetchError } = await supabase
+      .from('user_credits')
+      .select('total_credits, remaining_credits, used_credits')
+      .eq('user_id', userId)
+      .single();
+
+    if (fetchError) {
+      console.warn('⚠️ Could not verify credit update:', fetchError);
+    } else {
+      console.log('✅ Credit update verified:', {
+        total: updatedCredits.total_credits,
+        remaining: updatedCredits.remaining_credits,
+        used: updatedCredits.used_credits
+      });
+    }
+
+  } catch (error) {
+    console.error('❌ Error in updateUserCredits:', error);
+    throw error;
   }
-
-  const currentTotal = user.total_credits || 0;
-  const currentRemaining = user.remaining_credits || 0;
-
-  const newTotal = currentTotal + creditsToAdd;
-  const newRemaining = currentRemaining + creditsToAdd;
-
-  // Update user credits
-  const { error: updateError } = await supabase
-    .from('users')
-    .update({
-      total_credits: newTotal,
-      remaining_credits: newRemaining,
-      last_payment_at: new Date().toISOString()
-    })
-    .eq('user_id', userId);
-
-  if (updateError) {
-    console.error('❌ Failed to update user credits:', updateError);
-    throw updateError;
-  }
-
-  console.log('✅ User credits updated successfully:', {
-    userId,
-    creditsAdded: creditsToAdd,
-    newTotal,
-    newRemaining
-  });
 }

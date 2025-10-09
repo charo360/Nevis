@@ -1,9 +1,13 @@
 #!/bin/bash
 
-# Stripe Local Webhook Testing Script
-# This script sets up webhook forwarding for local development
-
-echo "🚀 Setting up local Stripe webhook testing..."
+echo "🔧 Setting up Local Stripe Webhooks for Development"
+echo "=================================================="
+echo ""
+echo "📋 This will fix your local development webhook issues:"
+echo "  • Payments stuck in 'pending' status"
+echo "  • No webhook events showing in terminal"
+echo "  • Duplicate payment records"
+echo ""
 
 # Check if Stripe CLI is installed
 if ! command -v stripe &> /dev/null; then

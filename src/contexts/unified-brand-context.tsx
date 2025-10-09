@@ -89,7 +89,10 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
     if (user?.userId) {
       console.log('🔄 User authenticated, loading brands for:', user.userId);
       setHasAttemptedLoad(false);
-      loadBrands();
+      // Add a small delay to ensure Supabase session is fully ready
+      setTimeout(() => {
+        loadBrands();
+      }, 1000);
     } else {
       console.log('🚫 No user, clearing brands');
       setBrands([]);
@@ -99,14 +102,14 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
     }
   }, [user?.userId]);
 
-  // Additional effect to ensure brands load after login with a slight delay
+  // Additional effect to ensure brands load after login with a longer delay to allow auth to settle
   useEffect(() => {
     if (user?.userId && brands.length === 0 && !loading && !hasAttemptedLoad) {
       console.log('🔄 Backup brand loading triggered for:', user.userId);
       const timer = setTimeout(() => {
         console.log('⏰ Executing delayed brand loading...');
         loadBrands();
-      }, 200);
+      }, 2000); // Increased delay to 2 seconds to allow auth to properly settle
 
       return () => clearTimeout(timer);
     }
@@ -127,13 +130,15 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
 
       const token = await getAccessToken();
       if (!token) {
-        throw new Error('No access token available');
+        console.log('🚫 No access token available - trying without token (Supabase RLS will handle auth)');
+        // Don't set error, just try the request without token - Supabase RLS will handle authentication
       }
 
       // Load brands via API route (which now uses Supabase)
       const response = await fetch('/api/brand-profiles', {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
       });
 
@@ -157,10 +162,16 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
             }
           }
 
-          // If no fallback available, show helpful error
-          throw new Error('Network connectivity issue. Please check your internet connection and try again.');
+          // If no fallback available, set error state but don't throw
+          console.warn('⚠️ No fallback brand available, setting error state');
+          setError('Authentication in progress. Brand data will load shortly...');
+          setLoading(false);
+          return;
         }
-        throw new Error('Failed to load brand profiles');
+        console.error('❌ Failed to load brand profiles, status:', response.status);
+        setError('Failed to load brand data. Please try refreshing the page.');
+        setLoading(false);
+        return;
       }
 
       const userBrands = await response.json();
