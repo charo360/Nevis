@@ -48,6 +48,7 @@ export const AppRoutesPaths = {
   "debug-database": "/debug-database",
   cbrand: "/cbrand",
   artifacts: "/artifacts",
+  credits: "/credits",
 } as const;
 
 /**

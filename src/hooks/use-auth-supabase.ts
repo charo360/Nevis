@@ -30,9 +30,9 @@ export function useAuth() {
   const [sessionTimeoutId, setSessionTimeoutId] = useState<NodeJS.Timeout | null>(null);
   const [idleTimeoutId, setIdleTimeoutId] = useState<NodeJS.Timeout | null>(null);
 
-  // Constants for timeouts (in milliseconds)
-  const SESSION_DURATION = 12 * 60 * 60 * 1000; // 12 hours
-  const IDLE_TIMEOUT = 60 * 60 * 1000; // 1 hour
+  // Constants for timeouts (in milliseconds) - Extended for better UX
+  const SESSION_DURATION = 30 * 24 * 60 * 60 * 1000; // 30 days
+  const IDLE_TIMEOUT = 24 * 60 * 60 * 1000; // 24 hours (much longer idle time)
 
   // Update last activity time
   const updateActivity = useCallback(() => {
@@ -68,25 +68,9 @@ export function useAuth() {
     const sessionStart = sessionStartTime || now;
     const sessionRemaining = SESSION_DURATION - (now - sessionStart);
 
-    if (sessionRemaining > 0) {
-      const sessionId = setTimeout(() => {
-        console.log('⏰ Session expired (12 hours), signing out...');
-        signOut();
-      }, sessionRemaining);
-      setSessionTimeoutId(sessionId);
-    } else {
-      // Session already expired
-      console.log('⏰ Session already expired on load, signing out...');
-      signOut();
-      return;
-    }
-
-    // Set idle timeout (1 hour from last activity)
-    const idleId = setTimeout(() => {
-      console.log('⏰ User idle for 1 hour, signing out...');
-      signOut();
-    }, IDLE_TIMEOUT);
-    setIdleTimeoutId(idleId);
+    // DISABLED: All automatic logout functionality
+    // Users now stay logged in indefinitely unless they manually logout
+    console.log('⏰ Session and idle timeouts disabled - no automatic logout');
 
   }, [authState.user, sessionStartTime]);
 
@@ -144,22 +128,19 @@ export function useAuth() {
     const sessionStart = sessionStartTime;
     const sessionRemaining = SESSION_DURATION - (now - sessionStart);
 
-    if (sessionRemaining > 0) {
-      const sessionId = setTimeout(() => {
-        console.log('⏰ Session expired (12 hours), signing out...');
-        signOut();
-      }, sessionRemaining);
-      setSessionTimeoutId(sessionId);
-    } else {
-      // Session already expired
-      console.log('⏰ Session already expired on load, signing out...');
-      signOut();
-    }
-
+    // DISABLED: Auto-logout functionality as requested by user
+    // Users should stay logged in unless they manually logout
+    console.log('⏰ All automatic logout functionality disabled - users stay logged in indefinitely');
+    
     return () => {
+      // Cleanup any existing timeouts (disabled)
       if (sessionTimeoutId) {
         clearTimeout(sessionTimeoutId);
         setSessionTimeoutId(null);
+      }
+      if (idleTimeoutId) {
+        clearTimeout(idleTimeoutId);
+        setIdleTimeoutId(null);
       }
     };
   }, [authState.user, sessionStartTime]);

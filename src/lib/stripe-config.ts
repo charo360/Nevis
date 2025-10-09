@@ -14,45 +14,65 @@ interface StripeConfig {
 
 /**
  * Get Stripe configuration based on environment
- * - Development: Uses test keys (sk_test_*, pk_test_*)
- * - Production: Uses live keys (sk_live_*, pk_live_*)
+ * - Development: Uses test keys (sk_test_*, pk_test_*) with _TEST suffix
+ * - Production: Uses live keys (sk_live_*, pk_live_*) or regular env vars
  */
 export function getStripeConfig(): StripeConfig {
   const nodeEnv = process.env.NODE_ENV;
   const isProduction = nodeEnv === 'production';
   
-  // Get keys from environment
-  const secretKey = process.env.STRIPE_SECRET_KEY;
-  const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  let secretKey: string;
+  let publishableKey: string;
+  let webhookSecret: string;
 
-  // Validate that essential keys exist (webhook secret is optional)
+  if (isProduction) {
+    // Production environment - use live keys or main env vars
+    secretKey = process.env.STRIPE_SECRET_KEY_LIVE || process.env.STRIPE_SECRET_KEY || '';
+    publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_LIVE || process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
+    webhookSecret = process.env.STRIPE_WEBHOOK_SECRET_LIVE || process.env.STRIPE_WEBHOOK_SECRET || '';
+  } else {
+    // Development environment - prefer _TEST suffixed keys, fallback to main
+    secretKey = process.env.STRIPE_SECRET_KEY_TEST || process.env.STRIPE_SECRET_KEY || '';
+    publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST || process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
+    webhookSecret = process.env.STRIPE_WEBHOOK_SECRET_TEST || process.env.STRIPE_WEBHOOK_SECRET || '';
+  }
+
+  // Validate that essential keys exist
   if (!secretKey || !publishableKey) {
     throw new Error(
-      `Missing Stripe configuration for ${isProduction ? 'production' : 'development'} environment. ` +
-      'Please ensure STRIPE_SECRET_KEY and NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY are set.'
+      `Missing Stripe configuration for ${isProduction ? 'production' : 'development'} environment.\n` +
+      `Expected keys: ${isProduction ? 'STRIPE_SECRET_KEY_LIVE, NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_LIVE' : 'STRIPE_SECRET_KEY_TEST, NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST'}\n` +
+      `Or fallback: STRIPE_SECRET_KEY, NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
     );
   }
 
   if (!webhookSecret) {
-    console.warn('⚠️ Stripe webhook secret (STRIPE_WEBHOOK_SECRET) is not set. Webhook signature verification will be disabled.');
+    console.warn(`⚠️ Stripe webhook secret is not set for ${isProduction ? 'production' : 'development'} environment.`);
+    console.warn(`Expected: ${isProduction ? 'STRIPE_WEBHOOK_SECRET_LIVE' : 'STRIPE_WEBHOOK_SECRET_TEST'} or STRIPE_WEBHOOK_SECRET`);
   }
 
   // Validate key format matches environment
   const expectedSecretPrefix = isProduction ? 'sk_live_' : 'sk_test_';
   const expectedPublishablePrefix = isProduction ? 'pk_live_' : 'pk_test_';
+  const expectedWebhookPrefix = 'whsec_';
 
   if (!secretKey.startsWith(expectedSecretPrefix)) {
     console.warn(
-      `⚠️  Stripe secret key doesn't match environment. ` +
-      `Expected ${expectedSecretPrefix} but got ${secretKey.substring(0, 8)}...`
+      `⚠️ Stripe secret key doesn't match ${isProduction ? 'production' : 'development'} environment.\n` +
+      `Expected: ${expectedSecretPrefix}... but got: ${secretKey.substring(0, 8)}...`
     );
   }
 
   if (!publishableKey.startsWith(expectedPublishablePrefix)) {
     console.warn(
-      `⚠️  Stripe publishable key doesn't match environment. ` +
-      `Expected ${expectedPublishablePrefix} but got ${publishableKey.substring(0, 8)}...`
+      `⚠️ Stripe publishable key doesn't match ${isProduction ? 'production' : 'development'} environment.\n` +
+      `Expected: ${expectedPublishablePrefix}... but got: ${publishableKey.substring(0, 8)}...`
+    );
+  }
+
+  if (webhookSecret && !webhookSecret.startsWith(expectedWebhookPrefix)) {
+    console.warn(
+      `⚠️ Stripe webhook secret format invalid. Expected: ${expectedWebhookPrefix}... but got: ${webhookSecret.substring(0, 8)}...`
     );
   }
 
@@ -64,18 +84,18 @@ export function getStripeConfig(): StripeConfig {
     isLive: isProduction && secretKey.startsWith('sk_live_')
   };
 
-  // Log configuration (without exposing keys)
-    const secretKeyPrefix = secretKey ? `${secretKey.substring(0, 12)}...` : 'not set';
-    const publishableKeyPrefix = publishableKey ? `${publishableKey.substring(0, 12)}...` : 'not set';
-    const webhookSecretPrefix = webhookSecret ? `${webhookSecret.substring(0, 12)}...` : 'not set';
+  // Log configuration (without exposing actual keys)
+  const secretKeyPrefix = secretKey ? `${secretKey.substring(0, 12)}...` : 'not set';
+  const publishableKeyPrefix = publishableKey ? `${publishableKey.substring(0, 12)}...` : 'not set';
+  const webhookSecretPrefix = webhookSecret ? `${webhookSecret.substring(0, 12)}...` : 'not set';
 
-    console.log(`🔧 Stripe Configuration:`, {
-      environment: config.environment,
-      isLive: config.isLive,
-      secretKeyPrefix,
-      publishableKeyPrefix,
-      webhookSecretPrefix
-    });
+  console.log(`🔧 Stripe Configuration Loaded:`, {
+    environment: config.environment,
+    isLive: config.isLive,
+    secretKey: secretKeyPrefix,
+    publishableKey: publishableKeyPrefix,
+    webhookSecret: webhookSecretPrefix
+  });
 
   return config;
 }

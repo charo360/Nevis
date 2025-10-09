@@ -23,6 +23,7 @@ import {
 import { UnifiedBrandSelector } from '@/components/brand/unified-brand-selector';
 import { usePathname } from "next/navigation";
 import { CreditsIndicator } from "@/components/pricing/CreditsDisplay";
+import { CreditDisplay } from "@/components/ui/credit-display";
 import { useAuth } from "@/hooks/use-auth-supabase";
 import {
   Sidebar,
@@ -63,6 +64,11 @@ export function AppSidebar() {
         <div className="px-2 py-2">
           <UnifiedBrandSelector />
         </div>
+
+        {/* Credit Display
+        <div className="px-2 pb-2">
+          <CreditDisplay variant="sidebar" />
+        </div> */}
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
@@ -140,6 +146,19 @@ export function AppSidebar() {
               <Link href="/content-calendar">
                 <Calendar />
                 <span>Content Calendar</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={isActive("/credits")}
+              tooltip="Credit Management"
+            >
+              <Link href="/credits">
+                <Coins />
+                <span>Credit Management</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
