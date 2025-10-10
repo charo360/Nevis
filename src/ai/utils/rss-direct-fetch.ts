@@ -157,7 +157,8 @@ export async function fetchRSSFeedDirect(category: string, limit: number = 10): 
     console.log(`🔍 [Direct RSS] Fetching category: ${category}, limit: ${limit} via server API`);
 
     // Use server-side API route to avoid CORS issues
-    const apiUrl = `/api/rss-data?category=${encodeURIComponent(category)}&limit=${limit}`;
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001';
+    const apiUrl = `${baseUrl}/api/rss-data?category=${encodeURIComponent(category)}&limit=${limit}`;
 
     const response = await fetch(apiUrl, {
       method: 'GET',

@@ -9,6 +9,7 @@
 
 import { ai, MediaPart, GenerateRequest, generateContentWithProxy } from '@/ai/genkit';
 import { aiProxyClient, getUserIdForProxy, getUserTierForProxy } from '@/lib/services/ai-proxy-client';
+import { vertexAIClient } from '@/lib/services/vertex-ai-client';
 import { z } from 'zod';
 import type { BrandProfile } from '@/lib/types';
 import {
@@ -283,14 +284,12 @@ async function generateWithRetry(request: GenerateRequest, logoDataUrl?: string,
 
     for (let i = 0; i < retries; i++) {
         try {
-            // If we have a logo, use the proxy-aware approach
+            // Use direct Vertex AI instead of proxy
             if (logoDataUrl && request.model?.includes('image')) {
-                console.log('🔍 [DEBUG] Using proxy-aware approach with logo');
-                const { generateContentWithProxy } = await import('@/ai/genkit');
+                console.log('🔍 [DEBUG] Using direct Vertex AI with logo');
 
                 // Extract text prompt from request
                 let textPrompt = '';
-                const nonLogoMediaParts: any[] = [];
 
                 if (Array.isArray(request.prompt)) {
                     for (const part of request.prompt) {
@@ -298,32 +297,11 @@ async function generateWithRetry(request: GenerateRequest, logoDataUrl?: string,
                             textPrompt += part;
                         } else if (part.text) {
                             textPrompt += part.text;
-                        } else if (part.media && part.media.url !== logoDataUrl) {
-                            // This is a non-logo media part (e.g., reference image)
-                            nonLogoMediaParts.push(part);
                         }
                     }
                 } else if (typeof request.prompt === 'string') {
                     textPrompt = request.prompt;
                 }
-
-                // Prepare parts for proxy call
-                const proxyParts: any[] = [textPrompt];
-
-                // Add non-logo media parts
-                nonLogoMediaParts.forEach(part => {
-                    if (part.media?.url) {
-                        const base64Match = part.media.url.match(/^data:[^;]+;base64,(.+)$/);
-                        if (base64Match) {
-                            proxyParts.push({
-                                inlineData: {
-                                    data: base64Match[1],
-                                    mimeType: part.media.contentType || 'image/png'
-                                }
-                            });
-                        }
-                    }
-                });
 
                 // Add logo integration prompt
                 const logoPrompt = `\n\n🎯 CRITICAL LOGO REQUIREMENT - THIS IS MANDATORY:
@@ -336,61 +314,53 @@ You MUST include the exact brand logo image that was provided via logoImage para
 
 The client specifically requested their brand logo to be included. FAILURE TO INCLUDE THE LOGO IS UNACCEPTABLE.`;
 
-                proxyParts[0] = textPrompt + logoPrompt;
+                const finalPrompt = textPrompt + logoPrompt;
 
-                // Call proxy with explicit logo
-                const modelName = request.model?.replace('googleai/', '') || 'gemini-2.5-flash-image-preview';
-                console.log('🔍 [DEBUG] About to call proxy generateImage directly with:', { modelName, hasLogo: !!logoDataUrl });
-                const userId = getUserIdForProxy();
-                const userTier = getUserTierForProxy();
-                const textOnlyPrompt = typeof proxyParts[0] === 'string' ? proxyParts[0] : (typeof textPrompt === 'string' ? textPrompt : '');
+                // Use direct Vertex AI with correct model name
+                const modelName = 'gemini-2.5-flash-image'; // Use correct Vertex AI model name
+                console.log('🔍 [DEBUG] About to call direct Vertex AI with:', { modelName, hasLogo: !!logoDataUrl });
 
-                const proxyResp = await aiProxyClient.generateImage({
-                    prompt: textOnlyPrompt,
-                    user_id: userId,
-                    user_tier: userTier,
-                    model: modelName,
+                const result = await vertexAIClient.generateImage(finalPrompt, modelName, {
+                    temperature: 0.7,
+                    maxOutputTokens: 8192,
                     logoImage: logoDataUrl
                 });
 
-                // Extract image data URL or file URI from proxy response
-                const candidates = proxyResp?.data?.candidates || [];
-                let imageUrlFromProxy: string | null = null;
-                let imageContentType: string = 'image/png';
-                for (const cand of candidates) {
-                    const parts = cand?.content?.parts || [];
-                    for (const part of parts) {
-                        if (part?.inlineData?.data) {
-                            imageContentType = part?.inlineData?.mimeType || 'image/png';
-                            imageUrlFromProxy = `data:${imageContentType};base64,${part.inlineData.data}`;
-                            break;
-                        }
-                        if (part?.fileData?.fileUri) {
-                            imageContentType = part?.fileData?.mimeType || 'image/png';
-                            imageUrlFromProxy = part.fileData.fileUri;
-                            break;
-                        }
+                console.log('✅ [DEBUG] Direct Vertex AI generation successful');
+                return {
+                    media: {
+                        url: `data:${result.mimeType};base64,${result.imageData}`,
+                        contentType: result.mimeType
                     }
-                    if (imageUrlFromProxy) break;
-                }
-
-                if (!imageUrlFromProxy) {
-                    throw new Error('Proxy returned no image data');
-                }
-
-                console.log('🔍 [DEBUG] Proxy image generated successfully');
-                return { media: { url: imageUrlFromProxy, contentType: imageContentType } } as any;
+                } as any;
             } else {
-                // Fallback to original ai.generate for non-logo cases
-                const result = await ai.generate(request);
-                return result;
+                // For non-logo cases, also use direct Vertex AI
+                console.log('🔍 [DEBUG] Using direct Vertex AI without logo');
+
+                let textPrompt = '';
+                if (Array.isArray(request.prompt)) {
+                    textPrompt = request.prompt.map(p => typeof p === 'string' ? p : (p.text || '')).join(' ');
+                } else if (typeof request.prompt === 'string') {
+                    textPrompt = request.prompt;
+                }
+
+                const modelName = 'gemini-2.5-flash-image';
+
+                const result = await vertexAIClient.generateImage(textPrompt, modelName, {
+                    temperature: 0.7,
+                    maxOutputTokens: 8192
+                });
+
+                console.log('✅ [DEBUG] Direct Vertex AI generation successful (no logo)');
+                return {
+                    media: {
+                        url: `data:${result.mimeType};base64,${result.imageData}`,
+                        contentType: result.mimeType
+                    }
+                } as any;
             }
         } catch (e: any) {
-            console.error('❌ [DEBUG] generateContentWithProxy failed:', (e && e.message) ? e.message : e);
-            // Handle proxy not available error
-            if (e.message && e.message.includes('Proxy is disabled')) {
-                throw new Error("🚫 AI Proxy is not configured. Please set up your API keys in .env.local and start the proxy server. See the setup instructions for details.");
-            }
+            console.error('❌ [DEBUG] Direct Vertex AI failed:', (e && e.message) ? e.message : e);
 
             if (e.message && e.message.includes('503') && i < retries - 1) {
                 await new Promise(resolve => setTimeout(resolve, delay));
@@ -1139,22 +1109,23 @@ Ensure the text is readable and well-composed.`
                     attempts++;
 
                     // FORCE Flash models to prevent Pro charges
-                    let modelToUse = 'googleai/gemini-2.5-flash-image-preview'; // Default
+                    let modelToUse = 'googleai/gemini-2.5-flash-image'; // Default
 
                     if (input.preferredModel) {
                         // Map Gemini model names to Genkit model identifiers - ONLY AUTHORIZED MODELS
                         const modelMapping: Record<string, string> = {
-                            'gemini-2.5-flash-image-preview': 'googleai/gemini-2.5-flash-image-preview',
+                            'gemini-2.5-flash-image-preview': 'googleai/gemini-2.5-flash-image',
+                            'gemini-2.5-flash-image': 'googleai/gemini-2.5-flash-image',
                             'gemini-2.5-flash': 'googleai/gemini-2.5-flash'
                             // REMOVED: 'gemini-2.0-flash' - NOT AUTHORIZED, CAUSES UNEXPECTED BILLING
                         };
 
-                        modelToUse = modelMapping[input.preferredModel] || 'googleai/gemini-2.5-flash-image-preview';
+                        modelToUse = modelMapping[input.preferredModel] || 'googleai/gemini-2.5-flash-image';
 
                         // BLOCK Pro models to prevent expensive charges
                         if (modelToUse.includes('pro')) {
                             console.warn('🚫 BLOCKED Pro model to prevent charges, using Flash instead');
-                            modelToUse = 'googleai/gemini-2.5-flash-image-preview';
+                            modelToUse = 'googleai/gemini-2.5-flash-image';
                         }
                     }
 
