@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase-client';
 import { Loader2, CheckCircle, XCircle, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -18,6 +18,7 @@ export default function AuthCallbackPage() {
         console.log('🔄 Processing OAuth callback...');
         
         // Get the session from Supabase (this handles the URL hash automatically)
+        const supabase = createClient();
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {

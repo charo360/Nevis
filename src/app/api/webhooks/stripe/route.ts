@@ -14,7 +14,7 @@ const stripeConfig = getStripeConfig();
 
 // Initialize Stripe with environment-appropriate keys  
 const stripe = new Stripe(stripeConfig.secretKey, {
-  apiVersion: '2025-09-30' as Stripe.LatestApiVersion
+  apiVersion: '2024-06-20'
 });
 
 const webhookSecret = stripeConfig.webhookSecret;
@@ -128,6 +128,7 @@ export async function POST(req: NextRequest) {
 
 async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
   console.log('🎉 Processing completed checkout session:', session.id);
+  console.log('📋 FULL Session object:', JSON.stringify(session, null, 2));
   console.log('📋 Session data:', {
     client_reference_id: session.client_reference_id,
     metadata: session.metadata,
@@ -142,11 +143,13 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
 
   if (!userId) {
     console.error('❌ Missing userId in session. client_reference_id:', session.client_reference_id, 'metadata.userId:', session.metadata?.userId);
+    console.error('📋 FULL Session object for debugging:', JSON.stringify(session, null, 2));
     return;
   }
 
   if (!planId) {
     console.error('❌ Missing planId in session metadata:', session.metadata);
+    console.error('📋 FULL Session object for debugging:', JSON.stringify(session, null, 2));
     return;
   }
 
@@ -154,96 +157,58 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
 
   if (!plan) {
     console.error('❌ Invalid plan ID:', planId);
+    console.error('📋 FULL Session object for debugging:', JSON.stringify(session, null, 2));
     return;
   }
 
   console.log('✅ Found plan:', { planId, credits: plan.credits, name: plan.name });
 
   try {
-    // Check if payment already processed (idempotency) - critical for preventing duplicates
-    console.log('🔍 Searching for existing payment with session_id:', session.id);
-    
-    const { data: existingPayment, error: existingError } = await supabase
-      .from('payment_transactions')
-      .select('id, status, credits_added, stripe_session_id, created_at')
-      .eq('stripe_session_id', session.id)
-      .maybeSingle();
-      
-    console.log('📊 Database search result:', {
-      found: !!existingPayment,
-      error: !!existingError,
-      payment_id: existingPayment?.id,
-      current_status: existingPayment?.status,
-      created_at: existingPayment?.created_at
+    // Use the new idempotent payment processing function
+    console.log('💳 Processing payment with idempotency protection...');
+    const { data: paymentResult, error: paymentError } = await supabase.rpc('process_payment_with_idempotency', {
+      p_stripe_session_id: session.id,
+      p_user_id: userId,
+      p_plan_id: planId,
+      p_amount: (session.amount_total || 0) / 100, // Convert from cents
+      p_credits_to_add: plan.credits
     });
 
-    if (existingError) {
-      console.error('❌ Error checking existing payment:', existingError);
+    console.log('🧾 Supabase RPC result:', { paymentResult, paymentError });
+
+    if (paymentError) {
+      console.error('❌ Payment processing failed:', paymentError);
+      throw new Error(`Payment processing failed: ${paymentError.message}`);
     }
 
-    if (existingPayment) {
-      if (existingPayment.status === 'completed') {
-        console.log('⚠️ Payment already completed, skipping:', session.id);
-        return;
-      } else {
-        console.log('📝 Found pending payment, updating to completed:', existingPayment.id);
-        // Update existing pending payment to completed
-        const { error: updateError } = await supabase
-          .from('payment_transactions')
-          .update({ 
-            status: 'completed',
-            credits_added: plan.credits
-          })
-          .eq('id', existingPayment.id);
-
-        if (updateError) {
-          console.error('❌ Failed to update existing payment:', updateError);
-          return;
-        }
-
-        console.log('✅ Updated existing payment to completed:', existingPayment.id);
-        await updateUserCredits(userId, plan.credits);
-        return;
-      }
+    if (!paymentResult || !Array.isArray(paymentResult) || paymentResult.length === 0) {
+      console.error('❌ No payment result returned from Supabase RPC!', { paymentResult });
+      throw new Error('No payment result returned from Supabase RPC');
     }
 
-    // If no existing payment found, this is an error - payments should always be created during checkout
-    console.error('❌ No existing payment transaction found for session:', session.id);
-    console.error('💡 This indicates a problem with the checkout flow - payment should be created before webhook');
-    
-    // Let's try to find it by different criteria
-    console.log('🔍 Searching for payment by payment_intent_id:', session.payment_intent);
-    
-    const { data: paymentByIntent, error: intentError } = await supabase
-      .from('payment_transactions')
-      .select('*')
-      .eq('stripe_payment_intent_id', session.payment_intent)
-      .maybeSingle();
+    const result = paymentResult[0];
 
-    if (paymentByIntent) {
-      console.log('✅ Found payment by payment_intent_id, updating:', paymentByIntent.id);
-      
-      const { error: updateError } = await supabase
-        .from('payment_transactions')
-        .update({ 
-          status: 'completed',
-          credits_added: plan.credits,
-          stripe_session_id: session.id  // Update with correct session ID
-        })
-        .eq('id', paymentByIntent.id);
-
-      if (updateError) {
-        console.error('❌ Failed to update payment by intent ID:', updateError);
-        return;
-      }
-
-      console.log('✅ Updated payment via payment_intent_id');
-      await updateUserCredits(userId, plan.credits);
-      return;
+    if (!result) {
+      console.error('❌ Supabase RPC returned empty result object!', { paymentResult });
+      throw new Error('Supabase RPC returned empty result object');
     }
-    
-    console.error('❌ Could not find payment transaction by session_id OR payment_intent_id');
-    console.error('🚨 This should never happen - investigate checkout flow!');
+
+    if (result.was_duplicate) {
+      console.log('⚠️ Duplicate payment detected and ignored:', {
+        session_id: session.id,
+        payment_id: result.payment_id,
+        credits_that_would_have_been_added: result.credits_added
+      });
+    } else {
+      console.log('✅ Payment processed successfully:', {
+        session_id: session.id,
+        payment_id: result.payment_id,
+        credits_added: result.credits_added,
+        new_total_credits: result.new_total_credits,
+        new_remaining_credits: result.new_remaining_credits
+      });
+    }
+
     return;
 
   } catch (error: any) {

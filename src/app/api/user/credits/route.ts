@@ -1,21 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { cookies } from 'next/headers';
+import { createClient } from '@/lib/supabase-server';
+import { createClient as createAdminClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 export async function GET(request: NextRequest) {
   try {
-    // Create Supabase client with cookies for auth
-    const cookieStore = cookies();
-    const supabase = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-      },
-    });
+    // Create server-side Supabase client with cookie handling
+    const supabase = await createClient();
 
     // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -27,9 +20,9 @@ export async function GET(request: NextRequest) {
     const userId = user.id;
 
     // Create service role client for database operations
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    const supabaseAdmin = createAdminClient(supabaseUrl, supabaseServiceKey);
     
-    // Get user credits from database
+    // Get user credits from database with real-time data
     const { data: userCredits, error: creditsError } = await supabaseAdmin
       .from('user_credits')
       .select('*')
@@ -41,28 +34,77 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch credits' }, { status: 500 });
     }
 
-    // If no credits record exists, create default
+    // If no credits record exists, initialize with free trial credits
     if (!userCredits) {
-      const { data: newCredits, error: createError } = await supabaseAdmin
-        .from('user_credits')
-        .insert([{
-          user_id: userId,
-          total_credits: 0,
-          remaining_credits: 0,
-          used_credits: 0
-        }])
-        .select()
-        .single();
+      console.log('🎁 New user detected! Creating free trial with 10 credits...');
+      
+      try {
+        // Create user credits record with 10 free credits
+        const { data: newCredits, error: createError } = await supabaseAdmin
+          .from('user_credits')
+          .insert([{
+            user_id: userId,
+            total_credits: 10, // "Try Agent Free" - 10 free credits
+            remaining_credits: 10,
+            used_credits: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }])
+          .select()
+          .single();
 
-      if (createError) {
-        console.error('Error creating user credits:', createError);
+        if (createError) {
+          console.error('Error creating user credits:', createError);
+          return NextResponse.json({ error: 'Failed to initialize credits' }, { status: 500 });
+        }
+
+        // Also create a payment transaction record for the free credits
+        await supabaseAdmin
+          .from('payment_transactions')
+          .insert([{
+            user_id: userId,
+            plan_id: 'try_agent_free',
+            amount: 0.00,
+            status: 'completed',
+            credits_added: 10,
+            stripe_session_id: `free_trial_${userId}`,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }]);
+
+        console.log('✅ Successfully created free trial credits for new user');
+
+        return NextResponse.json({
+          total_credits: 10,
+          remaining_credits: 10,
+          used_credits: 0,
+          last_payment_at: new Date().toISOString(),
+        }, {
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+          },
+        });
+      } catch (error) {
+        console.error('Error during credit initialization:', error);
         return NextResponse.json({ error: 'Failed to initialize credits' }, { status: 500 });
       }
-
-      return NextResponse.json(newCredits);
     }
 
-    return NextResponse.json(userCredits);
+    // Return existing credits
+    return NextResponse.json({
+      total_credits: userCredits.total_credits || 0,
+      remaining_credits: userCredits.remaining_credits || 0,
+      used_credits: userCredits.used_credits || 0,
+      last_payment_at: userCredits.last_payment_at,
+    }, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
+    });
 
   } catch (error) {
     console.error('Error in credits API:', error);
@@ -72,15 +114,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Create Supabase client with cookies for auth
-    const cookieStore = cookies();
-    const supabase = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-      },
-    });
+    // Create server-side Supabase client with cookie handling
+    const supabase = await createClient();
 
     // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -97,7 +132,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create service role client for database operations
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    const supabaseAdmin = createAdminClient(supabaseUrl, supabaseServiceKey);
 
     // Use the database function to add credits
     const { error } = await supabaseAdmin.rpc('add_credits_to_user', {

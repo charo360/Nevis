@@ -3,7 +3,7 @@
  * Replaces MongoDB for data storage and fixes image storage issues
  */
 
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase-client';
 import type { BrandProfile } from '@/lib/types';
 
 export interface SupabaseBrandProfile {
@@ -58,9 +58,11 @@ export class SupabaseService {
    * Initialize storage bucket if it doesn't exist
    */
   async initializeStorage(): Promise<void> {
-    if (!supabase || this.initialized) return;
+    if (this.initialized) return;
 
     try {
+      const supabase = createClient();
+      
       // Check if bucket exists
       const { data: buckets } = await supabase.storage.listBuckets();
       const bucketExists = buckets?.some(bucket => bucket.name === this.bucketName);
@@ -93,9 +95,9 @@ export class SupabaseService {
     path: string,
     contentType?: string
   ): Promise<{ url: string; path: string } | null> {
-    if (!supabase) return null;
-
     try {
+      const supabase = createClient();
+      
       const { data, error } = await supabase.storage
         .from(this.bucketName)
         .upload(path, file, {
@@ -331,9 +333,9 @@ export class SupabaseService {
    * Delete image from storage
    */
   async deleteImage(path: string): Promise<boolean> {
-    if (!supabase) return false;
-
     try {
+      const supabase = createClient();
+      
       const { error } = await supabase.storage
         .from(this.bucketName)
         .remove([path]);

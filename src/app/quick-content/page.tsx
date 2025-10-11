@@ -940,7 +940,7 @@ function QuickContentPage() {
   };
 
   return (
-    <SidebarInset key={currentBrand?.id || 'no-brand'} fullWidth>
+    <div key={currentBrand?.id || 'no-brand'}>
       <header className="flex h-14 items-center justify-between gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
         <div className="flex items-center gap-2">
           <Button
@@ -1006,7 +1006,7 @@ function QuickContentPage() {
       </header>
       <main className="flex-1 overflow-auto">
         <div className="min-h-full bg-gradient-to-br from-blue-50 to-indigo-100">
-          <div className="container mx-auto px-4 py-8 max-w-full">
+          <div className="w-full px-4 py-8" style={{ maxWidth: 'none' }}>
             <div className="max-w-7xl mx-auto w-full">
               <div className="space-y-4 w-full">
                 {currentBrand && (
@@ -1117,7 +1117,7 @@ function QuickContentPage() {
           </div>
         </div>
       </main>
-    </SidebarInset>
+    </div>
   );
 }
 

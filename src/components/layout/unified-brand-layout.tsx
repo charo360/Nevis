@@ -126,12 +126,14 @@ export function BrandContent({ children, fallback }: BrandContentProps) {
   
   if (!currentBrand) {
     return fallback || (
-      <div className="text-center p-8">
-        <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-          <span className="text-gray-400 text-2xl">🏢</span>
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="text-center p-8 w-full max-w-lg">
+          <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-gray-400 text-2xl">🏢</span>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Brand Selected</h3>
+          <p className="text-gray-600">Please select a brand to continue.</p>
         </div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">No Brand Selected</h3>
-        <p className="text-gray-600">Please select a brand to continue.</p>
       </div>
     );
   }

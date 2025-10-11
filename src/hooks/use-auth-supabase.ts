@@ -1,6 +1,6 @@
 // Supabase-based authentication hook (replaces MongoDB auth)
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase-client';
 import type { User, Session } from '@supabase/supabase-js';
 
 export interface AuthUser {
@@ -18,6 +18,7 @@ export interface AuthState {
 }
 
 export function useAuth() {
+  const supabase = createClient();
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     loading: true,
@@ -239,6 +240,8 @@ export function useAuth() {
           if (hasUser && event === 'SIGNED_IN') {
             setSessionStartTime(Date.now());
             setLastActivityTime(Date.now());
+            
+            // Credit initialization is now handled automatically by the credits API
           }
 
           // Clear session state when user signs out

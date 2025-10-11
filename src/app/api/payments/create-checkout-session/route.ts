@@ -10,7 +10,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '2025-08-27.basil' });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '2024-06-20' });
 
 // Minimal plan map (amounts in cents) — adjust to match your pricing-data if desired
 const PLANS: Record<string, { amountCents: number; credits: number; name: string }> = {
@@ -164,34 +164,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unable to create checkout session. Please try again or contact support.' }, { status: 500 });
     }
 
-    // persist pending payment keyed by session id
-    try {
-      const payload = {
-        user_id: decoded.userId,
-        stripe_session_id: session.id,
-  plan_id: isRegional45 ? 'regional_45' : planIdForLookup,
-        amount: unitAmount / 100,
-        currency,
-        status: 'pending',
-        credits_added: 0, // Will be updated on successful payment
-        payment_method: 'stripe_checkout',
-        metadata: {
-          session_id: session.id,
-          country: regionCountry || null,
-          credits_to_add: credits
-        }
-      };
-
-      // Save to Supabase payment_transactions table
-      await supabase
-        .from('payment_transactions')
-        .insert(payload);
-
-      console.log('Payment session created:', payload);
-    } catch (e) {
-      console.error('Failed to record payment session:', e);
-      // continue — do not leak internal error to end user unnecessarily
-    }
+    // Note: Payment record will be created by webhook when payment completes
+    // This prevents duplicate records and race conditions
+    console.log('Checkout session created:', {
+      session_id: session.id,
+      user_id: decoded.userId,
+      plan_id: isRegional45 ? 'regional_45' : planIdForLookup,
+      amount: unitAmount / 100,
+      credits_to_add: credits
+    });
 
     if (!session.url) {
       return NextResponse.json({ error: 'Failed to create checkout session' }, { status: 500 });

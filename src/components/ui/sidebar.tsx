@@ -321,16 +321,22 @@ const SidebarInset = React.forwardRef<
     fullWidth?: boolean
   }
 >(({ className, fullWidth = false, ...props }, ref) => {
+  const { state } = useSidebar()
+  
   if (fullWidth) {
-    // For full-width mode, break out of the sidebar constraints entirely
+    // For full-width mode, use the full screen minus sidebar width
     return (
       <main
         ref={ref}
         className={cn(
-          // Use fixed positioning but ensure proper flex layout for scrolling
-          "fixed inset-0 z-0 bg-background flex flex-col",
-          // Add left margin to account for sidebar when it's open
-          "md:ml-[--sidebar-width] md:peer-data-[state=collapsed]:ml-[--sidebar-width-icon] md:peer-data-[collapsible=offcanvas]:ml-0",
+          // Full width with responsive margins for sidebar - NO PADDING OR MAX-WIDTH
+          "flex min-h-screen flex-col bg-background transition-all duration-200 ease-linear w-full",
+          // Responsive margins based on sidebar state
+          "ml-0", // Mobile: no margin
+          "md:ml-[16rem]", // Desktop expanded: 16rem margin (sidebar width)
+          state === "collapsed" ? "md:ml-[3rem]" : "", // Desktop collapsed: 3rem margin (icon width)
+          // Ensure content uses full available width without any constraints
+          "flex-1",
           className
         )}
         {...props}
@@ -342,8 +348,13 @@ const SidebarInset = React.forwardRef<
     <main
       ref={ref}
       className={cn(
-        // Standard inset mode with responsive margins
-        "relative flex min-h-svh flex-1 flex-col bg-background",
+        // Standard inset mode with responsive margins and container behavior
+        "relative flex min-h-svh flex-1 flex-col bg-background transition-all duration-200 ease-linear",
+        // Standard margins for dashboard and other contained pages
+        "ml-0 md:ml-[16rem]",
+        state === "collapsed" ? "md:ml-[3rem]" : "",
+        // Add max-width for standard pages that should be contained
+        "px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto",
         className
       )}
       {...props}
