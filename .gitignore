@@ -52,3 +52,7 @@ firebase-debug.log
 firestore-debug.log
 *firebase-adminsdk*.json
 service-account-key.json
+
+# vertex ai credentials
+vertex-ai-credentials*.json
+*vertex-ai-credentials*.json

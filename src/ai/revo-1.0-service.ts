@@ -3,9 +3,9 @@
  * Enhanced with Gemini 2.5 Flash Image Preview for enhanced quality and perfect text rendering
  */
 
-// Removed: GoogleGenerativeAI - All AI calls now go through proxy for cost control
+// Updated: Using direct Vertex AI for all AI generation (no proxy dependencies)
 import { BrandProfile } from '@/lib/types';
-import { aiProxyClient, getUserIdForProxy, getUserTierForProxy, shouldUseProxy } from '@/lib/services/ai-proxy-client';
+import { vertexAIClient } from '@/lib/services/vertex-ai-client';
 import { revo10Config, revo10Prompts } from './models/versions/revo-1.0/config';
 import type { ScheduledService } from '@/services/calendar-service';
 import { advancedContentGenerator, BusinessProfile } from './advanced-content-generator';
@@ -444,7 +444,7 @@ function getPlatformOptimization(platform: string): string {
   return optimizations[platform.toLowerCase()] || optimizations['default'];
 }
 
-// Advanced real-time context gathering for Revo 1.0 (enhanced version)
+// Advanced real-time context gathering for Revo 1.0 (enhanced version with unified knowledge service)
 async function gatherRealTimeContext(
   businessType: string,
   location: string,
@@ -472,12 +472,42 @@ async function gatherRealTimeContext(
   };
 
   try {
-    // Import enhanced data integration utilities
-    const { fetchBusinessRelevantRSSData } = await import('@/ai/utils/enhanced-rss-integration');
+    // 🚀 ENHANCED: Use unified knowledge service for comprehensive data integration
+    const { unifiedKnowledgeService } = await import('@/services/unified-knowledge-service');
+
+    // Import legacy utilities for fallback and additional processing
     const { filterContextualData } = await import('@/ai/utils/data-relevance-filter');
     const { CalendarService } = await import('@/services/calendar-service');
-    const { getWeather } = await import('@/services/weather');
-    const { getEvents } = await import('@/services/events');
+
+    // 🚀 ENHANCED: Get unified contextual data first
+    let unifiedContext = null;
+    try {
+      console.log('🧠 [Revo 1.0] Fetching unified contextual data...');
+
+      unifiedContext = await unifiedKnowledgeService.getUnifiedContext({
+        businessType,
+        location,
+        platform,
+        includeRSS: true,
+        includeWeather: true,
+        includeCultural: true,
+        includeEvents: true,
+        includeCorrelation: true,
+        cachePreference: 'balanced',
+        fallbackStrategy: 'graceful'
+      });
+
+      console.log('✅ [Revo 1.0] Unified context received:', {
+        rssArticles: unifiedContext.rssData.articles.length,
+        weatherCondition: unifiedContext.weatherData.current.condition,
+        culturalRegion: unifiedContext.culturalData.region,
+        localEvents: unifiedContext.eventsData.localEvents.length,
+        correlatedInsights: Object.values(unifiedContext.correlatedInsights).reduce((sum, arr) => sum + arr.length, 0)
+      });
+
+    } catch (error) {
+      console.warn('⚠️ [Revo 1.0] Unified knowledge service failed, will use legacy data fetching:', error);
+    }
 
     // Collect all contextual data
     const contextualData: any[] = [];
@@ -506,89 +536,201 @@ async function gatherRealTimeContext(
       console.log('📅 [Revo 1.0] No scheduled services provided');
     }
 
-    // 2. RSS DATA INTEGRATION
-    try {
-      const rssData = await fetchBusinessRelevantRSSData(businessType, location);
-      context.rssData = rssData;
+    // 2. RSS DATA INTEGRATION (Enhanced with unified knowledge service)
+    if (unifiedContext) {
+      // Use unified context RSS data
+      context.rssData = {
+        articles: unifiedContext.rssData.articles,
+        trends: unifiedContext.rssData.trends.map(t => t.topic),
+        localNews: unifiedContext.rssData.localNews.map(n => n.headline),
+        industryNews: unifiedContext.rssData.industryNews.map(n => n.headline),
+        insights: unifiedContext.rssData.insights,
+        relevanceScore: unifiedContext.rssData.relevanceScore
+      };
 
       // Add RSS articles to contextual data
-      rssData.articles.forEach(article => {
+      unifiedContext.rssData.articles.forEach(article => {
         contextualData.push({
           type: 'rss',
           content: article,
-          source: 'rss_feeds',
+          source: 'unified_knowledge_service',
           timestamp: new Date()
         });
       });
 
-      console.log('📰 [Revo 1.0] RSS Data:', {
-        articlesCount: rssData.articles.length,
-        trendsCount: rssData.trends.length,
-        localNewsCount: rssData.localNews.length,
-        industryNewsCount: rssData.industryNews.length
+      console.log('📰 [Revo 1.0] RSS Data (Unified):', {
+        articlesCount: unifiedContext.rssData.articles.length,
+        trendsCount: unifiedContext.rssData.trends.length,
+        localNewsCount: unifiedContext.rssData.localNews.length,
+        industryNewsCount: unifiedContext.rssData.industryNews.length
       });
-    } catch (error) {
-      console.warn('Failed to fetch RSS data:', error);
+    } else {
+      // Fallback to legacy RSS fetching
+      try {
+        const { fetchBusinessRelevantRSSData } = await import('@/ai/utils/enhanced-rss-integration');
+        const rssData = await fetchBusinessRelevantRSSData(businessType, location);
+        context.rssData = rssData;
 
-      // Fallback: Provide basic RSS structure with empty data
-      context.rssData = {
-        articles: [],
-        trends: [],
-        localNews: [],
-        industryNews: [],
-        insights: [`RSS data temporarily unavailable for ${businessType} in ${location}`],
-        relevanceScore: 0.1
-      };
+        // Add RSS articles to contextual data
+        rssData.articles.forEach(article => {
+          contextualData.push({
+            type: 'rss',
+            content: article,
+            source: 'legacy_rss_feeds',
+            timestamp: new Date()
+          });
+        });
+
+        console.log('📰 [Revo 1.0] RSS Data (Legacy):', {
+          articlesCount: rssData.articles.length,
+          trendsCount: rssData.trends.length,
+          localNewsCount: rssData.localNews.length,
+          industryNewsCount: rssData.industryNews.length
+        });
+      } catch (error) {
+        console.warn('Failed to fetch RSS data:', error);
+
+        // Fallback: Provide basic RSS structure with empty data
+        context.rssData = {
+          articles: [],
+          trends: [],
+          localNews: [],
+          industryNews: [],
+          insights: [`RSS data temporarily unavailable for ${businessType} in ${location}`],
+          relevanceScore: 0.1
+        };
+      }
     }
 
-    // 3. WEATHER DATA INTEGRATION
-    try {
-      const weatherData = await getWeather(location);
-      if (weatherData && !weatherData.includes('Could not retrieve')) {
-        context.weather = {
-          condition: weatherData,
-          business_impact: generateBusinessWeatherImpact(weatherData, businessType),
-          content_opportunities: generateWeatherContentOpportunities(weatherData, businessType)
-        };
+    // 3. WEATHER DATA INTEGRATION (Enhanced with unified knowledge service)
+    if (unifiedContext) {
+      // Use unified context weather data
+      context.weather = {
+        condition: unifiedContext.weatherData.current.description,
+        business_impact: unifiedContext.weatherData.businessImpact,
+        content_opportunities: unifiedContext.weatherData.contentOpportunities
+      };
 
-        contextualData.push({
-          type: 'weather',
-          content: context.weather,
-          source: 'weather_api',
-          timestamp: new Date()
-        });
-      } else {
-        // Fallback to simulated weather context
+      contextualData.push({
+        type: 'weather',
+        content: context.weather,
+        source: 'unified_knowledge_service',
+        timestamp: new Date()
+      });
+
+      console.log('🌤️ [Revo 1.0] Weather Data (Unified):', {
+        condition: unifiedContext.weatherData.current.condition,
+        temperature: unifiedContext.weatherData.current.temperature,
+        businessImpact: unifiedContext.weatherData.businessImpact
+      });
+    } else {
+      // Fallback to legacy weather fetching
+      try {
+        const { getWeather } = await import('@/services/weather');
+        const weatherData = await getWeather(location);
+        if (weatherData && !weatherData.includes('Could not retrieve')) {
+          context.weather = {
+            condition: weatherData,
+            business_impact: generateBusinessWeatherImpact(weatherData, businessType),
+            content_opportunities: generateWeatherContentOpportunities(weatherData, businessType)
+          };
+
+          contextualData.push({
+            type: 'weather',
+            content: context.weather,
+            source: 'legacy_weather_api',
+            timestamp: new Date()
+          });
+        } else {
+          // Fallback to simulated weather context
+          context.weather = generateWeatherContext(location);
+        }
+      } catch (error) {
+        console.warn('Failed to fetch weather data:', error);
         context.weather = generateWeatherContext(location);
       }
-    } catch (error) {
-      console.warn('Failed to fetch weather data:', error);
-      context.weather = generateWeatherContext(location);
     }
 
-    // 4. LOCAL EVENTS INTEGRATION
-    try {
-      const eventsData = await getEvents(location, new Date());
-      if (eventsData && !eventsData.includes('Could not retrieve')) {
-        context.events = eventsData;
+    // 4. LOCAL EVENTS INTEGRATION (Enhanced with unified knowledge service)
+    if (unifiedContext) {
+      // Use unified context events data
+      context.events = unifiedContext.eventsData.localEvents.map(e => e.name).join(', ') ||
+        generateLocalOpportunities(businessType, location);
 
+      // Add events to contextual data
+      unifiedContext.eventsData.localEvents.forEach(event => {
         contextualData.push({
           type: 'event',
-          content: { description: eventsData, location },
-          source: 'events_api',
+          content: { description: event.name, location: event.venue || location },
+          source: 'unified_knowledge_service',
           timestamp: new Date()
         });
-      } else {
-        // Fallback to simulated events
+      });
+
+      console.log('🎉 [Revo 1.0] Events Data (Unified):', {
+        localEventsCount: unifiedContext.eventsData.localEvents.length,
+        businessRelevantCount: unifiedContext.eventsData.businessRelevantEvents.length,
+        relevanceScore: unifiedContext.eventsData.relevanceScore
+      });
+    } else {
+      // Fallback to legacy events fetching
+      try {
+        const { getEvents } = await import('@/services/events');
+        const eventsData = await getEvents(location, new Date());
+        if (eventsData && !eventsData.includes('Could not retrieve')) {
+          context.events = eventsData;
+
+          contextualData.push({
+            type: 'event',
+            content: { description: eventsData, location },
+            source: 'legacy_events_api',
+            timestamp: new Date()
+          });
+        } else {
+          // Fallback to simulated events
+          context.events = generateLocalOpportunities(businessType, location);
+        }
+      } catch (error) {
+        console.warn('Failed to fetch events data:', error);
         context.events = generateLocalOpportunities(businessType, location);
       }
-    } catch (error) {
-      console.warn('Failed to fetch events data:', error);
-      context.events = generateLocalOpportunities(businessType, location);
     }
 
-    // 5. ENHANCED LOCAL LANGUAGE AND CULTURAL CONTEXT
-    context.localLanguage = generateLocalLanguageContext(location);
+    // 5. ENHANCED LOCAL LANGUAGE AND CULTURAL CONTEXT (Enhanced with unified knowledge service)
+    if (unifiedContext) {
+      // Use unified context cultural data
+      context.localLanguage = generateLocalLanguageContext(location);
+      context.culturalContext = unifiedContext.culturalData;
+      context.correlatedInsights = unifiedContext.correlatedInsights;
+
+      console.log('🌍 [Revo 1.0] Cultural Context (Unified):', {
+        region: unifiedContext.culturalData.region,
+        primaryLanguage: unifiedContext.culturalData.primaryLanguage,
+        culturalValues: unifiedContext.culturalData.culturalValues.length,
+        correlatedInsights: Object.values(unifiedContext.correlatedInsights).reduce((sum, arr) => sum + arr.length, 0)
+      });
+
+      // Add correlated insights to context for enhanced content generation
+      context.enhancedInsights = {
+        weatherEventCorrelation: unifiedContext.correlatedInsights.weatherEventCorrelation,
+        culturalTrendAlignment: unifiedContext.correlatedInsights.culturalTrendAlignment,
+        seasonalOpportunities: unifiedContext.correlatedInsights.seasonalBusinessOpportunities,
+        crossSourceRecommendations: unifiedContext.correlatedInsights.crossSourceRecommendations,
+        contentOptimization: unifiedContext.correlatedInsights.contentOptimizationSuggestions
+      };
+
+    } else {
+      // Fallback to legacy cultural context
+      context.localLanguage = generateLocalLanguageContext(location);
+      context.culturalContext = { region: location, primaryLanguage: 'English' };
+      context.correlatedInsights = {
+        weatherEventCorrelation: [],
+        culturalTrendAlignment: [],
+        seasonalBusinessOpportunities: [],
+        crossSourceRecommendations: [],
+        contentOptimizationSuggestions: []
+      };
+    }
 
     // 5.1. ENHANCED CULTURAL INTELLIGENCE
     try {
@@ -826,7 +968,7 @@ MARKETING APPEAL STRATEGY FOR LAPTOPS:
 MARKETING APPEAL STRATEGY FOR CARS:
 - Focus on: Performance, luxury, reliability, fuel efficiency, safety, status
 - Visual elements: Show car in motion, highlight design features, emphasize interior/exterior
-- Emotional triggers: "Freedom to explore", "Luxury experience", "Safe journey", "Adventure awaits"
+- Emotional triggers: "Freedom to explore", "Luxury experience", "Safe travels", "Adventure awaits"
 - Target audience: Families, professionals, adventure seekers, luxury buyers
 - Design approach: Dynamic, aspirational, lifestyle-focused with motion and energy`;
   }
@@ -1252,7 +1394,7 @@ function getBusinessIntelligenceEngine(businessType: string, location: string): 
         contentStrategies: [
           'Local tech success stories',
           'Innovation case studies',
-          'Digital transformation journeys',
+          'Digital transformation stories',
           'Tech talent development',
           'Local startup ecosystem',
           'Government tech partnerships',
@@ -1330,7 +1472,7 @@ function getBusinessIntelligenceEngine(businessType: string, location: string): 
           'Health awareness and wellness trends'
         ],
         localPhrases: [
-          'Your fitness journey starts here',
+          'Your fitness transformation starts here',
           'Stronger [location] community',
           'Local fitness excellence',
           'Your wellness partner',
@@ -1423,7 +1565,7 @@ function getBusinessIntelligenceEngine(businessType: string, location: string): 
         ],
         localPhrases: [
           'Learning excellence in [location]',
-          'Your educational journey',
+          'Your educational path forward',
           'Local learning excellence',
           'Community education partner',
           'Your learning success',
@@ -2047,78 +2189,102 @@ function generateLocalOpportunities(businessType: string, location: string): any
   return opportunities.slice(0, 2);
 }
 
-// Removed: Direct API key and client initialization - All AI calls now go through proxy for cost control
+// Direct Vertex AI models (no proxy dependencies)
+const REVO_1_0_IMAGE_MODEL = 'gemini-2.5-flash-image'; // Direct Vertex AI model
+const REVO_1_0_TEXT_MODEL = 'gemini-2.5-flash'; // Direct Vertex AI model
 
-// Revo 1.0 uses the configured Gemini model
-const REVO_1_0_MODEL = revo10Config.aiService;
+// Direct Vertex AI function (no proxy dependencies)
+async function generateContentDirect(promptOrParts: string | any[], modelName: string, isImageGeneration: boolean): Promise<any> {
+  console.log('🔄 Revo 1.0: Using direct Vertex AI');
 
-// Helper function to route AI calls through proxy - PROXY ONLY, NO FALLBACK
-async function generateContentWithProxy(promptOrParts: string | any[], modelName: string, isImageGeneration: boolean = false): Promise<any> {
-  if (!shouldUseProxy()) {
-    throw new Error('🚫 Proxy is disabled. This system requires AI_PROXY_ENABLED=true for cost control and model management.');
-  }
-
-  console.log(`🔄 Revo 1.0: Using proxy for ${isImageGeneration ? 'image' : 'text'} generation with ${modelName}`);
-
-  // Handle multimodal requests (text + images) properly
-  let prompt: string;
-  let imageData: string | undefined;
-
-  if (Array.isArray(promptOrParts)) {
-    // Extract text and image data from parts array
-    const textParts = promptOrParts.filter(part => typeof part === 'string' || part.text);
-    const imageParts = promptOrParts.filter(part => part.inlineData);
-
-    prompt = textParts.map(part => typeof part === 'string' ? part : part.text).join(' ');
-
-    if (imageParts.length > 0 && imageParts[0].inlineData) {
-      imageData = imageParts[0].inlineData.data;
-    }
-  } else {
-    prompt = promptOrParts;
+  // Check if Vertex AI is enabled
+  if (!process.env.VERTEX_AI_ENABLED || process.env.VERTEX_AI_ENABLED !== 'true') {
+    throw new Error('🚫 Vertex AI is not enabled. Please set VERTEX_AI_ENABLED=true in your environment variables.');
   }
 
   try {
     if (isImageGeneration) {
-      const response = await aiProxyClient.generateImage({
-        prompt,
-        model: modelName,
-        user_id: getUserIdForProxy(),
-        user_tier: getUserTierForProxy(),
-        max_tokens: 8192
+      // Handle multimodal requests (text + images) for image generation
+      let prompt: string;
+      let logoImage: string | undefined;
+
+      if (Array.isArray(promptOrParts)) {
+        // Extract text parts
+        const textParts = promptOrParts.filter(part => typeof part === 'string');
+        prompt = textParts.join(' ');
+
+        // Extract image parts (logo)
+        const imageParts = promptOrParts.filter(part =>
+          typeof part === 'object' && part.inlineData
+        );
+
+        if (imageParts.length > 0) {
+          // Convert back to data URL format for Vertex AI
+          const firstImage = imageParts[0];
+          const mimeType = firstImage.inlineData.mimeType || 'image/png';
+          logoImage = `data:${mimeType};base64,${firstImage.inlineData.data}`;
+          console.log('🖼️ Revo 1.0: Logo data extracted for Vertex AI');
+        }
+      } else {
+        prompt = promptOrParts;
+      }
+
+      console.log(`🔄 Revo 1.0: Generating image with Vertex AI model ${modelName}`);
+      const result = await vertexAIClient.generateImage(prompt, modelName, {
+        temperature: 0.7,
+        maxOutputTokens: 8192,
+        logoImage
       });
 
-      // Return consistent structure with Revo 1.5 and 2.0
+      // Convert to expected format
       return {
-        candidates: [{
-          content: {
-            parts: [{
-              inlineData: {
-                mimeType: 'image/png',
-                data: response.imageUrl.includes('data:')
-                  ? response.imageUrl.split(',')[1]
-                  : response.imageUrl
-              }
-            }]
-          }
-        }]
+        response: {
+          candidates: [{
+            content: {
+              parts: [{
+                inlineData: {
+                  mimeType: result.mimeType,
+                  data: result.imageData
+                }
+              }]
+            }
+          }]
+        }
       };
     } else {
-      const response = await aiProxyClient.generateText({
-        prompt,
-        model: modelName,
-        user_id: getUserIdForProxy(),
-        user_tier: getUserTierForProxy(),
-        max_tokens: 8192,
-        image_data: imageData
+      // Text generation using Vertex AI
+      let prompt: string;
+      if (Array.isArray(promptOrParts)) {
+        // Extract text parts only
+        const textParts = promptOrParts.filter(part => typeof part === 'string');
+        prompt = textParts.join(' ');
+      } else {
+        prompt = promptOrParts;
+      }
+
+      console.log(`🔄 Revo 1.0: Generating text with Vertex AI model ${modelName}`);
+      const result = await vertexAIClient.generateText(prompt, modelName, {
+        temperature: 0.7,
+        maxOutputTokens: 8192
       });
 
-      return { response: { text: () => response.content } };
+      // Convert to expected format
+      return {
+        response: {
+          text: () => result.text
+        }
+      };
     }
   } catch (error) {
-    console.error('❌ [Revo 1.0] Proxy call failed:', error);
-    throw new Error(`Revo 1.0 proxy generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error('❌ Revo 1.0: Direct Vertex AI call failed:', error);
+    throw new Error(`Revo 1.0 direct generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
+}
+
+// Direct Vertex AI function (replaces proxy routing)
+async function generateContentWithProxy(promptOrParts: string | any[], modelName: string, isImageGeneration: boolean = false): Promise<any> {
+  console.log(`🔄 Revo 1.0: Using direct Vertex AI for ${isImageGeneration ? 'image' : 'text'} generation with ${modelName}`);
+  return await generateContentDirect(promptOrParts, modelName, isImageGeneration);
 }
 
 /**
@@ -2285,7 +2451,7 @@ ${upcomingServices.map((s: any) => `- ${s.serviceName} (in ${s.daysUntil} days):
       console.log('🏢 [Revo 1.0] Using general brand services (no scheduled services)');
     }
 
-    // Removed: Direct API model initialization - All AI calls now go through proxy
+    // Direct Vertex AI model initialization
 
     // Debug logging for contact information
     console.log('🔍 [Revo 1.0] Contact Information Debug:', {
@@ -2776,7 +2942,7 @@ export async function generateRevo10Design(input: {
 }) {
   try {
 
-    // Removed: Direct API model initialization - All AI calls now go through proxy
+    // Direct Vertex AI model initialization
 
     // Build the design generation prompt
     const designPrompt = `Create a creative design concept for ${input.businessName} (${input.businessType}) that feels like it was imagined by a human designer.
@@ -2809,7 +2975,7 @@ Remember: You're a creative human designer, not an AI. Think with imagination an
     const result = await generateContentWithProxy([
       revo10Prompts.DESIGN_SYSTEM_PROMPT,
       designPrompt
-    ], REVO_1_0_MODEL, false);
+    ], REVO_1_0_TEXT_MODEL, false);
 
     const response = await result.response;
     const design = response.text();
@@ -2903,7 +3069,7 @@ ANTI-GENERIC REQUIREMENTS:
 
     }
 
-    // Removed: Direct API model initialization - All AI calls now go through proxy
+    // Direct Vertex AI model initialization
 
     // Build advanced professional design prompt
     const brandInfo = input.location ? ` based in ${input.location}` : '';
@@ -3341,7 +3507,7 @@ You MUST include the exact brand logo image that was provided above in your desi
         async () => {
           for (let attempt = 1; attempt <= maxRetries; attempt++) {
             try {
-              const geminiResult = await generateContentWithProxy(generationParts, REVO_1_0_MODEL, true);
+              const geminiResult = await generateContentWithProxy(generationParts, REVO_1_0_IMAGE_MODEL, true);
               const geminiResponse = await geminiResult.response;
               return { result: geminiResult, response: geminiResponse };
             } catch (error: any) {
@@ -3428,7 +3594,7 @@ You MUST include the exact brand logo image that was provided above in your desi
         try {
           const strictParts = [...generationParts];
           strictParts[1] = (strictParts[1] || '') + `\nSTRICT DIMENSION ENFORCEMENT: Output must be exactly ${expectedW}x${expectedH} pixels. Do not adjust canvas based on logo.`;
-          const strictResult = await generateContentWithProxy(strictParts, REVO_1_0_MODEL, true);
+          const strictResult = await generateContentWithProxy(strictParts, REVO_1_0_IMAGE_MODEL, true);
           const strictResponse = await strictResult.response;
           const strictPartsOut = strictResponse.candidates?.[0]?.content?.parts || [];
           let strictImageUrl = '';
@@ -3478,8 +3644,8 @@ You MUST include the exact brand logo image that was provided above in your desi
  */
 export async function checkRevo10Health() {
   try {
-    // Removed: Direct API model initialization - All AI calls now go through proxy
-    const result = await generateContentWithProxy('Hello', REVO_1_0_MODEL, false);
+    // Direct Vertex AI model initialization
+    const result = await generateContentWithProxy('Hello', REVO_1_0_TEXT_MODEL, false);
     const response = await result.response;
 
     return {

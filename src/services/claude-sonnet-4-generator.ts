@@ -198,7 +198,7 @@ export class ClaudeSonnet4Generator {
   private static async generateCreativeConcept(request: ClaudeContentRequest, todaysServices: any[], upcomingServices: any[]): Promise<string> {
     try {
       const anthropic = this.getAnthropicClient();
-      
+
       // Build service-aware concept prompt (Revo 2.0 approach)
       let serviceContext = '';
       if (todaysServices.length > 0) {
@@ -207,7 +207,7 @@ export class ClaudeSonnet4Generator {
       if (upcomingServices.length > 0) {
         serviceContext += `\n\n📅 UPCOMING SERVICES (Secondary Focus):\n${upcomingServices.slice(0, 2).map(s => `- ${s.serviceName}`).join('\n')}`;
       }
-      
+
       const conceptPrompt = `Generate a creative concept for ${request.businessName} (${request.businessType}) on ${request.platform}.
       ${serviceContext}
       
@@ -236,10 +236,10 @@ Return a brief creative concept (2-3 sentences) that will guide the content crea
     }
 
     // Fallback concept with service integration
-    const fallbackConcept = todaysServices.length > 0 
+    const fallbackConcept = todaysServices.length > 0
       ? `Create engaging content for ${request.businessName} featuring today's ${todaysServices[0].serviceName} with authentic, professional appeal tailored for ${request.platform}.`
       : `Create engaging content for ${request.businessName} that showcases their ${request.businessType} expertise with authentic, professional appeal tailored for ${request.platform}.`;
-    
+
     return fallbackConcept;
   }
 
@@ -455,7 +455,7 @@ Return a brief creative concept (2-3 sentences) that will guide the content crea
     // Extract scheduled services for priority content focus (Revo 2.0 approach)
     const todaysServices = request.scheduledServices?.filter(s => s.isToday) || [];
     const upcomingServices = request.scheduledServices?.filter(s => s.isUpcoming) || [];
-    
+
     console.log('📅 [Claude Sonnet 4] Scheduled services integration:', {
       todaysServicesCount: todaysServices.length,
       todaysServiceNames: todaysServices.map(s => s.serviceName),
@@ -1035,8 +1035,8 @@ ${productBlock ? `\nPRODUCT CATALOG SNAPSHOT (parsed from brand services):\n${pr
 	- Experience/Events: Date/time/location clarity, what attendees get, social energy. CTA: "RSVP", "Get Tickets", "Join Us".
 
 	ACTION LOGIC:
-	- Determine primary customer journey: browse→buy vs book→visit vs download→use.
-	- Ensure the CTA matches that journey, and the caption narrates the path to action.
+	- Determine primary customer path: browse→buy vs book→visit vs download→use.
+	- Ensure the CTA matches that path, and the caption narrates the path to action.
 	- Create natural urgency (limited availability, seasonal relevance) without fake scarcity.
 
 

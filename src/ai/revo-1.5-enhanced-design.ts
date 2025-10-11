@@ -1,42 +1,34 @@
 /**
- * Revo 1.5 Enhanced Design Service - PROXY ONLY VERSION
- * Uses AI proxy for all requests - no direct API calls or fallbacks
+ * Revo 1.5 Enhanced Design Service - DIRECT VERTEX AI VERSION
+ * Uses direct Vertex AI for all requests - no proxy dependencies
  */
 
 import { BrandProfile } from '@/lib/types';
 import { TrendingHashtagsService } from '@/services/trending-hashtags-service';
 import { RegionalSocialTrendsService } from '@/services/regional-social-trends-service';
 import type { ScheduledService } from '@/services/calendar-service';
-import { aiProxyClient, getUserIdForProxy, getUserTierForProxy, shouldUseProxy } from '@/lib/services/ai-proxy-client';
+import { vertexAIClient } from '@/lib/services/vertex-ai-client';
 import { ContentQualityEnhancer } from '@/utils/content-quality-enhancer';
 
-// Helper function to extract text from proxy response (handles both Claude and Google formats)
-function extractTextFromProxyResponse(response: any): string {
-  console.log('🔍 [Revo 1.5] Extracting text from proxy response:', JSON.stringify(response, null, 2));
+// Helper function to extract text from Vertex AI response
+function extractTextFromResponse(response: any): string {
+  console.log('🔍 [Revo 1.5] Extracting text from Vertex AI response');
 
-  // Handle Claude response format (from our proxy conversion)
-  if (response.response && response.response.candidates && response.response.candidates[0] &&
-    response.response.candidates[0].content && response.response.candidates[0].content.parts) {
-    const text = response.response.candidates[0].content.parts[0].text;
-    console.log('✅ [Revo 1.5] Extracted text from Claude format:', text?.substring(0, 200) + '...');
+  // Handle direct response.text() function (from our generateContentDirect)
+  if (response.response && typeof response.response.text === 'function') {
+    const text = response.response.text();
+    console.log('✅ [Revo 1.5] Extracted text from response.text():', text?.substring(0, 200) + '...');
     return text || '';
   }
 
-  // Handle Google response format (legacy)
-  if (response.response && typeof response.response.text === 'function') {
-    const rawResponse = response.response.text();
-    if (typeof rawResponse === 'string') {
-      console.log('✅ [Revo 1.5] Extracted text from Google format (string):', rawResponse.substring(0, 200) + '...');
-      return rawResponse;
-    } else if (rawResponse && rawResponse.candidates && rawResponse.candidates[0] &&
-      rawResponse.candidates[0].content && rawResponse.candidates[0].content.parts) {
-      const text = rawResponse.candidates[0].content.parts[0].text || '';
-      console.log('✅ [Revo 1.5] Extracted text from Google format (object):', text.substring(0, 200) + '...');
-      return text;
-    }
+  // Handle direct string response
+  if (typeof response === 'string') {
+    console.log('✅ [Revo 1.5] Using direct string response:', response.substring(0, 200) + '...');
+    return response;
   }
 
-  console.log('⚠️ [Revo 1.5] Could not extract text from response, returning empty string');
+  console.warn('⚠️ [Revo 1.5] Could not extract text from response, using empty string');
+  console.warn('⚠️ [Revo 1.5] Response structure:', JSON.stringify(response, null, 2));
   return '';
 }
 
@@ -359,141 +351,98 @@ function getCulturalCTA(location: string, businessType: string): string | null {
   return null;
 }
 
-// Helper function to route AI calls through proxy - WITH CREDIT EXHAUSTION FALLBACK
-async function generateContentWithProxy(promptOrParts: string | any[], modelName: string, isImageGeneration: boolean = false): Promise<any> {
-  if (!shouldUseProxy()) {
-    throw new Error('🚫 Proxy is disabled. This system requires AI_PROXY_ENABLED=true for cost control and model management.');
-  }
+// Revo 1.5 model constants - Direct Vertex AI
+const REVO_1_5_IMAGE_MODEL = 'gemini-2.5-flash-image'; // Direct Vertex AI model
+const REVO_1_5_TEXT_MODEL = 'gemini-2.5-flash'; // Direct Vertex AI model
 
-  try {
-    const userId = getUserIdForProxy();
+// Direct API function when proxy is not available
+async function generateContentDirect(promptOrParts: string | any[], modelName: string, isImageGeneration: boolean): Promise<any> {
+  console.log('🔄 Revo 1.5: Using direct API calls');
 
-    // Handle multimodal requests (text + images) properly
+  if (isImageGeneration) {
+    // Use Vertex AI for image generation
+    console.log('🖼️ Revo 1.5: Using Vertex AI for image generation');
+
+    // Prepare prompt and logo
     let prompt: string;
-    let imageData: string | undefined;
+    let logoImage: string | undefined;
 
     if (Array.isArray(promptOrParts)) {
-      // Extract text parts
       const textParts = promptOrParts.filter(part => typeof part === 'string');
       prompt = textParts.join(' ');
 
-      // Extract image data from inlineData parts (for logo integration)
-      const imageParts = promptOrParts.filter(part =>
-        typeof part === 'object' && part.inlineData && part.inlineData.data
-      );
-
+      // Extract logo image data if present
+      const imageParts = promptOrParts.filter(part => typeof part === 'object' && part.inlineData);
       if (imageParts.length > 0) {
-        // Use the first image (logo) - convert back to data URL format for proxy
-        const firstImage = imageParts[0];
-        const mimeType = firstImage.inlineData.mimeType || 'image/png';
-        imageData = `data:${mimeType};base64,${firstImage.inlineData.data}`;
-        console.log('🖼️ Revo 1.5: Logo data extracted for proxy transmission');
+        const imageData = imageParts[0].inlineData;
+        logoImage = `data:${imageData.mimeType};base64,${imageData.data}`;
       }
     } else {
       prompt = promptOrParts;
     }
 
-    if (isImageGeneration) {
-      console.log(`🔒 Revo 1.5: Generating image with model ${modelName} via proxy`);
-      const result = await aiProxyClient.generateImage({
-        prompt,
-        user_id: userId,
-        model: modelName,
-        max_tokens: 8192,
+    const result = await vertexAIClient.generateImage(prompt, REVO_1_5_IMAGE_MODEL, {
+      temperature: 0.7,
+      maxOutputTokens: 8192,
+      logoImage
+    });
+
+    // Return in expected format
+    return {
+      candidates: [{
+        content: {
+          parts: [{
+            inlineData: {
+              mimeType: result.mimeType,
+              data: result.imageData
+            }
+          }]
+        },
+        finishReason: result.finishReason
+      }]
+    };
+  } else {
+    // Use Vertex AI for text generation
+    console.log('📝 Revo 1.5: Using Vertex AI for text generation');
+
+    const prompt = Array.isArray(promptOrParts) ? promptOrParts.join(' ') : promptOrParts;
+
+    try {
+      console.log('🔑 Revo 1.5: Making direct Vertex AI call...');
+
+      const result = await vertexAIClient.generateText(prompt, REVO_1_5_TEXT_MODEL, {
         temperature: 0.7,
-        ...(imageData && { logoImage: imageData })
+        maxOutputTokens: 8192
       });
 
-      if (!result.success) {
-        throw new Error(`Image generation failed: ${result.error || 'Unknown error'}`);
-      }
+      console.log('✅ Vertex AI response received successfully');
 
-      // Extract image data from proxy response (Fixed: match Revo 2.0 structure)
-      const candidates = result.data?.candidates;
-      if (!candidates || !candidates[0]?.content?.parts?.[0]?.inlineData?.data) {
-        throw new Error('Invalid image response from proxy - no image data found');
-      }
-
-      // Return the same structure as Revo 2.0 for consistency
-      return {
-        candidates: [{
-          content: {
-            parts: [{
-              inlineData: {
-                mimeType: 'image/png',
-                data: candidates[0].content.parts[0].inlineData.data
-              }
-            }]
-          }
-        }]
-      };
-    } else {
-      console.log(`🔒 Revo 1.5: Generating text with model ${modelName} via proxy`);
-      const result = await aiProxyClient.generateText({
-        prompt,
-        user_id: userId,
-        model: modelName,
-        max_tokens: 8192,
-        temperature: 0.7
-      });
-
-      if (!result.success) {
-        throw new Error(`Text generation failed: ${result.error || 'Unknown error'}`);
-      }
-
-      // Extract content from Google API response format
-      console.log('🔍 [Revo 1.5] Proxy result structure:', JSON.stringify(result, null, 2));
-      console.log('🔍 [Revo 1.5] Result.data type:', typeof result.data);
-      console.log('🔍 [Revo 1.5] Result.data structure:', JSON.stringify(result.data, null, 2));
-
-      let content = '';
-      if (result.data && result.data.candidates && result.data.candidates[0] &&
-        result.data.candidates[0].content && result.data.candidates[0].content.parts) {
-        content = result.data.candidates[0].content.parts[0].text || '';
-        console.log('🔍 [Revo 1.5] Extracted content from candidates:', content.substring(0, 200));
-      } else if (result.data && typeof result.data === 'string') {
-        content = result.data;
-        console.log('🔍 [Revo 1.5] Using string data directly:', content.substring(0, 200));
-      } else if (result.data && result.data.content) {
-        content = result.data.content;
-        console.log('🔍 [Revo 1.5] Using data.content:', content.substring(0, 200));
-      } else if (result.data && result.data.candidates && result.data.candidates[0] &&
-        result.data.candidates[0].finishReason === 'MAX_TOKENS') {
-        console.log('🔍 [Revo 1.5] Response truncated due to MAX_TOKENS limit');
-        throw new Error('🚫 [Revo 1.5] Response truncated due to token limit. Please reduce prompt length.');
-      } else {
-        console.log('🔍 [Revo 1.5] No matching content structure found');
-      }
-
+      // Return in expected format
       return {
         response: {
-          text: () => content
+          text: () => result.text,
+          candidates: [{
+            content: { parts: [{ text: result.text }] },
+            finishReason: result.finishReason
+          }]
         }
       };
+    } catch (error) {
+      console.error('❌ Vertex AI direct API failed:', error);
+      throw error;
     }
-  } catch (error) {
-    console.error(`❌ Revo 1.5: Proxy ${isImageGeneration ? 'image' : 'text'} generation failed:`, error);
-
-    // Check if it's a credit exhaustion error
-    const errorMessage = error instanceof Error ? error.message : '';
-    if (errorMessage.includes('No credits remaining') || errorMessage.includes('credits left')) {
-      console.log('💳 [Revo 1.5] Credits exhausted - triggering fallback system');
-      throw new Error('CREDITS_EXHAUSTED');
-    }
-
-    throw error;
   }
 }
-// import { CulturalIntelligenceService } from '@/services/cultural-intelligence-service';
-// import { NaturalContextMarketingService } from '@/services/natural-context-marketing';
-// import { EnhancedCTAGenerator, type CTAGenerationContext } from '@/services/enhanced-cta-generator';
-// import { AIContentGenerator, type AIContentRequest } from '@/services/ai-content-generator';
-// import { ClaudeSonnet4Generator, type ClaudeContentRequest } from '@/services/claude-sonnet-4-generator';
+
+// Direct Vertex AI function (replaces proxy routing)
+async function generateContentWithProxy(promptOrParts: string | any[], modelName: string, isImageGeneration: boolean = false): Promise<any> {
+  console.log(`🔄 Revo 1.5: Using direct Vertex AI for ${isImageGeneration ? 'image' : 'text'} generation with ${modelName}`);
+  return await generateContentDirect(promptOrParts, modelName, isImageGeneration);
+}
 
 import { ensureExactDimensions } from './utils/image-dimensions';
 
-// Removed OpenAI dependency - using proxy-only approach
-
+// Helper function to convert logo URL to base64 data URL for AI models (matching Revo 1.0)
 // Helper function to convert logo URL to base64 data URL for AI models (matching Revo 1.0)
 async function convertLogoToDataUrl(logoUrl?: string): Promise<string | undefined> {
   if (!logoUrl) return undefined;
@@ -665,18 +614,18 @@ Return ONLY valid JSON in this exact format:`;
     console.log('📝 [Revo 1.5] Analysis prompt length:', analysisPrompt.length);
     console.log('📝 [Revo 1.5] Analysis prompt preview:', analysisPrompt.substring(0, 200) + '...');
 
-    const response = await generateContentWithProxy(analysisPrompt, 'claude-sonnet-4.5', false);
+    const response = await generateContentWithProxy(analysisPrompt, REVO_1_5_TEXT_MODEL, false);
 
-    console.log('🔍 [Revo 1.5] Raw proxy response for business analysis:', response);
+    console.log('🔍 [Revo 1.5] Raw Vertex AI response for business analysis:', response);
     console.log('🔍 [Revo 1.5] Response type:', typeof response);
 
-    // Extract text from proxy response format
-    const responseText = extractTextFromProxyResponse(response);
+    // Extract text from Vertex AI response format
+    const responseText = extractTextFromResponse(response);
 
     console.log('🔍 [Revo 1.5] Extracted response text:', responseText);
 
     try {
-      // Handle proxy response format
+      // Handle Vertex AI response format
       console.log('🧹 [Revo 1.5] Response text extracted:', responseText);
 
       // Clean the response to extract JSON
@@ -1301,8 +1250,8 @@ STRICT RULES:
 
 ${prompt}`;
 
-    const response = await generateContentWithProxy(fullPrompt, 'claude-sonnet-4.5', false);
-    let responseContent = extractTextFromProxyResponse(response) || '{}';
+    const response = await generateContentWithProxy(fullPrompt, REVO_1_5_TEXT_MODEL, false);
+    let responseContent = extractTextFromResponse(response) || '{}';
 
     // Clean up response
     if (responseContent.includes('```json')) {
@@ -1722,7 +1671,7 @@ Format as JSON:
   "hashtags": [${Array(hashtagCount).fill('"#SpecificHashtag"').join(', ')}]
 }`;
 
-    console.log(`🎯[Revo 1.5] Using proxy for content generation with ${hashtagCount} hashtags for ${platform}`);
+    console.log(`🎯[Revo 1.5] Using Vertex AI for content generation with ${hashtagCount} hashtags for ${platform}`);
 
     const fullPrompt = `Create ${platform} content for ${businessName} (${businessType} in ${brandProfile.location || 'local area'}).
 
@@ -1731,19 +1680,19 @@ ${prompt}`;
     console.log('📝 [Revo 1.5] Content generation prompt length:', fullPrompt.length);
     console.log('📝 [Revo 1.5] Content generation prompt preview:', fullPrompt.substring(0, 300) + '...');
 
-    console.log('🔄 [Revo 1.5] Calling proxy with Claude Sonnet 4.5...');
-    const response = await generateContentWithProxy(fullPrompt, 'claude-sonnet-4.5', false);
-    console.log('✅ [Revo 1.5] Proxy response received successfully');
+    console.log('🔄 [Revo 1.5] Calling Vertex AI with Gemini 2.5 Flash...');
+    const response = await generateContentWithProxy(fullPrompt, REVO_1_5_TEXT_MODEL, false);
+    console.log('✅ [Revo 1.5] Vertex AI response received successfully');
 
-    console.log('✅ [Revo 1.5] Proxy response received for content generation (headlines, captions, hashtags, CTAs)');
+    console.log('✅ [Revo 1.5] Vertex AI response received for content generation (headlines, captions, hashtags, CTAs)');
     console.log('🔍 [Revo 1.5] Full response object:', JSON.stringify(response, null, 2));
 
     let responseContent = '';
     try {
-      // Extract text from proxy response format
-      responseContent = extractTextFromProxyResponse(response) || '{}';
+      // Extract text from Vertex AI response format
+      responseContent = extractTextFromResponse(response) || '{}';
 
-      console.log('🔍 [Revo 1.5] Raw proxy response:', responseContent.substring(0, 500));
+      console.log('🔍 [Revo 1.5] Raw Vertex AI response:', responseContent.substring(0, 500));
 
       // Clean up the response if it has markdown formatting
       if (responseContent.includes('```json')) {
@@ -1862,9 +1811,9 @@ ${prompt}`;
         });
       }
 
-      // Validate required fields from proxy response
+      // Validate required fields from Vertex AI response
       if (!parsed.caption || !parsed.headline || !parsed.subheadline || !parsed.hashtags) {
-        throw new Error('🚫 [Revo 1.5] Proxy AI response incomplete - missing required fields.');
+        throw new Error('🚫 [Revo 1.5] Vertex AI response incomplete - missing required fields.');
       }
 
       return {
@@ -1878,8 +1827,8 @@ ${prompt}`;
       console.error('❌ [Revo 1.5] JSON Parse Error:', parseError);
       console.error('❌ [Revo 1.5] Failed response content:', responseContent);
 
-      // JSON parsing must work with proxy system
-      throw new Error(`🚫 [Revo 1.5] JSON parsing failed with proxy response. Parse Error: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`);
+      // JSON parsing must work with Vertex AI system
+      throw new Error(`🚫 [Revo 1.5] JSON parsing failed with Vertex AI response. Parse Error: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`);
     }
   } catch (error) {
     console.error('❌ [Revo 1.5] Content generation failed - MAIN ERROR:', error);
@@ -1914,8 +1863,8 @@ ${prompt}`;
       };
     }
 
-    // Main content generation must work with proxy system
-    throw new Error(`🚫 [Revo 1.5] Main content generation failed with proxy system. Error: ${errorMessage}`);
+    // Main content generation must work with Vertex AI system
+    throw new Error(`🚫 [Revo 1.5] Main content generation failed with Vertex AI system. Error: ${errorMessage}`);
   }
 }
 
@@ -2046,10 +1995,10 @@ ${useLocalLanguage ? 'IMPORTANT: Include authentic cultural design elements that
 Keep it concise and actionable.`;
 
   try {
-    const planResponse = await generateContentWithProxy(designPlanningPrompt, 'claude-sonnet-4.5', false);
+    const planResponse = await generateContentWithProxy(designPlanningPrompt, REVO_1_5_TEXT_MODEL, false);
 
     return {
-      plan: extractTextFromProxyResponse(planResponse),
+      plan: extractTextFromResponse(planResponse),
       brandColors,
       timestamp: Date.now()
     };
@@ -2112,8 +2061,8 @@ export async function generateFinalImage(
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      // Use proxy for image generation - no direct API calls
-      console.log('🔒 [Revo 1.5] Using proxy for image generation');
+      // Use Vertex AI for image generation - direct API calls
+      console.log('🔒 [Revo 1.5] Using Vertex AI for image generation');
 
       // Prepare the generation request with logo if available (exactly like Revo 2.0)
       const generationParts = [
@@ -2252,9 +2201,9 @@ You MUST include the exact brand logo image that was provided above in your desi
         });
       }
 
-      const result = await generateContentWithProxy(generationParts, 'gemini-2.5-flash-image-preview', true);
+      const result = await generateContentWithProxy(generationParts, REVO_1_5_IMAGE_MODEL, true);
 
-      // Extract image data from proxy response (Fixed: use inlineData like Revo 2.0)
+      // Extract image data from Vertex AI response (Fixed: use inlineData like Revo 2.0)
       let imageUrl = '';
       if (result.candidates && result.candidates[0] && result.candidates[0].content && result.candidates[0].content.parts) {
         const parts = result.candidates[0].content.parts;
@@ -2281,7 +2230,7 @@ You MUST include the exact brand logo image that was provided above in your desi
       }
 
       if (!imageUrl) {
-        throw new Error('No image data generated by proxy for Revo 1.5');
+        throw new Error('No image data generated by Vertex AI for Revo 1.5');
       }
 
       // Optional dimension checking (Performance Optimized: No retries)
@@ -2749,7 +2698,7 @@ export async function generateRevo15EnhancedDesign(
     `Platform-Optimized ${aspectRatio} Format`,
     hasLogo ? 'Enhanced Logo Integration' : 'Logo Processing (No Logo Available)',
     'Revo 2.0-Level Logo Processing',
-    'Proxy-Based Logo Integration System'
+    'Vertex AI-Based Logo Integration System'
   ];
 
   try {
@@ -2758,10 +2707,10 @@ export async function generateRevo15EnhancedDesign(
     const designPlan = await generateDesignPlan(enhancedInput);
     enhancementsApplied.push('Strategic Design Planning');
 
-    // Step 2: Generate content using proxy system
-    console.log('🧠 [Revo 1.5] Generating content with proxy system...');
+    // Step 2: Generate content using Vertex AI system
+    console.log('🧠 [Revo 1.5] Generating content with Vertex AI system...');
 
-    // Use proxy for content generation
+    // Use Vertex AI for content generation
     const contentResult = await generateCaptionAndHashtags(
       input.businessType,
       input.brandProfile.businessName || input.businessType,
@@ -2773,9 +2722,9 @@ export async function generateRevo15EnhancedDesign(
       input.scheduledServices
     );
 
-    enhancementsApplied.push('Proxy Content Generation');
-    console.log('✅ [Revo 1.5] Proxy content generation successful');
-    console.log('🎯 [Revo 1.5] CONTENT SYSTEM USED: Proxy (claude-sonnet-4.5)');
+    enhancementsApplied.push('Vertex AI Content Generation');
+    console.log('✅ [Revo 1.5] Vertex AI content generation successful');
+    console.log('🎯 [Revo 1.5] CONTENT SYSTEM USED: Vertex AI (gemini-2.5-flash)');
 
     // Step 3: Generate final image with text elements on design (matching Revo 1.0 approach)
     const imageUrl = await generateFinalImage(enhancedInput, designPlan, contentResult);
@@ -2830,10 +2779,10 @@ export async function generateRevo15EnhancedDesign(
       qualityScore: 9.8, // Higher quality score for two-step process
       enhancementsApplied,
       processingTime: Date.now() - startTime,
-      model: 'revo-1.5-enhanced (claude-sonnet-4.5 + gemini-2.5-flash-image-preview)',
-      planningModel: 'claude-sonnet-4.5',
-      contentModel: 'claude-sonnet-4.5',
-      generationModel: 'gemini-2.5-flash-image-preview', // Model that works with Revo 1.5 API key
+      model: 'revo-1.5-enhanced (claude-sonnet-4.5 + gemini-2.5-flash-image)',
+      planningModel: REVO_1_5_TEXT_MODEL,
+      contentModel: REVO_1_5_TEXT_MODEL,
+      generationModel: REVO_1_5_IMAGE_MODEL, // Vertex AI compatible model name
       // format: claudeResult.format,
       caption: finalContentResult.caption,
       hashtags: finalContentResult.hashtags,

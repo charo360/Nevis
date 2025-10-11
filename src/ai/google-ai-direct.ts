@@ -9,10 +9,10 @@ import { aiProxyClient, getUserIdForProxy, getUserTierForProxy, shouldUseProxy }
 // REMOVED: Direct GoogleGenerativeAI instantiation - ALL AI calls now go through proxy for cost control
 // REMOVED: Direct API key usage - proxy handles authentication and routing
 
-// Available Gemini models (routed through proxy)
+// Available Gemini models (routed through proxy) - COST-CONTROLLED MODELS ONLY
 export const GEMINI_2_5_MODELS = {
   FLASH: 'gemini-2.5-flash',
-  PRO: 'gemini-2.5-pro',
+  // REMOVED: PRO: 'gemini-2.5-pro' - EXPLICITLY PROHIBITED DUE TO HIGH COST
   FLASH_LITE: 'gemini-2.5-flash-lite',
   FLASH_IMAGE_PREVIEW: 'gemini-2.5-flash-image-preview'
 } as const;

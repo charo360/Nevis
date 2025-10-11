@@ -365,5 +365,32 @@ export const ai = {
         config: config.name
       };
     };
+  },
+
+  // defineTool compatibility for existing tools (like events service)
+  defineTool: (config: any) => {
+    console.log('🔒 [Proxy-Only Genkit] DefineTool called for:', config.name);
+
+    // Return a function that can be used to execute the tool
+    return async (input: any) => {
+      console.log(`🔄 [Proxy-Only Genkit] Executing tool: ${config.name} with input:`, input);
+
+      // For events tool, return mock data since we're in proxy-only mode
+      if (config.name === 'getEnhancedEvents') {
+        return {
+          events: [],
+          message: `Events tool ${config.name} executed in proxy-only mode`,
+          location: input.location,
+          businessType: input.businessType
+        };
+      }
+
+      // For other tools, return generic response
+      return {
+        message: `Tool ${config.name} executed through proxy-only mode`,
+        config: config.name,
+        input: input
+      };
+    };
   }
 };

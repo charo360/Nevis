@@ -1,10 +1,32 @@
 # Nevis AI Proxy Server
 
+⚠️ **DEPRECATED**: This proxy server is no longer used by Revo 1.0, 1.5, and 2.0 services as of the latest update. All Revo services now use direct Vertex AI integration for improved reliability and performance.
+
 A controlled proxy server for AI model access that prevents unexpected model calls and manages costs with OpenRouter fallback system.
 
-## 🎯 Purpose
+## 🏗️ Current Architecture Status
 
-This proxy server ensures that:
+**As of the latest update, all Revo services (1.0, 1.5, and 2.0) have been migrated to use direct Vertex AI integration instead of this proxy server.** This change was made to:
+
+- ✅ **Eliminate recurring proxy-related failures** that were causing 500 errors
+- ✅ **Improve reliability** with direct API calls
+- ✅ **Reduce complexity** by removing proxy middleware
+- ✅ **Increase performance** with fewer network hops
+- ✅ **Simplify maintenance** with consistent architecture
+
+### New Architecture
+```
+Frontend → Next.js API → Revo Service → Vertex AI (Direct)
+```
+
+### Previous Architecture (Deprecated)
+```
+Frontend → Next.js API → Revo Service → Proxy Server → Vertex AI
+```
+
+## 🎯 Original Purpose (For Reference)
+
+This proxy server was designed to ensure that:
 - ✅ Only specified models are called (no unexpected model invocations)
 - ✅ User quotas are enforced (credit-based system)
 - ✅ All API calls are logged and monitored

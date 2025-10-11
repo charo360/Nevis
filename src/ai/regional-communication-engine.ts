@@ -839,9 +839,8 @@ ${ending}`;
    * Generate regional hashtags using AI for maximum local relevance
    */
   private async generateAIRegionalHashtags(location: string, businessType: string, businessName?: string): Promise<string[]> {
-    const { GoogleGenerativeAI } = await import('@google/generative-ai');
-    const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-    const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    // Import Vertex AI client instead of Google Generative AI
+    const { vertexAIClient } = await import('@/lib/services/vertex-ai-client');
 
     const prompt = `Generate 8 highly relevant, locally-focused hashtags for a ${businessType} business in ${location}.
 
@@ -862,8 +861,13 @@ Return ONLY a JSON array of hashtags (including the # symbol):
 ["#hashtag1", "#hashtag2", "#hashtag3", ...]`;
 
     try {
-      const result = await model.generateContent(prompt);
-      let response = result.response.text();
+      // Use Vertex AI with gemini-2.5-flash model
+      const result = await vertexAIClient.generateText(prompt, 'gemini-2.5-flash', {
+        temperature: 0.7,
+        maxOutputTokens: 1000
+      });
+
+      let response = result.text;
 
       // Remove markdown code blocks if present
       response = response.replace(/```json\s*|\s*```/g, '').trim();
