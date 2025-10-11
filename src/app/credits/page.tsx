@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth-supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,13 +21,14 @@ import {
   AlertCircle
 } from 'lucide-react';
 import Link from 'next/link';
+import { CreditAnalytics } from '@/components/ui/credit-analytics';
 
 // Types
 interface UserCredits {
   total_credits: number;
   remaining_credits: number;
   used_credits: number;
-  last_payment_at: string;
+  last_payment_at: string | null;
 }
 
 interface PaymentTransaction {
@@ -41,21 +42,56 @@ interface PaymentTransaction {
 }
 
 interface CreditUsage {
+  id: string;
   date: string;
   credits_used: number;
   feature: string;
+  model_version: string;
+  model_cost: number;
+  generation_type: string;
+  user_id: string;
 }
+
+interface ModelUsageStats {
+  revo_1_0: { count: number; total_cost: number };
+  revo_1_5: { count: number; total_cost: number };
+  revo_2_0: { count: number; total_cost: number };
+}
+
+// Model cost configuration
+const MODEL_COSTS = {
+  'revo-1.0': 2,
+  'revo-1.5': 3,
+  'revo-2.0': 4,
+} as const;
+
+// Utility function to get model display name
+const getModelDisplayName = (modelVersion: string): string => {
+  const names = {
+    'revo-1.0': 'Revo 1.0',
+    'revo-1.5': 'Revo 1.5', 
+    'revo-2.0': 'Revo 2.0',
+  };
+  return names[modelVersion as keyof typeof names] || modelVersion;
+};
+
+// Utility function to get model cost
+const getModelCost = (modelVersion: string): number => {
+  return MODEL_COSTS[modelVersion as keyof typeof MODEL_COSTS] || 0;
+};
 
 export default function CreditManagementPage() {
   const { user, loading: authLoading } = useAuth();
   const [userCredits, setUserCredits] = useState<UserCredits | null>(null);
   const [transactions, setTransactions] = useState<PaymentTransaction[]>([]);
   const [creditUsage, setCreditUsage] = useState<CreditUsage[]>([]);
+  const [modelStats, setModelStats] = useState<ModelUsageStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Fetch user credit data
-  const fetchCreditData = async () => {
+  const fetchCreditData = useCallback(async () => {
     if (!user && !authLoading) {
       setLoading(false);
       setError('Please sign in to view your credit information.');
@@ -71,16 +107,20 @@ export default function CreditManagementPage() {
     setError(null);
 
     try {
-      // Create headers for authenticated requests
+      // Create headers for authenticated requests with timestamp to prevent caching
       const headers = {
         'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
       };
 
-      // Fetch current credit balance
-      const creditsResponse = await fetch('/api/user/credits', {
+      // Fetch current credit balance (real-time from database)
+      const creditsResponse = await fetch(`/api/user/credits?t=${Date.now()}`, {
         method: 'GET',
         headers,
-        credentials: 'include', // Include cookies for auth
+        credentials: 'include',
+        cache: 'no-store', // Force fresh data from database
       });
 
       if (creditsResponse.ok) {
@@ -102,10 +142,11 @@ export default function CreditManagementPage() {
       }
 
       // Fetch payment history
-      const transactionsResponse = await fetch('/api/user/payment-history', {
+      const transactionsResponse = await fetch(`/api/user/payment-history?t=${Date.now()}`, {
         method: 'GET',
         headers,
         credentials: 'include',
+        cache: 'no-store',
       });
 
       if (transactionsResponse.ok) {
@@ -113,16 +154,43 @@ export default function CreditManagementPage() {
         setTransactions(transactionsData || []);
       }
 
-      // Fetch credit usage analytics
-      const usageResponse = await fetch('/api/user/credit-usage', {
+      // Fetch detailed credit usage analytics with model tracking
+      const usageResponse = await fetch(`/api/user/credit-usage?t=${Date.now()}`, {
         method: 'GET',
         headers,
         credentials: 'include',
+        cache: 'no-store',
       });
 
       if (usageResponse.ok) {
         const usageData = await usageResponse.json();
         setCreditUsage(usageData || []);
+        
+        // Calculate model-specific statistics
+        const stats: ModelUsageStats = {
+          revo_1_0: { count: 0, total_cost: 0 },
+          revo_1_5: { count: 0, total_cost: 0 },
+          revo_2_0: { count: 0, total_cost: 0 },
+        };
+
+        usageData?.forEach((usage: CreditUsage) => {
+          switch (usage.model_version) {
+            case 'revo-1.0':
+              stats.revo_1_0.count++;
+              stats.revo_1_0.total_cost += usage.credits_used;
+              break;
+            case 'revo-1.5':
+              stats.revo_1_5.count++;
+              stats.revo_1_5.total_cost += usage.credits_used;
+              break;
+            case 'revo-2.0':
+              stats.revo_2_0.count++;
+              stats.revo_2_0.total_cost += usage.credits_used;
+              break;
+          }
+        });
+
+        setModelStats(stats);
       }
 
     } catch (error) {
@@ -131,13 +199,29 @@ export default function CreditManagementPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, authLoading]);
 
   useEffect(() => {
     if (!authLoading) {
       fetchCreditData();
     }
-  }, [user, authLoading]);
+  }, [fetchCreditData, authLoading, refreshTrigger]);
+
+  // Function to refresh credit data (can be called after purchases or usage)
+  const refreshCreditData = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
+
+  // Real-time credit balance checking
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (user && !loading) {
+        fetchCreditData();
+      }
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [user, loading, fetchCreditData]);
 
   // Calculate credit usage percentage
   const usagePercentage = userCredits 
@@ -421,38 +505,7 @@ export default function CreditManagementPage() {
 
         {/* Usage Analytics Tab */}
         <TabsContent value="usage" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Credit Usage Over Time</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {creditUsage.length > 0 ? (
-                <div className="space-y-4">
-                  {creditUsage.slice(0, 10).map((usage, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <p className="font-medium">{usage.feature}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {formatDate(usage.date)}
-                        </p>
-                      </div>
-                      <Badge variant="outline">
-                        -{usage.credits_used} credits
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No usage data available yet</p>
-                  <p className="text-sm text-muted-foreground">
-                    Start using our features to see analytics here
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <CreditAnalytics />
         </TabsContent>
 
         {/* Purchase History Tab */}

@@ -14,6 +14,8 @@ import { usePathname } from 'next/navigation';
 // The AppRoute client component is lazy-loaded and will render client pages inside the layout.
 const AppRouteClient = React.lazy(() => import('@/components/app-route/AppRoute').then(m => ({ default: m.default })));
 
+
+
 function ConditionalLayout({ children, useAppRoute }: { children: React.ReactNode; useAppRoute?: boolean }) {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);

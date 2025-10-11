@@ -133,7 +133,7 @@ function CreativeStudioPageContent() {
   }, [currentBrand]);
 
   return (
-    <SidebarInset fullWidth>
+    <div>
       <header className="flex h-14 items-center justify-between border-b bg-card px-4 lg:h-[60px] lg:px-6">
         <div />
         <DropdownMenu>
@@ -158,8 +158,8 @@ function CreativeStudioPageContent() {
       <main className="flex-1 overflow-hidden">
         {editorImage ? (
           <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-            <div className="container mx-auto px-4 py-8">
-              <div className="max-w-7xl mx-auto">
+            <div className="w-full px-4 py-8" style={{ maxWidth: 'none' }}>
+              <div className="w-full">
                 <ImageEditor
                   imageUrl={editorImage}
                   onClose={() => setEditorImage(null)}
@@ -170,8 +170,8 @@ function CreativeStudioPageContent() {
           </div>
         ) : (
           <div className="h-full bg-gradient-to-br from-blue-50 to-indigo-100">
-            <div className="container mx-auto px-4 py-8 h-full">
-              <div className="max-w-7xl mx-auto h-full">
+            <div className="w-full px-4 py-8 h-full" style={{ maxWidth: 'none' }}>
+              <div className="w-full h-full">
                 <ChatLayout
                   brandProfile={brandProfile}
                   onEditImage={setEditorImage}
@@ -181,15 +181,15 @@ function CreativeStudioPageContent() {
           </div>
         )}
       </main>
-    </SidebarInset>
+    </div>
   );
 }
 
 function CreativeStudioPage() {
   return (
     <BrandContent fallback={
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100 flex items-center justify-center">
-        <div className="text-center">
+      <div className="w-full h-full bg-gradient-to-br from-purple-50 to-pink-100 flex items-center justify-center" style={{ maxWidth: 'none' }}>
+        <div className="text-center p-8 w-full max-w-lg">
           <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
             <Palette className="w-8 h-8 text-gray-400" />
           </div>

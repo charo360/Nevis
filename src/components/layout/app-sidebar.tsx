@@ -19,6 +19,8 @@ import {
   Coins,
   LogOut,
   User,
+  PanelLeftClose,
+  Menu,
 } from "lucide-react";
 import { UnifiedBrandSelector } from '@/components/brand/unified-brand-selector';
 import { usePathname } from "next/navigation";
@@ -33,11 +35,14 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 export function AppSidebar() {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
+  const { state, toggleSidebar } = useSidebar();
+  const isCollapsed = state === "collapsed";
   const isActive = (path: string) => pathname.startsWith(path);
   
   const handleLogout = async () => {
@@ -51,19 +56,36 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader>
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-white" />
-          </div>
-          <h1 className="text-xl font-bold text-primary-foreground font-headline">
-            Crevo
-          </h1>
-        </Link>
-
-        {/* Unified Brand Selector */}
-        <div className="px-2 py-2">
-          <UnifiedBrandSelector />
+        <div className="flex items-center justify-between w-full">
+          <Link href="/" className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            {!isCollapsed && (
+              <h1 className="text-xl font-bold text-primary-foreground font-headline truncate">
+                Crevo
+              </h1>
+            )}
+          </Link>
+          <button
+            onClick={toggleSidebar}
+            className="p-1 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors flex-shrink-0 ml-2"
+            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isCollapsed ? (
+              <Menu className="w-4 h-4" />
+            ) : (
+              <PanelLeftClose className="w-4 h-4" />
+            )}
+          </button>
         </div>
+
+        {/* Unified Brand Selector - Hide when collapsed */}
+        {!isCollapsed && (
+          <div className="px-2 py-2">
+            <UnifiedBrandSelector />
+          </div>
+        )}
 
         {/* Credit Display
         <div className="px-2 pb-2">
@@ -200,19 +222,20 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <div className="px-3 py-2 text-sm text-muted-foreground">
-              {user?.email && (
+              {user?.email && !isCollapsed && (
                 <div className="flex items-center gap-2 mb-2">
                   <User className="w-4 h-4" />
                   <span className="truncate">{user.email}</span>
                 </div>
               )}
-              <button
+              <SidebarMenuButton
                 onClick={handleLogout}
-                className="flex items-center gap-2 text-red-600 hover:text-red-800 transition-colors w-full"
+                className="text-red-600 hover:text-red-800 transition-colors w-full justify-start"
+                tooltip="Sign Out"
               >
                 <LogOut className="w-4 h-4" />
-                <span>Sign Out</span>
-              </button>
+                {!isCollapsed && <span>Sign Out</span>}
+              </SidebarMenuButton>
             </div>
           </SidebarMenuItem>
         </SidebarMenu>

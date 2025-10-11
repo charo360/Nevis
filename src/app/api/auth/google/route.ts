@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase-server';
 
 /**
  * Google OAuth API Route
@@ -96,6 +96,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<GoogleOAuthRe
     });
 
     // Generate Google OAuth URL through Supabase
+    const supabase = await createClient();
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {

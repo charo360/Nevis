@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     try {
       stripeConfig = getStripeConfig();
       stripe = new Stripe(stripeConfig.secretKey, {
-        apiVersion: '2025-08-27.basil'
+        apiVersion: '2024-06-20'
       });
       // Validate configured price IDs (best-effort) and log missing ones
       try {
@@ -53,7 +53,30 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const body = await req.json() as Body
+    let body: Body;
+    try {
+      const rawBody = await req.text();
+      console.log('📥 Raw request body:', rawBody.substring(0, 200));
+      console.log('📋 Request headers:', {
+        contentType: req.headers.get('content-type'),
+        contentLength: req.headers.get('content-length'),
+        authorization: req.headers.get('authorization') ? 'Bearer ***' : 'none'
+      });
+      
+      if (!rawBody || rawBody.trim() === '') {
+        console.error('❌ Empty request body received');
+        return NextResponse.json({ 
+          error: 'Empty request body - please ensure you are sending valid JSON data' 
+        }, { status: 400 });
+      }
+      
+      body = JSON.parse(rawBody) as Body;
+    } catch (jsonError: any) {
+      console.error('❌ JSON parsing error:', jsonError);
+      return NextResponse.json({ 
+        error: 'Invalid request body - ensure Content-Type is application/json and body is valid JSON' 
+      }, { status: 400 });
+    }
 
     // Determine the correct origin early so free-plan short-circuit can return proper URLs.
     const hostHeader = req.headers.get('x-forwarded-host') || req.headers.get('host') || '';
@@ -247,6 +270,16 @@ export async function POST(req: NextRequest) {
           locale: 'auto',
         })
       }
+      
+      console.log('✅ Stripe session creation successful!', {
+        session_id: session.id,
+        session_url: session.url,
+        payment_status: session.payment_status,
+        status: session.status,
+        metadata: session.metadata,
+        client_reference_id: session.client_reference_id
+      });
+      
     } catch (stripeError: any) {
       console.error('❌ Stripe session creation failed:', {
         message: stripeError?.message || String(stripeError),
@@ -267,26 +300,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: publicMessage }, { status: 500 })
     }
 
-    // Persist pending payment to Supabase if available
-    if (supabase) {
-      try {
-        const payload = {
-          user_id: verifiedUserId,
-          stripe_session_id: session.id,
-          plan_id: actualPlanId,
-          amount: planDetails.price,
-          status: 'pending',
-          credits_added: planDetails.credits,
-        }
-
-        const { error: insertError } = await supabase.from('payment_transactions').insert(payload as any)
-        if (insertError) {
-          console.error('Database insert failed:', insertError)
-        }
-      } catch (e) {
-        console.error('Failed to persist checkout session to Supabase:', e)
-      }
-    }
+    // Payment record will be created by webhook when payment completes
+    // This prevents duplicate records and race conditions
+    console.log('Checkout session created (payment will be recorded on completion):', {
+      session_id: session.id,
+      user_id: verifiedUserId,
+      plan_id: actualPlanId,
+      amount: planDetails.price,
+      credits_to_add: planDetails.credits
+    });
 
     return NextResponse.json({ id: session.id, url: session.url })
   } catch (err: any) {

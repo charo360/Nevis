@@ -4,7 +4,7 @@
  * Works alongside MongoDB for metadata storage
  */
 
-import { supabase, isSupabaseAvailable } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase-client';
 
 export interface SupabaseUploadResult {
   url: string;

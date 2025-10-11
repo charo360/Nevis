@@ -234,37 +234,34 @@ export default function DashboardPage() {
   // Show error message if brand context failed to load
   if (brandContextError) {
     return (
-      <SidebarInset>
-        <div className="flex-1 w-full max-w-[100vw] overflow-x-hidden space-y-6 px-6 py-6 lg:py-10 lg:px-12">
-          <Card className="border-orange-200 bg-orange-50">
-            <CardContent className="pt-6">
-              <div className="text-center space-y-4">
-                <div className="text-orange-600 text-lg font-medium">
-                  Loading your brand information...
-                </div>
-                <div className="text-orange-700 text-sm">
-                  Please wait a moment while we set up your account.
-                </div>
-                <Button 
-                  onClick={() => window.location.reload()} 
-                  variant="outline"
-                  className="mt-4"
-                >
-                  Refresh Page
-                </Button>
+      <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="pt-6">
+            <div className="text-center space-y-4">
+              <div className="text-orange-600 text-lg font-medium">
+                Loading your brand information...
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </SidebarInset>
+              <div className="text-orange-700 text-sm">
+                Please wait a moment while we set up your account.
+              </div>
+              <Button 
+                onClick={() => window.location.reload()} 
+                variant="outline"
+                className="mt-4"
+              >
+                Refresh Page
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <SidebarInset key={brandKey}>
-      <div className="flex-1 w-full max-w-[100vw] overflow-x-hidden space-y-6 px-6 py-6 lg:py-10 lg:px-12">
-        {/* Top navbar - visible navigation and user menu */}
-        <div className="flex items-center justify-between mb-6 bg-white/80 backdrop-blur-sm border rounded-lg p-3 shadow-sm">
+    <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6" key={brandKey}>
+      {/* Top navbar - visible navigation and user menu */}
+      <div className="flex items-center justify-between mb-6 bg-white/80 backdrop-blur-sm border rounded-lg p-3 shadow-sm">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded flex items-center justify-center text-white font-semibold">
@@ -538,7 +535,6 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-      </div>
-    </SidebarInset>
+    </div>
   );
 }

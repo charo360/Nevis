@@ -28,21 +28,6 @@ export async function POST(req: Request) {
 
     const userId = decoded.userId
 
-    // Check for existing payment (idempotency)
-    const { data: existingPayment } = await supabase
-      .from('payments')
-      .select('id')
-      .eq('stripe_session_id', sessionId)
-      .single()
-
-    if (existingPayment) {
-      return NextResponse.json({
-        success: true,
-        message: 'Payment already recorded',
-        paymentId: existingPayment.id
-      })
-    }
-
     const plan = getPlanById(planId)
     const creditsToAdd = plan ? plan.credits : 0
 
@@ -51,52 +36,63 @@ export async function POST(req: Request) {
     }
 
     try {
-      // Get current user credits
-      const { data: user, error: userError } = await supabase
-        .from('users')
-        .select('total_credits, used_credits, remaining_credits')
-        .eq('user_id', userId)
-        .single()
-
-      if (userError || !user) {
-        return NextResponse.json({ error: 'User not found' }, { status: 404 })
-      }
-
-      const currentTotal = user.total_credits || 0
-      const currentUsed = user.used_credits || 0
-      const currentRemaining = user.remaining_credits || 0
-
-      const newTotal = currentTotal + creditsToAdd
-      const newRemaining = currentRemaining + creditsToAdd
-
-      // Process payment transaction atomically
-      const { error: transactionError } = await supabase.rpc('process_payment_transaction', {
-        p_user_id: userId,
+      // Use the new idempotent payment processing function
+      console.log('💳 Processing manual payment with idempotency protection...');
+      
+      const { data: paymentResult, error: paymentError } = await supabase.rpc('process_payment_with_idempotency', {
         p_stripe_session_id: sessionId,
+        p_stripe_payment_intent_id: null, // Manual payments might not have this
+        p_user_id: userId,
         p_plan_id: planId,
         p_amount: amount,
         p_currency: currency,
-        p_credits_added: creditsToAdd,
+        p_credits_to_add: creditsToAdd,
         p_payment_method: paymentMethod || 'card',
-        p_new_total_credits: newTotal,
-        p_new_remaining_credits: newRemaining,
-        p_balance_before: currentRemaining
-      })
+        p_source: 'manual_record'
+      });
 
-      if (transactionError) {
-        console.error('❌ Payment transaction failed:', transactionError)
+      if (paymentError) {
+        console.error('❌ Payment processing failed:', paymentError);
         return NextResponse.json({
           error: 'Failed to process payment',
-          details: transactionError.message
+          details: paymentError.message
         }, { status: 500 })
+      }
+
+      const result = paymentResult[0];
+
+      if (result.was_duplicate) {
+        console.log('⚠️ Duplicate payment detected:', {
+          session_id: sessionId,
+          payment_id: result.payment_id,
+          message: 'Payment was already recorded'
+        });
+        
+        return NextResponse.json({
+          success: true,
+          message: 'Payment already recorded',
+          paymentId: result.payment_id,
+          creditsAdded: 0, // No credits added since it was duplicate
+          isDuplicate: true
+        })
       }
 
       console.log('✅ Payment recorded successfully:', {
         userId,
         planId,
-        creditsAdded: creditsToAdd,
-        newTotal,
-        newRemaining
+        creditsAdded: result.credits_added,
+        newTotal: result.new_total_credits,
+        newRemaining: result.new_remaining_credits
+      })
+
+      return NextResponse.json({
+        success: true,
+        message: 'Payment recorded and credits added successfully',
+        paymentId: result.payment_id,
+        creditsAdded: result.credits_added,
+        newTotal: result.new_total_credits,
+        newRemaining: result.new_remaining_credits,
+        isDuplicate: false
       })
 
     } catch (e: any) {
@@ -106,14 +102,6 @@ export async function POST(req: Request) {
         details: e.message
       }, { status: 500 })
     }
-
-    return NextResponse.json({
-      success: true,
-      message: 'Payment recorded and credits added successfully',
-      creditsAdded: creditsToAdd,
-      newTotal,
-      newRemaining
-    })
 
   } catch (error: any) {
     console.error('❌ Payment recording error:', error)

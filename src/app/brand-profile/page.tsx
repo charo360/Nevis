@@ -38,26 +38,26 @@ function BrandProfileContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="w-full px-4 py-8">
-        <div className="w-full">
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               {isCreateMode && 'Create New Brand Profile'}
               {isEditMode && 'Edit Brand Profile'}
               {!isCreateMode && !isEditMode && 'Brand Profile Setup'}
-            </h1>
-            <p className="text-gray-600">
-              {isCreateMode ? 'Create a new comprehensive brand profile with AI-powered analysis.' :
-                isEditMode ? 'Update your existing brand profile information.' :
-                  'Create a comprehensive brand profile with AI-powered analysis, detailed information sections, and professional customization options.'}
-            </p>
-          </div>
+              </h1>
+              <p className="text-gray-600">
+                {isCreateMode ? 'Create a new comprehensive brand profile with AI-powered analysis.' :
+                  isEditMode ? 'Update your existing brand profile information.' :
+                    'Create a comprehensive brand profile with AI-powered analysis, detailed information sections, and professional customization options.'}
+              </p>
+            </div>
 
-          <CbrandWizardUnified key={`${mode}-${brandId || 'new'}`} mode={mode} brandId={brandId} />
+            <CbrandWizardUnified key={`${mode}-${brandId || 'new'}`} mode={mode} brandId={brandId} />
+          </div>
         </div>
       </div>
-    </div>
   );
 }
 

@@ -109,38 +109,44 @@ export default function BrandsPage() {
 
   if (loading) {
     return (
-      <SidebarInset>
-        <div className="flex-1 space-y-6 p-6">
-          <div className="space-y-2">
-            <div className="h-8 w-48 bg-muted rounded animate-pulse" />
-            <div className="h-4 w-64 bg-muted rounded animate-pulse" />
-          </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="h-48 bg-muted rounded-lg animate-pulse" />
-            ))}
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="w-full px-4 py-8" style={{ maxWidth: 'none' }}>
+          <div className="max-w-7xl mx-auto w-full">
+            <div className="flex-1 space-y-6 p-6">
+              <div className="space-y-2">
+                <div className="h-8 w-48 bg-muted rounded animate-pulse" />
+                <div className="h-4 w-64 bg-muted rounded animate-pulse" />
+              </div>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-48 bg-muted rounded-lg animate-pulse" />
+                ))}
+              </div>
+            </div>
           </div>
         </div>
-      </SidebarInset>
+      </div>
     );
   }
 
   return (
-    <SidebarInset>
-      <div className="flex-1 space-y-6 p-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold text-gray-900">Brand Profiles</h1>
-            <p className="text-gray-600">
-              Manage your brand profiles and switch between them easily.
-            </p>
-          </div>
-          <Button onClick={handleCreateNew} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Create New Brand
-          </Button>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="w-full px-4 py-8" style={{ maxWidth: 'none' }}>
+        <div className="max-w-7xl mx-auto w-full">
+          <div className="flex-1 space-y-6 p-6">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <h1 className="text-3xl font-bold text-gray-900">Brand Profiles</h1>
+                <p className="text-gray-600">
+                  Manage your brand profiles and switch between them easily.
+                </p>
+              </div>
+              <Button onClick={handleCreateNew} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Create New Brand
+              </Button>
+            </div>
 
         {/* Stats */}
         <div className="grid gap-4 md:grid-cols-3">
@@ -328,7 +334,9 @@ export default function BrandsPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+          </div>
+        </div>
       </div>
-    </SidebarInset>
+    </div>
   );
 }
