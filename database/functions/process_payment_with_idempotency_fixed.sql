@@ -1,8 +1,8 @@
--- Idempotent payment processing function
--- Matches actual payment_transactions table structure: id, user_id, stripe_session_id, plan_id, amount, status, credits_added, created_at
+-- Fixed idempotent payment processing function
+-- Matches webhook expectations and handles UUID conversion properly
 CREATE OR REPLACE FUNCTION process_payment_with_idempotency(
     p_stripe_session_id TEXT,
-    p_user_id UUID,
+    p_user_id TEXT, -- Accept as TEXT and convert to UUID
     p_plan_id TEXT,
     p_amount DECIMAL,
     p_credits_to_add INTEGER DEFAULT 0
@@ -20,7 +20,15 @@ DECLARE
     existing_payment_id UUID;
     new_payment_id UUID;
     current_credits RECORD;
+    user_uuid UUID;
 BEGIN
+    -- Convert user_id from TEXT to UUID
+    BEGIN
+        user_uuid := p_user_id::UUID;
+    EXCEPTION WHEN invalid_text_representation THEN
+        RAISE EXCEPTION 'Invalid user_id format: %', p_user_id;
+    END;
+    
     -- Check if payment already exists (idempotency check)
     SELECT id INTO existing_payment_id
     FROM payment_transactions 
@@ -31,7 +39,7 @@ BEGIN
         SELECT total_credits, remaining_credits
         INTO current_credits
         FROM user_credits
-        WHERE user_id = p_user_id;
+        WHERE user_id = user_uuid;
         
         RETURN QUERY SELECT 
             existing_payment_id,
@@ -42,30 +50,38 @@ BEGIN
         RETURN;
     END IF;
     
-    -- Create new payment record (using only existing columns)
+    -- Create new payment record
     INSERT INTO payment_transactions (
         id,
         user_id,
-        stripe_session_id,
         plan_id,
         amount,
+        currency,
         status,
+        stripe_session_id,
         credits_added,
-        created_at
+        payment_method,
+        source,
+        created_at,
+        updated_at
     ) VALUES (
         gen_random_uuid(),
-        p_user_id,
-        p_stripe_session_id,
+        user_uuid,
         p_plan_id,
         p_amount,
+        'usd',
         'completed',
+        p_stripe_session_id,
         p_credits_to_add,
+        'card',
+        'webhook',
+        NOW(),
         NOW()
     ) RETURNING id INTO new_payment_id;
     
     -- Add credits to user account
     INSERT INTO user_credits (user_id, total_credits, remaining_credits, used_credits, created_at, updated_at)
-    VALUES (p_user_id, p_credits_to_add, p_credits_to_add, 0, NOW(), NOW())
+    VALUES (user_uuid, p_credits_to_add, p_credits_to_add, 0, NOW(), NOW())
     ON CONFLICT (user_id) 
     DO UPDATE SET
         total_credits = user_credits.total_credits + p_credits_to_add,
@@ -77,7 +93,7 @@ BEGIN
     SELECT total_credits, remaining_credits
     INTO current_credits
     FROM user_credits
-    WHERE user_id = p_user_id;
+    WHERE user_id = user_uuid;
     
     -- Return success result
     RETURN QUERY SELECT 
@@ -88,3 +104,6 @@ BEGIN
         current_credits.remaining_credits as new_remaining_credits;
 END;
 $$;
+
+-- Grant execute permission
+GRANT EXECUTE ON FUNCTION process_payment_with_idempotency TO service_role;

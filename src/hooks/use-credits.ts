@@ -201,23 +201,6 @@ export function useCredits() {
     }
   }, [user]);
 
-  // Get cost for a specific model
-  const getCostForModel = useCallback((modelVersion: ModelVersion): number => {
-    return MODEL_COSTS[modelVersion];
-  }, []);
-
-  // Check if user can afford a specific model generation
-  const canAffordModel = useCallback((modelVersion: ModelVersion): boolean => {
-    if (!creditBalance) return false;
-    return creditBalance.remaining_credits >= MODEL_COSTS[modelVersion];
-  }, [creditBalance]);
-
-  // Get number of generations available for a model
-  const getGenerationsAvailable = useCallback((modelVersion: ModelVersion): number => {
-    if (!creditBalance) return 0;
-    return Math.floor(creditBalance.remaining_credits / MODEL_COSTS[modelVersion]);
-  }, [creditBalance]);
-
   // Add credits (typically called after payment)
   const addCredits = useCallback(async (creditsToAdd: number): Promise<boolean> => {
     if (!user) return false;
@@ -234,12 +217,17 @@ export function useCredits() {
         }),
       });
 
+      if (response.ok) {
+        // Refresh credit balance after adding credits
+        await getCreditBalance();
+      }
+
       return response.ok;
     } catch (error) {
       console.error('Error adding credits:', error);
       return false;
     }
-  }, [user]);
+  }, [user, getCreditBalance]);
 
   // Get cost for a specific model
   const getCostForModel = useCallback((modelVersion: ModelVersion): number => {

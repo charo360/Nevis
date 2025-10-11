@@ -128,6 +128,7 @@ export async function POST(req: NextRequest) {
 
 async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
   console.log('🎉 Processing completed checkout session:', session.id);
+  console.log('📋 FULL Session object:', JSON.stringify(session, null, 2));
   console.log('📋 Session data:', {
     client_reference_id: session.client_reference_id,
     metadata: session.metadata,
@@ -142,11 +143,13 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
 
   if (!userId) {
     console.error('❌ Missing userId in session. client_reference_id:', session.client_reference_id, 'metadata.userId:', session.metadata?.userId);
+    console.error('📋 FULL Session object for debugging:', JSON.stringify(session, null, 2));
     return;
   }
 
   if (!planId) {
     console.error('❌ Missing planId in session metadata:', session.metadata);
+    console.error('📋 FULL Session object for debugging:', JSON.stringify(session, null, 2));
     return;
   }
 
@@ -154,6 +157,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
 
   if (!plan) {
     console.error('❌ Invalid plan ID:', planId);
+    console.error('📋 FULL Session object for debugging:', JSON.stringify(session, null, 2));
     return;
   }
 
@@ -162,23 +166,33 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   try {
     // Use the new idempotent payment processing function
     console.log('💳 Processing payment with idempotency protection...');
-    
     const { data: paymentResult, error: paymentError } = await supabase.rpc('process_payment_with_idempotency', {
       p_stripe_session_id: session.id,
-      p_stripe_payment_intent_id: session.payment_intent as string,
       p_user_id: userId,
       p_plan_id: planId,
       p_amount: (session.amount_total || 0) / 100, // Convert from cents
       p_credits_to_add: plan.credits
     });
 
+    console.log('🧾 Supabase RPC result:', { paymentResult, paymentError });
+
     if (paymentError) {
       console.error('❌ Payment processing failed:', paymentError);
       throw new Error(`Payment processing failed: ${paymentError.message}`);
     }
 
+    if (!paymentResult || !Array.isArray(paymentResult) || paymentResult.length === 0) {
+      console.error('❌ No payment result returned from Supabase RPC!', { paymentResult });
+      throw new Error('No payment result returned from Supabase RPC');
+    }
+
     const result = paymentResult[0];
-    
+
+    if (!result) {
+      console.error('❌ Supabase RPC returned empty result object!', { paymentResult });
+      throw new Error('Supabase RPC returned empty result object');
+    }
+
     if (result.was_duplicate) {
       console.log('⚠️ Duplicate payment detected and ignored:', {
         session_id: session.id,

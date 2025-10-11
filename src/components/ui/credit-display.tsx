@@ -32,29 +32,31 @@ export function CreditDisplay({
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
+    
     const fetchCredits = async () => {
       if (!user) {
-        setLoading(false);
+        if (mounted) setLoading(false);
         return;
       }
 
       try {
         const creditData = await getCreditBalance();
-        setCredits(creditData);
+        if (mounted) setCredits(creditData);
       } catch (error) {
         console.error('Error fetching credits:', error);
-        setCredits(null);
+        if (mounted) setCredits(null);
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
     fetchCredits();
     
-    // Set up polling for real-time updates
-    const interval = setInterval(fetchCredits, 30000); // Every 30 seconds
-    return () => clearInterval(interval);
-  }, [user, getCreditBalance]);
+    return () => {
+      mounted = false;
+    };
+  }, [user]);
 
   // Use hook state or local state
   const currentCredits = creditBalance || credits;
@@ -83,9 +85,9 @@ export function CreditDisplay({
     return null;
   }
 
-  const remaining_credits = currentCredits?.remaining_credits || 0;
-  const total_credits = currentCredits?.total_credits || 0;
-  const used_credits = currentCredits?.used_credits || 0;
+  const remaining_credits = currentCredits?.remaining_credits ?? 0;
+  const total_credits = currentCredits?.total_credits ?? 0;
+  const used_credits = currentCredits?.used_credits ?? 0;
   const isLowCredits = remaining_credits < 10;
   const usagePercentage = total_credits > 0 ? Math.round((used_credits / total_credits) * 100) : 0;
 
@@ -283,7 +285,7 @@ export function CreditDisplay({
               <div>
                 <p className="text-sm font-medium">Credits</p>
                 <p className="text-2xl font-bold">
-                  {remaining_credits.toLocaleString()}
+                  {remaining_credits?.toLocaleString() || '0'}
                 </p>
               </div>
             </div>
@@ -326,7 +328,7 @@ export function CreditDisplay({
         <div className="flex items-center space-x-2">
           <Coins className={`h-4 w-4 ${isLowCredits ? 'text-orange-500' : 'text-green-500'}`} />
           <Badge variant={isLowCredits ? 'destructive' : 'secondary'}>
-            {remaining_credits.toLocaleString()} credits
+            {remaining_credits?.toLocaleString() || '0'} credits
           </Badge>
         </div>
         <Button
@@ -358,7 +360,7 @@ export function CreditDisplay({
           <div>
             <p className="text-xs text-muted-foreground">Credits</p>
             <p className="font-medium">
-              {remaining_credits.toLocaleString()}
+              {remaining_credits?.toLocaleString() || '0'}
             </p>
           </div>
         </div>
