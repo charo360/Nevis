@@ -5,7 +5,7 @@
 
 // Updated: Using direct Vertex AI for all AI generation (no proxy dependencies)
 import { BrandProfile } from '@/lib/types';
-import { vertexAIClient } from '@/lib/services/vertex-ai-client';
+import { getVertexAIClient } from '@/lib/services/vertex-ai-client';
 import { revo10Config, revo10Prompts } from './models/versions/revo-1.0/config';
 import type { ScheduledService } from '@/services/calendar-service';
 import { advancedContentGenerator, BusinessProfile } from './advanced-content-generator';
@@ -2230,7 +2230,8 @@ async function generateContentDirect(promptOrParts: string | any[], modelName: s
       }
 
       console.log(`🔄 Revo 1.0: Generating image with Vertex AI model ${modelName}`);
-      const result = await vertexAIClient.generateImage(prompt, modelName, {
+  const vertexAIClient = getVertexAIClient();
+  const result = await vertexAIClient.generateImage(prompt, modelName, {
         temperature: 0.7,
         maxOutputTokens: 8192,
         logoImage
@@ -2263,7 +2264,8 @@ async function generateContentDirect(promptOrParts: string | any[], modelName: s
       }
 
       console.log(`🔄 Revo 1.0: Generating text with Vertex AI model ${modelName}`);
-      const result = await vertexAIClient.generateText(prompt, modelName, {
+  const vertexAIClient = getVertexAIClient();
+  const result = await vertexAIClient.generateText(prompt, modelName, {
         temperature: 0.7,
         maxOutputTokens: 8192
       });
