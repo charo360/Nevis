@@ -86,142 +86,123 @@ export default function CreditManagementPage() {
   const [transactions, setTransactions] = useState<PaymentTransaction[]>([]);
   const [creditUsage, setCreditUsage] = useState<CreditUsage[]>([]);
   const [modelStats, setModelStats] = useState<ModelUsageStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Only for initial load
+  const [refreshing, setRefreshing] = useState(false); // For background refreshes
   const [error, setError] = useState<string | null>(null);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  // Removed refreshTrigger state; refresh will be handled by direct fetch
 
   // Fetch user credit data
-  const fetchCreditData = useCallback(async () => {
-    if (!user && !authLoading) {
-      setLoading(false);
-      setError('Please sign in to view your credit information.');
-      return;
-    }
-
-    if (!user) {
-      // Still loading auth, don't proceed yet
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Create headers for authenticated requests with timestamp to prevent caching
-      const headers = {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-      };
-
-      // Fetch current credit balance (real-time from database)
-      const creditsResponse = await fetch(`/api/user/credits?t=${Date.now()}`, {
-        method: 'GET',
-        headers,
-        credentials: 'include',
-        cache: 'no-store', // Force fresh data from database
-      });
-
-      if (creditsResponse.ok) {
-        const creditsData = await creditsResponse.json();
-        setUserCredits(creditsData || {
-          total_credits: 0,
-          remaining_credits: 0,
-          used_credits: 0,
-          last_payment_at: null
-        });
+  const fetchCreditData = useCallback(
+    async (isInitial = false) => {
+      if (!user && !authLoading) {
+        setLoading(false);
+        setRefreshing(false);
+        setError('Please sign in to view your credit information.');
+        return;
+      }
+      if (!user) {
+        // Still loading auth, don't proceed yet
+        return;
+      }
+      if (isInitial) {
+        setLoading(true);
       } else {
-        // If no credit data exists, set default zero values
-        setUserCredits({
-          total_credits: 0,
-          remaining_credits: 0,
-          used_credits: 0,
-          last_payment_at: null
-        });
+        setRefreshing(true);
       }
-
-      // Fetch payment history
-      const transactionsResponse = await fetch(`/api/user/payment-history?t=${Date.now()}`, {
-        method: 'GET',
-        headers,
-        credentials: 'include',
-        cache: 'no-store',
-      });
-
-      if (transactionsResponse.ok) {
-        const transactionsData = await transactionsResponse.json();
-        setTransactions(transactionsData || []);
-      }
-
-      // Fetch detailed credit usage analytics with model tracking
-      const usageResponse = await fetch(`/api/user/credit-usage?t=${Date.now()}`, {
-        method: 'GET',
-        headers,
-        credentials: 'include',
-        cache: 'no-store',
-      });
-
-      if (usageResponse.ok) {
-        const usageData = await usageResponse.json();
-        setCreditUsage(usageData || []);
-        
-        // Calculate model-specific statistics
-        const stats: ModelUsageStats = {
-          revo_1_0: { count: 0, total_cost: 0 },
-          revo_1_5: { count: 0, total_cost: 0 },
-          revo_2_0: { count: 0, total_cost: 0 },
+      setError(null);
+      try {
+        const headers = {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
         };
-
-        usageData?.forEach((usage: CreditUsage) => {
-          switch (usage.model_version) {
-            case 'revo-1.0':
-              stats.revo_1_0.count++;
-              stats.revo_1_0.total_cost += usage.credits_used;
-              break;
-            case 'revo-1.5':
-              stats.revo_1_5.count++;
-              stats.revo_1_5.total_cost += usage.credits_used;
-              break;
-            case 'revo-2.0':
-              stats.revo_2_0.count++;
-              stats.revo_2_0.total_cost += usage.credits_used;
-              break;
-          }
+        const creditsResponse = await fetch(`/api/user/credits?t=${Date.now()}`, {
+          method: 'GET',
+          headers,
+          credentials: 'include',
+          cache: 'no-store',
         });
-
-        setModelStats(stats);
+        if (creditsResponse.ok) {
+          const creditsData = await creditsResponse.json();
+          // If the API returns null/undefined, fallback to 10 credits for new users
+          setUserCredits(creditsData && typeof creditsData.total_credits === 'number' ? creditsData : {
+            total_credits: 10,
+            remaining_credits: 10,
+            used_credits: 0,
+            last_payment_at: null
+          });
+        } else {
+          setUserCredits({
+            total_credits: 10,
+            remaining_credits: 10,
+            used_credits: 0,
+            last_payment_at: null
+          });
+        }
+        const transactionsResponse = await fetch(`/api/user/payment-history?t=${Date.now()}`, {
+          method: 'GET',
+          headers,
+          credentials: 'include',
+          cache: 'no-store',
+        });
+        if (transactionsResponse.ok) {
+          const transactionsData = await transactionsResponse.json();
+          setTransactions(transactionsData || []);
+        }
+        const usageResponse = await fetch(`/api/user/credit-usage?t=${Date.now()}`, {
+          method: 'GET',
+          headers,
+          credentials: 'include',
+          cache: 'no-store',
+        });
+        if (usageResponse.ok) {
+          const usageData = await usageResponse.json();
+          setCreditUsage(usageData || []);
+          const stats: ModelUsageStats = {
+            revo_1_0: { count: 0, total_cost: 0 },
+            revo_1_5: { count: 0, total_cost: 0 },
+            revo_2_0: { count: 0, total_cost: 0 },
+          };
+          usageData?.forEach((usage: CreditUsage) => {
+            switch (usage.model_version) {
+              case 'revo-1.0':
+                stats.revo_1_0.count++;
+                stats.revo_1_0.total_cost += usage.credits_used;
+                break;
+              case 'revo-1.5':
+                stats.revo_1_5.count++;
+                stats.revo_1_5.total_cost += usage.credits_used;
+                break;
+              case 'revo-2.0':
+                stats.revo_2_0.count++;
+                stats.revo_2_0.total_cost += usage.credits_used;
+                break;
+            }
+          });
+          setModelStats(stats);
+        }
+      } catch (error) {
+        console.error('Error fetching credit data:', error);
+        setError('Failed to load credit information. Please try again.');
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
       }
-
-    } catch (error) {
-      console.error('Error fetching credit data:', error);
-      setError('Failed to load credit information. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }, [user, authLoading]);
+    },
+    [user, authLoading]
+  );
 
   useEffect(() => {
-    if (!authLoading) {
-      fetchCreditData();
+    if (!authLoading && user) {
+      fetchCreditData(true); // Only once when user is ready
     }
-  }, [fetchCreditData, authLoading, refreshTrigger]);
+  }, [authLoading, user]);
 
-  // Function to refresh credit data (can be called after purchases or usage)
+  // Manual refresh function (call after purchases or usage)
   const refreshCreditData = () => {
-    setRefreshTrigger(prev => prev + 1);
+    fetchCreditData(true);
   };
-
-  // Real-time credit balance checking
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (user && !loading) {
-        fetchCreditData();
-      }
-    }, 30000); // Refresh every 30 seconds
-
-    return () => clearInterval(interval);
-  }, [user, loading, fetchCreditData]);
 
   // Calculate credit usage percentage
   const usagePercentage = userCredits 
@@ -259,67 +240,56 @@ export default function CreditManagementPage() {
     });
   };
 
-  if (loading || authLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  // Show error at the top of the page, but always render the main content
+  // If user is not authenticated after loading is complete, show error
+  const showError = error && !error.includes('sign in');
+  const showSignIn = error && error.includes('sign in');
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-2 text-red-600">
-              <AlertCircle className="h-5 w-5" />
-              <p>{error}</p>
-            </div>
-            {error.includes('sign in') ? (
-              <Link href="/auth">
-                <Button className="w-full mt-4">
-                  Sign In
-                </Button>
-              </Link>
-            ) : (
+  return (
+    <div className="container mx-auto p-6 space-y-6 max-w-7xl">
+      {/* Error Banner */}
+      {showError && (
+        <div className="mb-4">
+          <Card className="w-full max-w-md mx-auto border-red-300 bg-red-50">
+            <CardContent className="pt-6">
+              <div className="flex items-center space-x-2 text-red-600">
+                <AlertCircle className="h-5 w-5" />
+                <p>{error}</p>
+              </div>
               <Button 
-                onClick={fetchCreditData} 
+                onClick={() => fetchCreditData(true)} 
                 className="w-full mt-4"
                 variant="outline"
               >
                 Try Again
               </Button>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // If user is not authenticated after loading is complete, show error
-  if (!user && !authLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-2 text-red-600">
-              <AlertCircle className="h-5 w-5" />
-              <p>Please sign in to view your credit information.</p>
-            </div>
-            <Link href="/auth">
-              <Button className="w-full mt-4">
-                Sign In
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  return (
-    <div className="container mx-auto p-6 space-y-6 max-w-7xl">
+            </CardContent>
+          </Card>
+        </div>
+      )}
+      {showSignIn && (
+        <div className="mb-4">
+          <Card className="w-full max-w-md mx-auto border-red-300 bg-red-50">
+            <CardContent className="pt-6">
+              <div className="flex items-center space-x-2 text-red-600">
+                <AlertCircle className="h-5 w-5" />
+                <p>Please sign in to view your credit information.</p>
+              </div>
+              <Link href="/auth">
+                <Button className="w-full mt-4">
+                  Sign In
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+      {/* Subtle background refresh indicator */}
+      {refreshing && (
+        <div className="fixed top-0 right-0 m-4 text-xs text-gray-500 z-50 bg-white/80 px-3 py-1 rounded shadow">
+          Refreshing credits...
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -336,21 +306,25 @@ export default function CreditManagementPage() {
         </Link>
       </div>
 
-      {/* Credit Overview Cards */}
+  {/* Credit Overview Cards */}
+  {/* Show skeletons if loading, else show data */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {/* Total Credits */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Credits</CardTitle>
             <Coins className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{userCredits?.total_credits || 0}</div>
+            <div className="text-2xl font-bold">
+              {loading ? <span className="bg-gray-200 rounded w-16 h-6 inline-block animate-pulse" /> : (userCredits?.total_credits || 0)}
+            </div>
             <p className="text-xs text-muted-foreground">
               All-time purchased credits
             </p>
           </CardContent>
         </Card>
-
+        {/* Remaining Credits */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Remaining Credits</CardTitle>
@@ -358,34 +332,38 @@ export default function CreditManagementPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {userCredits?.remaining_credits || 0}
+              {loading ? <span className="bg-gray-200 rounded w-16 h-6 inline-block animate-pulse" /> : (userCredits?.remaining_credits || 0)}
             </div>
             <p className="text-xs text-muted-foreground">
               Available for use
             </p>
           </CardContent>
         </Card>
-
+        {/* Used Credits */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Used Credits</CardTitle>
             <TrendingUp className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{userCredits?.used_credits || 0}</div>
+            <div className="text-2xl font-bold">
+              {loading ? <span className="bg-gray-200 rounded w-16 h-6 inline-block animate-pulse" /> : (userCredits?.used_credits || 0)}
+            </div>
             <p className="text-xs text-muted-foreground">
               Credits consumed
             </p>
           </CardContent>
         </Card>
-
+        {/* Usage */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Usage</CardTitle>
             <Target className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{usagePercentage}%</div>
+            <div className="text-2xl font-bold">
+              {loading ? <span className="bg-gray-200 rounded w-12 h-6 inline-block animate-pulse" /> : `${usagePercentage}%`}
+            </div>
             <Progress value={usagePercentage} className="mt-2" />
           </CardContent>
         </Card>

@@ -112,7 +112,6 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const authResult = await verifySupabaseAuth(request.headers.get('authorization'));
-    
     if (authResult.error) {
       return NextResponse.json(
         { error: authResult.error },
@@ -120,56 +119,58 @@ export async function POST(request: NextRequest) {
       );
     }
 
-  const profile = await request.json();
-  console.log('📋 Processing brand profile save:', {
-    businessName: profile.businessName,
-    hasLogoDataUrl: !!profile.logoDataUrl,
-    logoDataLength: profile.logoDataUrl?.length || 0
-  });
+    const profile = await request.json();
+    console.log('📋 Processing brand profile save:', {
+      businessName: profile.businessName,
+      hasLogoDataUrl: !!profile.logoDataUrl,
+      logoDataLength: profile.logoDataUrl?.length || 0
+    });
 
-  // Process logo upload if logoDataUrl is provided
-  let processedProfile = { ...profile };
-  
-  if (profile.logoDataUrl && profile.logoDataUrl.startsWith('data:')) {
-    console.log('📤 Processing logo upload for brand:', profile.businessName);
-    
-    const logoResult = await uploadLogoToSupabase(
-      profile.logoDataUrl,
-      authResult.userId!,
-      profile.businessName || 'brand'
-    );
-    
-    if (logoResult.success && logoResult.url) {
-      // Replace logoDataUrl with the Supabase storage URL
-      processedProfile.logoUrl = logoResult.url;
-      // Remove the large base64 data to save database space
-      delete processedProfile.logoDataUrl;
-      console.log('✅ Logo uploaded successfully, using storage URL:', logoResult.url);
-    } else {
-      console.error('❌ Logo upload failed:', logoResult.error);
-      // Keep the logoDataUrl as fallback, but warn about it
-      console.warn('⚠️  Using logoDataUrl as fallback - this may cause performance issues');
+    // Process logo upload if logoDataUrl is provided
+    let processedProfile = { ...profile };
+    if (profile.logoDataUrl && profile.logoDataUrl.startsWith('data:')) {
+      console.log('📤 Processing logo upload for brand:', profile.businessName);
+      const logoResult = await uploadLogoToSupabase(
+        profile.logoDataUrl,
+        authResult.userId!,
+        profile.businessName || 'brand'
+      );
+      if (logoResult.success && logoResult.url) {
+        processedProfile.logoUrl = logoResult.url;
+        delete processedProfile.logoDataUrl;
+        console.log('✅ Logo uploaded successfully, using storage URL:', logoResult.url);
+      } else {
+        console.error('❌ Logo upload failed:', logoResult.error);
+        console.warn('⚠️  Using logoDataUrl as fallback - this may cause performance issues');
+      }
     }
-  }
 
-  // Use authenticated user ID instead of trusting the request body
-  const profileWithUserId = {
-    ...processedProfile,
-    userId: authResult.userId!,
-  };
+    // Use authenticated user ID instead of trusting the request body
+    const profileWithUserId = {
+      ...processedProfile,
+      userId: authResult.userId!,
+    };
 
-  console.log('💾 Saving brand profile to MongoDB:', {
-    businessName: profileWithUserId.businessName,
-    hasLogoUrl: !!profileWithUserId.logoUrl,
-    hasLogoDataUrl: !!profileWithUserId.logoDataUrl
-  });
+    console.log('💾 Saving brand profile to MongoDB:', {
+      businessName: profileWithUserId.businessName,
+      hasLogoUrl: !!profileWithUserId.logoUrl,
+      hasLogoDataUrl: !!profileWithUserId.logoDataUrl
+    });
 
-  const profileId = await brandProfileSupabaseService.saveBrandProfile(profileWithUserId);
-    return NextResponse.json({ id: profileId });
+    try {
+      const profileId = await brandProfileSupabaseService.saveBrandProfile(profileWithUserId);
+      return NextResponse.json({ id: profileId });
+    } catch (saveError) {
+      console.error('Error saving brand profile (inner):', saveError);
+      return NextResponse.json(
+        { error: saveError instanceof Error ? saveError.message : String(saveError) },
+        { status: 500 }
+      );
+    }
   } catch (error) {
-    console.error('Error saving brand profile:', error);
+    console.error('Error saving brand profile (outer):', error);
     return NextResponse.json(
-      { error: 'Failed to save brand profile' },
+      { error: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

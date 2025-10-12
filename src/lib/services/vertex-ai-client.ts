@@ -61,10 +61,22 @@ class VertexAIClient {
   private tokenExpiry: number = 0;
 
   constructor() {
-    // Load credentials from file
+    // Prefer loading credentials from environment variable (for Vercel compatibility)
+    const envCreds = process.env.VERTEX_AI_CREDENTIALS;
+    if (envCreds) {
+      try {
+        this.credentials = JSON.parse(envCreds);
+        this.projectId = process.env.VERTEX_AI_PROJECT_ID || this.credentials.project_id;
+        this.location = process.env.VERTEX_AI_LOCATION || 'us-central1';
+        return;
+      } catch (error) {
+        throw new Error('Failed to parse VERTEX_AI_CREDENTIALS env variable: ' + error);
+      }
+    }
+
+    // Fallback: load from file (for local/dev)
     const credentialsPath = process.env.VERTEX_AI_CREDENTIALS_PATH || 'proxy-server/vertex-ai-credentials.json';
     const fullPath = join(process.cwd(), credentialsPath);
-
     try {
       const credentialsData = readFileSync(fullPath, 'utf8');
       this.credentials = JSON.parse(credentialsData);
