@@ -276,4 +276,11 @@ class VertexAIClient {
 }
 
 // Export singleton instance
-export const vertexAIClient = new VertexAIClient();
+
+let vertexAIClientInstance: VertexAIClient | null = null;
+export function getVertexAIClient(): VertexAIClient {
+  if (!vertexAIClientInstance) {
+    vertexAIClientInstance = new VertexAIClient();
+  }
+  return vertexAIClientInstance;
+}
