@@ -1,4 +1,4 @@
-v/**
+/**
  * Environment-aware Stripe configuration
  * Automatically detects environment and uses appropriate keys
  * Senior Engineer Implementation - Secure and Production Ready

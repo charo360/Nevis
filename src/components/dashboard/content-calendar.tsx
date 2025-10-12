@@ -11,6 +11,7 @@ import { generateRevo15ContentAction } from "@/app/actions/revo-1.5-actions";
 
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth-supabase";
+import { useCredits } from "@/hooks/use-credits";
 import type { BrandProfile, GeneratedPost, Platform, BrandConsistencyPreferences } from "@/lib/types";
 import type { ScheduledService } from "@/services/calendar-service";
 
@@ -21,6 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { ArtifactSelector } from "@/components/artifacts/artifact-selector";
+import { CreditDisplay, CreditCostDisplay, ModelSelector } from "@/components/ui/credit-display";
 
 type ContentCalendarProps = {
   brandProfile: BrandProfile;
@@ -54,6 +56,7 @@ export function ContentCalendar({
   const [isGenerating, setIsGenerating] = React.useState<Platform | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { creditBalance, getCreditBalance, hasEnoughCreditsForModel, useCreditsForModel } = useCredits();
 
   // Brand consistency preferences - default to consistent if design examples exist
   const [brandConsistency, setBrandConsistency] = React.useState<BrandConsistencyPreferences>({
@@ -118,8 +121,29 @@ export function ContentCalendar({
 
 
   const handleGenerateClick = async (platform: Platform) => {
+    // Check if user has enough credits for the selected model
+    const hasCredits = await hasEnoughCreditsForModel(selectedRevoModel);
+    if (!hasCredits) {
+      toast({
+        title: "Insufficient Credits",
+        description: `You need ${selectedRevoModel === 'revo-1.0' ? '2' : selectedRevoModel === 'revo-1.5' ? '3' : '4'} credits to use ${selectedRevoModel}. Please purchase more credits.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsGenerating(platform);
     try {
+      // Deduct credits before generation
+      const creditResult = await useCreditsForModel(selectedRevoModel, 'content_generation', 'post');
+      if (!creditResult.success) {
+        toast({
+          title: "Credit Deduction Failed",
+          description: creditResult.error || "Failed to deduct credits",
+          variant: "destructive",
+        });
+        return;
+      }
 
       let newPost;
       let revo20Result: any = null; // Declare in proper scope
@@ -315,9 +339,12 @@ export function ContentCalendar({
       // Let the parent component handle saving
       onPostGenerated(newPost);
 
+      // Refresh credit balance after successful generation
+      await getCreditBalance();
+
       // Dynamic toast message based on generation type and model routing
       let title = "Content Generated!";
-      let description = `A new ${platform} post has been saved to your database.`;
+      let description = `A new ${platform} post has been saved. ${creditResult.credits_used} credits used. ${creditResult.remaining_credits} credits remaining.`;
 
       // Model-specific messages
       if (selectedRevoModel === 'revo-2.0') {
@@ -429,23 +456,54 @@ export function ContentCalendar({
                     onChange={(e) => setSelectedRevoModel(e.target.value as RevoModel)}
                     className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-1 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-[140px]"
                   >
-                    <option value="revo-1.0">Revo 1.0</option>
-                    <option value="revo-1.5">Revo 1.5</option>
-                    <option value="revo-2.0">Revo 2.0</option>
+                    <option value="revo-1.0">Revo 1.0 (2 credits)</option>
+                    <option value="revo-1.5">Revo 1.5 (3 credits)</option>
+                    <option value="revo-2.0">Revo 2.0 (4 credits)</option>
                   </select>
                 </div>
               </div>
             </div>
-            <p className="text-xs text-gray-500 mt-2">
-              {selectedRevoModel === 'revo-2.0'
-                ? `🚀 Revo 2.0: Next-Gen AI with native image generation, character consistency & intelligent editing`
-                : selectedRevoModel === 'revo-1.5'
-                  ? `✨ Revo 1.5: Professional design principles with brand color integration`
-                  : selectedRevoModel === 'revo-1.0'
-                    ? `🤖 Revo 1.0: Standard content generation with reliable performance`
-                    : `🌟 ${selectedRevoModel}: Next-generation AI (coming soon)`
-              }
-            </p>
+            <div className="mt-2 flex items-center justify-between">
+              <p className="text-xs text-gray-500">
+                {selectedRevoModel === 'revo-2.0'
+                  ? `🚀 Revo 2.0: Next-Gen AI with native image generation, character consistency & intelligent editing`
+                  : selectedRevoModel === 'revo-1.5'
+                    ? `✨ Revo 1.5: Professional design principles with brand color integration`
+                    : selectedRevoModel === 'revo-1.0'
+                      ? `🤖 Revo 1.0: Standard content generation with reliable performance`
+                      : `🌟 ${selectedRevoModel}: Next-generation AI (coming soon)`
+                }
+              </p>
+              <CreditCostDisplay 
+                modelVersion={selectedRevoModel} 
+                feature="Content Generation"
+                className="text-xs"
+              />
+            </div>
+          </div>
+
+          {/* Credit Display and Model Selection */}
+          <div className="mb-6 grid gap-4 md:grid-cols-2">
+            {/* Credit Display */}
+            <CreditDisplay 
+              variant="card" 
+              showBuyButton={true}
+              className=""
+            />
+            
+            {/* Model Selection with Credit Costs */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">AI Model Selection</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <ModelSelector
+                  selectedModel={selectedRevoModel}
+                  onModelChange={setSelectedRevoModel}
+                  userCredits={creditBalance}
+                />
+              </CardContent>
+            </Card>
           </div>
 
           {/* Simple Artifacts Toggle */}

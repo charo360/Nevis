@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Coins, Plus, AlertTriangle, Zap, Refresh, TrendingUp } from 'lucide-react';
+import { Coins, Plus, AlertTriangle, Zap, RefreshCw, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 
