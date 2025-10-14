@@ -3,6 +3,8 @@
  * Deep understanding of how people actually communicate, advertise, and connect in different regions
  */
 
+import { getVertexAIClient } from '@/lib/services/vertex-ai-client';
+
 export interface RegionalProfile {
   region: string;
   country: string;
@@ -862,7 +864,7 @@ Return ONLY a JSON array of hashtags (including the # symbol):
 
     try {
       // Use Vertex AI with gemini-2.5-flash model
-      const result = await vertexAIClient.generateText(prompt, 'gemini-2.5-flash', {
+      const result = await getVertexAIClient().generateText(prompt, 'gemini-2.5-flash', {
         temperature: 0.7,
         maxOutputTokens: 1000
       });

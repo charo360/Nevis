@@ -393,7 +393,7 @@ export function ContentCalendar({
 
   // Ensure this component is always full-bleed inside the app shell and does not cause horizontal overflow.
   return (
-    <div className="w-full max-w-full box-border overflow-x-hidden">
+    <div className="w-full max-w-full box-border  overflow-x-hidden">
       <div className="w-full px-4 py-6 lg:py-8 lg:px-6">
         <div className="w-full max-w-full box-border space-y-6">
           {/* Compact Brand Consistency Controls */}
@@ -483,28 +483,7 @@ export function ContentCalendar({
           </div>
 
           {/* Credit Display and Model Selection */}
-          <div className="mb-6 grid gap-4 md:grid-cols-2">
-            {/* Credit Display */}
-            <CreditDisplay 
-              variant="card" 
-              showBuyButton={true}
-              className=""
-            />
-            
-            {/* Model Selection with Credit Costs */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">AI Model Selection</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <ModelSelector
-                  selectedModel={selectedRevoModel}
-                  onModelChange={setSelectedRevoModel}
-                  userCredits={creditBalance}
-                />
-              </CardContent>
-            </Card>
-          </div>
+         
 
           {/* Simple Artifacts Toggle */}
           <div className="mb-6">

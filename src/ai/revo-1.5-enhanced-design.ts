@@ -7,7 +7,7 @@ import { BrandProfile } from '@/lib/types';
 import { TrendingHashtagsService } from '@/services/trending-hashtags-service';
 import { RegionalSocialTrendsService } from '@/services/regional-social-trends-service';
 import type { ScheduledService } from '@/services/calendar-service';
-import { vertexAIClient } from '@/lib/services/vertex-ai-client';
+import { getVertexAIClient } from '@/lib/services/vertex-ai-client';
 import { ContentQualityEnhancer } from '@/utils/content-quality-enhancer';
 
 // Helper function to extract text from Vertex AI response
@@ -381,7 +381,7 @@ async function generateContentDirect(promptOrParts: string | any[], modelName: s
       prompt = promptOrParts;
     }
 
-    const result = await vertexAIClient.generateImage(prompt, REVO_1_5_IMAGE_MODEL, {
+    const result = await getVertexAIClient().generateImage(prompt, REVO_1_5_IMAGE_MODEL, {
       temperature: 0.7,
       maxOutputTokens: 8192,
       logoImage
@@ -410,7 +410,7 @@ async function generateContentDirect(promptOrParts: string | any[], modelName: s
     try {
       console.log('🔑 Revo 1.5: Making direct Vertex AI call...');
 
-      const result = await vertexAIClient.generateText(prompt, REVO_1_5_TEXT_MODEL, {
+      const result = await getVertexAIClient().generateText(prompt, REVO_1_5_TEXT_MODEL, {
         temperature: 0.7,
         maxOutputTokens: 8192
       });

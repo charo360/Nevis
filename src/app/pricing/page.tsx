@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { loadStripe } from '@stripe/stripe-js';
 import {
   Star,
   Zap,
@@ -24,21 +26,86 @@ import Link from 'next/link';
 import { AppRoutesPaths } from '@/lib/routes';
 import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
+import { useAuth } from '@/hooks/use-auth-supabase';
+import { useToast } from '@/hooks/use-toast';
 
 export default function PricingPage() {
+  const router = useRouter();
   const [isVisible, setIsVisible] = useState(false);
+  const { user, loading, getAccessToken } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     setIsVisible(true);
   }, []);
 
+  const createCheckout = async (planId: string) => {
+    if (loading) {
+      toast({ title: 'Please wait', description: 'Checking authentication status...', variant: 'default' });
+      return;
+    }
+
+    if (!user || !user.userId) {
+      toast({ title: 'Sign in required', description: 'You need to sign in before purchasing credits.', variant: 'default' });
+      router.push('/auth');
+      return;
+    }
+
+    try {
+      const token = await getAccessToken();
+      const normalizedPlanId = planId;
+      const res = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({
+          planId: normalizedPlanId,
+          quantity: 1,
+          mode: 'payment',
+          customerEmail: user.email,
+          metadata: { userId: user.userId, planId: normalizedPlanId }
+        })
+      });
+
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      if (normalizedPlanId === 'try-free') {
+        router.push('/dashboard');
+        return;
+      }
+
+      const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
+      if (!stripe) throw new Error('Stripe failed to load');
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else if (data.id) {
+        await stripe.redirectToCheckout({ sessionId: data.id });
+      }
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Checkout failed', description: String(err?.message || err) });
+    }
+  };
+
   const handleGetStarted = (planId?: string) => {
-    if (planId === 'try-free') {
-      window.location.href = '/auth?plan=try-free';
-    } else if (planId) {
-      window.location.href = `/auth?plan=${planId}`;
-    } else {
-      window.location.href = '/auth';
+    try {
+      if (loading) {
+        toast({ title: 'Please wait', description: 'Checking authentication status...', variant: 'default' });
+        return;
+      }
+
+      if (!user || !user.userId) {
+        router.push('/auth');
+        return;
+      }
+
+      if (planId) {
+        void createCheckout(planId);
+        return;
+      }
+
+      router.push('/dashboard');
+    } catch (_) {
     }
   };
 

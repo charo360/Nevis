@@ -5,7 +5,7 @@
 
 import type { BrandProfile, Platform } from '@/lib/types';
 import { ContentQualityEnhancer } from '@/utils/content-quality-enhancer';
-import { vertexAIClient } from '@/lib/services/vertex-ai-client';
+import { getVertexAIClient } from '@/lib/services/vertex-ai-client';
 
 // Direct Vertex AI function for all AI generation
 async function generateContentDirect(promptOrParts: string | any[], modelName: string, isImageGeneration: boolean): Promise<any> {
@@ -37,7 +37,7 @@ async function generateContentDirect(promptOrParts: string | any[], modelName: s
   try {
     if (isImageGeneration) {
       // Use Vertex AI for image generation
-      const result = await vertexAIClient.generateImage(prompt, modelName, {
+      const result = await getVertexAIClient().generateImage(prompt, modelName, {
         temperature: 0.7,
         maxOutputTokens: 8192,
         logoImage
@@ -61,7 +61,7 @@ async function generateContentDirect(promptOrParts: string | any[], modelName: s
       };
     } else {
       // Use Vertex AI for text generation
-      const result = await vertexAIClient.generateText(prompt, modelName, {
+      const result = await getVertexAIClient().generateText(prompt, modelName, {
         temperature: 0.7,
         maxOutputTokens: 16384  // Increased for content generation
       });
