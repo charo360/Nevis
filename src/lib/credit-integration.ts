@@ -48,7 +48,7 @@ export async function hasEnoughCreditsForModel(
 ): Promise<{ hasCredits: boolean; remainingCredits: number; requiredCredits: number }> {
   try {
     const requiredCredits = MODEL_COSTS[modelVersion];
-    
+    const supabase = createClient();
     // Get current user credits
     const { data: userCredits, error } = await supabase
       .from('user_credits')
@@ -167,6 +167,7 @@ export async function recordFailedGeneration(
   try {
     const { userId, modelVersion, feature, generationType, metadata, errorMessage } = params;
     
+    const supabase = createClient();
     // Record the failed attempt without deducting credits
     await supabase
       .from('credit_usage_history')
@@ -193,6 +194,7 @@ export async function recordFailedGeneration(
  */
 export async function getUserCreditBalance(userId: string): Promise<number> {
   try {
+    const supabase = createClient();
     const { data, error } = await supabase
       .from('user_credits')
       .select('remaining_credits')
