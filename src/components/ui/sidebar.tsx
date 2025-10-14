@@ -321,26 +321,39 @@ const SidebarInset = React.forwardRef<
     fullWidth?: boolean
   }
 >(({ className, fullWidth = false, ...props }, ref) => {
-  const { state } = useSidebar()
+  const { state, toggleSidebar } = useSidebar()
   
   if (fullWidth) {
-    // For full-width mode, use the full screen minus sidebar width
+    // For full-width mode, content should be attached to sidebar with no gap
     return (
       <main
         ref={ref}
         className={cn(
-          // Full width with responsive margins for sidebar - NO PADDING OR MAX-WIDTH
+          // Full width content attached to sidebar
           "flex min-h-screen flex-col bg-background transition-all duration-200 ease-linear w-full",
-          // Responsive margins based on sidebar state
-          "ml-0", // Mobile: no margin
-          "md:ml-[16rem]", // Desktop expanded: 16rem margin (sidebar width)
-          state === "collapsed" ? "md:ml-[3rem]" : "", // Desktop collapsed: 3rem margin (icon width)
+          // No margins - content should be attached to sidebar
+          "ml-0",
           // Ensure content uses full available width without any constraints
           "flex-1",
           className
         )}
         {...props}
-      />
+      >
+        {/* Floating toggle button when sidebar is collapsed - visible on all screen sizes */}
+        {state === "collapsed" && (
+          <button
+            onClick={toggleSidebar}
+            className="fixed top-4 left-4 z-50 p-2 bg-background border border-border rounded-md shadow-lg hover:bg-accent transition-colors"
+            title="Open sidebar"
+          >
+            <PanelLeft className="h-4 w-4" />
+          </button>
+        )}
+        {/* Full width content wrapper - attached to sidebar with no gap */}
+        <div className="w-full h-full min-h-screen">
+          {props.children}
+        </div>
+      </main>
     )
   }
 
@@ -358,7 +371,19 @@ const SidebarInset = React.forwardRef<
         className
       )}
       {...props}
-    />
+    >
+      {/* Floating toggle button when sidebar is collapsed */}
+      {state === "collapsed" && (
+        <button
+          onClick={toggleSidebar}
+          className="fixed top-4 left-4 z-50 p-2 bg-background border border-border rounded-md shadow-lg hover:bg-accent transition-colors md:hidden"
+          title="Open sidebar"
+        >
+          <PanelLeft className="h-4 w-4" />
+        </button>
+      )}
+      {props.children}
+    </main>
   )
 })
 SidebarInset.displayName = "SidebarInset"

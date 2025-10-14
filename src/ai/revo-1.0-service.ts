@@ -2230,8 +2230,7 @@ async function generateContentDirect(promptOrParts: string | any[], modelName: s
       }
 
       console.log(`🔄 Revo 1.0: Generating image with Vertex AI model ${modelName}`);
-  const vertexAIClient = getVertexAIClient();
-  const result = await vertexAIClient.generateImage(prompt, modelName, {
+      const result = await getVertexAIClient().generateImage(prompt, modelName, {
         temperature: 0.7,
         maxOutputTokens: 8192,
         logoImage
@@ -2264,8 +2263,7 @@ async function generateContentDirect(promptOrParts: string | any[], modelName: s
       }
 
       console.log(`🔄 Revo 1.0: Generating text with Vertex AI model ${modelName}`);
-  const vertexAIClient = getVertexAIClient();
-  const result = await vertexAIClient.generateText(prompt, modelName, {
+      const result = await getVertexAIClient().generateText(prompt, modelName, {
         temperature: 0.7,
         maxOutputTokens: 8192
       });

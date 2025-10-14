@@ -109,31 +109,34 @@ export default function BrandsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="w-full px-4 py-8" style={{ maxWidth: 'none' }}>
-          <div className="max-w-7xl mx-auto w-full">
-            <div className="flex-1 space-y-6 p-6">
-              <div className="space-y-2">
-                <div className="h-8 w-48 bg-muted rounded animate-pulse" />
-                <div className="h-4 w-64 bg-muted rounded animate-pulse" />
-              </div>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="h-48 bg-muted rounded-lg animate-pulse" />
-                ))}
+      <SidebarInset fullWidth>
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+          <div className="w-full px-4 py-8">
+            <div className="max-w-7xl mx-auto w-full">
+              <div className="flex-1 space-y-6 p-6">
+                <div className="space-y-2">
+                  <div className="h-8 w-48 bg-muted rounded animate-pulse" />
+                  <div className="h-4 w-64 bg-muted rounded animate-pulse" />
+                </div>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="h-48 bg-muted rounded-lg animate-pulse" />
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </SidebarInset>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="w-full px-4 py-8" style={{ maxWidth: 'none' }}>
-        <div className="max-w-7xl mx-auto w-full">
-          <div className="flex-1 space-y-6 p-6">
+    <SidebarInset fullWidth>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 w-full">
+        <div className="w-full h-full">
+          <div className="w-full h-full">
+            <div className="flex-1 space-y-6 p-6 w-full px-4">
             {/* Header */}
             <div className="flex items-center justify-between">
               <div className="space-y-1">
@@ -334,9 +337,10 @@ export default function BrandsPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </SidebarInset>
   );
 }

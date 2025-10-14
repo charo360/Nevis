@@ -63,6 +63,13 @@ export class SupabaseService {
     try {
       const supabase = createClient();
       
+      // Check if we have a real Supabase client (not mock)
+      if (!supabase.storage || typeof supabase.storage.listBuckets !== 'function') {
+        console.warn('Supabase storage not available - using mock client');
+        this.initialized = true;
+        return;
+      }
+      
       // Check if bucket exists
       const { data: buckets } = await supabase.storage.listBuckets();
       const bucketExists = buckets?.some(bucket => bucket.name === this.bucketName);

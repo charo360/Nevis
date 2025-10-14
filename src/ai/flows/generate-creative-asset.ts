@@ -9,7 +9,7 @@
 
 import { ai, MediaPart, GenerateRequest, generateContentWithProxy } from '@/ai/genkit';
 import { aiProxyClient, getUserIdForProxy, getUserTierForProxy } from '@/lib/services/ai-proxy-client';
-import { vertexAIClient } from '@/lib/services/vertex-ai-client';
+import { getVertexAIClient } from '@/lib/services/vertex-ai-client';
 import { z } from 'zod';
 import type { BrandProfile } from '@/lib/types';
 import {
@@ -320,7 +320,7 @@ The client specifically requested their brand logo to be included. FAILURE TO IN
                 const modelName = 'gemini-2.5-flash-image'; // Use correct Vertex AI model name
                 console.log('🔍 [DEBUG] About to call direct Vertex AI with:', { modelName, hasLogo: !!logoDataUrl });
 
-                const result = await vertexAIClient.generateImage(finalPrompt, modelName, {
+                const result = await getVertexAIClient().generateImage(finalPrompt, modelName, {
                     temperature: 0.7,
                     maxOutputTokens: 8192,
                     logoImage: logoDataUrl
@@ -346,7 +346,7 @@ The client specifically requested their brand logo to be included. FAILURE TO IN
 
                 const modelName = 'gemini-2.5-flash-image';
 
-                const result = await vertexAIClient.generateImage(textPrompt, modelName, {
+                const result = await getVertexAIClient().generateImage(textPrompt, modelName, {
                     temperature: 0.7,
                     maxOutputTokens: 8192
                 });

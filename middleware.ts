@@ -8,9 +8,18 @@ export async function middleware(request: NextRequest) {
     },
   })
 
+  // Check if Supabase is properly configured
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey || supabaseAnonKey === 'REPLACE_WITH_REAL_ANON_KEY_FROM_SUPABASE_DASHBOARD') {
+    console.error('🚨 Supabase not configured in middleware - skipping auth');
+    return response;
+  }
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         getAll() {
