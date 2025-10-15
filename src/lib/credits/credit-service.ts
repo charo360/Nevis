@@ -31,7 +31,7 @@ export class CreditService {
   static async getUserCredits(userId: string): Promise<CreditBalance | null> {
     try {
       const { data, error } = await supabase
-        .from('users')
+        .from('user_credits')
         .select('total_credits, used_credits, remaining_credits')
         .eq('user_id', userId)
         .single();
@@ -73,7 +73,7 @@ export class CreditService {
 
       // Update user credits
       const { error: updateError } = await supabase
-        .from('users')
+        .from('user_credits')
         .update({
           total_credits: newTotal,
           remaining_credits: newRemaining,
@@ -146,7 +146,7 @@ export class CreditService {
 
       // Update user credits
       const { error: updateError } = await supabase
-        .from('users')
+        .from('user_credits')
         .update({
           used_credits: newUsed,
           remaining_credits: newRemaining,

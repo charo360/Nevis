@@ -15,15 +15,8 @@ import {
   CheckCircle,
   ArrowRight,
   Sparkles,
-  Crown,
-  Rocket,
-  Shield,
-  Users,
-  TrendingUp,
-  Clock
+  TrendingUp
 } from 'lucide-react';
-import Link from 'next/link';
-import { AppRoutesPaths } from '@/lib/routes';
 import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
 import { useAuth } from '@/hooks/use-auth-supabase';
@@ -39,6 +32,7 @@ export default function PricingPage() {
     setIsVisible(true);
   }, []);
 
+  // Logic from homepage pricing section
   const createCheckout = async (planId: string) => {
     if (loading) {
       toast({ title: 'Please wait', description: 'Checking authentication status...', variant: 'default' });
@@ -88,25 +82,22 @@ export default function PricingPage() {
   };
 
   const handleGetStarted = (planId?: string) => {
-    try {
-      if (loading) {
-        toast({ title: 'Please wait', description: 'Checking authentication status...', variant: 'default' });
-        return;
-      }
-
-      if (!user || !user.userId) {
-        router.push('/auth');
-        return;
-      }
-
-      if (planId) {
-        void createCheckout(planId);
-        return;
-      }
-
-      router.push('/dashboard');
-    } catch (_) {
+    if (loading) {
+      toast({ title: 'Please wait', description: 'Checking authentication status...', variant: 'default' });
+      return;
     }
+
+    if (!user || !user.userId) {
+      router.push('/auth');
+      return;
+    }
+
+    if (planId) {
+      void createCheckout(planId);
+      return;
+    }
+
+    router.push('/dashboard');
   };
 
   return (
@@ -201,7 +192,6 @@ export default function PricingPage() {
       <section className="relative px-6 py-20">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-16">
-
             {/* Try Agent Free */}
             <Card className="relative transition-all duration-300 hover:shadow-2xl border-2 border-gray-200 hover:scale-105">
               <CardContent className="p-6 text-center">
@@ -210,16 +200,13 @@ export default function PricingPage() {
                 </div>
                 <h3 className="text-xl font-bold mb-2">Try Agent Free</h3>
                 <p className="text-sm text-gray-600 mb-4">Basic agent training, Watermarked images</p>
-
                 <div className="mb-4">
                   <span className="text-3xl font-bold" data-plan="try-free" data-amount="0" data-currency="USD">$0</span>
                 </div>
-
                 <div className="mb-4">
                   <div className="text-2xl font-semibold text-blue-600">10</div>
                   <div className="text-sm text-gray-500">credits (one-time)</div>
                 </div>
-
                 <ul className="text-sm text-left space-y-2 mb-6">
                   <li className="flex items-start">
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
@@ -238,7 +225,6 @@ export default function PricingPage() {
                     <span>Images include watermark</span>
                   </li>
                 </ul>
-
                 <Button
                   onClick={() => handleGetStarted('try-free')}
                   className="w-full"
@@ -259,18 +245,15 @@ export default function PricingPage() {
                 </div>
                 <h3 className="text-xl font-bold mb-2">Starter Agent</h3>
                 <p className="text-sm text-gray-600 mb-4">HD generations, No watermark, Agent memory</p>
-
                 <div className="mb-4">
                   <span className="text-3xl font-bold" data-plan="starter" data-amount="999" data-currency="USD">$9.99</span>
                   <span className="text-gray-500 text-sm"> one-time</span>
                 </div>
-
                 <div className="mb-4">
                   <div className="text-2xl font-semibold text-blue-600">40</div>
                   <div className="text-sm text-gray-500">credits</div>
                   <div className="text-xs text-gray-400 mt-1">$0.25 per credit</div>
                 </div>
-
                 <ul className="text-sm text-left space-y-2 mb-6">
                   <li className="flex items-start">
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
@@ -289,7 +272,6 @@ export default function PricingPage() {
                     <span>Email support</span>
                   </li>
                 </ul>
-
                 <Button
                   onClick={() => handleGetStarted('starter')}
                   className="w-full"
@@ -307,30 +289,25 @@ export default function PricingPage() {
               <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white">
                 Most Popular
               </Badge>
-
               <CardContent className="p-6 text-center">
                 <div className="flex justify-center mb-4">
                   <Target className="w-6 h-6 text-blue-500" />
                 </div>
                 <h3 className="text-xl font-bold mb-2">Growth Agent</h3>
                 <p className="text-sm text-gray-600 mb-4">Priority speed, Advanced models, Priority support</p>
-
                 <div className="mb-4">
                   <span className="text-3xl font-bold" data-plan="growth" data-amount="2499" data-currency="USD">$24.99</span>
                   <span className="text-gray-500 text-sm"> one-time</span>
                 </div>
-
                 <div className="mb-4">
                   <div className="text-2xl font-semibold text-blue-600">100</div>
                   <div className="text-sm text-gray-500">credits</div>
                   <div className="text-xs text-gray-400 mt-1">$0.25 per credit</div>
                 </div>
-
                 <div className="mb-4 p-3 bg-blue-50 rounded-lg">
                   <div className="text-sm font-semibold text-blue-800 mb-1">Bonus:</div>
                   <div className="text-sm text-blue-700">Priority generation speed</div>
                 </div>
-
                 <ul className="text-sm text-left space-y-2 mb-6">
                   <li className="flex items-start">
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
@@ -345,7 +322,6 @@ export default function PricingPage() {
                     <span>Priority support</span>
                   </li>
                 </ul>
-
                 <Button
                   onClick={() => handleGetStarted('growth')}
                   className="w-full"
@@ -365,23 +341,19 @@ export default function PricingPage() {
                 </div>
                 <h3 className="text-xl font-bold mb-2">Pro Agent</h3>
                 <p className="text-sm text-gray-600 mb-4">Bulk generations, API access, Early features</p>
-
                 <div className="mb-4">
                   <span className="text-3xl font-bold" data-plan="pro" data-amount="5999" data-currency="USD">$59.99</span>
                   <span className="text-gray-500 text-sm"> one-time</span>
                 </div>
-
                 <div className="mb-4">
                   <div className="text-2xl font-semibold text-blue-600">250</div>
                   <div className="text-sm text-gray-500">credits</div>
                   <div className="text-xs text-gray-400 mt-1">$0.24 per credit</div>
                 </div>
-
                 <div className="mb-4 p-3 bg-purple-50 rounded-lg">
                   <div className="text-sm font-semibold text-purple-800 mb-1">Bonus:</div>
                   <div className="text-sm text-purple-700">Early access to new features</div>
                 </div>
-
                 <ul className="text-sm text-left space-y-2 mb-6">
                   <li className="flex items-start">
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
@@ -396,7 +368,6 @@ export default function PricingPage() {
                     <span>API access</span>
                   </li>
                 </ul>
-
                 <Button
                   onClick={() => handleGetStarted('pro')}
                   className="w-full"
@@ -417,23 +388,19 @@ export default function PricingPage() {
                 </div>
                 <h3 className="text-xl font-bold mb-2">Enterprise Agent</h3>
                 <p className="text-sm text-gray-600 mb-4">White-label, Team collaboration, Custom integrations</p>
-
                 <div className="mb-4">
                   <span className="text-3xl font-bold" data-plan="enterprise" data-amount="19999" data-currency="USD">$199.99</span>
                   <span className="text-gray-500 text-sm"> one-time</span>
                 </div>
-
                 <div className="mb-4">
                   <div className="text-2xl font-semibold text-blue-600">1000</div>
                   <div className="text-sm text-gray-500">credits</div>
                   <div className="text-xs text-gray-400 mt-1">$0.20 per credit</div>
                 </div>
-
                 <div className="mb-4 p-3 bg-indigo-50 rounded-lg">
                   <div className="text-sm font-semibold text-indigo-800 mb-1">Bonus:</div>
                   <div className="text-sm text-indigo-700">Dedicated support + Custom styles</div>
                 </div>
-
                 <ul className="text-sm text-left space-y-2 mb-6">
                   <li className="flex items-start">
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
@@ -448,7 +415,6 @@ export default function PricingPage() {
                     <span>Custom integrations</span>
                   </li>
                 </ul>
-
                 <Button
                   onClick={() => handleGetStarted('enterprise')}
                   className="w-full"
@@ -494,7 +460,6 @@ export default function PricingPage() {
             <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-32 translate-x-32"></div>
             <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
-
             <div className="relative z-10">
               <h2 className="text-4xl md:text-5xl font-bold mb-6">
                 Ready to Transform Your Content?
@@ -502,13 +467,12 @@ export default function PricingPage() {
               <p className="text-xl mb-8 text-white/90 max-w-2xl mx-auto">
                 Join thousands of businesses creating professional content with AI that understands their brand.
               </p>
-
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="lg" className="bg-white text-gray-900 hover:bg-gray-100 text-lg px-8 py-4">
+                <Button size="lg" className="bg-white text-gray-900 hover:bg-gray-100 text-lg px-8 py-4" onClick={() => handleGetStarted('try-free')}>
                   Start Free Trial
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
-                <Button size="lg" variant="outline" className="border-white text-gray-900 hover:bg-white hover:text-gray-900 text-lg px-8 py-4">
+                <Button size="lg" variant="outline" className="border-white text-gray-900 hover:bg-white hover:text-gray-900 text-lg px-8 py-4" onClick={() => window.scrollTo({top: document.body.scrollHeight, behavior: "smooth"})}>
                   View Features
                 </Button>
               </div>

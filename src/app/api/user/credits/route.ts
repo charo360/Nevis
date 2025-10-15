@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch credits' }, { status: 500 });
     }
 
-    // If no credits record exists, initialize with free trial credits
+    // If no credits record exists, initialize with free trial credits (idempotent)
     if (!userCredits) {
       console.log('🎁 New user detected! Creating free trial with 10 credits...');
       
@@ -42,14 +42,16 @@ export async function GET(request: NextRequest) {
         // Create user credits record with 10 free credits
         const { data: newCredits, error: createError } = await supabaseAdmin
           .from('user_credits')
-          .insert([{
+          .insert({
             user_id: userId,
-            total_credits: 10, // "Try Agent Free" - 10 free credits
+            total_credits: 10,
             remaining_credits: 10,
             used_credits: 0,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-          }])
+          })
+          .onConflict('user_id')
+          .ignore()
           .select()
           .single();
 
@@ -61,7 +63,7 @@ export async function GET(request: NextRequest) {
         // Also create a payment transaction record for the free credits
         await supabaseAdmin
           .from('payment_transactions')
-          .insert([{
+          .insert({
             user_id: userId,
             plan_id: 'try_agent_free',
             amount: 0.00,
@@ -70,7 +72,9 @@ export async function GET(request: NextRequest) {
             stripe_session_id: `free_trial_${userId}`,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-          }]);
+          })
+          .onConflict('stripe_session_id')
+          .ignore();
 
         console.log('✅ Successfully created free trial credits for new user');
 

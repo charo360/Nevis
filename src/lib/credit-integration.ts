@@ -103,7 +103,7 @@ export async function deductCreditsForGeneration(
 
     // Call the database function to atomically deduct credits and record usage
     const supabase = createClient();
-    const { data, error } = await supabase.rpc('deduct_credits_with_tracking', {
+    const { data, error } = await supabase.rpc('deduct_credits_with_tracking_v2', {
       p_user_id: userId,
       p_credits_used: creditsToDeduct,
       p_model_version: modelVersion,
@@ -113,7 +113,10 @@ export async function deductCreditsForGeneration(
     });
 
     if (error) {
-      console.error('Database error deducting credits:', error);
+      console.error('Database error deducting credits:', {
+        error,
+        params: { userId, creditsToDeduct, modelVersion, feature, generationType, metadata }
+      });
       return {
         success: false,
         message: `Failed to deduct credits: ${error.message}`,
@@ -135,7 +138,7 @@ export async function deductCreditsForGeneration(
       return {
         success: false,
         message: result.message || 'Credit deduction failed',
-        remainingCredits: result.remaining_credits || 0,
+        remainingCredits: (result.remaining_balance ?? result.remaining_credits) || 0,
         costDeducted: 0
       };
     }
@@ -143,7 +146,7 @@ export async function deductCreditsForGeneration(
     return {
       success: true,
       message: `Successfully deducted ${creditsToDeduct} credits for ${modelVersion}`,
-      remainingCredits: result.remaining_credits,
+      remainingCredits: (result.remaining_balance ?? result.remaining_credits),
       usageId: result.usage_id,
       costDeducted: creditsToDeduct
     };
