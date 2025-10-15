@@ -4,6 +4,8 @@ import { generateContentAction } from '@/app/actions';
 import { generateRevo15ContentAction } from '@/app/actions/revo-1.5-actions';
 import type { BrandProfile, Platform, BrandConsistencyPreferences } from '@/lib/types';
 import type { ScheduledService } from '@/services/calendar-service';
+import { withCreditTracking, type ModelVersion } from '@/lib/credit-integration';
+import { createClient as createServerSupabase } from '@/lib/supabase-server';
 
 export async function POST(request: NextRequest) {
   try {
@@ -49,21 +51,45 @@ export async function POST(request: NextRequest) {
     let result;
 
     try {
+      // Resolve authenticated user for credit deduction
+      const supabase = await createServerSupabase();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+
+      const modelVersion: ModelVersion = revoModel === 'revo-1.5' ? 'revo-1.5' : 'revo-1.0';
+
       if (revoModel === 'revo-1.5') {
         // Use Revo 1.5 enhanced generation (no fallback - fix the real issue)
-        result = await generateRevo15ContentAction(
-          brandProfile,
-          platform,
-          brandConsistency || { strictConsistency: false, followBrandColors: true, includeContacts: false },
-          '',
+        console.log('🔎 [QuickContent] Deducting credits for user', user.id, 'model', modelVersion, 'platform', platform);
+        const wrapped = await withCreditTracking(
           {
-            aspectRatio: '1:1',
-            visualStyle: brandProfile.visualStyle || 'modern',
-            includePeopleInDesigns,
-            useLocalLanguage
+            userId: user.id,
+            modelVersion,
+            feature: 'social_media_content',
+            generationType: 'quick_content',
+            metadata: { platform, brandId: (brandProfile as any)?.id }
           },
-          brandSpecificServices
+          async () =>
+            await generateRevo15ContentAction(
+              brandProfile,
+              platform,
+              brandConsistency || { strictConsistency: false, followBrandColors: true, includeContacts: false },
+              '',
+              {
+                aspectRatio: '1:1',
+                visualStyle: brandProfile.visualStyle || 'modern',
+                includePeopleInDesigns,
+                useLocalLanguage
+              },
+              brandSpecificServices
+            )
         );
+        if (!wrapped.success) {
+          return NextResponse.json({ error: wrapped.error || wrapped.creditInfo?.message || 'Credit deduction failed' }, { status: 402 });
+        }
+        result = wrapped.result;
       } else {
         // Use Revo 1.0 direct generation (same as working /api/advanced-content)
         const { generateRevo10Content } = await import('@/ai/revo-1.0-service');
@@ -100,7 +126,18 @@ export async function POST(request: NextRequest) {
 
         const structuredImageText = imageTextComponents.join(' | ');
 
-        const imageResult = await generateRevo10Image({
+        // Wrap image+content generation under credit tracking to ensure deduction
+        console.log('🔎 [QuickContent] Deducting credits for user', user.id, 'model', modelVersion, 'platform', platform);
+        const wrapped = await withCreditTracking(
+          {
+            userId: user.id,
+            modelVersion,
+            feature: 'social_media_content',
+            generationType: 'quick_content',
+            metadata: { platform, brandId: (brandProfile as any)?.id }
+          },
+          async () => {
+            const imageResult = await generateRevo10Image({
           businessType: brandProfile.businessType || 'Business',
           businessName: brandProfile.businessName || brandProfile.name || 'Business',
           platform: platform.toLowerCase(),
@@ -125,30 +162,36 @@ export async function POST(request: NextRequest) {
           websiteUrl: (brandProfile as any).websiteUrl || '',
           includePeople: includePeopleInDesigns,
           scheduledServices: brandSpecificServices || []
-        });
+            });
 
-        // Convert to GeneratedPost format
-        result = {
-          id: `revo10-${Date.now()}`,
-          date: new Date().toISOString(),
-          platform: platform.toLowerCase(),
-          postType: 'post' as const,
-          imageUrl: imageResult.imageUrl,
-          content: revo10Result.content,
-          hashtags: revo10Result.hashtags,
-          status: 'generated' as const,
-          variants: [{
-            platform: platform.toLowerCase(),
-            imageUrl: imageResult.imageUrl
-          }],
-          catchyWords: revo10Result.catchyWords,
-          subheadline: revo10Result.subheadline,
-          callToAction: revo10Result.callToAction,
-          metadata: {
-            model: 'Revo 1.0 Enhanced',
-            aiService: 'gemini-2.5-flash-image-preview'
+            // Convert to GeneratedPost format
+            return {
+              id: `revo10-${Date.now()}`,
+              date: new Date().toISOString(),
+              platform: platform.toLowerCase(),
+              postType: 'post' as const,
+              imageUrl: imageResult.imageUrl,
+              content: revo10Result.content,
+              hashtags: revo10Result.hashtags,
+              status: 'generated' as const,
+              variants: [{
+                platform: platform.toLowerCase(),
+                imageUrl: imageResult.imageUrl
+              }],
+              catchyWords: revo10Result.catchyWords,
+              subheadline: revo10Result.subheadline,
+              callToAction: revo10Result.callToAction,
+              metadata: {
+                model: 'Revo 1.0 Enhanced',
+                aiService: 'gemini-2.5-flash-image-preview'
+              }
+            } as const;
           }
-        };
+        );
+        if (!wrapped.success) {
+          return NextResponse.json({ error: wrapped.error || wrapped.creditInfo?.message || 'Credit deduction failed' }, { status: 402 });
+        }
+        result = wrapped.result;
       }
     } catch (generationError) {
       console.error(`❌ ${revoModel} generation failed:`, generationError);
@@ -177,23 +220,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result);
   } catch (error) {
     console.error('❌ Quick Content API Error:', error);
-
-    // Extract revoModel from request body for error messages
-    let requestRevoModel = 'The AI model';
-    try {
-      const body = await request.json();
-      requestRevoModel = body.revoModel || 'The AI model';
-    } catch {
-      // If we can't parse the body, use default
-    }
-
-    // Provide user-friendly error messages
+    // Provide user-friendly error messages without re-reading the request body
     let errorMessage = 'Content generation failed';
     if (error instanceof Error) {
       if (error.message.includes('🚀') || error.message.includes('🔧') || error.message.includes('🎨')) {
         errorMessage = error.message;
       } else {
-        errorMessage = `🚀 ${requestRevoModel} is being updated! Try a different model or wait a moment for amazing results.`;
+        errorMessage = `🚀 ${revoModel || 'The AI model'} is being updated! Try a different model or wait a moment for amazing results.`;
       }
     }
 

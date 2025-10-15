@@ -204,12 +204,12 @@ BEGIN
     END IF;
     
     -- Deduct credits atomically
-    UPDATE user_credits 
+    UPDATE public.user_credits uc
     SET 
-        remaining_credits = remaining_credits - p_credits_to_use,
-        used_credits = COALESCE(used_credits, 0) + p_credits_to_use,
+        remaining_credits = uc.remaining_credits - p_credits_to_use,
+        used_credits = COALESCE(uc.used_credits, 0) + p_credits_to_use,
         updated_at = CURRENT_TIMESTAMP
-    WHERE user_id = p_user_id;
+    WHERE uc.user_id = p_user_id;
     
     -- Log the usage
     INSERT INTO credit_usage_history (

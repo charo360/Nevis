@@ -20,14 +20,15 @@ DECLARE
     v_usage_id UUID;
     v_user_exists BOOLEAN;
 BEGIN
+    RAISE NOTICE '[deduct_credits_with_tracking] Start for user=% with credits=% model=% feature=% gen_type=%', p_user_id, p_credits_used, p_model_version, p_feature, p_generation_type;
     -- Check if user exists in user_credits table
     SELECT EXISTS(
-        SELECT 1 FROM user_credits WHERE user_id = p_user_id
+        SELECT 1 FROM public.user_credits uc WHERE uc.user_id = p_user_id
     ) INTO v_user_exists;
     
     -- If user doesn't exist, create default record
     IF NOT v_user_exists THEN
-        INSERT INTO user_credits (
+        INSERT INTO public.user_credits (
             user_id, 
             total_credits, 
             remaining_credits, 
@@ -45,9 +46,10 @@ BEGIN
         v_current_credits := 0;
     ELSE
         -- Get current remaining credits
-        SELECT remaining_credits INTO v_current_credits
-        FROM user_credits 
-        WHERE user_id = p_user_id;
+        SELECT uc.remaining_credits INTO v_current_credits
+        FROM public.user_credits uc
+        WHERE uc.user_id = p_user_id
+        FOR UPDATE; -- lock row to avoid races
     END IF;
     
     -- Check if user has sufficient credits
@@ -62,17 +64,18 @@ BEGIN
     
     -- Calculate new balance
     v_new_balance := v_current_credits - p_credits_used;
+    RAISE NOTICE '[deduct_credits_with_tracking] Current=% Deduct=% NewBalance=%', v_current_credits, p_credits_used, v_new_balance;
     
     -- Update user credits atomically
-    UPDATE user_credits 
+    UPDATE public.user_credits uc
     SET 
         remaining_credits = v_new_balance,
-        used_credits = used_credits + p_credits_used,
+        used_credits = uc.used_credits + p_credits_used,
         updated_at = NOW()
-    WHERE user_id = p_user_id;
+    WHERE uc.user_id = p_user_id;
     
     -- Record usage in history table
-    INSERT INTO credit_usage_history (
+    INSERT INTO public.credit_usage_history (
         user_id,
         credits_used,
         model_version,
@@ -91,9 +94,10 @@ BEGIN
         p_metadata,
         NOW()
     ) RETURNING id INTO v_usage_id;
+    RAISE NOTICE '[deduct_credits_with_tracking] Usage recorded id=% new_remaining=%', v_usage_id, v_new_balance;
     
     -- Return success result
-    RETURN QUERY SELECT 
+        RETURN QUERY SELECT 
         TRUE as success,
         'Credits deducted successfully' as message,
         v_new_balance as remaining_credits,
@@ -102,6 +106,7 @@ BEGIN
 EXCEPTION
     WHEN OTHERS THEN
         -- Rollback is automatic in PostgreSQL for failed transactions
+        RAISE NOTICE '[deduct_credits_with_tracking] ERROR: %', SQLERRM;
         RETURN QUERY SELECT 
             FALSE as success,
             'Error deducting credits: ' || SQLERRM as message,

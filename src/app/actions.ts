@@ -437,17 +437,45 @@ export async function generateCreativeAssetAction(
       hasReferenceAsset: !!referenceAssetUrl
     });
 
-    const result = await generateCreativeAssetFlow({
-      prompt,
-      outputType,
-      referenceAssetUrl,
-      useBrandProfile,
-      brandProfile: useBrandProfile ? brandProfile : null,
-      maskDataUrl,
-      aspectRatio,
-      preferredModel,
-      designColors,
-    });
+    // Enforce credit deduction for creative studio generations
+    const supabaseServer = await createClient();
+    const { data: { user } } = await supabaseServer.auth.getUser();
+    if (!user?.id) {
+      throw new Error('Unauthorized');
+    }
+
+    const { withCreditTracking } = await import('@/lib/credit-integration');
+    const modelVersion = (preferredModel && preferredModel.includes('2.5')) ? 'revo-2.0' : 'revo-1.5';
+
+    const wrapped = await withCreditTracking(
+      {
+        userId: user.id,
+        modelVersion,
+        feature: 'image_generation',
+        generationType: 'creative_studio',
+        metadata: {
+          preferredModel,
+          hasBrand: !!brandProfile?.id
+        }
+      },
+      async () => await generateCreativeAssetFlow({
+        prompt,
+        outputType,
+        referenceAssetUrl,
+        useBrandProfile,
+        brandProfile: useBrandProfile ? brandProfile : null,
+        maskDataUrl,
+        aspectRatio,
+        preferredModel,
+        designColors,
+      })
+    );
+
+    if (!wrapped.success) {
+      throw new Error(wrapped.error || wrapped.creditInfo?.message || 'Credit deduction failed');
+    }
+
+    const result = wrapped.result!;
 
     // Upload image to Supabase storage if it's a data URL
     if (result.imageUrl && result.imageUrl.startsWith('data:image/')) {

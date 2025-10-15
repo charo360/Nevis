@@ -59,11 +59,48 @@ function QuickContentPage() {
   // Everything inside useEffect hooks for loading posts and calendar services remains the same.
 
   const handlePostGenerated = async (post: GeneratedPost) => {
-    // identical to your version — processes posts and stores in Supabase
+    // Ensure the post has a stable unique id
+    const newPost: GeneratedPost = {
+      ...post,
+      id: post.id || `post-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+      date: post.date || new Date().toISOString(),
+    };
+
+    // Update UI immediately
+    setGeneratedPosts(prev => {
+      const existingIndex = prev.findIndex(p => p.id === newPost.id);
+      if (existingIndex !== -1) {
+        const copy = prev.slice();
+        copy[existingIndex] = { ...copy[existingIndex], ...newPost };
+        return copy;
+      }
+      return [newPost, ...prev];
+    });
+
+    // Persist to feature storage (best-effort; non-blocking)
+    try {
+      if (currentBrand?.id && postsStorage?.setItem) {
+        const updatedLocal = [newPost, ...generatedPosts].slice(0, MAX_POSTS_TO_STORE);
+        await postsStorage.setItem(updatedLocal);
+      }
+    } catch (e) {
+      // Keep UI responsive even if storage fails
+      console.warn('⚠️ Failed to persist generated post to storage:', e);
+    }
   };
 
   const handlePostUpdated = async (updatedPost: GeneratedPost) => {
-    // identical to your version — updates stored posts
+    setGeneratedPosts(prev => prev.map(p => p.id === updatedPost.id ? { ...p, ...updatedPost } : p));
+
+    // Persist update
+    try {
+      if (currentBrand?.id && postsStorage?.setItem) {
+        const updatedLocal = generatedPosts.map(p => p.id === updatedPost.id ? { ...p, ...updatedPost } : p);
+        await postsStorage.setItem(updatedLocal);
+      }
+    } catch (e) {
+      console.warn('⚠️ Failed to persist updated post to storage:', e);
+    }
   };
 
   return (
@@ -175,15 +212,17 @@ function QuickContentPage() {
                               brandProfile={{
                                 businessName: currentBrand.businessName,
                                 businessType: currentBrand.businessType || "",
-                                location:
-                                  typeof currentBrand.location === "string"
-                                    ? currentBrand.location
-                                    : currentBrand.location
-                                      ? `${currentBrand.location.city || ""}, ${currentBrand.location.country || ""}`
-                                        .replace(/^,\s*/, "")
-                                        .replace(/,\s*$/, "")
-                                      : "",
-                                logoUrl: currentBrand.logoUrl || "",
+                                location: ((): string => {
+                                  const loc: any = currentBrand.location as any;
+                                  if (typeof loc === 'string') return loc;
+                                  if (loc && (loc.city || loc.country)) {
+                                    return `${loc.city || ''}, ${loc.country || ''}`
+                                      .replace(/^,\s*/, '')
+                                      .replace(/,\s*$/, '');
+                                  }
+                                  return '';
+                                })(),
+                                logoUrl: (currentBrand as any).logoUrl || "",
                                 visualStyle: currentBrand.visualStyle || "",
                                 writingTone: currentBrand.writingTone || "",
                                 contentThemes: currentBrand.contentThemes || "",
