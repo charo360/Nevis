@@ -70,8 +70,19 @@ function QuickContentPage() {
         // Load from Supabase database (persistent across devices)
         try {
           const token = await getAccessToken();
+          
+          // Skip database load if no valid token
+          if (!token) {
+            console.log('ℹ️  No auth token, using localStorage only');
+            setGeneratedPosts(localArray);
+            return;
+          }
+
           const response = await fetch(`/api/generated-posts/brand/${currentBrand.id}`, {
-            headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}` 
+            }
           });
           
           if (response.ok) {
@@ -92,7 +103,11 @@ function QuickContentPage() {
             console.log('📂 Loaded posts - Local:', localArray.length, 'DB:', dbArray.length, 'Total:', allPosts.length);
             setGeneratedPosts(allPosts);
           } else {
-            console.log('⚠️ Database load failed, using localStorage only:', localArray.length);
+            if (response.status === 401) {
+              console.log('⚠️ Auth expired, using localStorage only');
+            } else {
+              console.log('⚠️ Database load failed, using localStorage only');
+            }
             setGeneratedPosts(localArray);
           }
         } catch (dbError) {
@@ -140,39 +155,62 @@ function QuickContentPage() {
 
   const handlePostGenerated = async (post: GeneratedPost) => {
     // Ensure the post has a stable unique id
+    const postId = post.id || `post-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     const newPost: GeneratedPost = {
       ...post,
-      id: post.id || `post-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+      id: postId,
       date: post.date || new Date().toISOString(),
     };
 
-    // Update UI immediately
-    setGeneratedPosts(prev => {
-      const existingIndex = prev.findIndex(p => p.id === newPost.id);
-      let updatedPosts;
-      
-      if (existingIndex !== -1) {
-        const copy = prev.slice();
-        copy[existingIndex] = { ...copy[existingIndex], ...newPost };
-        updatedPosts = copy;
-      } else {
-        updatedPosts = [newPost, ...prev];
-      }
-
-      // Persist to localStorage immediately
-      if (currentBrand?.id && postsStorage?.setItem) {
-        const toSave = updatedPosts.slice(0, MAX_POSTS_TO_STORE);
-        try {
-          postsStorage.setItem(toSave);
-        } catch (err) {
-          console.warn('⚠️ Failed to persist to localStorage:', err);
-        }
-      }
-
-      return updatedPosts;
+    console.log('📝 handlePostGenerated called:', {
+      id: postId,
+      hasImage: !!newPost.imageUrl,
+      hasContent: !!newPost.content,
+      platform: newPost.platform
     });
 
-    // Also save to Supabase database for cross-device persistence
+    // Update UI immediately - prevent duplicates by checking if post already exists
+    setGeneratedPosts(prev => {
+      // Check if this exact post already exists
+      const existingIndex = prev.findIndex(p => p.id === postId);
+      
+      if (existingIndex !== -1) {
+        // Update existing post (merge new data)
+        console.log('🔄 Updating existing post:', postId);
+        const copy = prev.slice();
+        copy[existingIndex] = { ...copy[existingIndex], ...newPost };
+        
+        // Persist updated list
+        if (currentBrand?.id && postsStorage?.setItem) {
+          const toSave = copy.slice(0, MAX_POSTS_TO_STORE);
+          try {
+            postsStorage.setItem(toSave);
+          } catch (err) {
+            console.warn('⚠️ Failed to persist to localStorage:', err);
+          }
+        }
+        
+        return copy;
+      } else {
+        // Add new post
+        console.log('➕ Adding new post:', postId);
+        const updatedPosts = [newPost, ...prev];
+        
+        // Persist to localStorage immediately
+        if (currentBrand?.id && postsStorage?.setItem) {
+          const toSave = updatedPosts.slice(0, MAX_POSTS_TO_STORE);
+          try {
+            postsStorage.setItem(toSave);
+          } catch (err) {
+            console.warn('⚠️ Failed to persist to localStorage:', err);
+          }
+        }
+        
+        return updatedPosts;
+      }
+    });
+
+    // Also save to Supabase database for cross-device persistence (only once)
     if (user?.userId && currentBrand?.id) {
       try {
         const token = await getAccessToken();
