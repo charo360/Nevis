@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { verifyToken } from '@/lib/auth/jwt'
+import { getStripeConfig } from '@/lib/stripe-config'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '2024-06-20' })
+const stripeConfig = getStripeConfig()
+const stripe = new Stripe(stripeConfig.secretKey, { apiVersion: '2024-06-20' })
 
 export async function POST(req: Request) {
   try {

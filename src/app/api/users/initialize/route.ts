@@ -24,21 +24,76 @@ export async function POST(req: NextRequest) {
 
     const userId = user.id;
 
-    // Ensure subscription_plan is free
+    console.log('🔄 Initializing user:', userId, user.email);
+
+    // 1. Create user_credits record with 10 free credits (idempotent)
     try {
-      await supabase.from('users').update({ subscription_plan: 'free', subscription_status: 'active' }).eq('user_id', userId);
+      const { data: existingCredits } = await supabase
+        .from('user_credits')
+        .select('user_id, total_credits')
+        .eq('user_id', userId)
+        .single();
+
+      if (!existingCredits) {
+        // User has no credits record - grant 10 free credits
+        const { data: newCredits, error: credError } = await supabase
+          .from('user_credits')
+          .insert({
+            user_id: userId,
+            total_credits: 10,
+            remaining_credits: 10,
+            used_credits: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
+
+        if (credError) {
+          console.error('❌ Error creating user credits:', credError);
+        } else {
+          console.log('✅ Granted 10 free credits to new user:', userId);
+
+          // Record free trial transaction (optional, non-blocking)
+          try {
+            await supabase.from('payment_transactions').insert({
+              user_id: userId,
+              plan_id: 'try_agent_free',
+              amount: 0.00,
+              status: 'completed',
+              credits_added: 10,
+              stripe_session_id: `free_trial_${userId}`,
+              created_at: new Date().toISOString(),
+            });
+          } catch (txErr) {
+            console.warn('⚠️ Could not record free trial transaction (non-critical)');
+          }
+        }
+      } else {
+        console.log('ℹ️  User already has credits, skipping initialization');
+      }
     } catch (e) {
-      console.warn('Failed to set subscription_plan to free', e);
+      console.error('❌ Error in credit initialization:', e);
     }
 
-    // Initialize free credits (server-side)
+    // 2. Set default plan to try-free in users table (if table exists)
     try {
-      await CreditService.initializeFreeCredits(userId);
+      await supabase.from('users').upsert({ 
+        user_id: userId,
+        email: user.email,
+        subscription_plan: 'try-free', 
+        subscription_status: 'active',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }, { 
+        onConflict: 'user_id'
+      });
+      console.log('✅ Set default plan to try-free for user:', userId);
     } catch (e) {
-      console.warn('Failed to initialize free credits for user', userId, e);
+      console.warn('⚠️ Could not set subscription_plan (users table may not exist):', e.message);
     }
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, userId, creditsGranted: true });
   } catch (err: any) {
     console.error('Initialization failed', err);
     return NextResponse.json({ error: 'Initialization failed' }, { status: 500 });

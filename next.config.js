@@ -2,6 +2,13 @@
 const webpack = require('webpack');
 
 const nextConfig = {
+  // Expose environment variables to the server runtime
+  env: {
+    VERTEX_AI_ENABLED: process.env.VERTEX_AI_ENABLED || 'true',
+    VERTEX_AI_CREDENTIALS: process.env.VERTEX_AI_CREDENTIALS,
+    GOOGLE_PROJECT_ID: process.env.GOOGLE_PROJECT_ID || 'nevis-474518',
+    GOOGLE_LOCATION: process.env.GOOGLE_LOCATION || 'us-central1',
+  },
   typescript: {
     // Temporarily ignore TypeScript errors during development
     ignoreBuildErrors: true,

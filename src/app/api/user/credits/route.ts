@@ -60,21 +60,25 @@ export async function GET(request: NextRequest) {
           return NextResponse.json({ error: 'Failed to initialize credits' }, { status: 500 });
         }
 
-        // Also create a payment transaction record for the free credits
-        await supabaseAdmin
-          .from('payment_transactions')
-          .insert({
-            user_id: userId,
-            plan_id: 'try_agent_free',
-            amount: 0.00,
-            status: 'completed',
-            credits_added: 10,
-            stripe_session_id: `free_trial_${userId}`,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .onConflict('stripe_session_id')
-          .ignore();
+        // Also create a payment transaction record for the free credits (if payment_transactions table exists)
+        try {
+          await supabaseAdmin
+            .from('payment_transactions')
+            .insert({
+              user_id: userId,
+              plan_id: 'try_agent_free',
+              amount: 0.00,
+              status: 'completed',
+              credits_added: 10,
+              stripe_session_id: `free_trial_${userId}`,
+              created_at: new Date().toISOString(),
+            })
+            .onConflict('stripe_session_id')
+            .ignore();
+        } catch (txError) {
+          // Non-critical: payment_transactions may not have updated_at column or may not exist
+          console.warn('⚠️ Could not create payment transaction record (non-critical):', txError);
+        }
 
         console.log('✅ Successfully created free trial credits for new user');
 
