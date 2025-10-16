@@ -51,12 +51,59 @@ function QuickContentPage() {
   const { open: sidebarOpen, toggleSidebar } = useSidebar();
   const { user, getAccessToken } = useAuth();
 
-  // ... (the data fetching, brand selection, and event listener logic remains identical)
-  // To keep this concise, I’m preserving all your original async loading, deduplication,
-  // post saving, scheduled service loading, and toast logic from your provided version.
+  // Load posts from storage when brand changes
+  useEffect(() => {
+    const loadStoredPosts = async () => {
+      if (!currentBrand?.id) {
+        setGeneratedPosts([]);
+        setIsLoading(false);
+        return;
+      }
 
-  // --- OMITTING repetitive logic here for clarity, unchanged from your provided code ---
-  // Everything inside useEffect hooks for loading posts and calendar services remains the same.
+      try {
+        setIsLoading(true);
+        const stored = postsStorage?.getItem ? postsStorage.getItem() : [];
+        const postsArray = Array.isArray(stored) ? stored : [];
+        console.log('📂 Loaded posts from storage:', postsArray.length);
+        setGeneratedPosts(postsArray);
+      } catch (error) {
+        console.error('❌ Error loading posts:', error);
+        setGeneratedPosts([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadStoredPosts();
+  }, [currentBrand?.id, postsStorage]);
+
+  // Load calendar services when brand changes
+  useEffect(() => {
+    const loadCalendarServices = async () => {
+      if (!currentBrand?.id) {
+        setScheduledServices([]);
+        setTodaysServices([]);
+        setUpcomingServices([]);
+        setHasScheduledContent(false);
+        return;
+      }
+
+      try {
+        const services = await CalendarService.getTodaysScheduledServices(currentBrand.id);
+        setScheduledServices(services);
+        setTodaysServices(services);
+        setUpcomingServices([]);
+        setHasScheduledContent(services.length > 0);
+      } catch (error) {
+        console.error('❌ Error loading calendar services:', error);
+        setScheduledServices([]);
+        setTodaysServices([]);
+        setUpcomingServices([]);
+      }
+    };
+
+    loadCalendarServices();
+  }, [currentBrand?.id]);
 
   const handlePostGenerated = async (post: GeneratedPost) => {
     // Ensure the post has a stable unique id
@@ -66,41 +113,48 @@ function QuickContentPage() {
       date: post.date || new Date().toISOString(),
     };
 
-    // Update UI immediately
+    // Update UI immediately and persist
     setGeneratedPosts(prev => {
       const existingIndex = prev.findIndex(p => p.id === newPost.id);
+      let updatedPosts;
+      
       if (existingIndex !== -1) {
         const copy = prev.slice();
         copy[existingIndex] = { ...copy[existingIndex], ...newPost };
-        return copy;
+        updatedPosts = copy;
+      } else {
+        updatedPosts = [newPost, ...prev];
       }
-      return [newPost, ...prev];
-    });
 
-    // Persist to feature storage (best-effort; non-blocking)
-    try {
+      // Persist to storage immediately with updated list
       if (currentBrand?.id && postsStorage?.setItem) {
-        const updatedLocal = [newPost, ...generatedPosts].slice(0, MAX_POSTS_TO_STORE);
-        await postsStorage.setItem(updatedLocal);
+        const toSave = updatedPosts.slice(0, MAX_POSTS_TO_STORE);
+        try {
+          postsStorage.setItem(toSave);
+        } catch (err) {
+          console.warn('⚠️ Failed to persist generated post to storage:', err);
+        }
       }
-    } catch (e) {
-      // Keep UI responsive even if storage fails
-      console.warn('⚠️ Failed to persist generated post to storage:', e);
-    }
+
+      return updatedPosts;
+    });
   };
 
   const handlePostUpdated = async (updatedPost: GeneratedPost) => {
-    setGeneratedPosts(prev => prev.map(p => p.id === updatedPost.id ? { ...p, ...updatedPost } : p));
-
-    // Persist update
-    try {
+    setGeneratedPosts(prev => {
+      const updated = prev.map(p => p.id === updatedPost.id ? { ...p, ...updatedPost } : p);
+      
+      // Persist immediately
       if (currentBrand?.id && postsStorage?.setItem) {
-        const updatedLocal = generatedPosts.map(p => p.id === updatedPost.id ? { ...p, ...updatedPost } : p);
-        await postsStorage.setItem(updatedLocal);
+        try {
+          postsStorage.setItem(updated);
+        } catch (err) {
+          console.warn('⚠️ Failed to persist updated post to storage:', err);
+        }
       }
-    } catch (e) {
-      console.warn('⚠️ Failed to persist updated post to storage:', e);
-    }
+      
+      return updated;
+    });
   };
 
   return (
