@@ -52,12 +52,26 @@ export async function POST(request: NextRequest) {
 
     try {
       // Resolve authenticated user for credit deduction
-      const supabase = await createServerSupabase();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      let user;
+      try {
+        const supabase = await createServerSupabase();
+        const { data, error } = await supabase.auth.getUser();
+        if (error) {
+          console.error('❌ [QuickContent] Auth error:', error);
+          return NextResponse.json({ error: 'Authentication failed' }, { status: 401 });
+        }
+        user = data?.user;
+      } catch (authError) {
+        console.error('❌ [QuickContent] Supabase client error:', authError);
+        return NextResponse.json({ error: 'Server authentication error' }, { status: 500 });
       }
 
+      if (!user?.id) {
+        console.error('❌ [QuickContent] No user found in session');
+        return NextResponse.json({ error: 'Unauthorized - please login' }, { status: 401 });
+      }
+
+      console.log('✅ [QuickContent] Authenticated user:', user.id);
       const modelVersion: ModelVersion = revoModel === 'revo-1.5' ? 'revo-1.5' : 'revo-1.0';
 
       if (revoModel === 'revo-1.5') {
