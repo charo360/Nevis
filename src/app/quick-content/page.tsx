@@ -51,10 +51,10 @@ function QuickContentPage() {
   const { open: sidebarOpen, toggleSidebar } = useSidebar();
   const { user, getAccessToken } = useAuth();
 
-  // Load posts from storage when brand changes
+  // Load posts from both localStorage AND Supabase database
   useEffect(() => {
-    const loadStoredPosts = async () => {
-      if (!currentBrand?.id) {
+    const loadAllPosts = async () => {
+      if (!currentBrand?.id || !user?.userId) {
         setGeneratedPosts([]);
         setIsLoading(false);
         return;
@@ -62,10 +62,43 @@ function QuickContentPage() {
 
       try {
         setIsLoading(true);
-        const stored = postsStorage?.getItem ? postsStorage.getItem() : [];
-        const postsArray = Array.isArray(stored) ? stored : [];
-        console.log('📂 Loaded posts from storage:', postsArray.length);
-        setGeneratedPosts(postsArray);
+        
+        // Load from localStorage first (instant)
+        const localPosts = postsStorage?.getItem ? postsStorage.getItem() : [];
+        const localArray = Array.isArray(localPosts) ? localPosts : [];
+        
+        // Load from Supabase database (persistent across devices)
+        try {
+          const token = await getAccessToken();
+          const response = await fetch(`/api/generated-posts/brand/${currentBrand.id}`, {
+            headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+          });
+          
+          if (response.ok) {
+            const dbPosts = await response.json();
+            const dbArray = Array.isArray(dbPosts) ? dbPosts : [];
+            
+            // Merge: prefer newer posts, deduplicate by id
+            const merged = new Map();
+            [...dbArray, ...localArray].forEach(post => {
+              if (!merged.has(post.id) || new Date(post.date || 0) > new Date(merged.get(post.id).date || 0)) {
+                merged.set(post.id, post);
+              }
+            });
+            
+            const allPosts = Array.from(merged.values())
+              .sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
+            
+            console.log('📂 Loaded posts - Local:', localArray.length, 'DB:', dbArray.length, 'Total:', allPosts.length);
+            setGeneratedPosts(allPosts);
+          } else {
+            console.log('⚠️ Database load failed, using localStorage only:', localArray.length);
+            setGeneratedPosts(localArray);
+          }
+        } catch (dbError) {
+          console.warn('⚠️ Could not load from database, using localStorage:', dbError);
+          setGeneratedPosts(localArray);
+        }
       } catch (error) {
         console.error('❌ Error loading posts:', error);
         setGeneratedPosts([]);
@@ -74,8 +107,8 @@ function QuickContentPage() {
       }
     };
 
-    loadStoredPosts();
-  }, [currentBrand?.id, postsStorage]);
+    loadAllPosts();
+  }, [currentBrand?.id, user?.userId, postsStorage, getAccessToken]);
 
   // Load calendar services when brand changes
   useEffect(() => {
@@ -113,7 +146,7 @@ function QuickContentPage() {
       date: post.date || new Date().toISOString(),
     };
 
-    // Update UI immediately and persist
+    // Update UI immediately
     setGeneratedPosts(prev => {
       const existingIndex = prev.findIndex(p => p.id === newPost.id);
       let updatedPosts;
@@ -126,18 +159,45 @@ function QuickContentPage() {
         updatedPosts = [newPost, ...prev];
       }
 
-      // Persist to storage immediately with updated list
+      // Persist to localStorage immediately
       if (currentBrand?.id && postsStorage?.setItem) {
         const toSave = updatedPosts.slice(0, MAX_POSTS_TO_STORE);
         try {
           postsStorage.setItem(toSave);
         } catch (err) {
-          console.warn('⚠️ Failed to persist generated post to storage:', err);
+          console.warn('⚠️ Failed to persist to localStorage:', err);
         }
       }
 
       return updatedPosts;
     });
+
+    // Also save to Supabase database for cross-device persistence
+    if (user?.userId && currentBrand?.id) {
+      try {
+        const token = await getAccessToken();
+        const response = await fetch('/api/generated-posts', {
+          method: 'POST',
+          headers: token ? {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          } : { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            post: newPost,
+            userId: user.userId,
+            brandProfileId: currentBrand.id
+          })
+        });
+        
+        if (response.ok) {
+          console.log('✅ Post saved to database for cross-device access');
+        } else {
+          console.warn('⚠️ Database save failed, post only in localStorage');
+        }
+      } catch (dbError) {
+        console.warn('⚠️ Could not save to database:', dbError);
+      }
+    }
   };
 
   const handlePostUpdated = async (updatedPost: GeneratedPost) => {
