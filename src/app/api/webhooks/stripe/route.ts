@@ -115,6 +115,16 @@ export async function POST(req: NextRequest) {
         console.log('💰 Payment intent succeeded (handled by checkout.session.completed)');
         break;
 
+      case 'charge.dispute.created':
+        console.log('⚠️ Dispute created for charge');
+        await handleChargeDisputeCreated(event.data.object as Stripe.Dispute);
+        break;
+
+      case 'charge.refunded':
+        console.log('💸 Charge refunded');
+        await handleChargeRefunded(event.data.object as Stripe.Charge);
+        break;
+
       default:
         console.log('🔄 Unhandled event type:', event.type);
     }
@@ -166,6 +176,14 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   try {
     // Use the new idempotent payment processing function
     console.log('💳 Processing payment with idempotency protection...');
+    console.log('📋 RPC params:', {
+      p_stripe_session_id: session.id,
+      p_user_id: userId,
+      p_plan_id: planId,
+      p_amount: (session.amount_total || 0) / 100,
+      p_credits_to_add: plan.credits
+    });
+
     const { data: paymentResult, error: paymentError } = await supabase.rpc('process_payment_with_idempotency', {
       p_stripe_session_id: session.id,
       p_user_id: userId,
@@ -177,8 +195,9 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     console.log('🧾 Supabase RPC result:', { paymentResult, paymentError });
 
     if (paymentError) {
-      console.error('❌ Payment processing failed:', paymentError);
-      throw new Error(`Payment processing failed: ${paymentError.message}`);
+      console.error('❌ Payment processing RPC error:', paymentError);
+      console.error('❌ Error details:', JSON.stringify(paymentError, null, 2));
+      throw new Error(`Payment processing failed: ${paymentError.message || paymentError.hint || 'Unknown error'}`);
     }
 
     if (!paymentResult || !Array.isArray(paymentResult) || paymentResult.length === 0) {
@@ -303,6 +322,92 @@ async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
   } catch (error: any) {
     console.error('❌ Error processing payment intent failure:', error);
     throw error;
+  }
+}
+
+async function handleChargeDisputeCreated(dispute: Stripe.Dispute) {
+  console.log('⚠️ Processing dispute:', dispute.id);
+
+  try {
+    const chargeId = typeof dispute.charge === 'string' ? dispute.charge : dispute.charge?.id;
+    
+    // Find payment transaction by charge ID or payment intent
+    const { data: transaction, error } = await supabase
+      .from('payment_transactions')
+      .select('*')
+      .or(`stripe_charge_id.eq.${chargeId},stripe_payment_intent_id.eq.${dispute.payment_intent}`)
+      .single();
+
+    if (error || !transaction) {
+      console.error('❌ Transaction not found for dispute:', dispute.id);
+      return;
+    }
+
+    // Mark transaction as disputed
+    await supabase
+      .from('payment_transactions')
+      .update({ 
+        status: 'disputed',
+        metadata: { 
+          ...transaction.metadata, 
+          dispute_id: dispute.id,
+          dispute_reason: dispute.reason,
+          dispute_amount: dispute.amount,
+          dispute_created: dispute.created
+        }
+      })
+      .eq('id', transaction.id);
+
+    console.log('✅ Transaction marked as disputed:', transaction.id);
+
+  } catch (error: any) {
+    console.error('❌ Error handling dispute:', error);
+  }
+}
+
+async function handleChargeRefunded(charge: Stripe.Charge) {
+  console.log('💸 Processing refund for charge:', charge.id);
+
+  try {
+    // Find payment transaction
+    const { data: transaction, error } = await supabase
+      .from('payment_transactions')
+      .select('*')
+      .or(`stripe_charge_id.eq.${charge.id},stripe_payment_intent_id.eq.${charge.payment_intent}`)
+      .single();
+
+    if (error || !transaction) {
+      console.error('❌ Transaction not found for refund:', charge.id);
+      return;
+    }
+
+    const refundAmount = charge.amount_refunded;
+    const isFullRefund = charge.refunded;
+
+    // Update transaction status
+    await supabase
+      .from('payment_transactions')
+      .update({ 
+        status: isFullRefund ? 'refunded' : 'partially_refunded',
+        metadata: { 
+          ...transaction.metadata, 
+          refund_amount: refundAmount,
+          refund_status: isFullRefund ? 'full' : 'partial',
+          refunded_at: new Date().toISOString()
+        }
+      })
+      .eq('id', transaction.id);
+
+    // If credits were added, consider deducting them (business logic decision)
+    if (isFullRefund && transaction.credits_added > 0) {
+      console.log('⚠️ Full refund detected - consider credit reversal for:', transaction.user_id);
+      // TODO: Implement credit reversal logic if needed
+    }
+
+    console.log('✅ Refund processed:', { transaction_id: transaction.id, refund_amount: refundAmount, is_full: isFullRefund });
+
+  } catch (error: any) {
+    console.error('❌ Error handling refund:', error);
   }
 }
 

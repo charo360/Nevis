@@ -29,7 +29,7 @@ export function CreditDisplay({
   const { toast } = useToast();
   const [credits, setCredits] = useState<UserCredits | null>(null);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshCwing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -61,8 +61,8 @@ export function CreditDisplay({
   // Use hook state or local state
   const currentCredits = creditBalance || credits;
 
-  const handleRefreshCw = async () => {
-    setRefreshCwing(true);
+  const handleRefresh = async () => {
+    setRefreshing(true);
     try {
       const updatedCredits = await getCreditBalance();
       setCredits(updatedCredits);
@@ -77,7 +77,7 @@ export function CreditDisplay({
         variant: 'destructive',
       });
     } finally {
-      setRefreshCwing(false);
+      setRefreshing(false);
     }
   };
 
@@ -144,11 +144,11 @@ export function CreditDisplay({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleRefreshCw}
+                onClick={handleRefresh}
                 disabled={refreshing}
                 className="h-6 w-6 p-0"
               >
-                <RefreshCw className={`h-3 w-3 ${refreshing ? 'animate-spin' : ''}`} />
+                <Refresh className={`h-3 w-3 ${refreshing ? 'animate-spin' : ''}`} />
               </Button>
             </CardHeader>
             <CardContent>
@@ -251,11 +251,11 @@ export function CreditDisplay({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleRefreshCw}
+                onClick={handleRefresh}
                 disabled={refreshing}
                 className="h-6 w-6 p-0"
               >
-                <RefreshCw className={`h-3 w-3 ${refreshing ? 'animate-spin' : ''}`} />
+                <Refresh className={`h-3 w-3 ${refreshing ? 'animate-spin' : ''}`} />
               </Button>
             </div>
           </div>
@@ -301,11 +301,11 @@ export function CreditDisplay({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleRefreshCw}
+                onClick={handleRefresh}
                 disabled={refreshing}
                 className="h-8 w-8 p-0"
               >
-                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                <Refresh className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
               </Button>
             </div>
           </div>
@@ -334,11 +334,11 @@ export function CreditDisplay({
         <Button
           variant="ghost"
           size="sm"
-          onClick={handleRefreshCw}
+          onClick={handleRefresh}
           disabled={refreshing}
           className="h-6 w-6 p-0"
         >
-          <RefreshCw className={`h-3 w-3 ${refreshing ? 'animate-spin' : ''}`} />
+          <Refresh className={`h-3 w-3 ${refreshing ? 'animate-spin' : ''}`} />
         </Button>
         {showBuyButton && (
           <Link href="/pricing">
@@ -368,11 +368,11 @@ export function CreditDisplay({
           <Button
             variant="ghost"
             size="sm"
-            onClick={handleRefreshCw}
+            onClick={handleRefresh}
             disabled={refreshing}
             className="h-6 w-6 p-0"
           >
-            <RefreshCwCw className={`h-3 w-3 ${refreshing ? 'animate-spin' : ''}`} />
+            <Refresh className={`h-3 w-3 ${refreshing ? 'animate-spin' : ''}`} />
           </Button>
           {showBuyButton && (
             <Link href="/pricing">
