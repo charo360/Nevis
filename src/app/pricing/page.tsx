@@ -247,13 +247,13 @@ export default function PricingPage() {
                 <h3 className="text-xl font-bold mb-2">Starter Agent</h3>
                 <p className="text-sm text-gray-600 mb-4">HD generations, No watermark, Agent memory</p>
                 <div className="mb-4">
-                  <span className="text-3xl font-bold" data-plan="starter" data-amount="999" data-currency="USD">$9.99</span>
+                  <span className="text-3xl font-bold" data-plan="starter" data-amount="10" data-currency="USD">$0.10</span>
                   <span className="text-gray-500 text-sm"> one-time</span>
                 </div>
                 <div className="mb-4">
                   <div className="text-2xl font-semibold text-blue-600">40</div>
                   <div className="text-sm text-gray-500">credits</div>
-                  <div className="text-xs text-gray-400 mt-1">$0.25 per credit</div>
+                  <div className="text-xs text-gray-400 mt-1">$0.0025 per credit</div>
                 </div>
                 <ul className="text-sm text-left space-y-2 mb-6">
                   <li className="flex items-start">

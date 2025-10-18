@@ -406,11 +406,19 @@ export function useAuth() {
         email,
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
             display_name: displayName,
             full_name: displayName,
           }
         }
+      });
+
+      console.log('📝 SignUp: Supabase response:', {
+        hasUser: !!data.user,
+        hasSession: !!data.session,
+        userConfirmed: data.user?.email_confirmed_at ? 'YES' : 'NO',
+        error: error?.message
       });
 
       if (error) {

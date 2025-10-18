@@ -37,7 +37,7 @@ export const PRICING_PLANS: PricingPlan[] = [
   {
     id: 'starter',
     name: 'Starter Agent',
-    price: 9.99,
+    price: 0.10,
     credits: 40,
     description: 'Great for small businesses',
     features: [
@@ -100,7 +100,7 @@ export function getPlanToStripeMapping(): Record<string, string> {
   // Allow override with explicit environment variables for production stability
   const envMap: Record<string, string | undefined> = {
     'try-free': process.env.STRIPE_PRICE_TRY_FREE,
-  'starter': 'price_1SDqfQELJu3kIHjxzHWPNMPs',
+  'starter': 'price_1SJTCsELJu3kIHjxpU5G1NmZ',
     'growth': process.env.STRIPE_PRICE_GROWTH,
     'pro': process.env.STRIPE_PRICE_PRO,
     'enterprise': process.env.STRIPE_PRICE_ENTERPRISE,
