@@ -116,3 +116,4 @@ WHERE au.email = 'sm1761a@american.edu';
 -- - remaining_credits: should show credits
 
 
+

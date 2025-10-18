@@ -64,3 +64,4 @@ JOIN auth.users au ON au.id = uc.user_id
 WHERE au.email = 'sm1761a@american.edu';
 
 
+
