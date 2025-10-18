@@ -4,6 +4,11 @@ import { createClient } from '@supabase/supabase-js';
 import { getPlanById } from '@/lib/secure-pricing';
 import { getStripeConfig } from '@/lib/stripe-config';
 
+// Critical: Tell Next.js to use Node.js runtime and force dynamic rendering
+// This ensures the raw request body is available for signature verification
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -19,9 +24,9 @@ const stripe = new Stripe(stripeConfig.secretKey, {
 
 const webhookSecret = stripeConfig.webhookSecret;
 
-// GET handler for webhook health check
+// GET handler for webhook health check and diagnostics
 export async function GET(req: NextRequest) {
-  const secretPrefix = webhookSecret ? webhookSecret.substring(0, 8) + '...' : 'NOT_SET';
+  const secretPrefix = webhookSecret ? webhookSecret.substring(0, 12) + '...' : 'NOT_SET';
   
   return NextResponse.json({ 
     status: 'active',
@@ -31,7 +36,15 @@ export async function GET(req: NextRequest) {
     isLive: stripeConfig.isLive,
     webhook_configured: !!webhookSecret,
     webhook_secret_prefix: secretPrefix,
-    secret_key_prefix: stripeConfig.secretKey.substring(0, 8) + '...'
+    secret_key_prefix: stripeConfig.secretKey.substring(0, 12) + '...',
+    diagnostics: {
+      NODE_ENV: process.env.NODE_ENV,
+      has_STRIPE_WEBHOOK_SECRET_LIVE: !!process.env.STRIPE_WEBHOOK_SECRET_LIVE,
+      has_STRIPE_WEBHOOK_SECRET: !!process.env.STRIPE_WEBHOOK_SECRET,
+      expected_env_var: stripeConfig.environment === 'production' ? 'STRIPE_WEBHOOK_SECRET_LIVE' : 'STRIPE_WEBHOOK_SECRET_TEST',
+      webhook_secret_length: webhookSecret?.length || 0,
+      webhook_secret_format_valid: webhookSecret?.startsWith('whsec_') || false
+    }
   });
 }
 
