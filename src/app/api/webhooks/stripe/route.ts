@@ -31,6 +31,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ 
     status: 'active',
     message: 'Stripe webhook endpoint is operational',
+    version: '1.0.1',
     timestamp: new Date().toISOString(),
     environment: stripeConfig.environment,
     isLive: stripeConfig.isLive,
