@@ -49,8 +49,25 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  console.log(`🔧 Webhook Request - Environment: ${stripeConfig.environment} (${stripeConfig.isLive ? 'LIVE' : 'TEST'})`);
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('🔧 WEBHOOK REQUEST RECEIVED');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log(`📍 Environment: ${stripeConfig.environment} (${stripeConfig.isLive ? 'LIVE' : 'TEST'})`);
   console.log(`🔑 Webhook Secret Status: ${webhookSecret ? 'CONFIGURED' : 'MISSING'} (${webhookSecret?.length || 0} chars)`);
+  console.log('');
+  console.log('🔐 Key Configuration:');
+  console.log(`   Secret Key:        ${stripeConfig.secretKey.substring(0, 15)}...`);
+  console.log(`   Publishable Key:   ${stripeConfig.publishableKey.substring(0, 15)}...`);
+  console.log(`   Webhook Secret:    ${webhookSecret ? webhookSecret.substring(0, 15) + '...' : 'NOT_SET'}`);
+  console.log('');
+  console.log('📊 Environment Variable Status:');
+  console.log(`   NODE_ENV:                        ${process.env.NODE_ENV}`);
+  console.log(`   STRIPE_SECRET_KEY_LIVE:          ${process.env.STRIPE_SECRET_KEY_LIVE ? process.env.STRIPE_SECRET_KEY_LIVE.substring(0, 12) + '...' : 'NOT_SET'}`);
+  console.log(`   STRIPE_SECRET_KEY:               ${process.env.STRIPE_SECRET_KEY ? process.env.STRIPE_SECRET_KEY.substring(0, 12) + '...' : 'NOT_SET'}`);
+  console.log(`   STRIPE_WEBHOOK_SECRET_LIVE:      ${process.env.STRIPE_WEBHOOK_SECRET_LIVE ? process.env.STRIPE_WEBHOOK_SECRET_LIVE.substring(0, 15) + '... (' + process.env.STRIPE_WEBHOOK_SECRET_LIVE.length + ' chars)' : 'NOT_SET'}`);
+  console.log(`   STRIPE_WEBHOOK_SECRET:           ${process.env.STRIPE_WEBHOOK_SECRET ? process.env.STRIPE_WEBHOOK_SECRET.substring(0, 15) + '... (' + process.env.STRIPE_WEBHOOK_SECRET.length + ' chars)' : 'NOT_SET'}`);
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('');
 
   if (!webhookSecret) {
     console.error(`❌ Webhook secret not configured for ${stripeConfig.environment} environment`);
