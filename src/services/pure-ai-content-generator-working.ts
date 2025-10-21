@@ -61,12 +61,10 @@ export class WorkingPureAIContentGenerator {
    * Generate content using a working, reliable approach with OpenAI
    */
   static async generateContent(request: PureAIRequest): Promise<PureAIResponse> {
-    console.log('🚀 [Working Pure AI] Starting content generation with OpenAI');
     
     try {
       const openai = this.getOpenAIClient();
       const prompt = this.buildWorkingPrompt(request);
-      console.log('📝 [Working Pure AI] Generated prompt');
       
       const response = await openai.chat.completions.create({
         model: 'gpt-4o',
@@ -81,10 +79,7 @@ export class WorkingPureAIContentGenerator {
         throw new Error('Empty response from OpenAI');
       }
 
-      console.log('✅ [Working Pure AI] OpenAI response received:', content.substring(0, 200) + '...');
-
       const parsed = JSON.parse(content);
-      console.log('✅ [Working Pure AI] JSON parsing successful');
       
       // Validate and adjust word counts
       if (parsed.content) {
@@ -113,14 +108,12 @@ export class WorkingPureAIContentGenerator {
     if (headlineWords > 6) {
       const words = content.headline.trim().split(/\s+/);
       adjustedHeadline = words.slice(0, 6).join(' ');
-      console.log(`⚠️ [Working Pure AI] Headline truncated from ${headlineWords} to 6 words: "${adjustedHeadline}"`);
     }
     
     // Truncate subheadline if over 14 words
     if (subheadlineWords > 14) {
       const words = content.subheadline.trim().split(/\s+/);
       adjustedSubheadline = words.slice(0, 14).join(' ');
-      console.log(`⚠️ [Working Pure AI] Subheadline truncated from ${subheadlineWords} to 14 words: "${adjustedSubheadline}"`);
     }
     
     return {

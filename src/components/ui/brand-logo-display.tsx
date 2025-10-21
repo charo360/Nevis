@@ -46,13 +46,11 @@ export function BrandLogoDisplay({
   const fallbackLogoSrc = logoDataUrl && (imageError || primaryImageFailed || !logoUrl) ? logoDataUrl : null;
 
   const handlePrimaryImageError = () => {
-    console.log('🖼️ Primary logo (logoUrl) failed to load, falling back to logoDataUrl');
     setPrimaryImageFailed(true);
     setImageError(false); // Reset for fallback image
   };
 
   const handleFallbackImageError = () => {
-    console.log('🖼️ Fallback logo (logoDataUrl) failed to load');
     setImageError(true);
   };
 
@@ -72,7 +70,6 @@ export function BrandLogoDisplay({
         className={`${sizeClasses[size]} object-contain rounded-md ${className}`}
         onError={handlePrimaryImageError}
         onLoad={() => {
-          console.log('✅ Primary logo (logoUrl) loaded successfully');
         }}
       />
     );
@@ -87,7 +84,6 @@ export function BrandLogoDisplay({
         className={`${sizeClasses[size]} object-contain rounded-md ${className}`}
         onError={handleFallbackImageError}
         onLoad={() => {
-          console.log('✅ Fallback logo (logoDataUrl) loaded successfully');
         }}
       />
     );

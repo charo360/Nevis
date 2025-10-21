@@ -73,7 +73,6 @@ function QuickContentPage() {
           
           // Skip database load if no valid token
           if (!token) {
-            console.log('ℹ️  No auth token, using localStorage only');
             setGeneratedPosts(localArray);
             return;
           }
@@ -89,24 +88,43 @@ function QuickContentPage() {
             const dbPosts = await response.json();
             const dbArray = Array.isArray(dbPosts) ? dbPosts : [];
             
-            // Merge: prefer newer posts, deduplicate by id
+            // Merge: prefer database posts over localStorage, deduplicate by id
             const merged = new Map();
-            [...dbArray, ...localArray].forEach(post => {
-              if (!merged.has(post.id) || new Date(post.date || 0) > new Date(merged.get(post.id).date || 0)) {
-                merged.set(post.id, post);
+            
+            // First add database posts (they have real IDs and are the source of truth)
+            dbArray.forEach(post => {
+              merged.set(post.id, post);
+            });
+            
+            // Then add local posts only if they don't exist in database
+            // Skip posts with temporary IDs (starting with 'post_') if we have database posts
+            localArray.forEach(post => {
+              // Only add if not already in database
+              if (!merged.has(post.id)) {
+                // If it's a temporary ID and we have database posts, skip it (likely duplicate)
+                const isTemporaryId = post.id && post.id.startsWith('post_');
+                if (!isTemporaryId || dbArray.length === 0) {
+                  merged.set(post.id, post);
+                }
               }
             });
             
             const allPosts = Array.from(merged.values())
               .sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
             
-            console.log('📂 Loaded posts - Local:', localArray.length, 'DB:', dbArray.length, 'Total:', allPosts.length);
             setGeneratedPosts(allPosts);
+            
+            // Cleanup: If we removed duplicates, update localStorage to match database
+            if (allPosts.length < localArray.length && postsStorage?.setItem) {
+              try {
+                postsStorage.setItem(allPosts.slice(0, MAX_POSTS_TO_STORE));
+              } catch (err) {
+                console.warn('⚠️ Failed to cleanup localStorage:', err);
+              }
+            }
           } else {
             if (response.status === 401) {
-              console.log('⚠️ Auth expired, using localStorage only');
             } else {
-              console.log('⚠️ Database load failed, using localStorage only');
             }
             setGeneratedPosts(localArray);
           }
@@ -162,13 +180,6 @@ function QuickContentPage() {
       date: post.date || new Date().toISOString(),
     };
 
-    console.log('📝 handlePostGenerated called:', {
-      id: postId,
-      hasImage: !!newPost.imageUrl,
-      hasContent: !!newPost.content,
-      platform: newPost.platform
-    });
-
     // Update UI immediately - prevent duplicates by checking if post already exists
     setGeneratedPosts(prev => {
       // Check if this exact post already exists
@@ -176,7 +187,6 @@ function QuickContentPage() {
       
       if (existingIndex !== -1) {
         // Update existing post (merge new data)
-        console.log('🔄 Updating existing post:', postId);
         const copy = prev.slice();
         copy[existingIndex] = { ...copy[existingIndex], ...newPost };
         
@@ -193,7 +203,6 @@ function QuickContentPage() {
         return copy;
       } else {
         // Add new post
-        console.log('➕ Adding new post:', postId);
         const updatedPosts = [newPost, ...prev];
         
         // Persist to localStorage immediately
@@ -228,7 +237,27 @@ function QuickContentPage() {
         });
         
         if (response.ok) {
-          console.log('✅ Post saved to database for cross-device access');
+          const result = await response.json();
+          const dbId = result.id;
+          
+          // Update the post in state and localStorage with the database-generated ID
+          // This prevents duplicates on page reload
+          if (dbId && dbId !== newPost.id) {
+            setGeneratedPosts(prev => {
+              const updated = prev.map(p => p.id === newPost.id ? { ...p, id: dbId } : p);
+              
+              // Update localStorage with the correct database ID
+              if (postsStorage?.setItem) {
+                try {
+                  postsStorage.setItem(updated.slice(0, MAX_POSTS_TO_STORE));
+                } catch (err) {
+                  console.warn('⚠️ Failed to update localStorage with database ID:', err);
+                }
+              }
+              
+              return updated;
+            });
+          }
         } else {
           console.warn('⚠️ Database save failed, post only in localStorage');
         }

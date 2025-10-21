@@ -77,8 +77,6 @@ export function ContentCalendar({
   // Use local language toggle
   const [useLocalLanguage, setUseLocalLanguage] = React.useState<boolean>(false);
 
-
-
   // Save preferences to localStorage
   React.useEffect(() => {
     const savedPreferences = localStorage.getItem('brandConsistencyPreferences');
@@ -118,8 +116,6 @@ export function ContentCalendar({
     localStorage.setItem('useLocalLanguage', JSON.stringify(useLocalLanguage));
   }, [useLocalLanguage]);
 
-
-
   const handleGenerateClick = async (platform: Platform) => {
     // Check if user has enough credits for the selected model
     const hasCredits = await hasEnoughCreditsForModel(selectedRevoModel);
@@ -149,11 +145,6 @@ export function ContentCalendar({
       let revo20Result: any = null; // Declare in proper scope
 
       // Debug logging for services
-      console.log('🔍 ContentCalendar Services Debug:', {
-        brandProfileServices: brandProfile.services,
-        businessType: brandProfile.businessType,
-        businessName: brandProfile.businessName
-      });
 
       // Get trending hashtags for this business type or services
       const businessContext = brandProfile.services || brandProfile.businessType || 'business';
@@ -182,15 +173,6 @@ export function ContentCalendar({
           trendingHashtags: platformHashtags,
           businessType: brandProfile.businessType || 'business'
         };
-
-        console.log('🎨 Calling Revo 2.0 API with scheduled services:', {
-          platform,
-          scheduledServicesCount: scheduledServices?.length || 0,
-          scheduledServiceNames: scheduledServices?.map(s => s.serviceName) || [],
-          todaysServicesCount: scheduledServices?.filter(s => s.isToday).length || 0,
-          upcomingServicesCount: scheduledServices?.filter(s => s.isUpcoming).length || 0,
-          hasScheduledContent
-        });
 
         const response = await fetch('/api/generate-revo-2.0', {
           method: 'POST',
@@ -264,14 +246,6 @@ export function ContentCalendar({
         };
       } else if (selectedRevoModel === 'revo-1.5' || selectedRevoModel === 'revo-1.0') {
         // Use unified Quick Content API for Revo 1.0 and 1.5
-        console.log(`🎨 Calling Quick Content API for ${selectedRevoModel} with scheduled services:`, {
-          platform,
-          scheduledServicesCount: scheduledServices?.length || 0,
-          scheduledServiceNames: scheduledServices?.map(s => s.serviceName) || [],
-          todaysServicesCount: scheduledServices?.filter(s => s.isToday).length || 0,
-          upcomingServicesCount: scheduledServices?.filter(s => s.isUpcoming).length || 0,
-          hasScheduledContent
-        });
 
         newPost = await generateRevo15ContentAction(
           brandProfile,
@@ -299,7 +273,6 @@ export function ContentCalendar({
         );
       } else {
         // Fallback to artifact-enhanced generation
-        console.log('🤖 Using artifact-enhanced generation as fallback');
         
         newPost = await generateContentWithArtifactsAction(
           brandProfile,
@@ -326,15 +299,7 @@ export function ContentCalendar({
       // Ensure the post has a unique ID
       if (!newPost.id) {
         newPost.id = `post-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        console.log('🔧 Generated new ID for post:', newPost.id);
       }
-
-      console.log('✅ Content generation successful, processing post:', {
-        id: newPost.id,
-        platform: newPost.platform,
-        hasContent: !!newPost.content,
-        hasImageUrl: !!newPost.imageUrl
-      });
 
       // Let the parent component handle saving
       onPostGenerated(newPost);
@@ -373,8 +338,6 @@ export function ContentCalendar({
       } else if (selectedArtifacts.length > 0) {
         description += ` • ${selectedArtifacts.length} reference${selectedArtifacts.length !== 1 ? 's' : ''}`;
       }
-
-
 
       toast({ 
         title, 
@@ -529,8 +492,6 @@ export function ContentCalendar({
               </CardContent>
             </Card>
           </div>
-
-
 
           <div className="flex flex-col items-start gap-4 md:flex-row md:items-center md:justify-between w-full">
             <div className="flex-1">

@@ -103,12 +103,6 @@ export class CreditService {
         remainingCredits: newRemaining,
       };
 
-      console.log('✅ Credits added successfully:', {
-        userId,
-        amount,
-        newBalance,
-      });
-
       return { success: true, newBalance };
     } catch (error: any) {
       console.error('❌ Error adding credits:', error);
@@ -169,12 +163,6 @@ export class CreditService {
         reason,
         metadata
       );
-
-      console.log('✅ Credits deducted successfully:', {
-        userId,
-        amount,
-        remainingCredits: newRemaining,
-      });
 
       return { success: true, remainingCredits: newRemaining };
     } catch (error: any) {

@@ -156,8 +156,6 @@ class VertexAIClient {
     // Construct Vertex AI endpoint
     const endpoint = `https://${this.location}-aiplatform.googleapis.com/v1/projects/${this.projectId}/locations/${this.location}/publishers/google/models/${cleanModel}:generateContent`;
 
-    console.log(`🔄 Vertex AI: Making request to ${endpoint}`);
-
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
@@ -173,7 +171,6 @@ class VertexAIClient {
     }
 
     const result = await response.json();
-    console.log(`✅ Vertex AI: Request successful`);
 
     return result;
   }

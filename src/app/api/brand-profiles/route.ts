@@ -40,7 +40,6 @@ async function verifySupabaseAuth(authHeader: string | null) {
 // Helper function to upload logo data URL to Supabase Storage
 async function uploadLogoToSupabase(logoDataUrl: string, userId: string, brandName: string): Promise<{ success: boolean; url?: string; error?: string }> {
   try {
-    console.log('📤 Uploading brand logo to Supabase Storage for:', brandName);
 
     // Convert data URL to buffer
     const base64Data = logoDataUrl.split(',')[1];
@@ -49,13 +48,11 @@ async function uploadLogoToSupabase(logoDataUrl: string, userId: string, brandNa
     }
     
     const buffer = Buffer.from(base64Data, 'base64');
-    console.log(`📦 Logo buffer size: ${buffer.length} bytes`);
 
     // Create upload path for logo
     const timestamp = Date.now();
     const safeBrandName = brandName.replace(/[^a-zA-Z0-9-_]/g, '-').toLowerCase();
     const uploadPath = `brands/${userId}/logos/${safeBrandName}-${timestamp}.png`;
-    console.log(`🎯 Logo upload path: ${uploadPath}`);
     
     const { data, error } = await supabaseService.storage
       .from('nevis-storage')
@@ -69,14 +66,11 @@ async function uploadLogoToSupabase(logoDataUrl: string, userId: string, brandNa
       return { success: false, error: error.message };
     }
 
-    console.log('✅ Logo upload successful:', data);
-
     // Get public URL
     const { data: { publicUrl } } = supabaseService.storage
       .from('nevis-storage')
       .getPublicUrl(uploadPath);
 
-    console.log('✅ Brand logo uploaded to Supabase Storage:', publicUrl);
     return { success: true, url: publicUrl };
   } catch (error) {
     console.error('❌ Logo upload error:', error);
@@ -97,7 +91,6 @@ export async function GET(request: NextRequest) {
     }
 
     const profiles = await brandProfileSupabaseService.loadBrandProfiles(authResult.userId!);
-    console.log(`✅ Loaded ${profiles.length} brand profiles for user:`, authResult.userId);
     return NextResponse.json(profiles);
   } catch (error) {
     console.error('Error loading brand profiles:', error);
@@ -120,16 +113,10 @@ export async function POST(request: NextRequest) {
     }
 
     const profile = await request.json();
-    console.log('📋 Processing brand profile save:', {
-      businessName: profile.businessName,
-      hasLogoDataUrl: !!profile.logoDataUrl,
-      logoDataLength: profile.logoDataUrl?.length || 0
-    });
 
     // Process logo upload if logoDataUrl is provided
     let processedProfile = { ...profile };
     if (profile.logoDataUrl && profile.logoDataUrl.startsWith('data:')) {
-      console.log('📤 Processing logo upload for brand:', profile.businessName);
       const logoResult = await uploadLogoToSupabase(
         profile.logoDataUrl,
         authResult.userId!,
@@ -138,7 +125,6 @@ export async function POST(request: NextRequest) {
       if (logoResult.success && logoResult.url) {
         processedProfile.logoUrl = logoResult.url;
         delete processedProfile.logoDataUrl;
-        console.log('✅ Logo uploaded successfully, using storage URL:', logoResult.url);
       } else {
         console.error('❌ Logo upload failed:', logoResult.error);
         console.warn('⚠️  Using logoDataUrl as fallback - this may cause performance issues');
@@ -150,12 +136,6 @@ export async function POST(request: NextRequest) {
       ...processedProfile,
       userId: authResult.userId!,
     };
-
-    console.log('💾 Saving brand profile to MongoDB:', {
-      businessName: profileWithUserId.businessName,
-      hasLogoUrl: !!profileWithUserId.logoUrl,
-      hasLogoDataUrl: !!profileWithUserId.logoDataUrl
-    });
 
     try {
       const profileId = await brandProfileSupabaseService.saveBrandProfile(profileWithUserId);

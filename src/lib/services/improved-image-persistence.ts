@@ -11,10 +11,6 @@ export class ImprovedImagePersistence {
    * Process and upload all images in a generated post
    */
   async processPostImages(post: GeneratedPost, userId: string): Promise<GeneratedPost> {
-    console.log('🖼️  Processing post images...', {
-      hasMainImage: !!post.imageUrl,
-      hasVariants: post.variants?.length || 0
-    });
 
     const processedPost = { ...post };
     let uploadCount = 0;
@@ -22,7 +18,6 @@ export class ImprovedImagePersistence {
     try {
       // 1. Process main image
       if (post.imageUrl && typeof post.imageUrl === 'string' && post.imageUrl.startsWith('data:')) {
-        console.log('📤 Uploading main image...');
         const result = await this.uploadDataUrl(
           post.imageUrl,
           userId,
@@ -33,7 +28,6 @@ export class ImprovedImagePersistence {
         if (result.success && result.url) {
           processedPost.imageUrl = result.url;
           uploadCount++;
-          console.log('✅ Main image uploaded successfully');
         } else {
           console.error('❌ Main image upload failed:', result.error);
         }
@@ -47,7 +41,6 @@ export class ImprovedImagePersistence {
           const variant = post.variants[i];
 
           if (variant.imageUrl && typeof variant.imageUrl === 'string' && variant.imageUrl.startsWith('data:')) {
-            console.log(`📤 Uploading variant ${i + 1} image...`);
             const result = await this.uploadDataUrl(
               variant.imageUrl,
               userId,
@@ -61,7 +54,6 @@ export class ImprovedImagePersistence {
                 imageUrl: result.url
               });
               uploadCount++;
-              console.log(`✅ Variant ${i + 1} image uploaded successfully`);
             } else {
               console.error(`❌ Variant ${i + 1} image upload failed:`, result.error);
               processedVariants.push(variant);
@@ -79,11 +71,9 @@ export class ImprovedImagePersistence {
         const firstVariantWithImage = processedPost.variants.find(v => v.imageUrl && typeof v.imageUrl === 'string' && !v.imageUrl.startsWith('data:'));
         if (firstVariantWithImage) {
           processedPost.imageUrl = firstVariantWithImage.imageUrl;
-          console.log('🔄 Set main image from first variant');
         }
       }
 
-      console.log(`✅ Image processing complete: ${uploadCount} images uploaded`);
       return processedPost;
 
     } catch (error) {

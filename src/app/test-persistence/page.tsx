@@ -29,7 +29,6 @@ export default function TestPersistencePage() {
     localStorage.removeItem('selectedBrandId');
     localStorage.removeItem('currentBrandData');
     localStorage.removeItem('brandColors');
-    console.log('🗑️ Cleared all persisted brand data');
   };
 
   const forceBrandRestore = () => {

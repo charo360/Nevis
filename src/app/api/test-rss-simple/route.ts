@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('Simple RSS test endpoint called');
     
     // Test basic functionality without external dependencies
     const testData = {
@@ -23,7 +22,6 @@ export async function GET(request: NextRequest) {
       }
     };
     
-    console.log('Simple RSS test: Returning test data');
     return NextResponse.json(testData);
     
   } catch (error) {

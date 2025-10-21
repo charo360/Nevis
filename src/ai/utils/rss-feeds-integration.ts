@@ -57,7 +57,6 @@ export async function fetchGoogleTrendsRSS(
       }
     }
 
-
     // If no trends found, use smart fallback
     if (allTrends.length === 0) {
       return getSmartTrendingFallback(location, category);
@@ -84,7 +83,6 @@ export async function fetchRedditRSS(
 
     // FIXED: Use server-side RSS API instead of direct client-side fetching to avoid CORS
     try {
-      console.log(`🔄 [Reddit RSS] Using server-side API for business type: ${businessType}`);
 
       // Use our server-side RSS API instead of direct Reddit RSS fetching
       const response = await fetch(`/api/rss-data?category=general&limit=20`);
@@ -374,7 +372,6 @@ export async function testRSSFeeds(location: string = 'Kenya', businessType: str
     const newsTrends = await fetchNewsRSS(location, businessType);
     newsTrends.slice(0, 3).forEach((trend, i) => {
     });
-
 
   } catch (error) {
   }

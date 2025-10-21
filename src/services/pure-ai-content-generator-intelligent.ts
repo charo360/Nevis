@@ -48,11 +48,9 @@ export class IntelligentPureAIContentGenerator {
    * Generate content using intelligent, product-specific approach
    */
   static async generateContent(request: PureAIRequest): Promise<PureAIResponse> {
-    console.log('🚀 [Intelligent Pure AI] Starting content generation with product intelligence');
     
     try {
       const prompt = this.buildIntelligentPrompt(request);
-      console.log('📝 [Intelligent Pure AI] Generated intelligent prompt');
       
       const response = await generateText(prompt, {
         temperature: 0.9, // Higher creativity for variety
@@ -64,8 +62,6 @@ export class IntelligentPureAIContentGenerator {
         throw new Error('Empty response from AI');
       }
 
-      console.log('✅ [Intelligent Pure AI] AI response received:', content.substring(0, 200) + '...');
-
       // Parse JSON response
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
@@ -74,7 +70,6 @@ export class IntelligentPureAIContentGenerator {
 
       const jsonString = jsonMatch[0];
       const parsed = JSON.parse(jsonString);
-      console.log('✅ [Intelligent Pure AI] JSON parsing successful');
       
       // Validate and adjust word counts
       if (parsed.content) {
@@ -103,14 +98,12 @@ export class IntelligentPureAIContentGenerator {
     if (headlineWords > 6) {
       const words = content.headline.trim().split(/\s+/);
       adjustedHeadline = words.slice(0, 6).join(' ');
-      console.log(`⚠️ [Intelligent Pure AI] Headline truncated from ${headlineWords} to 6 words: "${adjustedHeadline}"`);
     }
     
     // Truncate subheadline if over 14 words
     if (subheadlineWords > 14) {
       const words = content.subheadline.trim().split(/\s+/);
       adjustedSubheadline = words.slice(0, 14).join(' ');
-      console.log(`⚠️ [Intelligent Pure AI] Subheadline truncated from ${subheadlineWords} to 14 words: "${adjustedSubheadline}"`);
     }
     
     return {

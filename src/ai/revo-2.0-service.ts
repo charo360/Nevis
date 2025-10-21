@@ -9,7 +9,6 @@ import { getVertexAIClient } from '@/lib/services/vertex-ai-client';
 
 // Direct Vertex AI function for all AI generation
 async function generateContentDirect(promptOrParts: string | any[], modelName: string, isImageGeneration: boolean): Promise<any> {
-  console.log('🔄 Revo 2.0: Using direct Vertex AI');
 
   // Check if Vertex AI is enabled
   if (!process.env.VERTEX_AI_ENABLED || process.env.VERTEX_AI_ENABLED !== 'true') {
@@ -87,7 +86,6 @@ async function generateContentDirect(promptOrParts: string | any[], modelName: s
 
 // Direct Vertex AI function (replaces proxy routing)
 async function generateContentWithProxy(promptOrParts: string | any[], modelName: string, isImageGeneration: boolean = false): Promise<any> {
-  console.log(`🔄 Revo 2.0: Using direct Vertex AI for ${isImageGeneration ? 'image' : 'text'} generation with ${modelName}`);
   return await generateContentDirect(promptOrParts, modelName, isImageGeneration);
 }
 
@@ -214,7 +212,6 @@ function getCulturalBusinessGuidance(businessType: string): string {
 - BAD: Western business imagery that doesn't reflect local business culture`;
 }
 
-
 /**
  * Sanitize generic/template-sounding openings commonly produced by LLMs
  * Ensures outputs avoid phrases like "Visually showcase how ..." or "We'll showcase ..."
@@ -309,7 +306,6 @@ async function convertLogoToDataUrl(logoUrl?: string): Promise<string | undefine
   }
 
   try {
-    console.log('🔄 Revo 2.0: Fetching logo from storage URL...');
     const response = await fetch(logoUrl);
 
     if (!response.ok) {
@@ -323,7 +319,6 @@ async function convertLogoToDataUrl(logoUrl?: string): Promise<string | undefine
     const contentType = response.headers.get('content-type') || 'image/png';
     const dataUrl = `data:${contentType};base64,${base64}`;
 
-    console.log('✅ Revo 2.0: Logo converted to data URL successfully');
     return dataUrl;
 
   } catch (error) {
@@ -361,14 +356,7 @@ async function generateCreativeConcept(options: Revo20GenerationOptions): Promis
   const todaysServices = scheduledServices?.filter(s => s.isToday) || [];
   const upcomingServices = scheduledServices?.filter(s => s.isUpcoming) || [];
 
-  console.log('📅 Revo 2.0: Using scheduled services for concept generation:', {
-    todaysServicesCount: todaysServices.length,
-    todaysServiceNames: todaysServices.map(s => s.serviceName),
-    upcomingServicesCount: upcomingServices.length
-  });
-
   try {
-    console.log('🎨 Revo 2.0: Using Vertex AI for creative concept generation...');
 
     // Build service-aware concept prompt
     let serviceContext = '';
@@ -485,7 +473,6 @@ function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: any): st
   const chosenLayout = pickNonRepeating(layouts);
   const chosenType = pickNonRepeating(typographySet);
   const chosenEffect = pickNonRepeating(effects);
-
 
   // Lightweight contact integration - only add if contacts toggle is enabled
   let contactInstruction = '';
@@ -638,7 +625,6 @@ Create a visually stunning design that stops scrolling and drives engagement whi
  */
 async function generateImageWithGemini(prompt: string, options: Revo20GenerationOptions): Promise<{ imageUrl: string }> {
   try {
-    console.log('🎨 Revo 2.0: Starting Vertex AI image generation...');
 
     // Prepare generation parts array
     const generationParts: any[] = [prompt];
@@ -648,21 +634,10 @@ async function generateImageWithGemini(prompt: string, options: Revo20Generation
     const logoStorageUrl = (options.brandProfile as any).logoUrl || (options.brandProfile as any).logo_url;
     let logoUrl = logoDataUrl || logoStorageUrl;
 
-    console.log('🔍 Revo 2.0 Logo availability check:', {
-      businessName: options.brandProfile.businessName,
-      hasLogoDataUrl: !!logoDataUrl,
-      hasLogoStorageUrl: !!logoStorageUrl,
-      logoDataUrlLength: logoDataUrl?.length || 0,
-      logoStorageUrlLength: logoStorageUrl?.length || 0,
-      finalLogoUrl: logoUrl ? logoUrl.substring(0, 100) + '...' : 'None'
-    });
-
     // Convert storage URL to data URL if needed (same as Revo 1.5)
     if (logoUrl && !logoUrl.startsWith('data:') && logoUrl.startsWith('http')) {
-      console.log('🔄 Revo 2.0: Converting logo storage URL to data URL...');
       try {
         logoUrl = await convertLogoToDataUrl(logoUrl);
-        console.log('✅ Revo 2.0: Logo URL converted successfully');
       } catch (conversionError) {
         console.warn('⚠️ Revo 2.0: Logo URL conversion failed:', conversionError);
         logoUrl = undefined; // Clear invalid logo
@@ -671,7 +646,6 @@ async function generateImageWithGemini(prompt: string, options: Revo20Generation
 
     // Add logo to generation parts if available
     if (logoUrl && logoUrl.startsWith('data:image/')) {
-      console.log('✅ Revo 2.0: Adding logo to image generation');
 
       // Extract base64 data and mime type
       const logoMatch = logoUrl.match(/^data:([^;]+);base64,(.+)$/);
@@ -697,22 +671,14 @@ You MUST include the exact brand logo image that was provided above in your desi
 The client specifically requested their brand logo to be included. FAILURE TO INCLUDE THE LOGO IS UNACCEPTABLE.`;
 
         generationParts[0] = prompt + logoPrompt;
-        console.log('✅ Revo 2.0: Logo integration prompt added');
       } else {
         console.error('❌ Revo 2.0: Invalid logo data URL format');
       }
     } else {
-      console.log('ℹ️ Revo 2.0: No valid logo available for integration');
     }
 
-    console.log('🔄 Revo 2.0: Generating image with Gemini 2.0 Flash Image Generation...');
     const result = await generateContentWithProxy(generationParts, REVO_2_0_MODEL, true);
     const response = await result.response;
-
-    console.log('📊 Revo 2.0: Response received:', {
-      candidates: response.candidates?.length || 0,
-      finishReason: response.candidates?.[0]?.finishReason
-    });
 
     // Extract image from response
     const candidates = response.candidates;
@@ -746,7 +712,6 @@ The client specifically requested their brand logo to be included. FAILURE TO IN
 
     // Convert to data URL
     const imageUrl = `data:${mimeType};base64,${imageData}`;
-    console.log('✅ Revo 2.0: Image generated successfully (direct generation)');
 
     return { imageUrl };
 
@@ -777,7 +742,6 @@ async function generateCaptionAndHashtags(options: Revo20GenerationOptions, conc
   const creativityBoost = Math.floor(uniqueSeed % 10) + 1;
 
   try {
-    console.log('🎨 Revo 2.0: Using Vertex AI for content generation...');
 
     // Build service-specific content context
     let serviceContentContext = '';
@@ -940,11 +904,9 @@ Format as JSON:
       // ALWAYS enforce exact count - trim if too many, pad if too few
       if (finalHashtags.length > hashtagCount) {
         finalHashtags = finalHashtags.slice(0, hashtagCount);
-        console.log(`✂️ Revo 2.0: Trimmed hashtags from ${parsed.hashtags.length} to ${hashtagCount} for ${platform}`);
       } else if (finalHashtags.length < hashtagCount) {
         // Generate platform-appropriate hashtags if count is wrong
         finalHashtags = generateFallbackHashtags(brandProfile, businessType, platform, hashtagCount);
-        console.log(`➕ Revo 2.0: Added hashtags to reach ${hashtagCount} for ${platform}`);
       }
 
       // Final validation - ensure EXACTLY the right count
@@ -971,7 +933,6 @@ Format as JSON:
       const captionIsEmpty = !caption || caption.trim().length === 0;
 
       if (captionIsEmpty || captionHasJourney || captionTooSimilar || captionIsGeneric) {
-        console.log(`🚫 Revo 2.0: Rejecting caption "${caption}" - isEmpty:${captionIsEmpty}, hasJourney:${captionHasJourney}, tooSimilar:${captionTooSimilar}, isGeneric:${captionIsGeneric}`);
         caption = generateUniqueFallbackCaption(brandProfile, businessType, creativityBoost);
       }
 
@@ -984,7 +945,6 @@ Format as JSON:
       const isEmpty = !headline || headline.trim().length === 0;
 
       if (isEmpty || hasJourneyWords || hasColonPrefix || isTooSimilar) {
-        console.log(`🚫 Revo 2.0: Rejecting headline "${headline}" - isEmpty:${isEmpty}, hasJourney:${hasJourneyWords}, hasColon:${hasColonPrefix}, tooSimilar:${isTooSimilar}`);
         headline = generateUniqueHeadline(brandProfile, businessType, selectedTheme);
       }
 
@@ -1002,13 +962,11 @@ Format as JSON:
 
     } catch (parseError) {
       console.warn('⚠️ Revo 2.0: Failed to parse content JSON, generating unique fallback');
-      console.log('Parse error details:', parseError);
       return generateUniqueFallbackContent(brandProfile, businessType, platform, hashtagCount, creativityBoost, concept);
     }
 
   } catch (error) {
     console.warn('⚠️ Revo 2.0: Content generation failed, generating unique fallback');
-    console.log('Generation error details:', error);
     return generateUniqueFallbackContent(brandProfile, businessType, platform, hashtagCount, Date.now() % 10, concept);
   }
 }
@@ -1288,51 +1246,37 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
   const startTime = Date.now();
 
   try {
-    console.log('🚀 Revo 2.0: Starting next-generation content generation (Fixed Timeouts)');
 
     // Auto-detect platform-specific aspect ratio if not provided
     const aspectRatio = options.aspectRatio || getPlatformAspectRatio(options.platform);
     const enhancedOptions = { ...options, aspectRatio };
 
-    console.log(`🎯 Revo 2.0: Using ${aspectRatio} aspect ratio for ${options.platform}`);
-
     // Step 1: Generate creative concept with timeout
-    console.log('🎨 Revo 2.0: Generating creative concept...');
     const concept = await Promise.race([
       generateCreativeConcept(enhancedOptions),
       new Promise((_, reject) => setTimeout(() => reject(new Error('Creative concept generation timeout')), 60000))
     ]);
-    console.log('✅ Revo 2.0: Creative concept generated');
 
     // Step 2: Build enhanced prompt
-    console.log('📝 Revo 2.0: Building enhanced prompt...');
     const enhancedPrompt = buildEnhancedPrompt(enhancedOptions, concept);
-    console.log('✅ Revo 2.0: Enhanced prompt built');
 
     // Step 3: Generate image with Gemini 2.5 Flash Image Preview with timeout
-    console.log('🖼️ Revo 2.0: Generating image...');
     const imageResult = await Promise.race([
       generateImageWithGemini(enhancedPrompt, enhancedOptions),
       new Promise((_, reject) => setTimeout(() => reject(new Error('Image generation timeout')), 20000))
     ]);
-    console.log('✅ Revo 2.0: Image generated');
 
     // Step 4: Generate caption and hashtags with timeout
-    console.log('📱 Revo 2.0: Generating content...');
-    console.log('🔍 Debug: About to call generateCaptionAndHashtags with imageUrl:', imageResult.imageUrl ? 'Present' : 'Missing');
     const contentResult = await Promise.race([
       generateCaptionAndHashtags(enhancedOptions, concept, enhancedPrompt, imageResult.imageUrl),
       new Promise((_, reject) => setTimeout(() => reject(new Error('Content generation timeout')), 60000))
     ]);
-    console.log('✅ Revo 2.0: Content generated');
-    console.log('🔍 Debug: Content result:', contentResult);
 
     const processingTime = Date.now() - startTime;
 
     // 🔤 SPELL CHECK: Ensure headlines and subheadlines are spell-checked before final result
     let finalContentResult = contentResult;
     try {
-      console.log('🔤 [Revo 2.0] Running spell check on headlines and subheadlines...');
 
       const spellCheckedContent = await ContentQualityEnhancer.enhanceGeneratedContent({
         headline: contentResult.headline,
@@ -1347,11 +1291,9 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
 
       // Update content with spell-checked versions
       if (spellCheckedContent.headline !== contentResult.headline) {
-        console.log(`🔤 [Revo 2.0] Headline corrected: "${contentResult.headline}" → "${spellCheckedContent.headline}"`);
       }
 
       if (spellCheckedContent.subheadline !== contentResult.subheadline) {
-        console.log(`🔤 [Revo 2.0] Subheadline corrected: "${contentResult.subheadline}" → "${spellCheckedContent.subheadline}"`);
       }
 
       finalContentResult = {
@@ -1365,7 +1307,6 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
 
       // Add quality report if available
       if (spellCheckedContent.qualityReport) {
-        console.log(`🔤 [Revo 2.0] Content quality score: ${spellCheckedContent.qualityReport.overallQuality.score}/100`);
       }
 
     } catch (error) {
@@ -1411,7 +1352,6 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
  */
 export async function testRevo20Availability(): Promise<boolean> {
   try {
-    console.log('🧪 Testing Revo 2.0 availability via Vertex AI...');
 
     const response = await generateContentWithProxy('Create a simple test image with the text "Revo 2.0 Test" on a modern gradient background', REVO_2_0_MODEL, true);
 
@@ -1419,11 +1359,9 @@ export async function testRevo20Availability(): Promise<boolean> {
     const candidates = result.candidates;
 
     if (candidates && candidates.length > 0) {
-      console.log('✅ Revo 2.0: Model is available and working');
       return true;
     }
 
-    console.log('⚠️ Revo 2.0: Model responded but no candidates found');
     return false;
 
   } catch (error) {

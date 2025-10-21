@@ -56,12 +56,6 @@ export async function POST(req: NextRequest) {
     let body: Body;
     try {
       const rawBody = await req.text();
-      console.log('📥 Raw request body:', rawBody.substring(0, 200));
-      console.log('📋 Request headers:', {
-        contentType: req.headers.get('content-type'),
-        contentLength: req.headers.get('content-length'),
-        authorization: req.headers.get('authorization') ? 'Bearer ***' : 'none'
-      });
       
       if (!rawBody || rawBody.trim() === '') {
         console.error('❌ Empty request body received');
@@ -87,13 +81,6 @@ export async function POST(req: NextRequest) {
   const origin = getAppOriginLocal();
 
     // Debug logging for troubleshooting
-    console.log('🔄 Checkout request received:', {
-      planId: body.planId,
-      priceId: body.priceId,
-      customerEmail: body.customerEmail,
-      hasAuth: !!req.headers.get('authorization'),
-      environment: stripeConfig.environment
-    });
 
     // Support both old priceId (legacy) and new planId (secure) formats
     const planId = body.planId || body.priceId; // priceId for backward compatibility
@@ -122,7 +109,6 @@ export async function POST(req: NextRequest) {
   'price_1SEE0bRn8roP0mgSun2Cz4TH': 'enterprise'
       };
       actualPlanId = legacyMapping[planId] || 'starter'; // fallback to starter
-      console.log(`🔄 Converting legacy price ID ${planId} to plan ID: ${actualPlanId}`);
     }
 
     // Validate plan ID and get plan details
@@ -141,7 +127,6 @@ export async function POST(req: NextRequest) {
 
     // If the plan is free (price === 0), short-circuit Stripe and grant credits directly
     if (planDetails.price === 0) {
-      console.log('ℹ️ Free plan selected - granting credits without Stripe:', { planId: actualPlanId, credits: planDetails.credits })
 
       // Persist the free transaction if Supabase is available and we have a user id in metadata
       if (supabase) {
@@ -164,7 +149,6 @@ export async function POST(req: NextRequest) {
           console.error('Failed to persist free plan grant to Supabase:', e)
         }
       } else {
-        console.log('ℹ️ No Supabase configured - skipping persistence for free plan grant')
       }
 
       // Return success URL so frontend can redirect to the billing success page
@@ -172,7 +156,6 @@ export async function POST(req: NextRequest) {
     }
 
     // Note: We'll map plan -> Stripe price later (after we know the mode)
-
 
     const quantity = body.quantity && body.quantity > 0 ? body.quantity : 1
     const mode = body.mode === 'subscription' ? 'subscription' : 'payment'
@@ -272,14 +255,6 @@ export async function POST(req: NextRequest) {
         })
       }
       
-      console.log('✅ Stripe session creation successful!', {
-        session_id: session.id,
-        session_url: session.url,
-        payment_status: session.payment_status,
-        status: session.status,
-        metadata: session.metadata,
-        client_reference_id: session.client_reference_id
-      });
       
     } catch (stripeError: any) {
       console.error('❌ Stripe session creation failed:', {
@@ -303,13 +278,6 @@ export async function POST(req: NextRequest) {
 
     // Payment record will be created by webhook when payment completes
     // This prevents duplicate records and race conditions
-    console.log('Checkout session created (payment will be recorded on completion):', {
-      session_id: session.id,
-      user_id: verifiedUserId,
-      plan_id: actualPlanId,
-      amount: planDetails.price,
-      credits_to_add: planDetails.credits
-    });
 
     return NextResponse.json({ id: session.id, url: session.url })
   } catch (err: any) {

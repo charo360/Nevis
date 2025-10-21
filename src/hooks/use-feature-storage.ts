@@ -30,7 +30,6 @@ export function useQuickContentStorage(subFeature?: string) {
     if (currentBrand?.id) {
       const migrationResults = migrateToFeatureStorage(currentBrand.id);
       if (migrationResults.quickContentMigrated) {
-        console.log('✅ Quick Content data migrated to new storage system');
       }
     }
   }, [currentBrand?.id]);
@@ -118,7 +117,6 @@ export function useCreativeStudioStorage(subFeature?: string) {
     if (currentBrand?.id) {
       const migrationResults = migrateToFeatureStorage(currentBrand.id);
       if (migrationResults.creativeStudioMigrated) {
-        console.log('✅ Creative Studio data migrated to new storage system');
       }
     }
   }, [currentBrand?.id]);

@@ -46,8 +46,6 @@ async function generateContentWithProxy(promptOrParts: string | any[], modelName
     throw new Error('🚫 Proxy is disabled. This system requires AI_PROXY_ENABLED=true for cost control and model management.');
   }
 
-  console.log(`🔄 Proxy-Only Google AI: Using proxy for ${isImageGeneration ? 'image' : 'text'} generation with ${modelName}`);
-
   // Handle multimodal requests (text + images) properly
   let prompt: string;
   let imageData: string | undefined;
@@ -134,13 +132,9 @@ export async function generateText(
       maxOutputTokens = 2048,
     } = options;
 
-    console.log(`🔍 [Proxy-Only Google AI] Generating text with model: ${model}`);
-
     const result = await generateContentWithProxy(prompt, model, false);
     const response = await result.response;
     const text = response.text();
-
-    console.log(`✅ [Proxy-Only Google AI] Text generation successful, length: ${text.length}`);
 
     return {
       text,
@@ -180,8 +174,6 @@ export async function generateImage(
       temperature = 0.8,
       maxOutputTokens = 1024,
     } = options;
-
-    console.log(`🔍 [Proxy-Only Google AI] Generating image with model: ${model}`);
 
     const result = await generateContentWithProxy(prompt, model, true);
     const response = await result.response;
@@ -223,8 +215,6 @@ export async function generateMultimodal(
       temperature = 0.7,
       maxOutputTokens = 2048,
     } = options;
-
-    console.log(`🔍 [Proxy-Only Google AI] Generating multimodal content with model: ${model}`);
 
     // Prepare multimodal parts for proxy
     let parts: any[] = [textPrompt];

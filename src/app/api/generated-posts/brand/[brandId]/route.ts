@@ -9,8 +9,6 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-
-
 // GET /api/generated-posts/brand/[brandId] - Get posts for specific brand
 export async function GET(
   request: NextRequest,
@@ -42,7 +40,6 @@ export async function GET(
       }
       
       userId = user.id;
-      console.log('✅ Supabase token verified for user:', userId);
     } catch (authError) {
       console.error('❌ Token verification error:', authError);
       return NextResponse.json(
@@ -54,12 +51,6 @@ export async function GET(
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '10');
     const { brandId } = await params;
-
-    console.log('🔍 API: Loading posts for brand:', {
-      brandId,
-      userId,
-      limit
-    });
 
     // Query posts from Supabase database for specific brand
     const { data: posts, error } = await supabase
@@ -102,8 +93,6 @@ export async function GET(
         { status: 500 }
       );
     }
-
-    console.log('✅ API: Loaded', posts?.length || 0, 'posts from Supabase for brand:', brandId);
 
     // Transform posts to match expected client format
     const transformedPosts = (posts || []).map((post: any) => ({

@@ -33,13 +33,6 @@ export interface BrandProfileRow {
 class BrandProfileSupabaseService {
   // Convert database row to CompleteBrandProfile
   private rowToProfile(row: BrandProfileRow): CompleteBrandProfile {
-    console.log('🔄 Converting Supabase row to profile:', {
-      businessName: row.business_name,
-      hasLogoUrl: !!row.logo_url,
-      hasLogoDataUrl: !!row.logo_data_url,
-      logoUrlLength: row.logo_url?.length || 0,
-      logoDataUrlLength: row.logo_data_url?.length || 0
-    });
 
     const profile: CompleteBrandProfile = {
       id: row.id,
@@ -97,7 +90,6 @@ class BrandProfileSupabaseService {
           try {
             servicesArray = JSON.parse(row.services);
           } catch (e) {
-            console.log('🔍 DEBUG: Failed to parse services string:', e);
             servicesArray = [];
           }
         }
@@ -127,25 +119,11 @@ class BrandProfileSupabaseService {
       updatedAt: new Date(row.updated_at),
     };
 
-    console.log('✅ Profile conversion completed:', {
-      businessName: profile.businessName,
-      hasLogoUrl: !!profile.logoUrl,
-      hasLogoDataUrl: !!profile.logoDataUrl,
-      logoDataUrlPreview: profile.logoDataUrl ? profile.logoDataUrl.substring(0, 50) + '...' : 'None'
-    });
-
     return profile;
   }
 
   // Convert CompleteBrandProfile to database row
   private profileToRow(profile: Omit<CompleteBrandProfile, 'id' | 'createdAt' | 'updatedAt'>): Omit<BrandProfileRow, 'id' | 'created_at' | 'updated_at'> {
-    console.log('🔄 Converting profile to Supabase row:', {
-      businessName: profile.businessName,
-      hasLogoUrl: !!profile.logoUrl,
-      hasLogoDataUrl: !!profile.logoDataUrl,
-      logoUrlLength: profile.logoUrl?.length || 0,
-      logoDataUrlLength: profile.logoDataUrl?.length || 0
-    });
 
     const row = {
       user_id: profile.userId,
@@ -211,26 +189,12 @@ class BrandProfileSupabaseService {
       is_active: profile.isActive ?? true,
     };
 
-    console.log('✅ Row conversion completed:', {
-      businessName: row.business_name,
-      hasLogoUrl: !!row.logo_url,
-      hasLogoDataUrl: !!row.logo_data_url,
-      logoUrlPreview: row.logo_url ? row.logo_url.substring(0, 50) + '...' : 'None',
-      logoDataUrlPreview: row.logo_data_url ? row.logo_data_url.substring(0, 50) + '...' : 'None'
-    });
-
     return row;
   }
 
   // Save brand profile
   async saveBrandProfile(profile: CompleteBrandProfile): Promise<string> {
     try {
-      console.log('💾 Saving brand profile to Supabase:', {
-        businessName: profile.businessName,
-        hasId: !!profile.id,
-        hasLogoUrl: !!profile.logoUrl,
-        hasLogoDataUrl: !!profile.logoDataUrl
-      });
 
       if (profile.id) {
         // Update existing profile - but first verify it exists
@@ -258,7 +222,6 @@ class BrandProfileSupabaseService {
           throw new Error(`Failed to update brand profile: ${error.message}`);
         }
 
-        console.log('✅ Brand profile updated successfully');
         return profile.id;
       } else {
         // Create new profile
@@ -273,7 +236,6 @@ class BrandProfileSupabaseService {
           throw new Error(`Failed to create brand profile: ${error.message}`);
         }
 
-        console.log('✅ Brand profile created successfully with ID:', data.id);
         return data.id;
       }
     } catch (error) {
@@ -285,7 +247,6 @@ class BrandProfileSupabaseService {
   // Load brand profile by ID
   async loadBrandProfile(profileId: string): Promise<CompleteBrandProfile | null> {
     try {
-      console.log('🔍 Loading brand profile from Supabase:', profileId);
 
       const { data, error } = await supabase
         .from('brand_profiles')
@@ -295,14 +256,12 @@ class BrandProfileSupabaseService {
 
       if (error) {
         if (error.code === 'PGRST116') {
-          console.log('❌ Brand profile not found');
           return null;
         }
         console.error('❌ Supabase select error:', error);
         throw new Error(`Failed to load brand profile: ${error.message}`);
       }
 
-      console.log('✅ Brand profile loaded successfully');
       return this.rowToProfile(data);
     } catch (error) {
       console.error('❌ Error loading brand profile:', error);
@@ -313,7 +272,6 @@ class BrandProfileSupabaseService {
   // Load all brand profiles for a user
   async loadBrandProfiles(userId: string): Promise<CompleteBrandProfile[]> {
     try {
-      console.log('🔍 Loading brand profiles for user:', userId);
 
       const { data, error } = await supabase
         .from('brand_profiles')
@@ -326,7 +284,6 @@ class BrandProfileSupabaseService {
         throw new Error(`Failed to load brand profiles: ${error.message}`);
       }
 
-      console.log('✅ Brand profiles loaded successfully:', data.length, 'profiles');
       return data.map(row => this.rowToProfile(row));
     } catch (error) {
       console.error('❌ Error loading brand profiles:', error);
@@ -337,7 +294,6 @@ class BrandProfileSupabaseService {
   // Load active brand profiles for a user
   async loadActiveBrandProfiles(userId: string): Promise<CompleteBrandProfile[]> {
     try {
-      console.log('🔍 Loading active brand profiles for user:', userId);
 
       const { data, error } = await supabase
         .from('brand_profiles')
@@ -351,7 +307,6 @@ class BrandProfileSupabaseService {
         throw new Error(`Failed to load active brand profiles: ${error.message}`);
       }
 
-      console.log('✅ Active brand profiles loaded successfully:', data.length, 'profiles');
       return data.map(row => this.rowToProfile(row));
     } catch (error) {
       console.error('❌ Error loading active brand profiles:', error);
@@ -362,7 +317,6 @@ class BrandProfileSupabaseService {
   // Update brand profile
   async updateBrandProfile(profileId: string, updates: Partial<CompleteBrandProfile>): Promise<void> {
     try {
-      console.log('🔄 Updating brand profile:', profileId, Object.keys(updates));
 
       // Convert partial updates to row format - only include fields that exist in the database
       const rowUpdates: any = {};
@@ -448,7 +402,6 @@ class BrandProfileSupabaseService {
         throw new Error(`Failed to update brand profile: ${error.message}`);
       }
 
-      console.log('✅ Brand profile updated successfully');
     } catch (error) {
       console.error('❌ Error updating brand profile:', error);
       throw error;
@@ -458,7 +411,6 @@ class BrandProfileSupabaseService {
   // Delete brand profile
   async deleteBrandProfile(profileId: string): Promise<void> {
     try {
-      console.log('🗑️ Deleting brand profile:', profileId);
 
       const { error } = await supabase
         .from('brand_profiles')
@@ -470,7 +422,6 @@ class BrandProfileSupabaseService {
         throw new Error(`Failed to delete brand profile: ${error.message}`);
       }
 
-      console.log('✅ Brand profile deleted successfully');
     } catch (error) {
       console.error('❌ Error deleting brand profile:', error);
       throw error;
@@ -530,7 +481,6 @@ class BrandProfileSupabaseService {
   // Search profiles by business name
   async searchProfiles(userId: string, searchTerm: string): Promise<CompleteBrandProfile[]> {
     try {
-      console.log('🔍 Searching profiles for:', searchTerm);
 
       const { data, error } = await supabase
         .from('brand_profiles')
@@ -544,7 +494,6 @@ class BrandProfileSupabaseService {
         throw new Error(`Failed to search profiles: ${error.message}`);
       }
 
-      console.log('✅ Search completed:', data.length, 'results');
       return data.map(row => this.rowToProfile(row));
     } catch (error) {
       console.error('❌ Error searching profiles:', error);

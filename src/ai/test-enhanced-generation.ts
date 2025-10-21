@@ -65,35 +65,22 @@ const testProfiles = {
 export async function testEnhancedGeneration(businessType: keyof typeof testProfiles = 'restaurant') {
   
   try {
-    console.log(`\n🧪 Testing enhanced generation for ${businessType}...`);
     const testInput: GeneratePostFromProfileInput = testProfiles[businessType];
     
     const result = await generatePostFromProfile(testInput);
     
-    console.log(`✅ Generated content for ${businessType}:`);
-    console.log(`📝 Content length: ${result.content?.length || 0} characters`);
     
     if (result.contentVariants && result.contentVariants.length > 0) {
-      console.log(`📊 Found ${result.contentVariants.length} content variants`);
       result.contentVariants.forEach((variant, index) => {
-        console.log(`  Variant ${index + 1}: ${variant.content?.substring(0, 100)}...`);
       });
     }
     
     if (result.hashtagAnalysis) {
-      console.log(`🏷️ Hashtag analysis:`);
-      console.log(`  - Trending: ${result.hashtagAnalysis.trending?.length || 0} hashtags`);
-      console.log(`  - Niche: ${result.hashtagAnalysis.niche?.length || 0} hashtags`);
-      console.log(`  - Location: ${result.hashtagAnalysis.location?.length || 0} hashtags`);
-      console.log(`  - Community: ${result.hashtagAnalysis.community?.length || 0} hashtags`);
     }
     
-    console.log(`📈 Generated ${result.variants?.length || 0} platform variants`);
     result.variants.forEach((variant, index) => {
-      console.log(`  Platform ${index + 1}: ${variant.platform}`);
     });
     
-    console.log(`✅ Test completed successfully for ${businessType}\n`);
     return result;
     
   } catch (error) {
@@ -106,35 +93,26 @@ export async function testEnhancedGeneration(businessType: keyof typeof testProf
  * Test all business types
  */
 export async function testAllBusinessTypes() {
-  console.log('\n🚀 Starting comprehensive test suite for all business types...\n');
   
   const results: Array<{ businessType: keyof typeof testProfiles; success: boolean; result: any }> = [];
   const errors: Array<{ businessType: keyof typeof testProfiles; error: any }> = [];
   
   for (const businessType of Object.keys(testProfiles) as Array<keyof typeof testProfiles>) {
     try {
-      console.log(`\n📋 Testing ${businessType}...`);
       const result = await testEnhancedGeneration(businessType);
       results.push({ businessType, success: true, result });
-      console.log(`✅ ${businessType} test completed successfully`);
     } catch (error) {
       console.error(`❌ ${businessType} test failed:`, error);
       errors.push({ businessType, error });
     }
   }
   
-  console.log('\n📊 Test Suite Results:');
-  console.log(`✅ Successful tests: ${results.length}`);
-  console.log(`❌ Failed tests: ${errors.length}`);
   
   if (errors.length > 0) {
-    console.log('\n❌ Failed business types:');
     errors.forEach(({ businessType, error }) => {
-      console.log(`  - ${businessType}: ${error}`);
     });
   }
   
-  console.log('\n🏁 Test suite completed!\n');
   
   return { results, errors };
 }

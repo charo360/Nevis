@@ -70,14 +70,12 @@ export async function fetchBusinessRelevantRSSData(
   limit: number = 20
 ): Promise<BusinessRelevantRSSData> {
   try {
-    console.log(`🔍 [Enhanced RSS] Fetching data for: ${businessType} in ${location}`);
 
     // 💾 CACHE: Check if we have cached data for this business type and location
     const cacheKey = { businessType, location, limit };
     const cached = await rssCache.getOrSet(
       cacheKey,
       async () => {
-        console.log(`🔄 [Enhanced RSS] Cache miss - fetching fresh data`);
 
         // Get relevant categories for business type
         const categories = RSS_CATEGORIES[businessType] || ['business', 'general'];
@@ -149,8 +147,6 @@ async function fetchFreshRSSData(
 
   // Generate relevance insights
   const relevanceInsights = generateRelevanceInsights(sortedArticles, businessType, location);
-
-  console.log(`✅ [Enhanced RSS] Processed ${sortedArticles.length} articles with ${trends.length} trends`);
 
   return {
     articles: sortedArticles,

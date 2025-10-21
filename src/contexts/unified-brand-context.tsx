@@ -49,11 +49,6 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
       const savedBrandData = localStorage.getItem('currentBrandData');
       if (savedBrandData) {
         const parsed = JSON.parse(savedBrandData);
-        console.log('🔄 Immediately restoring brand from localStorage on init:', {
-          businessName: parsed.businessName || parsed.name,
-          hasLogoUrl: !!parsed.logoUrl,
-          hasLogoDataUrl: !!parsed.logoDataUrl
-        });
         return parsed as CompleteBrandProfile;
       }
     } catch (error) {
@@ -78,23 +73,14 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
 
   // Load brands when user changes
   useEffect(() => {
-    console.log('🔍 Brand context: User effect triggered', {
-      userId: user?.userId,
-      userExists: !!user,
-      brandsCount: brands.length,
-      loading,
-      hasAttemptedLoad
-    });
 
     if (user?.userId) {
-      console.log('🔄 User authenticated, loading brands for:', user.userId);
       setHasAttemptedLoad(false);
       // Add a small delay to ensure Supabase session is fully ready
       setTimeout(() => {
         loadBrands();
       }, 1000);
     } else {
-      console.log('🚫 No user, clearing brands');
       setBrands([]);
       setCurrentBrand(null);
       setLoading(false);
@@ -105,9 +91,7 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
   // Additional effect to ensure brands load after login with a longer delay to allow auth to settle
   useEffect(() => {
     if (user?.userId && brands.length === 0 && !loading && !hasAttemptedLoad) {
-      console.log('🔄 Backup brand loading triggered for:', user.userId);
       const timer = setTimeout(() => {
-        console.log('⏰ Executing delayed brand loading...');
         loadBrands();
       }, 2000); // Increased delay to 2 seconds to allow auth to properly settle
 
@@ -118,19 +102,16 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
   // Load all brands for the current user (using Supabase via API)
   const loadBrands = async () => {
     if (!user?.userId) {
-      console.log('🚫 No user ID available for loading brands');
       return;
     }
 
     try {
-      console.log('🔄 Loading brands from Supabase for user:', user.userId);
       setLoading(true);
       setError(null);
       setHasAttemptedLoad(true);
 
       const token = await getAccessToken();
       if (!token) {
-        console.log('🚫 No access token available - trying without token (Supabase RLS will handle auth)');
         // Don't set error, just try the request without token - Supabase RLS will handle authentication
       }
 
@@ -152,7 +133,6 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
           if (fallbackBrand) {
             try {
               const parsedBrand = JSON.parse(fallbackBrand);
-              console.log('✅ Using fallback brand from localStorage:', parsedBrand.businessName);
               setBrands([parsedBrand]);
               setCurrentBrand(parsedBrand);
               setLoading(false);
@@ -175,21 +155,12 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
       }
 
       const userBrands = await response.json();
-      console.log('✅ Brands loaded successfully from Supabase:', userBrands.length, 'brands found');
-      console.log('📋 Brand names:', userBrands.map(b => b.businessName || b.name));
       setBrands(userBrands);
 
       // Sync current brand with loaded brands
       if (currentBrand && userBrands.length > 0) {
         const freshBrand = userBrands.find(b => b.id === currentBrand.id);
         if (freshBrand && (freshBrand.logoUrl !== currentBrand.logoUrl || freshBrand.logoDataUrl !== currentBrand.logoDataUrl)) {
-          console.log('🔄 Updating current brand with fresh logo data from Supabase:', {
-            businessName: freshBrand.businessName || freshBrand.name,
-            oldLogoUrl: currentBrand.logoUrl,
-            newLogoUrl: freshBrand.logoUrl,
-            oldLogoDataUrl: !!currentBrand.logoDataUrl,
-            newLogoDataUrl: !!freshBrand.logoDataUrl
-          });
 
           const updatedBrand = {
             ...currentBrand,
@@ -206,7 +177,6 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
 
       // If no current brand is selected, try to restore from localStorage or select the first active one
       if (!currentBrand && userBrands.length > 0) {
-        console.log('🔍 No current brand selected, attempting restoration from localStorage');
 
         // Try to restore from localStorage first
         let restoredBrand: CompleteBrandProfile | null = null;
@@ -215,7 +185,6 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
           const savedBrandId = localStorage.getItem('selectedBrandId');
           if (savedBrandId) {
             restoredBrand = userBrands.find(b => b.id === savedBrandId) || null;
-            console.log('🔄 Found saved brand ID, attempting to restore:', savedBrandId, 'Found:', !!restoredBrand);
           }
         } catch (error) {
           console.error('Error restoring from localStorage:', error);
@@ -228,7 +197,6 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
             if (savedBrandData) {
               const parsedData = JSON.parse(savedBrandData);
               restoredBrand = userBrands.find(b => b.id === parsedData.id) || null;
-              console.log('🔄 Attempting restoration from full brand data:', parsedData.businessName || parsedData.name, 'Found:', !!restoredBrand);
             }
           } catch (error) {
             console.error('Error restoring from full brand data:', error);
@@ -237,13 +205,6 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
 
         // If restoration still failed, select the first active brand or first brand
         const brandToSelect = restoredBrand || userBrands.find(b => b.isActive) || userBrands[0];
-
-        console.log('🎯 Selecting brand:', {
-          restored: !!restoredBrand,
-          businessName: brandToSelect.businessName || brandToSelect.name,
-          brandId: brandToSelect.id,
-          isFirstBrand: brandToSelect === userBrands[0]
-        });
 
         setCurrentBrand(brandToSelect);
         updateAllBrandScopedServices(brandToSelect);
@@ -262,7 +223,6 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
       }
     } finally {
       setLoading(false);
-      console.log('✅ Brand loading completed');
     }
   };
 
@@ -291,8 +251,6 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
   // Select a brand as current
   const selectBrand = useCallback((brand: CompleteBrandProfile | null) => {
     const brandName = brand?.businessName || brand?.name || 'null';
-
-    console.log('🎯 Selecting brand:', brandName, 'ID:', brand?.id);
 
     // Update state
     setCurrentBrand(brand);
@@ -334,13 +292,11 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
       };
       localStorage.setItem('brandColors', JSON.stringify(colorData));
 
-      console.log('💾 Brand selection persisted to localStorage:', brandName);
     } else {
       // Clear localStorage when no brand is selected
       localStorage.removeItem('selectedBrandId');
       localStorage.removeItem('currentBrandData');
       localStorage.removeItem('brandColors');
-      console.log('🧹 Cleared brand data from localStorage');
     }
 
     // Trigger a custom event for other components to listen to

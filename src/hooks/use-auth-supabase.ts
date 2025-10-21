@@ -71,7 +71,6 @@ export function useAuth() {
 
     // DISABLED: All automatic logout functionality
     // Users now stay logged in indefinitely unless they manually logout
-    console.log('⏰ Session and idle timeouts disabled - no automatic logout');
 
   }, [authState.user, sessionStartTime]);
 
@@ -131,7 +130,6 @@ export function useAuth() {
 
     // DISABLED: Auto-logout functionality as requested by user
     // Users should stay logged in unless they manually logout
-    console.log('⏰ All automatic logout functionality disabled - users stay logged in indefinitely');
     
     return () => {
       // Cleanup any existing timeouts (disabled)
@@ -157,7 +155,6 @@ export function useAuth() {
 
     // Set new idle timeout
     const idleId = setTimeout(() => {
-      console.log('⏰ User idle for 1 hour, signing out...');
       signOut();
     }, IDLE_TIMEOUT);
     setIdleTimeoutId(idleId);
@@ -226,7 +223,6 @@ export function useAuth() {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.id);
         
         if (mounted) {
           const hasUser = !!session?.user;
@@ -262,7 +258,6 @@ export function useAuth() {
 
   // Clear all user-related data from localStorage and sessionStorage
   const clearAllUserData = useCallback(() => {
-    console.log('🧹 Clearing all user-related data from browser storage...');
 
     // Clear specific known keys
     const knownKeys = [
@@ -301,7 +296,6 @@ export function useAuth() {
     keysToRemove.forEach(key => {
       localStorage.removeItem(key);
       sessionStorage.removeItem(key);
-      console.log('🗑️ Removed storage key:', key);
     });
 
     // Also clear sessionStorage brand-related items
@@ -321,36 +315,23 @@ export function useAuth() {
       sessionStorage.removeItem(key);
     });
 
-    console.log('✅ All user data cleared from browser storage');
   }, []);
 
   // Sign in with email and password
   const signIn = async (email: string, password: string): Promise<void> => {
     try {
-      console.log('🔐 SignIn: Starting authentication for:', email);
-      console.log('🔐 SignIn: Email length:', email.length);
-      console.log('🔐 SignIn: Password length:', password.length);
       
       // Clear any existing user data to prevent cross-contamination between accounts
       clearAllUserData();
       
       setAuthState(prev => ({ ...prev, loading: true, error: null }));
 
-      console.log('🔐 SignIn: Making Supabase auth request...');
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
 
-      console.log('🔐 SignIn: Supabase response received');
-      console.log('🔐 SignIn: Error?', error ? 'YES' : 'NO');
-      console.log('🔐 SignIn: User?', data?.user ? 'YES' : 'NO');
-
       if (error) {
-        console.log('❌ SignIn: Error details:');
-        console.log('   - Message:', error.message);
-        console.log('   - Status:', error.status);
-        console.log('   - Full error:', JSON.stringify(error, null, 2));
         
         setAuthState({
           user: null,
@@ -361,10 +342,6 @@ export function useAuth() {
       }
 
       if (data.user) {
-        console.log('✅ SignIn: Authentication successful for user:', data.user.id);
-        console.log('✅ SignIn: User email:', data.user.email);
-        console.log('✅ SignIn: User confirmed:', data.user.email_confirmed_at ? 'YES' : 'NO');
-        console.log('✅ SignIn: Session?', data.session ? 'YES' : 'NO');
         
         const user = convertUser(data.user);
         setAuthState({
@@ -377,11 +354,9 @@ export function useAuth() {
         setSessionStartTime(Date.now());
         setLastActivityTime(Date.now());
       } else {
-        console.log('⚠️ SignIn: No error but no user either');
         throw new Error('Authentication failed - no user returned');
       }
     } catch (error) {
-      console.log('❌ SignIn: Caught exception:', error);
       const errorMessage = error instanceof Error ? error.message : 'Login failed';
       setAuthState(prev => ({
         ...prev,
@@ -395,7 +370,6 @@ export function useAuth() {
   // Sign up with email and password
   const signUp = async (email: string, password: string, displayName?: string): Promise<void> => {
     try {
-      console.log('📝 SignUp: Starting registration for:', email);
       
       // Clear any existing user data to ensure clean state for new user
       clearAllUserData();
@@ -412,13 +386,6 @@ export function useAuth() {
             full_name: displayName,
           }
         }
-      });
-
-      console.log('📝 SignUp: Supabase response:', {
-        hasUser: !!data.user,
-        hasSession: !!data.session,
-        userConfirmed: data.user?.email_confirmed_at ? 'YES' : 'NO',
-        error: error?.message
       });
 
       if (error) {
@@ -504,7 +471,6 @@ export function useAuth() {
   // Sign out
   const signOut = async (): Promise<void> => {
     try {
-      console.log('🚺 Signing out user...');
       
       // Clear timeouts first
       clearTimeouts();
@@ -530,7 +496,6 @@ export function useAuth() {
         error: null,
       });
       
-      console.log('✅ User signed out successfully');
       
       // Force a page reload to ensure clean state
       setTimeout(() => {
@@ -615,7 +580,6 @@ export function useAuth() {
       }
       const redirectTo = `${origin}/auth/callback`;
       
-      console.log('🔄 Google OAuth redirect setup:', { origin, redirectTo });
 
       // Call our Google OAuth API route
       const response = await fetch('/api/auth/google', {

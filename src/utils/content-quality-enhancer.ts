@@ -87,12 +87,9 @@ export class ContentQualityEnhancer {
     
     // Log corrections if any were made
     if (result.hasErrors) {
-      console.log(`🔤 Spell Check: Fixed ${result.corrections.length} errors in: "${text}"`);
-      console.log(`✅ Corrected to: "${result.correctedText}"`);
       
       // Log specific corrections
       result.corrections.forEach(correction => {
-        console.log(`   - "${correction.original}" → "${correction.corrected}" (${correction.type})`);
       });
     }
     
@@ -228,9 +225,6 @@ export class ContentQualityEnhancer {
         enhancedContent.headline = headlineCheck.correctedText;
         
         if (logCorrections) {
-          console.log(`🔤 [Headline] Fixed ${headlineCheck.corrections.length} spelling errors`);
-          console.log(`   Original: "${content.headline}"`);
-          console.log(`   Corrected: "${headlineCheck.correctedText}"`);
         }
       }
     }
@@ -243,9 +237,6 @@ export class ContentQualityEnhancer {
         enhancedContent.subheadline = subheadlineCheck.correctedText;
         
         if (logCorrections) {
-          console.log(`🔤 [Subheadline] Fixed ${subheadlineCheck.corrections.length} spelling errors`);
-          console.log(`   Original: "${content.subheadline}"`);
-          console.log(`   Corrected: "${subheadlineCheck.correctedText}"`);
         }
       }
     }
@@ -258,9 +249,6 @@ export class ContentQualityEnhancer {
         enhancedContent.caption = captionCheck.correctedText;
         
         if (logCorrections) {
-          console.log(`🔤 [Caption] Fixed ${captionCheck.corrections.length} spelling errors`);
-          console.log(`   Original: "${content.caption}"`);
-          console.log(`   Corrected: "${captionCheck.correctedText}"`);
         }
       }
     }
@@ -273,9 +261,6 @@ export class ContentQualityEnhancer {
         enhancedContent.catchyWords = catchyWordsCheck.correctedText;
         
         if (logCorrections) {
-          console.log(`🔤 [Catchy Words] Fixed ${catchyWordsCheck.corrections.length} spelling errors`);
-          console.log(`   Original: "${content.catchyWords}"`);
-          console.log(`   Corrected: "${catchyWordsCheck.correctedText}"`);
         }
       }
     }
@@ -288,9 +273,6 @@ export class ContentQualityEnhancer {
         enhancedContent.callToAction = ctaCheck.correctedText;
         
         if (logCorrections) {
-          console.log(`🔤 [Call-to-Action] Fixed ${ctaCheck.corrections.length} spelling errors`);
-          console.log(`   Original: "${content.callToAction}"`);
-          console.log(`   Corrected: "${ctaCheck.correctedText}"`);
         }
       }
     }

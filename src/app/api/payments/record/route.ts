@@ -37,7 +37,6 @@ export async function POST(req: Request) {
 
     try {
       // Use the new idempotent payment processing function
-      console.log('💳 Processing manual payment with idempotency protection...');
       
       const { data: paymentResult, error: paymentError } = await supabase.rpc('process_payment_with_idempotency', {
         p_stripe_session_id: sessionId,
@@ -62,11 +61,6 @@ export async function POST(req: Request) {
       const result = paymentResult[0];
 
       if (result.was_duplicate) {
-        console.log('⚠️ Duplicate payment detected:', {
-          session_id: sessionId,
-          payment_id: result.payment_id,
-          message: 'Payment was already recorded'
-        });
         
         return NextResponse.json({
           success: true,
@@ -76,14 +70,6 @@ export async function POST(req: Request) {
           isDuplicate: true
         })
       }
-
-      console.log('✅ Payment recorded successfully:', {
-        userId,
-        planId,
-        creditsAdded: result.credits_added,
-        newTotal: result.new_total_credits,
-        newRemaining: result.new_remaining_credits
-      })
 
       return NextResponse.json({
         success: true,

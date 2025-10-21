@@ -131,8 +131,6 @@ async function generateContentWithProxy(promptOrParts: string | any[], modelName
     throw new Error('🚫 Proxy is disabled. This system requires AI_PROXY_ENABLED=true for cost control and model management.');
   }
 
-  console.log(`🔄 Creative Enhancement: Using proxy for ${isImageGeneration ? 'image' : 'text'} generation with ${modelName}`);
-
   // Handle multimodal requests (text + images) properly
   let prompt: string;
   let imageData: string | undefined;
@@ -1013,7 +1011,6 @@ Just return the headline, nothing else.`;
       const retryResult = await generateContentWithProxy(simplifiedHeadlinePrompt + headlineRetryContext, 'gemini-2.5-flash-image-preview', false);
       const retryHeadline = retryResult.response.text().trim();
 
-
       return {
         headline: retryHeadline,
         approach: 'ai-retry-generated',
@@ -1038,7 +1035,6 @@ CRITICAL ANTI-REPETITION RULES:
 
         const emergencyResult = await generateContentWithProxy(emergencyPrompt + headlineEmergencyContext, 'gemini-2.5-flash-image-preview', false);
         const emergencyHeadline = emergencyResult.response.text().trim();
-
 
         return {
           headline: emergencyHeadline,
@@ -1400,14 +1396,6 @@ export async function generateUnifiedContent(
 }> {
 
   // 🔍 DEBUG: Local language parameter tracing in unified content generation
-  console.log('🌍 [Unified Content] Local Language Debug:', {
-    useLocalLanguage: useLocalLanguage,
-    location: location,
-    businessName: businessName,
-    businessType: businessType,
-    hasLocalLanguageContext: !!localLanguageContext,
-    localLanguageContextKeys: localLanguageContext ? Object.keys(localLanguageContext) : 'none'
-  });
 
   const contentPlan = StrategicContentPlanner.generateBusinessSpecificContent(
     businessType, businessName, location, businessDetails, platform, contentGoal
@@ -1831,7 +1819,6 @@ IMPORTANT:
     // Post-process to remove word repetitions from the entire response
     response = removeWordRepetitions(response);
 
-
     // Parse all unified components
     const unifiedThemeMatch = response.match(/UNIFIED_THEME:\s*(.*?)(?=KEY_MESSAGE:|$)/);
     const keyMessageMatch = response.match(/KEY_MESSAGE:\s*(.*?)(?=HEADLINE:|$)/);
@@ -1840,7 +1827,6 @@ IMPORTANT:
     const captionMatch = response.match(/CAPTION:\s*(.*?)(?=CTA:|$)/);
     const ctaMatch = response.match(/CTA:\s*(.*?)(?=DESIGN_DIRECTION:|$)/);
     const designMatch = response.match(/DESIGN_DIRECTION:\s*(.*?)$/);
-
 
     // Extract all components and apply word repetition removal to each
     const unifiedTheme = removeWordRepetitions(unifiedThemeMatch?.[1]?.trim() || 'Quality local business');
@@ -2293,7 +2279,6 @@ Generate ONE unique headline that makes people instantly want to try the service
       // Emerging trends: ${analytics.emergingTrends.join(', ')}
     }
 
-
     // Apply storytelling and local language enhancement to all content
     const enhancedHeadline = enhanceWithStorytellingAndLocalLanguage(finalHeadline, businessType, location);
     const enhancedSubheadlineFinal = enhanceWithStorytellingAndLocalLanguage(enhancedSubheadline, businessType, location);
@@ -2383,7 +2368,6 @@ Do NOT write "Here are captions" or provide lists.`;
     // Post-process to remove word repetitions from retry response
     retryResponse = removeWordRepetitions(retryResponse);
 
-
     // Parse the retry response
     const retryCaptionMatch = retryResponse.match(/CAPTION:\s*(.*?)(?=CTA:|$)/);
     const retryCtaMatch = retryResponse.match(/CTA:\s*(.*?)$/);
@@ -2446,7 +2430,6 @@ Do NOT write "Here are posts" or provide multiple options. Write ONE post only.`
 
       // Post-process to remove word repetitions from emergency response
       emergencyResponse = removeWordRepetitions(emergencyResponse);
-
 
       // Generate viral hashtags for emergency
       const emergencyHashtags = await viralHashtagEngine.generateViralHashtags(
@@ -3028,17 +3011,6 @@ export async function generateBusinessSpecificCaption(
 ): Promise<{ caption: string; engagementHooks: string[]; callToAction: string }> {
 
   // 🔍 DEBUG: Enhanced caption generation with RSS data and relevance insights
-  console.log('🌍 [Creative Enhancement] Enhanced Caption Generation Debug:', {
-    useLocalLanguage: useLocalLanguage,
-    location: location,
-    businessType: businessType,
-    hasLocalLanguageContext: !!localLanguageContext,
-    hasRealTimeContext: !!realTimeContext,
-    hasRSSData: !!(realTimeContext?.rssData?.articles?.length > 0),
-    rssArticlesCount: realTimeContext?.rssData?.articles?.length || 0,
-    hasRelevanceInsights: !!(realTimeContext?.relevanceInsights?.length > 0),
-    highRelevanceDataCount: realTimeContext?.highRelevanceData?.length || 0
-  });
 
   // 🔥 ENHANCED: Prepare enhanced context for content generation
   let enhancedTrendingData = trendingData || {};

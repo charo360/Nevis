@@ -3,7 +3,6 @@ import { SimpleV2PureAIContentGenerator, PureAIRequest } from '@/services/pure-a
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🔍 [Debug Pure AI] Starting comprehensive Pure AI debugging...');
 
     const body = await request.json();
     const {
@@ -37,7 +36,6 @@ export async function POST(request: NextRequest) {
     };
 
     // Test 1: Check API Keys
-    console.log('🧪 [Debug Pure AI] Test 1: Checking API keys...');
     const geminiKey = process.env.GEMINI_API_KEY_REVO_1_5 || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
 
     if (!geminiKey) {
@@ -57,7 +55,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Test 2: Test Proxy-Only Google AI Service
-    console.log('🧪 [Debug Pure AI] Test 2: Testing Proxy-Only Google AI service...');
     try {
       const { generateText } = await import('@/ai/google-ai-direct');
 
@@ -82,7 +79,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Test 3: Test Pure AI Content Generator (Primary - Gemini)
-    console.log('🧪 [Debug Pure AI] Test 3: Testing Pure AI with Gemini...');
     const pureAIRequest: PureAIRequest = {
       businessType,
       businessName,
@@ -100,7 +96,6 @@ export async function POST(request: NextRequest) {
     };
 
     try {
-      console.log('🧠 [Debug Pure AI] Attempting Pure AI Gemini generation...');
       const pureAIResult = await SimpleV2PureAIContentGenerator.generateContent(pureAIRequest);
 
       diagnostics.tests.push({
@@ -132,10 +127,8 @@ export async function POST(request: NextRequest) {
       });
 
       // Test 4: Test Pure AI with OpenAI Fallback
-      console.log('🧪 [Debug Pure AI] Test 4: Testing Pure AI with OpenAI fallback...');
       if (process.env.OPENAI_API_KEY) {
         try {
-          console.log('🧠 [Debug Pure AI] Attempting Pure AI OpenAI fallback...');
           const openAIResult = await SimpleV2PureAIContentGenerator.generateContent(pureAIRequest);
 
           diagnostics.tests.push({
@@ -194,12 +187,6 @@ export async function POST(request: NextRequest) {
         recommendations.push('🔧 Prompt may be too complex or response format issues');
       }
     }
-
-    console.log('🔍 [Debug Pure AI] Debugging complete:', {
-      success: diagnostics.success,
-      testsRun: diagnostics.tests.length,
-      errorsFound: diagnostics.errors.length
-    });
 
     return NextResponse.json({
       success: diagnostics.success,

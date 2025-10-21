@@ -24,7 +24,6 @@ export async function POST(request: NextRequest) {
 
     switch (action) {
       case 'migrate_all':
-        console.log('🚀 Starting full user migration...');
         const migrationResult = await UserMigrationService.migrateExistingUsers();
         
         return NextResponse.json({
@@ -70,7 +69,6 @@ export async function POST(request: NextRequest) {
         });
 
       case 'rollback':
-        console.log('⚠️ Rolling back migration...');
         const rollbackResult = await UserMigrationService.rollbackMigration();
         
         return NextResponse.json({

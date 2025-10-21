@@ -36,7 +36,6 @@ export default function StorageTestPage() {
 
   // Run isolation test
   const runIsolationTest = () => {
-    console.log('🧪 Running storage isolation test...');
 
     // Test data
     const qcData = { type: 'quick-content', data: qcTestData || 'QC Test Data', timestamp: Date.now() };
@@ -63,7 +62,6 @@ export default function StorageTestPage() {
       csLoad: csLoadResult.length > 0,
     });
 
-    console.log('✅ Storage isolation test completed');
   };
 
   // Clear all test data
@@ -72,7 +70,6 @@ export default function StorageTestPage() {
     creativeStudioStorage.clearAll();
     setTestResults(null);
     storageMonitor.refreshStats();
-    console.log('🧹 Test data cleared');
   };
 
   // Auto-refresh stats

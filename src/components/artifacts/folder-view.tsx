@@ -171,13 +171,10 @@ export function FolderView({
                       onSelect={() => onArtifactSelect?.(artifact.id)}
                       onDelete={async (artifact) => {
                         // Handle delete - would need to implement in artifacts service
-                        console.log('Delete artifact:', artifact.id);
                       }}
                       onView={(artifact) => {
-                        console.log('View artifact:', artifact.id);
                       }}
                       onEdit={(artifact) => {
-                        console.log('Edit artifact:', artifact.id);
                       }}
                       showUsageStats={true}
                     />

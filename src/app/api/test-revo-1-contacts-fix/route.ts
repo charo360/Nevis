@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('🧪 [Test Revo 1.0 Contacts Fix] Starting contact duplication fix verification...');
 
     // Test brand profile with contact information
     const testBrandProfile = {
@@ -52,13 +51,6 @@ export async function GET(request: NextRequest) {
       .replace('{contactEmail}', '') // Should be empty now
       .replace('{contactAddress}', '') // Should be empty now
       .replace('{websiteUrl}', ''); // Should be empty now
-
-    console.log('🧪 [Test Revo 1.0 Contacts Fix] Template analysis:', {
-      hasDuplicateContactInstructions,
-      hasProperContactHandling,
-      contentPromptLength: sampleContentPrompt.length,
-      contactInstructionsRemoved: !hasDuplicateContactInstructions && hasProperContactHandling
-    });
 
     // Verify the fix
     const fixVerification = {

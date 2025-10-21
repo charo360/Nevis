@@ -42,12 +42,10 @@ export class RSSFeedService {
     // Check cache first
     const cached = this.cache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
-      console.log(`✅ [RSS Service] Cache hit for ${category}`);
       return cached.data;
     }
 
     try {
-      console.log(`🔄 [RSS Service] Fetching fresh data for ${category}`);
 
       // 🛡️ FIXED: Use direct RSS fetching instead of problematic API calls
       const { fetchRSSFeedDirect } = await import('../ai/utils/rss-direct-fetch');
@@ -59,7 +57,6 @@ export class RSSFeedService {
       // Cache the result
       this.cache.set(cacheKey, { data, timestamp: Date.now() });
 
-      console.log(`✅ [RSS Service] Generated trending data: ${data.hashtags.length} hashtags, ${data.articles.length} articles`);
       return data;
 
     } catch (error) {

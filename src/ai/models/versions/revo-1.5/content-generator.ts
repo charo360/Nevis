@@ -63,7 +63,6 @@ export class Revo15ContentGenerator implements IContentGenerator {
       const processingTime = Date.now() - startTime;
       const qualityScore = this.calculateEnhancedQualityScore(generatedPost);
 
-
       return {
         success: true,
         data: generatedPost,
@@ -126,7 +125,6 @@ export class Revo15ContentGenerator implements IContentGenerator {
    */
   private async fetchAndConvertLogo(logoUrl: string): Promise<string> {
     try {
-      console.log('🖼️  [Revo 1.5 Content] Fetching logo from storage:', logoUrl.substring(0, 100) + '...');
       const response = await fetch(logoUrl);
 
       if (!response.ok) {
@@ -141,7 +139,6 @@ export class Revo15ContentGenerator implements IContentGenerator {
       const contentType = response.headers.get('content-type') || 'image/png';
       const logoDataUrl = `data:${contentType};base64,${base64String}`;
 
-      console.log('✅ [Revo 1.5 Content] Logo converted to base64:', logoDataUrl.length, 'characters');
       return logoDataUrl;
     } catch (error) {
       console.error('❌ [Revo 1.5 Content] Error fetching logo:', error);
@@ -161,14 +158,11 @@ export class Revo15ContentGenerator implements IContentGenerator {
     const logoUrl = profile.logoUrl;
 
     if (logoUrl && !processedLogoDataUrl) {
-      console.log('🔄 [Revo 1.5 Content] Converting logo from storage URL to base64...');
       processedLogoDataUrl = await this.fetchAndConvertLogo(logoUrl);
     }
 
     if (processedLogoDataUrl) {
-      console.log('🖼️  [Revo 1.5 Content] Logo available for content generation:', processedLogoDataUrl.length, 'characters');
     } else {
-      console.log('⚠️  [Revo 1.5 Content] No logo available for content generation');
     }
 
     // Enhanced parameter preparation with more sophisticated processing

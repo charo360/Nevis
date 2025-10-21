@@ -37,11 +37,6 @@ function CreativeStudioPageContent() {
           const studioProjects = creativeStudioStorage.loadProjects();
           const studioAssets = creativeStudioStorage.loadAssets();
 
-          console.log("✅ Creative Studio data loaded for brand:", brand.businessName, {
-            settingsLoaded: !!studioSettings,
-            projectsCount: studioProjects?.length || 0,
-            assetsCount: studioAssets?.length || 0,
-          });
         } catch (error) {
           console.error("❌ Error loading Creative Studio data:", error);
         }
@@ -62,7 +57,6 @@ function CreativeStudioPageContent() {
 
       if (currentBrand.logoUrl && currentBrand.logoUrl.startsWith("http")) {
         try {
-          console.log("🔄 Converting logo URL to data URL:", currentBrand.logoUrl);
           const response = await fetch(currentBrand.logoUrl);
           const blob = await response.blob();
           const reader = new FileReader();
@@ -70,7 +64,6 @@ function CreativeStudioPageContent() {
             reader.onloadend = () => resolve(reader.result as string);
             reader.readAsDataURL(blob);
           });
-          console.log("✅ Logo converted to data URL");
         } catch (error) {
           console.warn("⚠️ Failed to convert logo URL:", error);
           logoDataUrl = currentBrand.logoUrl;
