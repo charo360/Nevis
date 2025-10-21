@@ -111,7 +111,7 @@ export function getStripePrices() {
     // Production/Live price IDs - Real live price IDs from Stripe Dashboard
     return {
       'try-free': 'price_1SDqaWELJu3kIHjxZQBntjuO',     // Try Agent Free (prod)
-  'starter': 'price_1SDqfQELJu3kIHjxzHWPNMPs',       // Starter Agent TEST PRICE $0.50 (prod)
+  'starter': 'price_1SKigfELJu3kIHjxCDb6h01E',       // Starter Agent $9.99 (prod)
       'growth': 'price_1SDqiKELJu3kIHjx0LWHBgfV',        // Growth Agent (prod)
       'pro': 'price_1SDqloELJu3kIHjxU187qSj1',           // Pro Agent (prod)
       'enterprise': 'price_1SDqp4ELJu3kIHjx7oLcQwzh'     // Enterprise Agent (prod)

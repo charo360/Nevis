@@ -29,7 +29,8 @@ export async function POST(req: NextRequest) {
     if (planId.startsWith('price_')) {
       const legacyMapping: Record<string, string> = {
         'price_1SDqaWELJu3kIHjxZQBntjuO': 'try-free',
-  'price_1SDqfQELJu3kIHjxzHWPNMPs': 'starter',
+  'price_1SDqfQELJu3kIHjxzHWPNMPs': 'starter',  // Old starter price ID (legacy)
+  'price_1SKigfELJu3kIHjxCDb6h01E': 'starter',  // New starter price ID $9.99
         'price_1SDqiKELJu3kIHjx0LWHBgfV': 'growth',
         'price_1SDqloELJu3kIHjxU187qSj1': 'pro',
         'price_1SDqp4ELJu3kIHjx7oLcQwzh': 'enterprise',
