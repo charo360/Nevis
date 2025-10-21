@@ -44,9 +44,9 @@ export const pricingPlans: PricingPlan[] = [
   {
     id: 'starter',
     name: 'Starter Agent',
-    price: 0.50,
+    price: 9.99,
     credits: 40,
-    costPerCredit: 0.0125,
+    costPerCredit: 0.25,
     icon: 'zap',
     description: 'Ideal for occasional users or testers',
     features: [
