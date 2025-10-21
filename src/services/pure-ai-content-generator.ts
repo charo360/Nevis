@@ -74,27 +74,13 @@ export class PureAIContentGenerator {
     }
 
     try {
-      console.log('🧠 [Pure AI] Generating content with zero hardcoding...');
-      console.log('🔑 [Pure AI] API Key check:', {
-        hasGeminiKey: !!process.env.GEMINI_API_KEY_REVO_1_5,
-        hasBackupKey: !!process.env.GEMINI_API_KEY,
-        hasGoogleKey: !!process.env.GOOGLE_API_KEY,
-        hasGenAIKey: !!process.env.GOOGLE_GENAI_API_KEY,
-        keyPrefix: geminiKey.substring(0, 10) + '...'
-      });
 
       const response = await generateText(prompt, {
         temperature: 0.8, // Slightly lower for more consistent responses
         maxOutputTokens: 3000 // Increase token limit for complete responses
       });
 
-      console.log('✅ [Pure AI] Raw response received:', {
-        responseLength: response.text?.length || 0,
-        responsePreview: response.text?.substring(0, 200) + '...'
-      });
-
       // Debug: Log the full response for debugging
-      console.log('🔍 [Pure AI] Full response for debugging:', response.text);
 
       const parsed = this.parseAIResponse(response.text);
 
@@ -132,7 +118,6 @@ export class PureAIContentGenerator {
         const retryContent = retryParsed.content || retryParsed;
         
         if (retryContent.headline && retryContent.cta && retryContent.caption) {
-          console.log('✅ [Pure AI] Retry successful, using retry content');
           return this.formatResponse(retryParsed, retryContent, businessAnalysis, performancePrediction);
         }
       }
@@ -251,7 +236,6 @@ Generate EXACTLY ${platform === 'Instagram' ? '5' : '3'} hashtags. Be creative a
    */
   private static parseAIResponse(response: string): any {
     try {
-      console.log('🔍 [Pure AI] Parsing response, length:', response.length);
       
       // Clean the response to extract JSON
       let cleanResponse = response.trim();
@@ -259,22 +243,16 @@ Generate EXACTLY ${platform === 'Instagram' ? '5' : '3'} hashtags. Be creative a
       // Remove markdown code blocks if present
       if (cleanResponse.includes('```json')) {
         cleanResponse = cleanResponse.replace(/```json\s*/g, '').replace(/```\s*/g, '');
-        console.log('🔍 [Pure AI] Removed markdown code blocks');
       } else if (cleanResponse.includes('```')) {
         cleanResponse = cleanResponse.replace(/```\s*/g, '');
-        console.log('🔍 [Pure AI] Removed generic code blocks');
       }
 
       // Find JSON object
       const jsonStart = cleanResponse.indexOf('{');
       const jsonEnd = cleanResponse.lastIndexOf('}');
 
-      console.log('🔍 [Pure AI] JSON boundaries:', { jsonStart, jsonEnd, cleanResponseLength: cleanResponse.length });
-
       if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
         let extractedJson = cleanResponse.substring(jsonStart, jsonEnd + 1);
-        console.log('🔍 [Pure AI] Extracted JSON length:', extractedJson.length);
-        console.log('🔍 [Pure AI] Extracted JSON preview:', extractedJson.substring(0, 200) + '...');
         
         // Try to fix common JSON issues
         try {
@@ -285,7 +263,6 @@ Generate EXACTLY ${platform === 'Instagram' ? '5' : '3'} hashtags. Be creative a
           }
           
           const parsed = JSON.parse(extractedJson);
-          console.log('✅ [Pure AI] JSON parsing successful');
           return parsed;
         } catch (parseError) {
           console.error('❌ [Pure AI] JSON parse error:', parseError.message);
@@ -338,9 +315,7 @@ Generate EXACTLY ${platform === 'Instagram' ? '5' : '3'} hashtags. Be creative a
               fixedJson += '\n';
             }
             
-            console.log('🔧 [Pure AI] Attempting to fix JSON...');
             const fixedParsed = JSON.parse(fixedJson);
-            console.log('✅ [Pure AI] Fixed JSON parsing successful');
             return fixedParsed;
             
           } catch (fixError) {
@@ -376,11 +351,6 @@ Generate EXACTLY ${platform === 'Instagram' ? '5' : '3'} hashtags. Be creative a
     }
 
     try {
-      console.log('🧠 [Pure AI OpenAI] Generating content with OpenAI backend...');
-      console.log('🔑 [Pure AI OpenAI] API Key check:', {
-        hasOpenAIKey: !!process.env.OPENAI_API_KEY,
-        keyPrefix: process.env.OPENAI_API_KEY.substring(0, 10) + '...'
-      });
 
       // Use OpenAI with the same Pure AI prompt
       const OpenAI = (await import('openai')).default;

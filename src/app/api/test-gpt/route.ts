@@ -15,14 +15,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    console.log("🔑 OpenAI API Key found:", apiKey.substring(0, 10) + "...");
-
     // Initialize OpenAI client
     const openai = new OpenAI({
       apiKey: apiKey,
     });
-
-    console.log("🤖 Testing GPT content generation...");
 
     // Test GPT content generation
     const completion = await openai.chat.completions.create({
@@ -43,7 +39,6 @@ export async function POST(request: NextRequest) {
 
     const generatedContent = completion.choices[0]?.message?.content;
     
-    console.log("✅ GPT Response received:", generatedContent);
 
     // Check for common fallback indicators
     const fallbackIndicators = ["Transform", "Unlock", "Discover", "Revolutionize", "Elevate"];

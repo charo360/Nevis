@@ -34,7 +34,6 @@ async function verifySupabaseAuth(authHeader: string | null) {
 // Helper function to upload logo data URL to Supabase Storage
 async function uploadLogoToSupabase(logoDataUrl: string, userId: string, brandName: string): Promise<{ success: boolean; url?: string; error?: string }> {
   try {
-    console.log('📤 Uploading brand logo to Supabase Storage for:', brandName);
 
     // Convert data URL to buffer
     const base64Data = logoDataUrl.split(',')[1];
@@ -43,13 +42,11 @@ async function uploadLogoToSupabase(logoDataUrl: string, userId: string, brandNa
     }
     
     const buffer = Buffer.from(base64Data, 'base64');
-    console.log(`📦 Logo buffer size: ${buffer.length} bytes`);
 
     // Create upload path for logo
     const timestamp = Date.now();
     const safeBrandName = brandName.replace(/[^a-zA-Z0-9-_]/g, '-').toLowerCase();
     const uploadPath = `brands/${userId}/logos/${safeBrandName}-${timestamp}.png`;
-    console.log(`🎯 Logo upload path: ${uploadPath}`);
     
     const { data, error } = await supabaseService.storage
       .from('nevis-storage')
@@ -63,14 +60,11 @@ async function uploadLogoToSupabase(logoDataUrl: string, userId: string, brandNa
       return { success: false, error: error.message };
     }
 
-    console.log('✅ Logo upload successful:', data);
-
     // Get public URL
     const { data: { publicUrl } } = supabaseService.storage
       .from('nevis-storage')
       .getPublicUrl(uploadPath);
 
-    console.log('✅ Brand logo uploaded to Supabase Storage:', publicUrl);
     return { success: true, url: publicUrl };
   } catch (error) {
     console.error('❌ Logo upload error:', error);
@@ -131,12 +125,6 @@ export async function PUT(
     const { id: profileId } = await params;
     const updates = await request.json();
     
-    console.log('📋 Processing brand profile update:', {
-      profileId,
-      businessName: updates.businessName,
-      hasLogoDataUrl: !!updates.logoDataUrl,
-      logoDataLength: updates.logoDataUrl?.length || 0
-    });
 
     // Verify the profile belongs to the authenticated user
     const existingProfile = await brandProfileSupabaseService.loadBrandProfile(profileId);
@@ -158,7 +146,6 @@ export async function PUT(
     let processedUpdates = { ...updates };
     
     if (updates.logoDataUrl && updates.logoDataUrl.startsWith('data:')) {
-      console.log('📤 Processing logo upload for brand update:', updates.businessName || existingProfile.businessName);
       
       const logoResult = await uploadLogoToSupabase(
         updates.logoDataUrl,
@@ -171,19 +158,12 @@ export async function PUT(
         processedUpdates.logoUrl = logoResult.url;
         // Remove the large base64 data to save database space
         delete processedUpdates.logoDataUrl;
-        console.log('✅ Logo uploaded successfully in update, using storage URL:', logoResult.url);
       } else {
         console.error('❌ Logo upload failed in update:', logoResult.error);
         // Keep the logoDataUrl as fallback, but warn about it
         console.warn('⚠️  Using logoDataUrl as fallback in update - this may cause performance issues');
       }
     }
-
-    console.log('💾 Updating brand profile in Supabase:', {
-      profileId,
-      hasLogoUrl: !!processedUpdates.logoUrl,
-      hasLogoDataUrl: !!processedUpdates.logoDataUrl
-    });
 
     await brandProfileSupabaseService.updateBrandProfile(profileId, processedUpdates);
     return NextResponse.json({ success: true });

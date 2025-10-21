@@ -21,7 +21,6 @@ async function convertLogoToDataUrl(logoUrl?: string): Promise<string | undefine
   // If it's a Supabase Storage URL, fetch and convert to base64
   if (logoUrl.startsWith('http')) {
     try {
-      console.log('🔄 [Revo 1.5 API] Converting logo URL to base64 for AI generation:', logoUrl.substring(0, 50) + '...');
 
       const response = await fetch(logoUrl);
       if (!response.ok) {
@@ -34,7 +33,6 @@ async function convertLogoToDataUrl(logoUrl?: string): Promise<string | undefine
       const mimeType = response.headers.get('content-type') || 'image/png';
       const dataUrl = `data:${mimeType};base64,${base64}`;
 
-      console.log('✅ [Revo 1.5 API] Logo converted to base64 successfully (' + buffer.byteLength + ' bytes)');
       return dataUrl;
     } catch (error) {
       console.error('❌ [Revo 1.5 API] Error converting logo URL to base64:', error);
@@ -73,15 +71,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Skip credits check for testing
-    console.log('⚠️ [Revo 1.5] Skipping credits check for testing');
-
-    console.log('Revo 1.5 Enhanced generation request:', {
-      userId,
-      businessType,
-      platform,
-      visualStyle: visualStyle || 'modern',
-      aspectRatio: aspectRatio || '1:1'
-    });
 
     // Convert logo URL to base64 data URL (matching Revo 1.0 approach)
     const convertedLogoDataUrl = await convertLogoToDataUrl(brandProfile.logoUrl || brandProfile.logoDataUrl);
@@ -132,7 +121,6 @@ export async function POST(request: NextRequest) {
 
     // Try to provide a fallback response instead of just failing
     try {
-      console.log('🔄 [Revo 1.5 API] Attempting fallback response...');
 
       // Generate simple fallback content
       const fallbackCaption = `${body.brandProfile?.businessName || body.businessType || 'Our business'} provides quality services. Contact us to learn more about what we can do for you.`;
@@ -154,8 +142,6 @@ export async function POST(request: NextRequest) {
         enhancementsApplied: ['fallback-system'],
         designSpecs: { plan: 'Fallback design plan' }
       };
-
-      console.log('✅ [Revo 1.5 API] Fallback response created');
 
       return NextResponse.json({
         success: true,

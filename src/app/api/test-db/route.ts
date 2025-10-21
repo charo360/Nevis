@@ -3,10 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('🔄 Testing database connection...');
 
     // This endpoint is disabled - using Supabase instead
-    console.log('✅ Using Supabase - no MongoDB connection needed');
 
     return NextResponse.json({
       success: true,

@@ -123,7 +123,6 @@ export async function registerUser(
   displayName?: string
 ): Promise<AuthResult> {
   try {
-    console.log('🔐 Registering new user with Supabase:', email);
 
     // Check if user already exists
     const { data: existingUser } = await supabase
@@ -168,8 +167,6 @@ export async function registerUser(
       throw error;
     }
 
-    console.log('✅ User created successfully in Supabase');
-
     // Generate tokens
     const payload: JWTPayload = {
       userId,
@@ -199,7 +196,6 @@ export async function registerUser(
 // Login user
 export async function loginUser(email: string, password: string): Promise<AuthResult> {
   try {
-    console.log('🔐 Logging in user with Supabase:', email);
 
     // Find user by email
     const { data: user, error } = await supabase
@@ -209,7 +205,6 @@ export async function loginUser(email: string, password: string): Promise<AuthRe
       .single();
 
     if (error || !user) {
-      console.log('❌ User not found:', email);
       return {
         success: false,
         error: 'Invalid email or password',
@@ -218,7 +213,6 @@ export async function loginUser(email: string, password: string): Promise<AuthRe
 
     // Verify password
     if (!user.hashed_password) {
-      console.log('❌ No password hash found for user');
       return {
         success: false,
         error: 'Invalid email or password',
@@ -227,14 +221,11 @@ export async function loginUser(email: string, password: string): Promise<AuthRe
 
     const isValidPassword = await verifyPassword(password, user.hashed_password);
     if (!isValidPassword) {
-      console.log('❌ Invalid password for user');
       return {
         success: false,
         error: 'Invalid email or password',
       };
     }
-
-    console.log('✅ User login successful');
 
     // Generate tokens
     const payload: JWTPayload = {
@@ -265,7 +256,6 @@ export async function loginUser(email: string, password: string): Promise<AuthRe
 // Create anonymous user
 export async function createAnonymousUser(): Promise<AuthResult> {
   try {
-    console.log('🔐 Creating anonymous user with Supabase');
 
     // Generate anonymous user ID
     const userId = generateAnonymousUserId();
@@ -291,8 +281,6 @@ export async function createAnonymousUser(): Promise<AuthResult> {
       console.error('❌ Supabase anonymous user creation error:', error);
       throw error;
     }
-
-    console.log('✅ Anonymous user created successfully');
 
     // Generate tokens
     const payload: JWTPayload = {
@@ -323,7 +311,6 @@ export async function createAnonymousUser(): Promise<AuthResult> {
 // Refresh access token
 export async function refreshAccessToken(refreshToken: string): Promise<AuthResult> {
   try {
-    console.log('🔐 Refreshing access token with Supabase');
 
     // Verify refresh token
     const payload = verifyRefreshToken(refreshToken);
@@ -342,14 +329,11 @@ export async function refreshAccessToken(refreshToken: string): Promise<AuthResu
       .single();
 
     if (error || !user) {
-      console.log('❌ User not found during token refresh:', payload.userId);
       return {
         success: false,
         error: 'User not found',
       };
     }
-
-    console.log('✅ Token refresh successful');
 
     // Generate new access token
     const newPayload: JWTPayload = {
@@ -391,7 +375,6 @@ export async function getUserFromToken(token: string): Promise<UserDocument | nu
       .single();
 
     if (error || !user) {
-      console.log('❌ User not found from token:', payload.userId);
       return null;
     }
 

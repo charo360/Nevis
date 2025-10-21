@@ -3,7 +3,6 @@ import type { BrandProfile } from '@/lib/types';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('🧪 [Test Different Business] Testing with different business name...');
 
     // Test with a completely different business name to see if AI still generates same contact info
     const testBrandProfile: BrandProfile = {
@@ -25,7 +24,6 @@ export async function GET(request: NextRequest) {
       targetAudience: 'Local families and bread lovers'
     };
 
-    console.log('🧪 [Test Different Business] Testing content generation...');
     
     const { generateRevo10Content } = await import('../../../ai/revo-1.0-service');
     
@@ -66,15 +64,6 @@ export async function GET(request: NextRequest) {
     const hasAnyContactInContent = contentHasPhone || contentHasEmail || contentHasWebsite;
     const hasAnyContactInCTA = ctaHasPhone || ctaHasEmail || ctaHasWebsite;
     const hasPayaContactInCTA = ctaHasPayaPhone || ctaHasPayaEmail || ctaHasPayaWebsite;
-
-    console.log('🧪 [Test Different Business] Analysis:', {
-      businessName: testBrandProfile.businessName,
-      actualContactInfo: testBrandProfile.contactInfo,
-      actualWebsite: testBrandProfile.websiteUrl,
-      generatedCTA: contentResult.callToAction,
-      hasRealContactInCTA: hasAnyContactInCTA,
-      hasPayaContactInCTA: hasPayaContactInCTA
-    });
 
     return NextResponse.json({
       success: true,

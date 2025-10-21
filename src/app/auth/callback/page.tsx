@@ -15,7 +15,6 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        console.log('🔄 Processing OAuth callback...');
         
         // Get the session from Supabase (this handles the URL hash automatically)
         const supabase = createClient();
@@ -29,14 +28,12 @@ export default function AuthCallbackPage() {
         }
 
         if (data.session?.user) {
-          console.log('✅ OAuth authentication successful:', data.session.user.email);
           setUserEmail(data.session.user.email || '');
           
           // Initialize user if this is their first login
           try {
             const token = data.session.access_token;
             if (token) {
-              console.log('🔄 Initializing user account...');
               const response = await fetch('/api/users/initialize', {
                 method: 'POST',
                 headers: { 
@@ -46,7 +43,6 @@ export default function AuthCallbackPage() {
               });
               
               if (response.ok) {
-                console.log('✅ User initialized successfully');
               } else {
                 console.warn('⚠️ User initialization failed, but authentication succeeded');
               }

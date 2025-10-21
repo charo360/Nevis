@@ -71,7 +71,6 @@ export function saveTestBrandToLocalStorage(): CompleteBrandProfile {
   try {
     localStorage.setItem('completeBrandProfile', JSON.stringify(testBrand));
     localStorage.setItem('selectedBrandId', testBrand.id);
-    console.log('✅ Test brand saved to localStorage:', testBrand.businessName);
     return testBrand;
   } catch (error) {
     console.error('❌ Failed to save test brand to localStorage:', error);
@@ -84,7 +83,6 @@ export function loadTestBrandFromLocalStorage(): CompleteBrandProfile | null {
     const stored = localStorage.getItem('completeBrandProfile');
     if (stored) {
       const brand = JSON.parse(stored);
-      console.log('✅ Test brand loaded from localStorage:', brand.businessName);
       return brand;
     }
     return null;
@@ -98,7 +96,6 @@ export function clearTestBrandFromLocalStorage(): void {
   try {
     localStorage.removeItem('completeBrandProfile');
     localStorage.removeItem('selectedBrandId');
-    console.log('✅ Test brand cleared from localStorage');
   } catch (error) {
     console.error('❌ Failed to clear test brand from localStorage:', error);
   }

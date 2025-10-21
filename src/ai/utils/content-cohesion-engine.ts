@@ -24,7 +24,6 @@ export interface CohesionAnalysis {
  * Analyze content cohesion across all elements
  */
 export function analyzeContentCohesion(content: ContentElements): CohesionAnalysis {
-  console.log('🎨 [Content Cohesion] Analyzing content consistency...');
   
   // Extract all text content
   const allText = [
@@ -53,7 +52,6 @@ export function analyzeContentCohesion(content: ContentElements): CohesionAnalys
   // Generate improvement suggestions
   const suggestions = generateCohesionSuggestions(content, consistencyIssues, primaryTheme);
   
-  console.log(`✅ [Content Cohesion] Analysis complete - Score: ${(cohesionScore * 100).toFixed(1)}%, Theme: ${primaryTheme}`);
   
   return {
     cohesionScore,

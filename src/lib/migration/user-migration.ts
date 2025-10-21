@@ -30,7 +30,6 @@ export class UserMigrationService {
     };
 
     try {
-      console.log('🚀 Starting user migration to payment system...');
 
       // Get all existing users
       const { data: users, error } = await supabase
@@ -43,11 +42,8 @@ export class UserMigrationService {
       }
 
       if (!users || users.length === 0) {
-        console.log('✅ No users found to migrate');
         return result;
       }
-
-      console.log(`📊 Found ${users.length} users to migrate`);
 
       for (const user of users) {
         try {
@@ -55,7 +51,6 @@ export class UserMigrationService {
           result.usersProcessed++;
           
           if (result.usersProcessed % 10 === 0) {
-            console.log(`📈 Migrated ${result.usersProcessed}/${users.length} users`);
           }
 
         } catch (error) {
@@ -66,7 +61,6 @@ export class UserMigrationService {
         }
       }
 
-      console.log(`✅ Migration completed: ${result.usersProcessed} users processed`);
       
       if (result.errors.length > 0) {
         console.warn(`⚠️ ${result.errors.length} errors occurred during migration`);
@@ -130,9 +124,7 @@ export class UserMigrationService {
         throw new Error(`Failed to update user ${userId}: ${updateError.message}`);
       }
 
-      console.log(`✅ Migrated user ${userId}: ${trialDays} day trial, ${initialCredits} credits`);
     } else {
-      console.log(`⏭️ User ${userId} already has active trial, skipping`);
     }
   }
 
@@ -187,7 +179,6 @@ export class UserMigrationService {
           }
         });
 
-      console.log(`✅ Granted ${bonusCredits} bonus credits to user ${userId}`);
       return true;
 
     } catch (error) {
@@ -238,7 +229,6 @@ export class UserMigrationService {
    */
   static async rollbackMigration(): Promise<boolean> {
     try {
-      console.log('⚠️ Rolling back user migration...');
 
       const { error } = await supabase
         .from('users')
@@ -257,7 +247,6 @@ export class UserMigrationService {
         return false;
       }
 
-      console.log('✅ Migration rollback completed');
       return true;
 
     } catch (error) {

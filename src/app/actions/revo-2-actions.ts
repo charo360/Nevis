@@ -28,15 +28,6 @@ export async function generateRevo2ContentAction(
   try {
 
     // Log scheduled services integration
-    console.log('📅 [Revo 2.0 Action] Scheduled Services Integration:', {
-      hasScheduledServices: !!(scheduledServices && scheduledServices.length > 0),
-      scheduledServicesCount: scheduledServices?.length || 0,
-      todaysServicesCount: scheduledServices?.filter(s => s.isToday).length || 0,
-      upcomingServicesCount: scheduledServices?.filter(s => s.isUpcoming).length || 0,
-      scheduledServiceNames: scheduledServices?.map(s => s.serviceName) || [],
-      todaysServiceNames: scheduledServices?.filter(s => s.isToday).map(s => s.serviceName) || [],
-      upcomingServiceNames: scheduledServices?.filter(s => s.isUpcoming).map(s => s.serviceName) || []
-    });
 
     // Prepare Revo 2.0 generation options
     const revo2Options: Revo20GenerationOptions = {

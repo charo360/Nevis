@@ -8,7 +8,6 @@ import { aiProxyClient, getUserIdForProxy, getUserTierForProxy, shouldUseProxy }
 
 // Direct API fallback function when proxy is not available
 async function generateContentDirect(promptOrParts: string | any[], modelName: string, isImageGeneration: boolean, explicitLogoDataUrl?: string): Promise<any> {
-  console.log('🔄 Direct API: Using direct Google AI API fallback');
 
   // Get API key from environment
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
@@ -150,14 +149,11 @@ export interface GenerateRequest {
 export async function generateContentWithProxy(promptOrParts: string | any[], modelName: string = 'gemini-2.5-flash', isImageGeneration: boolean = false, explicitLogoDataUrl?: string): Promise<any> {
   // If proxy is disabled, use direct API fallback
   if (!shouldUseProxy()) {
-    console.log('🔄 Proxy disabled, using direct API fallback');
     return await generateContentDirect(promptOrParts, modelName, isImageGeneration, explicitLogoDataUrl);
   }
 
   // Strip Genkit prefixes to get the raw model name for proxy
   const cleanModelName = modelName.replace(/^(googleai\/|anthropic\/|openai\/)/, '');
-
-  console.log(`🔄 Proxy-Only Genkit: Using proxy for ${isImageGeneration ? 'image' : 'text'} generation with ${cleanModelName} (original: ${modelName})`);
 
   // Handle multimodal requests (text + images) properly
   let prompt: string;
@@ -246,8 +242,6 @@ export async function generateContentWithProxy(promptOrParts: string | any[], mo
       // Convert proxy response to Genkit format with media URL
       const imageDataUrl = `data:image/png;base64,${base64Data}`;
 
-      console.log('🔍 [DEBUG] generateContentWithProxy returning successful image response');
-
       return {
         response: {
           candidates: [{
@@ -293,7 +287,6 @@ export async function generateContentWithProxy(promptOrParts: string | any[], mo
 
     // If proxy fails and we should be using it, try direct API fallback
     if (shouldUseProxy()) {
-      console.log('🔄 Proxy failed, attempting direct API fallback...');
       try {
         return await generateContentDirect(promptOrParts, modelName, isImageGeneration, explicitLogoDataUrl);
       } catch (fallbackError) {
@@ -309,7 +302,6 @@ export async function generateContentWithProxy(promptOrParts: string | any[], mo
 // Proxy-only AI interface that mimics Genkit's API but routes through proxy
 export const ai = {
   generate: async (options: any) => {
-    console.log('🔒 [Proxy-Only Genkit] Generate called - routing through proxy');
 
     const prompt = options.prompt || options.input || '';
     const model = options.model || 'gemini-2.5-flash';
@@ -331,15 +323,12 @@ export const ai = {
 
   // defineFlow compatibility for existing flows
   defineFlow: (config: any, handler: any) => {
-    console.log('🔒 [Proxy-Only Genkit] DefineFlow called for:', config.name);
 
     // Return a function that wraps the handler with proxy-only enforcement
     return async (input: any) => {
       if (!shouldUseProxy()) {
         throw new Error('🚫 Proxy is disabled. This system requires AI_PROXY_ENABLED=true for cost control and model management.');
       }
-
-      console.log(`🔄 [Proxy-Only Genkit] Executing flow: ${config.name}`);
 
       // Execute the handler function
       return await handler(input);
@@ -348,15 +337,12 @@ export const ai = {
 
   // definePrompt compatibility for existing prompts
   definePrompt: (config: any) => {
-    console.log('🔒 [Proxy-Only Genkit] DefinePrompt called for:', config.name);
 
     // Return a function that can be used to execute the prompt through proxy
     return async (input: any) => {
       if (!shouldUseProxy()) {
         throw new Error('🚫 Proxy is disabled. This system requires AI_PROXY_ENABLED=true for cost control and model management.');
       }
-
-      console.log(`🔄 [Proxy-Only Genkit] Executing prompt: ${config.name}`);
 
       // For now, return a placeholder since the actual prompt isn't being used
       // This can be enhanced later to actually process the prompt through proxy
@@ -369,11 +355,9 @@ export const ai = {
 
   // defineTool compatibility for existing tools (like events service)
   defineTool: (config: any) => {
-    console.log('🔒 [Proxy-Only Genkit] DefineTool called for:', config.name);
 
     // Return a function that can be used to execute the tool
     return async (input: any) => {
-      console.log(`🔄 [Proxy-Only Genkit] Executing tool: ${config.name} with input:`, input);
 
       // For events tool, return mock data since we're in proxy-only mode
       if (config.name === 'getEnhancedEvents') {

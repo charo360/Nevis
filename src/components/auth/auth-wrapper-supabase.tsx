@@ -31,10 +31,8 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
       const isPublicRoute = publicRoutes.includes(currentPath) || currentPath.startsWith('/billing');
 
       if (!user && !isPublicRoute) {
-        console.log('🔒 User not authenticated, redirecting to login');
         router.push('/auth');
       } else if (user && currentPath === '/auth') {
-        console.log('✅ User authenticated, redirecting to dashboard');
         router.push('/dashboard');
       }
     }

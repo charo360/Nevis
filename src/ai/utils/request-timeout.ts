@@ -108,7 +108,6 @@ export async function withRetry<T>(
       const result = await operation();
       
       if (attempt > 1) {
-        console.log(`✅ [Retry] Operation succeeded on attempt ${attempt}`);
       }
       
       return result;

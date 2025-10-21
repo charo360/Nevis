@@ -62,7 +62,6 @@ export class CircuitBreaker {
         // Try to transition to half-open
         this.state = CircuitState.HALF_OPEN;
         this.successCount = 0;
-        console.log(`🟡 [Circuit Breaker: ${this.name}] Transitioning to HALF_OPEN`);
       }
     }
 
@@ -89,7 +88,6 @@ export class CircuitBreaker {
       if (this.successCount >= this.config.successThreshold) {
         this.state = CircuitState.CLOSED;
         this.failureCount = 0;
-        console.log(`🟢 [Circuit Breaker: ${this.name}] Circuit CLOSED - service recovered`);
       }
     } else if (this.state === CircuitState.CLOSED) {
       // Reset failure count on success in closed state
@@ -138,7 +136,6 @@ export class CircuitBreaker {
     this.failureCount = 0;
     this.successCount = 0;
     this.nextAttempt = 0;
-    console.log(`🔄 [Circuit Breaker: ${this.name}] Manually reset`);
   }
 
   /**
@@ -203,7 +200,6 @@ export class CircuitBreakerManager {
     for (const breaker of this.breakers.values()) {
       breaker.reset();
     }
-    console.log('🔄 [Circuit Breaker Manager] All circuits reset');
   }
 
   /**

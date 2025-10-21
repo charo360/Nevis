@@ -50,15 +50,6 @@ export async function POST(req: NextRequest): Promise<NextResponse<GoogleOAuthRe
                      ? 'https://crevo.app' 
                      : origin);
 
-    console.log('🌍 Environment detection:', {
-      NODE_ENV: process.env.NODE_ENV,
-      host,
-      protocol,
-      origin,
-      baseUrl,
-      NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL
-    });
-
     // Default and final redirect URL determination
     const defaultRedirectPath = '/auth/callback';
     const defaultRedirect = `${baseUrl}${defaultRedirectPath}`;
@@ -86,14 +77,6 @@ export async function POST(req: NextRequest): Promise<NextResponse<GoogleOAuthRe
         { status: 400 }
       );
     }
-
-    console.log('🔄 Initiating Google OAuth:', {
-      environment: process.env.NODE_ENV,
-      baseUrl,
-      redirectTo: finalRedirect,
-      origin,
-      userAgent: req.headers.get('user-agent')?.substring(0, 50) + '...'
-    });
 
     // Generate Google OAuth URL through Supabase
     const supabase = await createClient();
@@ -140,7 +123,6 @@ export async function POST(req: NextRequest): Promise<NextResponse<GoogleOAuthRe
       );
     }
 
-    console.log('✅ Google OAuth URL generated successfully');
     
     return NextResponse.json({
       success: true,

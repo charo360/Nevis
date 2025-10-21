@@ -21,7 +21,6 @@ async function convertLogoToDataUrl(logoUrl?: string): Promise<string | undefine
   // If it's a Supabase Storage URL, fetch and convert to base64
   if (logoUrl.startsWith('http')) {
     try {
-      console.log('🔄 [Revo 1.5 Actions] Converting logo URL to base64 for AI generation:', logoUrl.substring(0, 50) + '...');
 
       const response = await fetch(logoUrl);
       if (!response.ok) {
@@ -34,7 +33,6 @@ async function convertLogoToDataUrl(logoUrl?: string): Promise<string | undefine
       const mimeType = response.headers.get('content-type') || 'image/png';
       const dataUrl = `data:${mimeType};base64,${base64}`;
 
-      console.log('✅ [Revo 1.5 Actions] Logo converted to base64 successfully (' + buffer.byteLength + ' bytes)');
       return dataUrl;
     } catch (error) {
       console.error('❌ [Revo 1.5 Actions] Error converting logo URL to base64:', error);
@@ -62,25 +60,8 @@ export async function generateRevo15ContentAction(
   scheduledServices?: ScheduledService[]
 ): Promise<GeneratedPost> {
   try {
-    console.log('🎨 Revo 1.5: Starting content generation with logo support');
-    console.log('🔍 Brand Profile Logo Check:', {
-      businessName: brandProfile.businessName,
-      hasLogoDataUrl: !!brandProfile.logoDataUrl,
-      hasLogoUrl: !!brandProfile.logoUrl,
-      logoDataUrlLength: brandProfile.logoDataUrl?.length || 0,
-      logoUrlLength: brandProfile.logoUrl?.length || 0
-    });
 
     // NEW: Log scheduled services integration
-    console.log('📅 [Revo 1.5] Scheduled Services Integration:', {
-      hasScheduledServices: !!(scheduledServices && scheduledServices.length > 0),
-      scheduledServicesCount: scheduledServices?.length || 0,
-      todaysServicesCount: scheduledServices?.filter(s => s.isToday).length || 0,
-      upcomingServicesCount: scheduledServices?.filter(s => s.isUpcoming).length || 0,
-      scheduledServiceNames: scheduledServices?.map(s => s.serviceName) || [],
-      todaysServiceNames: scheduledServices?.filter(s => s.isToday).map(s => s.serviceName) || [],
-      upcomingServiceNames: scheduledServices?.filter(s => s.isUpcoming).map(s => s.serviceName) || []
-    });
 
     // Convert logo URL to base64 data URL (matching Revo 1.0 approach)
     const convertedLogoDataUrl = await convertLogoToDataUrl(brandProfile.logoUrl || brandProfile.logoDataUrl);
@@ -103,14 +84,6 @@ export async function generateRevo15ContentAction(
       logoUrl: brandProfile.logoUrl,
       // NEW: Scheduled services integration
       scheduledServices: scheduledServices || []
-    });
-
-    console.log('✅ Revo 1.5: Content generation completed');
-    console.log('📊 Result summary:', {
-      hasImageUrl: !!result.imageUrl,
-      model: result.model,
-      qualityScore: result.qualityScore,
-      processingTime: result.processingTime
     });
 
     // NO FALLBACKS - All content must come from Pure AI
@@ -193,7 +166,6 @@ export async function testRevo15LogoIntegrationAction(brandProfile: BrandProfile
   message: string;
 }> {
   try {
-    console.log('🧪 Testing Revo 1.5 logo integration...');
 
     let logoProcessed = false;
     let logoSource: 'dataUrl' | 'storageUrl' | 'none' = 'none';

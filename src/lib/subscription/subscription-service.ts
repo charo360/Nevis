@@ -37,7 +37,6 @@ export class SubscriptionService {
    */
   static async checkAccess(userId: string, feature: string): Promise<SubscriptionStatus> {
     try {
-      console.log(`🔐 Checking access for user ${userId} to feature ${feature}`);
 
       // Call the database function for comprehensive access check
       const { data, error } = await supabase.rpc('check_subscription_access', {
@@ -56,7 +55,6 @@ export class SubscriptionService {
       }
 
       const result = data[0];
-      console.log(`✅ Access check result:`, result);
 
       return {
         hasAccess: result.has_access,
@@ -151,7 +149,6 @@ export class SubscriptionService {
         return false;
       }
 
-      console.log('✅ Subscription created successfully');
       return true;
 
     } catch (error) {
@@ -197,7 +194,6 @@ export class SubscriptionService {
         return false;
       }
 
-      console.log('✅ Subscription canceled successfully');
       return true;
 
     } catch (error) {
@@ -229,7 +225,6 @@ export class SubscriptionService {
         return false;
       }
 
-      console.log(`✅ Trial initialized for user ${userId} (${trialDays} days)`);
       return true;
 
     } catch (error) {
@@ -257,7 +252,6 @@ export class SubscriptionService {
           metadata: metadata || {}
         });
 
-      console.log(`📊 Usage logged: ${feature} (${creditsUsed} credits)`);
     } catch (error) {
       console.error('❌ Failed to log usage:', error);
       // Don't throw - usage logging shouldn't break the main flow

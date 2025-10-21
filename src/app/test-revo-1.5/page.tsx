@@ -50,13 +50,6 @@ export default function TestRevo15Page() {
 
     setIsGenerating(true);
     try {
-      console.log('🧪 Testing Revo 1.5 content generation with brand:', {
-        businessName: currentBrand.businessName,
-        hasLogoDataUrl: !!currentBrand.logoDataUrl,
-        hasLogoUrl: !!currentBrand.logoUrl,
-        logoDataUrlLength: currentBrand.logoDataUrl?.length || 0,
-        logoUrlLength: currentBrand.logoUrl?.length || 0
-      });
 
       const result = await generateRevo15ContentAction(
         currentBrand as any,

@@ -28,11 +28,6 @@ export async function POST(request: NextRequest) {
       includePeopleInDesigns?: boolean;
     } = body;
 
-    console.log(`🚀 Quick Content API: Processing ${revoModel} request for ${platform}`);
-    console.log(`🔍 Brand Profile ID: ${(brandProfile as any)?.id || 'No ID'}`);
-    console.log(`📅 Scheduled Services Count: ${scheduledServices?.length || 0}`);
-    console.log(`📋 Scheduled Services: ${scheduledServices?.map(s => s.serviceName).join(', ') || 'None'}`);
-
     // Validate required parameters
     if (!brandProfile || !platform) {
       return NextResponse.json(
@@ -43,10 +38,6 @@ export async function POST(request: NextRequest) {
 
     // Use passed services directly - brand filtering should happen on frontend
     let brandSpecificServices: ScheduledService[] = scheduledServices || [];
-    console.log(`✅ Using provided services:`, {
-      serviceCount: brandSpecificServices.length,
-      serviceNames: brandSpecificServices.map(s => s.serviceName)
-    });
 
     let result;
 
@@ -71,12 +62,10 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized - please login' }, { status: 401 });
       }
 
-      console.log('✅ [QuickContent] Authenticated user:', user.id);
       const modelVersion: ModelVersion = revoModel === 'revo-1.5' ? 'revo-1.5' : 'revo-1.0';
 
       if (revoModel === 'revo-1.5') {
         // Use Revo 1.5 enhanced generation (no fallback - fix the real issue)
-        console.log('🔎 [QuickContent] Deducting credits for user', user.id, 'model', modelVersion, 'platform', platform);
         const wrapped = await withCreditTracking(
           {
             userId: user.id,
@@ -141,7 +130,6 @@ export async function POST(request: NextRequest) {
         const structuredImageText = imageTextComponents.join(' | ');
 
         // Wrap image+content generation under credit tracking to ensure deduction
-        console.log('🔎 [QuickContent] Deducting credits for user', user.id, 'model', modelVersion, 'platform', platform);
         const wrapped = await withCreditTracking(
           {
             userId: user.id,
@@ -230,7 +218,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`✅ Quick Content API: ${revoModel} generation successful`);
     return NextResponse.json(result);
   } catch (error) {
     console.error('❌ Quick Content API Error:', error);

@@ -34,7 +34,6 @@ export default function AuthPage() {
   // Check if there's an existing session when component mounts
   useEffect(() => {
     if (user) {
-      console.log('👤 Existing user detected on auth page:', user.email);
     }
   }, [user]);
 
@@ -87,13 +86,11 @@ export default function AuthPage() {
     }
 
     try {
-      console.log('🔐 Starting login process...');
       
       // First, let's try to determine if the email exists
       // We'll attempt a sign-in and analyze the error
       try {
         await signIn(signInData.email, signInData.password);
-        console.log('✅ Login successful, auth state should be updated');
 
         // Don't call refreshBrands immediately - let the brand context react to auth state changes
         // The brand context useEffect will handle loading brands when user state updates
@@ -105,7 +102,6 @@ export default function AuthPage() {
 
         // Small delay to ensure auth state is fully settled before navigation
         setTimeout(() => {
-          console.log('🚀 Navigating to dashboard...');
           router.push('/dashboard');
         }, 100);
         

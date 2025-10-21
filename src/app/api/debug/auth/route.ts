@@ -4,14 +4,11 @@ import { cookies } from 'next/headers';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('🔍 Starting debug...');
     
     const cookieStore = await cookies();
     const allCookies = cookieStore.getAll();
     
-    console.log('🍪 Total cookies received:', allCookies.length);
     allCookies.forEach(c => {
-      console.log(`  - ${c.name}: ${c.value.substring(0, 20)}${c.value.length > 20 ? '...' : ''}`);
     });
 
     // Find Supabase auth cookies
@@ -21,18 +18,13 @@ export async function GET(request: NextRequest) {
       c.name.includes('auth-token')
     );
 
-    console.log('� Supabase cookies found:', supabaseCookies.length);
     supabaseCookies.forEach(c => {
-      console.log(`  - ${c.name}`);
     });
 
     // Create server-side Supabase client with proper cookie handling
     const supabase = await createClient();
 
-    console.log('🔍 Attempting to get user...');
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    console.log('� User result:', user ? `Found: ${user.email} (${user.id})` : 'None');
-    console.log('❌ Error result:', authError?.message || 'None');
     
     return NextResponse.json({
       hasAuthHeader: !!request.headers.get('authorization'),

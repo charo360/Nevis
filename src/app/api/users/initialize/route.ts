@@ -24,8 +24,6 @@ export async function POST(req: NextRequest) {
 
     const userId = user.id;
 
-    console.log('🔄 Initializing user:', userId, user.email);
-
     // 1. Create user_credits record with 10 free credits (idempotent)
     try {
       const { data: existingCredits } = await supabase
@@ -52,7 +50,6 @@ export async function POST(req: NextRequest) {
         if (credError) {
           console.error('❌ Error creating user credits:', credError);
         } else {
-          console.log('✅ Granted 10 free credits to new user:', userId);
 
           // Record free trial transaction (optional, non-blocking)
           try {
@@ -70,7 +67,6 @@ export async function POST(req: NextRequest) {
           }
         }
       } else {
-        console.log('ℹ️  User already has credits, skipping initialization');
       }
     } catch (e) {
       console.error('❌ Error in credit initialization:', e);
@@ -88,7 +84,6 @@ export async function POST(req: NextRequest) {
       }, { 
         onConflict: 'user_id'
       });
-      console.log('✅ Set default plan to try-free for user:', userId);
     } catch (e) {
       console.warn('⚠️ Could not set subscription_plan (users table may not exist):', e.message);
     }

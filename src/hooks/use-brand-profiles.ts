@@ -42,7 +42,6 @@ export function useBrandProfiles() {
           console.warn('⚠️ No authentication token found, cannot load profiles');
           profiles = [];
         } else {
-          console.log('🔍 Loading brand profiles from Supabase via API...');
 
           // Use API route to load profiles with authentication
           const response = await fetch(`/api/brand-profiles?userId=${userId}`, {
@@ -53,7 +52,6 @@ export function useBrandProfiles() {
 
           if (response.ok) {
             profiles = await response.json();
-            console.log('✅ Loaded', profiles.length, 'brand profiles from MongoDB');
           } else {
             console.error('❌ Failed to load profiles:', response.status);
             profiles = [];
@@ -66,7 +64,6 @@ export function useBrandProfiles() {
         if (stored) {
           const profile = JSON.parse(stored);
           profiles = [profile];
-          console.log('📦 Loaded 1 profile from localStorage fallback');
         }
       }
 
@@ -102,8 +99,6 @@ export function useBrandProfiles() {
         throw new Error('Authentication token not found');
       }
 
-      console.log('💾 Saving brand profile to MongoDB via API...');
-
       // Save profile via API route with authentication
       const response = await fetch('/api/brand-profiles', {
         method: 'POST',
@@ -122,8 +117,6 @@ export function useBrandProfiles() {
 
       const result = await response.json();
       const profileId = result.id;
-
-      console.log('✅ Brand profile saved successfully:', profileId);
 
       // Reload profiles to get the updated list
       await loadProfiles();
@@ -159,8 +152,6 @@ export function useBrandProfiles() {
         throw new Error('Authentication token not found');
       }
 
-      console.log('🔄 Updating brand profile via API:', profileId);
-
       // Update profile via API route with authentication
       const response = await fetch(`/api/brand-profiles/${profileId}`, {
         method: 'PATCH',
@@ -176,8 +167,6 @@ export function useBrandProfiles() {
         console.error('❌ Failed to update brand profile:', response.status, errorData);
         throw new Error(errorData.error || `Failed to update profile (${response.status})`);
       }
-
-      console.log('✅ Brand profile updated successfully');
 
       // Update local state optimistically
       setState(prev => ({

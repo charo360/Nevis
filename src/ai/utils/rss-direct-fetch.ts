@@ -79,7 +79,6 @@ const RSS_FEEDS = {
  */
 async function fetchSingleRSSFeed(url: string): Promise<RSSArticle[]> {
   try {
-    console.log(`📡 [Direct RSS] Fetching: ${url}`);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
@@ -123,7 +122,6 @@ async function fetchSingleRSSFeed(url: string): Promise<RSSArticle[]> {
       }
     }
 
-    console.log(`✅ [Direct RSS] Got ${articles.length} articles from ${url}`);
     return articles;
   } catch (error) {
     if (error.name === 'AbortError') {
@@ -154,7 +152,6 @@ function extractKeywords(text: string): string[] {
  */
 export async function fetchRSSFeedDirect(category: string, limit: number = 10): Promise<RSSArticle[]> {
   try {
-    console.log(`🔍 [Direct RSS] Fetching category: ${category}, limit: ${limit} via server API`);
 
     // Use server-side API route to avoid CORS issues
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001';
@@ -189,14 +186,12 @@ export async function fetchRSSFeedDirect(category: string, limit: number = 10): 
       source: article.source || 'unknown'
     }));
 
-    console.log(`✅ [Direct RSS] Got ${articles.length} articles for ${category} via server API`);
     return articles;
 
   } catch (error) {
     console.error(`❌ [Direct RSS] Server API error for category ${category}:`, error);
 
     // Fallback: return empty array instead of trying direct fetch to avoid CORS
-    console.log(`🔄 [Direct RSS] Returning empty array as fallback for ${category}`);
     return [];
   }
 }

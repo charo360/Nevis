@@ -38,18 +38,15 @@ export function BrandProvider({ children }: BrandProviderProps) {
     setError(null);
 
     try {
-      console.log('🔄 Loading brands for user:', user.userId);
       const userBrands = await supabaseService.getBrandProfiles(user.userId);
       
       setBrands(userBrands);
-      console.log('✅ Loaded brands:', userBrands.length);
 
       // Auto-select the first brand if none is selected
       if (userBrands.length > 0 && !selectedBrand) {
         const firstBrand = userBrands[0];
         setSelectedBrand(firstBrand);
         localStorage.setItem('selectedBrandId', firstBrand.id);
-        console.log('🎯 Auto-selected first brand:', firstBrand.business_name);
       }
     } catch (err) {
       console.error('❌ Error loading brands:', err);
@@ -77,7 +74,6 @@ export function BrandProvider({ children }: BrandProviderProps) {
       const savedBrand = brands.find(b => b.id === savedBrandId);
       if (savedBrand) {
         setSelectedBrand(savedBrand);
-        console.log('🔄 Restored selected brand:', savedBrand.business_name);
       }
     }
   }, [brands]);
@@ -88,7 +84,6 @@ export function BrandProvider({ children }: BrandProviderProps) {
     if (brand) {
       setSelectedBrand(brand);
       localStorage.setItem('selectedBrandId', brandId);
-      console.log('🎯 Selected brand:', brand.business_name);
     }
   }, [brands]);
 
@@ -108,7 +103,6 @@ export function BrandProvider({ children }: BrandProviderProps) {
       setLoading(true);
       setError(null);
 
-      console.log('💾 Saving brand:', brandData.business_name);
       
       // Convert to the format expected by supabaseService
       const brandProfile = {
@@ -134,7 +128,6 @@ export function BrandProvider({ children }: BrandProviderProps) {
       );
 
       if (savedBrand) {
-        console.log('✅ Brand saved:', savedBrand.id);
         await refreshBrands();
         return savedBrand.id;
       }
@@ -157,11 +150,9 @@ export function BrandProvider({ children }: BrandProviderProps) {
       setLoading(true);
       setError(null);
 
-      console.log('🗑️ Deleting brand:', brandId);
       const success = await supabaseService.deleteBrandProfile(brandId);
 
       if (success) {
-        console.log('✅ Brand deleted');
         
         // If the deleted brand was selected, clear selection
         if (selectedBrand?.id === brandId) {

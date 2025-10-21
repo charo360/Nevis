@@ -19,13 +19,6 @@ export default function TestLogoDebugPage() {
 
     setIsGenerating(true);
     try {
-      console.log('🧪 Testing logo generation with brand:', {
-        businessName: currentBrand.businessName,
-        hasLogoDataUrl: !!currentBrand.logoDataUrl,
-        hasLogoUrl: !!currentBrand.logoUrl,
-        logoDataUrlLength: currentBrand.logoDataUrl?.length || 0,
-        logoUrlLength: currentBrand.logoUrl?.length || 0
-      });
 
       const result = await generateRevo2ContentAction(
         currentBrand as any,
@@ -147,10 +140,10 @@ export default function TestLogoDebugPage() {
                 🔄 Refresh Page (Test Persistence)
               </Button>
               <Button 
-                onClick={() => console.log('Current brand after refresh:', currentBrand)}
+                onClick={() => alert(JSON.stringify(currentBrand, null, 2))}
                 variant="outline"
               >
-                📋 Log Current Brand to Console
+                📋 Show Current Brand Data
               </Button>
             </div>
 

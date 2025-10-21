@@ -3,7 +3,6 @@ import type { BrandProfile } from '@/lib/types';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('🔍 [Debug Revo 1.0 Contacts] Starting comprehensive contact information debug...');
 
     // Test brand profile with real contact information
     const testBrandProfile: BrandProfile = {
@@ -25,14 +24,7 @@ export async function GET(request: NextRequest) {
       targetAudience: 'Kenyan professionals and businesses'
     };
 
-    console.log('🔍 [Debug Revo 1.0 Contacts] Test brand profile:', {
-      businessName: testBrandProfile.businessName,
-      contactInfo: testBrandProfile.contactInfo,
-      websiteUrl: testBrandProfile.websiteUrl
-    });
-
     // Step 1: Test the content generation flow
-    console.log('🔍 [Debug Revo 1.0 Contacts] Step 1: Testing content generation flow...');
     
     const { generateRevo10Content } = await import('../../../ai/revo-1.0-service');
     
@@ -56,19 +48,7 @@ export async function GET(request: NextRequest) {
       websiteUrl: testBrandProfile.websiteUrl
     });
 
-    console.log('🔍 [Debug Revo 1.0 Contacts] Content generation result:', {
-      hasContent: !!contentResult.content,
-      hasCatchyWords: !!contentResult.catchyWords,
-      hasSubheadline: !!contentResult.subheadline,
-      hasCallToAction: !!contentResult.callToAction,
-      contentPreview: contentResult.content?.substring(0, 100) + '...',
-      catchyWords: contentResult.catchyWords,
-      subheadline: contentResult.subheadline,
-      callToAction: contentResult.callToAction
-    });
-
     // Step 2: Test the image generation flow directly
-    console.log('🔍 [Debug Revo 1.0 Contacts] Step 2: Testing image generation flow...');
     
     const { generateRevo10Image } = await import('../../../ai/revo-1.0-service');
     
@@ -78,14 +58,6 @@ export async function GET(request: NextRequest) {
     if (contentResult.subheadline) imageTextComponents.push(contentResult.subheadline);
     if (contentResult.callToAction) imageTextComponents.push(contentResult.callToAction);
     const structuredImageText = imageTextComponents.join(' | ');
-
-    console.log('🔍 [Debug Revo 1.0 Contacts] Image generation input:', {
-      businessName: testBrandProfile.businessName,
-      includeContacts: true,
-      contactInfo: testBrandProfile.contactInfo,
-      websiteUrl: testBrandProfile.websiteUrl,
-      structuredImageText: structuredImageText
-    });
 
     // This will trigger the actual image generation and show us the contact information flow
     try {
@@ -107,11 +79,6 @@ export async function GET(request: NextRequest) {
         includeContacts: true,
         contactInfo: testBrandProfile.contactInfo,
         websiteUrl: testBrandProfile.websiteUrl
-      });
-
-      console.log('🔍 [Debug Revo 1.0 Contacts] Image generation successful:', {
-        hasImageUrl: !!imageResult.imageUrl,
-        imageUrlLength: imageResult.imageUrl?.length || 0
       });
 
       return NextResponse.json({

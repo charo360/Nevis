@@ -94,7 +94,6 @@ export class ContentCache<T = any> {
     this.stats.hits++;
     this.updateStats();
 
-    console.log(`✅ [Cache] Hit for key: ${cacheKey.substring(0, 8)}... (${entry.hits} hits)`);
     return entry.data;
   }
 
@@ -124,7 +123,6 @@ export class ContentCache<T = any> {
     this.stats.size = this.cache.size;
     this.updateStats();
 
-    console.log(`💾 [Cache] Set key: ${cacheKey.substring(0, 8)}... (TTL: ${entryTTL}ms)`);
   }
 
   /**
@@ -139,7 +137,6 @@ export class ContentCache<T = any> {
       this.stats.deletes++;
       this.stats.size = this.cache.size;
       this.updateStats();
-      console.log(`🗑️ [Cache] Deleted key: ${cacheKey.substring(0, 8)}...`);
     }
 
     return deleted;
@@ -159,7 +156,6 @@ export class ContentCache<T = any> {
       return cached;
     }
 
-    console.log(`🔄 [Cache] Miss - fetching data for key: ${typeof key === 'string' ? key.substring(0, 8) : 'generated'}...`);
     const data = await fetcher();
     this.set(key, data, ttl);
     
@@ -184,7 +180,6 @@ export class ContentCache<T = any> {
       this.cache.delete(oldestKey);
       this.accessOrder.delete(oldestKey);
       this.stats.evictions++;
-      console.log(`🚮 [Cache] Evicted LRU key: ${oldestKey.substring(0, 8)}...`);
     }
   }
 
@@ -206,7 +201,6 @@ export class ContentCache<T = any> {
     if (cleaned > 0) {
       this.stats.size = this.cache.size;
       this.updateStats();
-      console.log(`🧹 [Cache] Cleaned up ${cleaned} expired entries`);
     }
   }
 
@@ -268,7 +262,6 @@ export class ContentCache<T = any> {
     this.accessOrder.clear();
     this.stats.size = 0;
     this.updateStats();
-    console.log('🧽 [Cache] Cleared all entries');
   }
 
   /**
@@ -353,7 +346,6 @@ export class CacheManager {
     for (const cache of this.caches.values()) {
       cache.clear();
     }
-    console.log('🧽 [Cache Manager] Cleared all caches');
   }
 
   /**

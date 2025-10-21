@@ -25,7 +25,6 @@ async function convertLogoToDataUrl(logoUrl?: string): Promise<string | undefine
   // If it's a Supabase Storage URL, fetch and convert to base64
   if (logoUrl.startsWith('http')) {
     try {
-      console.log('🔄 Converting logo URL to base64 for AI generation:', logoUrl.substring(0, 50) + '...');
 
       const response = await fetch(logoUrl);
       if (!response.ok) {
@@ -38,7 +37,6 @@ async function convertLogoToDataUrl(logoUrl?: string): Promise<string | undefine
       const mimeType = response.headers.get('content-type') || 'image/png';
       const dataUrl = `data:${mimeType};base64,${base64}`;
 
-      console.log('✅ Logo converted to base64 successfully (' + buffer.byteLength + ' bytes)');
       return dataUrl;
     } catch (error) {
       console.error('❌ Error converting logo URL to base64:', error);
@@ -48,7 +46,6 @@ async function convertLogoToDataUrl(logoUrl?: string): Promise<string | undefine
 
   return undefined;
 }
-
 
 // --- AI Flow Actions ---
 
@@ -219,11 +216,6 @@ export async function generateContentAction(
   includePeopleInDesigns: boolean = true
 ): Promise<GeneratedPost> {
   try {
-    console.log('🎯 generateContentAction called with scheduled services:', {
-      scheduledServicesCount: scheduledServices?.length || 0,
-      scheduledServiceNames: scheduledServices?.map(s => s.serviceName) || [],
-      businessName: profile.businessName
-    });
 
     const today = new Date();
     const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long' });
@@ -257,14 +249,6 @@ export async function generateContentAction(
     };
 
     // Debug logging for contact information
-    console.log('🔍 [Actions] Contact Information Debug:', {
-      profileContactInfo: profile.contactInfo,
-      profileContactPhone: (profile as any).contactPhone,
-      profileContactEmail: (profile as any).contactEmail,
-      profileContactAddress: (profile as any).contactAddress,
-      enhancedContactInfo: enhancedProfile.contactInfo,
-      includeContacts: brandConsistency?.includeContacts
-    });
 
     // Convert arrays to newline-separated strings for AI processing
     const keyFeaturesString = Array.isArray(profile.keyFeatures)
@@ -284,26 +268,16 @@ export async function generateContentAction(
       ).join('\n')
       : profile.services || '';
 
-
-
     // Ensure model registry is initialized
     if (!modelRegistry.isInitialized()) {
       await modelRegistry.initialize();
     }
-
 
     // Use Revo 1.0 model through the registry for enhanced Gemini 2.5 Flash Image Preview
     const revo10Model = modelRegistry.getModel('revo-1.0');
     if (!revo10Model) {
       throw new Error('Revo 1.0 model not available');
     }
-
-
-    console.log('🔍 [Actions] People Toggle Debug:', {
-      includePeopleInDesignsParam: includePeopleInDesigns,
-      includePeopleInDesignsType: typeof includePeopleInDesigns,
-      businessName: profile.businessName
-    });
 
     const generationRequest = {
       modelId: 'revo-1.0',
@@ -343,11 +317,6 @@ export async function generateContentAction(
         aspectRatio: getAspectRatioForPlatform(platform),
       }]
     };
-
-    console.log('🔍 [Actions] Generation Request People Toggle:', {
-      includePeople: generationRequest.includePeople,
-      includePeopleType: typeof generationRequest.includePeople
-    });
 
     const result = await revo10Model.contentGenerator.generateContent(generationRequest);
 
@@ -411,7 +380,6 @@ export async function generateVideoContentAction(
   }
 }
 
-
 export async function generateCreativeAssetAction(
   prompt: string,
   outputType: 'image' | 'video',
@@ -428,14 +396,6 @@ export async function generateCreativeAssetAction(
   }
 ): Promise<CreativeAsset> {
   try {
-    console.log('🎨 [Creative Studio Action] Called with:', {
-      prompt,
-      outputType,
-      preferredModel,
-      useBrandProfile,
-      brandProfileName: brandProfile?.businessName,
-      hasReferenceAsset: !!referenceAssetUrl
-    });
 
     // Enforce credit deduction for creative studio generations
     const supabaseServer = await createClient();
@@ -480,7 +440,6 @@ export async function generateCreativeAssetAction(
     // Upload image to Supabase storage if it's a data URL
     if (result.imageUrl && result.imageUrl.startsWith('data:image/')) {
       try {
-        console.log('🔄 Uploading generated image to Supabase storage...');
 
         // Convert data URL to buffer
         const base64Data = result.imageUrl.split(',')[1];
@@ -500,14 +459,11 @@ export async function generateCreativeAssetAction(
         );
 
         if (uploadResult) {
-          console.log('✅ Image uploaded to Supabase:', uploadResult.url);
           // Replace data URL with Supabase URL
           result.imageUrl = uploadResult.url;
         } else {
-          console.log('⚠️ Supabase upload failed, keeping data URL');
         }
       } catch (uploadError) {
-        console.log('⚠️ Image upload error, keeping data URL:', uploadError);
         // Keep the original data URL if upload fails
       }
     }
@@ -561,7 +517,6 @@ export async function generateEnhancedDesignAction(
       finalImageText = components.join('\n');
     }
 
-
     // Try Gemini 2.5 first (best quality), then fallback to OpenAI, then Gemini 2.5 Flash Image Preview
     let result;
 
@@ -579,7 +534,6 @@ export async function generateEnhancedDesignAction(
         useLocalLanguage,
         designReferences: uploadedImageUrl ? [uploadedImageUrl] : undefined,
       });
-
 
     } catch (gemini25Error) {
 
@@ -618,14 +572,12 @@ export async function generateEnhancedDesignAction(
       }
     }
 
-
     return {
       imageUrl: result.imageUrl,
       qualityScore: result.qualityScore,
       enhancementsApplied: result.enhancementsApplied,
       processingTime: result.processingTime
     };
-
 
   } catch (error) {
     throw new Error((error as Error).message);
@@ -652,7 +604,6 @@ export async function generateGeminiHDDesignAction(
     if (!brandProfile) {
       throw new Error('Brand profile is required for Gemini 2.5 Flash Image Preview design generation');
     }
-
 
     // Temporarily disabled due to syntax errors
     // const { generateGeminiHDEnhancedDesignWithFallback } = await import('@/ai/gemini-hd-enhanced-design');
@@ -722,7 +673,6 @@ export async function generateContentWithArtifactsAction(
         await artifactsService.trackUsage(artifact.id, 'quick-content');
       }
     }
-
 
     // Generate base content first
     const basePost = await generateContentAction(profile, platform, brandConsistency, useLocalLanguage);

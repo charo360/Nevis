@@ -49,7 +49,6 @@ export class PureAIContentGenerator {
    * Generate content using Pure AI approach with Gemini backend (DISABLED - Using OpenAI instead)
    */
   static async generateContent(request: PureAIRequest): Promise<PureAIResponse> {
-    console.log('🚀 [Pure AI] Gemini disabled - Using OpenAI instead');
     
     // Force fallback to OpenAI since Gemini has too many issues
     return this.generateContentWithOpenAI(request);
@@ -59,7 +58,6 @@ export class PureAIContentGenerator {
    * Generate content using Pure AI approach with OpenAI backend (fallback)
    */
   static async generateContentWithOpenAI(request: PureAIRequest): Promise<PureAIResponse> {
-    console.log('🚀 [Pure AI] Starting content generation with OpenAI');
     
     const openAIKey = process.env.OPENAI_API_KEY;
     if (!openAIKey) {
@@ -82,8 +80,6 @@ export class PureAIContentGenerator {
         throw new Error('Empty response from OpenAI');
       }
 
-      console.log('✅ [Pure AI] OpenAI response received:', content.substring(0, 200) + '...');
-
       // Simple JSON extraction
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
@@ -92,7 +88,6 @@ export class PureAIContentGenerator {
 
       const jsonString = jsonMatch[0];
       const parsed = JSON.parse(jsonString);
-      console.log('✅ [Pure AI] OpenAI JSON parsing successful');
       
       // Validate and adjust word counts
       if (parsed.content) {
@@ -121,14 +116,12 @@ export class PureAIContentGenerator {
     if (headlineWords > 6) {
       const words = content.headline.trim().split(/\s+/);
       adjustedHeadline = words.slice(0, 6).join(' ');
-      console.log(`⚠️ [Pure AI] Headline truncated from ${headlineWords} to 6 words: "${adjustedHeadline}"`);
     }
     
     // Truncate subheadline if over 14 words
     if (subheadlineWords > 14) {
       const words = content.subheadline.trim().split(/\s+/);
       adjustedSubheadline = words.slice(0, 14).join(' ');
-      console.log(`⚠️ [Pure AI] Subheadline truncated from ${subheadlineWords} to 14 words: "${adjustedSubheadline}"`);
     }
     
     return {

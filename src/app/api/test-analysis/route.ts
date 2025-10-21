@@ -6,7 +6,6 @@ export async function POST(request: NextRequest) {
   try {
     const { url } = await request.json();
     
-    console.log('🔍 Testing analysis for:', url);
     
     // First test the scraping
     const scrapeResponse = await fetch(`${request.nextUrl.origin}/api/scrape-website`, {
@@ -18,7 +17,6 @@ export async function POST(request: NextRequest) {
     });
     
     const scrapeResult = await scrapeResponse.json();
-    console.log('📄 Scraping result:', scrapeResult.success ? 'SUCCESS' : 'FAILED');
     
     if (!scrapeResponse.ok) {
       return NextResponse.json({
@@ -30,8 +28,6 @@ export async function POST(request: NextRequest) {
     }
     
     // Now test the AI analysis
-    console.log('🤖 Starting AI analysis...');
-    console.log('📝 Content length:', scrapeResult.content?.length || 0);
     
     try {
       const analysisResult = await analyzeBrand({
@@ -40,7 +36,6 @@ export async function POST(request: NextRequest) {
         websiteContent: scrapeResult.content
       });
       
-      console.log('✅ AI analysis completed successfully');
       
       return NextResponse.json({
         step: 'analysis',

@@ -26,15 +26,12 @@ export function useBrandPersistence(options: BrandPersistenceOptions = {}) {
         const savedBrandData = localStorage.getItem('currentBrandData');
         if (savedBrandData) {
           const parsedData = JSON.parse(savedBrandData);
-          console.log('🔄 Attempting to restore brand from full data:', parsedData.businessName || parsedData.name);
           
           // Find matching brand in current brands list
           const matchingBrand = brands.find(b => b.id === parsedData.id);
           if (matchingBrand) {
-            console.log('✅ Found matching brand in brands list, using fresh data');
             return matchingBrand;
           } else {
-            console.log('⚠️ No matching brand found, using saved data as fallback');
             return parsedData as CompleteBrandProfile;
           }
         }
@@ -45,7 +42,6 @@ export function useBrandPersistence(options: BrandPersistenceOptions = {}) {
       if (savedBrandId && brands.length > 0) {
         const savedBrand = brands.find(b => b.id === savedBrandId);
         if (savedBrand) {
-          console.log('🔄 Restored brand from ID:', savedBrand.businessName || savedBrand.name);
           return savedBrand;
         }
       }
@@ -61,7 +57,6 @@ export function useBrandPersistence(options: BrandPersistenceOptions = {}) {
   const forceBrandRestore = useCallback(() => {
     const restoredBrand = restoreBrandFromStorage();
     if (restoredBrand && (!currentBrand || currentBrand.id !== restoredBrand.id)) {
-      console.log('🔧 Force restoring brand:', restoredBrand.businessName || restoredBrand.name);
       selectBrand(restoredBrand);
       return true;
     }
@@ -76,7 +71,6 @@ export function useBrandPersistence(options: BrandPersistenceOptions = {}) {
     if (!currentBrand && brands.length > 0) {
       const restoredBrand = restoreBrandFromStorage();
       if (restoredBrand) {
-        console.log('🔄 Auto-restoring brand on mount:', restoredBrand.businessName || restoredBrand.name);
         selectBrand(restoredBrand);
       }
     }
@@ -129,7 +123,6 @@ export function useBrandPersistence(options: BrandPersistenceOptions = {}) {
       localStorage.setItem('brandColors', JSON.stringify(colorData));
     }
 
-    console.log('💾 Enhanced brand persistence completed for:', brand.businessName || brand.name);
   }, [persistFullData, persistColors]);
 
   // Listen for brand changes and persist automatically
@@ -157,7 +150,6 @@ export function useBrandPersistence(options: BrandPersistenceOptions = {}) {
     localStorage.removeItem('selectedBrandId');
     localStorage.removeItem('currentBrandData');
     localStorage.removeItem('brandColors');
-    console.log('🗑️ Cleared all persisted brand data');
   }, []);
 
   return {

@@ -78,7 +78,6 @@ export async function POST(req: Request) {
             payment_method: 'free_plan',
             metadata: { source: 'free-plan' }
           });
-        console.log('Free plan payment recorded:', doc);
       } catch (e) {
         console.error('Failed to record free plan payment:', e);
       }
@@ -166,13 +165,6 @@ export async function POST(req: Request) {
 
     // Note: Payment record will be created by webhook when payment completes
     // This prevents duplicate records and race conditions
-    console.log('Checkout session created:', {
-      session_id: session.id,
-      user_id: decoded.userId,
-      plan_id: isRegional45 ? 'regional_45' : planIdForLookup,
-      amount: unitAmount / 100,
-      credits_to_add: credits
-    });
 
     if (!session.url) {
       return NextResponse.json({ error: 'Failed to create checkout session' }, { status: 500 });

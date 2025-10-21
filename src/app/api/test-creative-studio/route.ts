@@ -3,15 +3,8 @@ import { generateCreativeAssetAction } from '@/app/actions';
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🧪 [Test Creative Studio] API endpoint called');
     
     const body = await request.json();
-    console.log('📤 [Test Creative Studio] Request payload:', {
-      prompt: body.prompt,
-      outputType: body.outputType,
-      preferredModel: body.preferredModel,
-      useBrandProfile: body.useBrandProfile
-    });
     
     // Call the actual Creative Studio action
     const result = await generateCreativeAssetAction(
@@ -25,12 +18,6 @@ export async function POST(request: NextRequest) {
       body.preferredModel
     );
     
-    console.log('✅ [Test Creative Studio] Action completed successfully');
-    console.log('📊 [Test Creative Studio] Result:', {
-      hasImageUrl: !!result.imageUrl,
-      hasVideoUrl: !!result.videoUrl,
-      aiExplanation: result.aiExplanation?.substring(0, 100) + '...'
-    });
     
     return NextResponse.json({
       success: true,

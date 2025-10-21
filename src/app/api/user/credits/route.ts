@@ -36,7 +36,6 @@ export async function GET(request: NextRequest) {
 
     // If no credits record exists, initialize with free trial credits (idempotent)
     if (!userCredits) {
-      console.log('🎁 New user detected! Creating free trial with 10 credits...');
       
       try {
         // Create user credits record with 10 free credits
@@ -79,8 +78,6 @@ export async function GET(request: NextRequest) {
           // Non-critical: payment_transactions may not have updated_at column or may not exist
           console.warn('⚠️ Could not create payment transaction record (non-critical):', txError);
         }
-
-        console.log('✅ Successfully created free trial credits for new user');
 
         return NextResponse.json({
           total_credits: 10,

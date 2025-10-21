@@ -33,7 +33,6 @@ export function filterContextualData(
   location: string,
   contentType: 'caption' | 'hashtags' | 'headline' | 'general' = 'general'
 ): FilteredContextualData {
-  console.log(`🔍 [Data Filter] Processing ${data.length} items for ${businessType} in ${location}`);
   
   const scoredData = data.map(item => ({
     item,
@@ -63,7 +62,6 @@ export function filterContextualData(
     }
   };
   
-  console.log(`✅ [Data Filter] Filtered: ${result.summary.highRelevanceCount} high, ${result.summary.mediumRelevanceCount} medium, ${result.summary.lowRelevanceCount} low relevance items`);
   
   return result;
 }

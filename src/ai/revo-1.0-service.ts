@@ -482,7 +482,6 @@ async function gatherRealTimeContext(
     // 🚀 ENHANCED: Get unified contextual data first
     let unifiedContext = null;
     try {
-      console.log('🧠 [Revo 1.0] Fetching unified contextual data...');
 
       unifiedContext = await unifiedKnowledgeService.getUnifiedContext({
         businessType,
@@ -495,14 +494,6 @@ async function gatherRealTimeContext(
         includeCorrelation: true,
         cachePreference: 'balanced',
         fallbackStrategy: 'graceful'
-      });
-
-      console.log('✅ [Revo 1.0] Unified context received:', {
-        rssArticles: unifiedContext.rssData.articles.length,
-        weatherCondition: unifiedContext.weatherData.current.condition,
-        culturalRegion: unifiedContext.culturalData.region,
-        localEvents: unifiedContext.eventsData.localEvents.length,
-        correlatedInsights: Object.values(unifiedContext.correlatedInsights).reduce((sum, arr) => sum + arr.length, 0)
       });
 
     } catch (error) {
@@ -526,14 +517,7 @@ async function gatherRealTimeContext(
         });
       });
 
-      console.log('📅 [Revo 1.0] Scheduled Services:', {
-        totalCount: scheduledServices.length,
-        todaysCount: scheduledServices.filter((s: any) => s.isToday).length,
-        upcomingCount: scheduledServices.filter((s: any) => s.isUpcoming).length,
-        services: scheduledServices.map((s: any) => s.serviceName)
-      });
     } else {
-      console.log('📅 [Revo 1.0] No scheduled services provided');
     }
 
     // 2. RSS DATA INTEGRATION (Enhanced with unified knowledge service)
@@ -558,12 +542,6 @@ async function gatherRealTimeContext(
         });
       });
 
-      console.log('📰 [Revo 1.0] RSS Data (Unified):', {
-        articlesCount: unifiedContext.rssData.articles.length,
-        trendsCount: unifiedContext.rssData.trends.length,
-        localNewsCount: unifiedContext.rssData.localNews.length,
-        industryNewsCount: unifiedContext.rssData.industryNews.length
-      });
     } else {
       // Fallback to legacy RSS fetching
       try {
@@ -581,12 +559,6 @@ async function gatherRealTimeContext(
           });
         });
 
-        console.log('📰 [Revo 1.0] RSS Data (Legacy):', {
-          articlesCount: rssData.articles.length,
-          trendsCount: rssData.trends.length,
-          localNewsCount: rssData.localNews.length,
-          industryNewsCount: rssData.industryNews.length
-        });
       } catch (error) {
         console.warn('Failed to fetch RSS data:', error);
 
@@ -618,11 +590,6 @@ async function gatherRealTimeContext(
         timestamp: new Date()
       });
 
-      console.log('🌤️ [Revo 1.0] Weather Data (Unified):', {
-        condition: unifiedContext.weatherData.current.condition,
-        temperature: unifiedContext.weatherData.current.temperature,
-        businessImpact: unifiedContext.weatherData.businessImpact
-      });
     } else {
       // Fallback to legacy weather fetching
       try {
@@ -667,11 +634,6 @@ async function gatherRealTimeContext(
         });
       });
 
-      console.log('🎉 [Revo 1.0] Events Data (Unified):', {
-        localEventsCount: unifiedContext.eventsData.localEvents.length,
-        businessRelevantCount: unifiedContext.eventsData.businessRelevantEvents.length,
-        relevanceScore: unifiedContext.eventsData.relevanceScore
-      });
     } else {
       // Fallback to legacy events fetching
       try {
@@ -703,13 +665,6 @@ async function gatherRealTimeContext(
       context.culturalContext = unifiedContext.culturalData;
       context.correlatedInsights = unifiedContext.correlatedInsights;
 
-      console.log('🌍 [Revo 1.0] Cultural Context (Unified):', {
-        region: unifiedContext.culturalData.region,
-        primaryLanguage: unifiedContext.culturalData.primaryLanguage,
-        culturalValues: unifiedContext.culturalData.culturalValues.length,
-        correlatedInsights: Object.values(unifiedContext.correlatedInsights).reduce((sum, arr) => sum + arr.length, 0)
-      });
-
       // Add correlated insights to context for enhanced content generation
       context.enhancedInsights = {
         weatherEventCorrelation: unifiedContext.correlatedInsights.weatherEventCorrelation,
@@ -738,12 +693,6 @@ async function gatherRealTimeContext(
       const enhancedCulturalContext = getCulturalContext(location);
       if (enhancedCulturalContext) {
         context.enhancedCulturalContext = enhancedCulturalContext;
-        console.log('🌍 [Revo 1.0] Enhanced Cultural Context:', {
-          location: enhancedCulturalContext.location,
-          primaryLanguages: enhancedCulturalContext.primaryLanguages,
-          culturalValues: enhancedCulturalContext.culturalValues.slice(0, 3),
-          communicationStyle: enhancedCulturalContext.communicationStyle
-        });
       }
     } catch (error) {
       console.warn('Failed to load enhanced cultural intelligence:', error);
@@ -770,12 +719,6 @@ async function gatherRealTimeContext(
       context.relevanceInsights = filteredContext.insights;
       context.relevanceSummary = filteredContext.summary;
 
-      console.log('🎯 [Revo 1.0] Relevance Filtering:', {
-        totalData: contextualData.length,
-        highRelevance: filteredContext.highRelevance.length,
-        mediumRelevance: filteredContext.mediumRelevance.length,
-        insights: filteredContext.insights
-      });
     }
 
     return context;
@@ -813,15 +756,6 @@ function shouldIncludePeopleInDesign(businessType: string, location: string, vis
   const businessTypeLower = businessType.toLowerCase();
   const matchesBusinessType = peopleBusinessTypes.some(type => businessTypeLower.includes(type));
   const matchesVisualStyle = visualStyle === 'lifestyle' || visualStyle === 'authentic';
-
-  console.log('🔍 [People Toggle Debug] Business type matching:', {
-    businessType: businessType,
-    businessTypeLower: businessTypeLower,
-    visualStyle: visualStyle,
-    matchesBusinessType: matchesBusinessType,
-    matchesVisualStyle: matchesVisualStyle,
-    finalResult: matchesBusinessType || matchesVisualStyle
-  });
 
   return matchesBusinessType || matchesVisualStyle;
 }
@@ -2195,7 +2129,6 @@ const REVO_1_0_TEXT_MODEL = 'gemini-2.5-flash'; // Direct Vertex AI model
 
 // Direct Vertex AI function (no proxy dependencies)
 async function generateContentDirect(promptOrParts: string | any[], modelName: string, isImageGeneration: boolean): Promise<any> {
-  console.log('🔄 Revo 1.0: Using direct Vertex AI');
 
   // Check if Vertex AI is enabled
   if (!process.env.VERTEX_AI_ENABLED || process.env.VERTEX_AI_ENABLED !== 'true') {
@@ -2223,13 +2156,11 @@ async function generateContentDirect(promptOrParts: string | any[], modelName: s
           const firstImage = imageParts[0];
           const mimeType = firstImage.inlineData.mimeType || 'image/png';
           logoImage = `data:${mimeType};base64,${firstImage.inlineData.data}`;
-          console.log('🖼️ Revo 1.0: Logo data extracted for Vertex AI');
         }
       } else {
         prompt = promptOrParts;
       }
 
-      console.log(`🔄 Revo 1.0: Generating image with Vertex AI model ${modelName}`);
       const result = await getVertexAIClient().generateImage(prompt, modelName, {
         temperature: 0.7,
         maxOutputTokens: 8192,
@@ -2262,7 +2193,6 @@ async function generateContentDirect(promptOrParts: string | any[], modelName: s
         prompt = promptOrParts;
       }
 
-      console.log(`🔄 Revo 1.0: Generating text with Vertex AI model ${modelName}`);
       const result = await getVertexAIClient().generateText(prompt, modelName, {
         temperature: 0.7,
         maxOutputTokens: 8192
@@ -2283,7 +2213,6 @@ async function generateContentDirect(promptOrParts: string | any[], modelName: s
 
 // Direct Vertex AI function (replaces proxy routing)
 async function generateContentWithProxy(promptOrParts: string | any[], modelName: string, isImageGeneration: boolean = false): Promise<any> {
-  console.log(`🔄 Revo 1.0: Using direct Vertex AI for ${isImageGeneration ? 'image' : 'text'} generation with ${modelName}`);
   return await generateContentDirect(promptOrParts, modelName, isImageGeneration);
 }
 
@@ -2343,7 +2272,6 @@ export async function generateRevo10Content(input: {
   try {
     // Auto-detect platform-specific aspect ratio
     const aspectRatio = getPlatformAspectRatio(input.platform);
-    console.log(`🎯 Revo 1.0: Using ${aspectRatio} aspect ratio for ${input.platform}`);
 
     // Convert input to BusinessProfile for advanced analysis
     const businessProfile: BusinessProfile = {
@@ -2434,8 +2362,6 @@ ${hasProductSpecs ? `
 - Balance local context - mention location strategically but don't overemphasize for broader market appeal
 - DO NOT mention other business services not listed above`;
 
-        console.log('🎯 [Revo 1.0] Content focusing on TODAY\'S services:', todaysServices.map((s: any) => s.serviceName));
-        console.log('🛍️ [Revo 1.0] Product specs detected:', hasProductSpecs);
       } else if (upcomingServices.length > 0) {
         serviceFocus = upcomingServices.map((s: any) => s.serviceName).join(', ');
         serviceContext = `\n📅 UPCOMING SERVICES (Build anticipation for these services):
@@ -2445,23 +2371,13 @@ ${upcomingServices.map((s: any) => `- ${s.serviceName} (in ${s.daysUntil} days):
 - Focus on creating excitement for upcoming product launches
 - Highlight key specifications and expected pricing if available
 - Use anticipation language: "coming soon", "get ready", "pre-order now"`;
-        console.log('📅 [Revo 1.0] Content focusing on UPCOMING services:', upcomingServices.map((s: any) => s.serviceName));
       }
     } else {
-      console.log('🏢 [Revo 1.0] Using general brand services (no scheduled services)');
     }
 
     // Direct Vertex AI model initialization
 
     // Debug logging for contact information
-    console.log('🔍 [Revo 1.0] Contact Information Debug:', {
-      includeContacts: input.includeContacts,
-      contactInfo: input.contactInfo,
-      websiteUrl: input.websiteUrl,
-      hasPhone: !!input.contactInfo?.phone,
-      hasEmail: !!input.contactInfo?.email,
-      hasAddress: !!input.contactInfo?.address
-    });
 
     // Store original contact info for image generation, but remove from content generation
     const originalContactInfo = input.contactInfo;
@@ -2479,13 +2395,6 @@ ${upcomingServices.map((s: any) => `- ${s.serviceName} (in ${s.daysUntil} days):
     // Generate product-specific language BEFORE template replacement
     const todaysServices = scheduledServices ? scheduledServices.filter((s: any) => s.isToday).map((s: any) => s.serviceName) : [];
     const productLanguage = generateProductSpecificLanguage(todaysServices);
-
-    console.log('🎯 [Revo 1.0] Product-Specific Language:', {
-      primaryProduct: productLanguage.primaryProduct,
-      specificLanguage: productLanguage.specificLanguage,
-      todaysServices: todaysServices.slice(0, 3), // Show first 3 services
-      detectedCategory: todaysServices.length > 0 ? detectProductCategory(todaysServices[0])?.category : 'none'
-    });
 
     // Build the content generation prompt with enhanced brand context (using contact-free input)
     const contentPrompt = revo10Prompts.CONTENT_USER_PROMPT_TEMPLATE
@@ -2568,15 +2477,6 @@ ${realTimeContext.highRelevanceData.map((item: any) => {
     }
 
     // Debug logging for the enhanced prompt
-    console.log('🔍 [Revo 1.0] Enhanced Content Prompt:', {
-      hasRSSData: !!(realTimeContext.rssData && realTimeContext.rssData.articles.length > 0),
-      rssArticlesCount: realTimeContext.rssData?.articles.length || 0,
-      hasRelevanceInsights: !!(realTimeContext.relevanceInsights && realTimeContext.relevanceInsights.length > 0),
-      highRelevanceDataCount: realTimeContext.highRelevanceData?.length || 0,
-      scheduledServicesCount: scheduledServices.length,
-      promptLength: enhancedContentPrompt.length
-    });
-
 
     // 🎨 CREATIVE CAPTION GENERATION: Apply creative enhancement system
 
@@ -2585,16 +2485,13 @@ ${realTimeContext.highRelevanceData.map((item: any) => {
     const randomSeed = Math.floor(Math.random() * 10000) + Date.now();
     const uniqueContentVariation = generateUniqueContentVariation(input.businessType, input.location, randomSeed % 1000);
 
-
     // 🎯 STRATEGIC LOCATION MENTION SYSTEM
     // Only 40% of content should include location references for variety and broader market appeal
     const shouldIncludeLocationContext = Math.random() < 0.40; // 40% chance for location mentions
-    console.log('🌍 [Revo 1.0] Strategic location mention:', shouldIncludeLocationContext ? 'ENABLED' : 'DISABLED (product/service focus)');
 
     // 🛍️ STRATEGIC PRODUCT SPECIFICATION USAGE SYSTEM
     // Only 50% of content should prominently feature product specifications for variety
     const shouldUseProductSpecs = Math.random() < 0.50; // 50% chance for product spec focus
-    console.log('📱 [Revo 1.0] Strategic product spec usage:', shouldUseProductSpecs ? 'ENABLED (technical focus)' : 'DISABLED (emotional/lifestyle focus)');
 
     // 🎯 NEW: Generate business-specific content strategy with enhanced product focus
 
@@ -2674,7 +2571,6 @@ ${realTimeContext.highRelevanceData.map((item: any) => {
 
     // Generate strategic content plan based on business type and goals (dynamic based on product specs)
     const contentGoal = businessDetails.salesFocus ? 'conversion' : 'awareness';
-    console.log('🎯 [Revo 1.0] Content goal:', contentGoal, '(Sales focus:', businessDetails.salesFocus, ')');
 
     const contentPlan = StrategicContentPlanner.generateBusinessSpecificContent(
       input.businessType,
@@ -2684,7 +2580,6 @@ ${realTimeContext.highRelevanceData.map((item: any) => {
       input.platform,
       contentGoal // Dynamic: 'conversion' for sales, 'awareness' for general
     );
-
 
     // 🎨 NEW: Generate business-specific headlines and subheadlines with AI
 
@@ -2738,22 +2633,13 @@ ${realTimeContext.highRelevanceData.map((item: any) => {
       };
     }
 
-
     // 📝 NEW: Generate AI-powered business-specific caption
 
     // 🔍 DEBUG: Local language parameter tracing
-    console.log('🌍 [Revo 1.0] Local Language Debug:', {
-      useLocalLanguage: input.useLocalLanguage || false,
-      location: contentGenerationInput.location,
-      hasLocalLanguageContext: !!realTimeContext.localLanguage,
-      localLanguageContext: realTimeContext.localLanguage
-    });
 
     // 🚨 ALERT: Make this debug message very visible
     if (input.useLocalLanguage) {
-      console.log('🚨🌍 REVO 1.0 LOCAL LANGUAGE IS ENABLED! Should generate local language content for:', contentGenerationInput.location);
     } else {
-      console.log('❌🌍 REVO 1.0 LOCAL LANGUAGE IS DISABLED - English only');
     }
 
     let businessCaption;
@@ -2787,7 +2673,6 @@ ${realTimeContext.highRelevanceData.map((item: any) => {
         callToAction: 'Contact us today to learn more'
       };
     }
-
 
     // 🎯 BUSINESS-SPECIFIC CAPTION GENERATION COMPLETE
 
@@ -2848,14 +2733,6 @@ ${realTimeContext.highRelevanceData.map((item: any) => {
 
       const cohesionAnalysis = analyzeContentCohesion(contentElements);
 
-      console.log('🎨 [Revo 1.0] Content Cohesion Analysis:', {
-        cohesionScore: cohesionAnalysis.cohesionScore,
-        primaryTheme: cohesionAnalysis.theme?.primaryTheme,
-        emotionalTone: cohesionAnalysis.theme?.emotionalTone,
-        issuesCount: cohesionAnalysis.issues?.length || 0,
-        suggestionsCount: cohesionAnalysis.suggestions?.length || 0
-      });
-
       // Add cohesion data to the final content
       finalContent.cohesionAnalysis = {
         score: cohesionAnalysis.cohesionScore,
@@ -2870,7 +2747,6 @@ ${realTimeContext.highRelevanceData.map((item: any) => {
 
     // 🔤 SPELL CHECK: Ensure headlines and subheadlines are spell-checked before image generation
     try {
-      console.log('🔤 [Revo 1.0] Running spell check on headlines and subheadlines...');
 
       const spellCheckedContent = await ContentQualityEnhancer.enhanceGeneratedContent({
         headline: finalContent.headline,
@@ -2886,34 +2762,28 @@ ${realTimeContext.highRelevanceData.map((item: any) => {
 
       // Update finalContent with spell-checked versions
       if (spellCheckedContent.headline !== finalContent.headline) {
-        console.log(`🔤 [Revo 1.0] Headline corrected: "${finalContent.headline}" → "${spellCheckedContent.headline}"`);
         finalContent.headline = spellCheckedContent.headline;
       }
 
       if (spellCheckedContent.subheadline !== finalContent.subheadline) {
-        console.log(`🔤 [Revo 1.0] Subheadline corrected: "${finalContent.subheadline}" → "${spellCheckedContent.subheadline}"`);
         finalContent.subheadline = spellCheckedContent.subheadline;
       }
 
       if (spellCheckedContent.caption !== finalContent.content) {
-        console.log(`🔤 [Revo 1.0] Caption corrected`);
         finalContent.content = spellCheckedContent.caption;
       }
 
       if (spellCheckedContent.catchyWords !== finalContent.catchyWords) {
-        console.log(`🔤 [Revo 1.0] Catchy words corrected`);
         finalContent.catchyWords = spellCheckedContent.catchyWords;
       }
 
       if (spellCheckedContent.callToAction !== finalContent.callToAction) {
-        console.log(`🔤 [Revo 1.0] Call-to-action corrected`);
         finalContent.callToAction = spellCheckedContent.callToAction;
       }
 
       // Add quality report if available
       if (spellCheckedContent.qualityReport) {
         finalContent.qualityReport = spellCheckedContent.qualityReport;
-        console.log(`🔤 [Revo 1.0] Content quality score: ${spellCheckedContent.qualityReport.overallQuality.score}/100`);
       }
 
     } catch (error) {
@@ -2971,7 +2841,6 @@ Describe your creative concept in natural, designer language. Focus on the creat
 
 Remember: You're a creative human designer, not an AI. Think with imagination and artistic vision.`;
 
-
     const result = await generateContentWithProxy([
       revo10Prompts.DESIGN_SYSTEM_PROMPT,
       designPrompt
@@ -2979,7 +2848,6 @@ Remember: You're a creative human designer, not an AI. Think with imagination an
 
     const response = await result.response;
     const design = response.text();
-
 
     const aspectRatio = getPlatformAspectRatio(input.platform);
 
@@ -2994,7 +2862,6 @@ Remember: You're a creative human designer, not an AI. Think with imagination an
     throw new Error(`Revo 1.0 design generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
-
 
 // Ensure website URL is displayed as www.example.com (strip protocol, add www., no trailing slash)
 function ensureWwwWebsiteUrl(url?: string): string {
@@ -3101,7 +2968,6 @@ ANTI-GENERIC REQUIREMENTS:
 - EXAMPLE STYLE: Like "PAYA: YOUR FUTURE, NOW!" - bold, prominent, unmissable
     ` : '';
 
-
     // Get advanced design features
     const businessDesignDNA = getBusinessDesignDNA(input.businessType);
     const platformOptimization = getPlatformOptimization(input.platform);
@@ -3111,13 +2977,6 @@ ANTI-GENERIC REQUIREMENTS:
     const shouldIncludePeople = input.includePeople === true ? true : (input.includePeople !== false && businessTypeSupportsePeople);
     const peopleInstructions = shouldIncludePeople ? getAdvancedPeopleInstructions(input.businessType, input.location || 'Global') : '';
 
-    console.log('👥 [Revo 1.0] People in Designs:', {
-      includePeopleToggle: input.includePeople,
-      businessTypeSupportsePeople: businessTypeSupportsePeople,
-      finalDecision: shouldIncludePeople,
-      hasPeopleInstructions: !!peopleInstructions,
-      businessType: input.businessType
-    });
     // Strategic location mention - use the same 40% system for consistency
     const shouldMentionLocationInDesign = Math.random() < 0.40; // 40% chance for location mentions in design
     const locationTextForDesign = shouldMentionLocationInDesign && input.location
@@ -3324,10 +3183,8 @@ TECHNICAL REQUIREMENTS:
     imagePrompt = injectCreativeRebellion(imagePrompt, designSeed);
     imagePrompt = addArtisticConstraints(imagePrompt, designSeed);
 
-
     if (input.creativeContext) {
     }
-
 
     // Note: Contact information will be added at the very end of the prompt for better AI attention
 
@@ -3343,17 +3200,7 @@ TECHNICAL REQUIREMENTS:
     const logoStorageUrl = (input as any).logoUrl || (input as any).logo_url;
     const logoUrl = logoDataUrl || logoStorageUrl;
 
-    console.log('🔍 Revo 1.0 Logo availability check:', {
-      businessName: input.businessName,
-      hasLogoDataUrl: !!logoDataUrl,
-      hasLogoStorageUrl: !!logoStorageUrl,
-      logoDataUrlLength: logoDataUrl?.length || 0,
-      logoStorageUrlLength: logoStorageUrl?.length || 0,
-      finalLogoUrl: logoUrl ? logoUrl.substring(0, 100) + '...' : 'None'
-    });
-
     if (logoUrl) {
-      console.log('🎨 Revo 1.0: Processing brand logo for generation using:', logoDataUrl ? 'base64 data' : 'storage URL');
 
       let logoBase64Data = '';
       let logoMimeType = 'image/png';
@@ -3363,18 +3210,15 @@ TECHNICAL REQUIREMENTS:
         const logoMatch = logoUrl.match(/^data:([^;]+);base64,(.+)$/);
         if (logoMatch) {
           [, logoMimeType, logoBase64Data] = logoMatch;
-          console.log('✅ Revo 1.0: Using base64 logo data directly');
         }
       } else if (logoUrl.startsWith('http')) {
         // Handle storage URL - fetch and convert to base64 (same as Revo 2.0)
-        console.log('📡 Revo 1.0: Fetching logo from storage URL...');
         try {
           const response = await fetch(logoUrl);
           if (response.ok) {
             const buffer = await response.arrayBuffer();
             logoBase64Data = Buffer.from(buffer).toString('base64');
             logoMimeType = response.headers.get('content-type') || 'image/png';
-            console.log(`✅ Revo 1.0: Logo fetched and converted to base64 (${buffer.byteLength} bytes)`);
           } else {
             console.warn(`⚠️  Revo 1.0: Failed to fetch logo from URL: ${response.status} ${response.statusText}`);
           }
@@ -3437,7 +3281,6 @@ LOGO INTEGRATION RULES:
 
 The client specifically requested their brand logo to be included. FAILURE TO INCLUDE THE LOGO IS UNACCEPTABLE.`;
           generationParts[1] = imagePrompt + logoPrompt;
-          console.log('✅ Revo 1.0: NORMALIZED logo integration prompt added');
         } catch (normalizationError) {
           console.warn('⚠️ Logo normalization failed, using original:', normalizationError);
           // Fallback to original logo processing
@@ -3452,7 +3295,6 @@ The client specifically requested their brand logo to be included. FAILURE TO IN
 You MUST include the exact brand logo image that was provided above in your design. This is not optional.
 ✅ CRITICAL: Design dimensions must remain exactly 992x1056px regardless of logo size.`;
           generationParts[1] = imagePrompt + logoPrompt;
-          console.log('✅ Revo 1.0: FALLBACK logo integration prompt added');
         }
       } else {
         console.error('❌ Revo 1.0: Logo processing failed:', {
@@ -3463,10 +3305,6 @@ You MUST include the exact brand logo image that was provided above in your desi
         });
       }
     } else {
-      console.log('ℹ️  Revo 1.0: No logo provided for generation:', {
-        businessName: input.businessName,
-        availableInputKeys: Object.keys(input).filter(key => key.toLowerCase().includes('logo'))
-      });
     }
 
     // Retry logic for 503 errors
@@ -3517,7 +3355,6 @@ You MUST include the exact brand logo image that was provided above in your desi
               // Check if it's a 503 error and we have retries left
               if (error.message && error.message.includes('503') && attempt < maxRetries) {
                 const waitTime = Math.pow(2, attempt) * 1000; // Exponential backoff
-                console.log(`⏳ [Revo 1.0] Waiting ${waitTime}ms before retry ${attempt + 1}...`);
                 await new Promise(resolve => setTimeout(resolve, waitTime));
                 continue;
               }
@@ -3554,21 +3391,11 @@ You MUST include the exact brand logo image that was provided above in your desi
     const parts = response.candidates?.[0]?.content?.parts || [];
     let imageUrl = '';
 
-    console.log('🔍 Revo 1.0: Analyzing Gemini response:', {
-      hasCandidates: !!response.candidates,
-      candidatesLength: response.candidates?.length || 0,
-      firstCandidateHasContent: !!response.candidates?.[0]?.content,
-      partsLength: parts.length,
-      partsTypes: parts.map(p => Object.keys(p))
-    });
-
     for (const part of parts) {
-      console.log('🔍 Revo 1.0: Checking part:', Object.keys(part));
       if (part.inlineData) {
         const imageData = part.inlineData.data;
         const mimeType = part.inlineData.mimeType;
         imageUrl = `data:${mimeType};base64,${imageData}`;
-        console.log(`✅ Revo 1.0: Found image data (${imageData.length} chars, ${mimeType})`);
         break;
       }
     }
@@ -3578,9 +3405,7 @@ You MUST include the exact brand logo image that was provided above in your desi
       let textResponse = '';
       try {
         textResponse = response.text();
-        console.log('🔍 Revo 1.0: Text response:', textResponse.substring(0, 200));
       } catch (e) {
-        console.log('🔍 Revo 1.0: No text response available');
       }
       throw new Error(`No image data generated by ${REVO_1_0_MODEL}. Response had ${parts.length} parts.`);
     }
@@ -3610,7 +3435,6 @@ You MUST include the exact brand logo image that was provided above in your desi
             const check2 = await ensureExactDimensions(strictImageUrl, expectedW, expectedH);
             if (check2.ok) {
               imageUrl = strictImageUrl;
-              console.log('✅ Revo 1.0: Strict regeneration produced correct dimensions.');
             } else {
               console.warn(`\u26a0\ufe0f Revo 1.0: Strict regeneration still mismatched (${check2.width}x${check2.height}). Using first image.`);
             }
@@ -3622,8 +3446,6 @@ You MUST include the exact brand logo image that was provided above in your desi
         }
       }
     }
-
-
 
     const aspectRatio = getPlatformAspectRatio(input.platform);
 
@@ -3962,7 +3784,6 @@ function generateLocalNewsContext(businessType: string, location: string): any[]
 
   return newsInsights.slice(0, 3);
 }
-
 
 function getCulturallyAppropriatePersonDescription(location: string): string {
   const locationKey = location.toLowerCase();

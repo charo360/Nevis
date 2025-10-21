@@ -89,14 +89,6 @@ export function getStripeConfig(): StripeConfig {
   const publishableKeyPrefix = publishableKey ? `${publishableKey.substring(0, 12)}...` : 'not set';
   const webhookSecretPrefix = webhookSecret ? `${webhookSecret.substring(0, 12)}...` : 'not set';
 
-  console.log(`🔧 Stripe Configuration Loaded:`, {
-    environment: config.environment,
-    isLive: config.isLive,
-    secretKey: secretKeyPrefix,
-    publishableKey: publishableKeyPrefix,
-    webhookSecret: webhookSecretPrefix
-  });
-
   return config;
 }
 

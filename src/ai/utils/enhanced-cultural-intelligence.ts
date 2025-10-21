@@ -207,12 +207,10 @@ export function getCulturalContext(location: string): CulturalContext | null {
   const country = extractCountryFromLocation(location);
   
   if (CULTURAL_DATABASE[country]) {
-    console.log(`🌍 [Cultural Intelligence] Found context for ${country}`);
     return CULTURAL_DATABASE[country];
   }
   
   // Fallback for other locations
-  console.log(`🌍 [Cultural Intelligence] No specific context for ${location}, using general approach`);
   return null;
 }
 

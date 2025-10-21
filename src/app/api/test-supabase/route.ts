@@ -7,9 +7,6 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('Testing Supabase connection...');
-    console.log('Supabase URL:', supabaseUrl);
-    console.log('Service key exists:', !!supabaseServiceKey);
 
     if (!supabaseUrl || !supabaseServiceKey) {
       return NextResponse.json({
@@ -25,16 +22,12 @@ export async function GET(request: NextRequest) {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Test basic connection
-    console.log('Testing basic connection...');
     const { data: connectionTest, error: connectionError } = await supabase
       .from('posts')
       .select('*')
       .limit(1);
 
-    console.log('Connection test result:', { connectionTest, connectionError });
-
     // Test if we can create a simple record
-    console.log('Testing insert capability...');
     const { data: insertTest, error: insertError } = await supabase
       .from('posts')
       .insert({
@@ -48,10 +41,7 @@ export async function GET(request: NextRequest) {
       .select()
       .single();
 
-    console.log('Insert test result:', { insertTest, insertError });
-
     // Test storage bucket
-    console.log('Testing storage bucket...');
     const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
 
     return NextResponse.json({

@@ -37,16 +37,8 @@ export async function POST(request: NextRequest) {
       ...body
     };
 
-    console.log('🧪 [Advanced Content API] Test Data with Contacts:', {
-      includeContacts: testData.includeContacts,
-      contactInfo: testData.contactInfo,
-      websiteUrl: testData.websiteUrl
-    });
-
-
     // Generate advanced content
     const result = await generateRevo10Content(testData);
-
 
     // Return enhanced response with analysis
     return NextResponse.json({

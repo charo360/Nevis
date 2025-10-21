@@ -151,9 +151,6 @@ async function analyzeWebsiteWithProxy(
   try {
     const proxyUrl = process.env.NEXT_PUBLIC_PROXY_URL || 'http://localhost:8000';
 
-    console.log('🌐 Using new multi-model website analysis system...');
-    console.log(`📄 Content length: ${websiteContent.length} characters`);
-
     const payload = {
       website_content: websiteContent,
       website_url: websiteUrl,
@@ -164,8 +161,6 @@ async function analyzeWebsiteWithProxy(
       max_tokens: 8192
     };
 
-    console.log(`🔗 Making request to: ${proxyUrl}/analyze-website`);
-
     const response = await fetch(`${proxyUrl}/analyze-website`, {
       method: 'POST',
       headers: {
@@ -174,8 +169,6 @@ async function analyzeWebsiteWithProxy(
       body: JSON.stringify(payload),
     });
 
-    console.log(`📡 Proxy response status: ${response.status}`);
-
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`❌ Proxy error response: ${errorText}`);
@@ -183,15 +176,11 @@ async function analyzeWebsiteWithProxy(
     }
 
     const result = await response.json();
-    console.log(`📊 Proxy result keys: ${Object.keys(result).join(', ')}`);
 
     if (!result.success || !result.data) {
       console.error(`❌ Invalid proxy result:`, result);
       throw new Error('Proxy analysis returned no data');
     }
-
-    console.log(`✅ Website analysis successful with ${result.model_used} (${result.provider_used})`);
-    console.log(`🔄 Completed in attempt ${result.attempt}/3`);
 
     // Map proxy response to our expected schema
     const proxyData = result.data;
@@ -280,8 +269,6 @@ const analyzeBrandFlow = ai.defineFlow(
       // First, scrape the website content
       const websiteContent = await scrapeWebsiteContent(input.websiteUrl);
 
-      console.log('🔍 Analyzing brand with new multi-model system...');
-
       // Use the new proxy-based analysis instead of Genkit
       const output = await analyzeWebsiteWithProxy(
         websiteContent,
@@ -306,7 +293,6 @@ const analyzeBrandFlow = ai.defineFlow(
         throw new Error('Proxy returned incomplete or invalid analysis');
       }
 
-      console.log('✅ Multi-model website analysis completed successfully');
       return output;
     } catch (error) {
       // Enhanced fallback analysis with better error handling
