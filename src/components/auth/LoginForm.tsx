@@ -70,7 +70,7 @@ export default function LoginForm({ signInData, setSignInData, showSignInPasswor
         <div className="flex justify-end mt-1">
           <button
             type="button"
-            onClick={() => router.push('/auth/forgot-password')}
+            onClick={() => router.push('/forgot-password')}
             className="text-sm text-blue-600 hover:underline"
           >
             Forgot password?

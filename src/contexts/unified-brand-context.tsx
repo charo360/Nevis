@@ -62,6 +62,7 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
+  const [lastLoadTime, setLastLoadTime] = useState(0);
 
   // Use refs to store current values for event handlers
   const currentBrandRef = useRef<CompleteBrandProfile | null>(null);
@@ -73,37 +74,33 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
 
   // Load brands when user changes
   useEffect(() => {
-
-    if (user?.userId) {
-      setHasAttemptedLoad(false);
+    if (user?.userId && !hasAttemptedLoad) {
+      setHasAttemptedLoad(true);
       // Add a small delay to ensure Supabase session is fully ready
       setTimeout(() => {
         loadBrands();
       }, 1000);
-    } else {
+    } else if (!user?.userId) {
       setBrands([]);
       setCurrentBrand(null);
       setLoading(false);
       setHasAttemptedLoad(false);
     }
-  }, [user?.userId]);
+  }, [user?.userId, hasAttemptedLoad]);
 
-  // Additional effect to ensure brands load after login with a longer delay to allow auth to settle
-  useEffect(() => {
-    if (user?.userId && brands.length === 0 && !loading && !hasAttemptedLoad) {
-      const timer = setTimeout(() => {
-        loadBrands();
-      }, 2000); // Increased delay to 2 seconds to allow auth to properly settle
-
-      return () => clearTimeout(timer);
-    }
-  }, [user?.userId, brands.length, loading, hasAttemptedLoad]);
 
   // Load all brands for the current user (using Supabase via API)
   const loadBrands = async () => {
     if (!user?.userId) {
       return;
     }
+
+    // Prevent rapid successive calls
+    const now = Date.now();
+    if (now - lastLoadTime < 2000) { // 2 second cooldown
+      return;
+    }
+    setLastLoadTime(now);
 
     try {
       setLoading(true);
@@ -393,7 +390,18 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
       if (currentBrand?.id === profileId) {
         const updatedBrand = { ...currentBrand, ...updates };
         setCurrentBrand(updatedBrand);
+        
+        // Force re-render by updating state in next tick
+        setTimeout(() => {
+          setCurrentBrand(updatedBrand);
+        }, 0);
       }
+
+      // Force refresh from database to ensure consistency
+      console.log('🔄 Forcing brand refresh from database...');
+      await loadBrands();
+
+      console.log('✅ Brand profile updated successfully, context refreshed');
     } catch (err) {
       console.error('Error updating profile in Supabase:', err);
       setError('Failed to update brand profile');
@@ -445,6 +453,14 @@ export function UnifiedBrandProvider({ children }: UnifiedBrandProviderProps) {
 
   // Refresh brands list
   const refreshBrands = async (): Promise<void> => {
+    if (!user?.userId) return;
+    
+    // Prevent rapid successive calls
+    const now = Date.now();
+    if (now - lastLoadTime < 2000) { // 2 second cooldown
+      return;
+    }
+    
     setHasAttemptedLoad(false);
     await loadBrands();
   };

@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
       includePeopleInDesigns?: boolean;
     } = body;
 
+
     // Validate required parameters
     if (!brandProfile || !platform) {
       return NextResponse.json(
@@ -38,6 +39,7 @@ export async function POST(request: NextRequest) {
 
     // Use passed services directly - brand filtering should happen on frontend
     let brandSpecificServices: ScheduledService[] = scheduledServices || [];
+
 
     let result;
 
@@ -115,7 +117,11 @@ export async function POST(request: NextRequest) {
           dayOfWeek,
           currentDate,
           primaryColor: brandProfile.primaryColor,
-          visualStyle: brandProfile.visualStyle
+          visualStyle: brandProfile.visualStyle,
+          // Include contact information for contacts toggle
+          includeContacts: brandConsistency?.includeContacts || false,
+          contactInfo: brandProfile.contactInfo || {},
+          websiteUrl: brandProfile.websiteUrl || ''
         });
 
         // Generate image using Revo 1.0 image service
@@ -139,14 +145,22 @@ export async function POST(request: NextRequest) {
             metadata: { platform, brandId: (brandProfile as any)?.id }
           },
           async () => {
+            // Enhanced brand color extraction with fallbacks
+            const brandColors = (brandProfile as any).brand_colors || {};
+            const primaryColor = brandColors.primaryColor || brandProfile.primaryColor || '#3B82F6';
+            const accentColor = brandColors.accentColor || brandProfile.accentColor || '#1E40AF';
+            const backgroundColor = brandColors.backgroundColor || brandProfile.backgroundColor || '#FFFFFF';
+
+            console.log('🎨 Brand colors for generation:', { primaryColor, accentColor, backgroundColor });
+
             const imageResult = await generateRevo10Image({
           businessType: brandProfile.businessType || 'Business',
           businessName: brandProfile.businessName || brandProfile.name || 'Business',
           platform: platform.toLowerCase(),
           visualStyle: brandProfile.visualStyle || 'modern',
-          primaryColor: brandProfile.primaryColor || '#3B82F6',
-          accentColor: brandProfile.accentColor || '#1E40AF',
-          backgroundColor: brandProfile.backgroundColor || '#FFFFFF',
+          primaryColor: primaryColor,
+          accentColor: accentColor,
+          backgroundColor: backgroundColor,
           imageText: structuredImageText,
           designDescription: `Professional ${brandProfile.businessType} content with structured headline, subheadline, and CTA for ${platform.toLowerCase()}`,
           logoDataUrl: brandProfile.logoDataUrl,
@@ -156,12 +170,12 @@ export async function POST(request: NextRequest) {
           subheadline: revo10Result.subheadline,
           callToAction: revo10Result.callToAction,
           includeContacts: brandConsistency?.includeContacts || false,
-          contactInfo: {
-            phone: (brandProfile as any).phone,
-            email: (brandProfile as any).email,
-            address: brandProfile.location
+          contactInfo: brandProfile.contactInfo || {
+            phone: (brandProfile as any).contactPhone || (brandProfile as any).contact?.phone || '',
+            email: (brandProfile as any).contactEmail || (brandProfile as any).contact?.email || '',
+            address: (brandProfile as any).contactAddress || (brandProfile as any).contact?.address || brandProfile.location || ''
           },
-          websiteUrl: (brandProfile as any).websiteUrl || '',
+          websiteUrl: brandProfile.websiteUrl || (brandProfile as any).contact?.website || '',
           includePeople: includePeopleInDesigns,
           scheduledServices: brandSpecificServices || []
             });

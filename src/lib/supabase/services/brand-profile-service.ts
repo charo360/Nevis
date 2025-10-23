@@ -32,7 +32,7 @@ export interface BrandProfileRow {
 
 class BrandProfileSupabaseService {
   // Convert database row to CompleteBrandProfile
-  private rowToProfile(row: BrandProfileRow): CompleteBrandProfile {
+  public rowToProfile(row: BrandProfileRow): CompleteBrandProfile {
 
     const profile: CompleteBrandProfile = {
       id: row.id,
@@ -359,6 +359,11 @@ class BrandProfileSupabaseService {
         };
       }
 
+      // Handle website URL directly (for backward compatibility)
+      if (updates.websiteUrl !== undefined) {
+        rowUpdates.website_url = updates.websiteUrl;
+      }
+
       // Handle social media
       if (updates.facebookUrl !== undefined || updates.instagramUrl !== undefined || updates.twitterUrl !== undefined || updates.linkedinUrl !== undefined) {
         rowUpdates.social_media = {
@@ -385,6 +390,16 @@ class BrandProfileSupabaseService {
         rowUpdates.design_examples = Array.isArray(updates.designExamples) ? updates.designExamples : [];
       }
 
+      // Handle brand colors - ensure they're properly stored and accessible
+      if (updates.primaryColor !== undefined || updates.accentColor !== undefined || updates.backgroundColor !== undefined) {
+        rowUpdates.brand_colors = {
+          ...(rowUpdates.brand_colors || {}),
+          primaryColor: updates.primaryColor ?? undefined,
+          accentColor: updates.accentColor ?? undefined,
+          backgroundColor: updates.backgroundColor ?? undefined
+        };
+      }
+
       // Handle identity and other fields - only update fields that exist in the database
       if (updates.visualStyle !== undefined) rowUpdates.brand_voice = { ...(rowUpdates.brand_voice || {}), visualStyle: updates.visualStyle };
       if (updates.writingTone !== undefined) rowUpdates.brand_voice = { ...(rowUpdates.brand_voice || {}), writingTone: updates.writingTone };
@@ -401,6 +416,9 @@ class BrandProfileSupabaseService {
         console.error('❌ Supabase update error:', error);
         throw new Error(`Failed to update brand profile: ${error.message}`);
       }
+
+      // Force refresh of brand context after successful update
+      console.log('✅ Brand profile updated successfully, triggering context refresh');
 
     } catch (error) {
       console.error('❌ Error updating brand profile:', error);

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -310,6 +311,16 @@ export default function AuthPage() {
                         <Eye className="h-4 w-4" />
                       </Button>
                     </div>
+                  </div>
+
+                  {/* Forgot Password Link */}
+                  <div className="text-right">
+                    <Link 
+                      href="/forgot-password" 
+                      className="text-sm text-blue-600 hover:text-blue-700 hover:underline transition-colors"
+                    >
+                      Forgot password?
+                    </Link>
                   </div>
 
                   <Button
