@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import { getPlanById } from '@/lib/secure-pricing';
 import { getStripeConfig } from '@/lib/stripe-config';
+import { sendPaymentConfirmationEmail } from '@/lib/email/sendgrid-service';
 
 // Critical: Tell Next.js to use Node.js runtime and force dynamic rendering
 // This ensures the raw request body is available for signature verification
@@ -19,7 +20,7 @@ const stripeConfig = getStripeConfig();
 
 // Initialize Stripe with environment-appropriate keys  
 const stripe = new Stripe(stripeConfig.secretKey, {
-  apiVersion: '2024-06-20'
+  apiVersion: '2025-08-27.basil'
 });
 
 const webhookSecret = stripeConfig.webhookSecret;
@@ -184,7 +185,45 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     }
 
     if (result.was_duplicate) {
+      console.log('✅ Payment was duplicate, skipping email');
     } else {
+      console.log('✅ Payment processed successfully, sending confirmation email');
+      
+      // Get user email from Supabase auth
+      const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
+      
+      if (userError || !userData?.user?.email) {
+        console.error('❌ Could not fetch user email for payment confirmation:', userError);
+      } else {
+        try {
+          // Send payment confirmation email
+          const emailResult = await sendPaymentConfirmationEmail({
+            customerEmail: userData.user.email,
+            customerName: userData.user.user_metadata?.full_name || userData.user.email.split('@')[0],
+            planName: plan.name,
+            amount: (session.amount_total || 0) / 100,
+            currency: session.currency || 'usd',
+            creditsAdded: plan.credits,
+            totalCredits: result.new_total_credits,
+            transactionId: result.payment_id,
+            paymentDate: new Date().toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })
+          });
+          
+          if (emailResult.success) {
+            console.log('✅ Payment confirmation email sent successfully');
+          } else {
+            console.error('❌ Failed to send payment confirmation email:', emailResult.error);
+          }
+        } catch (emailError) {
+          console.error('❌ Error sending payment confirmation email:', emailError);
+        }
+      }
     }
 
     return;

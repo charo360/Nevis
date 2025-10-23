@@ -14,7 +14,7 @@ export default function ChangePasswordPage() {
     const email = localStorage.getItem('reset_email')
     const verified = localStorage.getItem('reset_code_verified')
     if (!email || verified !== 'true') {
-      router.push('/auth/forgot-password')
+      router.push('/forgot-password')
     }
   }, [])
 

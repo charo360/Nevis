@@ -1,4 +1,4 @@
-// API routes for individual brand profile management
+// API route for fetching a single brand profile
 import { NextRequest, NextResponse } from 'next/server';
 import { brandProfileSupabaseService } from '@/lib/supabase/services/brand-profile-service';
 import { createClient } from '@supabase/supabase-js';
@@ -19,198 +19,158 @@ async function verifySupabaseAuth(authHeader: string | null) {
     return { error: 'Authorization token required', status: 401 };
   }
 
-  const token = authHeader.substring(7);
+  const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+  
   try {
     const { data: { user }, error } = await supabaseAuth.auth.getUser(token);
+    
     if (error || !user) {
       return { error: 'Invalid or expired token', status: 401 };
     }
+    
     return { user, userId: user.id };
-  } catch (e) {
+  } catch (error) {
     return { error: 'Token verification failed', status: 401 };
   }
 }
 
-// Helper function to upload logo data URL to Supabase Storage
-async function uploadLogoToSupabase(logoDataUrl: string, userId: string, brandName: string): Promise<{ success: boolean; url?: string; error?: string }> {
-  try {
-
-    // Convert data URL to buffer
-    const base64Data = logoDataUrl.split(',')[1];
-    if (!base64Data) {
-      return { success: false, error: 'Invalid logo data URL format' };
-    }
-    
-    const buffer = Buffer.from(base64Data, 'base64');
-
-    // Create upload path for logo
-    const timestamp = Date.now();
-    const safeBrandName = brandName.replace(/[^a-zA-Z0-9-_]/g, '-').toLowerCase();
-    const uploadPath = `brands/${userId}/logos/${safeBrandName}-${timestamp}.png`;
-    
-    const { data, error } = await supabaseService.storage
-      .from('nevis-storage')
-      .upload(uploadPath, buffer, {
-        contentType: 'image/png',
-        upsert: true
-      });
-
-    if (error) {
-      console.error('❌ Logo upload error:', error);
-      return { success: false, error: error.message };
-    }
-
-    // Get public URL
-    const { data: { publicUrl } } = supabaseService.storage
-      .from('nevis-storage')
-      .getPublicUrl(uploadPath);
-
-    return { success: true, url: publicUrl };
-  } catch (error) {
-    console.error('❌ Logo upload error:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
-  }
-}
-
-// GET /api/brand-profiles/[id] - Get brand profile by ID
+// GET /api/brand-profiles/[id] - Load a single brand profile
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
     const authResult = await verifySupabaseAuth(request.headers.get('authorization'));
+    
     if (authResult.error) {
-      return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+      return NextResponse.json(
+        { error: authResult.error },
+        { status: authResult.status }
+      );
     }
 
-    const { id: profileId } = await params;
-
-    const profile = await brandProfileSupabaseService.loadBrandProfile(profileId);
-    if (!profile) {
+    const brandId = params.id;
+    if (!brandId) {
       return NextResponse.json(
-        { error: 'Profile not found' },
+        { error: 'Brand ID is required' },
+        { status: 400 }
+      );
+    }
+
+    console.log('🔍 Fetching brand profile:', brandId);
+    
+    // Fetch the brand profile directly from database
+    const { data: brandData, error: brandError } = await supabaseService
+      .from('brand_profiles')
+      .select('*')
+      .eq('id', brandId)
+      .eq('user_id', authResult.userId!)
+      .single();
+
+    if (brandError) {
+      console.error('❌ Error fetching brand profile:', brandError);
+      return NextResponse.json(
+        { error: 'Brand profile not found' },
         { status: 404 }
       );
     }
 
-    // Check if the profile belongs to the authenticated user
-    if (profile.userId !== authResult.userId) {
+    if (!brandData) {
       return NextResponse.json(
-        { error: 'Access denied' },
-        { status: 403 }
+        { error: 'Brand profile not found' },
+        { status: 404 }
       );
     }
 
+    console.log('✅ Brand profile fetched successfully:', brandData.business_name);
+    console.log('✅ Website URL:', brandData.website_url);
+
+    // Convert to CompleteBrandProfile format
+    const profile = brandProfileSupabaseService.rowToProfile(brandData);
+    
     return NextResponse.json(profile);
   } catch (error) {
-    console.error('Error getting brand profile:', error);
+    console.error('Error loading brand profile:', error);
     return NextResponse.json(
-      { error: 'Failed to get brand profile' },
+      { error: 'Failed to load brand profile' },
       { status: 500 }
     );
   }
 }
 
-// PUT /api/brand-profiles/[id] - Update brand profile
+// PUT /api/brand-profiles/[id] - Update a single brand profile
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
     const authResult = await verifySupabaseAuth(request.headers.get('authorization'));
+    
     if (authResult.error) {
-      return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+      return NextResponse.json(
+        { error: authResult.error },
+        { status: authResult.status }
+      );
     }
 
-    const { id: profileId } = await params;
-    const updates = await request.json();
-    
-
-    // Verify the profile belongs to the authenticated user
-    const existingProfile = await brandProfileSupabaseService.loadBrandProfile(profileId);
-    if (!existingProfile) {
+    const brandId = params.id;
+    if (!brandId) {
       return NextResponse.json(
-        { error: 'Profile not found' },
+        { error: 'Brand ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const updates = await request.json();
+    console.log('🔄 Updating brand profile:', brandId, updates);
+    console.log('🔄 User ID:', authResult.userId);
+
+    // First, check if the brand profile exists
+    const { data: existingBrand, error: fetchError } = await supabaseService
+      .from('brand_profiles')
+      .select('*')
+      .eq('id', brandId)
+      .eq('user_id', authResult.userId!)
+      .single();
+
+    if (fetchError || !existingBrand) {
+      console.error('❌ Brand profile not found:', fetchError);
+      return NextResponse.json(
+        { error: 'Brand profile not found' },
         { status: 404 }
       );
     }
 
-    if (existingProfile.userId !== authResult.userId) {
+    console.log('✅ Brand profile found:', existingBrand.business_name);
+
+    // Update the brand profile using the service
+    await brandProfileSupabaseService.updateBrandProfile(brandId, updates);
+
+    // Fetch the updated profile
+    const { data: updatedBrandData, error: fetchUpdatedError } = await supabaseService
+      .from('brand_profiles')
+      .select('*')
+      .eq('id', brandId)
+      .eq('user_id', authResult.userId!)
+      .single();
+
+    if (fetchUpdatedError || !updatedBrandData) {
+      console.error('❌ Failed to fetch updated profile:', fetchUpdatedError);
       return NextResponse.json(
-        { error: 'Access denied' },
-        { status: 403 }
+        { error: 'Failed to fetch updated profile' },
+        { status: 500 }
       );
     }
 
-    // Process logo upload if logoDataUrl is provided in updates
-    let processedUpdates = { ...updates };
-    
-    if (updates.logoDataUrl && updates.logoDataUrl.startsWith('data:')) {
-      
-      const logoResult = await uploadLogoToSupabase(
-        updates.logoDataUrl,
-        authResult.userId!,
-        updates.businessName || existingProfile.businessName || 'brand'
-      );
-      
-      if (logoResult.success && logoResult.url) {
-        // Replace logoDataUrl with the Supabase storage URL
-        processedUpdates.logoUrl = logoResult.url;
-        // Remove the large base64 data to save database space
-        delete processedUpdates.logoDataUrl;
-      } else {
-        console.error('❌ Logo upload failed in update:', logoResult.error);
-        // Keep the logoDataUrl as fallback, but warn about it
-        console.warn('⚠️  Using logoDataUrl as fallback in update - this may cause performance issues');
-      }
-    }
+    // Convert to CompleteBrandProfile format
+    const updatedProfile = brandProfileSupabaseService.rowToProfile(updatedBrandData);
 
-    await brandProfileSupabaseService.updateBrandProfile(profileId, processedUpdates);
-    return NextResponse.json({ success: true });
+    console.log('✅ Brand profile updated successfully:', updatedProfile.businessName);
+    return NextResponse.json(updatedProfile);
   } catch (error) {
     console.error('Error updating brand profile:', error);
     return NextResponse.json(
       { error: 'Failed to update brand profile' },
-      { status: 500 }
-    );
-  }
-}
-
-// DELETE /api/brand-profiles/[id] - Delete brand profile
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const authResult = await verifySupabaseAuth(request.headers.get('authorization'));
-    if (authResult.error) {
-      return NextResponse.json({ error: authResult.error }, { status: authResult.status });
-    }
-
-    const { id: profileId } = await params;
-
-    // Verify the profile belongs to the authenticated user
-    const existingProfile = await brandProfileSupabaseService.loadBrandProfile(profileId);
-    if (!existingProfile) {
-      return NextResponse.json(
-        { error: 'Profile not found' },
-        { status: 404 }
-      );
-    }
-
-    if (existingProfile.userId !== authResult.userId) {
-      return NextResponse.json(
-        { error: 'Access denied' },
-        { status: 403 }
-      );
-    }
-
-    await brandProfileSupabaseService.deleteBrandProfile(profileId);
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error deleting brand profile:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete brand profile' },
       { status: 500 }
     );
   }

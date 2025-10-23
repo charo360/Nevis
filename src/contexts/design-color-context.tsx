@@ -88,6 +88,8 @@ export function DesignColorProvider({ children }: DesignColorProviderProps) {
       root.style.setProperty('--design-background', backgroundHsl);
     }
 
+    // Log color changes for debugging
+
     // Cleanup function
     return () => {
       root.style.removeProperty('--design-primary-hsl');

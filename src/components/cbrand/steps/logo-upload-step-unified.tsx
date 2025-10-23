@@ -33,6 +33,7 @@ export function LogoUploadStepUnified({
   const { saveProfile, updateProfile } = useUnifiedBrand();
   const { user } = useAuth();
 
+
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;

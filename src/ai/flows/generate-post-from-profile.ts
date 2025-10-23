@@ -427,6 +427,11 @@ async function generateImageForVariant(
   - NO gradients using non-brand colors
   - Text: Use high contrast white or black only when needed
   - FORBIDDEN: Any design with more than 3 colors total
+  
+  **CRITICAL: These are the EXACT brand colors that MUST be used:**
+  - Primary: ${input.primaryColor} (use as main color)
+  - Accent: ${input.accentColor} (use for highlights)
+  - Background: ${input.backgroundColor} (use as base)
   ` : `
   **MAXIMUM 3 COLORS TOTAL:**
   - Primary: ${input.primaryColor} - DOMINANT (60-70%)

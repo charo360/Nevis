@@ -51,6 +51,7 @@ function QuickContentPage() {
   const { open: sidebarOpen, toggleSidebar } = useSidebar();
   const { user, getAccessToken } = useAuth();
 
+
   // Load posts from both localStorage AND Supabase database
   useEffect(() => {
     const loadAllPosts = async () => {
@@ -391,8 +392,8 @@ function QuickContentPage() {
 
                             <ContentCalendar
                               brandProfile={{
-                                businessName: currentBrand.businessName,
-                                businessType: currentBrand.businessType || "",
+                                  businessName: currentBrand.businessName,
+                                  businessType: currentBrand.businessType || "",
                                 location: ((): string => {
                                   const loc: any = currentBrand.location as any;
                                   if (typeof loc === 'string') return loc;
@@ -403,7 +404,8 @@ function QuickContentPage() {
                                   }
                                   return '';
                                 })(),
-                                logoUrl: (currentBrand as any).logoUrl || "",
+                                logoUrl: (currentBrand as any).logoUrl || currentBrand.logoDataUrl || "",
+                                logoDataUrl: currentBrand.logoDataUrl || "",
                                 visualStyle: currentBrand.visualStyle || "",
                                 writingTone: currentBrand.writingTone || "",
                                 contentThemes: currentBrand.contentThemes || "",
@@ -417,6 +419,12 @@ function QuickContentPage() {
                                 targetAudience: currentBrand.targetAudience || "",
                                 keyFeatures: currentBrand.keyFeatures || "",
                                 competitiveAdvantages: currentBrand.competitiveAdvantages || "",
+                                // Include contact information for contacts toggle
+                                contactInfo: {
+                                  phone: (currentBrand as any).contactPhone || (currentBrand as any).contact?.phone || "",
+                                  email: (currentBrand as any).contactEmail || (currentBrand as any).contact?.email || "",
+                                  address: (currentBrand as any).contactAddress || (currentBrand as any).contact?.address || ""
+                                }
                               }}
                               posts={generatedPosts}
                               onPostGenerated={handlePostGenerated}
