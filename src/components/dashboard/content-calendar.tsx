@@ -210,7 +210,7 @@ export function ContentCalendar({
           .slice(0, platform === 'Twitter' ? 5 : platform === 'LinkedIn' ? 8 : 10);
 
         newPost = {
-          id: `revo-2.0-${Date.now()}`,
+          id: `revo-2.0-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           content: revo20Result.caption || `🚀 Generated with Revo 2.0 (Gemini 2.5 Flash Image)`,
           hashtags: combinedHashtags,
           imageUrl: revo20Result.imageUrl,
@@ -338,9 +338,9 @@ export function ContentCalendar({
         return;
       }
 
-      // Ensure the post has a unique ID
+      // Ensure the post has a unique ID with additional entropy
       if (!newPost.id) {
-        newPost.id = `post-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        newPost.id = `post-${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${Math.random().toString(36).substr(2, 5)}`;
       }
 
       // Let the parent component handle saving
@@ -572,7 +572,7 @@ export function ContentCalendar({
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 w-full max-w-none">
               {posts.map((post, index) => (
                 <PostCard
-                  key={post.id || `post-${index}-${Date.now()}`}
+                  key={`post-card-${index}-${post.id || 'no-id'}-${Math.random().toString(36).substr(2, 9)}`}
                   post={post}
                   brandProfile={brandProfile}
                   onPostUpdated={onPostUpdated}

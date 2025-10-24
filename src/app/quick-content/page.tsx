@@ -63,15 +63,15 @@ function QuickContentPage() {
 
       try {
         setIsLoading(true);
-        
+
         // Load from localStorage first (instant)
         const localPosts = postsStorage?.getItem ? postsStorage.getItem() : [];
         const localArray = Array.isArray(localPosts) ? localPosts : [];
-        
+
         // Load from Supabase database (persistent across devices)
         try {
           const token = await getAccessToken();
-          
+
           // Skip database load if no valid token
           if (!token) {
             setGeneratedPosts(localArray);
@@ -79,24 +79,24 @@ function QuickContentPage() {
           }
 
           const response = await fetch(`/api/generated-posts/brand/${currentBrand.id}`, {
-            headers: { 
+            headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}` 
+              'Authorization': `Bearer ${token}`
             }
           });
-          
+
           if (response.ok) {
             const dbPosts = await response.json();
             const dbArray = Array.isArray(dbPosts) ? dbPosts : [];
-            
+
             // Merge: prefer database posts over localStorage, deduplicate by id
             const merged = new Map();
-            
+
             // First add database posts (they have real IDs and are the source of truth)
             dbArray.forEach(post => {
               merged.set(post.id, post);
             });
-            
+
             // Then add local posts only if they don't exist in database
             // Skip posts with temporary IDs (starting with 'post_') if we have database posts
             localArray.forEach(post => {
@@ -109,12 +109,12 @@ function QuickContentPage() {
                 }
               }
             });
-            
+
             const allPosts = Array.from(merged.values())
               .sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
-            
+
             setGeneratedPosts(allPosts);
-            
+
             // Cleanup: If we removed duplicates, update localStorage to match database
             if (allPosts.length < localArray.length && postsStorage?.setItem) {
               try {
@@ -173,8 +173,8 @@ function QuickContentPage() {
   }, [currentBrand?.id]);
 
   const handlePostGenerated = async (post: GeneratedPost) => {
-    // Ensure the post has a stable unique id
-    const postId = post.id || `post-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    // Ensure the post has a stable unique id with additional entropy
+    const postId = post.id || `post-${Date.now()}-${Math.random().toString(36).slice(2, 9)}-${Math.random().toString(36).slice(2, 5)}`;
     const newPost: GeneratedPost = {
       ...post,
       id: postId,
@@ -185,12 +185,12 @@ function QuickContentPage() {
     setGeneratedPosts(prev => {
       // Check if this exact post already exists
       const existingIndex = prev.findIndex(p => p.id === postId);
-      
+
       if (existingIndex !== -1) {
         // Update existing post (merge new data)
         const copy = prev.slice();
         copy[existingIndex] = { ...copy[existingIndex], ...newPost };
-        
+
         // Persist updated list
         if (currentBrand?.id && postsStorage?.setItem) {
           const toSave = copy.slice(0, MAX_POSTS_TO_STORE);
@@ -200,12 +200,12 @@ function QuickContentPage() {
             console.warn('⚠️ Failed to persist to localStorage:', err);
           }
         }
-        
+
         return copy;
       } else {
         // Add new post
         const updatedPosts = [newPost, ...prev];
-        
+
         // Persist to localStorage immediately
         if (currentBrand?.id && postsStorage?.setItem) {
           const toSave = updatedPosts.slice(0, MAX_POSTS_TO_STORE);
@@ -215,7 +215,7 @@ function QuickContentPage() {
             console.warn('⚠️ Failed to persist to localStorage:', err);
           }
         }
-        
+
         return updatedPosts;
       }
     });
@@ -236,17 +236,17 @@ function QuickContentPage() {
             brandProfileId: currentBrand.id
           })
         });
-        
+
         if (response.ok) {
           const result = await response.json();
           const dbId = result.id;
-          
+
           // Update the post in state and localStorage with the database-generated ID
           // This prevents duplicates on page reload
           if (dbId && dbId !== newPost.id) {
             setGeneratedPosts(prev => {
               const updated = prev.map(p => p.id === newPost.id ? { ...p, id: dbId } : p);
-              
+
               // Update localStorage with the correct database ID
               if (postsStorage?.setItem) {
                 try {
@@ -255,7 +255,7 @@ function QuickContentPage() {
                   console.warn('⚠️ Failed to update localStorage with database ID:', err);
                 }
               }
-              
+
               return updated;
             });
           }
@@ -271,7 +271,7 @@ function QuickContentPage() {
   const handlePostUpdated = async (updatedPost: GeneratedPost) => {
     setGeneratedPosts(prev => {
       const updated = prev.map(p => p.id === updatedPost.id ? { ...p, ...updatedPost } : p);
-      
+
       // Persist immediately
       if (currentBrand?.id && postsStorage?.setItem) {
         try {
@@ -280,7 +280,7 @@ function QuickContentPage() {
           console.warn('⚠️ Failed to persist updated post to storage:', err);
         }
       }
-      
+
       return updated;
     });
   };
@@ -392,8 +392,8 @@ function QuickContentPage() {
 
                             <ContentCalendar
                               brandProfile={{
-                                  businessName: currentBrand.businessName,
-                                  businessType: currentBrand.businessType || "",
+                                businessName: currentBrand.businessName,
+                                businessType: currentBrand.businessType || "",
                                 location: ((): string => {
                                   const loc: any = currentBrand.location as any;
                                   if (typeof loc === 'string') return loc;
