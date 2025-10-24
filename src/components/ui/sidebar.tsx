@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { Sheet, SheetContent } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Tooltip,
@@ -199,7 +199,7 @@ const Sidebar = React.forwardRef<
           <SheetContent
             data-sidebar="sidebar"
             data-mobile="true"
-            className="w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+            className="w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground"
             style={
               {
                 "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
@@ -207,6 +207,7 @@ const Sidebar = React.forwardRef<
             }
             side={side}
           >
+            <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
             <div className="flex h-full w-full flex-col">{children}</div>
           </SheetContent>
         </Sheet>
@@ -321,7 +322,15 @@ const SidebarInset = React.forwardRef<
     fullWidth?: boolean
   }
 >(({ className, fullWidth = false, ...props }, ref) => {
-  const { state, toggleSidebar } = useSidebar()
+  const { state, toggleSidebar, isMobile, setOpenMobile } = useSidebar()
+  
+  const handleMobileToggle = () => {
+    if (isMobile) {
+      setOpenMobile(true)
+    } else {
+      toggleSidebar()
+    }
+  }
   
   if (fullWidth) {
     // For full-width mode, content should be attached to sidebar with no gap
@@ -339,14 +348,25 @@ const SidebarInset = React.forwardRef<
         )}
         {...props}
       >
-        {/* Floating toggle button when sidebar is collapsed - visible on all screen sizes */}
+        {/* Mobile menu trigger - ALWAYS visible on mobile */}
+        <button
+          onClick={handleMobileToggle}
+          className="fixed top-4 left-4 z-[9999] p-3 bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-lg shadow-xl hover:shadow-2xl transition-all duration-200 md:hidden"
+          title="Open menu"
+          aria-label="Open menu"
+        >
+          <PanelLeft className="h-6 w-6" />
+        </button>
+        
+        {/* Desktop toggle button when sidebar is collapsed */}
         {state === "collapsed" && (
           <button
             onClick={toggleSidebar}
-            className="fixed top-4 left-4 z-50 p-2 bg-background border border-border rounded-md shadow-lg hover:bg-accent transition-colors"
+            className="fixed top-4 left-4 z-[9999] p-3 bg-white border border-gray-200 rounded-lg shadow-lg hover:bg-gray-50 transition-all duration-200 hidden md:block"
             title="Open sidebar"
+            aria-label="Open sidebar"
           >
-            <PanelLeft className="h-4 w-4" />
+            <PanelLeft className="h-5 w-5 text-gray-700" />
           </button>
         )}
         {/* Full width content wrapper - attached to sidebar with no gap */}
@@ -372,14 +392,25 @@ const SidebarInset = React.forwardRef<
       )}
       {...props}
     >
-      {/* Floating toggle button when sidebar is collapsed */}
+      {/* Mobile menu trigger - ALWAYS visible on mobile */}
+      <button
+        onClick={handleMobileToggle}
+        className="fixed top-4 left-4 z-[9999] p-3 bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-lg shadow-xl hover:shadow-2xl transition-all duration-200 md:hidden"
+        title="Open menu"
+        aria-label="Open menu"
+      >
+        <PanelLeft className="h-6 w-6" />
+      </button>
+      
+      {/* Desktop toggle button when sidebar is collapsed */}
       {state === "collapsed" && (
         <button
           onClick={toggleSidebar}
-          className="fixed top-4 left-4 z-50 p-2 bg-background border border-border rounded-md shadow-lg hover:bg-accent transition-colors md:hidden"
+          className="fixed top-4 left-4 z-[9999] p-3 bg-white border border-gray-200 rounded-lg shadow-lg hover:bg-gray-50 transition-all duration-200 hidden md:block"
           title="Open sidebar"
+          aria-label="Open sidebar"
         >
-          <PanelLeft className="h-4 w-4" />
+          <PanelLeft className="h-5 w-5 text-gray-700" />
         </button>
       )}
       {props.children}

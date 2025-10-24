@@ -34,6 +34,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { SidebarInset } from '@/components/ui/sidebar';
+import { MobileSidebarTrigger } from '@/components/layout/mobile-sidebar-trigger';
 import { useUnifiedBrand } from '@/contexts/unified-brand-context';
 import { toast } from '@/hooks/use-toast';
 
@@ -117,6 +118,7 @@ export default function BrandsPage() {
   if (loading) {
     return (
       <SidebarInset fullWidth>
+        <MobileSidebarTrigger />
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
           <div className="w-full px-4 py-8">
             <div className="max-w-7xl mx-auto w-full">
@@ -140,6 +142,7 @@ export default function BrandsPage() {
 
   return (
     <SidebarInset fullWidth>
+      <MobileSidebarTrigger />
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 w-full">
         <div className="w-full h-full">
           <div className="w-full h-full">

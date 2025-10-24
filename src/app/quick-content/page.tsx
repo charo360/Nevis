@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SidebarInset, useSidebar } from "@/components/ui/sidebar";
+import { MobileSidebarTrigger } from "@/components/layout/mobile-sidebar-trigger";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ContentCalendar } from "@/components/dashboard/content-calendar";
@@ -287,6 +288,7 @@ function QuickContentPage() {
 
   return (
     <SidebarInset fullWidth key={currentBrand?.id || 'no-brand'}>
+      <MobileSidebarTrigger />
       {/* ✅ Enclosed inside unified main layout div */}
       <div className="flex min-h-screen flex-col bg-background transition-all duration-200 ease-linear w-full ml-0 flex-1">
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 w-full">

@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SidebarInset } from "@/components/ui/sidebar";
+import { MobileSidebarTrigger } from "@/components/layout/mobile-sidebar-trigger";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ChatLayout } from "@/components/studio/chat-layout";
@@ -114,6 +115,7 @@ function CreativeStudioPageContent() {
 
   return (
     <SidebarInset fullWidth>
+      <MobileSidebarTrigger />
       {/* ✅ Unified Layout Wrapper */}
       <div className="flex min-h-screen flex-col bg-background transition-all duration-200 ease-linear w-full ml-0 flex-1">
         <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100 w-full">

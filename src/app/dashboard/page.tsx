@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { SidebarInset } from '@/components/ui/sidebar';
+import { MobileSidebarTrigger } from '@/components/layout/mobile-sidebar-trigger';
 import { useUnifiedBrand } from '@/contexts/unified-brand-context';
 import { AILearningWidget } from '@/components/ui/ai-learning-display';
 
@@ -259,8 +260,10 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6" key={brandKey}>
-      {/* Top navbar - visible navigation and user menu */}
+    <>
+      <MobileSidebarTrigger />
+      <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6" key={brandKey}>
+        {/* Top navbar - visible navigation and user menu */}
       <div className="flex items-center justify-between mb-6 bg-white/80 backdrop-blur-sm border rounded-lg p-3 shadow-sm">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-3">
@@ -535,6 +538,7 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-    </div>
+      </div>
+    </>
   );
 }
