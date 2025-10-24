@@ -296,9 +296,9 @@ export default function DashboardPage() {
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel className="font-medium">{user?.displayName || user?.email}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={() => router.push('/profile')}>Profile</DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => router.push('/settings')}>Settings</DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => router.push('/brand-profile')}>Brand Profile</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => router.push('/credits')}>Credits</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={async () => {
                   try {
