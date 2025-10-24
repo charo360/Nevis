@@ -20,7 +20,9 @@ import {
   LogOut,
   User,
   PanelLeftClose,
+  PanelLeftOpen,
   Menu,
+  X,
 } from "lucide-react";
 import { UnifiedBrandSelector } from '@/components/brand/unified-brand-selector';
 import { usePathname } from "next/navigation";
@@ -41,7 +43,7 @@ import {
 export function AppSidebar() {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
-  const { state, toggleSidebar } = useSidebar();
+  const { state, toggleSidebar, isMobile, openMobile, setOpenMobile } = useSidebar();
   const isCollapsed = state === "collapsed";
   const isActive = (path: string) => pathname.startsWith(path);
   
@@ -67,17 +69,33 @@ export function AppSidebar() {
               </h1>
             )}
           </Link>
-          <button
-            onClick={toggleSidebar}
-            className="p-1 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors flex-shrink-0 ml-2"
-            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {isCollapsed ? (
-              <Menu className="w-4 h-4" />
-            ) : (
-              <PanelLeftClose className="w-4 h-4" />
-            )}
-          </button>
+          
+          {/* Mobile close button */}
+          {isMobile && openMobile && (
+            <button
+              onClick={() => setOpenMobile(false)}
+              className="p-2 rounded-lg hover:bg-accent/50 hover:text-accent-foreground transition-all duration-200 flex-shrink-0 ml-2"
+              aria-label="Close menu"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
+          
+          {/* Desktop collapse toggle */}
+          {!isMobile && (
+            <button
+              onClick={toggleSidebar}
+              className="p-2 rounded-lg hover:bg-accent/50 hover:text-accent-foreground transition-all duration-200 flex-shrink-0 ml-2 group"
+              title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {isCollapsed ? (
+                <PanelLeftOpen className="w-5 h-5 transition-transform group-hover:scale-110" />
+              ) : (
+                <PanelLeftClose className="w-5 h-5 transition-transform group-hover:scale-110" />
+              )}
+            </button>
+          )}
         </div>
 
         {/* Unified Brand Selector - Hide when collapsed */}
