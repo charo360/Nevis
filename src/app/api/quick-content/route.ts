@@ -140,6 +140,38 @@ export async function POST(request: NextRequest) {
 
         const structuredImageText = imageTextComponents.join(' | ');
 
+        // 🎨📞 ENHANCED VALIDATION FOR BRAND COLORS AND CONTACT INFO
+        const finalPrimaryColor = brandProfile.primaryColor || '#3B82F6';
+        const finalAccentColor = brandProfile.accentColor || '#1E40AF';
+        const finalBackgroundColor = brandProfile.backgroundColor || '#FFFFFF';
+
+        const finalContactInfo = {
+          phone: brandProfile.contactInfo?.phone || (brandProfile as any).phone || '',
+          email: brandProfile.contactInfo?.email || (brandProfile as any).email || '',
+          address: brandProfile.contactInfo?.address || brandProfile.location || ''
+        };
+
+        const finalWebsiteUrl = brandProfile.websiteUrl || (brandProfile as any).websiteUrl || '';
+
+        console.log('🎨 [QuickContent] Brand Colors Validation:', {
+          originalPrimaryColor: brandProfile.primaryColor,
+          originalAccentColor: brandProfile.accentColor,
+          originalBackgroundColor: brandProfile.backgroundColor,
+          finalPrimaryColor,
+          finalAccentColor,
+          finalBackgroundColor,
+          followBrandColors: brandConsistency?.followBrandColors,
+          hasValidColors: !!(brandProfile.primaryColor && brandProfile.accentColor && brandProfile.backgroundColor)
+        });
+
+        console.log('📞 [QuickContent] Contact Info Validation:', {
+          includeContacts: brandConsistency?.includeContacts,
+          originalContactInfo: brandProfile.contactInfo,
+          finalContactInfo,
+          finalWebsiteUrl,
+          hasValidContacts: !!(finalContactInfo.phone || finalContactInfo.email || finalWebsiteUrl)
+        });
+
         // Wrap image+content generation under credit tracking to ensure deduction
         console.log('🔎 [QuickContent] Deducting credits for user', user.id, 'model', modelVersion, 'platform', platform);
         const wrapped = await withCreditTracking(
@@ -152,30 +184,26 @@ export async function POST(request: NextRequest) {
           },
           async () => {
             const imageResult = await generateRevo10Image({
-          businessType: brandProfile.businessType || 'Business',
-          businessName: brandProfile.businessName || brandProfile.name || 'Business',
-          platform: platform.toLowerCase(),
-          visualStyle: brandProfile.visualStyle || 'modern',
-          primaryColor: brandProfile.primaryColor || '#3B82F6',
-          accentColor: brandProfile.accentColor || '#1E40AF',
-          backgroundColor: brandProfile.backgroundColor || '#FFFFFF',
-          imageText: structuredImageText,
-          designDescription: `Professional ${brandProfile.businessType} content with structured headline, subheadline, and CTA for ${platform.toLowerCase()}`,
-          logoDataUrl: brandProfile.logoDataUrl,
-          logoUrl: (brandProfile as any).logoUrl,
-          location: brandProfile.location,
-          headline: revo10Result.catchyWords,
-          subheadline: revo10Result.subheadline,
-          callToAction: revo10Result.callToAction,
-          includeContacts: brandConsistency?.includeContacts || false,
-          contactInfo: {
-            phone: (brandProfile as any).phone,
-            email: (brandProfile as any).email,
-            address: brandProfile.location
-          },
-          websiteUrl: (brandProfile as any).websiteUrl || '',
-          includePeople: includePeopleInDesigns,
-          scheduledServices: brandSpecificServices || []
+              businessType: brandProfile.businessType || 'Business',
+              businessName: brandProfile.businessName || brandProfile.name || 'Business',
+              platform: platform.toLowerCase(),
+              visualStyle: brandProfile.visualStyle || 'modern',
+              primaryColor: finalPrimaryColor,
+              accentColor: finalAccentColor,
+              backgroundColor: finalBackgroundColor,
+              imageText: structuredImageText,
+              designDescription: `Professional ${brandProfile.businessType} content with structured headline, subheadline, and CTA for ${platform.toLowerCase()}`,
+              logoDataUrl: brandProfile.logoDataUrl,
+              logoUrl: (brandProfile as any).logoUrl,
+              location: brandProfile.location,
+              headline: revo10Result.catchyWords,
+              subheadline: revo10Result.subheadline,
+              callToAction: revo10Result.callToAction,
+              includeContacts: brandConsistency?.includeContacts || false,
+              contactInfo: finalContactInfo,
+              websiteUrl: finalWebsiteUrl,
+              includePeople: includePeopleInDesigns,
+              scheduledServices: brandSpecificServices || []
             });
 
             // Convert to GeneratedPost format

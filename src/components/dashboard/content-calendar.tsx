@@ -172,7 +172,7 @@ export function ContentCalendar({
       // Check if artifacts are enabled (simple toggle approach)
       const artifactsEnabled = selectedArtifacts.length > 0;
 
-  const useEnhancedGeneration = artifactsEnabled || String(selectedRevoModel) === 'revo-1.5' || String(selectedRevoModel) === 'revo-2.0';
+      const useEnhancedGeneration = artifactsEnabled || String(selectedRevoModel) === 'revo-1.5' || String(selectedRevoModel) === 'revo-2.0';
 
       // Dynamic model routing based on selected Revo version
       if (selectedRevoModel === 'revo-2.0') {
@@ -197,10 +197,10 @@ export function ContentCalendar({
           headers: {
             'Content-Type': 'application/json',
           },
-            body: JSON.stringify({
+          body: JSON.stringify({
             businessType: brandProfile.businessType || 'Business',
             platform: platform.toLowerCase(),
-              visualStyle: (brandProfile.visualStyle as any) || 'modern',
+            visualStyle: (brandProfile.visualStyle as any) || 'modern',
             imageText: '',
             brandProfile,
             aspectRatio: '1:1',
@@ -262,9 +262,9 @@ export function ContentCalendar({
             }
           }
         };
-      } else if (selectedRevoModel === 'revo-1.5' || selectedRevoModel === 'revo-1.0') {
-        // Use unified Quick Content API for Revo 1.0 and 1.5
-        console.log(`🎨 Calling Quick Content API for ${selectedRevoModel} with scheduled services:`, {
+      } else if (selectedRevoModel === 'revo-1.5') {
+        // Use Revo 1.5 enhanced generation
+        console.log(`🎨 Calling Revo 1.5 Enhanced Generation with scheduled services:`, {
           platform,
           scheduledServicesCount: scheduledServices?.length || 0,
           scheduledServiceNames: scheduledServices?.map(s => s.serviceName) || [],
@@ -286,6 +286,39 @@ export function ContentCalendar({
           },
           scheduledServices // Pass scheduled services
         );
+      } else if (selectedRevoModel === 'revo-1.0') {
+        // Use Revo 1.0 direct generation via Quick Content API
+        console.log(`🎨 Calling Revo 1.0 Direct Generation via Quick Content API:`, {
+          platform,
+          scheduledServicesCount: scheduledServices?.length || 0,
+          scheduledServiceNames: scheduledServices?.map(s => s.serviceName) || [],
+          todaysServicesCount: scheduledServices?.filter(s => s.isToday).length || 0,
+          upcomingServicesCount: scheduledServices?.filter(s => s.isUpcoming).length || 0,
+          hasScheduledContent
+        });
+
+        // Call the Quick Content API directly for Revo 1.0
+        const response = await fetch('/api/quick-content', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            revoModel: 'revo-1.0',
+            platform: platform.toLowerCase(),
+            brandProfile,
+            brandConsistency,
+            useLocalLanguage,
+            scheduledServices,
+            includePeopleInDesigns
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Revo 1.0 generation failed: ${response.statusText}`);
+        }
+
+        newPost = await response.json();
       } else if (useEnhancedGeneration) {
         // Use artifact-enhanced generation - will automatically use active artifacts from artifacts page
         newPost = await generateContentWithArtifactsAction(
@@ -300,7 +333,7 @@ export function ContentCalendar({
       } else {
         // Fallback to artifact-enhanced generation
         console.log('🤖 Using artifact-enhanced generation as fallback');
-        
+
         newPost = await generateContentWithArtifactsAction(
           brandProfile,
           platform,
@@ -350,7 +383,7 @@ export function ContentCalendar({
       if (selectedRevoModel === 'revo-2.0') {
         title = "Next-Gen Content Generated! 🚀";
         description = `${platform} post created with Revo 2.0`;
-        
+
         // Special message for Instagram with multiple captions
         if (platform === 'Instagram' && revo20Result?.captionVariations?.length > 1) {
           title = "Instagram Content with 5 Captions Generated! 📸";
@@ -376,9 +409,9 @@ export function ContentCalendar({
 
 
 
-      toast({ 
-        title, 
-        description 
+      toast({
+        title,
+        description
       });
     } catch (error) {
       toast({
@@ -474,8 +507,8 @@ export function ContentCalendar({
                       : `🌟 ${selectedRevoModel}: Next-generation AI (coming soon)`
                 }
               </p>
-              <CreditCostDisplay 
-                modelVersion={selectedRevoModel} 
+              <CreditCostDisplay
+                modelVersion={selectedRevoModel}
                 feature="Content Generation"
                 className="text-xs"
               />
@@ -483,7 +516,7 @@ export function ContentCalendar({
           </div>
 
           {/* Credit Display and Model Selection */}
-         
+
 
           {/* Simple Artifacts Toggle */}
           <div className="mb-6">
@@ -493,7 +526,7 @@ export function ContentCalendar({
                   <div className="space-y-1">
                     <Label className="text-sm font-medium">Use Artifacts</Label>
                     <p className="text-xs text-muted-foreground">
-                      
+
                     </p>
                   </div>
                   <div className="flex items-center gap-2">

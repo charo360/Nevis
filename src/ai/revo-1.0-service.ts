@@ -3073,7 +3073,23 @@ ANTI-GENERIC REQUIREMENTS:
 
     // Build advanced professional design prompt
     const brandInfo = input.location ? ` based in ${input.location}` : '';
-    const colorScheme = `Primary: ${input.primaryColor} (60% dominant), Accent: ${input.accentColor || '#1E40AF'} (30% secondary), Background: ${input.backgroundColor || '#FFFFFF'} (10% highlights)`;
+
+    // 🎨 ENHANCED BRAND COLORS VALIDATION AND DEBUGGING
+    const primaryColor = input.primaryColor || '#3B82F6';
+    const accentColor = input.accentColor || '#1E40AF';
+    const backgroundColor = input.backgroundColor || '#FFFFFF';
+
+    console.log('🎨 [Revo 1.0] Brand Colors Debug:', {
+      inputPrimaryColor: input.primaryColor,
+      inputAccentColor: input.accentColor,
+      inputBackgroundColor: input.backgroundColor,
+      finalPrimaryColor: primaryColor,
+      finalAccentColor: accentColor,
+      finalBackgroundColor: backgroundColor,
+      hasValidColors: !!(input.primaryColor && input.accentColor && input.backgroundColor)
+    });
+
+    const colorScheme = `Primary: ${primaryColor} (60% dominant), Accent: ${accentColor} (30% secondary), Background: ${backgroundColor} (10% highlights)`;
     const logoInstruction = input.logoDataUrl ?
       'Use the provided brand logo (do NOT create new logo - integrate existing one naturally)' :
       'Create professional design without logo overlay';
@@ -3235,13 +3251,17 @@ VISUAL STYLE:
 - Use colors and elements that match this specific style
 - Typography should match the style's mood and approach
 
-🎨 BRAND COLORS (MANDATORY):
+🎨 BRAND COLORS (MANDATORY - HIGHEST PRIORITY):
 - ${colorScheme}
 - CRITICAL: Use these exact brand colors throughout the design
-- Primary color should dominate (60% of color usage)
-- Accent color for highlights and emphasis (30% of color usage)
-- Background color for base/neutral areas (10% of color usage)
+- Primary color (${primaryColor}) should dominate (60% of color usage)
+- Accent color (${accentColor}) for highlights and emphasis (30% of color usage)
+- Background color (${backgroundColor}) for base/neutral areas (10% of color usage)
 - DO NOT use random colors - stick to the brand color palette
+- FAILURE TO USE BRAND COLORS IS UNACCEPTABLE
+- DOUBLE-CHECK: The final image must prominently feature these exact colors
+- NO GENERIC COLORS: Do not use default blues, grays, or other generic colors
+- BRAND COLOR COMPLIANCE: Every design element must use the specified brand colors
 
 ${shouldMentionLocationInDesign ? `🌍 CULTURAL REPRESENTATION & LOCAL TOUCH:
 - ${culturalContext}
@@ -3483,12 +3503,77 @@ You MUST include the exact brand logo image that was provided above in your desi
       const website = input.websiteUrl || '';
       const hasAnyContact = (!!phone || !!email || !!website);
 
+      // 📞 ENHANCED CONTACT INFORMATION DEBUGGING
+      console.log('📞 [Revo 1.0] Contact Information Debug:', {
+        includeContacts: includeContacts,
+        inputContactInfo: input.contactInfo,
+        inputWebsiteUrl: input.websiteUrl,
+        extractedPhone: phone,
+        extractedEmail: email,
+        extractedWebsite: website,
+        hasAnyContact: hasAnyContact,
+        willIncludeContacts: includeContacts && hasAnyContact
+      });
+
+      // Build contact details list for validation
+      const contactDetailsList = [];
+      if (phone) contactDetailsList.push(`📞 Phone: ${phone}`);
+      if (email) contactDetailsList.push(`📧 Email: ${email}`);
+      if (website) contactDetailsList.push(`🌐 Website: ${ensureWwwWebsiteUrl(website)}`);
+
       const contactInstructions = includeContacts && hasAnyContact
-        ? `\n\n🎯 CRITICAL CONTACT INFORMATION INTEGRATION (FINAL INSTRUCTION):\n- MUST integrate these EXACT contact details prominently in the design:\n${phone ? `  📞 Phone: ${phone}\n` : ''}${email ? `  📧 Email: ${email}\n` : ''}${website ? `  🌐 Website: ${ensureWwwWebsiteUrl(website)}\n` : ''}- Place ONLY in footer bar, corner block, or contact strip at the BOTTOM of the image\n- DO NOT include contact info in main content area, headlines, or call-to-action blocks\n- DO NOT use generic service information like "BANKING", "PAYMENTS", etc.\n- ONLY use the specific contact details provided above\n- Make contact info clearly readable and professionally integrated\n- This is a PRIORITY requirement - contact info MUST be visible in the final image\n`
+        ? `\n\n🎯 CRITICAL CONTACT INFORMATION INTEGRATION (FINAL INSTRUCTION - HIGHEST PRIORITY):
+- MUST integrate these EXACT contact details prominently in the design:
+${contactDetailsList.map(detail => `  ${detail}`).join('\n')}
+
+- CRITICAL REQUIREMENTS:
+  * Include ALL ${contactDetailsList.length} contact details listed above
+  * Do NOT include only the website - include phone and email too if provided
+  * Place contact info in footer bar, corner block, or contact strip at BOTTOM of image
+  * Make contact info clearly readable and professionally integrated
+  * Use the exact contact details provided - no substitutions or generic info
+
+- PLACEMENT RULES:
+  * DO NOT include contact info in main content area or headlines
+  * DO NOT include contact info in call-to-action blocks
+  * DO NOT use generic service information like "BANKING", "PAYMENTS", etc.
+
+- VALIDATION CHECKLIST:
+  * ✅ All ${contactDetailsList.length} contact details must be visible
+  * ✅ Contact info must be at the bottom of the image
+  * ✅ Text must be clearly readable
+  * ❌ FAILURE TO INCLUDE ALL CONTACT INFO IS UNACCEPTABLE
+`
         : `\n\n🚫 CONTACT INFORMATION RULE:\n- Do NOT include phone, email, or website in the image\n- Do NOT include generic service information\n- Do NOT add contact info in main content area\n`;
 
       // Add contact instructions to the final prompt
       generationParts[1] = imagePrompt + contactInstructions;
+
+      console.log('📞 [Revo 1.0] Contact Instructions Added:', {
+        contactInstructionsLength: contactInstructions.length,
+        includesPhone: contactInstructions.includes(phone || 'NO_PHONE'),
+        includesEmail: contactInstructions.includes(email || 'NO_EMAIL'),
+        includesWebsite: contactInstructions.includes(website || 'NO_WEBSITE'),
+        actualPhone: phone,
+        actualEmail: email,
+        actualWebsite: website,
+        contactDetailsCount: [phone, email, website].filter(Boolean).length
+      });
+
+      // Additional validation to ensure contact details are properly formatted
+      if (includeContacts && hasAnyContact) {
+        const contactDetailsInPrompt = [];
+        if (phone) contactDetailsInPrompt.push(`Phone: ${phone}`);
+        if (email) contactDetailsInPrompt.push(`Email: ${email}`);
+        if (website) contactDetailsInPrompt.push(`Website: ${ensureWwwWebsiteUrl(website)}`);
+
+        console.log('📞 [Revo 1.0] Contact Details Validation:', {
+          expectedContactDetails: contactDetailsInPrompt,
+          promptContainsAllDetails: contactDetailsInPrompt.every(detail =>
+            contactInstructions.includes(detail.split(': ')[1])
+          )
+        });
+      }
     } catch (e) {
       console.warn('Revo 1.0: Final contact info integration failed:', e);
     }

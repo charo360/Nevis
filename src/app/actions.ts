@@ -114,62 +114,11 @@ export async function analyzeBrandAction(
       // Ignore robots.txt errors, proceed
     }
 
-    // Step 3: Scrape content using basic fetch (for static sites; dynamic sites may not work perfectly)
-    let scrapedContent = '';
-    try {
-      const response = await fetch(normalizedUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        },
-        signal: AbortSignal.timeout(30000)
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const html = await response.text();
-      // Simple text extraction from HTML (remove basic tags)
-      scrapedContent = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-        .replace(/<[^>]+>/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-
-      // Allow analysis of all websites, even with minimal content
-      if (!scrapedContent || scrapedContent.length < 10) {
-        // Only reject if there's absolutely no content at all
-        return {
-          success: false,
-          error: "Unable to extract any content from the website. The website may be completely empty or have content protection.",
-          errorType: 'error'
-        };
-      }
-
-      // For websites with minimal content, add a helpful note
-      if (scrapedContent.length < 100) {
-        scrapedContent = `[NOTE: This website has minimal content - analysis will be basic]\n\n${scrapedContent}`;
-      }
-    } catch (scrapeError: any) {
-      if (scrapeError.name === 'AbortError') {
-        return {
-          success: false,
-          error: "Website took too long to load. Please try again or use a different URL.",
-          errorType: 'timeout'
-        };
-      }
-      return {
-        success: false,
-        error: "Failed to access the website. It may be down or blocking requests.",
-        errorType: 'error'
-      };
-    }
-
-    // Step 4: Call existing AI analysis with scraped content
-    const result = await analyzeBrandFlow({
+    // Step 3: Call the analyzeBrand function directly (it handles its own scraping)
+    const { analyzeBrand } = await import('@/ai/flows/analyze-brand');
+    const result = await analyzeBrand({
       websiteUrl: normalizedUrl,
-      designImageUris: designImageUris || [],
-      websiteContent: scrapedContent // Pass scraped content to AI flow for better accuracy
+      designImageUris: designImageUris || []
     });
 
     if (!result) {
@@ -256,14 +205,27 @@ export async function generateContentAction(
       socialMedia: profile.socialMedia || {},
     };
 
-    // Debug logging for contact information
-    console.log('🔍 [Actions] Contact Information Debug:', {
+    // 🎨📞 ENHANCED DEBUG LOGGING FOR BRAND COLORS AND CONTACT INFORMATION
+    console.log('🎨 [Actions] Brand Colors Debug:', {
+      profilePrimaryColor: profile.primaryColor,
+      profileAccentColor: profile.accentColor,
+      profileBackgroundColor: profile.backgroundColor,
+      enhancedPrimaryColor: enhancedProfile.primaryColor,
+      enhancedAccentColor: enhancedProfile.accentColor,
+      enhancedBackgroundColor: enhancedProfile.backgroundColor,
+      followBrandColors: brandConsistency?.followBrandColors,
+      hasValidBrandColors: !!(profile.primaryColor && profile.accentColor && profile.backgroundColor)
+    });
+
+    console.log('📞 [Actions] Contact Information Debug:', {
       profileContactInfo: profile.contactInfo,
       profileContactPhone: (profile as any).contactPhone,
       profileContactEmail: (profile as any).contactEmail,
       profileContactAddress: (profile as any).contactAddress,
+      profileWebsiteUrl: profile.websiteUrl,
       enhancedContactInfo: enhancedProfile.contactInfo,
-      includeContacts: brandConsistency?.includeContacts
+      includeContacts: brandConsistency?.includeContacts,
+      hasValidContactInfo: !!(enhancedProfile.contactInfo?.phone || enhancedProfile.contactInfo?.email || enhancedProfile.websiteUrl)
     });
 
     // Convert arrays to newline-separated strings for AI processing
