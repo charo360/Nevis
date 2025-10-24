@@ -93,13 +93,51 @@ const AnalyzeBrandOutputSchema = z.object({
 export type BrandAnalysisResult = z.infer<typeof AnalyzeBrandOutputSchema>;
 
 export async function analyzeBrand(input: AnalyzeBrandInput): Promise<BrandAnalysisResult> {
-  return analyzeBrandFlow(input);
+  // Direct OpenRouter analysis (bypass Genkit flow to avoid proxy requirements)
+  try {
+    console.log('🔍 Starting direct OpenRouter brand analysis...');
+    console.log('🔍 [FORCE RECOMPILE] This should trigger recompilation');
+
+    // First, scrape the website content
+    const scrapedData = await scrapeWebsiteContent(input.websiteUrl);
+
+    // Debug: Log scraped data
+    console.log(`🔍 [Brand Analysis] Scraped data:`, {
+      contentLength: scrapedData.content?.length || 0,
+      phoneNumbers: scrapedData.phoneNumbers?.length || 0,
+      emailAddresses: scrapedData.emailAddresses?.length || 0,
+      competitiveAdvantages: scrapedData.competitiveAdvantages?.length || 0,
+      contentThemes: scrapedData.contentThemes?.length || 0
+    });
+
+    // Use direct OpenRouter analysis (no proxy dependencies)
+    const output = await analyzeWebsiteWithOpenRouter(
+      scrapedData.content,
+      input.websiteUrl,
+      input.designImageUris,
+      scrapedData
+    );
+
+    console.log('✅ Direct OpenRouter brand analysis completed successfully');
+    // Force recompilation - updated
+    return output;
+
+  } catch (error) {
+    console.error('❌ Direct OpenRouter brand analysis failed:', error);
+    throw error;
+  }
 }
 
 // Old Genkit prompt removed - now using multi-model proxy system
 
 // Website scraping function using server-side API
-async function scrapeWebsiteContent(url: string): Promise<string> {
+async function scrapeWebsiteContent(url: string): Promise<{
+  content: string;
+  phoneNumbers?: string[];
+  emailAddresses?: string[];
+  competitiveAdvantages?: string[];
+  contentThemes?: string[];
+}> {
   try {
     // Use the server-side scraping API
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL
@@ -130,11 +168,24 @@ async function scrapeWebsiteContent(url: string): Promise<string> {
       }
     }
 
-    if (!result.success || !result.content) {
+    // Handle both old and new response structures
+    const content = result.data?.content || result.content;
+    const phoneNumbers = result.data?.phoneNumbers || result.phoneNumbers || [];
+    const emailAddresses = result.data?.emailAddresses || result.emailAddresses || [];
+    const competitiveAdvantages = result.data?.competitiveAdvantages || result.competitiveAdvantages || [];
+    const contentThemes = result.data?.contentThemes || result.contentThemes || [];
+
+    if (!result.success || !content) {
       throw new Error('No content could be extracted from the website');
     }
 
-    return result.content;
+    return {
+      content,
+      phoneNumbers,
+      emailAddresses,
+      competitiveAdvantages,
+      contentThemes
+    };
 
   } catch (error) {
     // Pass through the error with proper typing for upstream handling
@@ -142,129 +193,129 @@ async function scrapeWebsiteContent(url: string): Promise<string> {
   }
 }
 
-// New proxy-based website analysis function
-async function analyzeWebsiteWithProxy(
+// Direct OpenRouter website analysis function (no proxy dependencies)
+async function analyzeWebsiteWithOpenRouter(
   websiteContent: string,
   websiteUrl: string,
-  designImageUris: string[] = []
+  designImageUris: string[] = [],
+  scrapedData?: {
+    phoneNumbers?: string[];
+    competitiveAdvantages?: string[];
+    contentThemes?: string[];
+  }
 ): Promise<BrandAnalysisResult> {
   try {
-    const proxyUrl = process.env.NEXT_PUBLIC_PROXY_URL || 'http://localhost:8000';
-
-    console.log('🌐 Using new multi-model website analysis system...');
+    console.log('🌐 Using direct OpenRouter multi-model website analysis...');
     console.log(`📄 Content length: ${websiteContent.length} characters`);
 
-    const payload = {
-      website_content: websiteContent,
-      website_url: websiteUrl,
-      user_id: 'website_analysis_user',
-      user_tier: 'free',
-      design_images: designImageUris,
-      temperature: 0.3,
-      max_tokens: 8192
-    };
+    // Import the OpenRouter client
+    const { openRouterClient } = await import('@/lib/services/openrouter-client');
 
-    console.log(`🔗 Making request to: ${proxyUrl}/analyze-website`);
+    // Analyze website using direct OpenRouter calls with multi-model fallback
+    const result = await openRouterClient.analyzeWebsite(
+      websiteContent,
+      websiteUrl,
+      designImageUris,
+      scrapedData
+    );
 
-    const response = await fetch(`${proxyUrl}/analyze-website`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
+    console.log('✅ Direct OpenRouter analysis completed successfully');
 
-    console.log(`📡 Proxy response status: ${response.status}`);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`❌ Proxy error response: ${errorText}`);
-      throw new Error(`Proxy analysis failed: ${response.status} - ${errorText}`);
+    // Validate the response structure
+    if (!result || typeof result !== 'object') {
+      throw new Error('Invalid response format from OpenRouter');
     }
 
-    const result = await response.json();
-    console.log(`📊 Proxy result keys: ${Object.keys(result).join(', ')}`);
-
-    if (!result.success || !result.data) {
-      console.error(`❌ Invalid proxy result:`, result);
-      throw new Error('Proxy analysis returned no data');
-    }
-
-    console.log(`✅ Website analysis successful with ${result.model_used} (${result.provider_used})`);
-    console.log(`🔄 Completed in attempt ${result.attempt}/3`);
-
-    // Map proxy response to our expected schema
-    const proxyData = result.data;
+    // Map OpenRouter response to our expected schema
+    const analysisData = result;
 
     return {
-      businessName: proxyData.businessName || 'Unknown Business',
-      description: proxyData.description || 'Professional services company',
-      businessType: proxyData.businessType,
-      industry: proxyData.businessType,
-      targetAudience: proxyData.targetAudience || 'General business customers',
-      services: Array.isArray(proxyData.services)
-        ? proxyData.services.join('\n')
-        : (proxyData.services || 'Professional services'),
-      keyFeatures: Array.isArray(proxyData.keyFeatures)
-        ? proxyData.keyFeatures.join('\n')
-        : (proxyData.keyFeatures || 'Quality features'),
-      competitiveAdvantages: proxyData.competitiveAdvantages,
-      visualStyle: proxyData.visualStyle || 'Modern and professional design approach',
-      writingTone: proxyData.writingTone || 'Professional and customer-focused',
-      contentThemes: proxyData.contentThemes || proxyData.contentStrategy || 'Quality and professionalism',
-      brandPersonality: proxyData.brandPersonality || 'Professional and reliable',
-      colorPalette: proxyData.colorPalette || {
+      businessName: analysisData.businessName || 'Unknown Business',
+      description: analysisData.description || 'Professional services company',
+      businessType: analysisData.businessType || analysisData.industry || 'general',
+      industry: analysisData.industry || analysisData.businessType || 'general',
+      targetAudience: analysisData.targetAudience || 'General business customers',
+
+      // Enhanced service extraction with detailed descriptions
+      services: (() => {
+        // First try to get detailed service descriptions
+        if (analysisData.detailedServiceDescriptions && analysisData.detailedServiceDescriptions.length > 100) {
+          return analysisData.detailedServiceDescriptions;
+        }
+
+        // Then try service array (now simplified)
+        if (Array.isArray(analysisData.keyServices) && analysisData.keyServices.length > 0) {
+          return analysisData.keyServices.join('\n\n');
+        }
+
+        // Fallback to simple service list
+        if (typeof analysisData.keyServices === 'string') {
+          return analysisData.keyServices;
+        }
+
+        return 'Professional services';
+      })(),
+
+      keyFeatures: (() => {
+        // Use service descriptions as features if available
+        if (Array.isArray(analysisData.keyServices) && analysisData.keyServices.length > 0) {
+          return analysisData.keyServices.join('\n');
+        }
+
+        return analysisData.keyServices || 'Quality features';
+      })(),
+      competitiveAdvantages: Array.isArray(analysisData.competitiveAdvantages)
+        ? analysisData.competitiveAdvantages.join(', ')
+        : (analysisData.competitiveAdvantages || 'Quality service'),
+      visualStyle: analysisData.visualStyle || 'Modern and professional design approach',
+      writingTone: analysisData.brandPersonality?.tone || analysisData.communicationStyle || 'Professional and customer-focused',
+      contentThemes: Array.isArray(analysisData.contentThemes)
+        ? analysisData.contentThemes.join(', ')
+        : (analysisData.contentThemes || 'Quality and professionalism'),
+      brandPersonality: typeof analysisData.brandPersonality === 'object'
+        ? `${analysisData.brandPersonality.tone || 'professional'}, ${analysisData.brandPersonality.style || 'modern'}`
+        : (analysisData.brandPersonality || 'Professional and reliable'),
+      colorPalette: analysisData.colorScheme || {
         primary: '#3B82F6',
         secondary: '#10B981',
         accent: '#8B5CF6',
         description: 'Professional color scheme'
       },
-      typography: proxyData.typography || {
+      typography: {
         style: 'Modern and clean',
         characteristics: 'Professional typography'
       },
-      contactInfo: typeof proxyData.contactInfo === 'object'
-        ? proxyData.contactInfo
-        : {
-          phone: '',
-          email: '',
-          address: proxyData.location || '',
-          website: websiteUrl,
-          hours: ''
-        },
-      socialMedia: typeof proxyData.socialMedia === 'object'
-        ? {
-          facebook: proxyData.socialMedia?.facebook || '',
-          instagram: proxyData.socialMedia?.instagram || '',
-          twitter: proxyData.socialMedia?.twitter || '',
-          linkedin: proxyData.socialMedia?.linkedin || '',
-          youtube: proxyData.socialMedia?.youtube || '',
-          other: proxyData.socialMedia?.other || []
-        }
-        : {
-          facebook: '',
-          instagram: '',
-          twitter: '',
-          linkedin: '',
-          youtube: '',
-          other: []
-        },
-      location: proxyData.location,
-      establishedYear: proxyData.establishedYear ? String(proxyData.establishedYear) : '',
-      teamSize: proxyData.teamSize || '',
-      certifications: proxyData.certifications || [],
-      contentStrategy: proxyData.contentStrategy,
-      callsToAction: Array.isArray(proxyData.callsToAction)
-        ? proxyData.callsToAction
-        : (proxyData.callsToAction ? [proxyData.callsToAction] : []),
-      valueProposition: proxyData.valueProposition,
+      contactInfo: {
+        phone: analysisData.contactInfo?.phone || '',
+        email: analysisData.contactInfo?.email || '',
+        address: analysisData.contactInfo?.address || analysisData.location || '',
+        website: websiteUrl,
+        hours: analysisData.contactInfo?.hours || ''
+      },
+      socialMedia: {
+        facebook: analysisData.socialMedia?.facebook || '',
+        instagram: analysisData.socialMedia?.instagram || '',
+        twitter: analysisData.socialMedia?.twitter || '',
+        linkedin: analysisData.socialMedia?.linkedin || '',
+        youtube: analysisData.socialMedia?.youtube || '',
+        other: analysisData.socialMedia?.other || []
+      },
+      location: analysisData.location || 'not specified',
+      establishedYear: analysisData.establishedYear || '',
+      teamSize: analysisData.teamSize || '',
+      certifications: analysisData.certifications || [],
+      contentStrategy: Array.isArray(analysisData.marketingAngles)
+        ? analysisData.marketingAngles.join(', ')
+        : (analysisData.marketingAngles || 'Quality-focused approach'),
+      callsToAction: ['Contact Us', 'Learn More', 'Get Started'],
+      valueProposition: analysisData.valueProposition || 'Quality service provider',
 
-      // Include archetype recommendation from proxy server
-      archetypeRecommendation: proxyData.archetypeRecommendation || undefined
+      // Include archetype recommendation from OpenRouter analysis
+      archetypeRecommendation: analysisData.brandArchetype || undefined
     };
 
   } catch (error) {
-    console.error('❌ Proxy website analysis failed:', error);
+    console.error('❌ OpenRouter website analysis failed:', error);
     throw error;
   }
 }
@@ -280,19 +331,19 @@ const analyzeBrandFlow = ai.defineFlow(
       // First, scrape the website content
       const websiteContent = await scrapeWebsiteContent(input.websiteUrl);
 
-      console.log('🔍 Analyzing brand with new multi-model system...');
+      console.log('🔍 Analyzing brand with direct OpenRouter multi-model system...');
 
-      // Use the new proxy-based analysis instead of Genkit
-      const output = await analyzeWebsiteWithProxy(
+      // Use the new direct OpenRouter analysis (no proxy dependencies)
+      const output = await analyzeWebsiteWithOpenRouter(
         websiteContent,
         input.websiteUrl,
         input.designImageUris
       );
 
-      // Validate the proxy response
+      // Validate the OpenRouter response
       if (!output || typeof output !== 'object') {
-        console.error('❌ Invalid proxy response format:', typeof output);
-        throw new Error('Invalid proxy response format');
+        console.error('❌ Invalid OpenRouter response format:', typeof output);
+        throw new Error('Invalid OpenRouter response format');
       }
 
       // Validate required fields are present
