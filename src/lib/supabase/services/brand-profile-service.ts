@@ -329,13 +329,22 @@ class BrandProfileSupabaseService {
       if (updates.logoDataUrl !== undefined) rowUpdates.logo_data_url = updates.logoDataUrl;
       if (updates.isActive !== undefined) rowUpdates.is_active = updates.isActive;
 
-      // Handle nested object updates: colors
+      // Handle nested object updates: colors - ensure proper field mapping
       if (updates.primaryColor !== undefined || updates.accentColor !== undefined || updates.backgroundColor !== undefined) {
+        // Get existing colors to preserve values not being updated
+        const existingColors = rowUpdates.brand_colors || {};
         rowUpdates.brand_colors = {
-          primary: updates.primaryColor ?? (undefined as any),
-          accent: updates.accentColor ?? (undefined as any),
-          secondary: updates.backgroundColor ?? (undefined as any)
+          primary: updates.primaryColor !== undefined ? updates.primaryColor : existingColors.primary,
+          accent: updates.accentColor !== undefined ? updates.accentColor : existingColors.accent,
+          secondary: updates.backgroundColor !== undefined ? updates.backgroundColor : existingColors.secondary
         };
+
+        console.log('🎨 [Brand Profile Service] Color update mapping:', {
+          inputPrimaryColor: updates.primaryColor,
+          inputAccentColor: updates.accentColor,
+          inputBackgroundColor: updates.backgroundColor,
+          finalBrandColors: rowUpdates.brand_colors
+        });
       }
 
       // Handle location string (store as {country,city,address} minimal)
@@ -390,15 +399,7 @@ class BrandProfileSupabaseService {
         rowUpdates.design_examples = Array.isArray(updates.designExamples) ? updates.designExamples : [];
       }
 
-      // Handle brand colors - ensure they're properly stored and accessible
-      if (updates.primaryColor !== undefined || updates.accentColor !== undefined || updates.backgroundColor !== undefined) {
-        rowUpdates.brand_colors = {
-          ...(rowUpdates.brand_colors || {}),
-          primaryColor: updates.primaryColor ?? undefined,
-          accentColor: updates.accentColor ?? undefined,
-          backgroundColor: updates.backgroundColor ?? undefined
-        };
-      }
+      // Remove duplicate brand colors handling - already handled above with correct field names
 
       // Handle identity and other fields - only update fields that exist in the database
       if (updates.visualStyle !== undefined) rowUpdates.brand_voice = { ...(rowUpdates.brand_voice || {}), visualStyle: updates.visualStyle };
