@@ -76,7 +76,10 @@ export async function generateRevo15ContentAction(
         ...brandProfile,
         logoDataUrl: convertedLogoDataUrl || brandProfile.logoDataUrl
       },
-      brandConsistency, // pass through to enable includeContacts handling
+      brandConsistency: {
+        ...brandConsistency,
+        followBrandColors: brandConsistency?.followBrandColors !== false // Default to true
+      }, // pass through to enable includeContacts and followBrandColors handling
       aspectRatio: options?.aspectRatio || '1:1',
       includePeopleInDesigns: options?.includePeopleInDesigns || false,
       useLocalLanguage: options?.useLocalLanguage || false,

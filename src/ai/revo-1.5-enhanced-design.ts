@@ -2174,14 +2174,17 @@ function buildEnhancedImagePrompt(
     callToAction: string;
   }
 ): string {
-  // 🎨 ENHANCED BRAND COLORS VALIDATION AND DEBUGGING
-  const primaryColor = input.brandProfile.primaryColor || '#3B82F6';
-  const accentColor = input.brandProfile.accentColor || '#1E40AF';
-  const backgroundColor = input.brandProfile.backgroundColor || '#FFFFFF';
+  // 🎨 ENHANCED BRAND COLORS VALIDATION AND DEBUGGING WITH TOGGLE SUPPORT
+  const shouldFollowBrandColors = input.brandConsistency?.followBrandColors !== false; // Default to true if not specified
+
+  const primaryColor = shouldFollowBrandColors ? (input.brandProfile.primaryColor || '#3B82F6') : '#3B82F6';
+  const accentColor = shouldFollowBrandColors ? (input.brandProfile.accentColor || '#1E40AF') : '#1E40AF';
+  const backgroundColor = shouldFollowBrandColors ? (input.brandProfile.backgroundColor || '#FFFFFF') : '#FFFFFF';
 
   const brandColors = [primaryColor, accentColor, backgroundColor].filter(Boolean);
 
   console.log('🎨 [Revo 1.5] Brand Colors Debug:', {
+    followBrandColors: shouldFollowBrandColors,
     inputPrimaryColor: input.brandProfile.primaryColor,
     inputAccentColor: input.brandProfile.accentColor,
     inputBackgroundColor: input.brandProfile.backgroundColor,
@@ -2189,7 +2192,8 @@ function buildEnhancedImagePrompt(
     finalAccentColor: accentColor,
     finalBackgroundColor: backgroundColor,
     brandColorsArray: brandColors,
-    hasValidColors: !!(input.brandProfile.primaryColor && input.brandProfile.accentColor && input.brandProfile.backgroundColor)
+    hasValidColors: !!(input.brandProfile.primaryColor && input.brandProfile.accentColor && input.brandProfile.backgroundColor),
+    usingBrandColors: shouldFollowBrandColors && !!(input.brandProfile.primaryColor && input.brandProfile.accentColor && input.brandProfile.backgroundColor)
   });
 
   // Enhanced target market representation for all locations
@@ -2363,7 +2367,7 @@ BRAND INTEGRATION:
 |- Logo Status: ${(input.brandProfile.logoDataUrl || input.brandProfile.logoUrl) ? '✅ BRAND LOGO AVAILABLE - Must be integrated prominently' : '❌ No logo available - do not add any logo'}
 |- Logo Integration: ${(input.brandProfile.logoDataUrl || input.brandProfile.logoUrl) ? 'CRITICAL: The actual brand logo will be provided and MUST be used in the design' : 'Design without logo - focus on typography and brand colors'}
 
-🎨 BRAND COLORS (MANDATORY - HIGHEST PRIORITY):
+${shouldFollowBrandColors ? `🎨 BRAND COLORS (MANDATORY - HIGHEST PRIORITY):
 - Primary Color: ${primaryColor} (DOMINANT - 60% of design)
 - Accent Color: ${accentColor} (HIGHLIGHTS - 30% of design)
 - Background Color: ${backgroundColor} (BASE - 10% of design)
@@ -2371,7 +2375,11 @@ BRAND INTEGRATION:
 - FAILURE TO USE BRAND COLORS IS UNACCEPTABLE
 - DOUBLE-CHECK: The final image must prominently feature these exact colors
 - NO GENERIC COLORS: Do not use default blues, grays, or other generic colors
-- BRAND COLOR COMPLIANCE: Every design element must use the specified brand colors
+- BRAND COLOR COMPLIANCE: Every design element must use the specified brand colors` : `🎨 COLOR SCHEME:
+- Use professional, modern colors that complement the ${input.visualStyle} style
+- Choose colors that work well with the design theme
+- Ensure good contrast and readability
+- Colors should enhance the overall visual appeal and brand consistency`}
 
 ${cleanedImageText ? `ADDITIONAL TEXT CONTENT TO INCLUDE:
 "${cleanedImageText}"` : 'TEXT CONTENT: Use the generated headline, subheadline, and CTA from the content generation above'}

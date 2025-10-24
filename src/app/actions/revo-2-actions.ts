@@ -40,6 +40,7 @@ export async function generateRevo2ContentAction(
       includePeopleInDesigns: options?.includePeopleInDesigns || false,
       useLocalLanguage: options?.useLocalLanguage || false,
       includeContacts: !!brandConsistency?.includeContacts,
+      followBrandColors: brandConsistency?.followBrandColors !== false, // Default to true
       scheduledServices: scheduledServices // NEW: Pass scheduled services to Revo 2.0
     };
 

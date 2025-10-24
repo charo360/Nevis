@@ -276,6 +276,7 @@ export interface Revo20GenerationOptions {
   includePeopleInDesigns?: boolean;
   useLocalLanguage?: boolean;
   includeContacts?: boolean;
+  followBrandColors?: boolean;
   scheduledServices?: any[];
 }
 
@@ -415,10 +416,24 @@ function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: any): st
 
   const { businessType, platform, brandProfile, aspectRatio = '1:1', visualStyle = 'modern', scheduledServices } = options;
 
-  // Extract brand colors from profile
-  const primaryColor = brandProfile.primaryColor || '#3B82F6';
-  const accentColor = brandProfile.accentColor || '#1E40AF';
-  const backgroundColor = brandProfile.backgroundColor || '#FFFFFF';
+  // Extract brand colors from profile with toggle support
+  const shouldFollowBrandColors = options.followBrandColors !== false; // Default to true if not specified
+
+  const primaryColor = shouldFollowBrandColors ? (brandProfile.primaryColor || '#3B82F6') : '#3B82F6';
+  const accentColor = shouldFollowBrandColors ? (brandProfile.accentColor || '#1E40AF') : '#1E40AF';
+  const backgroundColor = shouldFollowBrandColors ? (brandProfile.backgroundColor || '#FFFFFF') : '#FFFFFF';
+
+  console.log('🎨 [Revo 2.0] Brand Colors Debug:', {
+    followBrandColors: shouldFollowBrandColors,
+    inputPrimaryColor: brandProfile.primaryColor,
+    inputAccentColor: brandProfile.accentColor,
+    inputBackgroundColor: brandProfile.backgroundColor,
+    finalPrimaryColor: primaryColor,
+    finalAccentColor: accentColor,
+    finalBackgroundColor: backgroundColor,
+    hasValidColors: !!(brandProfile.primaryColor && brandProfile.accentColor && brandProfile.backgroundColor),
+    usingBrandColors: shouldFollowBrandColors && !!(brandProfile.primaryColor && brandProfile.accentColor && brandProfile.backgroundColor)
+  });
 
   // Build color scheme instruction
   const colorScheme = `Primary: ${primaryColor} (60% dominant), Accent: ${accentColor} (30% secondary), Background: ${backgroundColor} (10% highlights)`;
@@ -570,7 +585,7 @@ REVO 2.0 ENHANCED FEATURES:
 CRITICAL REQUIREMENTS:
 - Resolution: 992x1056px (1:1 square format)
 - High-quality, professional appearance
-- MANDATORY: Use the specified brand colors (${primaryColor}, ${accentColor}, ${backgroundColor})
+${shouldFollowBrandColors ? `- MANDATORY: Use the specified brand colors (${primaryColor}, ${accentColor}, ${backgroundColor})` : `- Use professional, modern colors that complement the ${visualStyle} style`}
 - Clear, readable text elements with proper contrast
 - Engaging visual composition with brand consistency
 - Cultural sensitivity and relevance

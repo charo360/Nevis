@@ -2265,6 +2265,7 @@ export async function generateRevo10Content(input: {
     address?: string;
   };
   websiteUrl?: string;
+  followBrandColors?: boolean;
   useLocalLanguage?: boolean; // When true, mix local language with English; when false, use 100% English
   scheduledServices?: ScheduledService[]; // NEW: Scheduled services integration
   includePeople?: boolean; // NEW: People in designs toggle
@@ -2901,6 +2902,8 @@ export async function generateRevo10Image(input: {
   websiteUrl?: string;
   includePeople?: boolean; // NEW: People toggle parameter
   scheduledServices?: ScheduledService[]; // NEW: Scheduled services for product-specific marketing
+  // NEW: Brand consistency toggles
+  followBrandColors?: boolean;
 }) {
   try {
 
@@ -2941,19 +2944,23 @@ ANTI-GENERIC REQUIREMENTS:
     // Build advanced professional design prompt
     const brandInfo = input.location ? ` based in ${input.location}` : '';
 
-    // 🎨 ENHANCED BRAND COLORS VALIDATION AND DEBUGGING
-    const primaryColor = input.primaryColor || '#3B82F6';
-    const accentColor = input.accentColor || '#1E40AF';
-    const backgroundColor = input.backgroundColor || '#FFFFFF';
+    // 🎨 ENHANCED BRAND COLORS VALIDATION AND DEBUGGING WITH TOGGLE SUPPORT
+    const shouldFollowBrandColors = input.followBrandColors !== false; // Default to true if not specified
+
+    const primaryColor = shouldFollowBrandColors ? (input.primaryColor || '#3B82F6') : '#3B82F6';
+    const accentColor = shouldFollowBrandColors ? (input.accentColor || '#1E40AF') : '#1E40AF';
+    const backgroundColor = shouldFollowBrandColors ? (input.backgroundColor || '#FFFFFF') : '#FFFFFF';
 
     console.log('🎨 [Revo 1.0] Brand Colors Debug:', {
+      followBrandColors: shouldFollowBrandColors,
       inputPrimaryColor: input.primaryColor,
       inputAccentColor: input.accentColor,
       inputBackgroundColor: input.backgroundColor,
       finalPrimaryColor: primaryColor,
       finalAccentColor: accentColor,
       finalBackgroundColor: backgroundColor,
-      hasValidColors: !!(input.primaryColor && input.accentColor && input.backgroundColor)
+      hasValidColors: !!(input.primaryColor && input.accentColor && input.backgroundColor),
+      usingBrandColors: shouldFollowBrandColors && !!(input.primaryColor && input.accentColor && input.backgroundColor)
     });
 
     const colorScheme = `Primary: ${primaryColor} (60% dominant), Accent: ${accentColor} (30% secondary), Background: ${backgroundColor} (10% highlights)`;
@@ -3110,7 +3117,7 @@ VISUAL STYLE:
 - Use colors and elements that match this specific style
 - Typography should match the style's mood and approach
 
-🎨 BRAND COLORS (MANDATORY - HIGHEST PRIORITY):
+${shouldFollowBrandColors ? `🎨 BRAND COLORS (MANDATORY - HIGHEST PRIORITY):
 - ${colorScheme}
 - CRITICAL: Use these exact brand colors throughout the design
 - Primary color (${primaryColor}) should dominate (60% of color usage)
@@ -3120,7 +3127,11 @@ VISUAL STYLE:
 - FAILURE TO USE BRAND COLORS IS UNACCEPTABLE
 - DOUBLE-CHECK: The final image must prominently feature these exact colors
 - NO GENERIC COLORS: Do not use default blues, grays, or other generic colors
-- BRAND COLOR COMPLIANCE: Every design element must use the specified brand colors
+- BRAND COLOR COMPLIANCE: Every design element must use the specified brand colors` : `🎨 COLOR SCHEME:
+- Use professional, modern colors that complement the design
+- Choose colors that work well with the ${input.visualStyle} style
+- Ensure good contrast and readability
+- Colors should enhance the overall visual appeal`}
 
 ${shouldMentionLocationInDesign ? `🌍 CULTURAL REPRESENTATION & LOCAL TOUCH:
 - ${culturalContext}

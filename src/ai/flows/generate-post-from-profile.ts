@@ -412,12 +412,17 @@ async function generateImageForVariant(
   const isStrictConsistency = input.brandConsistency?.strictConsistency ?? false;
   const followBrandColors = input.brandConsistency?.followBrandColors ?? true;
 
+  // Use brand colors or default colors based on toggle
+  const finalPrimaryColor = followBrandColors ? input.primaryColor : '#3B82F6';
+  const finalAccentColor = followBrandColors ? input.accentColor : '#1E40AF';
+  const finalBackgroundColor = followBrandColors ? input.backgroundColor : '#FFFFFF';
+
   // STRICT 3-color maximum with brand color enforcement
   const colorInstructions = followBrandColors ? `
   **MAXIMUM 3 COLORS ONLY - BRAND COLORS MANDATORY:**
-  - Primary Color: ${input.primaryColor} - DOMINANT color (60-70% of design)
-  - Accent Color: ${input.accentColor} - HIGHLIGHT color (20-30% of design)
-  - Background Color: ${input.backgroundColor} - BASE color (10-20% of design)
+  - Primary Color: ${finalPrimaryColor} - DOMINANT color (60-70% of design)
+  - Accent Color: ${finalAccentColor} - HIGHLIGHT color (20-30% of design)
+  - Background Color: ${finalBackgroundColor} - BASE color (10-20% of design)
 
   **ABSOLUTE COLOR LIMITS - NO EXCEPTIONS:**
   - MAXIMUM 3 colors total in entire design
@@ -427,16 +432,16 @@ async function generateImageForVariant(
   - NO gradients using non-brand colors
   - Text: Use high contrast white or black only when needed
   - FORBIDDEN: Any design with more than 3 colors total
-  
+
   **CRITICAL: These are the EXACT brand colors that MUST be used:**
-  - Primary: ${input.primaryColor} (use as main color)
-  - Accent: ${input.accentColor} (use for highlights)
-  - Background: ${input.backgroundColor} (use as base)
+  - Primary: ${finalPrimaryColor} (use as main color)
+  - Accent: ${finalAccentColor} (use for highlights)
+  - Background: ${finalBackgroundColor} (use as base)
   ` : `
   **MAXIMUM 3 COLORS TOTAL:**
-  - Primary: ${input.primaryColor} - DOMINANT (60-70%)
-  - Accent: ${input.accentColor} - HIGHLIGHT (20-30%)
-  - Background: ${input.backgroundColor} - BASE (10-20%)
+  - Primary: ${finalPrimaryColor} - DOMINANT (60-70%)
+  - Accent: ${finalAccentColor} - HIGHLIGHT (20-30%)
+  - Background: ${finalBackgroundColor} - BASE (10-20%)
   - ABSOLUTE LIMIT: 3 colors maximum in entire design
   `;
 
@@ -812,7 +817,7 @@ ${ethnicityInstructions}
         input.visualStyle,
         9.2, // HD quality score with enhanced settings and prompting
         {
-          colorPalette: input.primaryColor ? [input.primaryColor, input.accentColor, input.backgroundColor].filter(Boolean) : [],
+          colorPalette: finalPrimaryColor ? [finalPrimaryColor, finalAccentColor, finalBackgroundColor].filter(Boolean) : [],
           typography: 'Modern social media optimized',
           composition: variant.aspectRatio,
           trends: selectedExamples.length > 0 ? ['design-examples-based'] : ['ai-generated'],

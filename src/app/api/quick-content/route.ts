@@ -205,7 +205,9 @@ export async function POST(request: NextRequest) {
               contactInfo: finalContactInfo,
               websiteUrl: finalWebsiteUrl,
               includePeople: includePeopleInDesigns,
-              scheduledServices: brandSpecificServices || []
+              scheduledServices: brandSpecificServices || [],
+              // Brand colors toggle
+              followBrandColors: brandConsistency?.followBrandColors !== false // Default to true
             });
 
             // Convert to GeneratedPost format

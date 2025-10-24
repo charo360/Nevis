@@ -274,6 +274,8 @@ export async function generateContentAction(
       includeContacts: brandConsistency?.includeContacts || false,
       contactInfo: enhancedProfile.contactInfo || {},
       websiteUrl: enhancedProfile.websiteUrl,
+      // Brand colors toggle
+      followBrandColors: brandConsistency?.followBrandColors !== false, // Default to true
       // Local language control
       useLocalLanguage: useLocalLanguage,
       // Product image descriptions for AI context
