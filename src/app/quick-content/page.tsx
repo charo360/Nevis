@@ -392,6 +392,7 @@ function QuickContentPage() {
 
                             <ContentCalendar
                               brandProfile={{
+                                id: currentBrand.id, // 🔧 CRITICAL FIX: Include brand ID for database lookups
                                 businessName: currentBrand.businessName,
                                 businessType: currentBrand.businessType || "",
                                 location: ((): string => {
@@ -410,6 +411,10 @@ function QuickContentPage() {
                                 writingTone: currentBrand.writingTone || "",
                                 contentThemes: currentBrand.contentThemes || "",
                                 websiteUrl: currentBrand.websiteUrl || "",
+                                // 🎨 CRITICAL FIX: Include brand colors for content generation
+                                primaryColor: currentBrand.primaryColor || "",
+                                accentColor: currentBrand.accentColor || "",
+                                backgroundColor: currentBrand.backgroundColor || "",
                                 description: currentBrand.description || "",
                                 services: calendarServices.length > 0
                                   ? calendarServices.join("\n")

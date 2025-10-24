@@ -37,7 +37,7 @@ async function verifySupabaseAuth(authHeader: string | null) {
 // GET /api/brand-profiles/[id] - Load a single brand profile
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await verifySupabaseAuth(request.headers.get('authorization'));
@@ -49,7 +49,7 @@ export async function GET(
       );
     }
 
-    const brandId = params.id;
+    const { id: brandId } = await params;
     if (!brandId) {
       return NextResponse.json(
         { error: 'Brand ID is required' },
@@ -101,7 +101,7 @@ export async function GET(
 // PUT /api/brand-profiles/[id] - Update a single brand profile
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await verifySupabaseAuth(request.headers.get('authorization'));
@@ -113,7 +113,7 @@ export async function PUT(
       );
     }
 
-    const brandId = params.id;
+    const { id: brandId } = await params;
     if (!brandId) {
       return NextResponse.json(
         { error: 'Brand ID is required' },
