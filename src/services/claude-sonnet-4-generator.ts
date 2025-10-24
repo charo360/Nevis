@@ -112,7 +112,6 @@ export class ClaudeSonnet4Generator {
     return brandKey.toLowerCase();
   }
 
-
   // Recent products memory per brand/platform to rotate SKUs without repetition
   private static recentProducts: Record<string, string[]> = {};
 
@@ -435,33 +434,14 @@ Return a brief creative concept (2-3 sentences) that will guide the content crea
     return parsed;
   }
 
-
-
-
   /**
    * Generate content using Claude Sonnet 4 ONLY - NO FALLBACKS
    */
   static async generateContent(request: ClaudeContentRequest): Promise<ClaudeContentResponse> {
-    console.log('🧠 [Claude Sonnet 4] Generating content for:', {
-      businessName: request.businessName,
-      businessType: request.businessType,
-      platform: request.platform,
-      location: request.location,
-      useLocalLanguage: request.useLocalLanguage,
-      scheduledServicesCount: request.scheduledServices?.length || 0,
-      todaysServicesCount: request.scheduledServices?.filter(s => s.isToday).length || 0
-    });
 
     // Extract scheduled services for priority content focus (Revo 2.0 approach)
     const todaysServices = request.scheduledServices?.filter(s => s.isToday) || [];
     const upcomingServices = request.scheduledServices?.filter(s => s.isUpcoming) || [];
-
-    console.log('📅 [Claude Sonnet 4] Scheduled services integration:', {
-      todaysServicesCount: todaysServices.length,
-      todaysServiceNames: todaysServices.map(s => s.serviceName),
-      upcomingServicesCount: upcomingServices.length,
-      upcomingServiceNames: upcomingServices.map(s => s.serviceName)
-    });
 
     // Platform-specific hashtag count
     const hashtagCount = request.platform.toLowerCase() === 'instagram' ? 5 : 3;
@@ -483,7 +463,6 @@ Return a brief creative concept (2-3 sentences) that will guide the content crea
 
     // STEP 1: Generate creative concept with scheduled services (Revo 2.0 approach)
     const creativeConcept = await this.generateCreativeConcept(request, todaysServices, upcomingServices);
-    console.log('✅ [Claude Sonnet 4] Creative concept generated:', creativeConcept.slice(0, 100) + '...');
 
     // Build product context from existing services for retail-focused ads
     const productCandidates = this.parseProductsFromServices((request as any).servicesRaw ?? request.services);
@@ -504,9 +483,6 @@ Return a brief creative concept (2-3 sentences) that will guide the content crea
     const prompt = this.buildFocusedClaudePrompt(request, hashtagCount, creativeConcept, enforcedFormat, productBlock, todaysServices, upcomingServices);
 
     // Log prompt details for debugging
-    console.log('🔍 [Claude Sonnet 4] Prompt length:', prompt.length);
-    console.log('🔍 [Claude Sonnet 4] Prompt preview (first 500 chars):', prompt.substring(0, 500) + '...');
-    console.log('🔍 [Claude Sonnet 4] Prompt preview (last 500 chars):', '...' + prompt.substring(prompt.length - 500));
 
     const response = await anthropic.messages.create({
       model: 'claude-3-5-sonnet-20241022',
@@ -524,7 +500,6 @@ Return a brief creative concept (2-3 sentences) that will guide the content crea
     }
 
     const responseText = content.text;
-    console.log('✅ [Claude Sonnet 4] Raw response received:', responseText.substring(0, 200) + '...');
 
     // Parse JSON response with improved error handling
     let jsonContent = responseText.trim();
@@ -590,7 +565,6 @@ Return a brief creative concept (2-3 sentences) that will guide the content crea
     }
 
     jsonContent = jsonContent.substring(jsonStart, jsonEnd + 1);
-    console.log('🔍 [Claude Sonnet 4] Extracted first JSON object:', jsonContent.substring(0, 200) + '...');
 
     let parsed;
     try {
@@ -636,15 +610,6 @@ Return a brief creative concept (2-3 sentences) that will guide the content crea
     // Apply quality guards (dedupe words, tidy punctuation)
     this.applyQualityGuards(parsed);
 
-    console.log('✅ [Claude Sonnet 4] Content generated successfully:', {
-      headline: parsed.headline,
-      subheadline: parsed.subheadline?.substring(0, 50) + '...',
-      cta: parsed.cta,
-      hashtagCount: parsed.hashtags?.length || 0,
-      platform: request.platform
-    });
-
-
     // Additional validation: cultural and fact-safety checks (post-parse)
     const combinedText = `${parsed.headline || ''} ${parsed.subheadline || ''} ${parsed.caption || ''}`;
 
@@ -664,7 +629,6 @@ Return a brief creative concept (2-3 sentences) that will guide the content crea
       console.warn('⚠️ [Claude Sonnet 4] Potential unverified numeric claims detected — will retry without numbers');
     }
 
-
     // DB-based repetition check against last 5 posts (if available)
     let dbSimilar = false;
     let dbReasons: string[] = [];
@@ -679,7 +643,6 @@ Return a brief creative concept (2-3 sentences) that will guide the content crea
         }
       }
     } catch { }
-
 
     // Diversity check and optional single retry
     let { similar, reasons } = this.tooSimilar(request, { headline: parsed.headline, subheadline: parsed.subheadline || '', caption: parsed.caption || '' });
@@ -698,7 +661,6 @@ Return a brief creative concept (2-3 sentences) that will guide the content crea
         'Additional reasons to avoid: ' + reasons.join('; ');
       const retryExtra = `${culturalIssue ? `MUST include ${culturalRule?.name || 'regional'} cultural elements as specified.` : ''}${factIssue ? '\nREMOVE all numeric claims, percentages, or specific numbers.' : ''}`;
       const retryPrompt = this.buildClaudePrompt(request, hashtagCount, avoid, enforcedFormat, retryExtra, productBlock);
-      console.log('🔁 [Claude Sonnet 4] Retrying with updated prompt (length):', retryPrompt.length);
       const retryResp = await anthropic.messages.create({
         model: 'claude-3-5-sonnet-20241022',
         max_tokens: 2000,
@@ -793,7 +755,6 @@ Return a brief creative concept (2-3 sentences) that will guide the content crea
 
     this.rememberFormat(request, enforcedFormat);
 
-
     // Remember selected product to avoid repetition next time
     try { if (selectedProduct?.name) this.rememberProduct(request, selectedProduct.name); } catch { }
 
@@ -806,8 +767,6 @@ Return a brief creative concept (2-3 sentences) that will guide the content crea
       hashtags: parsed.hashtags || []
     };
   }
-
-
 
   // Build focused prompt using Revo 2.0 approach (shorter, more structured)
   private static buildFocusedClaudePrompt(request: ClaudeContentRequest, hashtagCount: number, creativeConcept: string, enforcedFormat: string, productBlock?: string, todaysServices?: any[], upcomingServices?: any[]): string {
@@ -988,7 +947,6 @@ ${extraRules ? `\n${extraRules}\n` : ''}
 
 LANGUAGE POLICY: ${languageInstruction}
 
-
 ⚠️ CRITICAL REPETITION WARNING ⚠️
 The following phrases are ABSOLUTELY BANNED and must NEVER appear in your response:
 ${bannedPhrases.map(phrase => `❌ "${phrase}"`).join('\n')}
@@ -1038,7 +996,6 @@ ${productBlock ? `\nPRODUCT CATALOG SNAPSHOT (parsed from brand services):\n${pr
 	- Determine primary customer path: browse→buy vs book→visit vs download→use.
 	- Ensure the CTA matches that path, and the caption narrates the path to action.
 	- Create natural urgency (limited availability, seasonal relevance) without fake scarcity.
-
 
 ADVANCED INTELLIGENCE ANALYSIS REQUIRED:
 

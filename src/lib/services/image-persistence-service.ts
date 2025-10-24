@@ -31,7 +31,6 @@ class ImagePersistenceService {
     const opts = { ...this.DEFAULT_OPTIONS, ...options };
 
     try {
-      console.log('🔄 Persisting image URL:', url.substring(0, 50) + '...');
 
       // If it's already a data URL, validate and potentially compress it
       if (url.startsWith('data:')) {
@@ -73,7 +72,6 @@ class ImagePersistenceService {
       const sizeInBytes = Math.round((dataUrl.length * 3) / 4); // Approximate size of base64 data
 
       if (sizeInBytes <= options.maxSize) {
-        console.log('✅ Data URL is within size limits, keeping as-is');
         return {
           success: true,
           url: dataUrl,
@@ -83,7 +81,6 @@ class ImagePersistenceService {
       }
 
       // If too large, try to compress
-      console.log('🗜️ Data URL too large, attempting compression...');
       return this.compressDataUrl(dataUrl, options);
 
     } catch (error) {
@@ -99,7 +96,6 @@ class ImagePersistenceService {
    */
   private async fetchAndConvert(url: string, options: Required<ImagePersistenceOptions>): Promise<PersistentImageResult> {
     try {
-      console.log('📥 Fetching image from URL...');
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), options.timeout);
@@ -118,10 +114,7 @@ class ImagePersistenceService {
       const blob = await response.blob();
       const originalSize = blob.size;
 
-      console.log('📊 Fetched image size:', this.formatBytes(originalSize));
-
       if (originalSize > options.maxSize) {
-        console.log('🗜️ Image too large, compressing...');
         return await this.compressBlob(blob, options, originalSize);
       }
 
@@ -188,12 +181,6 @@ class ImagePersistenceService {
           
           const originalSize = Math.round((dataUrl.length * 3) / 4);
           const compressedSize = Math.round((compressedDataUrl.length * 3) / 4);
-
-          console.log('✅ Compressed image:', {
-            original: this.formatBytes(originalSize),
-            compressed: this.formatBytes(compressedSize),
-            reduction: Math.round((1 - compressedSize / originalSize) * 100) + '%'
-          });
 
           resolve({
             success: true,
@@ -271,7 +258,6 @@ class ImagePersistenceService {
   async persistMultipleImages(urls: string[], options: ImagePersistenceOptions = {}): Promise<Map<string, PersistentImageResult>> {
     const results = new Map<string, PersistentImageResult>();
     
-    console.log(`🔄 Batch persisting ${urls.length} images...`);
     
     // Process images in parallel but limit concurrency
     const concurrency = 3;
@@ -287,7 +273,6 @@ class ImagePersistenceService {
     }
     
     const successCount = Array.from(results.values()).filter(r => r.success).length;
-    console.log(`✅ Batch persistence complete: ${successCount}/${urls.length} successful`);
     
     return results;
   }

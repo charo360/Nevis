@@ -6,7 +6,6 @@ import { BrandProfile, BrandConsistencyPreferences } from '@/lib/types';
  */
 export async function GET(request: NextRequest) {
   try {
-    console.log('🧪 [Simple Revo 2.0 Contacts] Starting simple contact test...');
 
     // Create test brand profile with contact information
     const testBrandProfile: BrandProfile = {
@@ -63,15 +62,6 @@ Design Requirements:
       : `\n\nCONTACT INFORMATION RULE:\n- Do NOT include phone, email, or website text in the image.\n`;
 
     const finalSimplePrompt = simpleBasePrompt + contactInstructions;
-
-    console.log('🧪 [Simple Revo 2.0 Contacts] Simple prompt generated:', {
-      basePromptLength: simpleBasePrompt.length,
-      contactInstructionsLength: contactInstructions.length,
-      finalPromptLength: finalSimplePrompt.length,
-      containsPhone: finalSimplePrompt.includes('+254-700-123-456'),
-      containsEmail: finalSimplePrompt.includes('info@testrestaurant.com'),
-      containsWebsite: finalSimplePrompt.includes('www.testrestaurant.com')
-    });
 
     return NextResponse.json({
       success: true,

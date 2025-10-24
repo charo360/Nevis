@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear Black Panther TKN Brand Cache</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-size: 16px;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .button.danger {
+            background: #dc3545;
+        }
+        .button.danger:hover {
+            background: #c82333;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .info {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .code {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 3px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+        .step {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #ffc107;
+        }
+        .test-result {
+            background: #d4edda;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Black Panther TKN Brand Cache Clearer</h1>
+        <p>This tool will clear all cached data for the Black Panther TKN brand and force a fresh load from the database.</p>
+        
+        <div class="test-result">
+            <h3>✅ Database Update Confirmed:</h3>
+            <p>The database has been successfully updated:</p>
+            <div class="code">
+                <strong>Before:</strong> https://blackpanthertkn.com/<br>
+                <strong>After:</strong> https://updated-blackpanthertkn.com/
+            </div>
+        </div>
+        
+        <div class="info">
+            <h3>📋 Current Issue:</h3>
+            <p>Your brand profile edit page is showing cached data instead of the updated database values. The database has been updated correctly, but the frontend is using old cached data.</p>
+        </div>
+        
+        <h3>🛠️ Complete Solution:</h3>
+        
+        <button class="button" onclick="clearAllCaches()">1. Clear All Caches</button>
+        <button class="button" onclick="clearLocalStorage()">2. Clear localStorage</button>
+        <button class="button" onclick="clearSessionStorage()">3. Clear sessionStorage</button>
+        <button class="button danger" onclick="clearAllStorage()">4. Nuclear Option - Clear Everything</button>
+        <button class="button" onclick="openBrandProfile()">5. Open Black Panther TKN Profile</button>
+        
+        <div id="status"></div>
+        
+        <div class="step">
+            <h3>📝 Step-by-Step Manual Process:</h3>
+            <ol>
+                <li><strong>Open your brand profile page:</strong> <a href="http://localhost:3001/brand-profile?mode=edit&id=d2f65044-9b2b-47c5-91ae-9be038be20c3" target="_blank">http://localhost:3001/brand-profile?mode=edit&id=d2f65044-9b2b-47c5-91ae-9be038be20c3</a></li>
+                <li><strong>Open Developer Tools:</strong> Press F12</li>
+                <li><strong>Go to Application tab:</strong> Click on "Application" in the developer tools</li>
+                <li><strong>Clear Local Storage:</strong>
+                    <div class="code">
+                        Right-click on "Local Storage" → Clear All<br>
+                        Or manually delete these keys:<br>
+                        • currentBrandData<br>
+                        • completeBrandProfile<br>
+                        • selectedBrandId<br>
+                        • currentBrandId<br>
+                        • currentBrandName<br>
+                        • brandProfiles
+                    </div>
+                </li>
+                <li><strong>Clear Session Storage:</strong> Right-click on "Session Storage" → Clear All</li>
+                <li><strong>Clear Cache:</strong> Right-click on "Cache Storage" → Clear All</li>
+                <li><strong>Hard Refresh:</strong> Press Ctrl+F5 (Windows) or Cmd+Shift+R (Mac)</li>
+            </ol>
+        </div>
+        
+        <div class="test-result">
+            <h3>✅ Expected Result After Clearing Cache:</h3>
+            <div class="code">
+                Black Panther TKN<br>
+                Tech Startup / Cryptocurrency Token Project<br>
+                Active<br>
+                California, USA<br>
+                <strong>https://updated-blackpanthertkn.com/</strong> ← Should show this instead of blackpanthertkn.com
+            </div>
+        </div>
+        
+        <div class="info">
+            <h3>🔍 If Still Not Working:</h3>
+            <p>If the website URL still shows the old value after clearing cache, try:</p>
+            <ol>
+                <li>Close all browser tabs for localhost:3001</li>
+                <li>Clear browser cache completely (Settings → Privacy → Clear browsing data)</li>
+                <li>Restart your development server: <code>npm run dev</code></li>
+                <li>Open a new incognito/private window</li>
+            </ol>
+        </div>
+        
+        <div class="info">
+            <h3>🧪 Test Results:</h3>
+            <p>After clearing cache and refreshing, please check:</p>
+            <ul>
+                <li>Does the website URL show <code>https://updated-blackpanthertkn.com/</code>?</li>
+                <li>Does the contact website field show the updated URL?</li>
+                <li>Are there any console errors in the browser developer tools?</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function showStatus(message, isError = false) {
+            const status = document.getElementById('status');
+            status.innerHTML = `<div class="${isError ? 'error' : 'success'}">${message}</div>`;
+        }
+
+        function clearAllCaches() {
+            try {
+                // Clear localStorage
+                const localStorageKeys = [
+                    'currentBrandData',
+                    'completeBrandProfile',
+                    'selectedBrandId',
+                    'currentBrandId',
+                    'currentBrandName',
+                    'brandProfiles',
+                    'currentBrand'
+                ];
+                
+                let clearedCount = 0;
+                localStorageKeys.forEach(key => {
+                    if (localStorage.getItem(key)) {
+                        localStorage.removeItem(key);
+                        clearedCount++;
+                    }
+                });
+                
+                // Clear sessionStorage
+                sessionStorage.clear();
+                
+                // Clear service worker cache if available
+                if ('caches' in window) {
+                    caches.keys().then(names => {
+                        names.forEach(name => {
+                            caches.delete(name);
+                        });
+                    });
+                }
+                
+                showStatus(`✅ Cleared ${clearedCount} localStorage items, sessionStorage, and caches!`);
+            } catch (error) {
+                showStatus(`❌ Error clearing caches: ${error.message}`, true);
+            }
+        }
+
+        function clearLocalStorage() {
+            try {
+                localStorage.clear();
+                showStatus('✅ Cleared all localStorage successfully!');
+            } catch (error) {
+                showStatus(`❌ Error clearing localStorage: ${error.message}`, true);
+            }
+        }
+
+        function clearSessionStorage() {
+            try {
+                sessionStorage.clear();
+                showStatus('✅ Cleared sessionStorage successfully!');
+            } catch (error) {
+                showStatus(`❌ Error clearing sessionStorage: ${error.message}`, true);
+            }
+        }
+
+        function clearAllStorage() {
+            try {
+                localStorage.clear();
+                sessionStorage.clear();
+                if ('caches' in window) {
+                    caches.keys().then(names => {
+                        names.forEach(name => {
+                            caches.delete(name);
+                        });
+                    });
+                }
+                showStatus('✅ Nuclear option: Cleared ALL storage and caches!');
+            } catch (error) {
+                showStatus(`❌ Error with nuclear option: ${error.message}`, true);
+            }
+        }
+
+        function openBrandProfile() {
+            try {
+                const url = 'http://localhost:3001/brand-profile?mode=edit&id=d2f65044-9b2b-47c5-91ae-9be038be20c3';
+                window.open(url, '_blank');
+                showStatus('✅ Opening Black Panther TKN brand profile page in new tab...');
+            } catch (error) {
+                showStatus(`❌ Error opening page: ${error.message}`, true);
+            }
+        }
+
+        // Show initial status
+        showStatus('Ready to clear Black Panther TKN brand cache. Click the buttons above to proceed.');
+    </script>
+</body>
+</html>
+

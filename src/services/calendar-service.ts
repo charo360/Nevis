@@ -54,24 +54,7 @@ export class CalendarService {
       
       const allScheduledContent = await response.json();
 
-      console.log('🔍 [CalendarService] Database - getTodaysScheduledServices:', {
-        brandId,
-        today,
-        allScheduledContentCount: allScheduledContent.length,
-        allScheduledContentServices: allScheduledContent.map((item: any) => ({
-          date: item.date,
-          serviceName: item.service_name,
-          status: item.status,
-          id: item.id
-        }))
-      });
-
       const transformedServices = this.transformDatabaseToScheduledServices(allScheduledContent, true);
-
-      console.log('✅ [CalendarService] Final transformed services:', {
-        transformedServicesCount: transformedServices.length,
-        transformedServiceNames: transformedServices.map(s => s.serviceName)
-      });
 
       return transformedServices;
     } catch (error) {

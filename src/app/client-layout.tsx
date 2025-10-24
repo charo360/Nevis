@@ -37,6 +37,9 @@ function ConditionalLayout({ children, useAppRoute }: { children: React.ReactNod
     pathname === '/privacy' ||
     pathname === '/terms' ||
     pathname === '/success' ||
+    pathname === '/forgot-password' ||
+    pathname === '/verify-password' ||
+    pathname === '/change-password' ||
     (pathname ?? '').startsWith('/auth') ||
     (pathname ?? '').startsWith('/billing') ||
     pathname === '/cancel';

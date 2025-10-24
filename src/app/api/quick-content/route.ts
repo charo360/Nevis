@@ -28,10 +28,6 @@ export async function POST(request: NextRequest) {
       includePeopleInDesigns?: boolean;
     } = body;
 
-    console.log(`🚀 Quick Content API: Processing ${revoModel} request for ${platform}`);
-    console.log(`🔍 Brand Profile ID: ${(brandProfile as any)?.id || 'No ID'}`);
-    console.log(`📅 Scheduled Services Count: ${scheduledServices?.length || 0}`);
-    console.log(`📋 Scheduled Services: ${scheduledServices?.map(s => s.serviceName).join(', ') || 'None'}`);
 
     // Validate required parameters
     if (!brandProfile || !platform) {
@@ -43,10 +39,7 @@ export async function POST(request: NextRequest) {
 
     // Use passed services directly - brand filtering should happen on frontend
     let brandSpecificServices: ScheduledService[] = scheduledServices || [];
-    console.log(`✅ Using provided services:`, {
-      serviceCount: brandSpecificServices.length,
-      serviceNames: brandSpecificServices.map(s => s.serviceName)
-    });
+
 
     let result;
 
@@ -71,12 +64,10 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized - please login' }, { status: 401 });
       }
 
-      console.log('✅ [QuickContent] Authenticated user:', user.id);
       const modelVersion: ModelVersion = revoModel === 'revo-1.5' ? 'revo-1.5' : 'revo-1.0';
 
       if (revoModel === 'revo-1.5') {
         // Use Revo 1.5 enhanced generation (no fallback - fix the real issue)
-        console.log('🔎 [QuickContent] Deducting credits for user', user.id, 'model', modelVersion, 'platform', platform);
         const wrapped = await withCreditTracking(
           {
             userId: user.id,
@@ -126,7 +117,11 @@ export async function POST(request: NextRequest) {
           dayOfWeek,
           currentDate,
           primaryColor: brandProfile.primaryColor,
-          visualStyle: brandProfile.visualStyle
+          visualStyle: brandProfile.visualStyle,
+          // Include contact information for contacts toggle
+          includeContacts: brandConsistency?.includeContacts || false,
+          contactInfo: brandProfile.contactInfo || {},
+          websiteUrl: brandProfile.websiteUrl || ''
         });
 
         // Generate image using Revo 1.0 image service
@@ -173,7 +168,6 @@ export async function POST(request: NextRequest) {
         });
 
         // Wrap image+content generation under credit tracking to ensure deduction
-        console.log('🔎 [QuickContent] Deducting credits for user', user.id, 'model', modelVersion, 'platform', platform);
         const wrapped = await withCreditTracking(
           {
             userId: user.id,
@@ -183,6 +177,14 @@ export async function POST(request: NextRequest) {
             metadata: { platform, brandId: (brandProfile as any)?.id }
           },
           async () => {
+            // Enhanced brand color extraction with fallbacks
+            const brandColors = (brandProfile as any).brand_colors || {};
+            const primaryColor = brandColors.primaryColor || brandProfile.primaryColor || '#3B82F6';
+            const accentColor = brandColors.accentColor || brandProfile.accentColor || '#1E40AF';
+            const backgroundColor = brandColors.backgroundColor || brandProfile.backgroundColor || '#FFFFFF';
+
+            console.log('🎨 Brand colors for generation:', { primaryColor, accentColor, backgroundColor });
+
             const imageResult = await generateRevo10Image({
               businessType: brandProfile.businessType || 'Business',
               businessName: brandProfile.businessName || brandProfile.name || 'Business',
@@ -258,7 +260,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`✅ Quick Content API: ${revoModel} generation successful`);
     return NextResponse.json(result);
   } catch (error) {
     console.error('❌ Quick Content API Error:', error);

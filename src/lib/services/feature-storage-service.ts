@@ -86,7 +86,6 @@ export class FeatureStorageService {
       }
 
       localStorage.setItem(key, serialized);
-      console.log(`✅ ${this.feature} storage: Saved ${category} for brand ${this.brandId}`);
       return true;
     } catch (error) {
       console.error(`❌ ${this.feature} storage: Failed to save ${category}:`, error);
@@ -114,8 +113,6 @@ export class FeatureStorageService {
       const serialized = JSON.stringify(optimizedPosts);
       const dataSize = new Blob([serialized]).size;
 
-      console.log(`📦 Quick Content Storage: ${optimizedPosts.length} posts, ${this.formatBytes(dataSize)}`);
-
       // If still too large, reduce further
       if (dataSize > 1024 * 1024) { // 1MB limit
         console.warn('⚠️ Posts still too large, reducing to 25 most recent');
@@ -125,7 +122,6 @@ export class FeatureStorageService {
         localStorage.setItem(key, serialized);
       }
 
-      console.log(`✅ ${this.feature} storage: Saved ${category} with rotation for brand ${this.brandId}`);
       return true;
 
     } catch (error) {
@@ -147,7 +143,6 @@ export class FeatureStorageService {
           }));
 
         localStorage.setItem(key, JSON.stringify(emergencyPosts));
-        console.log('✅ Emergency fallback: Saved 10 most recent posts');
         return true;
       } catch (emergencyError) {
         console.error('❌ Emergency fallback failed:', emergencyError);
@@ -208,7 +203,6 @@ export class FeatureStorageService {
       }
 
       const parsed = JSON.parse(stored);
-      console.log(`📖 ${this.feature} storage: Loaded ${category} for brand ${this.brandId}`);
       return parsed;
     } catch (error) {
       console.error(`❌ ${this.feature} storage: Failed to load ${category}:`, error);
@@ -223,7 +217,6 @@ export class FeatureStorageService {
     try {
       const key = this.getStorageKey(category);
       localStorage.removeItem(key);
-      console.log(`🗑️ ${this.feature} storage: Removed ${category} for brand ${this.brandId}`);
       return true;
     } catch (error) {
       console.error(`❌ ${this.feature} storage: Failed to remove ${category}:`, error);
@@ -258,7 +251,6 @@ export class FeatureStorageService {
       // Remove all matching keys
       keysToRemove.forEach(key => localStorage.removeItem(key));
 
-      console.log(`🧹 ${this.feature} storage: Cleared all data for brand ${this.brandId}`);
       return true;
     } catch (error) {
       console.error(`❌ ${this.feature} storage: Failed to clear all data:`, error);
@@ -340,7 +332,6 @@ export function migrateToFeatureStorage(brandId: string): {
       qcStorage.setItem(STORAGE_CATEGORIES.QUICK_CONTENT.POSTS, parsedData);
       localStorage.removeItem(oldQuickContentKey); // Remove old key
       results.quickContentMigrated = true;
-      console.log(`✅ Migrated Quick Content data for brand ${brandId}`);
     }
 
     // Migrate Creative Studio data (if any exists)
@@ -353,7 +344,6 @@ export function migrateToFeatureStorage(brandId: string): {
       csStorage.setItem(STORAGE_CATEGORIES.CREATIVE_STUDIO.PROJECTS, parsedData);
       localStorage.removeItem(oldCreativeStudioKey); // Remove old key
       results.creativeStudioMigrated = true;
-      console.log(`✅ Migrated Creative Studio data for brand ${brandId}`);
     }
 
   } catch (error) {

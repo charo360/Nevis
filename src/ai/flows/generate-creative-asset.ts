@@ -66,7 +66,6 @@ export async function generateCreativeAsset(input: CreativeAssetInput): Promise<
     return generateCreativeAssetFlow(input);
 }
 
-
 /**
  * Helper function to download video and convert to data URI
  */
@@ -224,18 +223,6 @@ const analyzeUserIntent = (prompt: string, parsedInstructions: ParsedInstruction
     const isDesignDirectionRequest = !isLiteralTextRequest; // If not literal text, it's a design request
 
     // Debug human intent analysis
-    console.log('🧠 [Human Intent Analysis]:', {
-        originalPrompt: prompt,
-        cleanPrompt,
-        humanIntent,
-        isLiteralTextRequest,
-        isDesignDirectionRequest,
-        hasExplicitTextRequest,
-        hasQuotedText,
-        hasStructuredInstructions,
-        hasHumanDesignRequest,
-        matchingPatterns: humanDesignRequests.filter(pattern => pattern.test(prompt)).length
-    });
 
     // Collect all text instructions
     const textInstructions: string[] = [];
@@ -276,17 +263,11 @@ const extractQuotedText = (prompt: string): { imageText: string | null; remainin
  * Wraps ai.generate with retry logic for 503 errors and explicit logo handling.
  */
 async function generateWithRetry(request: GenerateRequest, logoDataUrl?: string, retries = 3, delay = 1000) {
-    console.log('🔍 [DEBUG] generateWithRetry called with:', {
-        hasLogo: !!logoDataUrl,
-        model: request.model,
-        promptLength: Array.isArray(request.prompt) ? request.prompt.length : 1
-    });
 
     for (let i = 0; i < retries; i++) {
         try {
             // Use direct Vertex AI instead of proxy
             if (logoDataUrl && request.model?.includes('image')) {
-                console.log('🔍 [DEBUG] Using direct Vertex AI with logo');
 
                 // Extract text prompt from request
                 let textPrompt = '';
@@ -318,7 +299,6 @@ The client specifically requested their brand logo to be included. FAILURE TO IN
 
                 // Use direct Vertex AI with correct model name
                 const modelName = 'gemini-2.5-flash-image'; // Use correct Vertex AI model name
-                console.log('🔍 [DEBUG] About to call direct Vertex AI with:', { modelName, hasLogo: !!logoDataUrl });
 
                 const result = await getVertexAIClient().generateImage(finalPrompt, modelName, {
                     temperature: 0.7,
@@ -326,7 +306,6 @@ The client specifically requested their brand logo to be included. FAILURE TO IN
                     logoImage: logoDataUrl
                 });
 
-                console.log('✅ [DEBUG] Direct Vertex AI generation successful');
                 return {
                     media: {
                         url: `data:${result.mimeType};base64,${result.imageData}`,
@@ -335,7 +314,6 @@ The client specifically requested their brand logo to be included. FAILURE TO IN
                 } as any;
             } else {
                 // For non-logo cases, also use direct Vertex AI
-                console.log('🔍 [DEBUG] Using direct Vertex AI without logo');
 
                 let textPrompt = '';
                 if (Array.isArray(request.prompt)) {
@@ -351,7 +329,6 @@ The client specifically requested their brand logo to be included. FAILURE TO IN
                     maxOutputTokens: 8192
                 });
 
-                console.log('✅ [DEBUG] Direct Vertex AI generation successful (no logo)');
                 return {
                     media: {
                         url: `data:${result.mimeType};base64,${result.imageData}`,
@@ -416,7 +393,6 @@ const getMimeTypeFromDataURI = (dataURI: string): string => {
     return 'image/png';
 };
 
-
 /**
  * The core Genkit flow for generating a creative asset.
  */
@@ -459,19 +435,8 @@ const generateCreativeAssetFlow = ai.defineFlow(
         const { imageText, remainingPrompt } = extractQuotedText(input.prompt); // Keep for backward compatibility
 
         // Debug logging for user intent analysis
-        console.log('🔍 [Creative Studio] User Intent Analysis:', {
-            prompt: input.prompt,
-            preferredModel: input.preferredModel,
-            isLiteralTextRequest: userIntent.isLiteralTextRequest,
-            isDesignDirectionRequest: userIntent.isDesignDirectionRequest,
-            textInstructions: userIntent.textInstructions,
-            designDirection: userIntent.designDirection,
-            quotedText: parsedInstructions.quotedText,
-            remainingPrompt: parsedInstructions.remainingPrompt
-        });
 
         // Additional debug for pattern matching
-        console.log('🔍 [Pattern Debug] Analyzing prompt patterns for:', input.prompt);
 
         if (input.maskDataUrl && input.referenceAssetUrl) {
             // This is an inpainting request.
@@ -630,12 +595,6 @@ Transform the uploaded image into a professional marketing design by enhancing i
                     : '';
 
             // Debug logging for services
-            console.log('🔍 [AI Generation] Services Debug:', {
-                services: bp.services,
-                servicesText,
-                businessType: bp.businessType,
-                businessName: bp.businessName
-            });
 
             // Get business-specific design DNA - prioritize services over business type
             let businessDNA = BUSINESS_TYPE_DESIGN_DNA.default;
@@ -1095,11 +1054,8 @@ Ensure the text is readable and well-composed.`
         //     prompt: `Based on the generated ${input.outputType}, write a very brief, one-sentence explanation of the creative choices made. ${input.useBrandProfile && input.brandProfile?.logoDataUrl ? 'Make sure to mention how the brand logo was integrated into the design.' : ''} For example: "I created a modern, vibrant image of a coffee shop, using your brand's primary color and prominently featuring your logo in the top-right corner."`
         // });
 
-        console.log('🔍 [DEBUG] About to start image/video generation logic');
-
         try {
             if (input.outputType === 'image') {
-                console.log('🔍 [DEBUG] Starting image generation logic');
                 // Generate image with quality validation
                 let finalImageUrl: string | null = null;
                 let attempts = 0;
@@ -1132,12 +1088,10 @@ Ensure the text is readable and well-composed.`
                     let imageUrl: string | null = null;
 
                     try {
-                        console.log('🔍 [DEBUG] About to extract logo and call generateWithRetry');
                         // Extract logo data URL for explicit passing
                         const logoDataUrl = input.useBrandProfile && input.brandProfile?.logoDataUrl
                             ? input.brandProfile.logoDataUrl
                             : undefined;
-                        console.log('🔍 [DEBUG] Logo extracted:', logoDataUrl ? 'Logo found' : 'No logo');
 
                         const { media } = await generateWithRetry({
                             model: modelToUse,
@@ -1147,9 +1101,7 @@ Ensure the text is readable and well-composed.`
                             },
                         }, logoDataUrl);
 
-                        console.log('🔍 [DEBUG] generateWithRetry returned successfully, media:', media ? 'Media found' : 'No media');
                         imageUrl = media?.url ?? null;
-                        console.log('🔍 [DEBUG] imageUrl extracted:', imageUrl ? 'URL found' : 'No URL');
                     } catch (err: any) {
                         const msg = (err?.message || '').toLowerCase();
                         const isInternalError = msg.includes('500') || msg.includes('internal error');
@@ -1331,5 +1283,4 @@ Ensure the text is readable and well-composed.`
         }
     }
 );
-
 

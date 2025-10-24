@@ -33,7 +33,6 @@ export default function AuthDebugPage() {
         }
       });
       const data = await response.json();
-      console.log('API Response:', data);
     } catch (error) {
       console.error('API Error:', error);
     }

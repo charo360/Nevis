@@ -68,7 +68,6 @@ class AIProxyClient {
    */
   async generateImage(request: ProxyImageRequest): Promise<ProxyResponse> {
     try {
-      console.log(`🔒 Proxy: Generating image with model ${request.model || 'gemini-2.5-flash-image-preview'}`);
 
       const response = await fetch(`${this.baseUrl}/generate-image`, {
         method: 'POST',
@@ -91,8 +90,6 @@ class AIProxyClient {
       }
 
       const result = await response.json();
-      console.log(`✅ Proxy: Image generated successfully with ${result.model_used}`);
-      console.log(`📊 Proxy: User quota: ${result.user_quota}/40`);
 
       return result;
     } catch (error) {
@@ -106,7 +103,6 @@ class AIProxyClient {
    */
   async generateText(request: ProxyTextRequest): Promise<ProxyResponse> {
     try {
-      console.log(`🔒 Proxy: Generating text with model ${request.model || 'gemini-2.5-flash'}`);
 
       const response = await fetch(`${this.baseUrl}/generate-text`, {
         method: 'POST',
@@ -128,8 +124,6 @@ class AIProxyClient {
       }
 
       const result = await response.json();
-      console.log(`✅ Proxy: Text generated successfully with ${result.model_used}`);
-      console.log(`📊 Proxy: User quota: ${result.user_quota}/40`);
 
       return result;
     } catch (error) {

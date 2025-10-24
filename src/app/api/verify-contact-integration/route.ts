@@ -6,7 +6,6 @@ import { BrandProfile, BrandConsistencyPreferences } from '@/lib/types';
  */
 export async function GET(request: NextRequest) {
   try {
-    console.log('🔍 [Contact Integration Verification] Starting verification...');
 
     // Create test brand profile with all contact information
     const testBrandProfile: BrandProfile = {
@@ -108,8 +107,6 @@ export async function GET(request: NextRequest) {
         contactInstructionsLength: contactInstructions.length
       }
     };
-
-    console.log('🔍 [Contact Integration Verification] Results:', verification);
 
     return NextResponse.json({
       success: true,

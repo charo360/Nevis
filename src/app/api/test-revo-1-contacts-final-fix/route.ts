@@ -3,7 +3,6 @@ import type { BrandProfile } from '@/lib/types';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('🧪 [Test Revo 1.0 Final Fix] Testing final contact information fix...');
 
     // Test brand profile with real contact information
     const testBrandProfile: BrandProfile = {
@@ -25,7 +24,6 @@ export async function GET(request: NextRequest) {
       targetAudience: 'Kenyan professionals and businesses'
     };
 
-    console.log('🧪 [Test Revo 1.0 Final Fix] Testing content generation (should NOT include contact info)...');
     
     const { generateRevo10Content } = await import('../../../ai/revo-1.0-service');
     
@@ -65,29 +63,6 @@ export async function GET(request: NextRequest) {
     const hasAnyContactInContent = contentHasPhone || contentHasEmail || contentHasWebsite;
     const hasAnyContactInCTA = ctaHasPhone || ctaHasEmail || ctaHasWebsite;
     const hasAnyContactInSubheadline = subheadlineHasPhone || subheadlineHasEmail || subheadlineHasWebsite;
-
-    console.log('🧪 [Test Revo 1.0 Final Fix] Content generation analysis:', {
-      content: {
-        hasPhone: contentHasPhone,
-        hasEmail: contentHasEmail,
-        hasWebsite: contentHasWebsite,
-        hasAnyContact: hasAnyContactInContent
-      },
-      callToAction: {
-        hasPhone: ctaHasPhone,
-        hasEmail: ctaHasEmail,
-        hasWebsite: ctaHasWebsite,
-        hasAnyContact: hasAnyContactInCTA,
-        actualCTA: contentResult.callToAction
-      },
-      subheadline: {
-        hasPhone: subheadlineHasPhone,
-        hasEmail: subheadlineHasEmail,
-        hasWebsite: subheadlineHasWebsite,
-        hasAnyContact: hasAnyContactInSubheadline,
-        actualSubheadline: contentResult.subheadline
-      }
-    });
 
     const fixSuccessful = !hasAnyContactInContent && !hasAnyContactInCTA && !hasAnyContactInSubheadline;
 

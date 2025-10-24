@@ -335,9 +335,15 @@ const analyzeBrandFlow = ai.defineFlow(
 
       // Use the new direct OpenRouter analysis (no proxy dependencies)
       const output = await analyzeWebsiteWithOpenRouter(
-        websiteContent,
+        websiteContent.content,
         input.websiteUrl,
-        input.designImageUris
+        input.designImageUris,
+        {
+          phoneNumbers: websiteContent.phoneNumbers,
+          emailAddresses: websiteContent.emailAddresses,
+          competitiveAdvantages: websiteContent.competitiveAdvantages,
+          contentThemes: websiteContent.contentThemes
+        }
       );
 
       // Validate the OpenRouter response
@@ -357,7 +363,6 @@ const analyzeBrandFlow = ai.defineFlow(
         throw new Error('Proxy returned incomplete or invalid analysis');
       }
 
-      console.log('✅ Multi-model website analysis completed successfully');
       return output;
     } catch (error) {
       // Enhanced fallback analysis with better error handling

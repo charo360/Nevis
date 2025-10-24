@@ -48,11 +48,9 @@ export class SimpleV2PureAIContentGenerator {
    * Generate content using simple, reliable approach
    */
   static async generateContent(request: PureAIRequest): Promise<PureAIResponse> {
-    console.log('🚀 [Simple V2 Pure AI] Starting content generation');
     
     try {
       const prompt = this.buildSimplePrompt(request);
-      console.log('📝 [Simple V2 Pure AI] Generated prompt');
       
       const response = await generateText(prompt, {
         temperature: 0.7,
@@ -64,8 +62,6 @@ export class SimpleV2PureAIContentGenerator {
         throw new Error('Empty response from AI');
       }
 
-      console.log('✅ [Simple V2 Pure AI] AI response received:', content.substring(0, 200) + '...');
-
       // Parse JSON response
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
@@ -74,7 +70,6 @@ export class SimpleV2PureAIContentGenerator {
 
       const jsonString = jsonMatch[0];
       const parsed = JSON.parse(jsonString);
-      console.log('✅ [Simple V2 Pure AI] JSON parsing successful');
       
       // Validate and adjust word counts
       if (parsed.content) {
@@ -103,14 +98,12 @@ export class SimpleV2PureAIContentGenerator {
     if (headlineWords > 6) {
       const words = content.headline.trim().split(/\s+/);
       adjustedHeadline = words.slice(0, 6).join(' ');
-      console.log(`⚠️ [Simple V2 Pure AI] Headline truncated from ${headlineWords} to 6 words: "${adjustedHeadline}"`);
     }
     
     // Truncate subheadline if over 14 words
     if (subheadlineWords > 14) {
       const words = content.subheadline.trim().split(/\s+/);
       adjustedSubheadline = words.slice(0, 14).join(' ');
-      console.log(`⚠️ [Simple V2 Pure AI] Subheadline truncated from ${subheadlineWords} to 14 words: "${adjustedSubheadline}"`);
     }
     
     return {
@@ -171,9 +164,4 @@ Respond with ONLY valid JSON in this exact format:
 Generate exactly ${platform === 'Instagram' ? '5' : '3'} hashtags. Be specific to this business and location.`;
   }
 }
-
-
-
-
-
 

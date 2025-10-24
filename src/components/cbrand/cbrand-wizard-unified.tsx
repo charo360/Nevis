@@ -19,7 +19,6 @@ export function CbrandWizardUnified({ mode: modeProp, brandId }: CbrandWizardUni
   // Default to 'create' mode if no mode is specified
   const mode = modeProp || 'create';
 
-  console.log('🚀 CbrandWizardUnified component rendered:', { mode, brandId });
   const [currentStep, setCurrentStep] = useState(1);
   const [brandProfile, setBrandProfile] = useState<CompleteBrandProfile>({
     businessName: '',
@@ -95,48 +94,65 @@ export function CbrandWizardUnified({ mode: modeProp, brandId }: CbrandWizardUni
   const router = useRouter();
 
   // Load existing profile on component mount (only once, unless not initialized and not dirty)
-  useEffect(() => {
-    if (hasInitializedRef.current || isDirty) {
-      return;
-    }
+    useEffect(() => {
+      console.log('🔄 CbrandWizardUnified useEffect triggered:', {
+        hasInitialized: hasInitializedRef.current,
+        isDirty,
+        mode,
+        brandId,
+        currentBrand: currentBrand?.businessName 
+      });
+      
+      // For edit mode, ensure we have the brand profile loaded
+      if (mode === 'edit' && brandId && currentBrand) {
+        console.log('🔄 CbrandWizardUnified: Edit mode detected');
+        console.log('🔄 CbrandWizardUnified: Current brand:', currentBrand.businessName, currentBrand.websiteUrl);
+        
+        // If brandProfile is empty, load it from currentBrand
+        if (!brandProfile.id || brandProfile.id === '') {
+          console.log('🔄 CbrandWizardUnified: Brand profile is empty, loading from currentBrand');
+          console.log('🔄 CbrandWizardUnified: Setting brand profile to currentBrand:', currentBrand);
+          setBrandProfile(currentBrand);
+          saveDraft(currentBrand);
+          hasInitializedRef.current = true;
+          return;
+        }
+        
+        // If we already have a brand profile, just ensure it's initialized
+        if (brandProfile.id && !hasInitializedRef.current) {
+          console.log('🔄 CbrandWizardUnified: Brand profile exists, marking as initialized');
+          hasInitializedRef.current = true;
+          return;
+        }
+      }
+      
+      if (hasInitializedRef.current || isDirty) {
+        console.log('⚠️ CbrandWizardUnified: Skipping initialization (already initialized or dirty)');
+        return;
+      }
     const loadExistingProfile = async () => {
       try {
         // 1) Prefer draft if present (user edits not yet saved to DB)
         const draft = loadDraft();
         if (draft) {
-          console.log('📝 Loaded draft brand profile from local storage:', {
-            businessName: draft.businessName,
-            hasId: !!draft.id,
-            id: draft.id,
-            mode
-          });
 
           // In create mode, ensure we remove any ID from the draft to prevent updates
           if (mode === 'create') {
             const cleanDraft = { ...draft };
             delete cleanDraft.id;
-            console.log('🧹 Cleaned ID from draft in create mode');
             setBrandProfile(cleanDraft);
           } else {
-            console.log('✅ Preserving ID in edit mode:', draft.id);
             setBrandProfile(draft);
           }
 
           hasInitializedRef.current = true;
           return;
         }
-        console.log('🔄 Loading brand profile (Unified). Mode:', mode, 'BrandId:', brandId, 'CurrentBrand:', currentBrand?.businessName);
 
         // If we're in edit mode with a specific brandId, load that brand
         if (mode === 'edit' && brandId && user?.userId) {
-          console.log('🔄 Loading brand for edit mode:', brandId);
           // For now, we'll use the current brand from context if it matches
           if (currentBrand && currentBrand.id === brandId) {
-            console.log('✅ Using current brand from context for edit:', {
-              businessName: currentBrand.businessName,
-              id: currentBrand.id,
-              hasId: !!currentBrand.id
-            });
             setBrandProfile(currentBrand);
             saveDraft(currentBrand);
             hasInitializedRef.current = true;
@@ -152,7 +168,71 @@ export function CbrandWizardUnified({ mode: modeProp, brandId }: CbrandWizardUni
 
         // If we have a current brand selected and we're not in create mode, use it
         if (currentBrand && mode !== 'create') {
-          console.log('✅ Using current brand from unified context:', currentBrand.businessName);
+          console.log('🔄 CbrandWizardUnified: Current brand found, mode:', mode);
+          // For edit mode, force refresh from database to get latest data
+          if (mode === 'edit' && brandId) {
+            console.log('🔄 CbrandWizardUnified: Edit mode detected, brandId:', brandId);
+            console.log('🔄 Edit mode: Refreshing brand data from database...');
+            console.log('🔄 Edit mode: Current brand before refresh:', currentBrand.businessName, currentBrand.websiteUrl);
+            await refreshBrands();
+            
+            // Wait a moment for the refresh to complete
+            await new Promise(resolve => setTimeout(resolve, 200));
+            
+            // Find the refreshed brand data
+            console.log('🔄 Edit mode: Looking for refreshed brand in brands array...');
+            console.log('🔄 Edit mode: Brands array length:', brands.length);
+            console.log('🔄 Edit mode: Brands array:', brands.map(b => ({ id: b.id, name: b.businessName, websiteUrl: b.websiteUrl })));
+            const refreshedBrand = brands.find(b => b.id === brandId);
+            console.log('🔄 Edit mode: Found refreshed brand:', refreshedBrand ? 'YES' : 'NO');
+            if (refreshedBrand) {
+              console.log('✅ Using refreshed brand data:', refreshedBrand.businessName);
+              console.log('✅ Website URL:', refreshedBrand.websiteUrl);
+              console.log('🔄 Setting brand profile state...');
+              console.log('🔄 Refreshed brand object:', refreshedBrand);
+              setBrandProfile(refreshedBrand);
+              saveDraft(refreshedBrand);
+              hasInitializedRef.current = true;
+              
+              // Force a re-render by updating state again
+              setTimeout(() => {
+                console.log('🔄 Forcing brand profile re-render...');
+                console.log('🔄 Re-render brand object:', refreshedBrand);
+                setBrandProfile({ ...refreshedBrand });
+              }, 50);
+              return;
+            } else {
+              console.warn('⚠️ Refreshed brand not found, trying direct fetch...');
+              
+              // Try direct fetch from API as fallback
+              try {
+                const response = await fetch(`/api/brand-profiles/${brandId}`);
+                if (response.ok) {
+                  const directBrand = await response.json();
+                  console.log('✅ Direct fetch successful:', directBrand.businessName);
+                  console.log('✅ Direct fetch Website URL:', directBrand.websiteUrl);
+                  console.log('🔄 Setting brand profile state from direct fetch...');
+                  console.log('🔄 Direct fetch brand object:', directBrand);
+                  setBrandProfile(directBrand);
+                  saveDraft(directBrand);
+                  hasInitializedRef.current = true;
+                  
+                  // Force a re-render by updating state again
+                  setTimeout(() => {
+                    console.log('🔄 Forcing brand profile re-render from direct fetch...');
+                    console.log('🔄 Re-render direct fetch brand object:', directBrand);
+                    setBrandProfile({ ...directBrand });
+                  }, 50);
+                  return;
+                }
+              } catch (error) {
+                console.error('❌ Direct fetch failed:', error);
+              }
+              
+              console.warn('⚠️ All refresh methods failed, falling back to current brand');
+            }
+          }
+          
           setBrandProfile(currentBrand);
           saveDraft(currentBrand);
           hasInitializedRef.current = true;
@@ -161,7 +241,6 @@ export function CbrandWizardUnified({ mode: modeProp, brandId }: CbrandWizardUni
 
         // For create mode, always start with empty profile
         if (mode === 'create') {
-          console.log('📝 Create mode: Starting with empty profile');
           // Keep the default empty profile that was set in useState
           hasInitializedRef.current = true;
           return;
@@ -169,28 +248,24 @@ export function CbrandWizardUnified({ mode: modeProp, brandId }: CbrandWizardUni
 
         // For non-create mode, try to load existing brands from MongoDB
         if (user?.userId && brands.length > 0) {
-          console.log('🔄 Using existing brands from MongoDB');
           const firstBrand = brands[0];
           if (firstBrand) {
             setBrandProfile(firstBrand);
             saveDraft(firstBrand);
             hasInitializedRef.current = true;
-            console.log('✅ Loaded existing profile from Supabase:', firstBrand.businessName);
             return;
           }
         }
 
-        console.log('📝 No existing profile found, starting with empty profile');
       } catch (error) {
         console.error('❌ Failed to load brand profile:', error);
       }
     };
 
     loadExistingProfile();
-  }, [mode, brandId, currentBrand, user?.userId, isDirty]);
+  }, [mode, brandId, user?.userId, isDirty]);
 
   const updateBrandProfile = async (updates: Partial<CompleteBrandProfile>) => {
-    console.log('🔧 UNIFIED WIZARD updateBrandProfile called with updates:', updates);
 
     // Update local state immediately
     setIsDirty(true);
@@ -207,14 +282,6 @@ export function CbrandWizardUnified({ mode: modeProp, brandId }: CbrandWizardUni
     const targetBrandId = brandId || currentBrand?.id;
     if (isColorUpdate && !isCreateMode && targetBrandId) {
       try {
-        console.log('🎨 Color update detected in EDIT mode, saving to DB:', {
-          brandId: targetBrandId,
-          updates: {
-            primaryColor: updates.primaryColor,
-            accentColor: updates.accentColor,
-            backgroundColor: updates.backgroundColor
-          }
-        });
 
         // Save color changes to DB immediately for the brand being edited
         await updateProfile(targetBrandId, updates);
@@ -225,14 +292,12 @@ export function CbrandWizardUnified({ mode: modeProp, brandId }: CbrandWizardUni
           selectBrand(updatedBrand);
         }
 
-        console.log('✅ Color changes saved (edit mode)');
       } catch (error) {
         console.error('❌ Failed to save color changes (edit mode):', error);
         // Don't throw error to avoid disrupting user experience
       }
     } else if (isColorUpdate && isCreateMode) {
       // In create mode, DO NOT save to DB or touch the active brand; keep it local to the wizard draft
-      console.log('ℹ️ Skipping DB color auto-save because we are in CREATE mode. No mutation to active brand.');
     }
   };
 
@@ -249,17 +314,10 @@ export function CbrandWizardUnified({ mode: modeProp, brandId }: CbrandWizardUni
   };
 
   const handleSaveComplete = async (profileId: string) => {
-    console.log('✅ Profile saved successfully:', profileId);
 
     try {
       // First, immediately select the updated brand profile with current data
       const immediateProfile = { ...brandProfile, id: profileId };
-      console.log('🔄 Immediately selecting updated profile with current colors:', {
-        businessName: immediateProfile.businessName,
-        primaryColor: immediateProfile.primaryColor,
-        accentColor: immediateProfile.accentColor,
-        backgroundColor: immediateProfile.backgroundColor
-      });
       selectBrand(immediateProfile);
 
       // Clear current draft after successful save
@@ -269,19 +327,12 @@ export function CbrandWizardUnified({ mode: modeProp, brandId }: CbrandWizardUni
       clearDraft(`BRAND_DRAFT_${profileId}`);
 
       // Then refresh brands from Supabase to ensure consistency
-      console.log('🔄 Refreshing brands from unified context for consistency...');
       await refreshBrands();
 
       // Wait a moment for the refresh to complete and then re-select
       setTimeout(() => {
         const updatedProfile = brands.find(brand => brand.id === profileId);
         if (updatedProfile) {
-          console.log('✅ Re-selecting with fresh MongoDB data:', updatedProfile.businessName);
-          console.log('🎨 Fresh colors from MongoDB:', {
-            primaryColor: updatedProfile.primaryColor,
-            accentColor: updatedProfile.accentColor,
-            backgroundColor: updatedProfile.backgroundColor
-          });
           selectBrand(updatedProfile);
         } else {
           console.warn('⚠️ Could not find updated profile in refreshed brands, keeping current selection');

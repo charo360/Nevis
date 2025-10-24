@@ -258,7 +258,6 @@ export class BrandScopedStorage {
         }
       });
 
-
       // Step 2: Try to save only the most essential data
       const emergency = {
         id: Date.now().toString(),
@@ -593,8 +592,6 @@ export class BrandScopedStorage {
       const serialized = JSON.stringify(optimizedPosts);
       const dataSize = new Blob([serialized]).size;
 
-      console.log(`📦 Quick Content Storage: ${optimizedPosts.length} posts, ${formatBytes(dataSize)}`);
-
       // If still too large, reduce further
       if (dataSize > 1024 * 1024) { // 1MB limit
         console.warn('⚠️ Posts still too large, reducing to 25 most recent');
@@ -623,7 +620,6 @@ export class BrandScopedStorage {
           }));
 
         localStorage.setItem(key, JSON.stringify(emergencyPosts));
-        console.log('✅ Emergency fallback: Saved 10 most recent posts');
       } catch (emergencyError) {
         console.error('❌ Emergency fallback failed:', emergencyError);
         // Clear the key entirely
@@ -766,5 +762,4 @@ function formatBytes(bytes: number): string {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
-
 

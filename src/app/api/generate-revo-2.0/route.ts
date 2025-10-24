@@ -13,10 +13,7 @@ export async function POST(request: NextRequest) {
     // Get user ID from headers (would be set by middleware in production)
     const userId = 'test-user-id'; // TODO: Get from authentication
 
-    console.log('🎯 Revo 2.0 API: Request received');
-
     const body = await request.json();
-    console.log('✅ Revo 2.0 API: Body parsed successfully');
 
     const {
       businessType,
@@ -31,14 +28,6 @@ export async function POST(request: NextRequest) {
       scheduledServices // NEW: Extract scheduled services from request
     } = body;
 
-    console.log('📊 Revo 2.0 API: Extracted fields:', {
-      businessType,
-      platform,
-      brandProfile: brandProfile ? 'Present' : 'Missing',
-      imageText,
-      visualStyle
-    });
-
     // Validate required fields
     if (!businessType || !platform || !brandProfile) {
       return NextResponse.json({
@@ -47,38 +36,11 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    console.log('Revo 2.0 Enhanced generation request:', {
-      userId,
-      businessType,
-      platform,
-      visualStyle: visualStyle || 'modern',
-      aspectRatio: aspectRatio || '1:1'
-    });
-
-    console.log('🌍 Brand Profile Location Check:', {
-      location: brandProfile?.location,
-      hasLocation: !!brandProfile?.location,
-      locationType: typeof brandProfile?.location,
-      brandProfileKeys: Object.keys(brandProfile || {})
-    });
-
     // Log scheduled services integration
-    console.log('📅 [Revo 2.0 API] Scheduled Services Integration:', {
-      hasScheduledServices: !!(scheduledServices && scheduledServices.length > 0),
-      scheduledServicesCount: scheduledServices?.length || 0,
-      todaysServicesCount: scheduledServices?.filter((s: any) => s.isToday).length || 0,
-      upcomingServicesCount: scheduledServices?.filter((s: any) => s.isUpcoming).length || 0,
-      scheduledServiceNames: scheduledServices?.map((s: any) => s.serviceName) || [],
-      todaysServiceNames: scheduledServices?.filter((s: any) => s.isToday).map((s: any) => s.serviceName) || [],
-      upcomingServiceNames: scheduledServices?.filter((s: any) => s.isUpcoming).map((s: any) => s.serviceName) || []
-    });
-
-    console.log('🚀 Revo 2.0 API: About to call generateWithRevo20...');
 
     // Generate content with Revo 2.0 Enhanced with error handling
     let result;
     try {
-      console.log('🔄 Revo 2.0 API: Calling generateWithRevo20 function...');
       result = await generateWithRevo20({
         businessType,
         platform,
@@ -91,7 +53,6 @@ export async function POST(request: NextRequest) {
         includeContacts: !!includeContacts,
         scheduledServices: scheduledServices // NEW: Pass scheduled services to Revo 2.0
       });
-      console.log('✅ Revo 2.0 API: generateWithRevo20 completed successfully');
     } catch (generationError) {
       console.error('❌ Revo 2.0 generation failed:', generationError);
       console.error('❌ Full error details:', {
@@ -103,7 +64,6 @@ export async function POST(request: NextRequest) {
       const errorMessage = generationError instanceof Error ? generationError.message : 'Unknown error';
       throw new Error(`Revo 2.0 Debug Error: ${errorMessage}`);
     }
-
 
     return NextResponse.json({
       success: true,

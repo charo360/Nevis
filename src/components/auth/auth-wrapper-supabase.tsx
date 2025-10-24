@@ -26,15 +26,13 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
   useEffect(() => {
     if (!loading && mounted) {
       // Public routes that don't require authentication
-      const publicRoutes = ['/', '/auth', '/auth/forgot-password', '/features', '/pricing', '/about', '/privacy', '/terms'];
+      const publicRoutes = ['/', '/auth', '/forgot-password', '/verify-password', '/change-password', '/features', '/pricing', '/about', '/privacy', '/terms'];
       const currentPath = pathname ?? '';
       const isPublicRoute = publicRoutes.includes(currentPath) || currentPath.startsWith('/billing');
 
       if (!user && !isPublicRoute) {
-        console.log('🔒 User not authenticated, redirecting to login');
         router.push('/auth');
       } else if (user && currentPath === '/auth') {
-        console.log('✅ User authenticated, redirecting to dashboard');
         router.push('/dashboard');
       }
     }
@@ -79,7 +77,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
 
   // Public routes - render without auth check
   const currentPath = pathname ?? '';
-  const publicRoutes = ['/', '/auth', '/auth/forgot-password', '/features', '/pricing', '/about', '/privacy', '/terms'];
+  const publicRoutes = ['/', '/auth', '/forgot-password', '/verify-password', '/change-password', '/features', '/pricing', '/about', '/privacy', '/terms'];
   const isPublicRoute = publicRoutes.includes(currentPath) || currentPath.startsWith('/billing');
 
   if (isPublicRoute) {

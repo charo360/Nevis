@@ -35,20 +35,8 @@ export async function POST(request: NextRequest) {
       websiteUrl: 'www.testrestaurant.com'
     };
 
-    console.log('🧪 [Test Contacts API] Test Data:', testData);
-
     // Generate content
     const result = await generateRevo10Content(testData);
-
-    console.log('🧪 [Test Contacts API] Generated Content:', {
-      content: result.content,
-      catchyWords: result.catchyWords,
-      callToAction: result.callToAction,
-      hasPhone: result.content?.includes('555-123-4567') || result.content?.includes('(555) 123-4567'),
-      hasEmail: result.content?.includes('info@testrestaurant.com'),
-      hasAddress: result.content?.includes('123 Test Street'),
-      hasWebsite: result.content?.includes('www.testrestaurant.com')
-    });
 
     return NextResponse.json({
       success: true,
@@ -73,17 +61,4 @@ export async function POST(request: NextRequest) {
     }, { status: 500 });
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 

@@ -12,19 +12,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('🔄 [RefreshCalendar] Force refreshing scheduled services for brand:', brandId);
     
     // Force fresh retrieval of today's services
     const todaysServices = await CalendarService.getTodaysScheduledServices(brandId);
     const upcomingServices = await CalendarService.getUpcomingScheduledServices(brandId);
     
-    console.log('✅ [RefreshCalendar] Fresh data retrieved:', {
-      timestamp: new Date().toISOString(),
-      todaysServicesCount: todaysServices.length,
-      upcomingServicesCount: upcomingServices.length,
-      todaysServiceNames: todaysServices.map(s => s.serviceName),
-      upcomingServiceNames: upcomingServices.map(s => s.serviceName)
-    });
     
     return NextResponse.json({
       success: true,

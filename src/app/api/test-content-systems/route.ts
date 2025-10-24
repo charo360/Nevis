@@ -3,7 +3,6 @@ import { PureAIContentGenerator, PureAIRequest } from '@/services/pure-ai-conten
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🧪 [Content Systems Test] Starting comprehensive content system testing...');
 
     const body = await request.json();
     const {
@@ -33,7 +32,6 @@ export async function POST(request: NextRequest) {
     };
 
     // Test 1: Pure AI Gemini System
-    console.log('🧪 [Content Systems Test] Testing Pure AI Gemini...');
     try {
       const pureAIRequest: PureAIRequest = {
         businessType,
@@ -92,7 +90,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Test 2: Pure AI OpenAI System
-    console.log('🧪 [Content Systems Test] Testing Pure AI OpenAI...');
     try {
       const pureAIRequest: PureAIRequest = {
         businessType,
@@ -171,13 +168,6 @@ export async function POST(request: NextRequest) {
         recommendations.push('🔧 Check prompt engineering and temperature settings');
       }
     }
-
-    console.log('🔍 [Content Systems Test] Testing complete:', {
-      totalSystems: testResults.summary.totalSystems,
-      workingSystems: testResults.summary.workingSystems,
-      failedSystems: testResults.summary.failedSystems,
-      recommendedSystem: testResults.summary.recommendedSystem
-    });
 
     return NextResponse.json({
       success: testResults.summary.workingSystems > 0,

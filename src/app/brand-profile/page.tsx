@@ -16,7 +16,6 @@ function BrandProfileContent() {
   // Auto-redirect to edit mode if no mode specified but there's an active brand
   useEffect(() => {
     if (!modeParam && currentBrand?.id) {
-      console.log('🔄 Auto-redirecting to edit mode for active brand:', currentBrand.businessName);
       router.replace(`/brand-profile?mode=edit&id=${currentBrand.id}`);
       return;
     }
@@ -25,7 +24,6 @@ function BrandProfileContent() {
   // Update URL when brand changes (for brand selector switching)
   useEffect(() => {
     if (modeParam === 'edit' && currentBrand?.id && brandId !== currentBrand.id) {
-      console.log('🔄 Brand changed via selector, updating URL to new brand:', currentBrand.businessName);
       router.replace(`/brand-profile?mode=edit&id=${currentBrand.id}`);
       return;
     }

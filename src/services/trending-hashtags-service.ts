@@ -68,13 +68,10 @@ export class TrendingHashtagsService {
       const isService = this.isServiceContext(businessType);
       const contextType = isService ? 'service' : 'business type';
 
-      console.log(`🔍 Analyzing ${contextType}: ${businessType}`);
-
       // First try to get real trending data from your RSS system
       const realTrendingHashtags = await this.fetchRealTrendingHashtags(businessType, location);
 
       if (realTrendingHashtags && realTrendingHashtags.length > 0) {
-        console.log(`📈 Using real trending hashtags for ${businessType}:`, realTrendingHashtags.slice(0, 5));
         return realTrendingHashtags.slice(0, limit);
       }
 
@@ -100,7 +97,6 @@ export class TrendingHashtagsService {
         })
         .slice(0, limit);
 
-      console.log(`📊 Using curated hashtags for ${businessType}:`, sortedHashtags.slice(0, 5).map(h => h.tag));
       return sortedHashtags.map(h => h.tag);
 
     } catch (error) {
@@ -117,7 +113,6 @@ export class TrendingHashtagsService {
     location?: string
   ): Promise<string[]> {
     try {
-      console.log(`🔍 Skipping advanced analyzer for ${businessType} - using curated data`);
       return [];
     } catch (error) {
       console.warn('Advanced hashtag analyzer failed:', error);
@@ -129,7 +124,6 @@ export class TrendingHashtagsService {
    * Direct RSS data fetch as fallback (SIMPLIFIED)
    */
   private static async fetchDirectRSSHashtags(businessType: string): Promise<string[]> {
-    console.log(`🔄 [Trending Hashtags] Skipping RSS fetch for ${businessType} - using fallback`);
     return [];
   }
 

@@ -232,7 +232,6 @@ export type GeneratePostFromProfileOutput = z.infer<typeof GeneratePostFromProfi
 
 // Export function moved to end of file after flow definition
 
-
 /**
  * Combines catchy words, subheadline, and call to action into a single text for image overlay
  */
@@ -428,6 +427,11 @@ async function generateImageForVariant(
   - NO gradients using non-brand colors
   - Text: Use high contrast white or black only when needed
   - FORBIDDEN: Any design with more than 3 colors total
+  
+  **CRITICAL: These are the EXACT brand colors that MUST be used:**
+  - Primary: ${input.primaryColor} (use as main color)
+  - Accent: ${input.accentColor} (use for highlights)
+  - Background: ${input.backgroundColor} (use as base)
   ` : `
   **MAXIMUM 3 COLORS TOTAL:**
   - Primary: ${input.primaryColor} - DOMINANT (60-70%)
@@ -669,7 +673,6 @@ ${ethnicityInstructions}
   // Build prompt parts array - Enhanced system temporarily disabled
   const promptParts: any[] = [{ text: imagePrompt }];
 
-
   // Enhanced logo integration with analysis
   if (input.logoDataUrl) {
     // Add logo analysis instructions to the prompt
@@ -690,7 +693,6 @@ ${ethnicityInstructions}
       "- Match the design style to complement the logo's aesthetic and personality\n" +
       "- Ensure visual harmony between the uploaded logo and all design elements\n" +
       "- The logo is the primary brand identifier - treat it as the most important visual element";
-
 
     // Add additional logo placement instructions
     const logoPlacementInstructions =
@@ -764,7 +766,6 @@ ${ethnicityInstructions}
             "Create engaging design for: " + textOutput.catchyWords
           );
 
-
           // If quality is acceptable, use this design
           if (meetsQualityStandards(quality, 7)) {
             finalImageUrl = imageUrl;
@@ -834,7 +835,6 @@ ${ethnicityInstructions}
   };
 }
 
-
 const generatePostFromProfileFlow = ai.defineFlow(
   {
     name: 'generatePostFromProfileFlow',
@@ -861,7 +861,6 @@ const generatePostFromProfileFlow = ai.defineFlow(
       input.contentThemes,
       input.dayOfWeek
     );
-
 
     // Step 2: Fetch Real-Time Trending Topics (always useful)
     const realTimeTrends = await generateRealTimeTrendingTopics(
@@ -945,12 +944,6 @@ const generatePostFromProfileFlow = ai.defineFlow(
             .filter(Boolean)
             .join('. ');
 
-          console.log('📅 Calendar Context for AI:', {
-            hasScheduledContent,
-            todaysServices: calendarContext.todaysServices.length,
-            upcomingServices: calendarContext.upcomingServices.length,
-            context: scheduledServicesContext
-          });
         }
       } catch (error) {
         console.warn('Failed to fetch calendar context for AI generation:', error);

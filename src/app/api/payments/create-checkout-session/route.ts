@@ -15,7 +15,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '20
 // Minimal plan map (amounts in cents) — adjust to match your pricing-data if desired
 const PLANS: Record<string, { amountCents: number; credits: number; name: string }> = {
   free: { amountCents: 0, credits: 10, name: 'Free Plan' },
-  starter: { amountCents: 999, credits: 40, name: 'Starter Pack' },
+  starter: { amountCents: 999, credits: 40, name: 'Starter Pack' },  // $9.99
   growth: { amountCents: 2499, credits: 100, name: 'Growth Pack' },
   pro: { amountCents: 5999, credits: 250, name: 'Pro Pack' },
   enterprise: { amountCents: 19999, credits: 1000, name: 'Enterprise Pack' },
@@ -78,7 +78,6 @@ export async function POST(req: Request) {
             payment_method: 'free_plan',
             metadata: { source: 'free-plan' }
           });
-        console.log('Free plan payment recorded:', doc);
       } catch (e) {
         console.error('Failed to record free plan payment:', e);
       }
@@ -166,13 +165,6 @@ export async function POST(req: Request) {
 
     // Note: Payment record will be created by webhook when payment completes
     // This prevents duplicate records and race conditions
-    console.log('Checkout session created:', {
-      session_id: session.id,
-      user_id: decoded.userId,
-      plan_id: isRegional45 ? 'regional_45' : planIdForLookup,
-      amount: unitAmount / 100,
-      credits_to_add: credits
-    });
 
     if (!session.url) {
       return NextResponse.json({ error: 'Failed to create checkout session' }, { status: 500 });

@@ -5,9 +5,6 @@ export async function POST(request: NextRequest) {
   try {
     // Debug: Log the raw request body to see what's being sent
     const rawBody = await request.text();
-    console.log('🔍 Raw request body:', rawBody);
-    console.log('🔍 Raw body length:', rawBody.length);
-    console.log('🔍 Raw body first 50 chars:', rawBody.substring(0, 50));
 
     // Try to parse the JSON
     let parsedBody;

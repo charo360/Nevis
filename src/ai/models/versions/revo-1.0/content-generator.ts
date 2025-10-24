@@ -58,12 +58,6 @@ export class Revo10ContentGenerator implements IContentGenerator {
         includePeople: (request as any).includePeople
       });
 
-      console.log('🔍 [Revo 1.0 Content Generator] People Toggle Debug:', {
-        requestIncludePeople: (request as any).includePeople,
-        requestIncludePeopleType: typeof (request as any).includePeople,
-        businessName: generationParams.profile?.businessName
-      });
-
       // Generate image using the catchy words and brand profile data
 
       const { generateRevo10Image } = await import('@/ai/revo-1.0-service');
@@ -140,7 +134,6 @@ export class Revo10ContentGenerator implements IContentGenerator {
       const processingTime = Date.now() - startTime;
       const qualityScore = this.calculateQualityScore(generatedPost);
 
-
       return {
         success: true,
         data: generatedPost,
@@ -199,13 +192,6 @@ export class Revo10ContentGenerator implements IContentGenerator {
     const today = new Date();
 
     // Debug logging for contact information
-    console.log('🔍 [Revo 1.0 Content Generator] Contact Information Debug:', {
-      includeContacts: (request as any).includeContacts,
-      contactInfo: (request as any).contactInfo,
-      websiteUrl: (request as any).websiteUrl,
-      profileContactInfo: profile.contactInfo,
-      profileWebsiteUrl: profile.websiteUrl
-    });
 
     // Convert arrays to strings for AI processing
     const keyFeaturesString = Array.isArray(profile.keyFeatures)

@@ -6,7 +6,6 @@ import { BrandProfile, BrandConsistencyPreferences } from '@/lib/types';
  */
 export async function GET(request: NextRequest) {
   try {
-    console.log('🧪 [Test Revo 2.0 System Contacts] Starting system message contact test...');
 
     // Create test brand profile with contact information
     const testBrandProfile: BrandProfile = {
@@ -30,15 +29,6 @@ export async function GET(request: NextRequest) {
       followBrandColors: true,
       includeContacts: true
     };
-
-    console.log('🧪 [Test Revo 2.0 System Contacts] Test data prepared:', {
-      businessName: testBrandProfile.businessName,
-      hasContactInfo: !!testBrandProfile.contactInfo,
-      phone: testBrandProfile.contactInfo?.phone,
-      email: testBrandProfile.contactInfo?.email,
-      website: testBrandProfile.websiteUrl,
-      includeContacts: brandConsistencyWithContacts.includeContacts
-    });
 
     // Simulate the system message generation (like the new Revo 2.0 approach)
     const includeContacts = brandConsistencyWithContacts.includeContacts === true;
@@ -116,8 +106,6 @@ Create a high-quality design with integrated text elements.`;
         userPrompt
       ]
     };
-
-    console.log('🧪 [Test Revo 2.0 System Contacts] System message approach results:', verification);
 
     return NextResponse.json({
       success: true,

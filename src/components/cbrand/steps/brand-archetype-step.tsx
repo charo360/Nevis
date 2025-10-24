@@ -333,14 +333,6 @@ export function BrandArchetypeStep({ brandProfile, onUpdate, onNext, onPrevious 
   const aiRecommendation = React.useMemo(() => {
     // Check if there's an archetype recommendation from website analysis
     const recommendation = (brandProfile as any).archetypeRecommendation as ArchetypeRecommendation | undefined;
-    console.log('🤖 BrandArchetypeStep: Checking for AI recommendation:', {
-      hasRecommendation: !!recommendation,
-      recommendation,
-      brandProfileKeys: Object.keys(brandProfile),
-      brandProfile
-    });
-
-
 
     return recommendation;
   }, [brandProfile]);

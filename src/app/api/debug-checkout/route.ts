@@ -7,15 +7,9 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     
-    console.log('🧪 DEBUG: Received checkout request:', {
-      body,
-      headers: Object.fromEntries(req.headers.entries()),
-      timestamp: new Date().toISOString()
-    });
 
     // Test plan ID resolution
     const planId = body.planId || body.priceId;
-    console.log('🧪 DEBUG: Plan ID resolution:', { planId, bodyPlanId: body.planId, bodyPriceId: body.priceId });
 
     if (!planId) {
       return NextResponse.json({ 
@@ -29,7 +23,8 @@ export async function POST(req: NextRequest) {
     if (planId.startsWith('price_')) {
       const legacyMapping: Record<string, string> = {
         'price_1SDqaWELJu3kIHjxZQBntjuO': 'try-free',
-  'price_1SDqfQELJu3kIHjxzHWPNMPs': 'starter',
+  'price_1SDqfQELJu3kIHjxzHWPNMPs': 'starter',  // Old starter price ID (legacy)
+  'price_1SKigfELJu3kIHjxCDb6h01E': 'starter',  // New starter price ID $9.99
         'price_1SDqiKELJu3kIHjx0LWHBgfV': 'growth',
         'price_1SDqloELJu3kIHjxU187qSj1': 'pro',
         'price_1SDqp4ELJu3kIHjx7oLcQwzh': 'enterprise',
@@ -41,11 +36,9 @@ export async function POST(req: NextRequest) {
         'price_1QOmclCXEBwbxwozO9Z1tBbt': 'enterprise'
       };
       actualPlanId = legacyMapping[planId] || 'starter';
-      console.log('🧪 DEBUG: Legacy mapping:', { original: planId, mapped: actualPlanId });
     }
 
     const planDetails = getPlanById(actualPlanId);
-    console.log('🧪 DEBUG: Plan details:', { actualPlanId, planDetails });
 
     if (!planDetails) {
       return NextResponse.json({ 
@@ -55,7 +48,6 @@ export async function POST(req: NextRequest) {
     }
 
     const stripePriceId = planIdToStripePrice(actualPlanId);
-    console.log('🧪 DEBUG: Stripe price mapping:', { actualPlanId, stripePriceId });
 
     if (!stripePriceId) {
       return NextResponse.json({ 

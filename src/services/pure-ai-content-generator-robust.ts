@@ -48,11 +48,9 @@ export class RobustPureAIContentGenerator {
    * Generate content using robust, product-specific approach
    */
   static async generateContent(request: PureAIRequest): Promise<PureAIResponse> {
-    console.log('🚀 [Robust Pure AI] Starting content generation');
     
     try {
       const prompt = this.buildRobustPrompt(request);
-      console.log('📝 [Robust Pure AI] Generated prompt');
       
       const response = await generateText(prompt, {
         temperature: 0.8,
@@ -64,8 +62,6 @@ export class RobustPureAIContentGenerator {
         throw new Error('Empty response from AI');
       }
 
-      console.log('✅ [Robust Pure AI] AI response received:', content.substring(0, 200) + '...');
-
       // Parse JSON response
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
@@ -74,7 +70,6 @@ export class RobustPureAIContentGenerator {
 
       const jsonString = jsonMatch[0];
       const parsed = JSON.parse(jsonString);
-      console.log('✅ [Robust Pure AI] JSON parsing successful');
       
       // Validate and adjust word counts
       if (parsed.content) {
@@ -103,14 +98,12 @@ export class RobustPureAIContentGenerator {
     if (headlineWords > 6) {
       const words = content.headline.trim().split(/\s+/);
       adjustedHeadline = words.slice(0, 6).join(' ');
-      console.log(`⚠️ [Robust Pure AI] Headline truncated from ${headlineWords} to 6 words: "${adjustedHeadline}"`);
     }
     
     // Truncate subheadline if over 14 words
     if (subheadlineWords > 14) {
       const words = content.subheadline.trim().split(/\s+/);
       adjustedSubheadline = words.slice(0, 14).join(' ');
-      console.log(`⚠️ [Robust Pure AI] Subheadline truncated from ${subheadlineWords} to 14 words: "${adjustedSubheadline}"`);
     }
     
     return {
@@ -227,9 +220,4 @@ CRITICAL WORD LIMITS:
 REMEMBER: Your content must be so specific and intelligent that it could ONLY work for this exact business. Generic content = FAILURE.`;
   }
 }
-
-
-
-
-
 

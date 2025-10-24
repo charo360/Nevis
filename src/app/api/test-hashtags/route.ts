@@ -34,15 +34,6 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
 
-    console.log('✅ Generated hashtag strategy:', {
-      totalHashtags: hashtagStrategy.total.length,
-      trending: hashtagStrategy.trending.length,
-      viral: hashtagStrategy.viral.length,
-      niche: hashtagStrategy.niche.length,
-      location: hashtagStrategy.location.length,
-      analytics: hashtagStrategy.analytics
-    });
-
     return NextResponse.json({
       success: true,
       message: 'Advanced hashtag system test completed',

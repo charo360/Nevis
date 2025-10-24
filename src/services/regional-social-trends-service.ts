@@ -39,7 +39,6 @@ export class RegionalSocialTrendsService {
     socialBuzz: string[];
   }> {
     try {
-      console.log(`📍 Getting regional social data for ${businessType} in ${location}`);
       
       const fallbackData = this.getFallbackRegionalData(location, businessType);
       
@@ -258,7 +257,6 @@ export class RegionalSocialTrendsService {
     location: string,
     businessType: string
   ): Promise<RegionalSocialData> {
-    console.log(`📍 Using fallback regional data for ${location}`);
     return this.getFallbackRegionalData(location, businessType);
   }
 
@@ -289,7 +287,6 @@ export class RegionalSocialTrendsService {
     businessType: string
   ): Promise<Partial<RegionalSocialData>> {
     try {
-      console.log(`🔄 [Regional Trends] Fetching data for ${source.region}`);
 
       // 🛡️ FIXED: Use direct RSS fetching instead of problematic API calls
       const { fetchRSSFeedDirect } = await import('../ai/utils/rss-direct-fetch');
@@ -310,7 +307,6 @@ export class RegionalSocialTrendsService {
 
         result.trendingHashtags = [...new Set(regionalHashtags)].slice(0, 10);
 
-        console.log(`✅ [Regional Trends] Generated ${result.trendingHashtags.length} hashtags for ${source.region}`);
       } else {
         result.trendingHashtags = this.getFallbackRegionalHashtags(source.region);
       }
@@ -398,8 +394,6 @@ export class RegionalSocialTrendsService {
         'retail': ['r/fashion', 'r/deals', 'r/shopping', 'r/smallbusiness']
       };
 
-      console.log(`🔄 [Reddit Trends] Fetching trends for ${businessType}`);
-
       // 🛡️ FIXED: Use direct RSS fetching instead of problematic API calls
       const { fetchRSSFeedDirect } = await import('../ai/utils/rss-direct-fetch');
 
@@ -425,7 +419,6 @@ export class RegionalSocialTrendsService {
       }
 
       const uniqueHashtags = [...new Set(allHashtags)];
-      console.log(`✅ [Reddit Trends] Generated ${uniqueHashtags.length} hashtags for ${businessType}`);
       return uniqueHashtags.slice(0, 10);
 
     } catch (error) {

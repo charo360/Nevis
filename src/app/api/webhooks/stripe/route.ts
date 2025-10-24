@@ -3,6 +3,12 @@ import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import { getPlanById } from '@/lib/secure-pricing';
 import { getStripeConfig } from '@/lib/stripe-config';
+import { sendPaymentConfirmationEmail } from '@/lib/email/sendgrid-service';
+
+// Critical: Tell Next.js to use Node.js runtime and force dynamic rendering
+// This ensures the raw request body is available for signature verification
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,30 +20,37 @@ const stripeConfig = getStripeConfig();
 
 // Initialize Stripe with environment-appropriate keys  
 const stripe = new Stripe(stripeConfig.secretKey, {
-  apiVersion: '2024-06-20'
+  apiVersion: '2025-08-27.basil'
 });
 
 const webhookSecret = stripeConfig.webhookSecret;
 
-// GET handler for webhook health check
+// GET handler for webhook health check and diagnostics
 export async function GET(req: NextRequest) {
-  const secretPrefix = webhookSecret ? webhookSecret.substring(0, 8) + '...' : 'NOT_SET';
+  const secretPrefix = webhookSecret ? webhookSecret.substring(0, 12) + '...' : 'NOT_SET';
   
   return NextResponse.json({ 
     status: 'active',
     message: 'Stripe webhook endpoint is operational',
+    version: '1.0.1',
     timestamp: new Date().toISOString(),
     environment: stripeConfig.environment,
     isLive: stripeConfig.isLive,
     webhook_configured: !!webhookSecret,
     webhook_secret_prefix: secretPrefix,
-    secret_key_prefix: stripeConfig.secretKey.substring(0, 8) + '...'
+    secret_key_prefix: stripeConfig.secretKey.substring(0, 12) + '...',
+    diagnostics: {
+      NODE_ENV: process.env.NODE_ENV,
+      has_STRIPE_WEBHOOK_SECRET_LIVE: !!process.env.STRIPE_WEBHOOK_SECRET_LIVE,
+      has_STRIPE_WEBHOOK_SECRET: !!process.env.STRIPE_WEBHOOK_SECRET,
+      expected_env_var: stripeConfig.environment === 'production' ? 'STRIPE_WEBHOOK_SECRET_LIVE' : 'STRIPE_WEBHOOK_SECRET_TEST',
+      webhook_secret_length: webhookSecret?.length || 0,
+      webhook_secret_format_valid: webhookSecret?.startsWith('whsec_') || false
+    }
   });
 }
 
 export async function POST(req: NextRequest) {
-  console.log(`🔧 Webhook Request - Environment: ${stripeConfig.environment} (${stripeConfig.isLive ? 'LIVE' : 'TEST'})`);
-  console.log(`🔑 Webhook Secret Status: ${webhookSecret ? 'CONFIGURED' : 'MISSING'} (${webhookSecret?.length || 0} chars)`);
 
   if (!webhookSecret) {
     console.error(`❌ Webhook secret not configured for ${stripeConfig.environment} environment`);
@@ -57,7 +70,6 @@ export async function POST(req: NextRequest) {
 
   try {
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-    console.log('✅ Webhook signature verified successfully');
   } catch (err: any) {
     console.error('❌ Webhook signature verification failed:', {
       error: err.message,
@@ -76,30 +88,15 @@ export async function POST(req: NextRequest) {
     }, { status: 400 });
   }
 
-  console.log('🎯 Received Stripe webhook:', event.type);
-  console.log('📋 Event data preview:', {
-    id: event.id,
-    type: event.type,
-    object_id: (event.data.object as any).id,
-    created: event.created
-  });
   
   // Enhanced debugging for payment events
   if (event.type.startsWith('payment_intent') || event.type.includes('session.completed')) {
     const obj = event.data.object as any;
-    console.log('💳 Payment Event Debug:', {
-      payment_intent_id: obj.id,
-      session_id: obj.id,
-      metadata: obj.metadata,
-      status: obj.status,
-      amount: obj.amount_total || obj.amount
-    });
   }
 
   try {
     switch (event.type) {
       case 'checkout.session.completed':
-        console.log('🎉 Processing checkout session completed');
         await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session);
         break;
 
@@ -112,21 +109,17 @@ export async function POST(req: NextRequest) {
       // because it contains all the metadata we need. payment_intent.succeeded
       // is fired before checkout.session.completed but lacks session metadata
       case 'payment_intent.succeeded':
-        console.log('💰 Payment intent succeeded (handled by checkout.session.completed)');
         break;
 
       case 'charge.dispute.created':
-        console.log('⚠️ Dispute created for charge');
         await handleChargeDisputeCreated(event.data.object as Stripe.Dispute);
         break;
 
       case 'charge.refunded':
-        console.log('💸 Charge refunded');
         await handleChargeRefunded(event.data.object as Stripe.Charge);
         break;
 
       default:
-        console.log('🔄 Unhandled event type:', event.type);
     }
 
     return NextResponse.json({ received: true });
@@ -137,15 +130,6 @@ export async function POST(req: NextRequest) {
 }
 
 async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
-  console.log('🎉 Processing completed checkout session:', session.id);
-  console.log('📋 FULL Session object:', JSON.stringify(session, null, 2));
-  console.log('📋 Session data:', {
-    client_reference_id: session.client_reference_id,
-    metadata: session.metadata,
-    amount_total: session.amount_total,
-    currency: session.currency,
-    payment_status: session.payment_status
-  });
 
   // Try to get userId from client_reference_id or metadata
   const userId = session.client_reference_id || session.metadata?.userId;
@@ -171,18 +155,8 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     return;
   }
 
-  console.log('✅ Found plan:', { planId, credits: plan.credits, name: plan.name });
-
   try {
     // Use the new idempotent payment processing function
-    console.log('💳 Processing payment with idempotency protection...');
-    console.log('📋 RPC params:', {
-      p_stripe_session_id: session.id,
-      p_user_id: userId,
-      p_plan_id: planId,
-      p_amount: (session.amount_total || 0) / 100,
-      p_credits_to_add: plan.credits
-    });
 
     const { data: paymentResult, error: paymentError } = await supabase.rpc('process_payment_with_idempotency', {
       p_stripe_session_id: session.id,
@@ -191,8 +165,6 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       p_amount: (session.amount_total || 0) / 100, // Convert from cents
       p_credits_to_add: plan.credits
     });
-
-    console.log('🧾 Supabase RPC result:', { paymentResult, paymentError });
 
     if (paymentError) {
       console.error('❌ Payment processing RPC error:', paymentError);
@@ -213,19 +185,45 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     }
 
     if (result.was_duplicate) {
-      console.log('⚠️ Duplicate payment detected and ignored:', {
-        session_id: session.id,
-        payment_id: result.payment_id,
-        credits_that_would_have_been_added: result.credits_added
-      });
+      console.log('✅ Payment was duplicate, skipping email');
     } else {
-      console.log('✅ Payment processed successfully:', {
-        session_id: session.id,
-        payment_id: result.payment_id,
-        credits_added: result.credits_added,
-        new_total_credits: result.new_total_credits,
-        new_remaining_credits: result.new_remaining_credits
-      });
+      console.log('✅ Payment processed successfully, sending confirmation email');
+      
+      // Get user email from Supabase auth
+      const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
+      
+      if (userError || !userData?.user?.email) {
+        console.error('❌ Could not fetch user email for payment confirmation:', userError);
+      } else {
+        try {
+          // Send payment confirmation email
+          const emailResult = await sendPaymentConfirmationEmail({
+            customerEmail: userData.user.email,
+            customerName: userData.user.user_metadata?.full_name || userData.user.email.split('@')[0],
+            planName: plan.name,
+            amount: (session.amount_total || 0) / 100,
+            currency: session.currency || 'usd',
+            creditsAdded: plan.credits,
+            totalCredits: result.new_total_credits,
+            transactionId: result.payment_id,
+            paymentDate: new Date().toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })
+          });
+          
+          if (emailResult.success) {
+            console.log('✅ Payment confirmation email sent successfully');
+          } else {
+            console.error('❌ Failed to send payment confirmation email:', emailResult.error);
+          }
+        } catch (emailError) {
+          console.error('❌ Error sending payment confirmation email:', emailError);
+        }
+      }
     }
 
     return;
@@ -237,7 +235,6 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
 }
 
 async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
-  console.log('💰 Processing payment intent succeeded:', paymentIntent.id);
 
   try {
     // Find the payment transaction by payment intent ID or session ID
@@ -274,7 +271,6 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
     }
 
     if (transaction.status === 'completed') {
-      console.log('⚠️ Payment already processed for intent:', paymentIntent.id);
       return;
     }
 
@@ -292,8 +288,6 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
       return;
     }
 
-    console.log('✅ Payment status updated to completed for intent:', paymentIntent.id);
-
   } catch (error: any) {
     console.error('❌ Error processing payment intent:', error);
     throw error;
@@ -301,7 +295,6 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
 }
 
 async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
-  console.log('❌ Processing payment intent failed:', paymentIntent.id);
 
   try {
     // Update payment transaction status to failed
@@ -316,7 +309,6 @@ async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
     if (updateError) {
       console.error('❌ Failed to update payment transaction status to failed:', updateError);
     } else {
-      console.log('✅ Payment transaction marked as failed for payment intent:', paymentIntent.id);
     }
 
   } catch (error: any) {
@@ -326,7 +318,6 @@ async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
 }
 
 async function handleChargeDisputeCreated(dispute: Stripe.Dispute) {
-  console.log('⚠️ Processing dispute:', dispute.id);
 
   try {
     const chargeId = typeof dispute.charge === 'string' ? dispute.charge : dispute.charge?.id;
@@ -358,15 +349,12 @@ async function handleChargeDisputeCreated(dispute: Stripe.Dispute) {
       })
       .eq('id', transaction.id);
 
-    console.log('✅ Transaction marked as disputed:', transaction.id);
-
   } catch (error: any) {
     console.error('❌ Error handling dispute:', error);
   }
 }
 
 async function handleChargeRefunded(charge: Stripe.Charge) {
-  console.log('💸 Processing refund for charge:', charge.id);
 
   try {
     // Find payment transaction
@@ -400,11 +388,8 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
 
     // If credits were added, consider deducting them (business logic decision)
     if (isFullRefund && transaction.credits_added > 0) {
-      console.log('⚠️ Full refund detected - consider credit reversal for:', transaction.user_id);
       // TODO: Implement credit reversal logic if needed
     }
-
-    console.log('✅ Refund processed:', { transaction_id: transaction.id, refund_amount: refundAmount, is_full: isFullRefund });
 
   } catch (error: any) {
     console.error('❌ Error handling refund:', error);
@@ -412,7 +397,6 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
 }
 
 async function updateUserCredits(userId: string, creditsToAdd: number) {
-  console.log('💳 Updating user credits:', { userId, creditsToAdd });
 
   try {
     // Use the database function to add credits to user account
@@ -427,11 +411,6 @@ async function updateUserCredits(userId: string, creditsToAdd: number) {
       throw error;
     }
 
-    console.log('✅ User credits updated successfully via database function:', {
-      userId,
-      creditsAdded: creditsToAdd
-    });
-
     // Verify the update by fetching current credits
     const { data: updatedCredits, error: fetchError } = await supabase
       .from('user_credits')
@@ -442,11 +421,6 @@ async function updateUserCredits(userId: string, creditsToAdd: number) {
     if (fetchError) {
       console.warn('⚠️ Could not verify credit update:', fetchError);
     } else {
-      console.log('✅ Credit update verified:', {
-        total: updatedCredits.total_credits,
-        remaining: updatedCredits.remaining_credits,
-        used: updatedCredits.used_credits
-      });
     }
 
   } catch (error) {

@@ -46,10 +46,16 @@ export function WebsiteAnalysisStep({
 
   // Update website URL when brand profile changes (for edit mode)
   useEffect(() => {
+    console.log('🔄 WebsiteAnalysisStep: brandProfile.websiteUrl changed:', brandProfile.websiteUrl);
+    console.log('🔄 WebsiteAnalysisStep: current websiteUrl state:', websiteUrl);
+    console.log('🔄 WebsiteAnalysisStep: brandProfile object:', brandProfile);
+    
+    // Simply use the brandProfile.websiteUrl if available
     if (brandProfile.websiteUrl && brandProfile.websiteUrl !== websiteUrl) {
+      console.log('✅ WebsiteAnalysisStep: Updating websiteUrl from brandProfile:', brandProfile.websiteUrl);
       setWebsiteUrl(brandProfile.websiteUrl);
     }
-  }, [brandProfile.websiteUrl]);
+  }, [brandProfile.websiteUrl, websiteUrl]);
 
   // Update existing design examples when brand profile changes (for edit mode)
   useEffect(() => {
@@ -413,7 +419,10 @@ export function WebsiteAnalysisStep({
               type="url"
               placeholder="https://your-website.com"
               value={websiteUrl}
-              onChange={(e) => setWebsiteUrl(e.target.value)}
+              onChange={(e) => {
+                setWebsiteUrl(e.target.value);
+                updateBrandProfile({ websiteUrl: e.target.value });
+              }}
               className="mt-1"
             />
           </div>

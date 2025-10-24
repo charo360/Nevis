@@ -12,14 +12,11 @@ import { BrandProfile } from '@/lib/types';
 export async function testRevo20Basic(): Promise<boolean> {
 
   try {
-    console.log('🧪 Testing Revo 2.0 basic availability...');
     const isAvailable = await testRevo20Availability();
 
     if (isAvailable) {
-      console.log('✅ Revo 2.0 is available');
       return true;
     } else {
-      console.log('❌ Revo 2.0 is not available');
       return false;
     }
   } catch (error) {
@@ -34,7 +31,6 @@ export async function testRevo20Basic(): Promise<boolean> {
 export async function testRevo20Generation(): Promise<boolean> {
 
   try {
-    console.log('🧪 Testing Revo 2.0 generation functionality...');
 
     const testBrandProfile: BrandProfile = {
       businessName: 'Test Restaurant',
@@ -66,19 +62,9 @@ export async function testRevo20Generation(): Promise<boolean> {
     const hasHashtags = result.hashtags && result.hashtags.length > 0;
     const hasQualityScore = result.qualityScore > 0;
 
-    console.log('📊 Generation result validation:', {
-      hasImage,
-      hasCaption,
-      hasHashtags,
-      hasQualityScore,
-      qualityScore: result.qualityScore
-    });
-
     if (hasImage && hasCaption && hasHashtags && hasQualityScore) {
-      console.log('✅ Revo 2.0 generation test passed');
       return true;
     } else {
-      console.log('❌ Revo 2.0 generation test failed - missing required properties');
       return false;
     }
 
@@ -96,8 +82,6 @@ export async function testRevo20AspectRatios(): Promise<boolean> {
   const aspectRatios: Array<'1:1' | '16:9' | '9:16' | '21:9' | '4:5'> = ['1:1', '16:9', '9:16'];
   let successCount = 0;
 
-  console.log('🧪 Testing Revo 2.0 aspect ratios:', aspectRatios);
-
   const testBrandProfile: BrandProfile = {
     businessName: 'Test Business',
     businessType: 'Business',
@@ -111,7 +95,6 @@ export async function testRevo20AspectRatios(): Promise<boolean> {
 
   for (const aspectRatio of aspectRatios) {
     try {
-      console.log(`📐 Testing aspect ratio: ${aspectRatio}`);
 
       const result = await generateWithRevo20({
         businessType: 'Business',
@@ -126,9 +109,7 @@ export async function testRevo20AspectRatios(): Promise<boolean> {
 
       if (result.imageUrl) {
         successCount++;
-        console.log(`✅ Aspect ratio ${aspectRatio} test passed`);
       } else {
-        console.log(`❌ Aspect ratio ${aspectRatio} test failed - no image URL`);
       }
 
     } catch (error) {
@@ -139,9 +120,7 @@ export async function testRevo20AspectRatios(): Promise<boolean> {
   const success = successCount === aspectRatios.length;
 
   if (success) {
-    console.log('✅ All aspect ratio tests passed');
   } else {
-    console.log(`❌ Aspect ratio tests failed: ${successCount}/${aspectRatios.length} passed`);
   }
 
   return success;
@@ -165,37 +144,27 @@ export async function runRevo20TestSuite(): Promise<{
   };
 
   try {
-    console.log('🚀 Starting comprehensive Revo 2.0 test suite...');
 
     // Test 1: Basic availability
-    console.log('📋 Test 1: Basic availability');
     results.basicTest = await testRevo20Basic();
 
     // Test 2: Generation functionality (only if basic test passes)
     if (results.basicTest) {
-      console.log('📋 Test 2: Generation functionality');
       results.generationTest = await testRevo20Generation();
     } else {
-      console.log('⏭️ Skipping generation test - basic test failed');
     }
 
     // Test 3: Aspect ratio support (only if generation test passes)
     if (results.generationTest) {
-      console.log('📋 Test 3: Aspect ratio support');
       results.aspectRatioTest = await testRevo20AspectRatios();
     } else {
-      console.log('⏭️ Skipping aspect ratio test - generation test failed');
     }
 
     // Overall success
     results.overallSuccess = results.basicTest && results.generationTest && results.aspectRatioTest;
 
-    console.log('📊 Test suite results:', results);
-
     if (results.overallSuccess) {
-      console.log('🎉 All Revo 2.0 tests passed successfully!');
     } else {
-      console.log('⚠️ Some Revo 2.0 tests failed - check logs above for details');
     }
 
   } catch (error) {
@@ -209,13 +178,10 @@ export async function runRevo20TestSuite(): Promise<{
  * Quick test function (SERVER-SIDE ONLY)
  */
 export async function quickTestRevo20(): Promise<void> {
-  console.log('⚡ Running quick Revo 2.0 test...');
 
   const basicTest = await testRevo20Basic();
 
   if (basicTest) {
-    console.log('✅ Quick test passed - Revo 2.0 is operational');
   } else {
-    console.log('❌ Quick test failed - Revo 2.0 is not available');
   }
 }

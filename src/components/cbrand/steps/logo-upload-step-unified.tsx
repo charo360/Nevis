@@ -33,6 +33,7 @@ export function LogoUploadStepUnified({
   const { saveProfile, updateProfile } = useUnifiedBrand();
   const { user } = useAuth();
 
+
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -106,7 +107,6 @@ export function LogoUploadStepUnified({
     setIsSaving(true);
 
     try {
-      console.log('🔄 Starting unified save process for:', brandProfile.businessName);
 
       // Prepare profile for saving
       const profileToSave = {
@@ -136,25 +136,13 @@ export function LogoUploadStepUnified({
 
           profileToSave.services = [businessTypeServiceObj, ...existingServices];
 
-          console.log('✨ Auto-added business type as service:', {
-            businessType: businessTypeService,
-            totalServices: profileToSave.services.length,
-            serviceNames: profileToSave.services.map(s => typeof s === 'string' ? s : s.name)
-          });
         } else {
-          console.log('✅ Business type already exists as service:', businessTypeService);
         }
       }
 
       let profileId: string;
 
       // Debug logging for edit mode
-      console.log('🔍 Save mode debug:', {
-        mode,
-        hasProfileId: !!profileToSave.id,
-        profileId: profileToSave.id,
-        brandProfileId: brandProfile.id
-      });
 
       if (mode === 'edit') {
         // Edit mode: Always update, never create new
@@ -169,53 +157,25 @@ export function LogoUploadStepUnified({
           profileToSave.id = brandProfile.id;
         }
 
-        console.log('✏️ Edit mode: Updating existing profile with ID:', profileToSave.id);
-        console.log('💾 Updating profile via unified context with logo data:', {
-          businessName: profileToSave.businessName,
-          hasLogo: !!profileToSave.logoUrl,
-          logoLength: profileToSave.logoUrl?.length || 0,
-          colors: {
-            primaryColor: profileToSave.primaryColor,
-            accentColor: profileToSave.accentColor,
-            backgroundColor: profileToSave.backgroundColor
-          }
-        });
-
         await updateProfile(profileToSave.id, profileToSave);
         profileId = profileToSave.id;
-        console.log('✅ Profile updated via unified context successfully:', profileId);
       } else if (mode === 'create') {
         // Create mode: Always create new profile, remove any ID that might be present
         if (profileToSave.id) {
-          console.log('🧹 Create mode: Removing ID to ensure new profile creation');
           delete profileToSave.id;
         }
 
-        console.log('💾 Creating new profile via unified context with logo data:', {
-          businessName: profileToSave.businessName,
-          hasLogo: !!profileToSave.logoDataUrl,
-          logoLength: profileToSave.logoDataUrl?.length || 0,
-          colors: {
-            primaryColor: profileToSave.primaryColor,
-            accentColor: profileToSave.accentColor,
-            backgroundColor: profileToSave.backgroundColor
-          }
-        });
-
         profileId = await saveProfile(profileToSave);
-        console.log('✅ Profile created via unified context successfully:', profileId);
       } else {
         // Unknown mode - this should never happen, but handle gracefully
         console.error('❌ Unknown mode:', mode, 'Defaulting to create mode');
 
         // Default to create mode as fallback
         if (profileToSave.id) {
-          console.log('🧹 Unknown mode: Removing ID to ensure new profile creation');
           delete profileToSave.id;
         }
 
         profileId = await saveProfile(profileToSave);
-        console.log('✅ Profile created via unified context (fallback mode):', profileId);
       }
 
       toast({

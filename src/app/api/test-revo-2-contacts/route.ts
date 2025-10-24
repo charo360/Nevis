@@ -7,7 +7,6 @@ import type { BrandProfile, BrandConsistencyPreferences } from '@/lib/types';
  */
 export async function GET(request: NextRequest) {
   try {
-    console.log('🧪 [Test Revo 2.0 Contacts] Starting contact integration test...');
 
     // Create test brand profile with contact information
     const testBrandProfile: BrandProfile = {
@@ -33,17 +32,7 @@ export async function GET(request: NextRequest) {
       includeContacts: true
     };
 
-    console.log('🧪 [Test Revo 2.0 Contacts] Test data prepared:', {
-      businessName: testBrandProfile.businessName,
-      hasContactInfo: !!testBrandProfile.contactInfo,
-      phone: testBrandProfile.contactInfo?.phone,
-      email: testBrandProfile.contactInfo?.email,
-      website: testBrandProfile.websiteUrl,
-      includeContacts: brandConsistencyWithContacts.includeContacts
-    });
-
     // Test the full Revo 2.0 prompt generation flow (including contact information at the end)
-    console.log('🧪 [Test Revo 2.0 Contacts] Testing full prompt generation flow...');
 
     // Import the Revo 2.0 service functions
     const revo2Service = await import('../../../ai/revo-2.0-service');
@@ -95,10 +84,6 @@ export async function GET(request: NextRequest) {
 
       const finalPrompt = basePrompt + contactInstructions;
 
-      console.log('🧪 [Test Revo 2.0 Contacts] Full prompt generated successfully');
-      console.log('🧪 [Test Revo 2.0 Contacts] Final prompt length:', finalPrompt.length);
-      console.log('🧪 [Test Revo 2.0 Contacts] Contact info in final prompt:', finalPrompt.includes('+254-700-123-456'));
-
       result = {
         success: true,
         promptGenerated: true,
@@ -122,8 +107,6 @@ export async function GET(request: NextRequest) {
         promptGenerated: false
       };
     }
-
-    console.log('🧪 [Test Revo 2.0 Contacts] Test result:', result);
 
     return NextResponse.json({
       success: result.success,

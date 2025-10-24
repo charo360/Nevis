@@ -43,6 +43,11 @@ const CBrand = React.lazy(() => import('../../app/cbrand/page').then(m => ({ def
 const Artifacts = React.lazy(() => import('../../app/artifacts/page').then(m => ({ default: m.default })));
 const Auth = React.lazy(() => import('../../app/auth/page').then(m => ({ default: m.default })));
 
+// Password Reset Pages
+const ForgotPassword = React.lazy(() => import('../../app/forgot-password/page').then(m => ({ default: m.default })));
+const VerifyPassword = React.lazy(() => import('../../app/verify-password/page').then(m => ({ default: m.default })));
+const ChangePassword = React.lazy(() => import('../../app/change-password/page').then(m => ({ default: m.default })));
+
 const FullWidthSpinner: React.FC = () => (
   <div className="w-full min-h-screen flex items-center justify-center px-6 lg:px-12">
     <div role="status" aria-label="Loading" className="h-12 w-12">
@@ -143,6 +148,11 @@ export function AppRoute() {
     { test: p => p.startsWith('/cbrand'), Component: CBrand },
     { test: p => p.startsWith('/artifacts'), Component: Artifacts },
     { test: p => p.startsWith('/auth'), Component: Auth },
+
+    // Password Reset Routes
+    { test: p => p.startsWith('/forgot-password'), Component: ForgotPassword },
+    { test: p => p.startsWith('/verify-password'), Component: VerifyPassword },
+    { test: p => p.startsWith('/change-password'), Component: ChangePassword },
   ];
 
   const match = routes.find(r => r.test(pathname));

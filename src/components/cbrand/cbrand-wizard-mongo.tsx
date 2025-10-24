@@ -171,13 +171,7 @@ export function CbrandWizardMongo({ mode, brandId }: CbrandWizardMongoProps) {
 
           completeProfile.services = [businessTypeServiceObj, ...existingServices];
 
-          console.log('✨ Auto-added business type as service (MongoDB):', {
-            businessType: businessTypeService,
-            totalServices: completeProfile.services.length,
-            serviceNames: completeProfile.services.map(s => s.name)
-          });
         } else {
-          console.log('✅ Business type already exists as service (MongoDB):', businessTypeService);
         }
       }
 

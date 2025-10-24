@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('🔍 [Debug] Checking Revo 1.5 API keys and dependencies...');
 
     const diagnostics = {
       timestamp: new Date().toISOString(),
@@ -36,7 +35,6 @@ export async function GET(request: NextRequest) {
         const OpenAI = (await import('openai')).default;
         const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
         
-        console.log('🧪 [Debug] Testing OpenAI connection...');
         const testResponse = await openai.chat.completions.create({
           model: 'gpt-4o',
           messages: [{ role: 'user', content: 'Test connection - respond with "OK"' }],
@@ -57,7 +55,6 @@ export async function GET(request: NextRequest) {
         const genAI = new GoogleGenerativeAI(geminiKey);
         const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
         
-        console.log('🧪 [Debug] Testing Gemini connection...');
         const result = await model.generateContent('Test connection - respond with "OK"');
         const response = await result.response;
         
@@ -66,8 +63,6 @@ export async function GET(request: NextRequest) {
         diagnostics.issues.push(`❌ Gemini connection failed: ${geminiError instanceof Error ? geminiError.message : 'Unknown error'}`);
       }
     }
-
-    console.log('🔍 [Debug] Diagnostics complete:', diagnostics);
 
     return NextResponse.json({
       success: true,

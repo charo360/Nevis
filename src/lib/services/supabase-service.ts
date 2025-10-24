@@ -85,7 +85,6 @@ export class SupabaseService {
         if (error) {
           console.error('Failed to create storage bucket:', error);
         } else {
-          console.log('✅ Storage bucket created successfully');
         }
       }
       this.initialized = true;

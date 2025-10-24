@@ -191,7 +191,6 @@ export function SocialMediaGenerator() {
       if (generation.success) {
         setResult(generation.result);
         // Show success message with credit info
-        console.log('Generation successful!', generation.creditInfo);
       } else {
         // Handle insufficient credits or other errors
         alert(generation.error);

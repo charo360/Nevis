@@ -17,6 +17,9 @@ export const AppRoutesPaths = {
   auth: "/auth",
   signIn: "/auth?mode=signin",
   signUp: "/auth?mode=signup",
+  forgotPassword: "/forgot-password",
+  verifyPassword: "/verify-password",
+  changePassword: "/change-password",
 
   // Dashboard routes (nested)
   dashboard: {

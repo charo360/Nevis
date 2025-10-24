@@ -17,8 +17,6 @@ export async function POST(request: NextRequest) {
       targetAudience
     } = body;
 
-    console.log(`🌍 Generating enhanced regional content for ${businessType} in ${location}`);
-
     // Initialize enhanced regional caption system
     const captionSystem = new EnhancedRegionalCaptionSystem();
 
@@ -44,8 +42,6 @@ export async function POST(request: NextRequest) {
       businessType,
       location
     );
-
-    console.log(`✅ Generated regional content with ${captionComponents.hashtags.length} hashtags and local context`);
 
     return NextResponse.json({
       success: true,

@@ -60,7 +60,6 @@ export class AdvancedTrendingHashtagAnalyzer {
    * Analyze trending data and generate advanced hashtag strategy (simplified)
    */
   public async analyzeHashtagTrends(context: AnalysisContext): Promise<AdvancedHashtagStrategy> {
-    console.log('Using simplified hashtag analysis for:', context.businessType);
     return this.getFallbackStrategy(context);
   }
 

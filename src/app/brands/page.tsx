@@ -45,6 +45,7 @@ export default function BrandsPage() {
     loading,
     selectBrand,
     deleteProfile: deleteBrand,
+    refreshBrands,
   } = useUnifiedBrand();
 
   const hasBrands = brands.length > 0;
@@ -57,8 +58,14 @@ export default function BrandsPage() {
     router.push('/brand-profile?mode=create');
   };
 
-  const handleEditBrand = (brand: any) => {
-    selectBrand(brand);
+  const handleEditBrand = async (brand: any) => {
+    // Force refresh the brand data before editing to ensure we have the latest data
+    console.log('🔄 Refreshing brand data before edit...');
+    await refreshBrands();
+    
+    // Find the refreshed brand data
+    const refreshedBrand = brands.find(b => b.id === brand.id) || brand;
+    selectBrand(refreshedBrand);
     router.push(`/brand-profile?mode=edit&id=${brand.id}`);
   };
 

@@ -44,7 +44,6 @@ const RSS_FEEDS = {
 
 async function fetchRSSFeed(url: string): Promise<RSSArticle[]> {
   try {
-    console.log(`RSS API: Fetching feed from ${url}`);
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; RSS Reader)'
@@ -81,7 +80,6 @@ async function fetchRSSFeed(url: string): Promise<RSSArticle[]> {
       }
     }
 
-    console.log(`RSS API: Successfully parsed ${articles.length} articles from ${url}`);
     return articles;
   } catch (error) {
     console.error(`RSS API: Error fetching RSS feed ${url}:`, error);
@@ -121,17 +119,12 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category') || 'general';
     const limit = parseInt(searchParams.get('limit') || '50');
 
-    console.log(`RSS API: Fetching ${category} feeds with limit ${limit}`);
-
     const feedUrls = RSS_FEEDS[category as keyof typeof RSS_FEEDS] || RSS_FEEDS.general;
-    console.log(`RSS API: Using feed URLs:`, feedUrls);
 
     // Fetch articles from all feeds in parallel
     const allArticlesPromises = feedUrls.map(url => fetchRSSFeed(url));
     const allArticlesArrays = await Promise.all(allArticlesPromises);
     const allArticles = allArticlesArrays.flat();
-
-    console.log(`RSS API: Fetched ${allArticles.length} total articles`);
 
     // If no articles were fetched, return fallback data
     if (allArticles.length === 0) {

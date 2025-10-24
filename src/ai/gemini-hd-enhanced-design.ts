@@ -47,7 +47,6 @@ export interface GeminiHDEnhancedDesignResult {
   processingTime: number;
 }
 
-
 // Top-level exported wrapper to ensure module-scope export
 export async function generateGeminiHDEnhancedDesignWithFallback(
   input: GeminiHDEnhancedDesignInput
@@ -107,7 +106,6 @@ export async function generateGeminiHDEnhancedDesign(
     const enhancedPrompt = buildGeminiHDPrompt(inputWithCleanText, aspectRatio);
     enhancementsApplied.push('Gemini 2.5 Flash Image Preview Optimized Prompting', 'Text Validation & Cleaning');
 
-
     // Build prompt parts array with media inputs like standard generation
     const promptParts: any[] = [{ text: enhancedPrompt }];
 
@@ -144,7 +142,6 @@ export async function generateGeminiHDEnhancedDesign(
           // Add logo normalization instructions to the prompt
           const logoInstructions = LogoNormalizationService.getLogoPromptInstructions(normalizedLogo);
           promptParts[0].text += `\n\n${logoInstructions}`;
-          console.log('✅ [Gemini HD] NORMALIZED logo added to generation');
         }
       } catch (normalizationError) {
         console.warn('⚠️ [Gemini HD] Logo normalization failed, using original:', normalizationError);
@@ -171,7 +168,6 @@ export async function generateGeminiHDEnhancedDesign(
                   contentType
                 }
               });
-              console.log('✅ Logo fetched from storage for Gemini HD generation');
             } else {
               console.warn(`⚠️  Failed to fetch logo from storage for Gemini HD: ${response.status}`);
             }
@@ -636,7 +632,6 @@ ${artifactInstructions}
             // Add logo normalization instructions to the prompt
             const logoInstructions = LogoNormalizationService.getLogoPromptInstructions(normalizedLogo);
             promptParts[0].text += `\n\n${logoInstructions}`;
-            console.log('✅ [Gemini HD Fallback] NORMALIZED logo added to generation');
           } catch (normalizationError) {
             console.warn('⚠️ [Gemini HD Fallback] Logo normalization failed, using original:', normalizationError);
             // Fallback to original logo processing
@@ -684,7 +679,6 @@ ${artifactInstructions}
             console.warn(`\u26a0\ufe0f [Gemini HD Fallback] Generated image dimensions ${check.width}x${check.height} != ${expectedW}x${expectedH}.`);
           }
         }
-
 
         return {
           imageUrl,
