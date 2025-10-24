@@ -114,10 +114,10 @@ export function CbrandWizardUnified({ mode: modeProp, brandId }: CbrandWizardUni
       throw new Error('Failed to update brand profile optimistically');
     }
 
-    // Update local brands array silently (without triggering loading states)
-    setBrands(prev => prev.map(brand =>
-      brand.id === profileId ? { ...brand, ...updates } : brand
-    ));
+    // Note: We don't need to update local brands array here because:
+    // 1. The UI is already updated optimistically via selectBrand()
+    // 2. The unified brand context will handle the update when needed
+    // 3. This keeps the optimistic update truly lightweight and fast
   };
 
   // Load existing profile on component mount (only once, unless not initialized and not dirty)
