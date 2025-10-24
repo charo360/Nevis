@@ -180,18 +180,18 @@ export default function SettingsPage() {
 
   return (
     <SidebarInset>
-      <div className="flex justify-center w-full">
-        <div className="p-4 md:p-8 max-w-6xl w-full">
+      <div className="flex justify-center w-full min-h-screen py-6 md:py-10">
+        <div className="w-full max-w-[1400px] px-4 md:px-6 lg:px-8">
           {/* Header */}
-          <div className="mb-8">
+          <div className="mb-8 max-w-4xl">
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Settings</h1>
             <p className="text-gray-600 mt-2">Manage your account settings and preferences</p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 lg:gap-8">
           {/* Profile Card - Sidebar */}
-          <aside className="lg:col-span-1">
-            <Card className="sticky top-4">
+          <aside className="xl:col-span-3">
+            <Card className="sticky top-4 max-w-sm mx-auto xl:mx-0">
               <CardContent className="p-6">
                 <div className="flex flex-col items-center text-center space-y-4">
                   <Avatar className="h-24 w-24 border-4 border-primary/10">
@@ -232,9 +232,9 @@ export default function SettingsPage() {
           </aside>
 
           {/* Main Content */}
-          <main className="lg:col-span-3">
+          <main className="xl:col-span-9">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3 lg:grid-cols-3">
+              <TabsList className="grid w-full grid-cols-3 max-w-md">
                 <TabsTrigger value="account" className="flex items-center gap-2">
                   <User className="w-4 h-4" />
                   <span className="hidden sm:inline">Account</span>
@@ -251,7 +251,7 @@ export default function SettingsPage() {
 
               {/* Account Tab */}
               <TabsContent value="account" className="space-y-6">
-                <Card>
+                <Card className="max-w-4xl">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <User className="w-5 h-5" />
@@ -326,7 +326,7 @@ export default function SettingsPage() {
 
               {/* Security Tab */}
               <TabsContent value="security" className="space-y-6">
-                <Card>
+                <Card className="max-w-4xl">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <KeyRound className="w-5 h-5" />
@@ -397,7 +397,7 @@ export default function SettingsPage() {
 
               {/* Data Tab */}
               <TabsContent value="data" className="space-y-6">
-                <Card>
+                <Card className="max-w-4xl">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Database className="w-5 h-5" />
@@ -436,7 +436,7 @@ export default function SettingsPage() {
                 </Card>
 
                 {/* Danger Zone */}
-                <Card className="border-destructive/50">
+                <Card className="border-destructive/50 max-w-4xl">
                   <CardHeader>
                     <CardTitle className="text-destructive flex items-center gap-2">
                       <Trash2 className="w-5 h-5" />
