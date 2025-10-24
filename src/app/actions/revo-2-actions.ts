@@ -8,6 +8,7 @@
 import { generateWithRevo20, testRevo20Availability, type Revo20GenerationOptions } from '@/ai/revo-2.0-service';
 import type { BrandProfile, Platform, BrandConsistencyPreferences, GeneratedPost } from '@/lib/types';
 import type { ScheduledService } from '@/services/calendar-service';
+import { brandProfileSupabaseService } from '@/lib/supabase/services/brand-profile-service';
 
 /**
  * Generate content with Revo 2.0 (Gemini 2.5 Flash Image Preview)
@@ -26,16 +27,42 @@ export async function generateRevo2ContentAction(
   scheduledServices?: ScheduledService[] // NEW: Scheduled services parameter
 ): Promise<GeneratedPost> {
   try {
+    // 🔄 FETCH FRESH BRAND PROFILE DATA FROM DATABASE
+    // This ensures we always use the latest colors and data, not cached frontend data
+    let freshBrandProfile: BrandProfile = brandProfile;
+
+    if (brandProfile.id) {
+      console.log('🔄 [Revo 2.0] Fetching fresh brand profile from database:', brandProfile.id);
+      try {
+        const latestProfile = await brandProfileSupabaseService.loadBrandProfile(brandProfile.id);
+        if (latestProfile) {
+          freshBrandProfile = latestProfile;
+          console.log('✅ [Revo 2.0] Fresh brand profile loaded with colors:', {
+            primaryColor: latestProfile.primaryColor,
+            accentColor: latestProfile.accentColor,
+            backgroundColor: latestProfile.backgroundColor,
+            businessName: latestProfile.businessName
+          });
+        } else {
+          console.warn('⚠️ [Revo 2.0] Could not load fresh profile, using provided data');
+        }
+      } catch (error) {
+        console.error('❌ [Revo 2.0] Error loading fresh profile:', error);
+        console.log('⚠️ [Revo 2.0] Falling back to provided brand profile data');
+      }
+    } else {
+      console.log('⚠️ [Revo 2.0] No brand profile ID provided, using frontend data');
+    }
 
     // Log scheduled services integration
 
     // Prepare Revo 2.0 generation options
     const revo2Options: Revo20GenerationOptions = {
-      businessType: brandProfile.businessType || 'Business',
+      businessType: freshBrandProfile.businessType || 'Business',
       platform,
       visualStyle: options?.visualStyle || 'modern',
       imageText: prompt || '',
-      brandProfile,
+      brandProfile: freshBrandProfile, // Use fresh data from database
       aspectRatio: options?.aspectRatio || '1:1',
       includePeopleInDesigns: options?.includePeopleInDesigns || false,
       useLocalLanguage: options?.useLocalLanguage || false,

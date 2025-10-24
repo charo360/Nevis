@@ -6,6 +6,7 @@ import type { BrandProfile, Platform, BrandConsistencyPreferences } from '@/lib/
 import type { ScheduledService } from '@/services/calendar-service';
 import { withCreditTracking, type ModelVersion } from '@/lib/credit-integration';
 import { createClient as createServerSupabase } from '@/lib/supabase-server';
+import { brandProfileSupabaseService } from '@/lib/supabase/services/brand-profile-service';
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,13 +29,39 @@ export async function POST(request: NextRequest) {
       includePeopleInDesigns?: boolean;
     } = body;
 
-
     // Validate required parameters
     if (!brandProfile || !platform) {
       return NextResponse.json(
         { error: 'Missing required parameters: brandProfile and platform are required' },
         { status: 400 }
       );
+    }
+
+    // 🔄 FETCH FRESH BRAND PROFILE DATA FROM DATABASE
+    // This ensures we always use the latest colors and data, not cached frontend data
+    let freshBrandProfile: BrandProfile = brandProfile;
+
+    if (brandProfile.id) {
+      console.log('🔄 [QuickContent] Fetching fresh brand profile from database:', brandProfile.id);
+      try {
+        const latestProfile = await brandProfileSupabaseService.loadBrandProfile(brandProfile.id);
+        if (latestProfile) {
+          freshBrandProfile = latestProfile;
+          console.log('✅ [QuickContent] Fresh brand profile loaded with colors:', {
+            primaryColor: latestProfile.primaryColor,
+            accentColor: latestProfile.accentColor,
+            backgroundColor: latestProfile.backgroundColor,
+            businessName: latestProfile.businessName
+          });
+        } else {
+          console.warn('⚠️ [QuickContent] Could not load fresh profile, using provided data');
+        }
+      } catch (error) {
+        console.error('❌ [QuickContent] Error loading fresh profile:', error);
+        console.log('⚠️ [QuickContent] Falling back to provided brand profile data');
+      }
+    } else {
+      console.log('⚠️ [QuickContent] No brand profile ID provided, using frontend data');
     }
 
     // Use passed services directly - brand filtering should happen on frontend
@@ -74,17 +101,17 @@ export async function POST(request: NextRequest) {
             modelVersion,
             feature: 'social_media_content',
             generationType: 'quick_content',
-            metadata: { platform, brandId: (brandProfile as any)?.id }
+            metadata: { platform, brandId: (freshBrandProfile as any)?.id }
           },
           async () =>
             await generateRevo15ContentAction(
-              brandProfile,
+              freshBrandProfile, // Use fresh data from database
               platform,
               brandConsistency || { strictConsistency: false, followBrandColors: true, includeContacts: false },
               '',
               {
                 aspectRatio: '1:1',
-                visualStyle: brandProfile.visualStyle || 'modern',
+                visualStyle: freshBrandProfile.visualStyle || 'modern',
                 includePeopleInDesigns,
                 useLocalLanguage
               },
@@ -104,24 +131,24 @@ export async function POST(request: NextRequest) {
         const currentDate = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
         const revo10Result = await generateRevo10Content({
-          businessType: brandProfile.businessType || 'Business',
-          businessName: brandProfile.businessName || brandProfile.name || 'Business',
-          location: brandProfile.location || '',
+          businessType: freshBrandProfile.businessType || 'Business',
+          businessName: freshBrandProfile.businessName || freshBrandProfile.name || 'Business',
+          location: freshBrandProfile.location || '',
           platform: platform.toLowerCase(),
-          writingTone: brandProfile.writingTone || 'professional',
-          contentThemes: Array.isArray(brandProfile.contentThemes) ? brandProfile.contentThemes : [brandProfile.contentThemes || ''],
-          targetAudience: brandProfile.targetAudience || 'General audience',
-          services: brandProfile.services || '',
-          keyFeatures: brandProfile.keyFeatures || '',
-          competitiveAdvantages: brandProfile.competitiveAdvantages || '',
+          writingTone: freshBrandProfile.writingTone || 'professional',
+          contentThemes: Array.isArray(freshBrandProfile.contentThemes) ? freshBrandProfile.contentThemes : [freshBrandProfile.contentThemes || ''],
+          targetAudience: freshBrandProfile.targetAudience || 'General audience',
+          services: freshBrandProfile.services || '',
+          keyFeatures: freshBrandProfile.keyFeatures || '',
+          competitiveAdvantages: freshBrandProfile.competitiveAdvantages || '',
           dayOfWeek,
           currentDate,
-          primaryColor: brandProfile.primaryColor,
-          visualStyle: brandProfile.visualStyle,
+          primaryColor: freshBrandProfile.primaryColor, // Use fresh colors from database
+          visualStyle: freshBrandProfile.visualStyle,
           // Include contact information for contacts toggle
           includeContacts: brandConsistency?.includeContacts || false,
-          contactInfo: brandProfile.contactInfo || {},
-          websiteUrl: brandProfile.websiteUrl || ''
+          contactInfo: freshBrandProfile.contactInfo || {},
+          websiteUrl: freshBrandProfile.websiteUrl || ''
         });
 
         // Generate image using Revo 1.0 image service
@@ -135,33 +162,40 @@ export async function POST(request: NextRequest) {
 
         const structuredImageText = imageTextComponents.join(' | ');
 
-        // 🎨📞 ENHANCED VALIDATION FOR BRAND COLORS AND CONTACT INFO
-        const finalPrimaryColor = brandProfile.primaryColor || '#3B82F6';
-        const finalAccentColor = brandProfile.accentColor || '#1E40AF';
-        const finalBackgroundColor = brandProfile.backgroundColor || '#FFFFFF';
+        // 🎨📞 ENHANCED VALIDATION FOR BRAND COLORS AND CONTACT INFO (using fresh data)
+        const finalPrimaryColor = freshBrandProfile.primaryColor || '#3B82F6';
+        const finalAccentColor = freshBrandProfile.accentColor || '#1E40AF';
+        const finalBackgroundColor = freshBrandProfile.backgroundColor || '#FFFFFF';
 
         const finalContactInfo = {
-          phone: brandProfile.contactInfo?.phone || (brandProfile as any).phone || '',
-          email: brandProfile.contactInfo?.email || (brandProfile as any).email || '',
-          address: brandProfile.contactInfo?.address || brandProfile.location || ''
+          phone: freshBrandProfile.contactInfo?.phone || (freshBrandProfile as any).phone || '',
+          email: freshBrandProfile.contactInfo?.email || (freshBrandProfile as any).email || '',
+          address: freshBrandProfile.contactInfo?.address || freshBrandProfile.location || ''
         };
 
-        const finalWebsiteUrl = brandProfile.websiteUrl || (brandProfile as any).websiteUrl || '';
+        const finalWebsiteUrl = freshBrandProfile.websiteUrl || (freshBrandProfile as any).websiteUrl || '';
 
-        console.log('🎨 [QuickContent] Brand Colors Validation:', {
-          originalPrimaryColor: brandProfile.primaryColor,
-          originalAccentColor: brandProfile.accentColor,
-          originalBackgroundColor: brandProfile.backgroundColor,
+        console.log('🎨 [QuickContent] Brand Colors Validation (Fresh Data):', {
+          frontendPrimaryColor: brandProfile.primaryColor,
+          frontendAccentColor: brandProfile.accentColor,
+          frontendBackgroundColor: brandProfile.backgroundColor,
+          freshPrimaryColor: freshBrandProfile.primaryColor,
+          freshAccentColor: freshBrandProfile.accentColor,
+          freshBackgroundColor: freshBrandProfile.backgroundColor,
           finalPrimaryColor,
           finalAccentColor,
           finalBackgroundColor,
           followBrandColors: brandConsistency?.followBrandColors,
-          hasValidColors: !!(brandProfile.primaryColor && brandProfile.accentColor && brandProfile.backgroundColor)
+          hasValidColors: !!(freshBrandProfile.primaryColor && freshBrandProfile.accentColor && freshBrandProfile.backgroundColor),
+          colorsChanged: (brandProfile.primaryColor !== freshBrandProfile.primaryColor ||
+            brandProfile.accentColor !== freshBrandProfile.accentColor ||
+            brandProfile.backgroundColor !== freshBrandProfile.backgroundColor)
         });
 
-        console.log('📞 [QuickContent] Contact Info Validation:', {
+        console.log('📞 [QuickContent] Contact Info Validation (Fresh Data):', {
           includeContacts: brandConsistency?.includeContacts,
-          originalContactInfo: brandProfile.contactInfo,
+          frontendContactInfo: brandProfile.contactInfo,
+          freshContactInfo: freshBrandProfile.contactInfo,
           finalContactInfo,
           finalWebsiteUrl,
           hasValidContacts: !!(finalContactInfo.phone || finalContactInfo.email || finalWebsiteUrl)
@@ -177,27 +211,33 @@ export async function POST(request: NextRequest) {
             metadata: { platform, brandId: (brandProfile as any)?.id }
           },
           async () => {
-            // Enhanced brand color extraction with fallbacks
-            const brandColors = (brandProfile as any).brand_colors || {};
-            const primaryColor = brandColors.primaryColor || brandProfile.primaryColor || '#3B82F6';
-            const accentColor = brandColors.accentColor || brandProfile.accentColor || '#1E40AF';
-            const backgroundColor = brandColors.backgroundColor || brandProfile.backgroundColor || '#FFFFFF';
+            // Enhanced brand color extraction with fallbacks (using fresh data)
+            const brandColors = (freshBrandProfile as any).brand_colors || {};
+            const primaryColor = brandColors.primaryColor || freshBrandProfile.primaryColor || '#3B82F6';
+            const accentColor = brandColors.accentColor || freshBrandProfile.accentColor || '#1E40AF';
+            const backgroundColor = brandColors.backgroundColor || freshBrandProfile.backgroundColor || '#FFFFFF';
 
-            console.log('🎨 Brand colors for generation:', { primaryColor, accentColor, backgroundColor });
+            console.log('🎨 Brand colors for generation (Fresh Data):', {
+              primaryColor,
+              accentColor,
+              backgroundColor,
+              fromFreshProfile: true,
+              brandId: freshBrandProfile.id
+            });
 
             const imageResult = await generateRevo10Image({
-              businessType: brandProfile.businessType || 'Business',
-              businessName: brandProfile.businessName || brandProfile.name || 'Business',
+              businessType: freshBrandProfile.businessType || 'Business',
+              businessName: freshBrandProfile.businessName || freshBrandProfile.name || 'Business',
               platform: platform.toLowerCase(),
-              visualStyle: brandProfile.visualStyle || 'modern',
+              visualStyle: freshBrandProfile.visualStyle || 'modern',
               primaryColor: finalPrimaryColor,
               accentColor: finalAccentColor,
               backgroundColor: finalBackgroundColor,
               imageText: structuredImageText,
-              designDescription: `Professional ${brandProfile.businessType} content with structured headline, subheadline, and CTA for ${platform.toLowerCase()}`,
-              logoDataUrl: brandProfile.logoDataUrl,
-              logoUrl: (brandProfile as any).logoUrl,
-              location: brandProfile.location,
+              designDescription: `Professional ${freshBrandProfile.businessType} content with structured headline, subheadline, and CTA for ${platform.toLowerCase()}`,
+              logoDataUrl: freshBrandProfile.logoDataUrl,
+              logoUrl: (freshBrandProfile as any).logoUrl,
+              location: freshBrandProfile.location,
               headline: revo10Result.catchyWords,
               subheadline: revo10Result.subheadline,
               callToAction: revo10Result.callToAction,

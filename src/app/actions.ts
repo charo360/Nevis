@@ -10,6 +10,7 @@ import { artifactsService } from "@/lib/services/artifacts-service";
 import type { Artifact } from "@/lib/types/artifacts";
 import { generateEnhancedDesign } from "@/ai/gemini-2.5-design";
 import { generateRevo2ContentAction, generateRevo2CreativeAssetAction } from "@/app/actions/revo-2-actions";
+import { brandProfileSupabaseService } from '@/lib/supabase/services/brand-profile-service';
 import { supabaseService } from "@/lib/services/supabase-service";
 import type { ScheduledService } from "@/services/calendar-service";
 
@@ -165,19 +166,45 @@ export async function generateContentAction(
   includePeopleInDesigns: boolean = true
 ): Promise<GeneratedPost> {
   try {
+    // 🔄 FETCH FRESH BRAND PROFILE DATA FROM DATABASE
+    // This ensures we always use the latest colors and data, not cached frontend data
+    let freshProfile: BrandProfile = profile;
+
+    if (profile.id) {
+      console.log('🔄 [Actions] Fetching fresh brand profile from database:', profile.id);
+      try {
+        const latestProfile = await brandProfileSupabaseService.loadBrandProfile(profile.id);
+        if (latestProfile) {
+          freshProfile = latestProfile;
+          console.log('✅ [Actions] Fresh brand profile loaded with colors:', {
+            primaryColor: latestProfile.primaryColor,
+            accentColor: latestProfile.accentColor,
+            backgroundColor: latestProfile.backgroundColor,
+            businessName: latestProfile.businessName
+          });
+        } else {
+          console.warn('⚠️ [Actions] Could not load fresh profile, using provided data');
+        }
+      } catch (error) {
+        console.error('❌ [Actions] Error loading fresh profile:', error);
+        console.log('⚠️ [Actions] Falling back to provided brand profile data');
+      }
+    } else {
+      console.log('⚠️ [Actions] No brand profile ID provided, using frontend data');
+    }
 
     const today = new Date();
     const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long' });
     const currentDate = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-    // Apply brand consistency logic
+    // Apply brand consistency logic (using fresh profile)
     const effectiveDesignExamples = brandConsistency?.strictConsistency
-      ? (profile.designExamples || [])
+      ? (freshProfile.designExamples || [])
       : []; // Don't use design examples if not strict consistency
 
-    // Enhanced brand profile data extraction
+    // Enhanced brand profile data extraction (using fresh profile)
     const enhancedProfile = {
-      ...profile,
+      ...freshProfile,
       // Ensure brand colors are available
       primaryColor: profile.primaryColor || '#3B82F6',
       accentColor: profile.accentColor || '#10B981',
@@ -197,24 +224,32 @@ export async function generateContentAction(
       socialMedia: profile.socialMedia || {},
     };
 
-    // 🎨📞 ENHANCED DEBUG LOGGING FOR BRAND COLORS AND CONTACT INFORMATION
-    console.log('🎨 [Actions] Brand Colors Debug:', {
-      profilePrimaryColor: profile.primaryColor,
-      profileAccentColor: profile.accentColor,
-      profileBackgroundColor: profile.backgroundColor,
+    // 🎨📞 ENHANCED DEBUG LOGGING FOR BRAND COLORS AND CONTACT INFORMATION (Fresh Data)
+    console.log('🎨 [Actions] Brand Colors Debug (Fresh Data):', {
+      frontendPrimaryColor: profile.primaryColor,
+      frontendAccentColor: profile.accentColor,
+      frontendBackgroundColor: profile.backgroundColor,
+      freshPrimaryColor: freshProfile.primaryColor,
+      freshAccentColor: freshProfile.accentColor,
+      freshBackgroundColor: freshProfile.backgroundColor,
       enhancedPrimaryColor: enhancedProfile.primaryColor,
       enhancedAccentColor: enhancedProfile.accentColor,
       enhancedBackgroundColor: enhancedProfile.backgroundColor,
       followBrandColors: brandConsistency?.followBrandColors,
-      hasValidBrandColors: !!(profile.primaryColor && profile.accentColor && profile.backgroundColor)
+      hasValidBrandColors: !!(freshProfile.primaryColor && freshProfile.accentColor && freshProfile.backgroundColor),
+      colorsChanged: (profile.primaryColor !== freshProfile.primaryColor ||
+        profile.accentColor !== freshProfile.accentColor ||
+        profile.backgroundColor !== freshProfile.backgroundColor)
     });
 
-    console.log('📞 [Actions] Contact Information Debug:', {
-      profileContactInfo: profile.contactInfo,
-      profileContactPhone: (profile as any).contactPhone,
-      profileContactEmail: (profile as any).contactEmail,
-      profileContactAddress: (profile as any).contactAddress,
-      profileWebsiteUrl: profile.websiteUrl,
+    console.log('📞 [Actions] Contact Information Debug (Fresh Data):', {
+      frontendContactInfo: profile.contactInfo,
+      frontendContactPhone: (profile as any).contactPhone,
+      frontendContactEmail: (profile as any).contactEmail,
+      frontendContactAddress: (profile as any).contactAddress,
+      frontendWebsiteUrl: profile.websiteUrl,
+      freshContactInfo: freshProfile.contactInfo,
+      freshWebsiteUrl: freshProfile.websiteUrl,
       enhancedContactInfo: enhancedProfile.contactInfo,
       includeContacts: brandConsistency?.includeContacts,
       hasValidContactInfo: !!(enhancedProfile.contactInfo?.phone || enhancedProfile.contactInfo?.email || enhancedProfile.websiteUrl)

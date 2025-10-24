@@ -8,6 +8,7 @@
 import { generateRevo15EnhancedDesign } from '@/ai/revo-1.5-enhanced-design';
 import type { BrandProfile, Platform, BrandConsistencyPreferences, GeneratedPost } from '@/lib/types';
 import type { ScheduledService } from '@/services/calendar-service';
+import { brandProfileSupabaseService } from '@/lib/supabase/services/brand-profile-service';
 
 // Helper function to convert logo URL to base64 data URL for AI models (matching Revo 1.0)
 async function convertLogoToDataUrl(logoUrl?: string): Promise<string | undefined> {
@@ -60,21 +61,47 @@ export async function generateRevo15ContentAction(
   scheduledServices?: ScheduledService[]
 ): Promise<GeneratedPost> {
   try {
+    // 🔄 FETCH FRESH BRAND PROFILE DATA FROM DATABASE
+    // This ensures we always use the latest colors and data, not cached frontend data
+    let freshBrandProfile: BrandProfile = brandProfile;
+
+    if (brandProfile.id) {
+      console.log('🔄 [Revo 1.5] Fetching fresh brand profile from database:', brandProfile.id);
+      try {
+        const latestProfile = await brandProfileSupabaseService.loadBrandProfile(brandProfile.id);
+        if (latestProfile) {
+          freshBrandProfile = latestProfile;
+          console.log('✅ [Revo 1.5] Fresh brand profile loaded with colors:', {
+            primaryColor: latestProfile.primaryColor,
+            accentColor: latestProfile.accentColor,
+            backgroundColor: latestProfile.backgroundColor,
+            businessName: latestProfile.businessName
+          });
+        } else {
+          console.warn('⚠️ [Revo 1.5] Could not load fresh profile, using provided data');
+        }
+      } catch (error) {
+        console.error('❌ [Revo 1.5] Error loading fresh profile:', error);
+        console.log('⚠️ [Revo 1.5] Falling back to provided brand profile data');
+      }
+    } else {
+      console.log('⚠️ [Revo 1.5] No brand profile ID provided, using frontend data');
+    }
 
     // NEW: Log scheduled services integration
 
-    // Convert logo URL to base64 data URL (matching Revo 1.0 approach)
-    const convertedLogoDataUrl = await convertLogoToDataUrl(brandProfile.logoUrl || brandProfile.logoDataUrl);
+    // Convert logo URL to base64 data URL (matching Revo 1.0 approach) - using fresh profile
+    const convertedLogoDataUrl = await convertLogoToDataUrl(freshBrandProfile.logoUrl || freshBrandProfile.logoDataUrl);
 
-    // Generate with Revo 1.5
+    // Generate with Revo 1.5 (using fresh profile data)
     const result = await generateRevo15EnhancedDesign({
-      businessType: brandProfile.businessType || 'Business',
+      businessType: freshBrandProfile.businessType || 'Business',
       platform,
       visualStyle: options?.visualStyle || 'modern',
       imageText: prompt || '',
       brandProfile: {
-        ...brandProfile,
-        logoDataUrl: convertedLogoDataUrl || brandProfile.logoDataUrl
+        ...freshBrandProfile, // Use fresh data from database
+        logoDataUrl: convertedLogoDataUrl || freshBrandProfile.logoDataUrl
       },
       brandConsistency: {
         ...brandConsistency,
@@ -83,8 +110,8 @@ export async function generateRevo15ContentAction(
       aspectRatio: options?.aspectRatio || '1:1',
       includePeopleInDesigns: options?.includePeopleInDesigns || false,
       useLocalLanguage: options?.useLocalLanguage || false,
-      logoDataUrl: convertedLogoDataUrl || brandProfile.logoDataUrl,
-      logoUrl: brandProfile.logoUrl,
+      logoDataUrl: convertedLogoDataUrl || freshBrandProfile.logoDataUrl,
+      logoUrl: freshBrandProfile.logoUrl,
       // NEW: Scheduled services integration
       scheduledServices: scheduledServices || []
     });

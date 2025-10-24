@@ -20,14 +20,14 @@ async function verifySupabaseAuth(authHeader: string | null) {
   }
 
   const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-  
+
   try {
     const { data: { user }, error } = await supabaseAuth.auth.getUser(token);
-    
+
     if (error || !user) {
       return { error: 'Invalid or expired token', status: 401 };
     }
-    
+
     return { user, userId: user.id };
   } catch (error) {
     return { error: 'Token verification failed', status: 401 };
@@ -41,7 +41,7 @@ export async function GET(
 ) {
   try {
     const authResult = await verifySupabaseAuth(request.headers.get('authorization'));
-    
+
     if (authResult.error) {
       return NextResponse.json(
         { error: authResult.error },
@@ -58,7 +58,7 @@ export async function GET(
     }
 
     console.log('🔍 Fetching brand profile:', brandId);
-    
+
     // Fetch the brand profile directly from database
     const { data: brandData, error: brandError } = await supabaseService
       .from('brand_profiles')
@@ -87,7 +87,7 @@ export async function GET(
 
     // Convert to CompleteBrandProfile format
     const profile = brandProfileSupabaseService.rowToProfile(brandData);
-    
+
     return NextResponse.json(profile);
   } catch (error) {
     console.error('Error loading brand profile:', error);
@@ -105,7 +105,7 @@ export async function PUT(
 ) {
   try {
     const authResult = await verifySupabaseAuth(request.headers.get('authorization'));
-    
+
     if (authResult.error) {
       return NextResponse.json(
         { error: authResult.error },
@@ -124,6 +124,17 @@ export async function PUT(
     const updates = await request.json();
     console.log('🔄 Updating brand profile:', brandId, updates);
     console.log('🔄 User ID:', authResult.userId);
+
+    // 🎨 ENHANCED DEBUG LOGGING FOR COLOR UPDATES
+    if (updates.primaryColor || updates.accentColor || updates.backgroundColor) {
+      console.log('🎨 [Brand Profile Update] Color changes detected:', {
+        primaryColor: updates.primaryColor,
+        accentColor: updates.accentColor,
+        backgroundColor: updates.backgroundColor,
+        brandId: brandId,
+        timestamp: new Date().toISOString()
+      });
+    }
 
     // First, check if the brand profile exists
     const { data: existingBrand, error: fetchError } = await supabaseService
@@ -145,6 +156,7 @@ export async function PUT(
 
     // Update the brand profile using the service
     await brandProfileSupabaseService.updateBrandProfile(brandId, updates);
+    console.log('✅ [Brand Profile Update] Database update completed');
 
     // Fetch the updated profile
     const { data: updatedBrandData, error: fetchUpdatedError } = await supabaseService
@@ -166,6 +178,18 @@ export async function PUT(
     const updatedProfile = brandProfileSupabaseService.rowToProfile(updatedBrandData);
 
     console.log('✅ Brand profile updated successfully:', updatedProfile.businessName);
+
+    // 🎨 LOG FINAL COLOR VALUES AFTER UPDATE
+    if (updates.primaryColor || updates.accentColor || updates.backgroundColor) {
+      console.log('🎨 [Brand Profile Update] Final colors after update:', {
+        primaryColor: updatedProfile.primaryColor,
+        accentColor: updatedProfile.accentColor,
+        backgroundColor: updatedProfile.backgroundColor,
+        brandId: brandId,
+        updateSuccessful: true
+      });
+    }
+
     return NextResponse.json(updatedProfile);
   } catch (error) {
     console.error('Error updating brand profile:', error);
