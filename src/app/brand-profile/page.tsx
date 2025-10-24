@@ -22,12 +22,21 @@ function BrandProfileContent() {
   }, [modeParam, currentBrand, router]);
 
   // Update URL when brand changes (for brand selector switching)
+  // Only redirect if we're in edit mode AND the brand actually changed to a different brand
+  // AND we're not already in the process of editing that brand
   useEffect(() => {
-    if (modeParam === 'edit' && currentBrand?.id && brandId !== currentBrand.id) {
-      router.replace(`/brand-profile?mode=edit&id=${currentBrand.id}`);
-      return;
+    if (modeParam === 'edit' && currentBrand?.id && brandId && brandId !== currentBrand.id) {
+      // Only redirect if this is a genuine brand switch (not just a color update)
+      // Check if the current URL brand ID is completely different from the selected brand
+      const isGenuineBrandSwitch = brandId !== currentBrand.id;
+
+      if (isGenuineBrandSwitch) {
+        console.log('🔄 Brand switched in selector, updating URL:', { from: brandId, to: currentBrand.id });
+        router.replace(`/brand-profile?mode=edit&id=${currentBrand.id}`);
+        return;
+      }
     }
-  }, [currentBrand, modeParam, brandId, router]);
+  }, [currentBrand?.id, modeParam, brandId, router]); // Removed currentBrand from deps to prevent color update triggers
 
   // Default to 'create' mode if no mode is specified
   const mode = modeParam || 'create';
@@ -40,12 +49,12 @@ function BrandProfileContent() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 w-full">
         <div className="w-full h-full">
           <div className="w-full h-full px-4 py-8">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              {isCreateMode && 'Create New Brand Profile'}
-              {isEditMode && 'Edit Brand Profile'}
-              {!isCreateMode && !isEditMode && 'Brand Profile Setup'}
+            {/* Header */}
+            <div className="text-center mb-8">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                {isCreateMode && 'Create New Brand Profile'}
+                {isEditMode && 'Edit Brand Profile'}
+                {!isCreateMode && !isEditMode && 'Brand Profile Setup'}
               </h1>
               <p className="text-gray-600">
                 {isCreateMode ? 'Create a new comprehensive brand profile with AI-powered analysis.' :

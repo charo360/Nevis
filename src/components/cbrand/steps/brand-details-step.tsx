@@ -95,27 +95,16 @@ export function BrandDetailsStep({
   };
 
   const handleInputChange = async (field: keyof CompleteBrandProfile, value: string) => {
-
-    // Update local state immediately
+    // Update local state immediately - this will handle color updates automatically
+    // The updateBrandProfile function in cbrand-wizard-unified.tsx already handles
+    // color updates, database saves, and context updates properly
     updateBrandProfile({ [field]: value });
 
-    // If this is a color update and we have a current brand with an ID, save to Firebase immediately
-    const isColorUpdate = field === 'primaryColor' || field === 'accentColor' || field === 'backgroundColor';
-    if (isColorUpdate && currentBrand?.id) {
-      try {
-
-
-        // Save color changes to Firebase immediately
-        await updateProfile(currentBrand.id, { [field]: value });
-
-        // Update the current brand in the unified context with new colors
-        const updatedBrand = { ...currentBrand, [field]: value };
-        selectBrand(updatedBrand);
-
-      } catch (error) {
-        // Don't throw error to avoid disrupting user experience
-      }
-    }
+    // Note: Removed duplicate color update logic that was causing navigation issues
+    // The updateBrandProfile function already handles:
+    // 1. Immediate local state update
+    // 2. Database save for color updates in edit mode
+    // 3. Context update via selectBrand (without causing navigation conflicts)
   };
 
   const addService = () => {
