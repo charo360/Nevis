@@ -67,7 +67,7 @@ export default function SettingsPage() {
         title: "Profile updated", 
         description: "Your account information has been successfully updated." 
       });
-    } catch (err) {
+      } catch (err) {
       toast({ 
         variant: "destructive", 
         title: "Update failed", 
@@ -187,7 +187,7 @@ export default function SettingsPage() {
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Settings</h1>
           <p className="text-gray-600 mt-2">Manage your account settings and preferences</p>
-        </div>
+      </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 lg:gap-8">
           {/* Profile Card - Sidebar */}
@@ -225,7 +225,7 @@ export default function SettingsPage() {
                       <span className="text-gray-900 font-medium">
                         {user.isAnonymous ? "Demo" : "Standard"}
                       </span>
-                    </div>
+                  </div>
                   </div>
                 </div>
               </CardContent>
@@ -431,14 +431,14 @@ export default function SettingsPage() {
                         <p className="text-sm text-green-600 font-medium mt-1">
                           Active & Verified
                         </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
                 {/* Danger Zone */}
-                <Card className="border-destructive/50">
-                  <CardHeader>
+          <Card className="border-destructive/50">
+            <CardHeader>
                     <CardTitle className="text-destructive flex items-center gap-2">
                       <Trash2 className="w-5 h-5" />
                       Danger Zone
@@ -446,26 +446,26 @@ export default function SettingsPage() {
                     <CardDescription>
                       Irreversible actions that will permanently affect your account
                     </CardDescription>
-                  </CardHeader>
-                  <CardContent>
+            </CardHeader>
+            <CardContent>
                     <div className="space-y-4">
                       <div className="p-4 border border-destructive/20 rounded-lg bg-destructive/5">
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                          <div>
+                <div>
                             <h4 className="font-semibold text-gray-900">Delete Account</h4>
                             <p className="text-sm text-gray-600 mt-1">
                               Once deleted, all your data will be permanently removed. This action cannot be undone.
                             </p>
-                          </div>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
+                </div>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
                               <Button variant="destructive" className="shrink-0">
                                 <Trash2 className="w-4 h-4 mr-2" />
                                 Delete Account
                               </Button>
-                            </AlertDialogTrigger>
+                  </AlertDialogTrigger>
                             <AlertDialogContent className="max-w-md">
-                              <AlertDialogHeader>
+                    <AlertDialogHeader>
                                 <AlertDialogTitle className="flex items-center gap-2 text-destructive">
                                   <Trash2 className="w-5 h-5" />
                                   Delete Account Permanently?
@@ -487,7 +487,7 @@ export default function SettingsPage() {
                                     </div>
                                   </div>
                                 </AlertDialogDescription>
-                              </AlertDialogHeader>
+                    </AlertDialogHeader>
 
                               <div className="space-y-4 pt-4">
                                 <div className="space-y-2">
@@ -538,14 +538,14 @@ export default function SettingsPage() {
                                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                   Delete Account Permanently
                                 </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
                         </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
+              </div>
+            </CardContent>
+          </Card>
               </TabsContent>
             </Tabs>
           </main>
