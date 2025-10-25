@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -24,19 +25,33 @@ import {
   MessageSquare,
   Clock,
   Award,
-  Lightbulb
+  Lightbulb,
+  DollarSign
 } from 'lucide-react';
 import Link from 'next/link';
 import { Footer } from '@/components/layout/footer';
 import { Navbar } from '@/components/layout/navbar';
 import { AppRoutesPaths } from '@/lib/routes';
+import { useAuth } from '@/hooks/use-auth-supabase';
 
 export default function FeaturesPage() {
   const [isVisible, setIsVisible] = useState(false);
+  const router = useRouter();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
     setIsVisible(true);
   }, []);
+
+  const handleStartCreating = () => {
+    if (user && !loading) {
+      // User is already logged in, take them to dashboard
+      router.push(AppRoutesPaths.dashboard.root);
+    } else {
+      // User not logged in, take them to auth/signup
+      router.push('/auth?mode=signup');
+    }
+  };
 
   const features = [
     {
@@ -135,12 +150,23 @@ export default function FeaturesPage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-8 py-4">
-                Start Creating
+              <Button 
+                size="lg" 
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-8 py-4"
+                onClick={handleStartCreating}
+                disabled={loading}
+              >
+                {user ? 'Go to Dashboard' : 'Start Creating'}
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
-              <Button size="lg" variant="outline" className="text-lg px-8 py-4">
-                Watch Demo
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="text-lg px-8 py-4"
+                onClick={() => router.push(AppRoutesPaths.pricing)}
+              >
+                <DollarSign className="mr-2 w-5 h-5" />
+                View Pricing
               </Button>
             </div>
           </div>
@@ -329,11 +355,22 @@ export default function FeaturesPage() {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="lg" className="bg-white text-gray-900 hover:bg-gray-100 text-lg px-8 py-4">
-                  Start Free Trial
+                <Button 
+                  size="lg" 
+                  className="bg-white text-gray-900 hover:bg-gray-100 text-lg px-8 py-4"
+                  onClick={handleStartCreating}
+                  disabled={loading}
+                >
+                  {user ? 'Go to Dashboard' : 'Start Free Trial'}
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
-                <Button size="lg" variant="outline" className="border-white text-gray-900 hover:bg-white hover:text-gray-900 text-lg px-8 py-4">
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  className="border-white text-white hover:bg-white hover:text-gray-900 text-lg px-8 py-4"
+                  onClick={() => router.push(AppRoutesPaths.pricing)}
+                >
+                  <DollarSign className="mr-2 w-5 h-5" />
                   View Pricing
                 </Button>
               </div>

@@ -14,6 +14,8 @@ import { useRouter } from "next/navigation";
 import { useUnifiedBrand, useBrandChangeListener } from "@/contexts/unified-brand-context";
 import { STORAGE_FEATURES } from "@/lib/services/brand-scoped-storage";
 import { BrandContent } from "@/components/layout/unified-brand-layout";
+import { MobileSidebarTrigger } from "@/components/layout/mobile-sidebar-trigger";
+import { DesktopSidebarTrigger } from "@/components/layout/desktop-sidebar-trigger";
 
 // Types
 interface ScheduledContent {
@@ -761,19 +763,23 @@ function ScheduleContentDialog({ isOpen, onClose, selectedDate, services, onSche
 
 function ContentCalendarPage() {
   return (
-    <BrandContent fallback={
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Calendar className="w-8 h-8 text-gray-400" />
+    <>
+      <MobileSidebarTrigger />
+      <DesktopSidebarTrigger />
+      <BrandContent fallback={
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Calendar className="w-8 h-8 text-gray-400" />
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">No Brand Selected</h2>
+            <p className="text-gray-600">Please select a brand to view and manage your content calendar.</p>
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">No Brand Selected</h2>
-          <p className="text-gray-600">Please select a brand to view and manage your content calendar.</p>
         </div>
-      </div>
-    }>
-      {() => <ContentCalendarPageContent />}
-    </BrandContent>
+      }>
+        {() => <ContentCalendarPageContent />}
+      </BrandContent>
+    </>
   );
 }
 
