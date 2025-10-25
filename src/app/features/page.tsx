@@ -367,7 +367,7 @@ export default function FeaturesPage() {
                 <Button 
                   size="lg" 
                   variant="outline" 
-                  className="border-white text-white hover:bg-white hover:text-gray-900 text-lg px-8 py-4"
+                  className="border-white text-gray-900 hover:bg-white hover:text-gray-900 text-lg px-8 py-4"
                   onClick={() => router.push(AppRoutesPaths.pricing)}
                 >
                   <DollarSign className="mr-2 w-5 h-5" />
