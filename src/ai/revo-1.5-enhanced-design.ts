@@ -38,6 +38,207 @@ function extractTextFromResponse(response: any): string {
 }
 
 /**
+ * FIXED: Analyze content for image matching requirements
+ */
+function analyzeContentForImageMatching(contentResult: any, location: string): {
+  detectedPeople: string[];
+  detectedSettings: string[];
+  detectedScenarios: string[];
+  culturalTerms: string[];
+  visualRequirements: string[];
+} {
+  const fullText = `${contentResult.headline} ${contentResult.subheadline} ${contentResult.callToAction}`.toLowerCase();
+
+  // Cultural terms mapping
+  const culturalTerms: string[] = [];
+  const detectedPeople: string[] = [];
+  const detectedSettings: string[] = [];
+  const detectedScenarios: string[] = [];
+  const visualRequirements: string[] = [];
+
+  // Kenyan cultural terms
+  if (fullText.includes('mama mboga')) {
+    culturalTerms.push('mama mboga');
+    detectedPeople.push('African woman vegetable vendor');
+    detectedSettings.push('market stall with fresh vegetables');
+    visualRequirements.push('Show African woman with colorful vegetables at market');
+  }
+  if (fullText.includes('boda boda')) {
+    culturalTerms.push('boda boda');
+    detectedPeople.push('motorcycle taxi rider');
+    detectedSettings.push('street with motorcycle');
+    visualRequirements.push('Show African man with motorcycle/bike');
+  }
+  if (fullText.includes('matatu')) {
+    culturalTerms.push('matatu');
+    detectedPeople.push('public transport driver');
+    detectedSettings.push('public transport vehicle');
+    visualRequirements.push('Show African driver with colorful public transport');
+  }
+
+  // Business scenarios
+  if (fullText.includes('farmer') || fullText.includes('agriculture')) {
+    detectedPeople.push('farmer');
+    detectedSettings.push('farm/agricultural setting');
+    visualRequirements.push('Show farmer in agricultural environment with crops');
+  }
+  if (fullText.includes('restaurant') || fullText.includes('chef') || fullText.includes('kitchen')) {
+    detectedPeople.push('restaurant owner/chef');
+    detectedSettings.push('restaurant/kitchen');
+    visualRequirements.push('Show person in restaurant/kitchen setting');
+  }
+  if (fullText.includes('shop') || fullText.includes('store') || fullText.includes('retail')) {
+    detectedPeople.push('shop owner/customer');
+    detectedSettings.push('retail store');
+    visualRequirements.push('Show person in retail/shop environment');
+  }
+  if (fullText.includes('office') || fullText.includes('business') || fullText.includes('professional')) {
+    detectedPeople.push('business professional');
+    detectedSettings.push('office environment');
+    visualRequirements.push('Show professional in office setting');
+  }
+
+  // Family/personal scenarios
+  if (fullText.includes('family') || fullText.includes('mother') || fullText.includes('father')) {
+    detectedPeople.push('family members');
+    detectedSettings.push('home/family setting');
+    visualRequirements.push('Show family in home environment');
+  }
+
+  // Tech/digital scenarios
+  if (fullText.includes('app') || fullText.includes('digital') || fullText.includes('online')) {
+    detectedScenarios.push('digital/tech usage');
+    detectedSettings.push('modern tech environment');
+    visualRequirements.push('Show person using technology/app');
+  }
+
+  return {
+    detectedPeople,
+    detectedSettings,
+    detectedScenarios,
+    culturalTerms,
+    visualRequirements
+  };
+}
+
+/**
+ * FIXED: Comprehensive cultural representation system
+ * Maps locations to appropriate ethnic representation and cultural context
+ */
+function getCulturalRepresentation(location: string): {
+  region: string;
+  ethnicRepresentation: string;
+  culturalContext: string;
+  primaryEthnicity: string;
+} {
+  const locationKey = location.toLowerCase();
+
+  // African countries mapping
+  const africanCountries = {
+    'kenya': {
+      region: 'East Africa',
+      ethnicRepresentation: 'Black African people with Kenyan features, diverse tribal backgrounds (Kikuyu, Luo, Luhya, Kalenjin)',
+      culturalContext: 'Kenyan cultural elements, Swahili influence, modern African urban/rural settings',
+      primaryEthnicity: 'Black African (Kenyan)'
+    },
+    'nigeria': {
+      region: 'West Africa',
+      ethnicRepresentation: 'Black African people with Nigerian features, diverse ethnic backgrounds (Yoruba, Igbo, Hausa)',
+      culturalContext: 'Nigerian cultural elements, vibrant colors, modern African urban settings',
+      primaryEthnicity: 'Black African (Nigerian)'
+    },
+    'ghana': {
+      region: 'West Africa',
+      ethnicRepresentation: 'Black African people with Ghanaian features, diverse ethnic backgrounds (Akan, Ewe, Ga)',
+      culturalContext: 'Ghanaian cultural elements, Kente patterns, traditional and modern settings',
+      primaryEthnicity: 'Black African (Ghanaian)'
+    },
+    'south africa': {
+      region: 'Southern Africa',
+      ethnicRepresentation: 'Diverse South African people, predominantly Black African with mixed representation',
+      culturalContext: 'Rainbow nation diversity, modern African urban settings',
+      primaryEthnicity: 'Black African (South African)'
+    },
+    'uganda': {
+      region: 'East Africa',
+      ethnicRepresentation: 'Black African people with Ugandan features, diverse tribal backgrounds',
+      culturalContext: 'Ugandan cultural elements, traditional and modern African settings',
+      primaryEthnicity: 'Black African (Ugandan)'
+    },
+    'tanzania': {
+      region: 'East Africa',
+      ethnicRepresentation: 'Black African people with Tanzanian features, Swahili cultural influence',
+      culturalContext: 'Tanzanian cultural elements, coastal and inland African settings',
+      primaryEthnicity: 'Black African (Tanzanian)'
+    },
+    'ethiopia': {
+      region: 'East Africa',
+      ethnicRepresentation: 'Black African people with Ethiopian features, diverse ethnic backgrounds',
+      culturalContext: 'Ethiopian cultural elements, ancient African traditions, highland settings',
+      primaryEthnicity: 'Black African (Ethiopian)'
+    },
+    'rwanda': {
+      region: 'East Africa',
+      ethnicRepresentation: 'Black African people with Rwandan features, unified cultural identity',
+      culturalContext: 'Rwandan cultural elements, unity and progress themes, modern African settings',
+      primaryEthnicity: 'Black African (Rwandan)'
+    }
+  };
+
+  // Check for African countries first
+  for (const [country, data] of Object.entries(africanCountries)) {
+    if (locationKey.includes(country)) {
+      return data;
+    }
+  }
+
+  // Other regions
+  if (locationKey.includes('india')) {
+    return {
+      region: 'South Asia',
+      ethnicRepresentation: 'South Asian people with Indian features, diverse regional backgrounds',
+      culturalContext: 'Indian cultural elements, vibrant colors, traditional and modern settings',
+      primaryEthnicity: 'South Asian (Indian)'
+    };
+  }
+
+  if (locationKey.includes('usa') || locationKey.includes('america')) {
+    return {
+      region: 'North America',
+      ethnicRepresentation: 'Diverse American people, mixed ethnic representation reflecting local demographics',
+      culturalContext: 'American cultural elements, modern urban/suburban settings',
+      primaryEthnicity: 'Mixed American'
+    };
+  }
+
+  if (locationKey.includes('canada')) {
+    return {
+      region: 'North America',
+      ethnicRepresentation: 'Diverse Canadian people, multicultural representation',
+      culturalContext: 'Canadian cultural elements, multicultural and inclusive settings',
+      primaryEthnicity: 'Mixed Canadian'
+    };
+  }
+
+  if (locationKey.includes('uk') || locationKey.includes('britain') || locationKey.includes('england')) {
+    return {
+      region: 'Europe',
+      ethnicRepresentation: 'Diverse British people, mixed ethnic representation',
+      culturalContext: 'British cultural elements, traditional and modern settings',
+      primaryEthnicity: 'Mixed British'
+    };
+  }
+
+  // Default for unspecified locations
+  return {
+    region: 'Global',
+    ethnicRepresentation: 'Diverse people representing global demographics',
+    culturalContext: 'Universal cultural elements with professional appeal',
+    primaryEthnicity: 'Mixed Global'
+  };
+}
+
+/**
  * Get cultural context for engaging designs based on location
  */
 function getCulturalContextForLocation(location: string): string {
@@ -2642,10 +2843,19 @@ function buildEnhancedImagePrompt(
     usingBrandColors: shouldFollowBrandColors && !!(input.brandProfile.primaryColor && input.brandProfile.accentColor && input.brandProfile.backgroundColor)
   });
 
-  // Enhanced target market representation for all locations
+  // FIXED: Enhanced cultural representation system with proper ethnic mapping
   const getTargetMarketInstructions = (location: string, businessType: string, targetAudience: string, includePeople: boolean, useLocalLanguage: boolean) => {
     const locationKey = location.toLowerCase();
-    const africanCountries = ['kenya', 'nigeria', 'south africa', 'ghana', 'uganda', 'tanzania', 'ethiopia', 'rwanda', 'zambia', 'zimbabwe', 'botswana', 'namibia', 'malawi', 'mozambique', 'senegal', 'mali', 'burkina faso', 'ivory coast', 'cameroon', 'chad', 'sudan', 'egypt', 'morocco', 'algeria', 'tunisia', 'libya'];
+
+    // Comprehensive cultural representation mapping
+    const culturalRepresentation = getCulturalRepresentation(location);
+
+    console.log('🌍 [CULTURAL REPRESENTATION DEBUG]:', {
+      location: location,
+      detectedRegion: culturalRepresentation.region,
+      ethnicRepresentation: culturalRepresentation.ethnicRepresentation,
+      culturalContext: culturalRepresentation.culturalContext
+    });
 
     // Get business-specific target market
     const getBusinessTargetMarket = (businessType: string) => {
@@ -2703,56 +2913,38 @@ ${languageInstruction}
 - Target Audience: ${targetAudience || targetMarket}`;
     }
 
-    if (isAfricanCountry) {
-      return `
-**CRITICAL TARGET MARKET REPRESENTATION FOR ${location.toUpperCase()}:**
-- MANDATORY: Include authentic Black/African people who represent the target market
-- Show people who would actually use the services: ${targetMarket}
-- Display local African people in settings relevant to ${businessType} business
-- Ensure faces are fully visible, well-lit, and anatomically correct with no deformations
-- Emphasize cultural authenticity and local representation
-- AVOID: Generic office workers - show people who match the target audience
-- PRIORITY: 80%+ of people in the image should be Black/African when business is in African country
-- Context: Show people in ${businessType}-relevant settings, not generic offices
+    // Use the comprehensive cultural representation system
+    return `
+**CRITICAL CULTURAL REPRESENTATION FOR ${location.toUpperCase()}:**
+🌍 **ETHNIC REPRESENTATION (MANDATORY):**
+- PRIMARY: ${culturalRepresentation.ethnicRepresentation}
+- REGION: ${culturalRepresentation.region}
+- CULTURAL CONTEXT: ${culturalRepresentation.culturalContext}
 
-**CLEAN, DIVERSE PEOPLE REPRESENTATION:**
-- STYLE: Clean, modern design with diverse people (like Canva templates)
-- BACKGROUND: Clean, minimal background with subtle gradients or solid colors
-- DIVERSITY: Include diverse people of different ages, ethnicities, and backgrounds
-- PEOPLE: Natural, approachable people in appropriate attire for the business
-- POSES: Natural, confident poses that look authentic and engaging
-- EXPRESSIONS: Friendly, genuine expressions that connect with the audience
-- LIGHTING: Clean, even lighting that looks professional and polished
-- SETTINGS: Clean, modern environments or neutral backgrounds
-- QUALITY: High-quality, natural appearance (like professional stock photos)
-- AVOID: Overly complex backgrounds, cluttered scenes, or distracting elements
-- GOAL: Clean, diverse design that looks like a high-quality Canva template
-${languageInstruction}
-- Target Audience: ${targetAudience || targetMarket}`;
-    } else {
-      return `
-**TARGET MARKET REPRESENTATION FOR ${location.toUpperCase()}:**
-- Include people who represent the target market: ${targetMarket}
-- Show people who would actually use the services
+👥 **PEOPLE REQUIREMENTS:**
+- Show people who would actually use ${businessType} services: ${targetMarket}
+- MANDATORY: Use ${culturalRepresentation.primaryEthnicity} as primary representation (80%+ of people)
 - Display people in settings relevant to ${businessType} business
-- Ensure faces are fully visible, well-lit, and anatomically correct
+- Ensure faces are fully visible, well-lit, and anatomically correct with no deformations
+- AVOID: Generic office workers or stock photo looks
 - Context: Show people in ${businessType}-relevant settings, not generic offices
 
-**CLEAN, DIVERSE PEOPLE REPRESENTATION:**
-- STYLE: Clean, modern design with diverse people (like Canva templates)
+🎨 **VISUAL QUALITY STANDARDS:**
+- STYLE: Clean, modern design with authentic cultural representation
 - BACKGROUND: Clean, minimal background with subtle gradients or solid colors
-- DIVERSITY: Include diverse people of different ages, ethnicities, and backgrounds
 - PEOPLE: Natural, approachable people in appropriate attire for the business
 - POSES: Natural, confident poses that look authentic and engaging
 - EXPRESSIONS: Friendly, genuine expressions that connect with the audience
-- LIGHTING: Clean, even lighting that looks professional and polished
-- SETTINGS: Clean, modern environments or neutral backgrounds
-- QUALITY: High-quality, natural appearance (like professional stock photos)
+- LIGHTING: Clean, even lighting that shows skin tones accurately and professionally
+- SETTINGS: Clean, modern environments or culturally appropriate backgrounds
+- QUALITY: High-quality, natural appearance (like professional photography)
 - AVOID: Overly complex backgrounds, cluttered scenes, or distracting elements
-- GOAL: Clean, diverse design that looks like a high-quality Canva template
+- GOAL: Clean, culturally authentic design that represents the local population
+
 ${languageInstruction}
-- Target Audience: ${targetAudience || targetMarket}`;
-    }
+- Target Audience: ${targetAudience || targetMarket}
+
+🚨 **CRITICAL**: This is a cultural appropriateness requirement. Images MUST show people who actually represent the local population of ${location}.`;
   };
 
   // Apply Cultural Intelligence for Visual Adaptation
@@ -2786,18 +2978,36 @@ ${useLocalLanguage ? `- Local Authenticity: Include subtle design elements that 
     location: location
   });
 
-  // Debug content-image matching
+  // FIXED: Enhanced content-image matching debug with comprehensive analysis
   if (contentResult) {
-    console.log('📖 [Revo 1.5 Content-Image Matching] Debug:', {
+    const contentAnalysis = analyzeContentForImageMatching(contentResult, input.brandProfile.location || '');
+    console.log('📖 [CONTENT-IMAGE MATCHING DEBUG]:', {
       headline: contentResult.headline,
       subheadline: contentResult.subheadline,
       callToAction: contentResult.callToAction,
-      hasSpecificPeople: contentResult.headline.toLowerCase().includes('mama') ||
-        contentResult.subheadline.toLowerCase().includes('mama') ||
-        /\b[A-Z][a-z]+\b/.test(contentResult.headline) || // Detects proper names
-        /\b[A-Z][a-z]+\b/.test(contentResult.subheadline)
+      detectedPeople: contentAnalysis.detectedPeople,
+      detectedSettings: contentAnalysis.detectedSettings,
+      detectedScenarios: contentAnalysis.detectedScenarios,
+      culturalTerms: contentAnalysis.culturalTerms,
+      visualRequirements: contentAnalysis.visualRequirements
     });
   }
+
+  // FIXED: Local language toggle debug
+  console.log('🌍 [LOCAL LANGUAGE TOGGLE DEBUG]:', {
+    toggleStatus: input.useLocalLanguage === true ? 'ON' : 'OFF',
+    location: input.brandProfile.location,
+    shouldUseLocalLanguage: input.useLocalLanguage === true,
+    expectedLanguageElements: input.useLocalLanguage === true ? getLocalLanguageElements(input.brandProfile.location || '') : 'None (toggle OFF)'
+  });
+
+  // COMPREHENSIVE DEBUG SUMMARY
+  console.log('🚨 [REVO 1.5 CRITICAL ISSUES FIX SUMMARY]:');
+  console.log('1. CULTURAL REPRESENTATION:', culturalRepresentation);
+  console.log('2. LOCAL LANGUAGE STATUS:', input.useLocalLanguage === true ? 'ENABLED' : 'DISABLED');
+  console.log('3. CONTENT-IMAGE MATCHING:', contentResult ? 'ACTIVE' : 'NO CONTENT');
+  console.log('4. PEOPLE TOGGLE:', shouldIncludePeople ? 'ON' : 'OFF');
+  console.log('5. LOCATION:', input.brandProfile.location || 'NOT SPECIFIED');
 
   // Clean business name pattern from image text
   const cleanBusinessNamePattern = (text: string): string => {
@@ -2865,20 +3075,25 @@ ${adConcept ? `- Ad Concept: **${adConcept.name}**
 - CRITICAL: The image must integrate ALL 6 dimensions cohesively` : '- Standard business visualization approach'}
 
 ${contentResult ? `
-📖 CONTENT-SPECIFIC VISUALIZATION:
+📖 CRITICAL CONTENT-IMAGE MATCHING SYSTEM:
 - Content Story: "${contentResult.headline}" - "${contentResult.subheadline}"
-- CRITICAL: The image MUST match and visualize this specific story/content
-- If content mentions specific people (like "Amina", "mama mboga", "John the farmer"), show THOSE people
-- If content describes a scenario, show THAT exact scenario visually
-- The image should tell the same story as the text content
+- MANDATORY: The image MUST visually represent what the text describes
 
-📖 STORY-TO-IMAGE MATCHING:
-- Read the headline and subheadline carefully
-- Identify WHO is mentioned (specific person, profession, demographic)
-- Identify WHAT situation/scenario is described
-- Identify WHERE the story takes place (setting, environment)
-- Show the EXACT people and situation described in the content
-- Make the visual story match the text story perfectly
+📊 CONTENT ANALYSIS RESULTS:
+${(() => {
+          const analysis = analyzeContentForImageMatching(contentResult, input.brandProfile.location || '');
+          return `- Detected People: ${analysis.detectedPeople.join(', ') || 'Generic business people'}
+- Detected Settings: ${analysis.detectedSettings.join(', ') || 'Professional business environment'}
+- Cultural Terms: ${analysis.culturalTerms.join(', ') || 'None'}
+- Visual Requirements: ${analysis.visualRequirements.join(' | ') || 'Show professional business scenario'}`;
+        })()}
+
+🚨 CRITICAL MATCHING RULES:
+- If headline/subheadline mentions specific people → Show those EXACT people
+- If content mentions specific locations → Show those EXACT locations
+- If content mentions specific scenarios → Show those EXACT scenarios
+- The visual story must tell the SAME story as the text
+- NO generic business scenes if content is specific
 
 🌍 CULTURAL/LOCAL TERMS RECOGNITION:
 • "mama mboga" → Female vegetable vendor with fresh produce at market stall

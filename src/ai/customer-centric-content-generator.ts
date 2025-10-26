@@ -305,7 +305,22 @@ EXAMPLES OF BEFORE/AFTER CONTRAST:
 ✅ SPECIFIC: "BEFORE: 3-hour hospital queues. AFTER: See a doctor in 15 minutes from home."
 
 ${useLocalLanguage ? `
-CULTURAL CONTEXT: Incorporate local ${location} context and language naturally.
+🌍 CRITICAL LOCAL LANGUAGE INTEGRATION FOR ${location.toUpperCase()}:
+- MANDATORY: Mix English (70%) with local language elements (30%)
+- NATURAL INTEGRATION: Don't force it - only add when it flows naturally
+- CONTEXTUAL USE: Match local language to business type and audience
+- VARIETY: Use different local phrases for each generation (avoid repetition)
+
+📍 LOCATION-SPECIFIC LANGUAGE ELEMENTS:
+${this.getLocationSpecificLanguageInstructions(location)}
+
+🎯 INTEGRATION EXAMPLES:
+- Headlines: "Quality Tech Solutions" → "Quality Tech Solutions, Karibu!" (Kenya)
+- Subheadlines: "Fast delivery across the city" → "Fast delivery across Nairobi, Haraka sana!"
+- Captions: Mix English sentences with local expressions naturally
+- CTAs: Use local action words when appropriate
+
+⚠️ CRITICAL: Local language should enhance, not confuse. Keep it natural and contextual.
 ` : ''}
 
 CTA INSTRUCTIONS:
@@ -345,6 +360,53 @@ Format as JSON:
     // Let AI handle CTA generation in the main prompt - no hardcoded templates
     // This is just a fallback that should rarely be used
     return 'Learn More';
+  }
+
+  /**
+   * FIXED: Get location-specific language instructions for proper local language integration
+   */
+  private static getLocationSpecificLanguageInstructions(location: string): string {
+    const locationKey = location.toLowerCase();
+
+    if (locationKey.includes('kenya')) {
+      return `- SWAHILI ELEMENTS: "Karibu" (welcome), "Asante" (thank you), "Haraka" (fast), "Poa" (cool/good), "Mambo" (what's up)
+- BUSINESS CONTEXT: "Biashara" (business), "Huduma" (service), "Kazi" (work), "Pesa" (money)
+- GREETINGS: "Jambo" (hello), "Habari" (how are you), "Sawa" (okay/fine)
+- EXPRESSIONS: "Hakuna matata" (no problem), "Pole pole" (slowly/carefully), "Twende" (let's go)`;
+    }
+
+    if (locationKey.includes('nigeria')) {
+      return `- PIDGIN ELEMENTS: "How far?" (how are you), "Wetin dey happen?" (what's happening), "No wahala" (no problem)
+- BUSINESS CONTEXT: "Business dey boom" (business is booming), "Make we go" (let's go), "Sharp sharp" (quickly)
+- GREETINGS: "Bawo" (Yoruba hello), "Ndewo" (Igbo hello), "Sannu" (Hausa hello)
+- EXPRESSIONS: "E go better" (it will be better), "God dey" (God is there), "Correct" (right/good)`;
+    }
+
+    if (locationKey.includes('ghana')) {
+      return `- TWI ELEMENTS: "Akwaaba" (welcome), "Medaase" (thank you), "Yie" (good), "Adwo" (peace)
+- BUSINESS CONTEXT: "Adwuma" (work), "Sika" (money), "Dwuma" (business)
+- GREETINGS: "Maakye" (good morning), "Maaha" (good afternoon)
+- EXPRESSIONS: "Ɛyɛ" (it's good), "Ampa" (truly), "Sɛ ɛyɛ a" (if it's good)`;
+    }
+
+    if (locationKey.includes('south africa')) {
+      return `- MIXED ELEMENTS: "Howzit" (how are you), "Sharp" (good), "Lekker" (nice), "Eish" (expression)
+- BUSINESS CONTEXT: "Bakkie" (pickup truck), "Robot" (traffic light), "Braai" (barbecue)
+- GREETINGS: "Sawubona" (Zulu hello), "Dumela" (Sotho hello)
+- EXPRESSIONS: "Ag man" (oh man), "Just now" (later), "Now now" (soon)`;
+    }
+
+    if (locationKey.includes('india')) {
+      return `- HINDI ELEMENTS: "Namaste" (hello), "Dhanyawad" (thank you), "Accha" (good), "Jaldi" (quickly)
+- BUSINESS CONTEXT: "Vyavasaya" (business), "Seva" (service), "Kaam" (work)
+- GREETINGS: "Namaskar" (respectful hello), "Sat Sri Akal" (Punjabi hello)
+- EXPRESSIONS: "Bahut accha" (very good), "Chalo" (let's go), "Kya baat hai" (what's the matter)`;
+    }
+
+    return `- Use appropriate local language elements for ${location}
+- Mix naturally with English for authentic feel
+- Focus on greetings, business terms, and common expressions
+- Keep it contextual and business-appropriate`;
   }
 
   /**
