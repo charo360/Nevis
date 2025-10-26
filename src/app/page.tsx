@@ -13,6 +13,7 @@ import {
   Star,
   Play,
   ChevronRight,
+  ChevronLeft,
   Globe,
   Users,
   TrendingUp,
@@ -41,6 +42,83 @@ export default function HomePage() {
   // Typewriter animation for "AI Designer"
   const [displayText, setDisplayText] = useState('');
   const fullText = 'AI Designer';
+
+  // Testimonial slider state
+  const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+
+  const testimonials = [
+    {
+      text: "Our payment setup time dropped from days to minutes. Paya's platform made transactions smooth and our customers love it.",
+      author: "Grace Wanjiru",
+      role: "Operations Lead, Paya.co.ke",
+      location: "Kenya",
+      image: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=200&h=200&fit=crop&crop=face&auto=format&q=80" // African woman
+    },
+    {
+      text: "We save hours every week on social content. It's like having a full creative team without the cost.",
+      author: "Emma Johansson",
+      role: "Marketing Director, NordicBloom Design",
+      location: "Sweden",
+      image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&h=200&fit=crop&crop=face&auto=format&q=80" // Scandinavian woman
+    },
+    {
+      text: "The AI templates gave our bakery a whole new online identity. Customers say our posts 'feel delicious!'",
+      author: "Carlos Rivera",
+      role: "Owner, Pan Dulce Bakery",
+      location: "Mexico",
+      image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&h=200&fit=crop&crop=face&auto=format&q=80" // Hispanic/Latino man
+    },
+    {
+      text: "FreshHarvest doubled our online orders within a month. The AI copy suggestions make every product post pop.",
+      author: "Linda Obiero",
+      role: "Marketing Manager, FreshHarvest Foods",
+      location: "Kenya",
+      image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&h=200&fit=crop&crop=face&auto=format&q=80" // African woman
+    },
+    {
+      text: "We went from posting once a week to daily without burning out. Engagement jumped 250% in just two weeks.",
+      author: "Sophia Tran",
+      role: "Co-founder, UrbanNest Interiors",
+      location: "Singapore",
+      image: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=200&h=200&fit=crop&crop=face&auto=format&q=80" // Asian woman
+    },
+    {
+      text: "Our small repair shop suddenly looks like a tech startup. The content tools help us stay sharp and consistent.",
+      author: "Kevin Kibe",
+      role: "Head of Marketing, SwiftRepair Tech",
+      location: "Kenya",
+      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face&auto=format&q=80" // African man
+    },
+    {
+      text: "EcoMove's engagement tripled overnight. The AI knows our tone and keeps everything perfectly on-brand.",
+      author: "Brian Otieno",
+      role: "Founder & CEO, EcoMove Logistics",
+      location: "Kenya",
+      image: "https://images.unsplash.com/photo-1531384441138-2736e62e0919?w=200&h=200&fit=crop&crop=face&auto=format&q=80" // African man
+    },
+    {
+      text: "We launched a new tutoring program and needed visuals fast. The AI handled it flawlessly — every banner looked perfect.",
+      author: "Maya Patel",
+      role: "Director, EduBridge Learning",
+      location: "India",
+      image: "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=200&h=200&fit=crop&crop=face&auto=format&q=80" // Indian woman
+    },
+    {
+      text: "Our handmade jewelry brand finally stands out online. It's like having a creative agency working 24/7 for us.",
+      author: "Lucie Bernard",
+      role: "Founder, Bijoux du Soleil",
+      location: "France",
+      image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop&crop=face&auto=format&q=80" // French/European woman
+    },
+    {
+      text: "Our outreach campaigns feel personal yet professional. The AI tools save us time and make our brand look global.",
+      author: "Tom Anderson",
+      role: "Community Manager, GreenField Labs",
+      location: "USA",
+      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=face&auto=format&q=80" // American man
+    }
+  ];
 
   useEffect(() => {
     setIsVisible(true);
@@ -96,6 +174,33 @@ export default function HomePage() {
       // Cleanup is handled within the function
     };
   }, [isVisible, fullText]);
+
+  // Testimonial slider autoplay
+  useEffect(() => {
+    if (!isAutoPlaying) return;
+    
+    const interval = setInterval(() => {
+      setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
+    }, 5000); // Change testimonial every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [isAutoPlaying, testimonials.length]);
+
+  // Navigation handlers for testimonial slider
+  const nextTestimonial = () => {
+    setIsAutoPlaying(false);
+    setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
+  };
+
+  const prevTestimonial = () => {
+    setIsAutoPlaying(false);
+    setCurrentTestimonial((prev) => (prev - 1 + testimonials.length) % testimonials.length);
+  };
+
+  const goToTestimonial = (index: number) => {
+    setIsAutoPlaying(false);
+    setCurrentTestimonial(index);
+  };
 
   // Heartbeat: ping server every 5 minutes to extend session (only for logged in users)
   useEffect(() => {
@@ -545,8 +650,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section className="relative px-6 py-20 bg-white/50 backdrop-blur-sm">
+      {/* Testimonials Section - Slider */}
+      <section className="relative px-6 py-20 bg-white/50 backdrop-blur-sm overflow-hidden">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
@@ -557,93 +662,103 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Testimonial 1 */}
-            <Card className="border-0 bg-white/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
-              <CardContent className="p-8">
-                <div className="flex items-center gap-1 mb-4">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  ))}
+          {/* Testimonial Slider */}
+          <div className="relative max-w-4xl mx-auto">
+            {/* Main Testimonial Card */}
+            <div className="relative min-h-[320px]">
+              {testimonials.map((testimonial, index) => (
+                <div
+                  key={index}
+                  className={`absolute inset-0 transition-all duration-500 ease-in-out ${
+                    index === currentTestimonial
+                      ? 'opacity-100 translate-x-0'
+                      : index < currentTestimonial
+                      ? 'opacity-0 -translate-x-full'
+                      : 'opacity-0 translate-x-full'
+                  }`}
+                >
+                  <Card className="border-0 bg-white/90 backdrop-blur-sm shadow-2xl">
+                    <CardContent className="p-8 md:p-12">
+                      {/* Stars */}
+                      <div className="flex items-center justify-center gap-1 mb-6">
+                        {[1, 2, 3, 4, 5].map((i) => (
+                          <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                        ))}
+                      </div>
+                      
+                      {/* Quote */}
+                      <p className="text-lg md:text-xl text-gray-700 mb-8 leading-relaxed text-center italic">
+                        "{testimonial.text}"
+                      </p>
+                      
+                      {/* Author Info */}
+                      <div className="flex flex-col items-center gap-4">
+                        <Image
+                          src={testimonial.image}
+                          alt={testimonial.author}
+                          width={64}
+                          height={64}
+                          className="rounded-full object-cover border-4 border-purple-100"
+                          loading="lazy"
+                          unoptimized
+                        />
+                        <div className="text-center">
+                          <p className="font-bold text-gray-900 text-lg">{testimonial.author}</p>
+                          <p className="text-sm text-gray-600">{testimonial.role}</p>
+                          <p className="text-xs text-gray-500 mt-1 flex items-center justify-center gap-1">
+                            <Globe className="w-3 h-3" />
+                            {testimonial.location}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
-                <p className="text-gray-700 mb-6 leading-relaxed">
-                  "Our AI agent cut post creation from 15 minutes to 30 seconds. Engagement soared by 300%! It's like having a designer that never sleeps."
-                </p>
-                <div className="flex items-center gap-3">
-                  <Image
-                    src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=40&h=40&fit=crop&crop=face&auto=format&q=80"
-                    alt="Sarah Chen"
-                    width={40}
-                    height={40}
-                    className="rounded-full object-cover"
-                    loading="lazy"
-                    unoptimized
-                  />
-                  <div>
-                    <p className="font-semibold text-gray-900">Sarah Chen</p>
-                    <p className="text-sm text-gray-600">Marketing Director, TechFlow</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+              ))}
+            </div>
 
-            {/* Testimonial 2 */}
-            <Card className="border-0 bg-white/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
-              <CardContent className="p-8">
-                <div className="flex items-center gap-1 mb-4">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  ))}
-                </div>
-                <p className="text-gray-700 mb-6 leading-relaxed">
-                  "It's like a designer that never sleeps. Perfectly on-brand every time. The agent learns our style and creates content that looks like our team made it."
-                </p>
-                <div className="flex items-center gap-3">
-                  <Image
-                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face&auto=format&q=80"
-                    alt="Marcus Rodriguez"
-                    width={40}
-                    height={40}
-                    className="rounded-full object-cover"
-                    loading="lazy"
-                    unoptimized
-                  />
-                  <div>
-                    <p className="font-semibold text-gray-900">Marcus Rodriguez</p>
-                    <p className="text-sm text-gray-600">Founder, GrowthLab</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Navigation Arrows */}
+            <button
+              onClick={prevTestimonial}
+              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 md:-translate-x-12 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 transition-all duration-200 hover:scale-110 group"
+              aria-label="Previous testimonial"
+            >
+              <ChevronLeft className="w-6 h-6 text-gray-600 group-hover:text-purple-600" />
+            </button>
+            
+            <button
+              onClick={nextTestimonial}
+              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 md:translate-x-12 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 transition-all duration-200 hover:scale-110 group"
+              aria-label="Next testimonial"
+            >
+              <ChevronRight className="w-6 h-6 text-gray-600 group-hover:text-purple-600" />
+            </button>
 
-            {/* Testimonial 3 */}
-            <Card className="border-0 bg-white/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
-              <CardContent className="p-8">
-                <div className="flex items-center gap-1 mb-4">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  ))}
-                </div>
-                <p className="text-gray-700 mb-6 leading-relaxed">
-                  "We serve 3x more clients with the same team. Crevo's agent is a game changer. The cultural intelligence makes our global campaigns resonate perfectly."
-                </p>
-                <div className="flex items-center gap-3">
-                  <Image
-                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face&auto=format&q=80"
-                    alt="Alex Thompson"
-                    width={40}
-                    height={40}
-                    className="rounded-full object-cover"
-                    loading="lazy"
-                    unoptimized
-                  />
-                  <div>
-                    <p className="font-semibold text-gray-900">Alex Thompson</p>
-                    <p className="text-sm text-gray-600">CEO, Creative Studio</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Dot Indicators */}
+            <div className="flex items-center justify-center gap-2 mt-8">
+              {testimonials.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => goToTestimonial(index)}
+                  className={`transition-all duration-300 rounded-full ${
+                    index === currentTestimonial
+                      ? 'w-8 h-2 bg-purple-600'
+                      : 'w-2 h-2 bg-gray-300 hover:bg-gray-400'
+                  }`}
+                  aria-label={`Go to testimonial ${index + 1}`}
+                />
+              ))}
+            </div>
+
+            {/* Autoplay indicator */}
+            <div className="text-center mt-4">
+              <button
+                onClick={() => setIsAutoPlaying(!isAutoPlaying)}
+                className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                {isAutoPlaying ? '⏸ Pause' : '▶ Play'} Auto-scroll
+              </button>
+            </div>
           </div>
         </div>
       </section>

@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense, useEffect } from 'react';
 import { useUnifiedBrand } from '@/contexts/unified-brand-context';
 import { SidebarInset } from '@/components/ui/sidebar';
+import { MobileSidebarTrigger } from '@/components/layout/mobile-sidebar-trigger';
 
 function BrandProfileContent() {
   const searchParams = useSearchParams();
@@ -46,6 +47,7 @@ function BrandProfileContent() {
 
   return (
     <SidebarInset fullWidth>
+      <MobileSidebarTrigger />
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 w-full">
         <div className="w-full h-full">
           <div className="w-full h-full px-4 py-8">

@@ -31,10 +31,11 @@ export const AppRoutesPaths = {
     "quick-content": "/dashboard/quick-content",
     showcase: "/dashboard/showcase",
     "social-connect": "/dashboard/social-connect",
-    settings: "/dashboard/settings",
-    profile: "/dashboard/profile",
     "brand-profile": "/dashboard/brand-profile",
   },
+  
+  // App routes
+  settings: "/settings",
 
   // Billing routes
   billing: {

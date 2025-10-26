@@ -9,7 +9,6 @@ import { AppRoutesPaths } from '@/lib/routes';
 // Explicit lazy imports for top-level app routes (keeps bundler friendly)
 const Dashboard = React.lazy(() => import('../../app/dashboard/page').then(m => ({ default: m.default })));
 const Settings = React.lazy(() => import('../../app/settings/page').then(m => ({ default: m.default })));
-const Profile = React.lazy(() => import('../../app/profile/page').then(m => ({ default: m.default })));
 const BrandProfile = React.lazy(() => import('../../app/brand-profile/page').then(m => ({ default: m.default })));
 // Firebase brand profile removed - using MongoDB version
 const Brands = React.lazy(() => import('../../app/brands/page').then(m => ({ default: m.default })));
@@ -129,7 +128,6 @@ export function AppRoute() {
     // Dashboard and nested routes - prefix matches
     { test: p => p.startsWith('/dashboard'), Component: Dashboard },
     { test: p => p.startsWith('/settings'), Component: Settings },
-    { test: p => p.startsWith('/profile'), Component: Profile },
     // Firebase brand profile route removed
     { test: p => p.startsWith('/brand-profile'), Component: BrandProfile },
     { test: p => p.startsWith('/brands'), Component: Brands },

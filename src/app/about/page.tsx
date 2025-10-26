@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -29,40 +30,34 @@ import {
   Smartphone,
   Monitor,
   Cpu,
-  Network
+  Network,
+  Play,
+  DollarSign
 } from 'lucide-react';
 import Link from 'next/link';
 import { AppRoutesPaths } from '@/lib/routes';
 import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
+import { useAuth } from '@/hooks/use-auth-supabase';
 
 export default function AboutPage() {
   const [isVisible, setIsVisible] = useState(false);
+  const router = useRouter();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
     setIsVisible(true);
   }, []);
 
-  const team = [
-    {
-      name: "Sarah Chen",
-      role: "CEO & Co-Founder",
-      description: "Former Google AI researcher with 10+ years in machine learning",
-      image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&h=150&fit=crop&crop=face&auto=format&q=80"
-    },
-    {
-      name: "Marcus Rodriguez",
-      role: "CTO & Co-Founder",
-      description: "Ex-Meta engineer specializing in computer vision and NLP",
-      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face&auto=format&q=80"
-    },
-    {
-      name: "Alex Thompson",
-      role: "Head of AI",
-      description: "PhD in Artificial Intelligence from Stanford University",
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face&auto=format&q=80"
+  const handleStartJourney = () => {
+    if (user && !loading) {
+      // User is already logged in, take them to dashboard
+      router.push(AppRoutesPaths.dashboard.root);
+    } else {
+      // User not logged in, take them to auth/signup
+      router.push('/auth?mode=signup');
     }
-  ];
+  };
 
   const milestones = [
     { year: "2023", event: "Company founded with vision to democratize AI content creation" },
@@ -96,12 +91,23 @@ export default function AboutPage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-8 py-4">
-                Start Your Journey
+              <Button 
+                size="lg" 
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-8 py-4"
+                onClick={handleStartJourney}
+                disabled={loading}
+              >
+                {user ? 'Go to Dashboard' : 'Start Your Journey'}
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
-              <Button size="lg" variant="outline" className="text-lg px-8 py-4">
-                Watch Our Story
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="text-lg px-8 py-4"
+                onClick={() => router.push(AppRoutesPaths.features)}
+              >
+                <Play className="mr-2 w-5 h-5" />
+                Explore Features
               </Button>
             </div>
           </div>
@@ -306,33 +312,66 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Team Section */}
+      {/* Technology Section */}
       <section className="relative px-6 py-20 bg-white/50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              Meet Our Team
+              Powered by Advanced AI Technology
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              World-class AI researchers and engineers building the future of content creation
+              Built on cutting-edge machine learning models and years of research in AI-driven creativity
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {team.map((member, index) => (
-              <Card key={index} className="text-center border-0 bg-white/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
-                <CardContent className="p-8">
-                  <img
-                    src={member.image}
-                    alt={member.name}
-                    className="w-24 h-24 rounded-full mx-auto mb-6 object-cover"
-                  />
-                  <h3 className="text-xl font-bold mb-2">{member.name}</h3>
-                  <p className="text-blue-600 font-medium mb-4">{member.role}</p>
-                  <p className="text-gray-600 text-sm">{member.description}</p>
-                </CardContent>
-              </Card>
-            ))}
+            <Card className="border-0 bg-white/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <Brain className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-gray-900">AI Agent Architecture</h3>
+                <p className="text-gray-600 text-sm leading-relaxed mb-4">
+                  Our proprietary AI agents learn from your brand's unique voice, style, and cultural context to create perfectly aligned content every time.
+                </p>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  <Badge variant="secondary" className="text-xs">Machine Learning</Badge>
+                  <Badge variant="secondary" className="text-xs">Neural Networks</Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 bg-white/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <Cpu className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-gray-900">Real-Time Processing</h3>
+                <p className="text-gray-600 text-sm leading-relaxed mb-4">
+                  Lightning-fast content generation powered by distributed computing and optimized AI models for instant results.
+                </p>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  <Badge variant="secondary" className="text-xs">Cloud Infrastructure</Badge>
+                  <Badge variant="secondary" className="text-xs">GPU Acceleration</Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 bg-white/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <Shield className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-gray-900">Enterprise Security</h3>
+                <p className="text-gray-600 text-sm leading-relaxed mb-4">
+                  Bank-level encryption and data protection ensure your brand information and content are always secure and private.
+                </p>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  <Badge variant="secondary" className="text-xs">SOC 2 Compliant</Badge>
+                  <Badge variant="secondary" className="text-xs">GDPR Ready</Badge>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
@@ -439,12 +478,23 @@ export default function AboutPage() {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="lg" className="bg-white text-gray-900 hover:bg-gray-100 text-lg px-8 py-4">
-                  Start Creating Today
+                <Button 
+                  size="lg" 
+                  className="bg-white text-gray-900 hover:bg-gray-100 text-lg px-8 py-4"
+                  onClick={handleStartJourney}
+                  disabled={loading}
+                >
+                  {user ? 'Go to Dashboard' : 'Start Creating Today'}
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
-                <Button size="lg" variant="outline" className="border-white text-gray-900 hover:bg-white hover:text-gray-900 text-lg px-8 py-4">
-                  Learn More
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  className="border-white text-gray-900 hover:bg-white hover:text-gray-900 text-lg px-8 py-4"
+                  onClick={() => router.push(AppRoutesPaths.pricing)}
+                >
+                  <DollarSign className="mr-2 w-5 h-5" />
+                  View Pricing
                 </Button>
               </div>
             </div>

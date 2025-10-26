@@ -22,6 +22,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { CreditAnalytics } from '@/components/ui/credit-analytics';
+import { MobileSidebarTrigger } from '@/components/layout/mobile-sidebar-trigger';
+import { DesktopSidebarTrigger } from '@/components/layout/desktop-sidebar-trigger';
 
 // Types
 interface UserCredits {
@@ -246,7 +248,10 @@ export default function CreditManagementPage() {
   const showSignIn = error && error.includes('sign in');
 
   return (
-    <div className="container mx-auto p-6 space-y-6 max-w-7xl">
+    <>
+      <MobileSidebarTrigger />
+      <DesktopSidebarTrigger />
+      <div className="container mx-auto p-6 space-y-6 max-w-7xl">
       {/* Error Banner */}
       {showError && (
         <div className="mb-4">
@@ -584,6 +589,7 @@ export default function CreditManagementPage() {
           </div>
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </>
   );
 }
