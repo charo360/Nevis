@@ -51,6 +51,9 @@ export class TrendingHashtagsService {
       'refinancing'
     ];
 
+    if (!context || typeof context !== 'string') {
+      return false;
+    }
     const contextLower = context.toLowerCase();
     return serviceKeywords.some(keyword => contextLower.includes(keyword));
   }
@@ -433,6 +436,9 @@ export class TrendingHashtagsService {
       retail: ['#shopping', '#fashion', '#style', '#deals', '#quality'],
     };
 
+    if (!businessType || typeof businessType !== 'string') {
+      return ['#business', '#quality', '#service', '#professional', '#growth'];
+    }
     return fallbacks[businessType.toLowerCase()] || ['#business', '#quality', '#service', '#professional', '#growth'];
   }
 

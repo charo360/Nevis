@@ -3002,8 +3002,9 @@ ${useLocalLanguage ? `- Local Authenticity: Include subtle design elements that 
   });
 
   // COMPREHENSIVE DEBUG SUMMARY
+  const debugCulturalRep = getCulturalRepresentation(input.brandProfile.location || '');
   console.log('🚨 [REVO 1.5 CRITICAL ISSUES FIX SUMMARY]:');
-  console.log('1. CULTURAL REPRESENTATION:', culturalRepresentation);
+  console.log('1. CULTURAL REPRESENTATION:', debugCulturalRep);
   console.log('2. LOCAL LANGUAGE STATUS:', input.useLocalLanguage === true ? 'ENABLED' : 'DISABLED');
   console.log('3. CONTENT-IMAGE MATCHING:', contentResult ? 'ACTIVE' : 'NO CONTENT');
   console.log('4. PEOPLE TOGGLE:', shouldIncludePeople ? 'ON' : 'OFF');
