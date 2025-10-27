@@ -52,39 +52,93 @@ function cleanBusinessNamePattern(text: string): string {
   return cleaned;
 }
 
-// Dynamic Alternatives Generator - Creates 30+ unique variations to prevent repetition
-function getDynamicAlternatives(businessType: string): string[] {
-  const actionWords = [
-    'Revolutionary', 'Transform', 'Discover', 'Achieve', 'Experience', 'Master', 'Elevate',
-    'Breakthrough', 'Redefine', 'Optimize', 'Amplify', 'Streamline', 'Enhance', 'Accelerate',
-    'Maximize', 'Upgrade', 'Refine', 'Boost', 'Advance', 'Perfect', 'Strengthen', 'Improve',
-    'Develop', 'Build', 'Create', 'Establish', 'Generate', 'Produce', 'Deliver', 'Provide',
-    'Unlock', 'Reveal', 'Unleash', 'Activate', 'Ignite', 'Catalyze', 'Empower', 'Inspire',
-    'Motivate', 'Drive', 'Fuel', 'Spark', 'Trigger', 'Launch', 'Initiate', 'Commence'
-  ];
-
-  const outcomeWords = [
-    'solution', 'experience', 'future', 'excellence', 'innovation', 'success', 'game',
-    'technology', 'standards', 'performance', 'operations', 'capabilities', 'impact',
-    'growth', 'potential', 'approach', 'strategies', 'efficiency', 'solutions', 'process',
-    'foundations', 'outcomes', 'expertise', 'mastery', 'leadership', 'results', 'value',
-    'breakthrough', 'transformation', 'evolution', 'advancement', 'progress', 'change',
-    'improvement', 'enhancement', 'optimization', 'maximization', 'realization', 'achievement'
-  ];
-
+// FIXED: Service-Focused Content Generator (UNIFIED SERVICE SELECTION!)
+function getDynamicAlternatives(businessType: string, businessName?: string): string[] {
   const alternatives: string[] = [];
 
-  // Generate 30+ unique combinations
-  for (let i = 0; i < 35; i++) {
-    const actionIndex = i % actionWords.length;
-    const outcomeIndex = (i + Math.floor(i / actionWords.length)) % outcomeWords.length;
-
-    const alternative = `${actionWords[actionIndex]} ${businessType} ${outcomeWords[outcomeIndex]}`;
-
-    // Avoid duplicates
-    if (!alternatives.includes(alternative)) {
-      alternatives.push(alternative);
+  // FIXED: PAYA FINANCE UNIFIED SERVICE PACKAGES
+  if (businessType.toLowerCase().includes('financial') || businessType.toLowerCase().includes('fintech')) {
+    // Store selected service globally for this generation
+    if (!global.selectedPayaService) {
+      const services = ['BNPL', 'WALLET', 'ACCOUNT', 'BUSINESS'];
+      global.selectedPayaService = services[Math.floor(Math.random() * services.length)];
     }
+
+    // Return headlines based on selected service - HUMAN & SPECIFIC
+    switch (global.selectedPayaService) {
+      case 'BNPL':
+        alternatives.push(
+          'Nunua Sasa, Lipa Baadaye',
+          'Shop Today, Pay in 3 Months',
+          'From 5K to 300K - Approved Fast',
+          'Buy What You Need Today'
+        );
+        break;
+      case 'WALLET':
+        alternatives.push(
+          'Send Money Faster Than M-Pesa',
+          'Pesa Kwa Phone - Zero Fees',
+          'Help Mama, Sort Beshte Instantly',
+          'Digital Wallet Bila Stress'
+        );
+        break;
+      case 'ACCOUNT':
+        alternatives.push(
+          'Open FREE Account in 2 Minutes',
+          'No Branch Visits - Just Your ID',
+          'Bank from Your Couch Today',
+          'Fungua Account Bila Paperwork'
+        );
+        break;
+      case 'BUSINESS':
+        alternatives.push(
+          'Accept Mpesa & Card Payments',
+          'Get Paid Faster - Grow Business',
+          'Business Account - Zero Setup Fees',
+          'Serve Customers Across All Networks'
+        );
+        break;
+    }
+  } else if (businessType.toLowerCase().includes('restaurant') || businessType.toLowerCase().includes('food')) {
+    alternatives.push(
+      'Chakula Fresh Daily',
+      'Delivered Hot to Your Door',
+      'Order Kwa WhatsApp',
+      'Best Nyama in Town',
+      'Family Portions Available',
+      'Free Delivery Weekends',
+      'Lunch Special KSh 200',
+      'Taste the Difference',
+      'Made Fresh This Morning',
+      'Your Neighborhood Favorite'
+    );
+  } else if (businessType.toLowerCase().includes('shop') || businessType.toLowerCase().includes('retail')) {
+    alternatives.push(
+      'Quality Goods, Fair Prices',
+      'Shop Smart, Save More',
+      'Everything You Need Here',
+      'Best Deals in Town',
+      'Fresh Stock Weekly',
+      'Credit Available',
+      'Open 7 Days a Week',
+      'Wholesale Prices Available',
+      'Free Home Delivery',
+      'Your One-Stop Shop'
+    );
+  } else {
+    // Generic benefit-focused alternatives (NO CORPORATE BUZZWORDS)
+    alternatives.push(
+      'Quality Service You Trust',
+      'Fast, Reliable, Affordable',
+      'Your Local Solution',
+      'Professional Service Daily',
+      'Best Value in Town',
+      'Quick and Easy Process',
+      'Trusted by Neighbors',
+      'Same Day Service',
+      'No Hidden Charges',
+      'Satisfaction Guaranteed'
+    );
   }
 
   return alternatives;
@@ -544,6 +598,8 @@ export async function generateBusinessSpecificHeadline(
   localLanguageContext?: any,
   realTimeContext?: any // NEW: Enhanced real-time context with RSS data
 ): Promise<{ headline: string; approach: string; emotionalImpact: string }> {
+  // FIXED: Reset service selection for each new generation
+  global.selectedPayaService = null;
 
   const contentPlan = StrategicContentPlanner.generateBusinessSpecificContent(
     businessType, businessName, location, businessDetails, platform, contentGoal
@@ -819,7 +875,7 @@ Remember: Just write ONE amazing headline that captures the essence of what make
 
       if (isRepetitive) {
         // Generate a more dynamic alternative
-        const dynamicAlternatives = getDynamicAlternatives(businessType);
+        const dynamicAlternatives = getDynamicAlternatives(businessType, businessName);
 
         return dynamicAlternatives[Math.floor(Math.random() * dynamicAlternatives.length)];
       }
@@ -835,7 +891,7 @@ Remember: Just write ONE amazing headline that captures the essence of what make
 
     // Dynamic headline enhancement - if headline is too short after cleaning, enhance it
     if (headline.length < 10) {
-      const dynamicEnhancements = getDynamicAlternatives(businessType);
+      const dynamicEnhancements = getDynamicAlternatives(businessType, businessName);
 
       const randomEnhancement = dynamicEnhancements[Math.floor(Math.random() * dynamicEnhancements.length)];
       headline = randomEnhancement;
@@ -955,7 +1011,7 @@ Generate ONE unique headline that makes people instantly want to try the service
           const isRepetitive = repetitivePatterns.some(pattern => pattern.test(text));
 
           if (isRepetitive) {
-            const dynamicAlternatives = getDynamicAlternatives(businessType);
+            const dynamicAlternatives = getDynamicAlternatives(businessType, businessName);
             return dynamicAlternatives[Math.floor(Math.random() * dynamicAlternatives.length)];
           }
 
@@ -967,13 +1023,13 @@ Generate ONE unique headline that makes people instantly want to try the service
         return dynamicHeadline;
       } catch (error) {
         // Fallback to a simple dynamic approach if AI fails
-        const fallbackApproaches = getDynamicAlternatives(businessType);
+        const fallbackApproaches = getDynamicAlternatives(businessType, businessName);
         return fallbackApproaches[Math.floor(Math.random() * fallbackApproaches.length)];
       }
     };
 
-    // Apply dynamic headline generation if current headline is generic
-    if (headline.length < 15 || headline.includes(businessName) || headline.includes(businessType)) {
+    // Apply dynamic headline generation if current headline is generic (FIXED: Don't replace headlines that include business name)
+    if (headline.length < 15 || (!headline.includes(businessName) && !headline.includes(businessType))) {
       const dynamicHeadline = await generateDynamicHeadline(businessType, location, businessName);
       headline = dynamicHeadline;
     }
@@ -1048,10 +1104,10 @@ CRITICAL ANTI-REPETITION RULES:
         const timestamp = Date.now();
         const uniqueId = timestamp % 1000;
 
-        const emergencyHeadlines = getDynamicAlternatives(businessType);
+        const emergencyHeadlines = getDynamicAlternatives(businessType, businessName);
 
         return {
-          headline: emergencyHeadlines[uniqueId % emergencyHeadlines.length] + ` #${uniqueId}`,
+          headline: emergencyHeadlines[uniqueId % emergencyHeadlines.length],
           approach: 'timestamp-unique',
           emotionalImpact: 'emergency-fallback'
         };
@@ -1334,24 +1390,10 @@ CRITICAL: If your first instinct is to use any banned word or pattern, immediate
       // Strategic location mention - only 30% of the time to avoid repetition
       const shouldMentionLocation = (randomSeed % 10) < 3; // 30% chance
 
-      const patternsWithoutLocation = [
-        () => `${words.quality[randomSeed % words.quality.length]} ${words.business[randomSeed % words.business.length]} for every client`,
-        () => `${words.action[randomSeed % words.action.length]} ${words.quality[randomSeed % words.quality.length]} ${words.business[randomSeed % words.business.length]} daily`,
-        () => `where ${words.quality[randomSeed % words.quality.length]} meets ${words.business[randomSeed % words.business.length]}`,
-        () => `${businessName} - ${words.action[randomSeed % words.action.length]} ${words.quality[randomSeed % words.quality.length]} ${words.business[randomSeed % words.business.length]}`,
-        () => `trusted ${words.business[randomSeed % words.business.length]} with ${words.quality[randomSeed % words.quality.length]} results`,
-        () => `${words.quality[randomSeed % words.quality.length]} ${businessType} ${words.business[randomSeed % words.business.length]} since day one`,
-        () => `making ${words.business[randomSeed % words.business.length]} ${words.quality[randomSeed % words.quality.length]} for everyone`,
-        () => `${words.action[randomSeed % words.action.length]} what matters most - ${words.quality[randomSeed % words.quality.length]} ${words.business[randomSeed % words.business.length]}`,
-        () => `${businessType} ${words.business[randomSeed % words.business.length]} with a difference`,
-        () => `your choice for ${words.quality[randomSeed % words.quality.length]} ${businessType} ${words.business[randomSeed % words.business.length]}`
-      ];
+      // FIXED: Dynamic benefit-focused subheadlines (NO MORE REPETITION!)
+      const patternsWithoutLocation = generateDynamicSubheadlines(businessType, businessName, location, randomSeed);
 
-      const patternsWithLocation = [
-        () => `${words.quality[randomSeed % words.quality.length]} ${words.business[randomSeed % words.business.length]} for ${words.location[randomSeed % words.location.length]} clients`,
-        () => `your ${words.location[randomSeed % words.location.length]} choice for ${words.quality[randomSeed % words.quality.length]} ${businessType}`,
-        () => `${words.location[randomSeed % words.location.length]} ${businessType} with a difference`
-      ];
+      const patternsWithLocation = generateDynamicSubheadlines(businessType, businessName, location, randomSeed, true);
 
       const patterns = shouldMentionLocation ? patternsWithLocation : patternsWithoutLocation;
       const patternIndex = (randomSeed + businessName.length) % patterns.length;
@@ -1857,7 +1899,7 @@ IMPORTANT:
 
       if (isRepetitive) {
         // Generate a more dynamic alternative
-        const dynamicAlternatives = getDynamicAlternatives(businessType);
+        const dynamicAlternatives = getDynamicAlternatives(businessType, businessName);
 
         return dynamicAlternatives[Math.floor(Math.random() * dynamicAlternatives.length)];
       }
@@ -2124,8 +2166,8 @@ IMPORTANT:
       return text;
     };
 
-    // Dynamic headline enhancement for unified content
-    if (finalHeadline.length < 15 || finalHeadline.includes(businessName) || finalHeadline.includes(businessType)) {
+    // Dynamic headline enhancement for unified content (FIXED: Don't replace headlines that include business name)
+    if (finalHeadline.length < 15 || (!finalHeadline.includes(businessName) && !finalHeadline.includes(businessType))) {
       const generateDynamicHeadline = async (businessType: string, location: string, businessName: string) => {
         // Get real-time data for intelligent content generation
         const getContextualData = async () => {
@@ -2233,7 +2275,7 @@ Generate ONE unique headline that makes people instantly want to try the service
           return dynamicHeadline;
         } catch (error) {
           // Fallback to a simple dynamic approach if AI fails
-          const fallbackApproaches = getDynamicAlternatives(businessType);
+          const fallbackApproaches = getDynamicAlternatives(businessType, businessName);
           return fallbackApproaches[Math.floor(Math.random() * fallbackApproaches.length)];
         }
       };
@@ -2299,14 +2341,14 @@ Generate ONE unique headline that makes people instantly want to try the service
       imageText: `${enhancedHeadline}\n\n${enhancedSubheadlineFinal}\n\n${callToAction}` // Pass enhanced text as imageText for design integration
     };
   } catch (error) {
-    const dynamicAlternatives = getDynamicAlternatives(businessType);
+    const dynamicAlternatives = getDynamicAlternatives(businessType, businessName);
     const randomAlternative = dynamicAlternatives[Math.floor(Math.random() * dynamicAlternatives.length)];
 
     return {
       headline: randomAlternative,
       subheadline: `Professional ${businessType} solutions in ${location}`,
-      caption: `Experience exceptional ${businessType} services in ${location}. We're committed to delivering excellence that exceeds expectations.`,
-      callToAction: `Get started!`,
+      caption: generateLocalizedContent(businessType, businessName, location),
+      callToAction: generateFallbackCTA(platform, businessType),
       engagementHooks: ['Quality service', 'Local expertise', 'Customer satisfaction'],
       designDirection: 'Professional, clean design with local elements',
       unifiedTheme: 'Professional excellence',
@@ -2373,7 +2415,7 @@ Do NOT write "Here are captions" or provide lists.`;
     const retryCtaMatch = retryResponse.match(/CTA:\s*(.*?)$/);
 
     const retryCaption = removeWordRepetitions(retryCaptionMatch ? retryCaptionMatch[1].trim() : retryResponse);
-    const retryCallToAction = removeWordRepetitions(retryCtaMatch ? retryCtaMatch[1].trim() : generateFallbackCTA(platform));
+    const retryCallToAction = removeWordRepetitions(retryCtaMatch ? retryCtaMatch[1].trim() : generateFallbackCTA(platform, businessType));
 
     // Generate viral hashtags for retry
     const retryHashtags = await viralHashtagEngine.generateViralHashtags(
@@ -2382,7 +2424,7 @@ Do NOT write "Here are captions" or provide lists.`;
       businessDetails.targetAudience
     );
 
-    const dynamicAlternatives = getDynamicAlternatives(businessType);
+    const dynamicAlternatives = getDynamicAlternatives(businessType, businessName);
     const randomAlternative = dynamicAlternatives[Math.floor(Math.random() * dynamicAlternatives.length)];
 
     return {
@@ -2438,7 +2480,7 @@ Do NOT write "Here are posts" or provide multiple options. Write ONE post only.`
         businessDetails.targetAudience
       );
 
-      const dynamicAlternatives = getDynamicAlternatives(businessType);
+      const dynamicAlternatives = getDynamicAlternatives(businessType, businessName);
       const randomAlternative = dynamicAlternatives[Math.floor(Math.random() * dynamicAlternatives.length)];
 
       return {
@@ -2446,14 +2488,14 @@ Do NOT write "Here are posts" or provide multiple options. Write ONE post only.`
         subheadline: `Quality ${businessType} services in ${location}`,
         caption: emergencyResponse,
         engagementHooks: generateDynamicEngagementHooks(businessType, location, industry),
-        callToAction: removeWordRepetitions(generateFallbackCTA(platform)),
+        callToAction: removeWordRepetitions(generateFallbackCTA(platform, businessType)),
         designDirection: 'Professional, clean design with local elements',
         unifiedTheme: 'Professional excellence',
         keyMessage: 'Quality service provider',
         hashtags: emergencyHashtags.total,
         hashtagStrategy: emergencyHashtags,
-        ctaStrategy: { primary: removeWordRepetitions(generateFallbackCTA(platform)) },
-        imageText: removeWordRepetitions(generateFallbackCTA(platform))
+        ctaStrategy: { primary: removeWordRepetitions(generateFallbackCTA(platform, businessType)) },
+        imageText: removeWordRepetitions(generateFallbackCTA(platform, businessType))
       };
 
     } catch (emergencyError) {
@@ -2469,22 +2511,22 @@ Do NOT write "Here are posts" or provide multiple options. Write ONE post only.`
         businessDetails.targetAudience
       );
 
-      const dynamicAlternatives = getDynamicAlternatives(businessType);
+      const dynamicAlternatives = getDynamicAlternatives(businessType, businessName);
       const randomAlternative = dynamicAlternatives[Math.floor(Math.random() * dynamicAlternatives.length)];
 
       return {
         headline: randomAlternative,
         subheadline: `Quality ${businessType} services in ${location}`,
-        caption: removeWordRepetitions(`${businessName} in ${location} - where quality meets innovation. Every visit is a new experience that locals can't stop talking about. Join the community that knows great ${businessType}! #${timestamp}`),
+        caption: removeWordRepetitions(`Where quality meets innovation in ${location}. Every visit is a new experience that locals can't stop talking about. Join the community that knows great ${businessType}!`),
         engagementHooks: generateDynamicEngagementHooks(businessType, location, industry),
-        callToAction: removeWordRepetitions(generateFallbackCTA(platform)),
+        callToAction: removeWordRepetitions(generateFallbackCTA(platform, businessType)),
         designDirection: 'Professional, clean design with local elements',
         unifiedTheme: 'Professional excellence',
         keyMessage: 'Quality service provider',
         hashtags: fallbackHashtags.total,
         hashtagStrategy: fallbackHashtags,
-        ctaStrategy: { primary: removeWordRepetitions(generateFallbackCTA(platform)) },
-        imageText: removeWordRepetitions(generateFallbackCTA(platform))
+        ctaStrategy: { primary: removeWordRepetitions(generateFallbackCTA(platform, businessType)) },
+        imageText: removeWordRepetitions(generateFallbackCTA(platform, businessType))
       };
     }
   }
@@ -2502,17 +2544,257 @@ function getPlatformRequirements(platform: string): string {
   return requirements[platform] || requirements['Instagram'];
 }
 
-function generateFallbackCTA(platform: string): string {
-  const timestamp = Date.now();
-  const creativityBoost = Math.floor(Math.random() * 1000) + timestamp;
+// FIXED: Generate dynamic, varied subheadlines (NO MORE REPETITION!)
+function generateDynamicSubheadlines(businessType: string, businessName: string, location: string, randomSeed: number, includeLocation: boolean = false): (() => string)[] {
+  const type = businessType.toLowerCase();
+  const isKenya = location.toLowerCase().includes('kenya') || location.toLowerCase().includes('nairobi');
 
-  // Use the same dynamic CTA styles as the main system
-  const ctaStyles = [
-    'DIRECT_ACTION', 'INVITATION', 'CHALLENGE', 'BENEFIT_FOCUSED', 'COMMUNITY',
-    'URGENCY', 'CURIOSITY', 'LOCAL_REFERENCE', 'PERSONAL', 'EXCLUSIVE'
+  if (type.includes('financial') || type.includes('fintech')) {
+    // FIXED: Use SAME service as headlines for consistency
+    const selectedService = global.selectedPayaService || 'BNPL';
+
+    switch (selectedService) {
+      case 'BNPL':
+        return [
+          () => 'Approved in 5 minutes. No paperwork needed.',
+          () => 'From 5K to 300K. Zero hidden charges.',
+          () => 'Pay in 3-6 months bila stress.',
+          () => 'Get approved today, pay later.'
+        ];
+      case 'WALLET':
+        return [
+          () => 'Faster than M-Pesa. Zero transaction fees.',
+          () => 'Send to any network instantly.',
+          () => 'Help mama, sort beshte, pay rent.',
+          () => 'All networks supported - Safaricom, Airtel, Telkom.'
+        ];
+      case 'ACCOUNT':
+        return [
+          () => 'No paperwork. No branch visits. Just your ID.',
+          () => 'FREE to open. Ready in 2 minutes.',
+          () => 'Bank from anywhere. Zero monthly fees.',
+          () => 'No minimum balance. Trusted by 100,000+ Kenyans.'
+        ];
+      case 'BUSINESS':
+        return [
+          () => 'Accept Mpesa, Airtel, Visa & Mastercard instantly.',
+          () => 'Get paid in seconds. FREE for 6 months.',
+          () => 'Zero setup fees. Trusted by 10,000+ SMEs.',
+          () => 'Serve customers across all networks bila stress.'
+        ];
+      default:
+        return [() => 'Trusted by thousands of Kenyans.'];
+    }
+  }
+
+  if (type.includes('restaurant') || type.includes('food')) {
+    const foodSubheadlines = [
+      () => 'Fresh ingredients, happy stomachs',
+      () => 'Cooked with love, served with pride',
+      () => 'Your taste buds will thank you',
+      () => 'Quality food, fair prices',
+      () => 'Made fresh, delivered hot',
+      () => 'Family recipes, modern kitchen',
+      () => 'Hungry? We got you covered',
+      () => 'Best flavors in town',
+      () => 'Food that brings people together',
+      () => 'Every bite tells a story'
+    ];
+
+    if (isKenya) {
+      foodSubheadlines.push(
+        () => 'Chakula fresh, guaranteed tasty',
+        () => 'Nyama choma specialists',
+        () => 'Ugali na sukuma wiki perfection'
+      );
+    }
+
+    return foodSubheadlines;
+  }
+
+  // Default dynamic subheadlines
+  const defaultSubheadlines = [
+    () => 'Quality service, happy customers',
+    () => 'Professional results every time',
+    () => 'Your satisfaction is our priority',
+    () => 'Trusted by locals, loved by all',
+    () => 'Excellence in every interaction',
+    () => 'Making your life easier',
+    () => 'Where quality meets affordability',
+    () => 'Service with a smile',
+    () => 'Your neighborhood experts',
+    () => 'Reliable, professional, affordable'
   ];
 
-  const selectedStyle = ctaStyles[creativityBoost % ctaStyles.length];
+  return defaultSubheadlines;
+}
+
+// FIXED: Generate varied, localized content (NO MORE REPETITION!)
+function generateLocalizedContent(businessType: string, businessName: string, location: string): string {
+  const type = businessType.toLowerCase();
+  const isKenya = location.toLowerCase().includes('kenya') || location.toLowerCase().includes('nairobi');
+  const timestamp = Date.now();
+  const variation = timestamp % 5; // 5 different variations
+
+  if (type.includes('financial') || type.includes('fintech')) {
+    // FIXED: Use SAME service as headlines/subheadlines for consistency
+    const selectedService = global.selectedPayaService || 'BNPL';
+
+    if (isKenya) {
+      switch (selectedService) {
+        case 'BNPL':
+          const bnplCaptions = [
+            `Nunua sasa, lipa baadaye! From 5K to 300K approved in 5 minutes. No paperwork, hakuna hidden charges. Trusted by 50,000+ Kenyans.`,
+            `Shop today, pay in 3-6 months bila stress. Get approved instantly with just your ID. Zero setup fees, zero stress.`
+          ];
+          return bnplCaptions[variation % bnplCaptions.length];
+
+        case 'WALLET':
+          const walletCaptions = [
+            `Send money faster than M-Pesa bila fees! Works with Safaricom, Airtel & Telkom. Help mama, sort beshte, pay rent - all from one app.`,
+            `Digital wallet yako! Send to any network instantly. Zero transaction fees, maximum convenience. Download now, send in seconds.`
+          ];
+          return walletCaptions[variation % walletCaptions.length];
+
+        case 'ACCOUNT':
+          const accountCaptions = [
+            `Open FREE account in 2 minutes with just your ID! No branch visits, no paperwork, no minimum balance. Trusted by 100,000+ Kenyans.`,
+            `Skip the queues, skip the hassle. Open your account from your couch today. FREE banking, instant setup, zero hidden fees.`
+          ];
+          return accountCaptions[variation % accountCaptions.length];
+
+        case 'BUSINESS':
+          const businessCaptions = [
+            `Accept Mpesa, Airtel, Visa & Mastercard payments instantly! Zero setup fees for SMEs. Get paid in seconds, trusted by 10,000+ businesses.`,
+            `Business banking made simple! Serve customers across all networks. Instant payments, real-time notifications, FREE for first 6 months.`
+          ];
+          return businessCaptions[variation % businessCaptions.length];
+      }
+    } else {
+      // Global versions (service-specific)
+      switch (selectedService) {
+        case 'BNPL':
+          return `Buy now, pay later made simple. Get what you need today, pay in installments.`;
+        case 'WALLET':
+          return `Digital wallet for modern life. Send money, pay bills, shop online - all in one app.`;
+        case 'ACCOUNT':
+          return `Open account in minutes, not hours. No paperwork, no branch visits required.`;
+        case 'BUSINESS':
+          return `Business payment solutions that work. Accept payments easily, get paid faster.`;
+      }
+    }
+  }
+
+  if (type.includes('restaurant') || type.includes('food')) {
+    if (isKenya) {
+      const kenyanFoodCaptions = [
+        `Chakula fresh daily! Order kwa WhatsApp, delivered hot to your door. Best nyama in ${location}.`,
+        `Nyama choma specialists! Fresh ugali, tasty sukuma wiki. Order now, delivered hot bila delay.`,
+        `Chakula cha mama! Home-cooked flavors, delivered fresh. Your neighborhood food heroes in ${location}.`,
+        `Fresh food, happy stomachs! Order kwa phone, delivered hot. Quality meals for quality people.`,
+        `Taste the difference! Fresh ingredients, local flavors, delivered hot to your door in ${location}.`
+      ];
+      return kenyanFoodCaptions[variation];
+    } else {
+      const globalFoodCaptions = [
+        `Fresh food daily, delivered hot. Your neighborhood favorite for quality meals.`,
+        `Quality ingredients, amazing flavors. Order now for fresh, hot delivery to your door.`,
+        `Home-style cooking, restaurant quality. Fresh meals delivered hot and fast.`,
+        `Taste the difference quality makes. Fresh ingredients, expert cooking, hot delivery.`,
+        `Your local food heroes! Fresh, hot, delicious meals delivered right to you.`
+      ];
+      return globalFoodCaptions[variation];
+    }
+  }
+
+  if (type.includes('shop') || type.includes('retail')) {
+    if (isKenya) {
+      const kenyanRetailCaptions = [
+        `Quality goods, fair prices. Everything you need, credit available. Your one-stop shop in ${location}.`,
+        `Shopping made easy! Quality products, wholesale prices, credit terms available. Visit us in ${location}.`,
+        `Everything under one roof! Quality goods, fair prices, friendly service. Your neighborhood shop.`,
+        `Best deals in ${location}! Quality products, credit available, free delivery. Shop smart, save more.`,
+        `Your shopping destination! Quality goods, competitive prices, excellent service in ${location}.`
+      ];
+      return kenyanRetailCaptions[variation];
+    } else {
+      const globalRetailCaptions = [
+        `Quality products, fair prices. Everything you need in one place.`,
+        `Your one-stop shopping destination. Quality goods, competitive prices, excellent service.`,
+        `Shop smart, save more! Quality products, great prices, friendly service.`,
+        `Everything you need, all in one place. Quality goods, fair prices, happy customers.`,
+        `Your neighborhood store! Quality products, competitive prices, personal service.`
+      ];
+      return globalRetailCaptions[variation];
+    }
+  }
+
+  // Default varied content
+  if (isKenya) {
+    const kenyanDefaultCaptions = [
+      `Quality service bila stress! Professional, reliable, affordable. Trusted by neighbors in ${location}.`,
+      `Service with a smile! Professional solutions, fair prices, happy customers in ${location}.`,
+      `Your local experts! Quality service, reliable results, affordable prices. Trusted in ${location}.`,
+      `Professional service, personal touch! Quality results, fair prices, satisfied customers.`,
+      `Excellence in every interaction! Professional, reliable, affordable service in ${location}.`
+    ];
+    return kenyanDefaultCaptions[variation];
+  } else {
+    const globalDefaultCaptions = [
+      `Quality service you can trust. Professional, reliable, affordable in ${location}.`,
+      `Your local service experts. Professional results, competitive prices, satisfied customers.`,
+      `Excellence delivered daily. Quality service, fair prices, happy customers in ${location}.`,
+      `Professional service, personal attention. Quality results you can count on.`,
+      `Your trusted local partner. Professional service, competitive prices, excellent results.`
+    ];
+    return globalDefaultCaptions[variation];
+  }
+}
+
+function generateFallbackCTA(platform: string, businessType?: string): string {
+  // FIXED: Generate specific, actionable CTAs based on business type
+  const type = (businessType || '').toLowerCase();
+
+  // FIXED: PAYA FINANCE SERVICE-SPECIFIC CTAs (UNIFIED!)
+  if (type.includes('financial') || type.includes('fintech') || type.includes('bank')) {
+    const selectedService = global.selectedPayaService || 'BNPL';
+
+    switch (selectedService) {
+      case 'BNPL':
+        const bnplCTAs = ['Get Approved in 5 Minutes', 'Shop Now Pay Later', 'Apply for BNPL Now'];
+        return bnplCTAs[Math.floor(Math.random() * bnplCTAs.length)];
+      case 'WALLET':
+        const walletCTAs = ['Download FREE App', 'Send Money Now', 'Get Digital Wallet'];
+        return walletCTAs[Math.floor(Math.random() * walletCTAs.length)];
+      case 'ACCOUNT':
+        const accountCTAs = ['Open FREE Account Now', 'Get Started Instantly', 'Fungua Account Sasa'];
+        return accountCTAs[Math.floor(Math.random() * accountCTAs.length)];
+      case 'BUSINESS':
+        const businessCTAs = ['Accept Payments Now', 'Get Business Account FREE', 'Start Accepting Payments'];
+        return businessCTAs[Math.floor(Math.random() * businessCTAs.length)];
+      default:
+        return 'Download Paya';
+    }
+  }
+
+  if (type.includes('restaurant') || type.includes('food') || type.includes('cafe')) {
+    const foodCTAs = ['Order Now', 'Book Table', 'Call Us', 'Visit Today', 'Order Online'];
+    return foodCTAs[Math.floor(Math.random() * foodCTAs.length)];
+  }
+
+  if (type.includes('shop') || type.includes('retail') || type.includes('store')) {
+    const retailCTAs = ['Shop Now', 'Visit Store', 'Call Us', 'Browse Products', 'Order Today'];
+    return retailCTAs[Math.floor(Math.random() * retailCTAs.length)];
+  }
+
+  if (type.includes('salon') || type.includes('beauty') || type.includes('spa')) {
+    const beautyCTAs = ['Book Now', 'Call Today', 'Schedule Visit', 'Reserve Slot', 'Book Session'];
+    return beautyCTAs[Math.floor(Math.random() * beautyCTAs.length)];
+  }
+
+  // Default actionable CTAs (still specific, not generic)
+  const defaultCTAs = ['Call Now', 'Visit Today', 'Contact Us', 'Learn More', 'Book Now'];
+  return defaultCTAs[Math.floor(Math.random() * defaultCTAs.length)];
 
   // Dynamic CTAs based on style - avoid repetitive patterns
   const dynamicCTAs = {
@@ -2520,7 +2802,7 @@ function generateFallbackCTA(platform: string): string {
       'Grab yours! 🔥',
       'Book your spot! ⚡',
       'Try it this week! 💪',
-      'Get started! 🚀'
+      'Take action! 🚀'
     ],
     'INVITATION': [
       'Come see for yourself! 👀',

@@ -131,7 +131,7 @@ export class Revo10DesignGenerator implements IDesignGenerator {
         businessType: generationParams.businessType,
         businessName: generationParams.businessName || 'Business',
         platform: generationParams.variants[0]?.platform || 'instagram',
-        visualStyle: generationParams.visualStyle || 'modern',
+        visualStyle: generationParams.visualStyle || 'tier1-fintech',
         primaryColor: generationParams.primaryColor || '#3B82F6',
         imageText: imageText || 'Your Text Here',
         designDescription: designResult.design,

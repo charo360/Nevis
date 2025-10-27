@@ -142,7 +142,17 @@ export class Revo10ContentGenerator implements IContentGenerator {
           processingTime,
           qualityScore,
           creditsUsed: 2, // Revo 1.0 now uses 2 credits (updated)
-          enhancementsApplied: ['enhanced-optimization', 'platform-formatting', 'gemini-2.5-flash-image']
+          enhancementsApplied: [
+            'enhanced-ai-engine',
+            'real-time-context',
+            'trending-topics',
+            'advanced-prompting',
+            'quality-optimization',
+            'gemini-2.5-flash-image',
+            'enhanced-styling',
+            'brand-colors',
+            'platform-optimization'
+          ]
         }
       };
 
@@ -240,33 +250,39 @@ export class Revo10ContentGenerator implements IContentGenerator {
       websiteUrl: (request as any).websiteUrl || profile.websiteUrl || '',
       // NEW: Scheduled services integration
       scheduledServices: request.scheduledServices || [],
-      // Revo 1.0 specific constraints (updated to match config)
+      // Revo 1.0 enhanced features (copied from Revo 1.5)
       modelConstraints: {
-        maxComplexity: 'enhanced', // Upgraded from basic
-        enhancedFeatures: true,    // Now enabled
-        realTimeContext: true,     // Now enabled
-        trendingTopics: true,      // Now enabled
-        artifactSupport: false     // Keep disabled for Revo 1.0
+        maxComplexity: 'enhanced',
+        enhancedFeatures: true,
+        realTimeContext: true,
+        trendingTopics: true,
+        artifactSupport: false, // Keep disabled for Revo 1.0
+        advancedPrompting: true, // NEW: Enhanced prompts from Revo 1.5
+        qualityLevel: 'enhanced' // NEW: Enhanced quality validation from Revo 1.5
       }
     };
   }
 
   /**
-   * Calculate quality score for generated content
+   * Calculate enhanced quality score for generated content (copied from Revo 1.5)
    */
   private calculateQualityScore(post: GeneratedPost): number {
     let score = 7; // Base score (upgraded from 5 for Gemini 2.5 Flash Image Preview)
 
-    // Content quality checks
-    if (post.content && post.content.length > 50) score += 1;
-    if (post.content && post.content.length > 100) score += 0.5;
+    // Content quality checks (enhanced from Revo 1.5)
+    if (post.content && post.content.length > 50) score += 0.5;
+    if (post.content && post.content.length > 150) score += 0.5;
 
-    // Hashtag quality
-    if (post.hashtags && post.hashtags.length >= 5) score += 1;
-    if (post.hashtags && post.hashtags.length >= 10) score += 0.5;
+    // Enhanced content features (from Revo 1.5)
+    if (post.subheadline && post.subheadline.trim().length > 0) score += 0.5;
+    if (post.callToAction && post.callToAction.trim().length > 0) score += 0.5;
+
+    // Hashtag quality and analysis (enhanced from Revo 1.5)
+    if (post.hashtags && post.hashtags.length >= 5) score += 0.5;
+    if (post.hashtags && post.hashtags.length >= 8) score += 0.5;
 
     // Catchy words presence
-    if (post.catchyWords && post.catchyWords.trim().length > 0) score += 1;
+    if (post.catchyWords && post.catchyWords.trim().length > 0) score += 0.5;
 
     // Image generation success (enhanced for Gemini 2.5 Flash Image Preview)
     if (post.variants && post.variants.length > 0 && post.variants[0].imageUrl) {

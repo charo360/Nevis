@@ -222,25 +222,27 @@ function parseDesignSpecsFromText(text: string, input: Gemini25DesignInput): any
 
   return {
     layout: {
-      style: input.visualStyle || 'modern-professional',
+      style: 'tier1-fintech',
       dimensions: { width: 1080, height: 1080 },
-      textPlacement: 'center'
+      textPlacement: 'center',
+      whiteSpace: '40%'
     },
     colors: {
-      primary: input.brandProfile.primaryColor || colors[0] || '#1e40af',
-      secondary: input.brandProfile.accentColor || colors[1] || '#3b82f6',
+      primary: input.brandProfile.primaryColor || '#1e40af',
+      secondary: input.brandProfile.accentColor || '#3b82f6',
       background: input.brandProfile.backgroundColor || '#ffffff',
-      text: '#333333'
+      text: '#374151'
     },
     typography: {
-      headline: { size: 36, weight: 'bold', family: 'Arial, sans-serif' },
-      subheadline: { size: 24, weight: 'normal', family: 'Arial, sans-serif' },
-      body: { size: 16, weight: 'normal', family: 'Arial, sans-serif' }
+      headline: { size: 34, weight: 700, family: 'Inter, Roboto, sans-serif', maxWords: 6 },
+      subheadline: { size: 20, weight: 500, family: 'Inter, Roboto, sans-serif', maxWords: 25 },
+      cta: { size: 17, weight: 700, padding: '12px', borderRadius: '8px', background: 'solid' },
+      body: { size: 15, weight: 400, lineHeight: 1.5, color: '#374151' }
     },
     elements: {
       logo: { position: 'top-left', size: 80 },
-      shapes: ['gradient-background', 'accent-shapes'],
-      effects: ['subtle-shadow', 'modern-gradient']
+      shapes: ['clean-background', 'minimal-accents'],
+      effects: ['subtle-shadow-2px', 'professional-depth']
     },
     concept: text.substring(0, 200) + '...'
   };

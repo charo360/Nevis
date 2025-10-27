@@ -29,10 +29,64 @@ import {
   generateBusinessSpecificCaption
 } from './creative-enhancement';
 
-// Advanced features integration (simplified for now)
-// TODO: Import advanced features from Revo 1.5 when available
-
+// Enhanced features integration (copied from Revo 1.5)
 import { ensureExactDimensions } from './utils/image-dimensions';
+
+/**
+ * Validate content quality and business specificity (copied from Revo 1.5)
+ */
+function validateContentQuality(
+  content: any,
+  businessName: string,
+  businessType: string,
+  brandProfile: BrandProfile
+): { isBusinessSpecific: boolean; issues: string[] } {
+  const issues: string[] = [];
+  let isBusinessSpecific = true;
+
+  // Check if content mentions business name OR business type (more flexible)
+  const contentText = `${content.headline || ''} ${content.subheadline || ''} ${content.caption || ''}`.toLowerCase();
+  const businessNameLower = businessName.toLowerCase();
+  const businessTypeLower = businessType.toLowerCase();
+
+  // Business name or type should appear in content
+  const hasBusinessName = contentText.includes(businessNameLower);
+  const hasBusinessType = contentText.includes(businessTypeLower);
+
+  if (!hasBusinessName && !hasBusinessType) {
+    issues.push('Content does not mention business name or type');
+    isBusinessSpecific = false;
+  }
+
+  // Check for generic phrases that indicate low quality
+  const genericPhrases = [
+    'quality service', 'professional service', 'best service',
+    'your trusted', 'we provide', 'contact us today'
+  ];
+
+  const hasGenericPhrases = genericPhrases.some(phrase => contentText.includes(phrase));
+  if (hasGenericPhrases) {
+    issues.push('Content contains generic phrases');
+  }
+
+  return { isBusinessSpecific, issues };
+}
+
+/**
+ * Generate fallback hashtags based on platform requirements (copied from Revo 1.5)
+ */
+function generateFallbackHashtags(businessName: string, businessType: string, platform: string): string[] {
+  const hashtagCount = platform.toLowerCase() === 'instagram' ? 5 : 3;
+  const baseHashtags = [
+    `#${businessName.replace(/\s+/g, '')}`,
+    `#${businessType.replace(/\s+/g, '')}`,
+    '#professional',
+    '#quality',
+    '#service'
+  ];
+
+  return baseHashtags.slice(0, hashtagCount);
+}
 
 // Smart Product-Specific Language System
 interface ProductCategory {
@@ -2791,6 +2845,57 @@ ${realTimeContext.highRelevanceData.map((item: any) => {
       console.warn('🔤 [Revo 1.0] Spell check failed, using original content:', error);
     }
 
+    // 🎯 ENHANCED: Content Quality Validation (copied from Revo 1.5)
+    try {
+      const contentQuality = validateContentQuality(
+        {
+          headline: finalContent.headline,
+          subheadline: finalContent.subheadline,
+          caption: finalContent.content
+        },
+        input.businessName,
+        input.businessType,
+        { businessName: input.businessName, businessType: input.businessType } as BrandProfile
+      );
+
+      if (!contentQuality.isBusinessSpecific) {
+        console.warn('⚠️ [Revo 1.0] Content appears generic, enhancing with business specificity');
+        // Enhance content with business specificity
+        if (finalContent.content && !finalContent.content.toLowerCase().includes(input.businessName.toLowerCase())) {
+          finalContent.content = `${finalContent.content} Experience the difference with ${input.businessName}.`;
+        }
+      }
+
+      // 🏷️ ENHANCED: Hashtag Validation and Enhancement (copied from Revo 1.5)
+      const expectedHashtagCount = input.platform.toLowerCase() === 'instagram' ? 5 : 3;
+      const currentHashtags = finalContent.hashtags ? finalContent.hashtags.split(' ').filter(h => h.startsWith('#')) : [];
+
+      if (currentHashtags.length !== expectedHashtagCount) {
+        console.warn(`⚠️ [Revo 1.0] Hashtag count mismatch: expected ${expectedHashtagCount} for ${input.platform}, got ${currentHashtags.length}`);
+
+        if (currentHashtags.length > expectedHashtagCount) {
+          // Trim excess hashtags
+          finalContent.hashtags = currentHashtags.slice(0, expectedHashtagCount).join(' ');
+        } else {
+          // Add fallback hashtags to reach required count
+          const fallbackHashtags = generateFallbackHashtags(input.businessName, input.businessType, input.platform);
+          const combinedHashtags = [...currentHashtags];
+
+          for (const fallback of fallbackHashtags) {
+            if (combinedHashtags.length >= expectedHashtagCount) break;
+            if (!combinedHashtags.includes(fallback)) {
+              combinedHashtags.push(fallback);
+            }
+          }
+
+          finalContent.hashtags = combinedHashtags.slice(0, expectedHashtagCount).join(' ');
+        }
+      }
+
+    } catch (error) {
+      console.warn('🎯 [Revo 1.0] Content quality validation failed:', error);
+    }
+
     return finalContent;
 
   } catch (error) {
@@ -3069,9 +3174,19 @@ ANTICIPATION VISUAL REQUIREMENTS:
 `;
     }
 
-    let imagePrompt = `🎨 Create a visually stunning, modern ${designVariations.style.toLowerCase()} social media design for ${input.businessName} that stops scrolling and drives engagement.
+    let imagePrompt = `🏦 Create a CLEAN, HUMAN-DESIGNED fintech advertisement for ${input.businessName} that looks like it was created by a professional human designer, NOT AI.
 
-🚨 CRITICAL ANTI-AI INSTRUCTION: This must NOT look AI-generated! Avoid perfect symmetry, artificial-looking people with flawless faces, sterile aesthetics, and overly polished elements. Make it feel authentic, natural, and human-crafted with organic imperfections.
+🚨 CRITICAL ANTI-AI REQUIREMENTS:
+- MUST look like a real human designer created this, NOT AI-generated
+- NO perfect symmetry, NO artificial patterns, NO obvious AI characteristics
+- USE real photography style, authentic layouts, natural imperfections
+- AVOID sterile, overly polished, or artificial-looking elements
+
+🎯 CLEAN DESIGN STANDARDS:
+- MINIMAL, clean layout with plenty of white space (40%+)
+- NATURAL color palette: deep blues (#1e40af, #3b82f6), professional greens (#059669, #10b981), clean whites
+- AUTHENTIC typography that looks hand-selected, not AI-generated
+- REAL-WORLD visual elements, not artificial patterns
 
 BUSINESS CONTEXT:
 - Business: ${input.businessName} (${input.businessType})
@@ -3098,13 +3213,18 @@ ${contentStructure.map(item => `- ${item}`).join('\n')}
 - Each style should have its own distinct visual language
 - **CRITICAL: Include ALL text content listed above in the design**
 
-**MODERN DESIGN ELEMENTS TO INCLUDE:**
-- Subtle gradients and color transitions for depth
-- Soft shadows and modern depth effects
-- Contemporary typography with clear hierarchy
-- Clean geometric shapes and patterns
-- Strategic white space (30-40%, not excessive)
-- High-quality visual elements that build trust
+**HUMAN-DESIGNED TYPOGRAPHY (NOT AI-LOOKING):**
+- HEADLINE: 32-36px, Bold, clean sans-serif (Inter/Roboto), natural placement, max 6 words
+- SUBHEADLINE: 18-22px, Medium weight, readable and natural, max 25 words
+- CTA BUTTON: 16-18px, Bold, looks like a real button humans would design, solid background, clear borders
+- BODY TEXT: 14-16px, Regular, natural line spacing, readable color (#374151)
+
+**CLEAN, NATURAL DESIGN ELEMENTS:**
+- AUTHENTIC shadows: subtle, natural-looking (0-2px blur, 5% opacity max)
+- REAL button styling: solid backgrounds, clean borders, looks clickable and human-designed
+- NATURAL spacing: 16px, 24px, 32px increments - feels organic, not robotic
+- SINGLE clear focus: one main message, no visual chaos or AI-generated clutter
+- AUTHENTIC visual elements: real-world inspired, not artificial patterns
 
 ${productIntelligence}
 
@@ -3204,7 +3324,7 @@ TECHNICAL REQUIREMENTS:
 - Logo integration should look natural
 - Optimized for Instagram, Facebook, Twitter, LinkedIn mobile viewing
 
-🎨 **GOAL: Create a visually stunning ${designVariations.style.toLowerCase()} design that stops scrolling, drives engagement, and makes people want to learn more about the business. Focus on modern aesthetics, strong visual impact, and professional quality that rivals top-tier brand campaigns.**`;
+🎯 **GOAL: Create a CLEAN, HUMAN-DESIGNED advertisement that looks like a professional human designer created it, NOT AI. Must look natural, authentic, and trustworthy - like real fintech companies use. NO AI-generated patterns, NO artificial symmetry, NO obvious AI characteristics. Focus on clean, minimal, human-crafted aesthetics.**`;
 
     // NEW: Enhance with industry intelligence and creativity
     imagePrompt = enhanceDesignWithIndustryIntelligence(imagePrompt, input.businessType, designVariations.style, designSeed);

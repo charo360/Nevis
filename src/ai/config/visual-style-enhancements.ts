@@ -16,6 +16,35 @@ export interface StyleEnhancement {
 }
 
 export const VISUAL_STYLE_ENHANCEMENTS: Record<string, StyleEnhancement> = {
+  'tier1-fintech': {
+    name: 'Tier-1 Fintech',
+    description: 'Professional fintech design system (Flutterwave/Kuda/M-Pesa level)',
+    colorEnhancements: [
+      'Use trusted fintech color palette: deep blues (#1e40af, #3b82f6), professional greens (#059669, #10b981), clean whites (#ffffff)',
+      'Avoid neon, crypto-style colors, or overly bright/flashy schemes',
+      'Apply high contrast ratios (7:1 minimum) for accessibility and trust',
+      'Use subtle gradients only for depth, never for flashy effects'
+    ],
+    typographyEnhancements: [
+      'HEADLINE (H1): 32-36px, Bold (700), Inter/Roboto, max 6 words, high contrast',
+      'SUBHEADLINE (H2): 18-22px, Medium (500), same font family, max 25 words',
+      'CTA BUTTON: 16-18px, Bold (700), high contrast background, 12px padding, 8px border radius',
+      'BODY TEXT: 14-16px, Regular (400), optimal line height 1.5, readable color (#374151)'
+    ],
+    compositionEnhancements: [
+      'Clean, minimal layouts with 40%+ white space for trust and clarity',
+      'Grid-based alignment following banking app standards',
+      'Single focal point per design - no visual clutter',
+      'Professional spacing: 16px, 24px, 32px increments only'
+    ],
+    effectsEnhancements: [
+      'Subtle shadows: 0-2px blur, 5% opacity maximum',
+      'NO neon glows, crypto effects, or flashy animations',
+      'Clean button styling with solid backgrounds and clear borders',
+      'Professional depth through layering, not effects'
+    ],
+    qualityMultiplier: 1.5
+  },
   'modern-professional': {
     name: 'Modern Professional',
     description: 'Clean, sophisticated design with premium business appeal',
@@ -172,19 +201,19 @@ export const VISUAL_STYLE_ENHANCEMENTS: Record<string, StyleEnhancement> = {
  */
 export function getStyleEnhancement(visualStyle: string): StyleEnhancement {
   const normalizedStyle = visualStyle.toLowerCase().replace(/[^a-z]/g, '-');
-  
+
   // Try exact match first
   if (VISUAL_STYLE_ENHANCEMENTS[normalizedStyle]) {
     return VISUAL_STYLE_ENHANCEMENTS[normalizedStyle];
   }
-  
+
   // Try partial matches
   for (const [key, enhancement] of Object.entries(VISUAL_STYLE_ENHANCEMENTS)) {
     if (normalizedStyle.includes(key.split('-')[0]) || key.includes(normalizedStyle.split('-')[0])) {
       return enhancement;
     }
   }
-  
+
   // Default to modern professional
   return VISUAL_STYLE_ENHANCEMENTS['modern-professional'];
 }
@@ -194,7 +223,7 @@ export function getStyleEnhancement(visualStyle: string): StyleEnhancement {
  */
 export function generateStyleEnhancementPrompt(visualStyle: string): string {
   const enhancement = getStyleEnhancement(visualStyle);
-  
+
   return `
 **VISUAL STYLE: ${enhancement.name.toUpperCase()}**
 ${enhancement.description}
