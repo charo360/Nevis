@@ -24,5 +24,20 @@
     },
     "createdAt": "2025-08-14T19:00:09.764Z",
     "updatedAt": "2025-08-14T19:00:09.764Z"
+  },
+  "dd9f93dc-08c2-4086-9359-687fa6c5897d_twitter": {
+    "userId": "dd9f93dc-08c2-4086-9359-687fa6c5897d",
+    "platform": "twitter",
+    "socialId": "1983218162423480320",
+    "accessToken": "Z1AxMnZqNzd2RmVTamMxdmZuSW8wMHhPZF9UaWxZR0ZuVUR6RjV3MDBZRGhnOjE3NjE3NjI2OTUxNjA6MToxOmF0OjE",
+    "accessTokenSecret": "TVltTXcxbmE4UzhteTlTSGdqdWF6Y0xVclZydzQ4LWZSMVNZVENmajFUVUtpOjE3NjE3NjI2OTUxNjA6MToxOnJ0OjE",
+    "expiresAt": null,
+    "profile": {
+      "id": "1983218162423480320",
+      "name": "Samuel Mweni",
+      "username": "crevosam"
+    },
+    "createdAt": "2025-10-29T18:31:36.095Z",
+    "updatedAt": "2025-10-29T18:31:36.095Z"
   }
 }
