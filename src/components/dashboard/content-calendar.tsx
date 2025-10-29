@@ -51,8 +51,9 @@ export function ContentCalendar({
   scheduledServices = [],
   todaysServices = [],
   upcomingServices = [],
-  hasScheduledContent = false
-}: ContentCalendarProps) {
+  hasScheduledContent = false,
+  onRefreshCalendar
+}: ContentCalendarProps & { onRefreshCalendar?: () => Promise<void> }) {
   const [isGenerating, setIsGenerating] = React.useState<Platform | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -62,7 +63,7 @@ export function ContentCalendar({
   const [brandConsistency, setBrandConsistency] = React.useState<BrandConsistencyPreferences>({
     strictConsistency: !!(brandProfile.designExamples && brandProfile.designExamples.length > 0), // Auto-check if design examples exist
     followBrandColors: true, // Always follow brand colors
-    includeContacts: false, // Default to not including contacts
+    includeContacts: true, // Default to including contacts
   });
 
   // Revo model selection
@@ -117,6 +118,18 @@ export function ContentCalendar({
   }, [useLocalLanguage]);
 
   const handleGenerateClick = async (platform: Platform) => {
+    // Force refresh calendar data to ensure we have the absolute latest scheduled services
+    if (onRefreshCalendar) {
+      console.log('🔄 Force refreshing calendar data before content generation...');
+      // Clear any cached timestamp to force fresh fetch
+      localStorage.setItem('calendarLastChecked', Date.now().toString());
+      await onRefreshCalendar();
+      
+      // Wait a moment to ensure refresh is complete
+      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log('✅ Calendar refresh complete, proceeding with generation...');
+    }
+    
     // Check if user has enough credits for the selected model
     const hasCredits = await hasEnoughCreditsForModel(selectedRevoModel);
     if (!hasCredits) {

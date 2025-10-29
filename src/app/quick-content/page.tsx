@@ -145,32 +145,70 @@ function QuickContentPage() {
     loadAllPosts();
   }, [currentBrand?.id, user?.userId, postsStorage, getAccessToken]);
 
+  // Function to refresh calendar services
+  const refreshCalendarServices = async () => {
+    if (!currentBrand?.id) {
+      setScheduledServices([]);
+      setTodaysServices([]);
+      setUpcomingServices([]);
+      setHasScheduledContent(false);
+      return;
+    }
+
+    try {
+      console.log('🔄 Refreshing calendar services for brand:', currentBrand.id);
+      
+      // Force fresh fetch from database
+      const [todaysServices, upcomingServices] = await Promise.all([
+        CalendarService.getTodaysScheduledServices(currentBrand.id),
+        CalendarService.getUpcomingScheduledServices(currentBrand.id)
+      ]);
+      
+      console.log('✅ Fresh calendar data loaded:', {
+        todaysCount: todaysServices.length,
+        upcomingCount: upcomingServices.length,
+        todaysServices: todaysServices.map(s => s.serviceName),
+        upcomingServices: upcomingServices.map(s => s.serviceName)
+      });
+      
+      setScheduledServices([...todaysServices, ...upcomingServices]);
+      setTodaysServices(todaysServices);
+      setUpcomingServices(upcomingServices);
+      setHasScheduledContent(todaysServices.length > 0 || upcomingServices.length > 0);
+    } catch (error) {
+      console.error('❌ Error loading calendar services:', error);
+      setScheduledServices([]);
+      setTodaysServices([]);
+      setUpcomingServices([]);
+      setHasScheduledContent(false);
+    }
+  };
+
   // Load calendar services when brand changes
   useEffect(() => {
-    const loadCalendarServices = async () => {
-      if (!currentBrand?.id) {
-        setScheduledServices([]);
-        setTodaysServices([]);
-        setUpcomingServices([]);
-        setHasScheduledContent(false);
-        return;
-      }
+    refreshCalendarServices();
+  }, [currentBrand?.id]);
 
-      try {
-        const services = await CalendarService.getTodaysScheduledServices(currentBrand.id);
-        setScheduledServices(services);
-        setTodaysServices(services);
-        setUpcomingServices([]);
-        setHasScheduledContent(services.length > 0);
-      } catch (error) {
-        console.error('❌ Error loading calendar services:', error);
-        setScheduledServices([]);
-        setTodaysServices([]);
-        setUpcomingServices([]);
+  // Check for calendar updates from other pages
+  useEffect(() => {
+    const checkForCalendarUpdates = () => {
+      const lastUpdated = localStorage.getItem('calendarLastUpdated');
+      const lastChecked = localStorage.getItem('calendarLastChecked') || '0';
+      
+      if (lastUpdated && parseInt(lastUpdated) > parseInt(lastChecked)) {
+        console.log('🔄 Calendar was updated in another page, refreshing...');
+        refreshCalendarServices();
+        localStorage.setItem('calendarLastChecked', Date.now().toString());
       }
     };
 
-    loadCalendarServices();
+    // Check immediately
+    checkForCalendarUpdates();
+
+    // Check every 2 seconds for updates
+    const interval = setInterval(checkForCalendarUpdates, 2000);
+
+    return () => clearInterval(interval);
   }, [currentBrand?.id]);
 
   const handlePostGenerated = async (post: GeneratedPost) => {
@@ -368,26 +406,36 @@ function QuickContentPage() {
                       <div className="w-full space-y-4">
                         {currentBrand && (
                           <>
-                            {calendarServices.length > 0 && (
+                            {(hasScheduledContent || calendarServices.length > 0) && (
                               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2">
                                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                                     <span className="text-sm font-medium text-blue-900">
-                                      Using Calendar Services
+                                      Calendar Services ({todaysServices.length} today, {upcomingServices.length} upcoming)
                                     </span>
                                   </div>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setCalendarServices([])}
-                                    className="text-xs h-6"
-                                  >
-                                    Use Brand Services
-                                  </Button>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={refreshCalendarServices}
+                                      className="text-xs h-6"
+                                    >
+                                      🔄 Refresh
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => setCalendarServices([])}
+                                      className="text-xs h-6"
+                                    >
+                                      Use Brand Services
+                                    </Button>
+                                  </div>
                                 </div>
                                 <p className="text-xs text-blue-700 mt-1">
-                                  Content will be generated for: {calendarServices.join(", ")}
+                                  Content will be generated for: {scheduledServices.map(s => s.serviceName).join(", ") || "No services scheduled"}
                                 </p>
                               </div>
                             )}
@@ -440,6 +488,7 @@ function QuickContentPage() {
                               todaysServices={todaysServices}
                               upcomingServices={upcomingServices}
                               hasScheduledContent={hasScheduledContent}
+                              onRefreshCalendar={refreshCalendarServices}
                             />
                           </>
                         )}

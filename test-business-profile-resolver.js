@@ -1,9 +1,11 @@
 /**
  * Test Business Profile Resolver with Paya.co.ke
  * Verifies that the system now uses actual business data instead of generic templates
+ * Enhanced with calendar integration and database health checks
  */
 
 const { BusinessProfileResolver } = require('./src/ai/business-profile/resolver.ts');
+const { DatabaseHealthChecker } = require('./src/utils/database-health-check.ts');
 
 async function testPayaProfile() {
   console.log('🧪 Testing Business Profile Resolver with Paya.co.ke...\n');
@@ -126,10 +128,49 @@ async function testPayaProfile() {
     console.log('   ✅ "No-unsourced-claims" guardrails in prompts');
     console.log('   ✅ Paya.co.ke sample profile for testing');
     
+    // Test 4: Database Health Check
+    console.log('\n📋 Test 4: Database health check...');
+    
+    try {
+      const healthChecker = new DatabaseHealthChecker();
+      const healthReport = await healthChecker.checkHealth();
+      
+      console.log('✅ Database Health Report:');
+      console.log('   Supabase Connection:', healthReport.supabaseConnection ? '✅' : '❌');
+      console.log('   Brand Profiles Table:', healthReport.brandProfilesTable ? '✅' : '❌');
+      console.log('   Scheduled Content Table:', healthReport.scheduledContentTable ? '✅' : '❌');
+      console.log('   Sample Data Available:', healthReport.sampleDataAvailable ? '✅' : '❌');
+      
+      if (healthReport.errors.length > 0) {
+        console.log('   Errors:', healthReport.errors);
+      }
+      
+      if (healthReport.recommendations.length > 0) {
+        console.log('   Recommendations:', healthReport.recommendations);
+      }
+
+      // Test calendar integration if database is healthy
+      if (healthReport.supabaseConnection && healthReport.scheduledContentTable) {
+        console.log('\n📋 Test 5: Calendar integration test...');
+        const calendarTest = await healthChecker.testCalendarIntegration('paya-test');
+        console.log('   Calendar Integration:', calendarTest.success ? '✅' : '❌');
+        console.log('   Today\'s Services:', calendarTest.todaysServices);
+        console.log('   Total Scheduled:', calendarTest.totalScheduled);
+        
+        if (calendarTest.errors.length > 0) {
+          console.log('   Calendar Errors:', calendarTest.errors);
+        }
+      }
+      
+    } catch (error) {
+      console.log('⚠️  Database health check failed (expected in test environment):', error.message);
+    }
+
     console.log('\n🚀 Next Steps:');
     console.log('   1. Set up Supabase connection with real Paya profile');
     console.log('   2. Test end-to-end generation with actual business data');
     console.log('   3. Verify no generic templates or random context appears');
+    console.log('   4. Test calendar integration with real scheduled services');
     
   } catch (error) {
     console.error('❌ Test failed:', error.message);

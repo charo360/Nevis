@@ -571,7 +571,36 @@ async function gatherRealTimeContext(
         });
       });
 
+      // 🚀 ENHANCED: Add calendar-enhanced context
+      try {
+        const { Revo10CalendarEnhancer } = await import('./revo-1.0-calendar-enhancer');
+        const calendarContext = await Revo10CalendarEnhancer.getEnhancedCalendarContext(
+          brandId || 'default',
+          { businessName, businessType, location } as any
+        );
+        context.calendarEnhanced = calendarContext;
+      } catch (error) {
+        console.warn('Calendar enhancement failed:', error);
+      }
+
     } else {
+      // Try to fetch calendar data if brandId is available
+      if (brandId) {
+        try {
+          const todaysServices = await CalendarService.getTodaysScheduledServices(brandId);
+          if (todaysServices.length > 0) {
+            context.scheduledServices = todaysServices;
+            const { Revo10CalendarEnhancer } = await import('./revo-1.0-calendar-enhancer');
+            const calendarContext = await Revo10CalendarEnhancer.getEnhancedCalendarContext(
+              brandId,
+              { businessName, businessType, location } as any
+            );
+            context.calendarEnhanced = calendarContext;
+          }
+        } catch (error) {
+          console.warn('Failed to fetch calendar services:', error);
+        }
+      }
     }
 
     // 2. RSS DATA INTEGRATION (Enhanced with unified knowledge service)
@@ -3922,8 +3951,8 @@ You MUST include the exact brand logo image that was provided above in your desi
       const website = input.websiteUrl || '';
       const hasAnyContact = (!!phone || !!email || !!website);
 
-      // 📞 ENHANCED CONTACT INFORMATION DEBUGGING
-      console.log('📞 [Revo 1.0] Contact Information Debug:', {
+      // ENHANCED CONTACT INFORMATION DEBUGGING
+      console.log(' [Revo 1.0] Contact Information Debug:', {
         includeContacts: includeContacts,
         inputContactInfo: input.contactInfo,
         inputWebsiteUrl: input.websiteUrl,
@@ -3931,12 +3960,20 @@ You MUST include the exact brand logo image that was provided above in your desi
         extractedEmail: email,
         extractedWebsite: website,
         hasAnyContact: hasAnyContact,
-        willIncludeContacts: includeContacts && hasAnyContact
+        willIncludeContacts: includeContacts && hasAnyContact,
+        phoneExists: !!phone,
+        emailExists: !!email,
+        websiteExists: !!website,
+        phoneValue: phone || 'EMPTY',
+        emailValue: email || 'EMPTY',
+        websiteValue: website || 'EMPTY'
       });
 
       // Build contact details list for validation
       const contactDetailsList = [];
-      if (phone) contactDetailsList.push(`📞 Phone: ${phone}`);
+      if (phone) contactDetailsList.push(` Phone: ${phone}`);
+      if (email) contactDetailsList.push(` Email: ${email}`);
+      if (website) contactDetailsList.push(` Website: ${ensureWwwWebsiteUrl(website)}`);
       if (email) contactDetailsList.push(`📧 Email: ${email}`);
       if (website) contactDetailsList.push(`🌐 Website: ${ensureWwwWebsiteUrl(website)}`);
 

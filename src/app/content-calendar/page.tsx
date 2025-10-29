@@ -16,6 +16,7 @@ import { STORAGE_FEATURES } from "@/lib/services/brand-scoped-storage";
 import { BrandContent } from "@/components/layout/unified-brand-layout";
 import { MobileSidebarTrigger } from "@/components/layout/mobile-sidebar-trigger";
 import { DesktopSidebarTrigger } from "@/components/layout/desktop-sidebar-trigger";
+import { CalendarPrefillDialog } from "@/components/calendar/calendar-prefill-dialog";
 
 // Types
 interface ScheduledContent {
@@ -114,7 +115,21 @@ function ContentCalendarPageContent() {
           // DB mode: always load from server
           fetch(`/api/calendar?brandId=${brand.id}`)
             .then(response => response.json())
-            .then(data => setScheduledContent(data || []))
+            .then(data => {
+              // Transform database format to frontend format
+              const transformedData = (data || []).map((item: any) => ({
+                id: item.id.toString(),
+                date: item.date,
+                serviceId: item.id.toString(), // Use database ID as serviceId
+                serviceName: item.service_name, // Transform snake_case to camelCase
+                contentType: item.content_type,
+                platform: item.platform,
+                notes: item.notes,
+                status: item.status
+              }));
+              console.log('📅 Loaded calendar data:', transformedData);
+              setScheduledContent(transformedData);
+            })
             .catch(() => setScheduledContent([]));
         } else {
           setServices([]);
@@ -230,32 +245,86 @@ function ContentCalendarPageContent() {
     });
   };
 
-  // Reassign service for a day
+  // Change service for a day (one service per day approach)
   const handleReassignService = () => {
     if (!reassignDay || !reassignService) return;
     const selectedServiceObj = services.find(s => s.id === reassignService);
     if (!selectedServiceObj) return;
+    
+    // Remove existing content for this day
     const updatedContent = scheduledContent.filter(item => item.date !== reassignDay);
-    const platforms: ('Facebook' | 'Instagram' | 'LinkedIn' | 'Twitter')[] = ['Facebook', 'Instagram', 'LinkedIn'];
+    
+    // Create ONE new service for the day with random platform and content type
+    const platforms: ('Facebook' | 'Instagram' | 'LinkedIn' | 'Twitter')[] = ['Facebook', 'Instagram', 'LinkedIn', 'Twitter'];
     const contentTypes: ('post' | 'story' | 'reel' | 'ad')[] = ['post', 'story', 'reel'];
-    const newContent: ScheduledContent[] = platforms.map((platform, index) => ({
-      id: `reassigned-${selectedServiceObj.id}-${platform}-${reassignDay}-${Date.now()}`,
+    const randomPlatform = platforms[Math.floor(Math.random() * platforms.length)];
+    const randomContentType = contentTypes[Math.floor(Math.random() * contentTypes.length)];
+    
+    const newContent: ScheduledContent = {
+      id: `changed-${selectedServiceObj.id}-${reassignDay}-${Date.now()}`,
       date: reassignDay,
       serviceId: selectedServiceObj.id,
       serviceName: selectedServiceObj.name,
-      contentType: contentTypes[index % contentTypes.length],
-      platform,
-      notes: `Reassigned to ${selectedServiceObj.name}`,
+      contentType: randomContentType,
+      platform: randomPlatform,
+      notes: `Changed to ${selectedServiceObj.name}`,
       status: "scheduled"
-    }));
-    saveScheduledContent([...updatedContent, ...newContent]);
+    };
+    
+    // Save to database via API
+    updateCalendarInDatabase(reassignDay, selectedServiceObj.name, randomContentType, randomPlatform, `Changed to ${selectedServiceObj.name}`);
+    
+    saveScheduledContent([...updatedContent, newContent]);
     setReassignDialogOpen(false);
     setReassignDay('');
     setReassignService('');
     toast({
-      title: "Service Reassigned",
-      description: `Day ${reassignDay} now features ${selectedServiceObj.name} content.`,
+      title: "Service Changed! 🔄",
+      description: `${new Date(reassignDay).toLocaleDateString()} now features "${selectedServiceObj.name}" (${randomPlatform} ${randomContentType})`,
     });
+  };
+
+  // Update calendar in database
+  const updateCalendarInDatabase = async (date: string, serviceName: string, contentType: string, platform: string, notes: string) => {
+    if (!currentBrand?.id) return;
+    
+    try {
+      // First, delete existing entries for this date
+      const existingResponse = await fetch(`/api/calendar?brandId=${currentBrand.id}&date=${date}`);
+      const existingData = await existingResponse.json();
+      
+      // Delete existing entries
+      for (const item of existingData) {
+        await fetch('/api/calendar', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: item.id })
+        });
+      }
+      
+      // Create new entry
+      await fetch('/api/calendar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          brandId: currentBrand.id,
+          serviceName,
+          date,
+          contentType,
+          platform,
+          notes
+        })
+      });
+      
+      console.log(`✅ Updated database: ${date} → ${serviceName} (${platform} ${contentType})`);
+      
+      // Force refresh calendar cache by updating localStorage timestamp
+      localStorage.setItem('calendarLastUpdated', Date.now().toString());
+      console.log('🔄 Calendar cache invalidated - other pages will refresh');
+      
+    } catch (error) {
+      console.error('❌ Failed to update database:', error);
+    }
   };
 
   const openReassignDialog = (day: string) => {
@@ -298,6 +367,35 @@ function ContentCalendarPageContent() {
                
               </div>
               <div className="flex items-center gap-2">
+                {currentBrand && (
+                  <CalendarPrefillDialog
+                    brandId={currentBrand.id}
+                    businessType={currentBrand.businessType || 'default'}
+                    onPrefillComplete={() => {
+                      // Refresh calendar data after prefill
+                      if (currentBrand) {
+                        fetch(`/api/calendar?brandId=${currentBrand.id}`)
+                          .then(response => response.json())
+                          .then(data => {
+                            // Transform database format to frontend format
+                            const transformedData = (data || []).map((item: any) => ({
+                              id: item.id.toString(),
+                              date: item.date,
+                              serviceId: item.id.toString(),
+                              serviceName: item.service_name, // Transform snake_case to camelCase
+                              contentType: item.content_type,
+                              platform: item.platform,
+                              notes: item.notes,
+                              status: item.status
+                            }));
+                            console.log('📅 Refreshed calendar data after prefill:', transformedData);
+                            setScheduledContent(transformedData);
+                          })
+                          .catch(() => setScheduledContent([]));
+                      }
+                    }}
+                  />
+                )}
                 <Button
                   variant="outline"
                   size="sm"

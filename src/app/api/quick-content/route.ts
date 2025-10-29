@@ -225,6 +225,15 @@ export async function POST(request: NextRequest) {
           ? `${resolvedProfile.location.city || ''}, ${resolvedProfile.location.country || ''}`.replace(/^,\s*|,\s*$/g, '')
           : '';
 
+        // Prepare contact information for Revo 1.0
+        const finalContactInfo = {
+          phone: resolvedProfile.contact?.phone || freshBrandProfile.contactInfo?.phone || (freshBrandProfile as any).phone || '',
+          email: resolvedProfile.contact?.email || freshBrandProfile.contactInfo?.email || (freshBrandProfile as any).email || '',
+          address: resolvedProfile.contact?.address || freshBrandProfile.contactInfo?.address || freshBrandProfile.location || ''
+        };
+
+        const finalWebsiteUrl = resolvedProfile.contact?.website || freshBrandProfile.websiteUrl || (freshBrandProfile as any).websiteUrl || '';
+
         const revo10Result = await generateRevo10Content({
           businessType: resolvedProfile.businessType,
           businessName: resolvedProfile.businessName,
@@ -242,8 +251,12 @@ export async function POST(request: NextRequest) {
           visualStyle: freshBrandProfile.visualStyle || 'modern',
           // Include contact information based on user toggle setting
           includeContacts: brandConsistency?.includeContacts === true,
-          contactInfo: resolvedProfile.contact || {},
-          websiteUrl: resolvedProfile.contact?.website || ''
+          contactInfo: {
+            phone: resolvedProfile.contact?.phone || finalContactInfo.phone || '',
+            email: resolvedProfile.contact?.email || finalContactInfo.email || '',
+            address: resolvedProfile.contact?.address || finalContactInfo.address || ''
+          },
+          websiteUrl: resolvedProfile.contact?.website || finalWebsiteUrl || ''
         });
 
         // Generate image using Revo 1.0 image service
@@ -261,14 +274,6 @@ export async function POST(request: NextRequest) {
         const finalPrimaryColor = freshBrandProfile.primaryColor || '#3B82F6';
         const finalAccentColor = freshBrandProfile.accentColor || '#1E40AF';
         const finalBackgroundColor = freshBrandProfile.backgroundColor || '#FFFFFF';
-
-        const finalContactInfo = {
-          phone: resolvedProfile.contact?.phone || freshBrandProfile.contactInfo?.phone || (freshBrandProfile as any).phone || '',
-          email: resolvedProfile.contact?.email || freshBrandProfile.contactInfo?.email || (freshBrandProfile as any).email || '',
-          address: resolvedProfile.contact?.address || freshBrandProfile.contactInfo?.address || freshBrandProfile.location || ''
-        };
-
-        const finalWebsiteUrl = resolvedProfile.contact?.website || freshBrandProfile.websiteUrl || (freshBrandProfile as any).websiteUrl || '';
 
         console.log('🎨 [QuickContent] Brand Colors Validation (Fresh Data):', {
           frontendPrimaryColor: brandProfile.primaryColor,
@@ -295,10 +300,23 @@ export async function POST(request: NextRequest) {
           finalContactInfo,
           finalWebsiteUrl,
           hasValidContacts: !!(finalContactInfo.phone || finalContactInfo.email || finalWebsiteUrl),
+          willPassToContentGeneration: {
+            includeContacts: brandConsistency?.includeContacts === true,
+            contactInfo: {
+              phone: resolvedProfile.contact?.phone || finalContactInfo.phone || '',
+              email: resolvedProfile.contact?.email || finalContactInfo.email || '',
+              address: resolvedProfile.contact?.address || finalContactInfo.address || ''
+            },
+            websiteUrl: resolvedProfile.contact?.website || finalWebsiteUrl || ''
+          },
           willPassToImageGeneration: {
             includeContacts: brandConsistency?.includeContacts === true,
-            contactInfo: resolvedProfile.contact || {},
-            websiteUrl: resolvedProfile.contact?.website || ''
+            contactInfo: {
+              phone: resolvedProfile.contact?.phone || finalContactInfo.phone || '',
+              email: resolvedProfile.contact?.email || finalContactInfo.email || '',
+              address: resolvedProfile.contact?.address || finalContactInfo.address || ''
+            },
+            websiteUrl: resolvedProfile.contact?.website || finalWebsiteUrl || ''
           }
         });
 
@@ -335,8 +353,11 @@ export async function POST(request: NextRequest) {
             subheadline: revo10Result.subheadline,
             callToAction: revo10Result.callToAction,
             includeContacts: brandConsistency?.includeContacts === true,
-            contactInfo: resolvedProfile.contact || {},
-            websiteUrl: resolvedProfile.contact?.website || '',
+            contactInfo: {
+              phone: resolvedProfile.contact?.phone || finalContactInfo.phone || '',
+              email: resolvedProfile.contact?.email || finalContactInfo.email || ''
+            },
+            websiteUrl: resolvedProfile.contact?.website || finalWebsiteUrl || '',
             includePeople: includePeopleInDesigns,
             scheduledServices: brandSpecificServices || [],
             // Brand colors toggle
