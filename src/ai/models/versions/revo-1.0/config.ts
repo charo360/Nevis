@@ -63,7 +63,36 @@ export const revo10Constants = {
   // Pricing
   CREDITS_PER_GENERATION: 1.5, // Upgraded from 1 for enhanced capabilities
   CREDITS_PER_DESIGN: 1.5, // Upgraded from 1 for enhanced capabilities
-  TIER: 'enhanced' // Upgraded from basic
+  TIER: 'enhanced', // Upgraded from basic
+  
+  // Quality Validation Checklist
+  QUALITY_CHECKLIST: {
+    DIVERSITY: {
+      UNIQUE_HEADLINES: 'Are all headlines completely different?',
+      UNIQUE_CONTENT: 'Do ads have different angles and approaches?',
+      NO_DUPLICATION: 'No two ads should be similar in messaging?'
+    },
+    CLAIMS: {
+      NO_COMPETITOR_COMPARISON: 'No unverified competitor comparisons?',
+      NO_SUPERLATIVES: 'No "fastest", "cheapest", "best" without proof?',
+      HONEST_CLAIMS: 'All claims match actual services?'
+    },
+    VISUAL: {
+      WARM_COLORS: 'Using warm, approachable colors (not dark/techy)?',
+      NO_ABSTRACT_SHAPES: 'No meaningless abstract shapes?',
+      AUTHENTIC_FEEL: 'Looks like real human-designed content?'
+    },
+    CTA: {
+      SPECIFIC_ACTION: 'CTA tells users exactly what to do?',
+      STRONG_LANGUAGE: 'Uses action-oriented, compelling language?',
+      NOT_GENERIC: 'Avoids weak CTAs like "Learn More"?'
+    },
+    CONTENT: {
+      BUSINESS_SPECIFIC: 'Content mentions business name or specific services?',
+      LOCAL_RELEVANCE: 'Appropriate use of location/cultural context?',
+      CLEAR_VALUE: 'Value proposition is clear and compelling?'
+    }
+  }
 } as const;
 
 // Revo 1.0 specific prompts and templates
@@ -89,6 +118,30 @@ When you create content, you:
 - Use humor, emotion, and personality naturally
 - Make technical specs sound exciting (when that's the focus)
 - Focus on how things make people FEEL (when that's the approach)
+
+🚨 CRITICAL DIVERSITY REQUIREMENTS:
+- Each ad MUST be completely unique and different
+- NEVER duplicate headlines, body copy, or messaging
+- Create 4 DISTINCT variations with different angles, benefits, and approaches
+- If two ads have similar copy, YOU HAVE FAILED
+- Use different emotional triggers, value propositions, and storytelling approaches for each ad
+
+❌ BANNED CLAIMS & RISKY STATEMENTS:
+NEVER claim these without concrete proof:
+- "Faster than [competitor]" (could lead to legal issues)
+- "Zero fees" or "No fees" (unless ALL transactions are truly free)
+- "Instant" (unless genuinely instant)
+- "Cheapest" or "Lowest prices" (unless verified)
+- "Best" or "#1" (unless backed by evidence)
+- Any direct competitor comparisons without evidence
+
+INSTEAD use safe, honest alternatives:
+✅ "Fast transfers" (not "Faster than [competitor]")
+✅ "Low fees" or "No hidden fees" (not "Zero fees")
+✅ "Quick and easy" (not "Instant")
+✅ "Great value" (not "Cheapest")
+✅ "High quality" (not "Best")
+✅ Focus on YOUR benefits, not competitor bashing
 
 You're like that friend who's genuinely excited to tell you about something cool they discovered - that's the energy you bring to every piece of content.`,
 
@@ -175,8 +228,47 @@ Requirements:
 - Avoid any corrupted or unreadable character sequences
 - Make the content location-specific and culturally relevant when appropriate
 - CRITICAL: DO NOT include any phone numbers, email addresses, or website URLs in the content, subheadlines, or call-to-action
-- Call-to-action should be generic action phrases like "Get Started Today!", "Learn More!", "Join Us!", "Transform Your Business!"
-- Contact information will be handled separately during image generation for optimal placement`,
+- Contact information will be handled separately during image generation for optimal placement
+
+🎯 IMPROVED CALL-TO-ACTION REQUIREMENTS:
+Replace weak CTAs with specific, actionable ones:
+❌ Weak CTAs to AVOID:
+- "Get Digital Wallet" (Where? How?)
+- "Get Business Account FREE" (Vague)
+- "Learn More" (Generic)
+- "Contact Us" (Passive)
+
+✅ Strong CTAs to USE:
+- "Download App" (Clear action)
+- "Open Business Account" (Direct and specific)
+- "Sign Up Free" (Clear benefit)
+- "Start Now" (Immediate action)
+- "Apply Today" (Time-sensitive)
+- "Get Approved" (Outcome-focused)
+- "Join Free" (Community + benefit)
+
+CTA must be:
+- Specific and actionable
+- Tell users exactly what to do
+- Include benefit when possible
+- Create urgency or excitement
+
+📝 EXAMPLES OF EXCELLENT CONTENT (TEMPLATE TO FOLLOW):
+For BNPL/Financial services:
+"Get Approved in 5 Minutes"
+"Shop Today, Pay in 3 Months"
+"Nunua sasa, lipa baadaye! From 5K to 300K approved in 5 minutes. No paperwork, hakuna hidden fees."
+CTA: "Get Approved in 5 Minutes"
+
+This works because:
+✅ Specific service (BNPL not generic loans)
+✅ Local language mix used naturally
+✅ Specific, believable claims (5 minutes, 5K-300K range)
+✅ Clear value proposition
+✅ Warm, approachable feel
+✅ Strong, outcome-focused CTA
+
+REPLICATE THIS QUALITY ACROSS ALL CONTENT!`,
 
   // Design generation prompts
   DESIGN_SYSTEM_PROMPT: `You are an elite creative director with 15+ years of experience creating award-winning social media designs for Fortune 500 companies. Your designs consistently achieve high engagement rates and are featured in design showcases worldwide.
@@ -187,6 +279,15 @@ Requirements:
 - Each design type must have a completely unique visual language and approach
 - Use current design trends that work for maximum engagement
 - Make designs that look like they belong in top-tier brand campaigns
+
+🎨 VISUAL CONSISTENCY REQUIREMENTS:
+- Use WARM, APPROACHABLE colors as the default aesthetic
+- AVOID dark, techy, or crypto-gaming vibes unless specifically requested
+- Default color palette: warm oranges, friendly blues, approachable greens, clean whites
+- NO dark blue + tech graphics combinations (feels cold and uninviting)
+- NO abstract shapes without purpose (confuses the message)
+- Focus on AUTHENTIC, RELATABLE visual elements
+- Make designs feel welcoming and accessible to everyday people
 
 **DESIGN PRINCIPLES FOR MAXIMUM APPEAL:**
 1. **STRONG VISUAL HIERARCHY** - One clear focal point that draws the eye immediately

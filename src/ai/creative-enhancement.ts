@@ -659,7 +659,23 @@ export async function generateBusinessSpecificHeadline(
 - Tone: Clear, compelling, and sales-oriented
 - Purpose: Broader market appeal beyond local customers`;
 
+  // Generate unique session ID to prevent repetition
+  const uniqueSessionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const antiRepetitionSeed = Math.floor(Math.random() * 10000);
+
   const prompt = `${locationContext}
+
+🚨 CRITICAL UNIQUENESS REQUIREMENTS:
+- Session ID: ${uniqueSessionId}
+- Anti-Repetition Seed: ${antiRepetitionSeed}
+- You MUST create completely unique content that has never been generated before
+- AVOID these common repetitive patterns:
+  * "[Location]'s best-kept secret"
+  * "Chakula kizuri" or any repetitive Swahili phrases
+  * "For your familia's delight" or similar family references
+  * Generic business phrases like "quality service", "professional excellence"
+- CREATE fresh, original content with unique angles and perspectives
+- Use varied sentence structures, different emotional appeals, and diverse vocabulary
 
 REAL-TIME CONTEXTUAL DATA (Analyze and use what's relevant):
 - Current News: ${contextualData.news}
@@ -1161,7 +1177,19 @@ export async function generateBusinessSpecificSubheadline(
 
   const marketingStrategy = `Create a subheadline that makes the individual user think "This is exactly what I need!" Use trending keywords naturally and speak directly to "YOU" - the individual person reading this. Focus on personal benefits, individual value, and what makes ${businessName} the perfect choice for YOU. Address the user directly with "you," "your," "your family" language. Make it feel like a personal recommendation, not a generic advertisement.`;
 
+  // Generate unique session ID for subheadline to prevent repetition
+  const uniqueSubheadlineId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const subheadlineAntiRepetitionSeed = Math.floor(Math.random() * 10000);
+
   const prompt = `${marketingContext}
+
+🚨 SUBHEADLINE UNIQUENESS REQUIREMENTS:
+- Session ID: ${uniqueSubheadlineId}
+- Anti-Repetition Seed: ${subheadlineAntiRepetitionSeed}
+- Create completely unique subheadlines - never repeat patterns
+- AVOID repetitive structures like "[Service] for [Location] families"
+- AVOID overused phrases like "experience the difference", "quality you can trust"
+- USE fresh, creative approaches with varied vocabulary and sentence structures
 
 MARKETING CONTEXT:
 - Main Headline: "${headline}"
@@ -3180,23 +3208,24 @@ export function enhanceDesignCreativity(
 function getRegionalLanguageStyle(location: string): string {
   const locationLower = location.toLowerCase();
 
+  // SIMPLIFIED - Let AI be more creative instead of using hardcoded phrases
   if (locationLower.includes('kenya') || locationLower.includes('nairobi') || locationLower.includes('mombasa')) {
-    return 'Warm, community-focused, with occasional Swahili phrases like "karibu" (welcome), "asante" (thank you). Direct but friendly tone.';
+    return 'Warm, community-focused communication with authentic local feel';
   } else if (locationLower.includes('nigeria') || locationLower.includes('lagos') || locationLower.includes('abuja')) {
-    return 'Energetic, aspirational, with pidgin English influences. Uses "finest", "sharp sharp", "no wahala" naturally.';
+    return 'Energetic, aspirational communication with professional Nigerian English style';
   } else if (locationLower.includes('south africa') || locationLower.includes('cape town') || locationLower.includes('johannesburg')) {
-    return 'Multicultural blend, uses "lekker", "braai", "just now". Mix of English and local expressions.';
+    return 'Multicultural, inclusive communication with South African warmth';
   } else if (locationLower.includes('ghana') || locationLower.includes('accra')) {
-    return 'Friendly, respectful, with Twi influences. Uses "chale", "ɛyɛ" naturally in marketing.';
+    return 'Respectful, community-focused communication with Ghanaian hospitality';
   } else if (locationLower.includes('india') || locationLower.includes('mumbai') || locationLower.includes('delhi')) {
-    return 'Enthusiastic, family-oriented, with Hindi/English mix. Uses "achha", "best", "number one" frequently.';
+    return 'Family-oriented, enthusiastic communication with Indian cultural values';
   } else if (locationLower.includes('uk') || locationLower.includes('london') || locationLower.includes('manchester')) {
-    return 'Polite but confident, uses "brilliant", "proper", "lovely". Understated but effective.';
+    return 'Professional, quality-focused communication with British understated confidence';
   } else if (locationLower.includes('usa') || locationLower.includes('new york') || locationLower.includes('california')) {
-    return 'Direct, confident, superlative-heavy. Uses "awesome", "amazing", "best ever" frequently.';
+    return 'Direct, confident communication with American enthusiasm';
   }
 
-  return 'Friendly, professional, community-focused with local cultural sensitivity.';
+  return 'Professional, culturally-aware communication that resonates locally';
 }
 
 function getRegionalMarketingStyle(location: string): string {
@@ -3225,49 +3254,19 @@ function getLocalBusinessLanguage(location: string, businessType: string): strin
   const locationLower = location.toLowerCase();
   const businessLower = businessType.toLowerCase();
 
+  // REDUCED HARDCODED CONTENT - Let AI be more creative
   if (locationLower.includes('kenya')) {
-    if (businessLower.includes('restaurant') || businessLower.includes('food')) {
-      return '"chakula kizuri" (good food), "asili" (authentic), "familia" (family), "mazingira" (environment)';
-    } else if (businessLower.includes('tech') || businessLower.includes('digital')) {
-      return '"teknolojia", "haraka" (fast), "rahisi" (easy), "bora" (best)';
-    }
-    return '"bora" (best), "karibu" (welcome), "mazuri" (good), "familia" (family)';
+    return 'Use occasional Swahili words naturally when they add value, but focus on clear English communication';
   } else if (locationLower.includes('nigeria')) {
-    if (businessLower.includes('restaurant') || businessLower.includes('food')) {
-      return '"finest food", "correct taste", "no wahala", "sharp sharp service"';
-    }
-    return '"finest", "correct", "sharp sharp", "no wahala", "top notch"';
+    return 'Use occasional Nigerian English expressions naturally, but prioritize clear professional communication';
   }
 
-  return 'quality, authentic, local, trusted, community';
+  return 'Focus on professional, clear communication that resonates with local culture';
 }
 
 function getLocalMarketingExamples(location: string, businessType: string): string {
-  const locationLower = location.toLowerCase();
-  const businessLower = businessType.toLowerCase();
-
-  if (locationLower.includes('kenya')) {
-    if (businessLower.includes('restaurant') || businessLower.includes('food')) {
-      return `- "Chakula Asili Kenya" (Authentic Kenya Food)
-- "Familia Flavors Nairobi"
-- "Taste Bora Kenya"
-- "Karibu Kitchen Experience"`;
-    }
-    return `- "Bora ${businessType} Kenya"
-- "Karibu Quality Service"
-- "Kenya's Finest Choice"
-- "Asili ${businessType} Experience"`;
-  } else if (locationLower.includes('nigeria')) {
-    return `- "Finest ${businessType} Lagos"
-- "Sharp Sharp Service"
-- "Correct ${businessType} Choice"
-- "Top Notch Experience"`;
-  }
-
-  return `- "${location}'s Best ${businessType}"
-- "Quality Meets Community"
-- "Local Excellence Delivered"
-- "Authentic ${businessType} Experience"`;
+  // REMOVED HARDCODED EXAMPLES - Let AI be creative and unique
+  return `Generate unique, creative marketing approaches that feel natural and authentic for ${businessType} businesses in ${location}. Avoid repetitive patterns and create fresh, engaging content each time.`;
 }
 
 // BACKWARD COMPATIBILITY - Keep existing caption function

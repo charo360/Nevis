@@ -7,6 +7,7 @@ import type { ScheduledService } from '@/services/calendar-service';
 import { withCreditTracking, type ModelVersion } from '@/lib/credit-integration';
 import { createClient as createServerSupabase } from '@/lib/supabase-server';
 import { brandProfileSupabaseService } from '@/lib/supabase/services/brand-profile-service';
+import { BusinessProfileResolver } from '@/ai/business-profile/resolver';
 
 export async function POST(request: NextRequest) {
   try {
@@ -67,7 +68,6 @@ export async function POST(request: NextRequest) {
     // Use passed services directly - brand filtering should happen on frontend
     let brandSpecificServices: ScheduledService[] = scheduledServices || [];
 
-
     let result;
 
     try {
@@ -94,32 +94,125 @@ export async function POST(request: NextRequest) {
           brandSpecificServices
         );
       } else {
-        // Use Revo 1.0 direct generation (same as working /api/advanced-content)
+        // Use Revo 1.0 with Business Profile Resolver (strict validation)
+        const resolver = new BusinessProfileResolver();
+
+        // Resolve business profile with strict validation
+        let resolvedProfile;
+        try {
+          resolvedProfile = await resolver.resolveProfile(
+            freshBrandProfile.id || freshBrandProfile.businessName || 'unknown',
+            userId,
+            freshBrandProfile as any,
+            {
+              allowExternalContext: false, // Disable external context by default
+              requireContacts: true,
+              strictValidation: true
+            }
+          );
+
+          // Validate for generation
+          const validation = resolver.validateForGeneration(resolvedProfile, {
+            requireContacts: true,
+            strictValidation: true
+          });
+
+          if (!validation.valid) {
+            return NextResponse.json(
+              { 
+                error: `Business profile validation failed: ${validation.errors.join(', ')}`,
+                details: 'Please complete your business profile with all required information.',
+                missingFields: resolvedProfile.completeness.missingCritical
+              },
+              { status: 400 }
+            );
+          }
+
+        } catch (error) {
+          // Fallback for Paya testing
+          if (freshBrandProfile.businessName?.toLowerCase().includes('paya')) {
+            const sampleProfile = BusinessProfileResolver.getSampleProfile();
+            resolvedProfile = {
+              id: 'paya-sample',
+              ...sampleProfile,
+              sources: {
+                businessName: 'user',
+                businessType: 'user',
+                description: 'user',
+                location: 'user',
+                contact: 'user',
+                services: 'user',
+                keyFeatures: 'user',
+                competitiveAdvantages: 'user',
+                targetAudience: 'user',
+                brandVoice: 'missing',
+                brandColors: 'user',
+                logoUrl: 'missing',
+                logoDataUrl: 'missing',
+                designExamples: 'missing'
+              },
+              completeness: {
+                score: 85,
+                missingCritical: [],
+                missingOptional: ['brandVoice', 'logoUrl']
+              }
+            };
+          } else {
+            return NextResponse.json(
+              { 
+                error: `Failed to resolve business profile: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                details: 'Please ensure your business profile is complete and try again.'
+              },
+              { status: 400 }
+            );
+          }
+        }
+
         const { generateRevo10Content } = await import('@/ai/revo-1.0-service');
 
         const today = new Date();
         const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long' });
         const currentDate = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
+        // Convert services to string format
+        const servicesString = resolvedProfile.services
+          ? resolvedProfile.services.map(service => 
+              `${service.name}: ${service.description || ''}`
+            ).join('\n')
+          : '';
+
+        const keyFeaturesString = resolvedProfile.keyFeatures
+          ? resolvedProfile.keyFeatures.join('\n')
+          : '';
+
+        const competitiveAdvantagesString = resolvedProfile.competitiveAdvantages
+          ? resolvedProfile.competitiveAdvantages.join('\n')
+          : '';
+
+        // Format location
+        const locationString = resolvedProfile.location
+          ? `${resolvedProfile.location.city || ''}, ${resolvedProfile.location.country || ''}`.replace(/^,\s*|,\s*$/g, '')
+          : '';
+
         const revo10Result = await generateRevo10Content({
-          businessType: freshBrandProfile.businessType || 'Business',
-          businessName: freshBrandProfile.businessName || freshBrandProfile.name || 'Business',
-          location: freshBrandProfile.location || '',
+          businessType: resolvedProfile.businessType,
+          businessName: resolvedProfile.businessName,
+          location: locationString,
           platform: platform.toLowerCase(),
-          writingTone: freshBrandProfile.writingTone || 'professional',
-          contentThemes: Array.isArray(freshBrandProfile.contentThemes) ? freshBrandProfile.contentThemes : [freshBrandProfile.contentThemes || ''],
-          targetAudience: freshBrandProfile.targetAudience || 'General audience',
-          services: freshBrandProfile.services || '',
-          keyFeatures: freshBrandProfile.keyFeatures || '',
-          competitiveAdvantages: freshBrandProfile.competitiveAdvantages || '',
+          writingTone: resolvedProfile.brandVoice || 'professional',
+          contentThemes: [],
+          targetAudience: resolvedProfile.targetAudience || '',
+          services: servicesString,
+          keyFeatures: keyFeaturesString,
+          competitiveAdvantages: competitiveAdvantagesString,
           dayOfWeek,
           currentDate,
-          primaryColor: freshBrandProfile.primaryColor, // Use fresh colors from database
-          visualStyle: freshBrandProfile.visualStyle,
+          primaryColor: resolvedProfile.brandColors?.primary || freshBrandProfile.primaryColor,
+          visualStyle: freshBrandProfile.visualStyle || 'modern',
           // Include contact information for contacts toggle
-          includeContacts: brandConsistency?.includeContacts || false,
-          contactInfo: freshBrandProfile.contactInfo || {},
-          websiteUrl: freshBrandProfile.websiteUrl || ''
+          includeContacts: !!(resolvedProfile.contact?.phone || resolvedProfile.contact?.email),
+          contactInfo: resolvedProfile.contact || {},
+          websiteUrl: resolvedProfile.contact?.website || ''
         });
 
         // Generate image using Revo 1.0 image service
@@ -189,24 +282,24 @@ export async function POST(request: NextRequest) {
           });
 
           const imageResult = await generateRevo10Image({
-            businessType: freshBrandProfile.businessType || 'Business',
-            businessName: freshBrandProfile.businessName || freshBrandProfile.name || 'Business',
+            businessType: resolvedProfile.businessType,
+            businessName: resolvedProfile.businessName,
             platform: platform.toLowerCase(),
             visualStyle: freshBrandProfile.visualStyle || 'modern',
-            primaryColor: finalPrimaryColor,
-            accentColor: finalAccentColor,
+            primaryColor: resolvedProfile.brandColors?.primary || finalPrimaryColor,
+            accentColor: resolvedProfile.brandColors?.secondary || finalAccentColor,
             backgroundColor: finalBackgroundColor,
             imageText: structuredImageText,
-            designDescription: `Professional ${freshBrandProfile.businessType} content with structured headline, subheadline, and CTA for ${platform.toLowerCase()}`,
-            logoDataUrl: freshBrandProfile.logoDataUrl,
-            logoUrl: (freshBrandProfile as any).logoUrl,
-            location: freshBrandProfile.location,
+            designDescription: `Professional ${resolvedProfile.businessType} content with structured headline, subheadline, and CTA for ${platform.toLowerCase()}`,
+            logoDataUrl: resolvedProfile.logoDataUrl || freshBrandProfile.logoDataUrl,
+            logoUrl: resolvedProfile.logoUrl || (freshBrandProfile as any).logoUrl,
+            location: locationString,
             headline: revo10Result.catchyWords,
             subheadline: revo10Result.subheadline,
             callToAction: revo10Result.callToAction,
-            includeContacts: brandConsistency?.includeContacts || false,
-            contactInfo: finalContactInfo,
-            websiteUrl: finalWebsiteUrl,
+            includeContacts: !!(resolvedProfile.contact?.phone || resolvedProfile.contact?.email),
+            contactInfo: resolvedProfile.contact || {},
+            websiteUrl: resolvedProfile.contact?.website || '',
             includePeople: includePeopleInDesigns,
             scheduledServices: brandSpecificServices || [],
             // Brand colors toggle

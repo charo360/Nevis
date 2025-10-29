@@ -2295,6 +2295,211 @@ function getPlatformDimensionsText(aspectRatio: string): string {
 }
 
 /**
+ * Content diversity tracking system to prevent duplication
+ */
+class ContentDiversityTracker {
+  private static recentContent: Array<{
+    headline: string;
+    subheadline: string;
+    caption: string;
+    timestamp: number;
+  }> = [];
+
+  static addContent(content: { headline: string; subheadline: string; caption: string }) {
+    this.recentContent.push({
+      ...content,
+      timestamp: Date.now()
+    });
+    
+    // Keep only last 20 pieces of content to prevent memory issues
+    if (this.recentContent.length > 20) {
+      this.recentContent = this.recentContent.slice(-20);
+    }
+  }
+
+  static checkDiversity(content: { headline: string; subheadline: string; caption: string }): {
+    isDiverse: boolean;
+    duplications: string[];
+    similarityScore: number;
+  } {
+    const duplications: string[] = [];
+    let maxSimilarity = 0;
+
+    // Check for specific repetitive patterns
+    this.checkRepetitivePatterns(content, duplications);
+
+    for (const existing of this.recentContent) {
+      // Check headline similarity
+      const headlineSimilarity = this.calculateSimilarity(content.headline, existing.headline);
+      if (headlineSimilarity > 0.8) {
+        duplications.push(`Headline too similar to recent content: "${existing.headline}"`);
+      }
+
+      // Check subheadline similarity
+      const subheadlineSimilarity = this.calculateSimilarity(content.subheadline, existing.subheadline);
+      if (subheadlineSimilarity > 0.8) {
+        duplications.push(`Subheadline too similar to recent content: "${existing.subheadline}"`);
+      }
+
+      // Check overall content similarity
+      const overallSimilarity = (
+        headlineSimilarity + 
+        subheadlineSimilarity + 
+        this.calculateSimilarity(content.caption, existing.caption)
+      ) / 3;
+
+      maxSimilarity = Math.max(maxSimilarity, overallSimilarity);
+      
+      if (overallSimilarity > 0.7) {
+        duplications.push('Overall content too similar to recent generation');
+      }
+    }
+
+    return {
+      isDiverse: duplications.length === 0,
+      duplications,
+      similarityScore: maxSimilarity
+    };
+  }
+
+  private static checkRepetitivePatterns(content: { headline: string; subheadline: string; caption: string }, duplications: string[]) {
+    const headline = content.headline.toLowerCase();
+    const caption = content.caption.toLowerCase();
+
+    // Check for banned headline patterns
+    const bannedHeadlinePatterns = [
+      /unlock\s+.*('s|s)?\s+/i,
+      /.*'s\s+best\s+/i,
+      /experience\s+the\s+/i,
+      /discover\s+.*\s+in\s+/i,
+      /transform\s+your\s+/i,
+      /your\s+.*\s+solution/i
+    ];
+
+    for (const pattern of bannedHeadlinePatterns) {
+      if (pattern.test(headline)) {
+        duplications.push(`Headline uses banned repetitive pattern: "${content.headline}"`);
+        break;
+      }
+    }
+
+    // Check for banned caption starters
+    const bannedCaptionStarters = [
+      /^experience\s+/i,
+      /^imagine\s+/i,
+      /^discover\s+the\s+/i,
+      /^welcome\s+to\s+/i,
+      /^at\s+.*,\s+we\s+/i,
+      /^quality\s+service/i
+    ];
+
+    for (const pattern of bannedCaptionStarters) {
+      if (pattern.test(caption)) {
+        duplications.push(`Caption uses banned repetitive starter: "${content.caption.substring(0, 50)}..."`);
+        break;
+      }
+    }
+  }
+
+  private static calculateSimilarity(str1: string, str2: string): number {
+    if (!str1 || !str2) return 0;
+    
+    const words1 = str1.toLowerCase().split(' ').filter(w => w.length > 3); // Filter out small words
+    const words2 = str2.toLowerCase().split(' ').filter(w => w.length > 3);
+    
+    if (words1.length === 0 || words2.length === 0) return 0;
+    
+    const commonWords = words1.filter(word => words2.includes(word));
+    return commonWords.length / Math.max(words1.length, words2.length);
+  }
+
+  static clearHistory() {
+    this.recentContent = [];
+  }
+}
+
+/**
+ * Quality validation system for generated content
+ */
+function validateContentQuality_Enhanced(
+  content: any,
+  businessName: string,
+  businessType: string
+): { isValid: boolean; issues: string[]; score: number } {
+  const issues: string[] = [];
+  let score = 10;
+
+  // Check for content duplication indicators
+  const contentText = `${content.headline || ''} ${content.subheadline || ''} ${content.caption || ''}`.toLowerCase();
+  
+  // Check for banned risky claims
+  const bannedClaims = [
+    'faster than',
+    'zero fees',
+    'zero transaction fees',
+    'no fees',
+    'instant',
+    'cheapest',
+    'lowest price',
+    'best',
+    '#1'
+  ];
+  
+  for (const claim of bannedClaims) {
+    if (contentText.includes(claim)) {
+      issues.push(`Contains risky claim: "${claim}" - could lead to legal issues or customer complaints`);
+      score -= 2;
+    }
+  }
+  
+  // Check for weak CTAs
+  const weakCTAs = [
+    'get digital wallet',
+    'learn more',
+    'contact us',
+    'get business account free'
+  ];
+  
+  const cta = (content.callToAction || '').toLowerCase();
+  for (const weakCTA of weakCTAs) {
+    if (cta.includes(weakCTA)) {
+      issues.push(`Weak CTA detected: "${content.callToAction}" - should be more specific and actionable`);
+      score -= 1;
+    }
+  }
+  
+  // Check for business specificity
+  const hasBusinessName = contentText.includes(businessName.toLowerCase());
+  const hasBusinessType = contentText.includes(businessType.toLowerCase());
+  
+  if (!hasBusinessName && !hasBusinessType) {
+    issues.push('Content lacks business specificity - should mention business name or type');
+    score -= 1;
+  }
+  
+  // Check for generic phrases
+  const genericPhrases = [
+    'quality service',
+    'professional service', 
+    'best service',
+    'contact us today'
+  ];
+  
+  for (const phrase of genericPhrases) {
+    if (contentText.includes(phrase)) {
+      issues.push(`Contains generic phrase: "${phrase}" - content should be more specific`);
+      score -= 0.5;
+    }
+  }
+  
+  return {
+    isValid: issues.length === 0,
+    issues,
+    score: Math.max(score, 0)
+  };
+}
+
+/**
  * Generate content using Revo 1.0 with Gemini 2.5 Flash Image Preview
  */
 export async function generateRevo10Content(input: {
@@ -2451,18 +2656,120 @@ ${upcomingServices.map((s: any) => `- ${s.serviceName} (in ${s.daysUntil} days):
     const todaysServices = scheduledServices ? scheduledServices.filter((s: any) => s.isToday).map((s: any) => s.serviceName) : [];
     const productLanguage = generateProductSpecificLanguage(todaysServices);
 
-    // Build the content generation prompt with enhanced brand context (using contact-free input)
-    const contentPrompt = revo10Prompts.CONTENT_USER_PROMPT_TEMPLATE
-      .replace('{businessName}', contentGenerationInput.businessName)
-      .replace('{businessType}', contentGenerationInput.businessType)
+    // Generate unique session identifiers to prevent AI repetition
+    const globalUniqueId = `${Date.now()}-${Math.random().toString(36).substr(2, 12)}`;
+    const diversitySeed = Math.floor(Math.random() * 100000);
+    
+    // Inject global uniqueness requirements
+    const uniquenessInjection = `
+
+🚨 GLOBAL CONTENT UNIQUENESS SYSTEM:
+- Unique Generation ID: ${globalUniqueId}
+- Diversity Seed: ${diversitySeed}
+- MANDATE: Create completely unique content that breaks previous patterns
+- FORBIDDEN: Reusing phrases, structures, or approaches from previous generations
+- REQUIRED: Fresh vocabulary, new sentence structures, different emotional appeals
+- GOAL: Every piece of content must feel like it was written by a different creative expert
+
+🚨 CRITICAL ANTI-REPETITION PATTERNS (NEVER USE THESE):
+❌ BANNED HEADLINE PATTERNS:
+- "Unlock [Location]'s [Something]" or any "Unlock" variations
+- "[Location]'s Best [Service]" or "Best-Kept Secret" patterns
+- "Experience the [Something]" or "Experience [Business]" patterns
+- "Discover [Service] in [Location]" patterns
+- "Transform Your [Something]" patterns
+- "Your [Service] Solution" patterns
+
+❌ BANNED CAPTION STARTERS:
+- "Experience effortless..." or any "Experience" beginnings
+- "Imagine seamless..." or any "Imagine" beginnings  
+- "Discover the difference..." patterns
+- "Welcome to [Business]..." openings
+- "At [Business], we..." corporate speak
+- "Quality service..." or "Professional excellence" phrases
+
+❌ BANNED CTA PATTERNS:
+- "Download App" (overused - be more creative!)
+- "Learn More" (generic)
+- "Get Started" (boring)
+- "Contact Us" (passive)
+
+✅ REQUIRED CREATIVITY:
+- Use completely different headline structures each time
+- Start captions with fresh, unexpected openings
+- Create unique, engaging CTAs that specify the actual benefit
+- Vary emotional appeals: excitement, curiosity, urgency, social proof, etc.
+- Use different vocabulary and sentence lengths
+- Take unique creative angles that haven't been used before
+
+🎯 CREATIVE MANDATE: If you find yourself using familiar patterns, STOP and create something completely different!
+
+🚫 FORBIDDEN CONTENT:
+- Do NOT invent business details not provided
+- Do NOT add generic claims like "fastest", "cheapest", "best" without proof
+- Do NOT create fake testimonials or statistics
+- Do NOT add contact information not explicitly provided
+- Do NOT use template phrases or boilerplate content
+
+✅ REQUIRED APPROACH:
+- Use ONLY the actual business information provided
+- If a field shows [FIELD_NOT_PROVIDED], omit that aspect entirely
+- Create unique content based on real business data
+- For Kenya businesses: Add "T&Cs apply" for financial claims
+- Mention the actual business name and type in the content`;
+
+    // 🚨 STRICT BUSINESS DATA GUARDRAILS - ZERO HALLUCINATION POLICY
+    const businessDataGuardrails = `
+🚨 ZERO HALLUCINATION POLICY - CRITICAL BUSINESS DATA RULES:
+
+❌ ABSOLUTELY FORBIDDEN - DO NOT INVENT:
+- Specific amounts (KSh 300,000, $1000, etc.) unless explicitly provided
+- Timelines or speeds ("in 5 minutes", "same day", "instant") unless stated
+- Fees, rates, or pricing ("low fees", "competitive rates") unless given
+- Approval processes ("no credit checks", "fast approval") unless confirmed
+- Payment methods ("M-Pesa", "mobile money") unless specified
+- Geographic details beyond what's provided (specific cities, regions)
+- Customer numbers or statistics unless explicitly stated
+- Technical features not mentioned in business profile
+- Competitive claims ("best", "fastest", "cheapest") without proof
+
+✅ ONLY USE WHAT'S EXPLICITLY PROVIDED:
+- Exact business name as given
+- Exact business type as stated  
+- Only services listed in the business profile
+- Only features explicitly mentioned
+- Only contact information provided
+- Only target audience specified
+- Only competitive advantages listed
+
+🎯 CONTENT CREATION RULES:
+- Build content ONLY from provided business information
+- If information is missing, omit that aspect entirely
+- Use exact wording from business profile when possible
+- Create engaging content without adding unsourced details
+- For Kenya businesses: Add "T&Cs apply" only for financial services
+
+🚫 VIOLATION EXAMPLES TO AVOID:
+- "Get KSh 50,000 in minutes" (amount + timeline not provided)
+- "No collateral required" (process detail not confirmed)
+- "Trusted by 10,000+ customers" (statistic not given)
+- "Best rates in Kenya" (competitive claim without proof)
+- "Instant M-Pesa disbursement" (method + speed not specified)
+
+`;
+
+    // Build the content generation prompt with strict business data validation
+    const contentPrompt = (businessDataGuardrails + revo10Prompts.CONTENT_USER_PROMPT_TEMPLATE + uniquenessInjection)
+      .replace('{businessName}', contentGenerationInput.businessName || '[BUSINESS_NAME_MISSING]')
+      .replace('{businessType}', contentGenerationInput.businessType || '[BUSINESS_TYPE_MISSING]')
       .replace('{platform}', contentGenerationInput.platform)
-      .replace('{writingTone}', contentGenerationInput.writingTone)
-      .replace('{location}', contentGenerationInput.location)
-      .replace('{primaryColor}', contentGenerationInput.primaryColor || '#3B82F6')
+      .replace('{writingTone}', contentGenerationInput.writingTone || 'professional')
+      .replace('{location}', contentGenerationInput.location || '[LOCATION_NOT_PROVIDED]')
+      .replace('{primaryColor}', contentGenerationInput.primaryColor || '[COLOR_NOT_PROVIDED]')
       .replace('{visualStyle}', contentGenerationInput.visualStyle || 'modern')
-      .replace('{targetAudience}', contentGenerationInput.targetAudience)
-      .replace('{services}', serviceFocus + serviceContext)
-      .replace('{keyFeatures}', contentGenerationInput.keyFeatures || '')
+      .replace('{targetAudience}', contentGenerationInput.targetAudience || '[AUDIENCE_NOT_PROVIDED]')
+      .replace('{services}', serviceFocus + serviceContext || '[SERVICES_NOT_PROVIDED]')
+      .replace('{keyFeatures}', contentGenerationInput.keyFeatures || '[FEATURES_NOT_PROVIDED]')
       .replace('{productLanguage}', `
 🎯 PRODUCT-SPECIFIC LANGUAGE REQUIREMENTS:
 - Primary Product Type: ${productLanguage.primaryProduct}
@@ -2477,8 +2784,8 @@ Examples:
 - ❌ "Quality tech solutions" → ✅ "${(productLanguage.descriptors || ['quality'])[0]} ${productLanguage.primaryProduct}"
 
 This makes content more engaging and specific to what you're actually selling.`)
-      .replace('{competitiveAdvantages}', contentGenerationInput.competitiveAdvantages || '')
-      .replace('{contentThemes}', Array.isArray(contentGenerationInput.contentThemes) ? contentGenerationInput.contentThemes.join(', ') : 'general business content')
+      .replace('{competitiveAdvantages}', contentGenerationInput.competitiveAdvantages || '[ADVANTAGES_NOT_PROVIDED]')
+      .replace('{contentThemes}', Array.isArray(contentGenerationInput.contentThemes) ? contentGenerationInput.contentThemes.join(', ') : '[THEMES_NOT_PROVIDED]')
       .replace('{contactPhone}', '') // Contact details will be added during image generation
       .replace('{contactEmail}', '') // Contact details will be added during image generation
       .replace('{contactAddress}', '') // Contact details will be added during image generation
@@ -2636,102 +2943,136 @@ ${realTimeContext.highRelevanceData.map((item: any) => {
       contentGoal // Dynamic: 'conversion' for sales, 'awareness' for general
     );
 
-    // 🎨 NEW: Generate business-specific headlines and subheadlines with AI
+    // 🎨 DIRECT AI GENERATION - Bypass template functions entirely
+    
+    // Generate completely unique content using RANDOMIZED prompt structures
+    const promptStructures = [
+      // Structure 1: Question-based approach
+      `${enhancedContentPrompt}\n\n🎯 QUESTION-DRIVEN CONTENT CREATION:\nYou're a curious marketer asking engaging questions. Create:\n- HOOK QUESTION: Start with "What if...?" or "Ready for...?" or "Tired of...?"\n- ANSWER BENEFIT: 10-15 words explaining the solution\n- STORY CAPTION: Tell a mini-story in 2-3 sentences\n- ACTION CTA: Specific action that solves their problem\n- HASHTAGS: ${input.platform === 'instagram' ? '5' : '3'} relevant tags`,
+      
+      // Structure 2: Problem-solution approach  
+      `${enhancedContentPrompt}\n\n🎯 PROBLEM-SOLUTION CONTENT CREATION:\nYou're a solution-focused expert. Create:\n- PROBLEM HEADLINE: Identify a specific pain point (5-8 words)\n- SOLUTION PROMISE: How you solve it (10-15 words)\n- PROOF CAPTION: Show evidence or results in 2-3 sentences\n- RESULT CTA: What outcome they'll get\n- HASHTAGS: ${input.platform === 'instagram' ? '5' : '3'} relevant tags`,
+      
+      // Structure 3: Benefit-focused approach
+      `${enhancedContentPrompt}\n\n🎯 BENEFIT-FOCUSED CONTENT CREATION:\nYou're an enthusiastic advocate. Create:\n- BENEFIT HEADLINE: Lead with the main advantage (5-8 words)\n- VALUE EXPLANATION: Why it matters (10-15 words)\n- SUCCESS CAPTION: Paint the success picture in 2-3 sentences\n- GET STARTED CTA: How to begin the journey\n- HASHTAGS: ${input.platform === 'instagram' ? '5' : '3'} relevant tags`,
+      
+      // Structure 4: Social proof approach
+      `${enhancedContentPrompt}\n\n🎯 SOCIAL PROOF CONTENT CREATION:\nYou're sharing community success. Create:\n- SOCIAL HEADLINE: "Join [Number] People Who..." format (5-8 words)\n- COMMUNITY BENEFIT: What the community gets (10-15 words)\n- TESTIMONIAL CAPTION: Share a success story or result in 2-3 sentences\n- JOIN CTA: Invitation to join the community\n- HASHTAGS: ${input.platform === 'instagram' ? '5' : '3'} relevant tags`,
+      
+      // Structure 5: Urgency-driven approach
+      `${enhancedContentPrompt}\n\n🎯 URGENCY-DRIVEN CONTENT CREATION:\nYou're creating time-sensitive excitement. Create:\n- URGENT HEADLINE: Include timeframe or limit (5-8 words)\n- SCARCITY REASON: Why they need to act now (10-15 words)\n- FOMO CAPTION: What they'll miss if they wait in 2-3 sentences\n- TIME CTA: Action with deadline or urgency\n- HASHTAGS: ${input.platform === 'instagram' ? '5' : '3'} relevant tags`
+    ];
+    
+    // Add content persona randomization to make AI think differently
+    const contentPersonas = [
+      "You're an enthusiastic startup founder who gets excited about helping people solve problems",
+      "You're a seasoned marketing expert with 15+ years of experience crafting compelling messages", 
+      "You're a friendly community leader who knows exactly what local people need and want",
+      "You're a creative storyteller who turns business benefits into engaging narratives",
+      "You're a results-focused consultant who speaks directly about outcomes and value",
+      "You're an innovative disruptor who challenges conventional approaches with fresh ideas"
+    ];
+    
+    const selectedPersona = contentPersonas[diversitySeed % contentPersonas.length];
+    const personaInjection = `\n\n🎭 CONTENT PERSONA:\n${selectedPersona}. Write from this perspective and personality.\n`;
+    
+    // Select random prompt structure to break AI patterns  
+    const selectedStructure = promptStructures[diversitySeed % promptStructures.length];
+    const directContentPrompt = selectedStructure + personaInjection + `
 
-    let businessHeadline;
+CREATIVE HEADLINE INSPIRATION (Don't copy - use as creativity sparks):
+- Question format: "Ready for [specific benefit]?"
+- Number format: "5 Ways [Business] Changes [Life Aspect]"
+- Benefit format: "Get [Specific Result] in [Timeframe]"
+- Social proof: "Join [Number] Happy [Customers]"
+- Urgency format: "[Limited Offer] Ends [Timeframe]"
+- Problem-solution: "No More [Problem] - Try [Solution]"
+- Local pride: "[Location] Loves [Business] Because..."
+
+CREATIVE CTA INSPIRATION (Don't copy - create unique versions):
+- Specific benefit CTAs: "Start Saving Today", "Book Your Session", "Claim Your Spot"
+- Urgency CTAs: "Reserve Now", "Join Before It's Full", "Get Early Access"
+- Social CTAs: "Join the Community", "See What Others Say", "Share Your Story"
+- Value CTAs: "Try Risk-Free", "Get Your Quote", "Unlock Benefits"
+- Local CTAs: "Visit Our [Location] Store", "Call [Local Number]", "Find Us Downtown"
+
+CREATIVE CAPTION STARTERS (Don't copy - use for inspiration):
+- Question hooks: "What if you could...?", "Ever wondered how...?", "Tired of...?"
+- Story hooks: "Last week, a customer told us...", "Here's what happened when..."
+- Benefit hooks: "In just [timeframe], you'll...", "[Number] people have already..."
+- Local hooks: "Every [Location] resident deserves...", "We've been serving [Location] because..."
+- Problem hooks: "Stop struggling with...", "Never again worry about..."
+
+Output format:
+HEADLINE: [your unique headline - not using patterns above]
+SUBHEADLINE: [your creative subheadline] 
+CAPTION: [your engaging caption with fresh opener]
+CTA: [your specific, benefit-focused call-to-action]
+HASHTAGS: [your relevant hashtags]
+
+Remember: Be completely unique, avoid ALL repetitive patterns, create fresh content every time!`;
+
+    let businessHeadline, businessSubheadline, businessCaption;
+    
     try {
-      businessHeadline = await generateBusinessSpecificHeadline(
-        contentGenerationInput.businessType,
-        contentGenerationInput.businessName,
-        contentGenerationInput.location,
-        businessDetails,
-        contentGenerationInput.platform,
-        contentGoal, // Use dynamic content goal (conversion for sales, awareness for general)
-        trendingEnhancement,
-        advancedContent,
-        input.useLocalLanguage || false,
-        realTimeContext.localLanguage,
-        realTimeContext // Pass real-time context for RSS data integration
-      );
-    } catch (error) {
-      console.error('Failed to generate business-specific headline:', error);
-      // Fallback to simple headline
+      // Direct AI generation without templates
+      const directResult = await generateContentWithProxy(directContentPrompt, 'gemini-2.5-flash', false);
+      const directResponse = directResult.response.text();
+      
+      // Parse the response
+      const headlineMatch = directResponse.match(/HEADLINE:\s*([^\n]+)/i);
+      const subheadlineMatch = directResponse.match(/SUBHEADLINE:\s*([^\n]+)/i);
+      const captionMatch = directResponse.match(/CAPTION:\s*([^\n]+(?:\n[^\n]*)*?)(?=\nCTA:|\nHASHTAGS:|$)/i);
+      const ctaMatch = directResponse.match(/CTA:\s*([^\n]+)/i);
+      const hashtagsMatch = directResponse.match(/HASHTAGS:\s*([^\n]+)/i);
+      
       businessHeadline = {
-        headline: `${contentGenerationInput.businessName} - Quality ${contentGenerationInput.businessType} in ${contentGenerationInput.location}`,
-        approach: 'professional',
-        emotionalImpact: 'confident'
+        headline: headlineMatch ? headlineMatch[1].trim() : `${contentGenerationInput.businessName} - Your ${contentGenerationInput.businessType} Solution`,
+        approach: 'direct-ai',
+        emotionalImpact: 'engaging'
       };
-    }
-
-    let businessSubheadline;
-    try {
-      businessSubheadline = await generateBusinessSpecificSubheadline(
-        contentGenerationInput.businessType,
-        contentGenerationInput.businessName,
-        contentGenerationInput.location,
-        businessDetails,
-        businessHeadline.headline,
-        contentGoal, // Use dynamic content goal (conversion for sales, awareness for general)
-        trendingEnhancement,
-        advancedContent,
-        input.useLocalLanguage || false,
-        realTimeContext.localLanguage,
-        realTimeContext // Pass real-time context for RSS data integration
-      );
-    } catch (error) {
-      console.error('Failed to generate business-specific subheadline:', error);
-      // Fallback to simple subheadline
+      
       businessSubheadline = {
-        subheadline: `Professional ${contentGenerationInput.businessType} services for ${contentGenerationInput.location}`,
-        framework: 'benefit-focused',
-        benefit: 'reliable service'
+        subheadline: subheadlineMatch ? subheadlineMatch[1].trim() : `Professional ${contentGenerationInput.businessType} services for your needs`,
+        framework: 'direct-ai',
+        benefit: 'value-focused'
       };
-    }
-
-    // 📝 NEW: Generate AI-powered business-specific caption
-
-    // 🔍 DEBUG: Local language parameter tracing
-
-    // 🚨 ALERT: Make this debug message very visible
-    if (input.useLocalLanguage) {
-    } else {
-    }
-
-    let businessCaption;
-    try {
-      businessCaption = await generateBusinessSpecificCaption(
-        contentGenerationInput.businessType,
-        contentGenerationInput.businessName,
-        contentGenerationInput.location,
-        businessDetails,
-        contentGenerationInput.platform,
-        contentGoal, // Use dynamic content goal (conversion for sales, awareness for general)
-        trendingEnhancement,
-        advancedContent,
-        {
-          includeContacts: false, // Always false for content generation
-          phone: undefined, // No contact info in content generation
-          email: undefined, // No contact info in content generation
-          address: undefined, // No contact info in content generation
-          websiteUrl: undefined // No contact info in content generation
-        },
-        input.useLocalLanguage || false,
-        realTimeContext.localLanguage,
-        realTimeContext // Pass the entire real-time context for RSS data and relevance insights
-      );
-    } catch (error) {
-      console.error('Failed to generate business-specific caption:', error);
-      // Fallback to simple caption
+      
       businessCaption = {
-        caption: `${contentGenerationInput.businessName} provides quality ${contentGenerationInput.businessType} services in ${contentGenerationInput.location}. Experience the difference with our professional approach and commitment to excellence.`,
-        engagementHooks: ['Quality service', 'Professional approach', 'Local expertise'],
-        callToAction: 'Contact us today to learn more'
+        caption: captionMatch ? captionMatch[1].trim() : `Discover quality ${contentGenerationInput.businessType} services from ${contentGenerationInput.businessName}. We provide exceptional value and professional results.`,
+        callToAction: ctaMatch ? ctaMatch[1].trim() : 'Get Started Today',
+        engagementHooks: ['professional service', 'quality results']
       };
+      
+      // Store hashtags for later use
+      var generatedHashtags = hashtagsMatch ? hashtagsMatch[1].trim() : `#${contentGenerationInput.businessType.replace(/\s+/g, '')} #quality #professional`;
+      
+    } catch (error) {
+      console.error('Direct AI generation failed:', error);
+      
+      // Simple fallback without templates
+      businessHeadline = {
+        headline: `${contentGenerationInput.businessName} - Your ${contentGenerationInput.businessType} Solution`,
+        approach: 'fallback',
+        emotionalImpact: 'professional'
+      };
+      
+      businessSubheadline = {
+        subheadline: `Quality ${contentGenerationInput.businessType} services you can trust`,
+        framework: 'benefit-focused',
+        benefit: 'trust'
+      };
+      
+      businessCaption = {
+        caption: `Experience the difference with ${contentGenerationInput.businessName}. We provide professional ${contentGenerationInput.businessType} services with a focus on quality and customer satisfaction.`,
+        callToAction: 'Contact Us Today',
+        engagementHooks: ['quality service', 'customer satisfaction']
+      };
+      
+      var generatedHashtags = `#${contentGenerationInput.businessType.replace(/\s+/g, '')} #quality #professional`;
     }
-
-    // 🎯 BUSINESS-SPECIFIC CAPTION GENERATION COMPLETE
-
-    // 🎯 BUSINESS-SPECIFIC CONTENT GENERATION COMPLETE
+    
+    // 🎯 DIRECT AI CONTENT GENERATION COMPLETE
 
     // 🎯 FINAL: Return business-specific content package
 
@@ -2740,12 +3081,12 @@ ${realTimeContext.highRelevanceData.map((item: any) => {
       headline: businessHeadline.headline,
       subheadline: businessSubheadline.subheadline,
       callToAction: businessCaption.callToAction,
-      hashtags: hashtags,
+      hashtags: generatedHashtags || `#${input.businessType.replace(/\s+/g, '')} #quality #professional`,
       catchyWords: businessHeadline.headline, // Use business-specific headline
-      contentStrategy: contentPlan.strategy,
-      businessStrengths: contentPlan.businessStrengths,
-      marketOpportunities: contentPlan.marketOpportunities,
-      valueProposition: contentPlan.valueProposition,
+      contentStrategy: contentPlan?.strategy || 'awareness',
+      businessStrengths: contentPlan?.businessStrengths || ['Professional service'],
+      marketOpportunities: contentPlan?.marketOpportunities || ['Market growth'],
+      valueProposition: contentPlan?.valueProposition || 'Quality service provider',
       platform: input.platform,
       businessType: input.businessType,
       location: input.location,
@@ -2759,12 +3100,12 @@ ${realTimeContext.highRelevanceData.map((item: any) => {
       },
       // 🧠 BUSINESS INTELLIGENCE DATA
       businessIntelligence: {
-        contentGoal: contentPlan.strategy.goal,
-        businessStrengths: contentPlan.businessStrengths,
-        marketOpportunities: contentPlan.marketOpportunities,
-        customerPainPoints: contentPlan.customerPainPoints,
-        valueProposition: contentPlan.valueProposition,
-        localRelevance: contentPlan.localRelevance
+        contentGoal: contentPlan?.strategy?.goal || 'awareness',
+        businessStrengths: contentPlan?.businessStrengths || ['Professional service'],
+        marketOpportunities: contentPlan?.marketOpportunities || ['Market growth'],
+        customerPainPoints: contentPlan?.customerPainPoints || ['Service needs'],
+        valueProposition: contentPlan?.valueProposition || 'Quality service provider',
+        localRelevance: contentPlan?.localRelevance || 'Local business'
       },
       variants: [{
         platform: input.platform,
@@ -2783,7 +3124,7 @@ ${realTimeContext.highRelevanceData.map((item: any) => {
         subheadline: businessSubheadline.subheadline,
         caption: businessCaption.caption,
         callToAction: businessCaption.callToAction,
-        hashtags: hashtags
+        hashtags: finalContent.hashtags
       };
 
       const cohesionAnalysis = analyzeContentCohesion(contentElements);
@@ -2845,24 +3186,84 @@ ${realTimeContext.highRelevanceData.map((item: any) => {
       console.warn('🔤 [Revo 1.0] Spell check failed, using original content:', error);
     }
 
-    // 🎯 ENHANCED: Content Quality Validation (copied from Revo 1.5)
+    // 🎯 ENHANCED: Content Diversity Check
+    const diversityCheck = ContentDiversityTracker.checkDiversity({
+      headline: finalContent.headline,
+      subheadline: finalContent.subheadline,
+      caption: finalContent.content
+    });
+    
+    if (!diversityCheck.isDiverse) {
+      console.warn('⚠️ [Revo 1.0] Content duplication detected:', diversityCheck.duplications);
+      // Add diversity issues to content for visibility
+      finalContent.diversityReport = {
+        isDiverse: false,
+        duplications: diversityCheck.duplications,
+        similarityScore: diversityCheck.similarityScore
+      };
+    } else {
+      // Track this content for future diversity checks
+      ContentDiversityTracker.addContent({
+        headline: finalContent.headline,
+        subheadline: finalContent.subheadline,
+        caption: finalContent.content
+      });
+      
+      finalContent.diversityReport = {
+        isDiverse: true,
+        duplications: [],
+        similarityScore: diversityCheck.similarityScore
+      };
+    }
+
+    // 🎯 ENHANCED: Content Quality Validation with new requirements
     try {
-      const contentQuality = validateContentQuality(
+      const contentQuality = validateContentQuality_Enhanced(
         {
           headline: finalContent.headline,
           subheadline: finalContent.subheadline,
-          caption: finalContent.content
+          caption: finalContent.content,
+          callToAction: finalContent.callToAction
         },
         input.businessName,
-        input.businessType,
-        { businessName: input.businessName, businessType: input.businessType } as BrandProfile
+        input.businessType
       );
 
-      if (!contentQuality.isBusinessSpecific) {
-        console.warn('⚠️ [Revo 1.0] Content appears generic, enhancing with business specificity');
-        // Enhance content with business specificity
-        if (finalContent.content && !finalContent.content.toLowerCase().includes(input.businessName.toLowerCase())) {
+      // Log quality issues for debugging
+      if (!contentQuality.isValid) {
+        console.warn('⚠️ [Revo 1.0] Content quality issues detected:', contentQuality.issues);
+      }
+      
+      // Add quality report to final content
+      finalContent.qualityReport = {
+        isValid: contentQuality.isValid,
+        score: contentQuality.score,
+        issues: contentQuality.issues
+      };
+
+      // Auto-fix some issues if possible
+      if (!contentQuality.isValid) {
+        // Fix business specificity
+        if (!finalContent.content.toLowerCase().includes(input.businessName.toLowerCase()) && 
+            !finalContent.content.toLowerCase().includes(input.businessType.toLowerCase())) {
           finalContent.content = `${finalContent.content} Experience the difference with ${input.businessName}.`;
+        }
+        
+        // Fix weak CTAs by replacing them with stronger alternatives
+        const weakCTAReplacements = {
+          'learn more': 'Start Now',
+          'contact us': 'Get Started Today',
+          'get digital wallet': 'Download App',
+          'get business account free': 'Open Business Account'
+        };
+        
+        const ctaLower = (finalContent.callToAction || '').toLowerCase();
+        for (const [weak, strong] of Object.entries(weakCTAReplacements)) {
+          if (ctaLower.includes(weak)) {
+            finalContent.callToAction = strong;
+            console.log(`🔄 [Revo 1.0] Improved CTA: "${weak}" → "${strong}"`);
+            break;
+          }
         }
       }
 
@@ -3077,14 +3478,14 @@ ANTI-GENERIC REQUIREMENTS:
     const contentStructure = [];
     if (input.headline) contentStructure.push(`PRIMARY (Largest, most prominent): "${input.headline}"`);
     if (input.subheadline) contentStructure.push(`SECONDARY (Medium, supporting): "${input.subheadline}"`);
-    if (input.callToAction) contentStructure.push(`CTA (Bold, action-oriented, prominent like "PAYA: YOUR FUTURE, NOW!" style): "${input.callToAction}"`);
+    if (input.callToAction) contentStructure.push(`CTA (Bold, action-oriented, prominent and unmissable): "${input.callToAction}"`);
 
-    // 🎯 CTA PROMINENCE INSTRUCTIONS (like Paya example)
+    // 🎯 CTA PROMINENCE INSTRUCTIONS
     const ctaInstructions = input.callToAction ? `
 
-🎯 CRITICAL CTA DISPLAY REQUIREMENTS (LIKE PAYA EXAMPLE):
+🎯 CRITICAL CTA DISPLAY REQUIREMENTS:
 - The CTA "${input.callToAction}" MUST be displayed prominently on the design
-- Make it BOLD, LARGE, and VISUALLY STRIKING like "PAYA: YOUR FUTURE, NOW!"
+- Make it BOLD, LARGE, and VISUALLY STRIKING
 - Use high contrast colors to make the CTA stand out
 - Position it prominently - top, center, or as a banner across the design
 - Make the CTA text the MAIN FOCAL POINT of the design
@@ -3093,7 +3494,7 @@ ANTI-GENERIC REQUIREMENTS:
 - The CTA should be the FIRST thing people notice when they see the design
 - Make it look like a professional marketing campaign CTA
 - Ensure it's readable from mobile devices - minimum 32px equivalent font size
-- EXAMPLE STYLE: Like "PAYA: YOUR FUTURE, NOW!" - bold, prominent, unmissable
+- STYLE: Bold, prominent, unmissable - like premium brand campaign CTAs
     ` : '';
 
     // Get advanced design features
@@ -3174,19 +3575,41 @@ ANTICIPATION VISUAL REQUIREMENTS:
 `;
     }
 
-    let imagePrompt = `🏦 Create a CLEAN, HUMAN-DESIGNED fintech advertisement for ${input.businessName} that looks like it was created by a professional human designer, NOT AI.
+    // Randomize image generation approach to break visual patterns
+    const imagePromptStyles = [
+      // Style 1: Warm & Approachable (Original)
+      `🎨 Create a WARM, APPROACHABLE advertisement for ${input.businessName} that looks like it was created by a professional human designer, NOT AI.`,
+      
+      // Style 2: Bold & Dynamic
+      `💪 Create a BOLD, DYNAMIC advertisement for ${input.businessName} that grabs attention and demands action, designed by a confident creative director.`,
+      
+      // Style 3: Clean & Professional  
+      `✨ Create a CLEAN, PROFESSIONAL advertisement for ${input.businessName} that builds trust and credibility, designed by an experienced brand strategist.`,
+      
+      // Style 4: Friendly & Community-focused
+      `🎆 Create a FRIENDLY, COMMUNITY-FOCUSED advertisement for ${input.businessName} that feels like a local recommendation from a trusted neighbor.`,
+      
+      // Style 5: Modern & Innovative
+      `🚀 Create a MODERN, INNOVATIVE advertisement for ${input.businessName} that showcases forward-thinking and cutting-edge solutions.`
+    ];
+    
+    const selectedImageStyle = imagePromptStyles[designSeed % imagePromptStyles.length];
+    let imagePrompt = selectedImageStyle + `
 
-🚨 CRITICAL ANTI-AI REQUIREMENTS:
+CRITICAL ANTI-AI REQUIREMENTS:
 - MUST look like a real human designer created this, NOT AI-generated
 - NO perfect symmetry, NO artificial patterns, NO obvious AI characteristics
 - USE real photography style, authentic layouts, natural imperfections
 - AVOID sterile, overly polished, or artificial-looking elements
 
-🎯 CLEAN DESIGN STANDARDS:
-- MINIMAL, clean layout with plenty of white space (40%+)
-- NATURAL color palette: deep blues (#1e40af, #3b82f6), professional greens (#059669, #10b981), clean whites
+🎨 WARM & APPROACHABLE DESIGN STANDARDS:
+- WARM, friendly color palette that feels welcoming and accessible
+- DEFAULT colors: warm oranges (#ff6b35, #f97316), friendly blues (#3b82f6, #60a5fa), approachable greens (#10b981, #34d399), clean whites
+- AVOID: Dark blues + tech graphics (feels cold and crypto-like)
+- AVOID: Abstract shapes without clear purpose (confuses message)
+- USE: Colors that make people feel welcome and comfortable
 - AUTHENTIC typography that looks hand-selected, not AI-generated
-- REAL-WORLD visual elements, not artificial patterns
+- REAL-WORLD visual elements that people can relate to
 
 BUSINESS CONTEXT:
 - Business: ${input.businessName} (${input.businessType})
