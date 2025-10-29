@@ -1,23 +1,12 @@
 import { NextResponse } from 'next/server';
 import { TwitterApi } from 'twitter-api-v2';
-import fs from 'fs/promises';
-import path from 'path';
+import { createClient } from '@supabase/supabase-js';
 
-const STATE_STORE = path.resolve(process.cwd(), 'tmp', 'oauth-states.json');
-
-async function readStates() {
-  try {
-    const raw = await fs.readFile(STATE_STORE, 'utf-8');
-    return JSON.parse(raw || '{}');
-  } catch (e) {
-    return {};
-  }
-}
-
-async function writeStates(data: any) {
-  await fs.mkdir(path.dirname(STATE_STORE), { recursive: true });
-  await fs.writeFile(STATE_STORE, JSON.stringify(data, null, 2), 'utf-8');
-}
+// Server-side Supabase client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -31,15 +20,21 @@ export async function GET(req: Request) {
   }
 
   try {
-    // Read stored state
-    const states = await readStates();
-    const storedState = states[state];
+    // Get stored state from Supabase
+    const { data: storedState, error: stateError } = await supabase
+      .from('oauth_states')
+      .select('*')
+      .eq('state', state)
+      .eq('platform', 'twitter')
+      .gt('expires_at', new Date().toISOString())
+      .single();
 
-    if (!storedState || !storedState.codeVerifier) {
+    if (stateError || !storedState) {
+      console.error('Invalid or expired state:', stateError);
       return NextResponse.redirect(`${baseUrl}/social-connect?error=invalid_state`);
     }
 
-    const { codeVerifier, userId } = storedState;
+    const { code_verifier: codeVerifier, user_id: userId } = storedState;
 
     if (!userId) {
       console.error('No userId in stored state');
@@ -97,9 +92,11 @@ export async function GET(req: Request) {
 
     console.log('Successfully stored Twitter connection');
 
-    // Clean up state
-    delete states[state];
-    await writeStates(states);
+    // Clean up state from Supabase
+    await supabase
+      .from('oauth_states')
+      .delete()
+      .eq('state', state);
 
     // Redirect to the same base URL we're running on
     const redirectUrl = `${baseUrl}/social-connect?oauth_success=true&platform=twitter&username=${userObject.username}`;
