@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import Image from "next/image";
-import { Facebook, Instagram, Linkedin, MoreVertical, Pen, RefreshCw, Twitter, CalendarIcon, Download, Loader2, Video, ChevronLeft, ChevronRight, ImageOff, Copy, Eye } from "lucide-react";
+import { Facebook, Instagram, Linkedin, MoreVertical, Pen, RefreshCw, Twitter, CalendarIcon, Download, Loader2, Video, ChevronLeft, ChevronRight, ImageOff, Copy, Eye, Send, Clock, Share2, CheckCircle, XCircle } from "lucide-react";
 import { toPng } from 'html-to-image';
 import { PerformanceBadgeCompact } from '@/components/ui/performance-badge';
 import { PerformancePredictionService } from '@/services/performance-prediction-service';
@@ -34,6 +34,7 @@ import {
 import type { BrandProfile, GeneratedPost, Platform, PostVariant } from "@/lib/types";
 import { format } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth-supabase";
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Input } from '../ui/input';
@@ -41,6 +42,13 @@ import { generateContentAction, generateVideoContentAction } from '@/app/actions
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from '@/lib/utils';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '../ui/carousel';
+import { createClient } from '@supabase/supabase-js';
+
+// Supabase client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 // Helper function to validate URLs
 const isValidUrl = (url: string): boolean => {
@@ -110,6 +118,7 @@ type PostCardProps = {
 };
 
 export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
+  const { user, getAccessToken } = useAuth();
   const [isEditing, setIsEditing] = React.useState(false);
   const [isRegenerating, setIsRegenerating] = React.useState(false);
   const [isGeneratingVideo, setIsGeneratingVideo] = React.useState(false);
@@ -119,6 +128,18 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   const [showVideoDialog, setShowVideoDialog] = React.useState(false);
   const [showImagePreview, setShowImagePreview] = React.useState(false);
   const [previewImageUrl, setPreviewImageUrl] = React.useState<string>('');
+  
+  // Posting state
+  const [isPosting, setIsPosting] = React.useState(false);
+  const [postingStatus, setPostingStatus] = React.useState<Record<string, 'idle' | 'posting' | 'success' | 'error'>>({});
+  const [showPostingDialog, setShowPostingDialog] = React.useState(false);
+  const [selectedPlatforms, setSelectedPlatforms] = React.useState<string[]>([]);
+  const [scheduledTime, setScheduledTime] = React.useState<string>('');
+  const [postingMode, setPostingMode] = React.useState<'manual' | 'schedule'>('manual');
+  
+  // Dropdown state
+  const [dropdownOpen, setDropdownOpen] = React.useState(false);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
 
   // Performance prediction state
   const [performancePrediction, setPerformancePrediction] = React.useState<PerformancePrediction | null>(null);
@@ -244,6 +265,77 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
     setPreviewImageUrl(imageUrl);
     setShowImagePreview(true);
   }, []);
+
+  // Posting functionality
+  const handlePostToSocial = React.useCallback(async (platform: string, mode: 'manual' | 'schedule' = 'manual', scheduledTime?: string) => {
+    setIsPosting(true);
+    setPostingStatus(prev => ({ ...prev, [platform]: 'posting' }));
+
+    try {
+      const accessToken = await getAccessToken();
+      
+      if (!accessToken) {
+        throw new Error('Please log in to post to social media');
+      }
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      };
+
+      const response = await fetch('/api/social/post', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          platform,
+          content: editedContent,
+          hashtags: editedHashtags,
+          imageUrl: post.imageUrl,
+          mode,
+          scheduledTime: mode === 'schedule' ? scheduledTime : undefined,
+          postId: post.id
+        })
+      });
+
+      if (response.ok) {
+        setPostingStatus(prev => ({ ...prev, [platform]: 'success' }));
+        toast({
+          title: "Posted Successfully!",
+          description: `Your post has been ${mode === 'manual' ? 'published' : 'scheduled'} to ${platform}.`,
+        });
+      } else {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `HTTP ${response.status}: Failed to post`);
+      }
+    } catch (error) {
+      console.error('Posting error:', error);
+      setPostingStatus(prev => ({ ...prev, [platform]: 'error' }));
+      toast({
+        title: "Posting Failed",
+        description: `Failed to post to ${platform}. Please try again.`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsPosting(false);
+    }
+  }, [editedContent, editedHashtags, post.imageUrl, post.id, getAccessToken, toast]);
+
+  const handleOpenPostingDialog = React.useCallback(() => {
+    setShowPostingDialog(true);
+    setSelectedPlatforms([post.platform.toLowerCase()]);
+  }, [post.platform]);
+
+  const handlePostToMultiple = React.useCallback(async () => {
+    if (selectedPlatforms.length === 0) return;
+
+    setIsPosting(true);
+    
+    for (const platform of selectedPlatforms) {
+      await handlePostToSocial(platform, postingMode, scheduledTime);
+    }
+    
+    setShowPostingDialog(false);
+  }, [selectedPlatforms, postingMode, scheduledTime, handlePostToSocial]);
 
   const handleDownload = React.useCallback(async () => {
     const activeVariant = safeVariants.find(v => v.platform === activeTab);
@@ -449,7 +541,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
 
   return (
     <>
-      <Card className="flex flex-col w-full">
+      <Card className="flex flex-col w-full relative">
         <CardHeader className="flex-row items-center justify-between gap-4 p-4">
           <div className="flex items-center gap-3 text-sm font-medium text-muted-foreground">
             <div className="flex items-center gap-2">
@@ -462,35 +554,72 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
               loading={isPredictionLoading}
             />
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="ghost" className="h-6 w-6" disabled={isRegenerating || isGeneratingVideo}>
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setIsEditing(true)}>
-                <Pen className="mr-2 h-4 w-4" />
-                Edit Text
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleRegenerate} disabled={isRegenerating}>
-                {isRegenerating ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                )}
-                Regenerate Image
-              </DropdownMenuItem>
-              <DropdownMenuItem disabled>
-                <Video className="mr-2 h-4 w-4 text-muted-foreground" />
-                Generate Video (Coming Soon)
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleDownload}>
-                <Download className="mr-2 h-4 w-4" />
-                Download Image
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="relative" ref={dropdownRef}>
+            <button 
+              className="h-6 w-6 flex items-center justify-center rounded hover:bg-gray-100"
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+            >
+              <MoreVertical className="h-4 w-4" />
+            </button>
+            
+            {dropdownOpen && (
+              <div 
+                className="absolute right-0 top-8 z-50 min-w-[200px] rounded-md border bg-white p-1 shadow-lg"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button 
+                  className="flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-gray-100"
+                  onClick={() => {
+                    setDropdownOpen(false);
+                    setIsEditing(true);
+                  }}
+                >
+                  <Pen className="h-4 w-4" />
+                  Edit Text
+                </button>
+                <button 
+                  className={`flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-gray-100 ${isRegenerating ? 'opacity-50 pointer-events-none' : ''}`}
+                  onClick={() => {
+                    if (!isRegenerating) {
+                      setDropdownOpen(false);
+                      handleRegenerate();
+                    }
+                  }}
+                >
+                  {isRegenerating ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                  Regenerate Image
+                </button>
+                <div className="flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm opacity-50 pointer-events-none">
+                  <Video className="h-4 w-4 text-muted-foreground" />
+                  Generate Video (Coming Soon)
+                </div>
+                <button 
+                  className="flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-gray-100"
+                  onClick={() => {
+                    setDropdownOpen(false);
+                    handleDownload();
+                  }}
+                >
+                  <Download className="h-4 w-4" />
+                  Download Image
+                </button>
+                <button 
+                  className="flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-gray-100"
+                  onClick={() => {
+                    setDropdownOpen(false);
+                    handleOpenPostingDialog();
+                  }}
+                >
+                  <Send className="h-4 w-4" />
+                  Post to Social Media
+                </button>
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="flex-grow space-y-4 p-4 pt-0">
           {isRevo2Post ? (
@@ -516,11 +645,14 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
                         <span className="sr-only">{isRegenerating ? 'Regenerating image...' : 'Generating video...'}</span>
                       </div>
                     )}
-                    <div ref={el => (downloadRefs.current[variant?.platform || 'instagram'] = el)} className={`relative ${dimensions.aspectClass} w-full overflow-hidden rounded-md border group`}>
+                    <div ref={el => { downloadRefs.current[variant?.platform || 'instagram'] = el; }} className={`relative ${dimensions.aspectClass} w-full overflow-hidden rounded-md border group`}>
                       {variant?.imageUrl && isValidUrl(variant.imageUrl) ? (
                         <div
                           className="relative h-full w-full cursor-pointer"
-                          onClick={() => handleImagePreview(variant.imageUrl)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleImagePreview(variant.imageUrl);
+                          }}
                         >
                           <Image
                             alt={`Generated post image for ${variant.platform}`}
@@ -589,11 +721,14 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
                           <span className="sr-only">{isRegenerating ? 'Regenerating image...' : 'Generating video...'}</span>
                         </div>
                       )}
-                      <div ref={el => (downloadRefs.current[variant.platform] = el)} className={`relative ${dimensions.aspectClass} w-full overflow-hidden rounded-md border group`}>
+                      <div ref={el => { downloadRefs.current[variant.platform] = el; }} className={`relative ${dimensions.aspectClass} w-full overflow-hidden rounded-md border group`}>
                         {variant.imageUrl && isValidUrl(variant.imageUrl) ? (
                           <div
                             className="relative h-full w-full cursor-pointer"
-                            onClick={() => handleImagePreview(variant.imageUrl)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleImagePreview(variant.imageUrl);
+                            }}
                           >
                             <Image
                               alt={`Generated post image for ${variant.platform}`}
@@ -789,6 +924,137 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowImagePreview(false)}>
               Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Posting Dialog */}
+      <Dialog open={showPostingDialog} onOpenChange={setShowPostingDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Post to Social Media</DialogTitle>
+            <DialogDescription>
+              Choose platforms and posting mode for your content.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Platform Selection */}
+            <div className="space-y-2">
+              <Label>Select Platforms</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {['twitter', 'facebook', 'instagram', 'linkedin'].map((platform) => (
+                  <div key={platform} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id={platform}
+                      checked={selectedPlatforms.includes(platform)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedPlatforms([...selectedPlatforms, platform]);
+                        } else {
+                          setSelectedPlatforms(selectedPlatforms.filter(p => p !== platform));
+                        }
+                      }}
+                      className="rounded"
+                    />
+                    <Label htmlFor={platform} className="capitalize flex items-center gap-2">
+                      {platformIcons[platform as Platform]}
+                      {platform}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Posting Mode */}
+            <div className="space-y-2">
+              <Label>Posting Mode</Label>
+              <div className="flex space-x-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="manual"
+                    name="mode"
+                    checked={postingMode === 'manual'}
+                    onChange={() => setPostingMode('manual')}
+                  />
+                  <Label htmlFor="manual" className="flex items-center gap-2">
+                    <Send className="h-4 w-4" />
+                    Post Now
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="schedule"
+                    name="mode"
+                    checked={postingMode === 'schedule'}
+                    onChange={() => setPostingMode('schedule')}
+                  />
+                  <Label htmlFor="schedule" className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Schedule
+                  </Label>
+                </div>
+              </div>
+            </div>
+
+            {/* Schedule Time */}
+            {postingMode === 'schedule' && (
+              <div className="space-y-2">
+                <Label htmlFor="scheduledTime">Schedule Time</Label>
+                <Input
+                  id="scheduledTime"
+                  type="datetime-local"
+                  value={scheduledTime}
+                  onChange={(e) => setScheduledTime(e.target.value)}
+                  min={new Date().toISOString().slice(0, 16)}
+                />
+              </div>
+            )}
+
+            {/* Posting Status */}
+            {Object.keys(postingStatus).length > 0 && (
+              <div className="space-y-2">
+                <Label>Posting Status</Label>
+                <div className="space-y-1">
+                  {Object.entries(postingStatus).map(([platform, status]) => (
+                    <div key={platform} className="flex items-center justify-between text-sm">
+                      <span className="capitalize">{platform}</span>
+                      <div className="flex items-center gap-1">
+                        {status === 'posting' && <Loader2 className="h-3 w-3 animate-spin" />}
+                        {status === 'success' && <CheckCircle className="h-3 w-3 text-green-500" />}
+                        {status === 'error' && <XCircle className="h-3 w-3 text-red-500" />}
+                        <span className="capitalize text-muted-foreground">{status}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPostingDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handlePostToMultiple} 
+              disabled={isPosting || selectedPlatforms.length === 0}
+            >
+              {isPosting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Posting...
+                </>
+              ) : (
+                <>
+                  <Share2 className="mr-2 h-4 w-4" />
+                  {postingMode === 'manual' ? 'Post Now' : 'Schedule Post'}
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -595,7 +595,7 @@ export function ContentCalendar({
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 w-full max-w-none">
               {posts.map((post, index) => (
                 <PostCard
-                  key={`post-card-${index}-${post.id || 'no-id'}-${Math.random().toString(36).substr(2, 9)}`}
+                  key={post.id || `post-${index}`}
                   post={post}
                   brandProfile={brandProfile}
                   onPostUpdated={onPostUpdated}
