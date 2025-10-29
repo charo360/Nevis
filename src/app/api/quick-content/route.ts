@@ -129,35 +129,66 @@ export async function POST(request: NextRequest) {
           }
 
         } catch (error) {
-          // Fallback for Paya testing
-          if (freshBrandProfile.businessName?.toLowerCase().includes('paya')) {
-            const sampleProfile = BusinessProfileResolver.getSampleProfile();
-            resolvedProfile = {
-              id: 'paya-sample',
-              ...sampleProfile,
-              sources: {
-                businessName: 'user',
-                businessType: 'user',
-                description: 'user',
-                location: 'user',
-                contact: 'user',
-                services: 'user',
-                keyFeatures: 'user',
-                competitiveAdvantages: 'user',
-                targetAudience: 'user',
-                brandVoice: 'missing',
-                brandColors: 'user',
-                logoUrl: 'missing',
-                logoDataUrl: 'missing',
-                designExamples: 'missing'
-              },
-              completeness: {
-                score: 85,
-                missingCritical: [],
-                missingOptional: ['brandVoice', 'logoUrl']
-              }
-            };
-          } else {
+          console.log(' [QuickContent] Business Profile Resolver failed, using provided data:', error.message);
+          
+          // Use the provided fresh brand profile data directly with proper structure
+          resolvedProfile = {
+            id: freshBrandProfile.id || 'test-profile',
+            businessName: freshBrandProfile.businessName,
+            businessType: freshBrandProfile.businessType,
+            description: freshBrandProfile.description || `${freshBrandProfile.businessType} services`,
+            location: freshBrandProfile.location ? 
+              (typeof freshBrandProfile.location === 'string' ? 
+                { country: freshBrandProfile.location.includes('Kenya') ? 'KE' : freshBrandProfile.location } : 
+                freshBrandProfile.location) : 
+              undefined,
+            contact: freshBrandProfile.contactInfo || freshBrandProfile.contact,
+            services: Array.isArray(freshBrandProfile.services) ? 
+              freshBrandProfile.services : 
+              (freshBrandProfile.services ? [{ name: freshBrandProfile.services, description: '' }] : []),
+            keyFeatures: freshBrandProfile.keyFeatures || [],
+            competitiveAdvantages: freshBrandProfile.competitiveAdvantages || [],
+            targetAudience: freshBrandProfile.targetAudience || 'General audience',
+            brandVoice: freshBrandProfile.brandVoice || freshBrandProfile.writingTone,
+            brandColors: {
+              primary: freshBrandProfile.primaryColor,
+              secondary: freshBrandProfile.accentColor
+            },
+            logoUrl: freshBrandProfile.logoUrl,
+            logoDataUrl: freshBrandProfile.logoDataUrl,
+            sources: {
+              businessName: 'user',
+              businessType: 'user', 
+              description: 'user',
+              location: 'user',
+              contact: 'user',
+              services: 'user',
+              keyFeatures: 'user',
+              competitiveAdvantages: 'user',
+              targetAudience: 'user',
+              brandVoice: 'user',
+              brandColors: 'user',
+              logoUrl: 'missing',
+              logoDataUrl: 'missing',
+              designExamples: 'missing'
+            },
+            completeness: {
+              score: 90,
+              missingCritical: [],
+              missingOptional: ['logoUrl']
+            }
+          };
+          
+          console.log(' [QuickContent] Using provided business profile:', {
+            businessName: resolvedProfile.businessName,
+            businessType: resolvedProfile.businessType,
+            location: resolvedProfile.location,
+            servicesCount: resolvedProfile.services?.length || 0,
+            hasColors: !!(resolvedProfile.brandColors?.primary)
+          });
+          
+          // Fallback for Paya testing only if business name includes 'paya' and no data provided
+          if (freshBrandProfile.businessName?.toLowerCase().includes('paya') && !freshBrandProfile.services) {
             return NextResponse.json(
               { 
                 error: `Failed to resolve business profile: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -209,8 +240,8 @@ export async function POST(request: NextRequest) {
           currentDate,
           primaryColor: resolvedProfile.brandColors?.primary || freshBrandProfile.primaryColor,
           visualStyle: freshBrandProfile.visualStyle || 'modern',
-          // Include contact information for contacts toggle
-          includeContacts: !!(resolvedProfile.contact?.phone || resolvedProfile.contact?.email),
+          // Include contact information based on user toggle setting
+          includeContacts: brandConsistency?.includeContacts === true,
           contactInfo: resolvedProfile.contact || {},
           websiteUrl: resolvedProfile.contact?.website || ''
         });
@@ -232,12 +263,12 @@ export async function POST(request: NextRequest) {
         const finalBackgroundColor = freshBrandProfile.backgroundColor || '#FFFFFF';
 
         const finalContactInfo = {
-          phone: freshBrandProfile.contactInfo?.phone || (freshBrandProfile as any).phone || '',
-          email: freshBrandProfile.contactInfo?.email || (freshBrandProfile as any).email || '',
-          address: freshBrandProfile.contactInfo?.address || freshBrandProfile.location || ''
+          phone: resolvedProfile.contact?.phone || freshBrandProfile.contactInfo?.phone || (freshBrandProfile as any).phone || '',
+          email: resolvedProfile.contact?.email || freshBrandProfile.contactInfo?.email || (freshBrandProfile as any).email || '',
+          address: resolvedProfile.contact?.address || freshBrandProfile.contactInfo?.address || freshBrandProfile.location || ''
         };
 
-        const finalWebsiteUrl = freshBrandProfile.websiteUrl || (freshBrandProfile as any).websiteUrl || '';
+        const finalWebsiteUrl = resolvedProfile.contact?.website || freshBrandProfile.websiteUrl || (freshBrandProfile as any).websiteUrl || '';
 
         console.log('🎨 [QuickContent] Brand Colors Validation (Fresh Data):', {
           frontendPrimaryColor: brandProfile.primaryColor,
@@ -260,9 +291,15 @@ export async function POST(request: NextRequest) {
           includeContacts: brandConsistency?.includeContacts,
           frontendContactInfo: brandProfile.contactInfo,
           freshContactInfo: freshBrandProfile.contactInfo,
+          resolvedContactInfo: resolvedProfile.contact,
           finalContactInfo,
           finalWebsiteUrl,
-          hasValidContacts: !!(finalContactInfo.phone || finalContactInfo.email || finalWebsiteUrl)
+          hasValidContacts: !!(finalContactInfo.phone || finalContactInfo.email || finalWebsiteUrl),
+          willPassToImageGeneration: {
+            includeContacts: brandConsistency?.includeContacts === true,
+            contactInfo: resolvedProfile.contact || {},
+            websiteUrl: resolvedProfile.contact?.website || ''
+          }
         });
 
         // Skip credits check for testing (consistent with other Revo routes)
@@ -297,7 +334,7 @@ export async function POST(request: NextRequest) {
             headline: revo10Result.catchyWords,
             subheadline: revo10Result.subheadline,
             callToAction: revo10Result.callToAction,
-            includeContacts: !!(resolvedProfile.contact?.phone || resolvedProfile.contact?.email),
+            includeContacts: brandConsistency?.includeContacts === true,
             contactInfo: resolvedProfile.contact || {},
             websiteUrl: resolvedProfile.contact?.website || '',
             includePeople: includePeopleInDesigns,

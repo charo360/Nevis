@@ -3450,15 +3450,32 @@ ANTI-GENERIC REQUIREMENTS:
     // Build advanced professional design prompt
     const brandInfo = input.location ? ` based in ${input.location}` : '';
 
-    // 🎨 ENHANCED BRAND COLORS VALIDATION AND DEBUGGING WITH TOGGLE SUPPORT
+    // 🎨 STRICT BRAND COLORS LOGIC - When strict mode is ON, ONLY use provided colors
     const shouldFollowBrandColors = input.followBrandColors !== false; // Default to true if not specified
+    const isStrictMode = input.followBrandColors === true; // Explicit strict mode
 
-    const primaryColor = shouldFollowBrandColors ? (input.primaryColor || '#3B82F6') : '#3B82F6';
-    const accentColor = shouldFollowBrandColors ? (input.accentColor || '#1E40AF') : '#1E40AF';
-    const backgroundColor = shouldFollowBrandColors ? (input.backgroundColor || '#FFFFFF') : '#FFFFFF';
+    let primaryColor, accentColor, backgroundColor;
+    
+    if (isStrictMode) {
+      // STRICT MODE: Only use provided colors, no fallbacks
+      primaryColor = input.primaryColor; // Could be undefined - that's intentional
+      accentColor = input.accentColor;   // Could be undefined - that's intentional  
+      backgroundColor = input.backgroundColor; // Could be undefined - that's intentional
+    } else if (shouldFollowBrandColors) {
+      // NORMAL MODE: Use provided colors with fallbacks
+      primaryColor = input.primaryColor || '#3B82F6';
+      accentColor = input.accentColor || '#1E40AF';
+      backgroundColor = input.backgroundColor || '#FFFFFF';
+    } else {
+      // BRAND COLORS DISABLED: Use default colors
+      primaryColor = '#3B82F6';
+      accentColor = '#1E40AF';
+      backgroundColor = '#FFFFFF';
+    }
 
     console.log('🎨 [Revo 1.0] Brand Colors Debug:', {
       followBrandColors: shouldFollowBrandColors,
+      isStrictMode: isStrictMode,
       inputPrimaryColor: input.primaryColor,
       inputAccentColor: input.accentColor,
       inputBackgroundColor: input.backgroundColor,
@@ -3690,7 +3707,17 @@ ${shouldMentionLocationInDesign ? `🌍 CULTURAL REPRESENTATION & LOCAL TOUCH:
 
 ${peopleInstructions ? `
 👥 PEOPLE REPRESENTATION:
-${peopleInstructions}
+🌍 AFRICAN REPRESENTATION REQUIRED:
+- Show ONLY authentic Black/African people with natural African features
+- Use diverse African skin tones from light to dark
+- Show contemporary African fashion and modern styling
+- Include natural African hairstyles and authentic expressions
+- Focus on real-life scenarios: people working, socializing, using technology
+- Show modern African urban life - offices, cafes, shopping, digital activities
+- Use natural lighting that flatters darker skin tones
+- Avoid stereotypes - show professional, educated, tech-savvy Africans
+- Emphasize authenticity and cultural pride
+- For Kenya specifically: Show Nairobi urban lifestyle, modern professionals, diverse ethnic groups
 ` : ''}
 
 DESIGN VARIATION:
@@ -3914,27 +3941,36 @@ You MUST include the exact brand logo image that was provided above in your desi
       if (website) contactDetailsList.push(`🌐 Website: ${ensureWwwWebsiteUrl(website)}`);
 
       const contactInstructions = includeContacts && hasAnyContact
-        ? `\n\n🎯 CRITICAL CONTACT INFORMATION INTEGRATION (FINAL INSTRUCTION - HIGHEST PRIORITY):
-- MUST integrate these EXACT contact details prominently in the design:
-${contactDetailsList.map(detail => `  ${detail}`).join('\n')}
+        ? `\n\n🚨🚨🚨 MANDATORY CONTACT INFORMATION - THIS IS NOT OPTIONAL 🚨🚨🚨
 
-- CRITICAL REQUIREMENTS:
-  * Include ALL ${contactDetailsList.length} contact details listed above
-  * Do NOT include only the website - include phone and email too if provided
-  * Place contact info in footer bar, corner block, or contact strip at BOTTOM of image
-  * Make contact info clearly readable and professionally integrated
-  * Use the exact contact details provided - no substitutions or generic info
+⚠️  CRITICAL: The user has SPECIFICALLY REQUESTED contact information to be included.
+⚠️  FAILURE TO INCLUDE CONTACTS WILL RESULT IN REJECTION OF THE DESIGN.
 
-- PLACEMENT RULES:
-  * DO NOT include contact info in main content area or headlines
-  * DO NOT include contact info in call-to-action blocks
-  * DO NOT use generic service information like "BANKING", "PAYMENTS", etc.
+📞📧🌐 EXACT CONTACT DETAILS TO INCLUDE:
+${contactDetailsList.map(detail => `  ✅ ${detail}`).join('\n')}
 
-- VALIDATION CHECKLIST:
-  * ✅ All ${contactDetailsList.length} contact details must be visible
-  * ✅ Contact info must be at the bottom of the image
-  * ✅ Text must be clearly readable
-  * ❌ FAILURE TO INCLUDE ALL CONTACT INFO IS UNACCEPTABLE
+🎯 CONTACT PLACEMENT REQUIREMENTS (MANDATORY):
+  ✅ Create a contact footer/strip at the BOTTOM of the image
+  ✅ Use a contrasting background (dark bar, light text OR light bar, dark text)
+  ✅ Make contact text LARGE ENOUGH to read (minimum 14px equivalent)
+  ✅ Include ALL ${contactDetailsList.length} contact details listed above
+  ✅ Use icons: 📞 for phone, 📧 for email, 🌐 for website
+  ✅ Format: "📞 ${phone} | 📧 ${email} | 🌐 ${ensureWwwWebsiteUrl(website)}"
+
+❌ FORBIDDEN ACTIONS:
+  ❌ Do NOT skip any contact information
+  ❌ Do NOT make contact text too small to read
+  ❌ Do NOT place contacts in the main content area
+  ❌ Do NOT use generic contact information
+
+🔍 FINAL VALIDATION:
+Before completing the image, verify:
+1. Can you see the phone number "${phone}" in the image?
+2. Can you see the email "${email}" in the image?
+3. Can you see the website "${ensureWwwWebsiteUrl(website)}" in the image?
+4. Are all contacts at the bottom in a readable format?
+
+If ANY contact is missing, the design is INCOMPLETE and UNACCEPTABLE.
 `
         : `\n\n🚫 CONTACT INFORMATION RULE:\n- Do NOT include phone, email, or website in the image\n- Do NOT include generic service information\n- Do NOT add contact info in main content area\n`;
 
@@ -4432,7 +4468,17 @@ function getCulturallyAppropriatePersonDescription(location: string): string {
 
   for (const country of africanCountries) {
     if (locationKey.includes(country)) {
-      return 'Show authentic Black/African people in natural, candid moments - relaxed expressions, genuine smiles, casual poses. Focus on real-life scenarios: people working, laughing, having conversations, or engaged in everyday activities. Use natural lighting and avoid overly posed or studio-like settings. Show contemporary African life with people wearing modern, stylish clothing. Emphasize authenticity over perfection - slight imperfections make people look real and relatable.';
+      return `🌍 AFRICAN REPRESENTATION REQUIRED:
+- Show ONLY authentic Black/African people with natural African features
+- Use diverse African skin tones from light to dark
+- Show contemporary African fashion and modern styling
+- Include natural African hairstyles and authentic expressions
+- Focus on real-life scenarios: people working, socializing, using technology
+- Show modern African urban life - offices, cafes, shopping, digital activities
+- Use natural lighting that flatters darker skin tones
+- Avoid stereotypes - show professional, educated, tech-savvy Africans
+- Emphasize authenticity and cultural pride
+- For Kenya specifically: Show Nairobi urban lifestyle, modern professionals, diverse ethnic groups`;
     }
   }
 

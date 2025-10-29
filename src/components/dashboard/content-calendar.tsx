@@ -408,58 +408,68 @@ export function ContentCalendar({
                 <Settings className="h-4 w-4 text-blue-600" />
                 <span className="font-medium text-sm">Brand Consistency</span>
               </div>
-              <div className="flex items-center gap-4 flex-wrap">
-                <div className="flex items-center gap-2 min-w-[96px]">
-                  <Palette className="h-3 w-3 text-gray-500" />
-                  <span className="text-xs text-gray-600">Strict</span>
+              <div className="flex items-center gap-6 flex-wrap">
+                <div className="flex items-center gap-3 min-w-[110px] cursor-pointer p-1 rounded hover:bg-gray-50"
+                     onClick={() => setBrandConsistency(prev => ({ ...prev, strictConsistency: !prev.strictConsistency }))}>
+                  <Palette className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm text-gray-700 select-none">Strict</span>
                   <Switch
                     checked={brandConsistency.strictConsistency}
                     onCheckedChange={(checked) =>
                       setBrandConsistency(prev => ({ ...prev, strictConsistency: checked }))
                     }
+                    className="ml-auto"
                   />
                 </div>
-                <div className="flex items-center gap-2 min-w-[96px]">
-                  <Sparkles className="h-3 w-3 text-gray-500" />
-                  <span className="text-xs text-gray-600">Colors</span>
+                <div className="flex items-center gap-3 min-w-[110px] cursor-pointer p-1 rounded hover:bg-gray-50"
+                     onClick={() => setBrandConsistency(prev => ({ ...prev, followBrandColors: !prev.followBrandColors }))}>
+                  <Sparkles className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm text-gray-700 select-none">Colors</span>
                   <Switch
                     checked={brandConsistency.followBrandColors}
                     onCheckedChange={(checked) =>
                       setBrandConsistency(prev => ({ ...prev, followBrandColors: checked }))
                     }
+                    className="ml-auto"
                   />
                 </div>
-                <div className="flex items-center gap-2 min-w-[96px]">
-                  <Phone className="h-3 w-3 text-gray-500" />
-                  <span className="text-xs text-gray-600">Contacts</span>
+                <div className="flex items-center gap-3 min-w-[110px] cursor-pointer p-1 rounded hover:bg-gray-50"
+                     onClick={() => setBrandConsistency(prev => ({ ...prev, includeContacts: !prev.includeContacts }))}>
+                  <Phone className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm text-gray-700 select-none">Contacts</span>
                   <Switch
                     checked={brandConsistency.includeContacts}
                     onCheckedChange={(checked) =>
                       setBrandConsistency(prev => ({ ...prev, includeContacts: checked }))
                     }
+                    className="ml-auto"
                   />
                 </div>
-                <div className="flex items-center gap-2 min-w-[96px]">
-                  <span className="text-xs text-gray-600">👥 People</span>
+                <div className="flex items-center gap-3 min-w-[110px] cursor-pointer p-1 rounded hover:bg-gray-50"
+                     onClick={() => setIncludePeopleInDesigns(!includePeopleInDesigns)}>
+                  <span className="text-sm text-gray-700 select-none">👥 People</span>
                   <Switch
                     checked={includePeopleInDesigns}
                     onCheckedChange={setIncludePeopleInDesigns}
+                    className="ml-auto"
                   />
                 </div>
-                <div className="flex items-center gap-2 min-w-[96px]">
-                  <span className="text-xs text-gray-600">🌍 Local</span>
+                <div className="flex items-center gap-3 min-w-[110px] cursor-pointer p-1 rounded hover:bg-gray-50"
+                     onClick={() => setUseLocalLanguage(!useLocalLanguage)}>
+                  <span className="text-sm text-gray-700 select-none">🌍 Local</span>
                   <Switch
                     checked={useLocalLanguage}
                     onCheckedChange={setUseLocalLanguage}
+                    className="ml-auto"
                   />
                 </div>
                 <Separator orientation="vertical" className="hidden sm:block h-4" />
-                <div className="flex items-center gap-2 min-w-[160px]">
-                  <span className="text-xs text-gray-600">AI Model:</span>
+                <div className="flex items-center gap-3 min-w-[180px] cursor-pointer p-1 rounded hover:bg-gray-50">
+                  <span className="text-sm text-gray-700 select-none">AI Model:</span>
                   <select
                     value={selectedRevoModel}
                     onChange={(e) => setSelectedRevoModel(e.target.value as RevoModel)}
-                    className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-1 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-[140px]"
+                    className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-400 transition-colors cursor-pointer min-w-[160px]"
                   >
                     <option value="revo-1.0">Revo 1.0 (2 credits)</option>
                     <option value="revo-1.5">Revo 1.5 (3 credits)</option>
