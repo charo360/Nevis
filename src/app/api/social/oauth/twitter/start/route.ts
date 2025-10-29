@@ -1,23 +1,12 @@
 import { NextResponse } from 'next/server';
 import { TwitterApi } from 'twitter-api-v2';
-import fs from 'fs/promises';
-import path from 'path';
+import { createClient } from '@supabase/supabase-js';
 
-const STATE_STORE = path.resolve(process.cwd(), 'tmp', 'oauth-states.json');
-
-async function readStates() {
-  try {
-    const raw = await fs.readFile(STATE_STORE, 'utf-8');
-    return JSON.parse(raw || '{}');
-  } catch (e) {
-    return {};
-  }
-}
-
-async function writeStates(data: any) {
-  await fs.mkdir(path.dirname(STATE_STORE), { recursive: true });
-  await fs.writeFile(STATE_STORE, JSON.stringify(data, null, 2), 'utf-8');
-}
+// Server-side Supabase client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -55,14 +44,22 @@ export async function GET(req: Request) {
       }
     );
 
-    // Store the codeVerifier and state for the callback
-    const states = await readStates();
-    states[state] = {
-      createdAt: Date.now(),
-      codeVerifier,
-      userId,
-    };
-    await writeStates(states);
+    // Store state in Supabase for verification in callback
+    const { error: stateError } = await supabase
+      .from('oauth_states')
+      .insert({
+        state,
+        code_verifier: codeVerifier,
+        user_id: userId,
+        platform: 'twitter',
+        created_at: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString() // 10 minutes
+      });
+
+    if (stateError) {
+      console.error('Error storing OAuth state:', stateError);
+      return NextResponse.redirect(`${baseUrl}/social-connect?error=state_storage_failed`);
+    }
 
     return NextResponse.redirect(authUrl);
   } catch (error) {

@@ -13,7 +13,8 @@ import {
   Unlink,
   RefreshCw,
   Shield,
-  Zap
+  Zap,
+  Clock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -506,6 +507,11 @@ export default function SocialConnectPage() {
                               <>
                                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                                 Connecting...
+                              </>
+                            ) : !provider.enabled ? (
+                              <>
+                                <Clock className="w-4 h-4 mr-2" />
+                                Coming Soon
                               </>
                             ) : (
                               <>
