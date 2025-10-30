@@ -298,10 +298,14 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
       });
 
       if (response.ok) {
+        const result = await response.json();
         setPostingStatus(prev => ({ ...prev, [platform]: 'success' }));
+        
         toast({
           title: "Posted Successfully!",
-          description: `Your post has been ${mode === 'manual' ? 'published' : 'scheduled'} to ${platform}.`,
+          description: result.tweetUrl 
+            ? `Your post has been ${mode === 'manual' ? 'published' : 'scheduled'} to ${platform}. View tweet: ${result.tweetUrl}`
+            : `Your post has been ${mode === 'manual' ? 'published' : 'scheduled'} to ${platform}.`,
         });
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
