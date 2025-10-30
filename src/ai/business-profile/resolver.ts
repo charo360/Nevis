@@ -291,6 +291,7 @@ export class BusinessProfileResolver {
         country: 'KE'
       },
       contact: {
+        phone: '+254 700 000 000',
         website: 'https://paya.co.ke',
         email: 'support@paya.co.ke'
       },

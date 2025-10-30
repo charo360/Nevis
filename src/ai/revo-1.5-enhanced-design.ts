@@ -76,6 +76,40 @@ function analyzeContentForImageMatching(contentResult: any, location: string): {
     visualRequirements.push('Show African driver with colorful public transport');
   }
 
+  // CRITICAL: Enhanced Financial Services Detection (for Paya and similar companies)
+  if (fullText.includes('banking') || fullText.includes('money') || fullText.includes('payment') || 
+      fullText.includes('financial') || fullText.includes('smart money') || fullText.includes('effortless banking') ||
+      fullText.includes('business potential') || fullText.includes('unlock') || fullText.includes('merchant') ||
+      fullText.includes('float') || fullText.includes('digital payments') || fullText.includes('fintech') ||
+      fullText.includes('seamless money') || fullText.includes('pocket') || fullText.includes('secure your future') ||
+      fullText.includes('daily finances') || fullText.includes('simplified') || fullText.includes('empowered') ||
+      fullText.includes('transactions') || fullText.includes('paya') || fullText.includes('finance solution')) {
+    
+    // Specific scenario detection based on exact phrases
+    if (fullText.includes('pocket') || fullText.includes('seamless money')) {
+      detectedPeople.push('person pulling smartphone from pocket', 'customer making mobile payment from pocket');
+      detectedSettings.push('payment scenario with phone coming from pocket', 'mobile payment at point of sale');
+      visualRequirements.push('Show person taking phone from pocket to pay', 'Show seamless pocket-to-payment action');
+    }
+    
+    if (fullText.includes('secure your future') || fullText.includes('secure') || fullText.includes('future')) {
+      detectedPeople.push('person setting financial goals on app', 'user reviewing secure financial dashboard');
+      detectedSettings.push('financial planning interface', 'secure banking environment with security indicators');
+      visualRequirements.push('Show financial security features', 'Show future planning tools on mobile device');
+    }
+    
+    if (fullText.includes('daily finances') || fullText.includes('simplified') || fullText.includes('empowered')) {
+      detectedPeople.push('person managing daily expenses on phone', 'user with simplified financial interface');
+      detectedSettings.push('daily life scenario with financial management', 'clean financial app interface');
+      visualRequirements.push('Show simplified financial management', 'Show daily financial tasks made easy');
+    }
+    
+    // General fintech scenarios
+    detectedPeople.push('business owner using mobile payment', 'entrepreneur with smartphone', 'person making digital transaction');
+    detectedSettings.push('modern business environment with digital devices', 'mobile payment scenario', 'business growth setting');
+    visualRequirements.push('Show person using smartphone for payments', 'Show business success/growth visualization', 'Show digital financial transaction');
+  }
+
   // Business scenarios
   if (fullText.includes('farmer') || fullText.includes('agriculture')) {
     detectedPeople.push('farmer');
@@ -2156,6 +2190,15 @@ export async function generateDesignPlan(
   input: Revo15DesignInput
 ): Promise<any> {
 
+  // REVO 1.0 STYLE: Map brandColors to direct properties (ensuring compatibility)
+  const profile = input.brandProfile as any;
+  if (profile.brandColors && !profile.primaryColor) {
+    profile.primaryColor = profile.brandColors.primary;
+    profile.accentColor = profile.brandColors.secondary || profile.brandColors.accent;
+    profile.backgroundColor = profile.brandColors.background || '#FFFFFF';
+  }
+
+  // REVO 1.0 STYLE: Direct color property extraction (matching Revo 1.0 approach)
   const brandColors = [
     input.brandProfile.primaryColor,
     input.brandProfile.accentColor,
@@ -2235,93 +2278,95 @@ export async function generateFinalImage(
   adConcept?: AdConcept
 ): Promise<string> {
 
+  // CRITICAL: Create structured text for image (like Revo 1.0)
+  let structuredImageText = '';
+  if (contentResult) {
+    const imageTextComponents: string[] = [];
+    if (contentResult.headline) imageTextComponents.push(contentResult.headline);
+    if (contentResult.subheadline) imageTextComponents.push(contentResult.subheadline);
+    if (contentResult.callToAction) imageTextComponents.push(contentResult.callToAction);
+    structuredImageText = imageTextComponents.join(' | ');
+    
+    console.log('📝 [Revo 1.5 Content-Image Sync] Structured text for image:', {
+      headline: contentResult.headline,
+      subheadline: contentResult.subheadline,
+      callToAction: contentResult.callToAction,
+      structuredText: structuredImageText
+    });
+  }
+
   // Build comprehensive image generation prompt based on the design plan
   let imagePrompt = buildEnhancedImagePrompt(input, designPlan, contentResult, adConcept);
+  
+  // CRITICAL: Add structured text directly to prompt for better content-image sync
+  if (structuredImageText) {
+    imagePrompt += `\n\n🎯 STRUCTURED CONTENT FOR IMAGE (MANDATORY):
+"${structuredImageText}"
 
-  // Contact information integration based on toggle
-  try {
-    const includeContacts = (input.brandConsistency as any)?.includeContacts === true;
-    const phone = input.brandProfile?.contactInfo?.phone;
-    const email = input.brandProfile?.contactInfo?.email;
-    const address = input.brandProfile?.contactInfo?.address;
-    const website = (input.brandProfile as any)?.websiteUrl || '';
+CRITICAL INSTRUCTION: The image MUST visually represent and include the text content above. This is the exact content that was generated and must be displayed in the image.
 
-    const hasAnyContact = (!!phone || !!email || !!website);
+🔍 LITERAL CONTENT INTERPRETATION:
+- Analyze each word in the headline for specific visual requirements
+- "Pocket" = show actual pocket interaction with phone/money
+- "Secure" = show security features, locks, protection elements
+- "Future" = show planning, growth, forward-looking elements
+- "Daily" = show everyday scenarios, routine activities
+- "Simplified" = show before/after complexity reduction
+- "Seamless" = show smooth, effortless process flow
 
-    // 📞 ENHANCED CONTACT INFORMATION DEBUGGING
-    console.log('📞 [Revo 1.5] Contact Information Debug:', {
+⚠️ MANDATORY: The visual must literally match what the text describes, not generic business interpretations.`;
+  }
+
+  // REVO 2.0 STYLE: Lightweight contact integration (proven working approach)
+  let contactInstruction = '';
+  const includeContacts = (input.brandConsistency as any)?.includeContacts === true;
+  
+  if (includeContacts === true) {
+    const contacts: string[] = [];
+
+    // REVO 2.0 STYLE: Simple contact detection (multiple data structure support)
+    const phone = input.brandProfile?.contactInfo?.phone ||
+      (input.brandProfile as any)?.contact?.phone ||
+      (input.brandProfile as any)?.contactPhone ||
+      (input.brandProfile as any)?.phone;
+
+    const email = input.brandProfile?.contactInfo?.email ||
+      (input.brandProfile as any)?.contact?.email ||
+      (input.brandProfile as any)?.contactEmail ||
+      (input.brandProfile as any)?.email;
+
+    const website = (input.brandProfile as any)?.websiteUrl ||
+      (input.brandProfile as any)?.contact?.website ||
+      (input.brandProfile as any)?.website;
+
+    const address = input.brandProfile?.contactInfo?.address ||
+      (input.brandProfile as any)?.contact?.address ||
+      (input.brandProfile as any)?.contactAddress ||
+      (input.brandProfile as any)?.address;
+
+    console.log('📞 [Revo 1.5] Contact Information Debug (Revo 2.0 Style):', {
       includeContacts: includeContacts,
-      brandConsistency: input.brandConsistency,
-      inputContactInfo: input.brandProfile?.contactInfo,
-      inputWebsiteUrl: (input.brandProfile as any)?.websiteUrl,
       extractedPhone: phone,
       extractedEmail: email,
       extractedWebsite: website,
-      hasAnyContact: hasAnyContact,
-      willIncludeContacts: includeContacts && hasAnyContact
+      extractedAddress: address,
+      contactsFound: [phone, email, website, address].filter(Boolean).length
     });
 
-    // Build contact details list for validation
-    const contactDetailsList = [];
-    if (phone) contactDetailsList.push(`📞 Phone: ${phone}`);
-    if (email) contactDetailsList.push(`📧 Email: ${email}`);
-    if (website) contactDetailsList.push(`🌐 Website: ${ensureWwwWebsiteUrl(website)}`);
-
-    const contactInstructions = includeContacts && hasAnyContact
-      ? `\n\n🎯 CRITICAL CONTACT INFORMATION INTEGRATION (FINAL INSTRUCTION - HIGHEST PRIORITY):
-- MUST integrate these EXACT contact details prominently in the design:
-${contactDetailsList.map(detail => `  ${detail}`).join('\n')}
-
-- CRITICAL REQUIREMENTS:
-  * Include ALL ${contactDetailsList.length} contact details listed above
-  * Do NOT include only the website - include phone and email too if provided
-  * Place contact info in footer bar, corner block, or contact strip at BOTTOM of image
-  * Make contact info clearly readable and professionally integrated
-  * Use the exact contact details provided - no substitutions or generic info
-
-- PLACEMENT RULES:
-  * DO NOT include contact info in main content area or headlines
-  * DO NOT include contact info in call-to-action blocks
-  * DO NOT use generic service information like "BANKING", "PAYMENTS", etc.
-
-- VALIDATION CHECKLIST:
-  * ✅ All ${contactDetailsList.length} contact details must be visible
-  * ✅ Contact info must be at the bottom of the image
-  * ✅ Text must be clearly readable
-  * ❌ FAILURE TO INCLUDE ALL CONTACT INFO IS UNACCEPTABLE
-`
-      : `\n\n🚫 CONTACT INFORMATION RULE:\n- Do NOT include phone, email, or website in the image\n- Do NOT include generic service information\n- Do NOT add contact info in main content area\n`;
-
-    imagePrompt += contactInstructions;
-
-    console.log('📞 [Revo 1.5] Contact Instructions Added:', {
-      contactInstructionsLength: contactInstructions.length,
-      includesPhone: contactInstructions.includes(phone || 'NO_PHONE'),
-      includesEmail: contactInstructions.includes(email || 'NO_EMAIL'),
-      includesWebsite: contactInstructions.includes(website || 'NO_WEBSITE'),
-      actualPhone: phone,
-      actualEmail: email,
-      actualWebsite: website,
-      contactDetailsCount: [phone, email, website].filter(Boolean).length
-    });
-
-    // Additional validation to ensure contact details are properly formatted
-    if (includeContacts && hasAnyContact) {
-      const contactDetailsInPrompt = [];
-      if (phone) contactDetailsInPrompt.push(`Phone: ${phone}`);
-      if (email) contactDetailsInPrompt.push(`Email: ${email}`);
-      if (website) contactDetailsInPrompt.push(`Website: ${ensureWwwWebsiteUrl(website)}`);
-
-      console.log('📞 [Revo 1.5] Contact Details Validation:', {
-        expectedContactDetails: contactDetailsInPrompt,
-        promptContainsAllDetails: contactDetailsInPrompt.every(detail =>
-          contactInstructions.includes(detail.split(': ')[1])
-        )
-      });
+    if (phone) contacts.push(`📞 ${phone}`);
+    if (email) contacts.push(`📧 ${email}`);
+    // Only include website if it actually exists in brand profile - NEVER generate fake URLs
+    if (website && website.trim() && !website.includes('example.com') && !website.includes('placeholder')) {
+      contacts.push(`🌐 ${website}`);
     }
-  } catch (e) {
-    console.warn('Revo 1.5: Contact info prompt augmentation skipped:', e);
+    if (address) contacts.push(`📍 ${address}`);
+
+    if (contacts.length > 0) {
+      contactInstruction = `\n\n📞 CONTACT INFORMATION (Include in design):\n${contacts.join('\n')}\n- Display contact info prominently in footer/corner area\n- Ensure contact details are readable and well-formatted\n- Use professional styling that complements the brand colors`;
+    }
   }
+
+  imagePrompt += contactInstruction;
 
   // Retry logic for 503 errors (Performance Optimized: Reduced retries)
   const maxRetries = 1;
@@ -2821,24 +2866,55 @@ function buildEnhancedImagePrompt(
   adConcept?: AdConcept
 ): string {
   console.log('🎨 [Revo 1.5] buildEnhancedImagePrompt called with includePeopleInDesigns:', input.includePeopleInDesigns);
+  
+  // REVO 1.0 STYLE: Map brandColors to direct properties (ensuring compatibility)
+  const profile = input.brandProfile as any;
+  if (profile.brandColors && !profile.primaryColor) {
+    profile.primaryColor = profile.brandColors.primary;
+    profile.accentColor = profile.brandColors.secondary || profile.brandColors.accent;
+    profile.backgroundColor = profile.brandColors.background || '#FFFFFF';
+  }
+  
   // 🎨 ENHANCED BRAND COLORS VALIDATION AND DEBUGGING WITH TOGGLE SUPPORT
   const shouldFollowBrandColors = input.brandConsistency?.followBrandColors !== false; // Default to true if not specified
 
-  const primaryColor = shouldFollowBrandColors ? (input.brandProfile.primaryColor || '#3B82F6') : '#3B82F6';
-  const accentColor = shouldFollowBrandColors ? (input.brandProfile.accentColor || '#1E40AF') : '#1E40AF';
-  const backgroundColor = shouldFollowBrandColors ? (input.brandProfile.backgroundColor || '#FFFFFF') : '#FFFFFF';
+  // REVO 1.0 STYLE: Exact color handling logic (copied from Revo 1.0)
+  const isStrictMode = input.brandConsistency?.followBrandColors === true; // Explicit strict mode
+  
+  let primaryColor, accentColor, backgroundColor;
+  
+  if (isStrictMode) {
+    // STRICT MODE: Only use provided colors, no fallbacks
+    primaryColor = input.brandProfile.primaryColor; // Could be undefined - that's intentional
+    accentColor = input.brandProfile.accentColor;   // Could be undefined - that's intentional  
+    backgroundColor = input.brandProfile.backgroundColor; // Could be undefined - that's intentional
+  } else if (shouldFollowBrandColors) {
+    // NORMAL MODE: Use provided colors with fallbacks
+    primaryColor = input.brandProfile.primaryColor || '#3B82F6';
+    accentColor = input.brandProfile.accentColor || '#1E40AF';
+    backgroundColor = input.brandProfile.backgroundColor || '#FFFFFF';
+  } else {
+    // BRAND COLORS DISABLED: Use default colors
+    primaryColor = '#3B82F6';
+    accentColor = '#1E40AF';
+    backgroundColor = '#FFFFFF';
+  }
 
   const brandColors = [primaryColor, accentColor, backgroundColor].filter(Boolean);
+  
+  // REVO 1.0 STYLE: Color scheme definition (copied from Revo 1.0)
+  const colorScheme = `Primary: ${primaryColor} (60% dominant), Accent: ${accentColor} (30% secondary), Background: ${backgroundColor} (10% highlights)`;
 
+  // REVO 1.0 STYLE: Exact debug logging (copied from Revo 1.0)
   console.log('🎨 [Revo 1.5] Brand Colors Debug:', {
     followBrandColors: shouldFollowBrandColors,
+    isStrictMode: isStrictMode,
     inputPrimaryColor: input.brandProfile.primaryColor,
     inputAccentColor: input.brandProfile.accentColor,
     inputBackgroundColor: input.brandProfile.backgroundColor,
     finalPrimaryColor: primaryColor,
     finalAccentColor: accentColor,
     finalBackgroundColor: backgroundColor,
-    brandColorsArray: brandColors,
     hasValidColors: !!(input.brandProfile.primaryColor && input.brandProfile.accentColor && input.brandProfile.backgroundColor),
     usingBrandColors: shouldFollowBrandColors && !!(input.brandProfile.primaryColor && input.brandProfile.accentColor && input.brandProfile.backgroundColor)
   });
@@ -3032,31 +3108,69 @@ ${useLocalLanguage ? `- Local Authenticity: Include subtle design elements that 
 
   const cleanedImageText = cleanBusinessNamePattern(input.imageText);
 
-  return `Create a CLEAN, MINIMAL ${input.platform} design with SINGULAR FOCUS:
+  return `Create a CLEAN, PROFESSIONAL ${input.platform} design with OPTIMAL VISUAL HIERARCHY:
 
-🎯 DESIGN PHILOSOPHY: Clean, singular focal point + one emotion + one action
+🎯 DESIGN PHILOSOPHY: 
+- SINGLE FOCAL POINT (the main headline)
+- CLEAN LAYOUT with generous white space
+- PROFESSIONAL aesthetics that build trust
+- CLEAR visual hierarchy that guides the eye
+
+📐 LAYOUT & COMPOSITION RULES:
+1. 60% WHITE SPACE minimum - don't fill every pixel
+2. GRID-BASED layout for professional appearance
+3. CONSISTENT margins and padding throughout
+4. BALANCED composition - not cramped or cluttered
+5. FOCAL POINT should be immediately obvious
+6. SUPPORTING elements should enhance, not compete
 
 BRAND ESSENTIALS:
 - Business: ${input.brandProfile.businessName}
-- Primary Color: ${primaryColor}
-- Style: Clean and minimal
-${(input.brandProfile.logoDataUrl || input.brandProfile.logoUrl) ? '- Logo: Will be integrated naturally' : '- Logo: Typography-based branding'}
+- Colors: ${colorScheme}
+- Style: Clean, professional, trustworthy
+${(input.brandProfile.logoDataUrl || input.brandProfile.logoUrl) ? '- Logo: Will be integrated naturally in corner/header' : '- Logo: Typography-based branding'}
+
+${shouldFollowBrandColors ? `🎨 BRAND COLORS (MANDATORY - HIGHEST PRIORITY):
+- ${colorScheme}
+- CRITICAL: Use these exact brand colors throughout the design
+- Primary color (${primaryColor}) should dominate (60% of color usage)
+- Accent color (${accentColor}) for highlights and emphasis (30% of color usage)
+- Background color (${backgroundColor}) for base/neutral areas (10% of color usage)
+- DO NOT use random colors - stick to the brand color palette` : ''}
 
 ${cleanedImageText ? `ADDITIONAL TEXT CONTENT TO INCLUDE:
 "${cleanedImageText}"` : 'TEXT CONTENT: Use the generated headline, subheadline, and CTA from the content generation above'}
 
 ${contentResult ? `
-📝 CONTENT TO DISPLAY:
-- Main Message: "${contentResult.headline}"
-- Supporting Text: "${contentResult.subheadline}"
-- Action Button: "${contentResult.callToAction}"
+📝 CRITICAL CONTENT INTEGRATION (EXACT TEXT MATCHING):
+- HEADLINE (Main Focus): "${contentResult.headline}"
+- SUBHEADLINE (Supporting): "${contentResult.subheadline}"
+- CALL-TO-ACTION (Button): "${contentResult.callToAction}"
 
-🎯 CLEAN LAYOUT RULES:
-1. ONE primary focal point (the main message)
-2. ONE supporting element (subheadline OR visual, not both)
-3. ONE clear action (prominent CTA button)
-4. Plenty of white space
-5. Maximum 3 colors total
+🚨 MANDATORY TEXT HIERARCHY & LAYOUT RULES:
+1. HEADLINE: Must be 2X LARGER than any other text, bold, most prominent
+2. SUBHEADLINE: 50% smaller than headline, supports main message
+3. CTA BUTTON: Large, prominent button with clear action text
+4. MINIMIZE supporting text - keep only essential information
+5. USE WHITE SPACE effectively - don't cram text together
+6. Text hierarchy: HEADLINE (largest) > CTA Button (prominent) > Subheadline (supporting)
+7. NO small supporting text that competes with main message
+8. SINGLE CLEAR MESSAGE per design - avoid information overload
+
+🎯 CONTENT-IMAGE SYNCHRONIZATION:
+- The visual design MUST match the message tone and content
+- If headline is about success → show success scenarios
+- If headline is about problems → show problem-solving scenarios
+- If headline mentions specific benefits → visualize those benefits
+
+💼 FINANCIAL SERVICES VISUAL GUIDELINES:
+- Show REAL people using technology (not stock photo poses)
+- Include mobile devices/smartphones when relevant to fintech
+- Demonstrate the "before vs after" or "problem vs solution" visually
+- Use AUTHENTIC scenarios (real business environments, not staged)
+- Show OUTCOMES and RESULTS, not just processes
+- For "simplify" messages → show contrast between complex and simple
+- For "unlock potential" → show transformation/growth visualization
 ` : ''}
 
 ${(input.brandProfile.logoDataUrl || input.brandProfile.logoUrl) ? `
@@ -3089,9 +3203,53 @@ ${(() => {
 - Visual Requirements: ${analysis.visualRequirements.join(' | ') || 'Show professional business scenario'}`;
         })()}
 
-🚨 CRITICAL MATCHING RULES:
+🚨 CRITICAL MATCHING RULES (LITERAL INTERPRETATION REQUIRED):
 - If headline/subheadline mentions specific people → Show those EXACT people
 - If content mentions specific locations → Show those EXACT locations
+- If content mentions specific services → Show those EXACT services
+- If content mentions benefits → Visualize those EXACT benefits
+- If content mentions problems → Show problem-solving scenarios
+- The visual MUST tell the same story as the text content
+
+🔍 LITERAL PHRASE MATCHING (MANDATORY):
+- "Right In Your Pocket" → MUST show phone/money coming from actual pocket
+- "Secure Your Future" → MUST show security features, future planning, or protection
+- "Daily Finances" → MUST show daily financial activities, not generic business
+- "Simplified" → MUST show before/after or complex vs simple comparison
+- "Seamless" → MUST show smooth, effortless transaction process
+- "Empowered" → MUST show person in control, confident with financial tools
+
+⚠️ AVOID GENERIC INTERPRETATIONS:
+- Don't show generic office scenes for specific financial actions
+- Don't show random business meetings for payment scenarios  
+- Don't show documents/paperwork for mobile/digital services
+- Don't show staged poses - show actual service usage
+
+🔄 CONTENT-VISUAL SYNCHRONIZATION CHECKLIST:
+✅ Does the image match the headline message?
+✅ Does the visual support the subheadline?
+✅ Does the scene align with the call-to-action?
+✅ Are the people/setting appropriate for the content?
+✅ Does the overall mood match the text tone?
+
+🎨 BRAND CONSISTENCY & DESIGN SYSTEM:
+1. CONSISTENT LAYOUT STRUCTURE across all designs
+2. UNIFIED COLOR PALETTE (primary + 2 supporting colors max)
+3. SAME TYPOGRAPHY HIERARCHY in all designs
+4. CONSISTENT LOGO PLACEMENT and sizing
+5. UNIFIED VISUAL STYLE (photography vs illustration vs mixed)
+6. CONSISTENT SPACING AND MARGINS throughout
+7. SAME CTA BUTTON STYLE across all designs
+8. PROFESSIONAL, TRUSTWORTHY aesthetic that builds credibility
+
+🚫 AVOID THESE DESIGN MISTAKES:
+- Multiple competing focal points
+- Cramped layouts with no white space
+- Tiny text that's hard to read
+- Cluttered compositions with too many elements
+- Inconsistent visual styles within same campaign
+- Generic stock photo poses
+- Information overload with too much text
 - If content mentions specific scenarios → Show those EXACT scenarios
 - The visual story must tell the SAME story as the text
 - NO generic business scenes if content is specific
@@ -3102,6 +3260,23 @@ ${(() => {
 • "matatu driver" → Public transport driver with vehicle
 • "kiosk owner" → Small shop owner with products displayed
 • "hawker" → Street vendor selling goods
+
+💰 FINANCIAL SERVICES TERMS RECOGNITION (CRITICAL FOR PAYA):
+• "smart money" → Show person using smartphone for digital payments
+• "effortless banking" → Show easy mobile banking interface/transaction
+• "business potential" → Show business growth, success metrics, upward trends
+• "unlock potential" → Show transformation from struggle to success
+• "merchant float" → Show business owner managing cash flow digitally
+• "digital payments" → Show contactless/mobile payment scenarios
+• "financial tools" → Show business dashboard, analytics, financial management
+
+🎯 SPECIFIC PAYA SCENARIO MATCHING (EXACT PHRASE DETECTION):
+• "Seamless Money, Right In Your Pocket" → Show person pulling phone from pocket and making instant payment
+• "Secure Your Future, Today" → Show financial security dashboard, savings goals, or protection features
+• "Daily Finances, Simplified" → Show before/after comparison of complex vs simple financial management
+• "Your Daily Finances, Simplified and Empowered" → Show person easily managing daily expenses on clean app interface
+• "Future-Proof Your Finances" → Show financial planning tools, investment growth, or long-term security features
+• "Simplify Your Money" → Show contrast between old complex way vs new simple Paya way
 • "jua kali artisan" → Skilled craftsperson/metalworker
 • "salon owner" → Hair/beauty salon professional
 • "cyber cafe owner" → Internet cafe operator with computers

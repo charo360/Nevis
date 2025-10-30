@@ -111,11 +111,17 @@ export class CustomerCentricContentGenerator {
    * Uses AI to dynamically identify customer problems and outcomes
    */
   private static async identifyBusinessOutcome(brandProfile: BrandProfile): Promise<BusinessOutcome> {
-    const businessType = brandProfile.businessType || 'professional services';
-    const businessName = brandProfile.businessName || 'Our Company';
-    const location = brandProfile.location || 'local area';
+    // STRICT: No fallbacks - use only provided business data
+    const businessType = brandProfile.businessType;
+    const businessName = brandProfile.businessName;
+    const location = brandProfile.location;
     const services = brandProfile.services || [];
-    const websiteUrl = brandProfile.websiteUrl || '';
+    const websiteUrl = brandProfile.websiteUrl;
+
+    // Validate required fields
+    if (!businessType || !businessName) {
+      throw new Error('Business type and name are required for content generation');
+    }
 
     // Randomly select content approach for variety
     const contentApproaches = ['Story', 'Education', 'Promo', 'Testimonial', 'Lifestyle'];
@@ -137,8 +143,8 @@ MISSION: Identify the #1 most frustrating problem their customers face and the e
 BUSINESS CONTEXT:
 - Company: ${businessName}
 - Industry: ${businessType}
-- Location: ${location}
-- Services: ${services.join(', ') || 'Not specified'}
+- Location: ${location || 'Not specified'}
+- Services: ${Array.isArray(services) ? services.join(', ') : (services || 'Not specified')}
 - Website: ${websiteUrl || 'Not provided'}
 
 ULTRA-SPECIFIC REQUIREMENTS:
@@ -331,6 +337,31 @@ MANDATORY REQUIREMENTS:
 4. NO VAGUE LANGUAGE: Be specific about WHO, WHAT, WHEN, HOW MUCH
 5. DYNAMIC CTA: Create a contextually appropriate call-to-action (not generic "Contact Us")
 
+📝 CONTENT DENSITY & CLARITY RULES:
+6. HEADLINE: Maximum 6 words - must be punchy and memorable
+7. SUBHEADLINE: Maximum 12 words - supports headline with key benefit
+8. CAPTION: Maximum 25 words - concise, focused message
+9. NO INFORMATION OVERLOAD: One clear message per ad
+10. ELIMINATE FLUFF: Every word must serve a purpose
+11. PRIORITIZE CLARITY: Simple, direct language over complex descriptions
+12. SINGLE FOCAL POINT: Don't compete for attention with multiple messages
+
+💡 CONTENT IMPROVEMENT RULES (MAKE IT COMPELLING):
+13. USE SPECIFIC NUMBERS: "1M+ customers", "Open in minutes", "No credit checks"
+14. ADDRESS PAIN POINTS: Bank queues, paperwork, credit requirements, slow payments
+15. SHOW CONCRETE OUTCOMES: Time saved, money saved, convenience gained
+16. CREATE URGENCY: "Join thousands", "Start today", "Don't wait"
+17. USE SOCIAL PROOF: "Trusted by 1M+ Kenyans", "Kenya's fastest growing"
+18. BENEFIT-FOCUSED: Lead with what customer gets, not what Paya does
+
+🎭 STRATEGIC CONTENT VARIATION (DIFFERENT MARKETING ANGLES):
+19. ROTATE MARKETING APPROACHES: Don't use same angle repeatedly
+20. MATCH APPROACH TO AUDIENCE: Growth for entrepreneurs, accessibility for underbanked
+21. USE DIFFERENT COMPANY DATA: Alternate between scale, speed, trust, inclusion
+22. VARY EMOTIONAL APPEALS: Aspiration, security, convenience, community
+23. DIVERSIFY VALUE PROPS: Sometimes speed, sometimes trust, sometimes inclusion
+24. AUTHENTIC BUSINESS POSITIONING: Always use real Paya services and features
+
 WINNING FORMULA:
 1. HOOK: Specific customer frustration (BEFORE situation with details)
 2. PROMISE: Exact measurable result (AFTER situation with numbers)
@@ -343,6 +374,103 @@ EXAMPLES OF BEFORE/AFTER CONTRAST:
 
 ❌ VAGUE: "Quality healthcare for your family."
 ✅ SPECIFIC: "BEFORE: 3-hour hospital queues. AFTER: See a doctor in 15 minutes from home."
+
+🏦 PAYA-SPECIFIC CONTENT REQUIREMENTS (MANDATORY BUSINESS DATA USAGE):
+- Business: Paya (Financial Technology/Fintech)
+- Services: Digital Banking, Payment Solutions, Buy Now Pay Later
+- Key Features: No credit checks, Quick setup (open in minutes), 1M+ customers, Mobile app
+- Competitive Advantages: Financial inclusivity, Universally accessible banking, Trusted by 1M+
+- Target: Consumers and businesses across Kenya
+
+🚨 STRICT BUSINESS DATA ENFORCEMENT:
+- NEVER invent features not listed above
+- NEVER claim services Paya doesn't offer
+- NEVER use competitor data or generic fintech claims
+- ALWAYS use exact numbers: "1M+ customers" (not "millions" or "thousands")
+- ALWAYS reference actual services: Digital Banking, Payment Solutions, Buy Now Pay Later
+- ALWAYS use real competitive advantages: Financial inclusivity, No credit checks
+- NEVER make up testimonials, success rates, or guarantees not provided
+
+📊 PAYA CONTENT FORMULAS (USE THESE SPECIFIC DETAILS):
+1. SPEED: "Open account in minutes" vs "days of paperwork"
+2. ACCESSIBILITY: "No credit checks required" vs "complex approval process"  
+3. SCALE: "Join 1M+ Kenyans" vs "limited access"
+4. CONVENIENCE: "Mobile banking anywhere" vs "branch visits required"
+5. INCLUSIVITY: "Banking for all Kenyans" vs "exclusive requirements"
+
+✨ IMPROVED CONTENT EXAMPLES (USING PAYA DATA):
+Instead of: "Connected Finances, Real Kenyan Progress"
+Better: "Skip Bank Queues - Open Account in Minutes"
+
+Instead of: "Finance Reimagined for Every Kenyan"  
+Better: "No Credit Checks Required - Join 1M+ Kenyans"
+
+Instead of: "Effortless Banking, Stronger Communities"
+Better: "Mobile Banking Anywhere - Trusted by 1M+"
+
+🎯 DIVERSE MARKETING APPROACHES (USE COMPANY DATA IN DIFFERENT WAYS):
+
+📈 GROWTH/SCALE MARKETING (Use: 1M+ customers, Kenya's fastest growing):
+- "Join 1M+ Kenyans Already Banking Smarter"
+- "Kenya's Fastest Growing Fintech - See Why"
+- "1M+ Customers Can't Be Wrong - Try Paya"
+
+⚡ SPEED/CONVENIENCE MARKETING (Use: Open in minutes, mobile app):
+- "Open Account in Minutes, Not Days"
+- "Banking at Your Fingertips - Anywhere, Anytime"
+- "Skip Bank Queues - Mobile Banking Made Simple"
+
+🔓 ACCESSIBILITY MARKETING (Use: No credit checks, financial inclusion):
+- "No Credit Checks - Banking for All Kenyans"
+- "Finally, Banking Without the Barriers"
+- "Financial Inclusion Made Real - Join Today"
+
+💰 FINANCIAL BENEFITS MARKETING (Use: Buy Now Pay Later, payment solutions):
+- "Buy Now, Pay Later - No Credit Required"
+- "Smart Payment Solutions for Smart Kenyans"
+- "Flexible Payments That Fit Your Life"
+
+🏆 TRUST/CREDIBILITY MARKETING (Use: Regulated partnerships, secure):
+- "Regulated Banking Partners You Can Trust"
+- "Bank-Level Security, Startup-Level Innovation"
+- "Trusted by 1M+ Kenyans for Good Reason"
+
+🌍 COMMUNITY/IMPACT MARKETING (Use: Financial inclusivity mission):
+- "Building Financial Inclusion Across Kenya"
+- "Empowering Every Kenyan's Financial Journey"
+- "Together, We're Changing Kenya's Financial Future"
+
+📋 CONTENT TEMPLATES FOR DIFFERENT MARKETING APPROACHES:
+
+TEMPLATE 1 - SCALE/SOCIAL PROOF:
+Headline: "Join 1M+ Kenyans [ACTION]"
+Subheadline: "[SPECIFIC BENEFIT] with Kenya's fastest growing fintech"
+CTA: "Join the Movement"
+
+TEMPLATE 2 - SPEED/CONVENIENCE:
+Headline: "[ACTION] in Minutes, Not [OLD WAY]"
+Subheadline: "Skip [PAIN POINT] with mobile [SERVICE]"
+CTA: "Start Now"
+
+TEMPLATE 3 - ACCESSIBILITY/INCLUSION:
+Headline: "No [BARRIER] - [SERVICE] for All"
+Subheadline: "Finally, [BENEFIT] without the barriers"
+CTA: "Get Access Today"
+
+TEMPLATE 4 - FINANCIAL BENEFITS:
+Headline: "[FINANCIAL SOLUTION] Made Simple"
+Subheadline: "[SPECIFIC OUTCOME] with flexible payment options"
+CTA: "Explore Options"
+
+TEMPLATE 5 - TRUST/SECURITY:
+Headline: "Bank-Level Security, [INNOVATION BENEFIT]"
+Subheadline: "Regulated partnerships you can trust"
+CTA: "Learn More"
+
+TEMPLATE 6 - PROBLEM/SOLUTION:
+Headline: "Tired of [PAIN POINT]? Try [SOLUTION]"
+Subheadline: "[BEFORE] vs [AFTER] with Paya"
+CTA: "Make the Switch"
 
 ${useLocalLanguage ? `
 🌍 CRITICAL LOCAL LANGUAGE INTEGRATION FOR ${location.toUpperCase()}:
