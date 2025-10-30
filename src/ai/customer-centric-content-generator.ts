@@ -536,11 +536,15 @@ ${useLocalLanguage ? `
 📍 LOCATION-SPECIFIC LANGUAGE ELEMENTS:
 ${this.getLocationSpecificLanguageInstructions(location)}
 
-🎯 INTEGRATION EXAMPLES:
-- Headlines: "Quality Tech Solutions" → "Quality Tech Solutions, Karibu!" (Kenya)
-- Subheadlines: "Fast delivery across the city" → "Fast delivery across Nairobi, Haraka sana!"
-- Captions: Mix English sentences with local expressions naturally
-- CTAs: Use local action words when appropriate
+🎯 INTEGRATION EXAMPLES (ADAPTS TO USER'S COUNTRY):
+- Headlines: "Digital Banking Made Simple" → Add local welcome (Karibu/Hola/Bonjour/etc.)
+- Subheadlines: "Fast payments, zero hassle" → Mix with local reassurance phrases
+- Benefits: "Secure transactions" → Include local trust expressions
+- CTAs: "Get Started Today" → Use local action phrases (Twende/Vamos/Allons-y/etc.)
+- Social Proof: "Trusted by customers" → Localize with country-specific language
+- Urgency: "Don't wait" → Use local urgency expressions
+- Captions: Mix English (70%) with local language (30%) naturally
+- ADAPTS TO: Kenya, Nigeria, Ghana, South Africa, India, Philippines, Indonesia, Thailand, Vietnam, Brazil, Mexico, Spain, France, Germany, and more
 
 ⚠️ CRITICAL: Local language should enhance, not confuse. Keep it natural and contextual.
 ` : ''}
@@ -592,9 +596,16 @@ Format as JSON:
 
     if (locationKey.includes('kenya')) {
       return `- SWAHILI ELEMENTS: "Karibu" (welcome), "Asante" (thank you), "Haraka" (fast), "Poa" (cool/good), "Mambo" (what's up)
-- BUSINESS CONTEXT: "Biashara" (business), "Huduma" (service), "Kazi" (work), "Pesa" (money)
-- GREETINGS: "Jambo" (hello), "Habari" (how are you), "Sawa" (okay/fine)
-- EXPRESSIONS: "Hakuna matata" (no problem), "Pole pole" (slowly/carefully), "Twende" (let's go)`;
+- BUSINESS CONTEXT: "Biashara" (business), "Huduma" (service), "Kazi" (work), "Pesa" (money), "Benki" (bank)
+- FINTECH TERMS: "M-Pesa" (mobile money), "Simu" (phone), "Mitandao" (networks), "Usalama" (security)
+- GREETINGS: "Jambo" (hello), "Habari" (how are you), "Sawa" (okay/fine), "Vipi" (how's it going)
+- EXPRESSIONS: "Hakuna matata" (no problem), "Pole pole" (slowly/carefully), "Twende" (let's go), "Fanya haraka" (do it quickly)
+- ENCOURAGEMENT: "Hongera" (congratulations), "Vizuri sana" (very good), "Umefanya vizuri" (you did well)
+- INTEGRATION EXAMPLES: 
+  * "Fast payments" → "Malipo ya haraka"
+  * "No worries" → "Hakuna wasiwasi" 
+  * "Let's start" → "Twende tuanze"
+  * "Very secure" → "Salama sana"`;
     }
 
     if (locationKey.includes('nigeria')) {
@@ -620,15 +631,73 @@ Format as JSON:
 
     if (locationKey.includes('india')) {
       return `- HINDI ELEMENTS: "Namaste" (hello), "Dhanyawad" (thank you), "Accha" (good), "Jaldi" (quickly)
-- BUSINESS CONTEXT: "Vyavasaya" (business), "Seva" (service), "Kaam" (work)
+- BUSINESS CONTEXT: "Vyavasaya" (business), "Seva" (service), "Kaam" (work), "Paisa" (money)
 - GREETINGS: "Namaskar" (respectful hello), "Sat Sri Akal" (Punjabi hello)
 - EXPRESSIONS: "Bahut accha" (very good), "Chalo" (let's go), "Kya baat hai" (what's the matter)`;
+    }
+
+    if (locationKey.includes('philippines')) {
+      return `- FILIPINO ELEMENTS: "Kumusta" (how are you), "Salamat" (thank you), "Mabuti" (good), "Bilisan" (hurry up)
+- BUSINESS CONTEXT: "Negosyo" (business), "Serbisyo" (service), "Trabaho" (work), "Pera" (money)
+- GREETINGS: "Magandang umaga" (good morning), "Kamusta ka" (how are you)
+- EXPRESSIONS: "Walang problema" (no problem), "Tara na" (let's go), "Sulit" (difficult/valuable)`;
+    }
+
+    if (locationKey.includes('indonesia')) {
+      return `- BAHASA ELEMENTS: "Halo" (hello), "Terima kasih" (thank you), "Bagus" (good), "Cepat" (fast)
+- BUSINESS CONTEXT: "Bisnis" (business), "Layanan" (service), "Kerja" (work), "Uang" (money)
+- GREETINGS: "Selamat pagi" (good morning), "Apa kabar" (how are you)
+- EXPRESSIONS: "Tidak masalah" (no problem), "Ayo" (let's go), "Mantap" (great/solid)`;
+    }
+
+    if (locationKey.includes('thailand')) {
+      return `- THAI ELEMENTS: "Sawasdee" (hello), "Khob khun" (thank you), "Dee" (good), "Rew" (fast)
+- BUSINESS CONTEXT: "Thurakit" (business), "Borikan" (service), "Ngan" (work), "Ngern" (money)
+- GREETINGS: "Sawasdee krab/ka" (hello), "Sabai dee mai" (how are you)
+- EXPRESSIONS: "Mai pen rai" (no problem), "Pai kan" (let's go), "Jai yen" (stay calm)`;
+    }
+
+    if (locationKey.includes('vietnam')) {
+      return `- VIETNAMESE ELEMENTS: "Xin chào" (hello), "Cảm ơn" (thank you), "Tốt" (good), "Nhanh" (fast)
+- BUSINESS CONTEXT: "Kinh doanh" (business), "Dịch vụ" (service), "Công việc" (work), "Tiền" (money)
+- GREETINGS: "Chào bạn" (hello friend), "Bạn khỏe không" (how are you)
+- EXPRESSIONS: "Không sao" (no problem), "Đi thôi" (let's go), "Tuyệt vời" (excellent)`;
+    }
+
+    if (locationKey.includes('brazil')) {
+      return `- PORTUGUESE ELEMENTS: "Olá" (hello), "Obrigado/a" (thank you), "Bom" (good), "Rápido" (fast)
+- BUSINESS CONTEXT: "Negócio" (business), "Serviço" (service), "Trabalho" (work), "Dinheiro" (money)
+- GREETINGS: "Bom dia" (good morning), "Como vai" (how are you)
+- EXPRESSIONS: "Sem problema" (no problem), "Vamos lá" (let's go), "Perfeito" (perfect)`;
+    }
+
+    if (locationKey.includes('mexico') || locationKey.includes('spain')) {
+      return `- SPANISH ELEMENTS: "Hola" (hello), "Gracias" (thank you), "Bueno" (good), "Rápido" (fast)
+- BUSINESS CONTEXT: "Negocio" (business), "Servicio" (service), "Trabajo" (work), "Dinero" (money)
+- GREETINGS: "Buenos días" (good morning), "¿Cómo estás?" (how are you)
+- EXPRESSIONS: "Sin problema" (no problem), "Vamos" (let's go), "Excelente" (excellent)`;
+    }
+
+    if (locationKey.includes('france')) {
+      return `- FRENCH ELEMENTS: "Bonjour" (hello), "Merci" (thank you), "Bon" (good), "Rapide" (fast)
+- BUSINESS CONTEXT: "Affaires" (business), "Service" (service), "Travail" (work), "Argent" (money)
+- GREETINGS: "Salut" (hi), "Comment allez-vous" (how are you)
+- EXPRESSIONS: "Pas de problème" (no problem), "Allons-y" (let's go), "Parfait" (perfect)`;
+    }
+
+    if (locationKey.includes('germany')) {
+      return `- GERMAN ELEMENTS: "Hallo" (hello), "Danke" (thank you), "Gut" (good), "Schnell" (fast)
+- BUSINESS CONTEXT: "Geschäft" (business), "Service" (service), "Arbeit" (work), "Geld" (money)
+- GREETINGS: "Guten Tag" (good day), "Wie geht's" (how are you)
+- EXPRESSIONS: "Kein Problem" (no problem), "Los geht's" (let's go), "Perfekt" (perfect)`;
     }
 
     return `- Use appropriate local language elements for ${location}
 - Mix naturally with English for authentic feel
 - Focus on greetings, business terms, and common expressions
-- Keep it contextual and business-appropriate`;
+- Keep it contextual and business-appropriate
+- Research local business language and cultural expressions
+- Maintain professional tone while adding cultural authenticity`;
   }
 
   /**
