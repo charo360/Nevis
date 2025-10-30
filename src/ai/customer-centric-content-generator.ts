@@ -6,6 +6,7 @@
 
 import type { BrandProfile, Platform } from '@/lib/types';
 import { getVertexAIClient } from '@/lib/services/vertex-ai-client';
+import { getOpenAIClient } from '@/lib/services/openai-client';
 
 interface CustomerCentricContent {
   hook: string;           // Grab attention with specific problem/benefit
@@ -70,12 +71,14 @@ export class CustomerCentricContentGenerator {
     try {
       // ANTI-REPETITION: Randomize temperature for content variety
       const randomTemperature = 0.7 + (Math.random() * 0.4); // Random between 0.7-1.1
-      const result = await getVertexAIClient().generateText(prompt, 'gemini-2.5-flash', {
+      
+      // 🚀 UPGRADED: Using GPT-4 for superior content quality and variety
+      const result = await getOpenAIClient().generateText(prompt, 'gpt-4', {
         temperature: randomTemperature,
-        maxOutputTokens: 1000
+        maxTokens: 1000
       });
       
-      console.log('🎲 [Content Variety] Using temperature:', randomTemperature.toFixed(2));
+      console.log('🎲 [Content Variety] Using GPT-4 with temperature:', randomTemperature.toFixed(2));
 
       const response = result.text;
       const jsonMatch = response.match(/\{[\s\S]*\}/);
@@ -164,6 +167,30 @@ ${selectedApproach === 'Accessibility' ? 'Focus on making financial services ava
 - FOCUS on different pain points (not always payment/financing issues)
 - GENERATE unique headlines that don't sound similar to previous ads
 
+🚫 SUBHEADLINE ANTI-REPETITION (CRITICAL):
+- NEVER start subheadlines with "Join [number]+ [customer type]"
+- AVOID patterns like "Join 1500+ satisfied farmers", "Join thousands of entrepreneurs"
+- VARY subheadline structures: questions, benefits, urgency, social proof, outcomes
+- USE different opening words: "Discover", "Experience", "Get", "Save", "Unlock", "Access", "Transform"
+- CREATE unique value statements that don't follow repetitive formulas
+
+✅ SUBHEADLINE VARIETY EXAMPLES (Use these patterns instead):
+- Questions: "Ready to cut transaction fees by 50%?"
+- Benefits: "Save KES 2,000 monthly on payment processing"
+- Urgency: "Limited time: Zero setup fees this month"
+- Social proof: "Trusted by 1M+ Kenyan businesses"
+- Outcomes: "From cash-only to digital payments in 24 hours"
+- Guarantees: "100% secure transactions, guaranteed"
+- Comparisons: "3x faster than traditional banking"
+
+🚨 CRITICAL BUSINESS DATA ENFORCEMENT:
+- ONLY use services listed in business profile: ${Array.isArray(services) ? services.join(', ') : services}
+- NEVER invent features not mentioned in the business profile
+- NEVER claim services the company doesn't actually offer
+- ALWAYS reference actual competitive advantages and key features
+- NEVER make up customer numbers, testimonials, or guarantees not provided
+- ONLY use real business information - NO assumptions or hallucinations
+
 MISSION: Identify the #1 most frustrating problem their customers face and the exact measurable outcome they deliver.
 
 BUSINESS CONTEXT:
@@ -203,9 +230,10 @@ Format as JSON:
 }`;
 
     try {
-      const result = await getVertexAIClient().generateText(analysisPrompt, 'gemini-2.5-flash', {
+      // 🚀 UPGRADED: Using GPT-4 for business outcome analysis
+      const result = await getOpenAIClient().generateText(analysisPrompt, 'gpt-4', {
         temperature: 0.7,
-        maxOutputTokens: 500
+        maxTokens: 500
       });
 
       const response = result.text;
@@ -540,7 +568,7 @@ Format as JSON:
   "proof": "Concrete evidence - customer count, success rate, guarantee, testimonial",
   "cta": "Clear action with urgency/incentive - not generic 'Contact Us'",
   "headline": "Hook + Promise combined naturally (avoid word repetition)",
-  "subheadline": "Proof element that builds credibility and trust",
+  "subheadline": "Proof element that builds credibility and trust (NEVER start with 'Join [number]+' - use varied structures)",
   "caption": "Natural flow: Problem → Solution → Proof → Action (no word salad)",
   "hashtags": ["#outcome-focused", "#specific-to-business", "#local-relevant"]
 }`;
