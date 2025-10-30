@@ -68,10 +68,14 @@ export class CustomerCentricContentGenerator {
     );
 
     try {
+      // ANTI-REPETITION: Randomize temperature for content variety
+      const randomTemperature = 0.7 + (Math.random() * 0.4); // Random between 0.7-1.1
       const result = await getVertexAIClient().generateText(prompt, 'gemini-2.5-flash', {
-        temperature: 0.8,
+        temperature: randomTemperature,
         maxOutputTokens: 1000
       });
+      
+      console.log('🎲 [Content Variety] Using temperature:', randomTemperature.toFixed(2));
 
       const response = result.text;
       const jsonMatch = response.match(/\{[\s\S]*\}/);
@@ -123,8 +127,12 @@ export class CustomerCentricContentGenerator {
       throw new Error('Business type and name are required for content generation');
     }
 
-    // Randomly select content approach for variety
-    const contentApproaches = ['Story', 'Education', 'Promo', 'Testimonial', 'Lifestyle'];
+    // ENHANCED: Much more diverse content approaches for variety
+    const contentApproaches = [
+      'Story', 'Education', 'Promo', 'Testimonial', 'Lifestyle',
+      'Problem-Solver', 'Innovation', 'Security-Focus', 'Speed-Focus', 'Community-Impact',
+      'Cost-Savings', 'Convenience', 'Growth-Enabler', 'Trust-Builder', 'Accessibility'
+    ];
     const selectedApproach = contentApproaches[Math.floor(Math.random() * contentApproaches.length)];
 
     // AI prompt to force ULTRA-SPECIFIC, CONCRETE customer thinking with varied approaches
@@ -137,6 +145,24 @@ ${selectedApproach === 'Education' ? 'Focus on teaching customers something valu
 ${selectedApproach === 'Promo' ? 'Focus on a specific offer or promotion with clear value.' : ''}
 ${selectedApproach === 'Testimonial' ? 'Focus on a specific customer success story with real results.' : ''}
 ${selectedApproach === 'Lifestyle' ? 'Focus on how this business improves daily life with specific scenarios.' : ''}
+${selectedApproach === 'Problem-Solver' ? 'Focus on a specific pain point and how this service eliminates it completely.' : ''}
+${selectedApproach === 'Innovation' ? 'Focus on what makes this service cutting-edge or different from competitors.' : ''}
+${selectedApproach === 'Security-Focus' ? 'Focus on safety, protection, and trust - why customers feel secure.' : ''}
+${selectedApproach === 'Speed-Focus' ? 'Focus on time-saving, instant results, and rapid solutions.' : ''}
+${selectedApproach === 'Community-Impact' ? 'Focus on how this service helps the local community or creates social good.' : ''}
+${selectedApproach === 'Cost-Savings' ? 'Focus on money saved, affordable pricing, or financial benefits.' : ''}
+${selectedApproach === 'Convenience' ? 'Focus on ease of use, simplicity, and removing friction from daily tasks.' : ''}
+${selectedApproach === 'Growth-Enabler' ? 'Focus on how this service helps customers scale, expand, or achieve bigger goals.' : ''}
+${selectedApproach === 'Trust-Builder' ? 'Focus on reliability, reputation, and why customers can depend on this service.' : ''}
+${selectedApproach === 'Accessibility' ? 'Focus on making financial services available to everyone, regardless of background.' : ''}
+
+🚫 CRITICAL CONTENT ANTI-REPETITION RULES:
+- NEVER use generic phrases like "Empower Your Business" or "Grow Your Community"
+- AVOID repetitive messaging about "daily finances" or "business growth"
+- CREATE completely different value propositions each time
+- USE varied customer personas (not always small business owners)
+- FOCUS on different pain points (not always payment/financing issues)
+- GENERATE unique headlines that don't sound similar to previous ads
 
 MISSION: Identify the #1 most frustrating problem their customers face and the exact measurable outcome they deliver.
 

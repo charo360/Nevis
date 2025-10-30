@@ -591,6 +591,153 @@ function getCulturalCTA(location: string, businessType: string): string | null {
   return null;
 }
 
+/**
+ * Get currency instructions based on location
+ */
+function getCurrencyInstructions(location: string): string {
+  const locationKey = location.toLowerCase();
+  
+  // Currency mapping by country/region
+  const currencyMap: { [key: string]: { currency: string; symbol: string; example: string } } = {
+    kenya: { currency: 'Kenyan Shilling', symbol: 'KES', example: 'KES 1,000' },
+    uganda: { currency: 'Ugandan Shilling', symbol: 'UGX', example: 'UGX 10,000' },
+    tanzania: { currency: 'Tanzanian Shilling', symbol: 'TZS', example: 'TZS 5,000' },
+    nigeria: { currency: 'Nigerian Naira', symbol: '₦', example: '₦2,500' },
+    ghana: { currency: 'Ghanaian Cedi', symbol: 'GHS', example: 'GHS 150' },
+    'south africa': { currency: 'South African Rand', symbol: 'R', example: 'R500' },
+    egypt: { currency: 'Egyptian Pound', symbol: 'EGP', example: 'EGP 300' },
+    morocco: { currency: 'Moroccan Dirham', symbol: 'MAD', example: 'MAD 200' },
+    india: { currency: 'Indian Rupee', symbol: '₹', example: '₹1,500' },
+    singapore: { currency: 'Singapore Dollar', symbol: 'S$', example: 'S$50' },
+    malaysia: { currency: 'Malaysian Ringgit', symbol: 'RM', example: 'RM100' },
+    thailand: { currency: 'Thai Baht', symbol: '฿', example: '฿500' },
+    philippines: { currency: 'Philippine Peso', symbol: '₱', example: '₱1,000' },
+    indonesia: { currency: 'Indonesian Rupiah', symbol: 'Rp', example: 'Rp50,000' },
+    vietnam: { currency: 'Vietnamese Dong', symbol: '₫', example: '₫100,000' },
+    'united kingdom': { currency: 'British Pound', symbol: '£', example: '£25' },
+    uk: { currency: 'British Pound', symbol: '£', example: '£25' },
+    france: { currency: 'Euro', symbol: '€', example: '€30' },
+    germany: { currency: 'Euro', symbol: '€', example: '€30' },
+    spain: { currency: 'Euro', symbol: '€', example: '€30' },
+    italy: { currency: 'Euro', symbol: '€', example: '€30' },
+    netherlands: { currency: 'Euro', symbol: '€', example: '€30' },
+    canada: { currency: 'Canadian Dollar', symbol: 'CAD', example: 'CAD $40' },
+    australia: { currency: 'Australian Dollar', symbol: 'AUD', example: 'AUD $45' },
+    'new zealand': { currency: 'New Zealand Dollar', symbol: 'NZD', example: 'NZD $50' },
+    brazil: { currency: 'Brazilian Real', symbol: 'R$', example: 'R$150' },
+    mexico: { currency: 'Mexican Peso', symbol: 'MX$', example: 'MX$500' },
+    argentina: { currency: 'Argentine Peso', symbol: 'ARS', example: 'ARS $2,000' },
+    chile: { currency: 'Chilean Peso', symbol: 'CLP', example: 'CLP $15,000' },
+    japan: { currency: 'Japanese Yen', symbol: '¥', example: '¥3,000' },
+    'south korea': { currency: 'South Korean Won', symbol: '₩', example: '₩30,000' },
+    china: { currency: 'Chinese Yuan', symbol: '¥', example: '¥200' },
+    russia: { currency: 'Russian Ruble', symbol: '₽', example: '₽1,500' }
+  };
+
+  // Find matching currency
+  for (const [key, currencyInfo] of Object.entries(currencyMap)) {
+    if (locationKey.includes(key)) {
+      return `- CURRENCY: Use ${currencyInfo.currency} (${currencyInfo.symbol}) for all monetary amounts
+- NEVER use USD ($) or dollars - always use local currency
+- Example format: ${currencyInfo.example}
+- Apply to: prices, costs, savings, discounts, offers, financial amounts
+- MANDATORY: All money references must use ${currencyInfo.symbol} symbol or ${currencyInfo.currency}`;
+    }
+  }
+
+  // Default for unrecognized locations
+  return `- CURRENCY: Use local currency appropriate for the region (NOT USD dollars)
+- NEVER use USD ($) unless specifically for US market
+- Research appropriate currency symbol for the location
+- Apply to: prices, costs, savings, discounts, offers, financial amounts
+- MANDATORY: Avoid defaulting to dollars - use regional currency`;
+}
+
+/**
+ * Get signature brand motif to eliminate template corporate feel
+ */
+function getSignatureBrandMotif(businessName: string, location: string): string {
+  const locationKey = location.toLowerCase();
+  
+  // Fintech-specific signature motifs
+  const fintechMotifs = [
+    "Subtle diagonal grid pattern overlay (20% opacity) suggesting digital connectivity",
+    "Curved corner elements with gradient fade representing smooth transactions", 
+    "Geometric hexagon pattern (background) symbolizing security and trust",
+    "Flowing wave gradient from top-left corner representing financial flow",
+    "Dotted connection lines between elements showing network connectivity",
+    "Subtle card-like shadow depth giving premium fintech feel",
+    "Rounded rectangle frames with soft inner glow for modern tech aesthetic",
+    "Triangular accent elements in corners representing growth and progress"
+  ];
+  
+  // Location-specific authentic imagery suggestions
+  const locationImagery: { [key: string]: string } = {
+    kenya: "Authentic Kenyan context: Matatu station, MPESA agent, Nairobi CBD, local kiosk, mobile money booth",
+    nigeria: "Authentic Nigerian context: Lagos market, POS terminal, mobile banking, local business owner",
+    ghana: "Authentic Ghanaian context: Accra market, mobile money agent, local entrepreneur, digital payments",
+    'south africa': "Authentic South African context: Township business, mobile banking, local merchant, digital payments",
+    uganda: "Authentic Ugandan context: Kampala market, mobile money, local business, digital transactions",
+    tanzania: "Authentic Tanzanian context: Dar es Salaam business, mobile payments, local entrepreneur"
+  };
+  
+  // Select random motif for variety
+  const selectedMotif = fintechMotifs[Math.floor(Math.random() * fintechMotifs.length)];
+  
+  // Get location-specific imagery
+  let locationContext = "Generic business setting with authentic local context";
+  for (const [key, context] of Object.entries(locationImagery)) {
+    if (locationKey.includes(key)) {
+      locationContext = context;
+      break;
+    }
+  }
+  
+  return `- SIGNATURE MOTIF: ${selectedMotif}
+- AUTHENTIC IMAGERY: ${locationContext}
+- AVOID: Stock photos, generic corporate imagery, posed business people
+- INCLUDE: Real business moments, genuine interactions, local context
+- VISUAL SIGNATURE: Consistent ${businessName} brand element across all designs`;
+}
+
+/**
+ * Get dynamic color rotation to prevent repetitive look
+ */
+function getDynamicColorRotation(primaryColor: string, accentColor: string, backgroundColor: string): string {
+  const colorRotations = [
+    {
+      name: "Primary Dominant",
+      description: "Primary color takes 70% of design space with accent highlights",
+      instruction: `Use ${primaryColor} as dominant color (70%), ${accentColor} for accents (20%), ${backgroundColor} for breathing space (10%)`
+    },
+    {
+      name: "Balanced Harmony", 
+      description: "Equal balance between primary and accent with generous white space",
+      instruction: `Balance ${primaryColor} (40%) and ${accentColor} (40%) with ${backgroundColor} providing generous white space (20%)`
+    },
+    {
+      name: "Accent Forward",
+      description: "Accent color leads with primary as supporting element", 
+      instruction: `Lead with ${accentColor} (60%), support with ${primaryColor} (25%), ${backgroundColor} for clean spacing (15%)`
+    },
+    {
+      name: "Minimal Clean",
+      description: "Mostly white/background with strategic color placement",
+      instruction: `Predominantly ${backgroundColor} (60%) with strategic ${primaryColor} (25%) and ${accentColor} accents (15%)`
+    }
+  ];
+  
+  // Select rotation based on timestamp for variety
+  const rotationIndex = Math.floor(Date.now() / 1000) % colorRotations.length;
+  const selectedRotation = colorRotations[rotationIndex];
+  
+  return `- COLOR ROTATION: ${selectedRotation.name}
+- ${selectedRotation.instruction}
+- VISUAL RHYTHM: Create breathing room between elements
+- AVOID: Monotone red-heavy designs that look repetitive
+- GOAL: Each design feels fresh while maintaining brand consistency`;
+}
+
 // Revo 1.5 model constants - Direct Vertex AI
 const REVO_1_5_IMAGE_MODEL = 'gemini-2.5-flash-image'; // Direct Vertex AI model
 const REVO_1_5_TEXT_MODEL = 'gemini-2.5-flash'; // Direct Vertex AI model
@@ -2355,18 +2502,30 @@ CRITICAL INSTRUCTION: The image MUST visually represent and include the text con
 
     if (phone) contacts.push(`📞 ${phone}`);
     if (email) contacts.push(`📧 ${email}`);
-    // Only include website if it actually exists in brand profile - NEVER generate fake URLs
+    // Format website as www.domain.com (remove https:// and http://)
     if (website && website.trim() && !website.includes('example.com') && !website.includes('placeholder')) {
-      contacts.push(`🌐 ${website}`);
+      let formattedWebsite = website.trim();
+      // Remove https:// or http://
+      formattedWebsite = formattedWebsite.replace(/^https?:\/\//, '');
+      // Add www. if not present
+      if (!formattedWebsite.startsWith('www.')) {
+        formattedWebsite = `www.${formattedWebsite}`;
+      }
+      contacts.push(`🌐 ${formattedWebsite}`);
     }
     if (address) contacts.push(`📍 ${address}`);
 
     if (contacts.length > 0) {
-      contactInstruction = `\n\n📞 CONTACT INFORMATION (Include in design):\n${contacts.join('\n')}\n- Display contact info prominently in footer/corner area\n- Ensure contact details are readable and well-formatted\n- Use professional styling that complements the brand colors`;
+      contactInstruction = `\n\n📞 CONTACT INFORMATION (MANDATORY FOOTER PLACEMENT):\n${contacts.join('\n')}\n- MUST display available contact info in footer strip at BOTTOM of image\n- MANDATORY: Use contrasting background (dark footer with light text OR light footer with dark text)\n- MANDATORY: Contact footer must span full width of image\n- MANDATORY: Text size minimum 14px equivalent for readability\n- MANDATORY: Format as horizontal strip: "${contacts.join(' | ')}"\n- MANDATORY: Footer placement is NON-NEGOTIABLE - always at bottom\n- NOTE: Only show available contacts (phone, email, website) - not all are required\n- Use professional styling that complements the brand colors`;
     }
   }
 
   imagePrompt += contactInstruction;
+
+  // FOOTER VALIDATION: Additional footer placement enforcement
+  if (includeContacts && contactInstruction) {
+    imagePrompt += `\n\n🚨 FOOTER PLACEMENT VALIDATION:\n- The contact information MUST appear at the very bottom of the image\n- NO exceptions: footer is ALWAYS at bottom edge\n- Footer must be visually distinct from main content\n- Contact text must be horizontally centered in footer\n- Footer background must contrast with main image for readability`;
+  }
 
   // Retry logic for 503 errors (Performance Optimized: Reduced retries)
   const maxRetries = 1;
@@ -2679,7 +2838,7 @@ function generate6DimensionalAdConcept(): AdConcept {
     { tone: "Serious", description: "Healthcare, finance, legal, insurance" }
   ];
 
-  // DIMENSION 6: FORMAT/TECHNIQUE (Structure)
+  // DIMENSION 6: FORMAT/TECHNIQUE (Structure) - ENHANCED WITH EMOTIONAL STORYTELLING
   const formats = [
     { technique: "Testimonial", structure: "Real customer story with photo/quote" },
     { technique: "Statistic", structure: "Lead with a big number or data point" },
@@ -2690,16 +2849,47 @@ function generate6DimensionalAdConcept(): AdConcept {
     { technique: "Announcement", structure: "New feature, update, launch" },
     { technique: "Social Proof", structure: "Join 10,000 others, Trusted by..." },
     { technique: "Story", structure: "Narrative arc with beginning/middle/end" },
-    { technique: "Direct Offer", structure: "Straight to the deal/CTA" }
+    { technique: "Direct Offer", structure: "Straight to the deal/CTA" },
+    // EMOTIONAL STORYTELLING ADDITIONS
+    { technique: "Transformation", structure: "Show customer's life before vs after using service - emotional journey" },
+    { technique: "Day-in-Life", structure: "Follow real person through daily routine showing natural product use" },
+    { technique: "Success Moment", structure: "Capture the exact moment customer achieves their goal - pure emotion" },
+    { technique: "Community Impact", structure: "Show how individual success ripples out to help family/community" },
+    { technique: "Overcoming Struggle", structure: "Real person facing challenge, finding solution, celebrating victory" }
   ];
 
-  // Randomly select one from each dimension
-  const selectedSetting = settings[Math.floor(Math.random() * settings.length)];
-  const selectedCustomer = customers[Math.floor(Math.random() * customers.length)];
-  const selectedVisualStyle = visualStyles[Math.floor(Math.random() * visualStyles.length)];
-  const selectedBenefit = benefits[Math.floor(Math.random() * benefits.length)];
-  const selectedTone = emotionalTones[Math.floor(Math.random() * emotionalTones.length)];
-  const selectedFormat = formats[Math.floor(Math.random() * formats.length)];
+  // ENHANCED ANTI-REPETITION: Avoid recently used concepts with timestamp-based randomization
+  let selectedSetting, selectedCustomer, selectedVisualStyle, selectedBenefit, selectedTone, selectedFormat;
+  let attempts = 0;
+  const maxAttempts = 10;
+  
+  // Add timestamp-based randomization for better variety
+  const timeBasedSeed = Date.now() % 1000;
+  Math.random(); // Warm up random
+  
+  do {
+    // Use timestamp-influenced randomization for better variety
+    selectedSetting = settings[Math.floor((Math.random() + timeBasedSeed / 1000) % 1 * settings.length)];
+    selectedCustomer = customers[Math.floor((Math.random() + timeBasedSeed / 2000) % 1 * customers.length)];
+    selectedVisualStyle = visualStyles[Math.floor((Math.random() + timeBasedSeed / 3000) % 1 * visualStyles.length)];
+    selectedBenefit = benefits[Math.floor((Math.random() + timeBasedSeed / 4000) % 1 * benefits.length)];
+    selectedTone = emotionalTones[Math.floor((Math.random() + timeBasedSeed / 5000) % 1 * emotionalTones.length)];
+    selectedFormat = formats[Math.floor((Math.random() + timeBasedSeed / 6000) % 1 * formats.length)];
+    
+    attempts++;
+    
+    // Check if this combination is too similar to recent concepts
+    const isTooSimilar = recentConcepts.some(recent => 
+      recent.setting.category === selectedSetting.category &&
+      recent.customer.type === selectedCustomer.type &&
+      recent.visualStyle.style === selectedVisualStyle.style
+    );
+    
+    // If not too similar or we've tried enough times, accept it
+    if (!isTooSimilar || attempts >= maxAttempts) {
+      break;
+    }
+  } while (attempts < maxAttempts);
 
   // Generate concept name
   const conceptName = `${selectedFormat.technique} ${selectedSetting.category} ${selectedBenefit.type}`;
@@ -3116,7 +3306,16 @@ ${useLocalLanguage ? `- Local Authenticity: Include subtle design elements that 
 - PROFESSIONAL aesthetics that build trust
 - CLEAR visual hierarchy that guides the eye
 
-📐 LAYOUT & COMPOSITION RULES:
+🚫 CRITICAL ANTI-REPETITION RULES (MANDATORY):
+- NEVER use the same layout structure as previous designs
+- VARY phone mockup placement: left, right, center, background, foreground
+- ALTERNATE text positioning: top-left, bottom-right, center, split layout
+- ROTATE visual composition: vertical, horizontal, diagonal, circular
+- CHANGE background approach: solid, gradient, pattern, photo, minimal
+- DIVERSIFY human subjects: age, gender, setting, activity, emotion
+- MANDATORY: Each design must feel completely different from the last
+
+📐 ENHANCED LAYOUT & COMPOSITION RULES (ANTI-TOP-HEAVY):
 1. 60% WHITE SPACE minimum - don't fill every pixel
 2. GRID-BASED layout for professional appearance
 3. CONSISTENT margins and padding throughout
@@ -3124,11 +3323,34 @@ ${useLocalLanguage ? `- Local Authenticity: Include subtle design elements that 
 5. FOCAL POINT should be immediately obvious
 6. SUPPORTING elements should enhance, not compete
 
+🚫 FIX TOP-HEAVY TEXT LAYOUT:
+- NEVER stack all text at the top of the design
+- MOVE subheadline BELOW the main visual element
+- BREAK long headlines with icons or emojis for visual rhythm
+- CREATE visual breathing space between headline and subheadline
+- BALANCE text placement: top headline + bottom subheadline/CTA
+
+📱 FINTECH CREDIBILITY ELEMENTS (MANDATORY):
+- INCLUDE phone mockup showing app interface or payment screen
+- ADD payment card visual, transaction flow, or dashboard preview
+- SHOW real fintech interaction: mobile banking, payment confirmation, balance display
+- INTEGRATE QR code, payment terminal, or mobile money interface
+- DISPLAY security badges, encryption symbols, or trust indicators
+
 BRAND ESSENTIALS:
 - Business: ${input.brandProfile.businessName}
 - Colors: ${colorScheme}
 - Style: Clean, professional, trustworthy
 ${(input.brandProfile.logoDataUrl || input.brandProfile.logoUrl) ? '- Logo: Will be integrated naturally in corner/header' : '- Logo: Typography-based branding'}
+
+💰 CURRENCY LOCALIZATION (MANDATORY):
+${getCurrencyInstructions(input.brandProfile.location || '')}
+
+🎨 SIGNATURE BRAND MOTIF & COLOR ROTATION (ANTI-TEMPLATE SYSTEM):
+${getSignatureBrandMotif(input.brandProfile.businessName, input.brandProfile.location || '')}
+
+🌈 DYNAMIC COLOR SYSTEM (PREVENT REPETITIVE LOOK):
+${getDynamicColorRotation(primaryColor, accentColor, backgroundColor)}
 
 ${shouldFollowBrandColors ? `🎨 BRAND COLORS (MANDATORY - HIGHEST PRIORITY):
 - ${colorScheme}
