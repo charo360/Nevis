@@ -222,13 +222,11 @@ export function AppSidebar() {
             <SidebarMenuButton
               asChild
               isActive={isActive("/social-connect")}
-              tooltip="Social Media Connect - Coming Soon"
-              disabled
+              tooltip="Social Media Connect"
             >
               <Link href="/social-connect">
                 <LinkIcon />
                 <span>Social Media Connect</span>
-                <span className="ml-auto text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">Coming Soon</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

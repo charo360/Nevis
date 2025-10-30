@@ -1,23 +1,12 @@
 import { NextResponse } from 'next/server';
 import { TwitterApi } from 'twitter-api-v2';
-import fs from 'fs/promises';
-import path from 'path';
+import { createClient } from '@supabase/supabase-js';
 
-const STATE_STORE = path.resolve(process.cwd(), 'tmp', 'oauth-states.json');
-
-async function readStates() {
-  try {
-    const raw = await fs.readFile(STATE_STORE, 'utf-8');
-    return JSON.parse(raw || '{}');
-  } catch (e) {
-    return {};
-  }
-}
-
-async function writeStates(data: any) {
-  await fs.mkdir(path.dirname(STATE_STORE), { recursive: true });
-  await fs.writeFile(STATE_STORE, JSON.stringify(data, null, 2), 'utf-8');
-}
+// Server-side Supabase client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -31,15 +20,26 @@ export async function GET(req: Request) {
   }
 
   try {
-    // Read stored state
-    const states = await readStates();
-    const storedState = states[state];
+    // Get stored state from Supabase
+    const { data: storedState, error: stateError } = await supabase
+      .from('oauth_states')
+      .select('*')
+      .eq('state', state)
+      .eq('platform', 'twitter')
+      .gt('expires_at', new Date().toISOString())
+      .single();
 
-    if (!storedState || !storedState.codeVerifier) {
+    if (stateError || !storedState) {
+      console.error('Invalid or expired state:', stateError);
       return NextResponse.redirect(`${baseUrl}/social-connect?error=invalid_state`);
     }
 
-    const { codeVerifier, userId } = storedState;
+    const { code_verifier: codeVerifier, user_id: userId } = storedState;
+
+    if (!userId) {
+      console.error('No userId in stored state');
+      return NextResponse.redirect(`${baseUrl}/social-connect?error=invalid_state`);
+    }
 
     // Initialize Twitter client
     const twitterClient = new TwitterApi({
@@ -47,55 +47,62 @@ export async function GET(req: Request) {
       clientSecret: process.env.TWITTER_CLIENT_SECRET || process.env.TWITTER_SECRET_KEY!,
     });
 
-    const callbackUrl = `${baseUrl}/api/social/oauth/twitter/callback`;
-
-    // Also accept callbacks from production URL in development
-    const prodCallbackUrl = 'https://crevo.app/api/social/oauth/twitter/callback';
-    const acceptedCallbackUrls = [callbackUrl];
-    if (baseUrl.includes('localhost')) {
-      acceptedCallbackUrls.push(prodCallbackUrl);
-    }
+    // Use localhost callback in development, production URL in production
+    const isDevelopment = baseUrl.includes('localhost');
+    const callbackUrl = isDevelopment 
+      ? 'http://localhost:3001/api/social/oauth/twitter/callback'
+      : 'https://crevo.app/api/social/oauth/twitter/callback';
 
     // Get access token
     const { client: loggedClient, accessToken, refreshToken } = await twitterClient.loginWithOAuth2({
       code,
       codeVerifier,
-      redirectUri: prodCallbackUrl, // Use production URL since that's what we registered with Twitter
+      redirectUri: callbackUrl, // Use the same URL we registered with
     });
 
     // Get user info
     const { data: userObject } = await loggedClient.v2.me();
 
     // Store connection via connections API
+    console.log('Storing Twitter connection for user:', userId);
     const connectionsResponse = await fetch(`${baseUrl}/api/social/connections`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${storedState.accessToken}`,
-        'x-demo-user': storedState.userId // Fallback for demo/development
+        'x-demo-user': userId // Use the userId from stored state
       },
       body: JSON.stringify({
         platform: 'twitter',
         socialId: userObject.id,
         accessToken,
         refreshToken,
-        profile: userObject,
+        profile: {
+          id: userObject.id,
+          username: userObject.username,
+          name: userObject.name,
+        },
       }),
     });
 
     if (!connectionsResponse.ok) {
-      console.error('Failed to store connection:', await connectionsResponse.text());
+      const errorText = await connectionsResponse.text();
+      console.error('Failed to store connection:', errorText);
+      return NextResponse.redirect(`${baseUrl}/social-connect?error=storage_failed`);
     }
 
-    // Clean up state
-    delete states[state];
-    await writeStates(states);
+    console.log('Successfully stored Twitter connection');
 
-    // For development, redirect to localhost
-    const redirectUrl = `http://localhost:3001/social-connect?oauth_success=true&platform=twitter&username=${userObject.username}`;
+    // Clean up state from Supabase
+    await supabase
+      .from('oauth_states')
+      .delete()
+      .eq('state', state);
+
+    // Redirect to the same base URL we're running on
+    const redirectUrl = `${baseUrl}/social-connect?oauth_success=true&platform=twitter&username=${userObject.username}`;
     return NextResponse.redirect(redirectUrl);
   } catch (error) {
     console.error('Twitter OAuth callback error:', error);
-    return NextResponse.redirect(`http://localhost:3001/social-connect?error=twitter_callback_failed`);
+    return NextResponse.redirect(`${baseUrl}/social-connect?error=twitter_callback_failed`);
   }
 }
