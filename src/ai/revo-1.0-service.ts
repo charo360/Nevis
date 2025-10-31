@@ -3591,28 +3591,12 @@ ANTI-GENERIC REQUIREMENTS:
       'Use the provided brand logo (do NOT create new logo - integrate existing one naturally)' :
       'Create professional design without logo overlay';
 
-    // Prepare structured content display with hierarchy
+    // 🚫 NO TEXT ON IMAGE - Keep text in caption only
+    // Only use minimal brand name or logo, no story content on the visual
     const contentStructure = [];
-    if (input.headline) contentStructure.push(`PRIMARY (Largest, most prominent): "${input.headline}"`);
-    if (input.subheadline) contentStructure.push(`SECONDARY (Medium, supporting): "${input.subheadline}"`);
-    if (input.callToAction) contentStructure.push(`CTA (Bold, action-oriented, prominent and unmissable): "${input.callToAction}"`);
 
-    // 🎯 CTA PROMINENCE INSTRUCTIONS
-    const ctaInstructions = input.callToAction ? `
-
-🎯 CRITICAL CTA DISPLAY REQUIREMENTS:
-- The CTA "${input.callToAction}" MUST be displayed prominently on the design
-- Make it BOLD, LARGE, and VISUALLY STRIKING
-- Use high contrast colors to make the CTA stand out
-- Position it prominently - top, center, or as a banner across the design
-- Make the CTA text the MAIN FOCAL POINT of the design
-- Use typography that commands attention - bold, modern, impactful
-- Add visual elements (borders, backgrounds, highlights) to emphasize the CTA
-- The CTA should be the FIRST thing people notice when they see the design
-- Make it look like a professional marketing campaign CTA
-- Ensure it's readable from mobile devices - minimum 32px equivalent font size
-- STYLE: Bold, prominent, unmissable - like premium brand campaign CTAs
-    ` : '';
+    // NO CTA BUTTONS - Content should be in caption, not on image
+    const ctaInstructions = '';
 
     // Get advanced design features
     const businessDesignDNA = getBusinessDesignDNA(input.businessType);
@@ -3736,28 +3720,31 @@ ${locationTextForDesign}
 
 ${ctaInstructions}
 
-TEXT CONTENT TO DISPLAY:
-${contentStructure.map(item => `- ${item}`).join('\n')}
+🚫 NO TEXT OVERLAY ON IMAGE:
+- Keep the visual clean and focused
+- Text content belongs in the caption, not on the image
+- Only include brand name/logo if absolutely necessary
+- Let the visual tell the story without text clutter
 
-**VISUAL APPEAL REQUIREMENTS:**
-- Create a design that DEMANDS ATTENTION and encourages engagement
-- Use modern design trends: gradients, shadows, contemporary typography, clean layouts
-- Focus on strong visual hierarchy with one clear focal point
-- Make it look like a premium brand campaign, not a generic business post
-- Ensure the design feels current and on-trend
+**CONSISTENT BRAND DESIGN REQUIREMENTS:**
+- Maintain consistent visual style across all designs
+- Use the same design approach: clean, professional, modern
+- Consistent color usage: ${colorScheme}
+- Single focal point - avoid multiple competing elements
+- Professional fintech aesthetic - trustworthy and reliable
+- Clean layouts with plenty of white space
+- Avoid cluttered or busy compositions
 
 **DESIGN STYLE EXECUTION:**
 - Follow the specific style: ${designVariations.style}
 - Each style must look completely different and unique
 - ${designVariations.description}
 - Each style should have its own distinct visual language
-- **CRITICAL: Include ALL text content listed above in the design**
-
-**HUMAN-DESIGNED TYPOGRAPHY (NOT AI-LOOKING):**
-- HEADLINE: 32-36px, Bold, clean sans-serif (Inter/Roboto), natural placement, max 6 words
-- SUBHEADLINE: 18-22px, Medium weight, readable and natural, max 25 words
-- CTA BUTTON: 16-18px, Bold, looks like a real button humans would design, solid background, clear borders
-- BODY TEXT: 14-16px, Regular, natural line spacing, readable color (#374151)
+**SIMPLE TYPOGRAPHY:**
+- Use ONE consistent font family throughout
+- Clear hierarchy: large headline, medium subheadline
+- No competing text elements or multiple fonts
+- Clean, readable typography that doesn't overwhelm
 
 **CLEAN, NATURAL DESIGN ELEMENTS:**
 - AUTHENTIC shadows: subtle, natural-looking (0-2px blur, 5% opacity max)
