@@ -2650,7 +2650,7 @@ export async function generateRevo10Content(input: {
 
       if (todaysServices.length > 0) {
         serviceFocus = todaysServices.map((s: any) => s.serviceName).join(', ');
-        serviceContext = `\n\n🚨🚨🚨 MANDATORY SERVICE FOCUS - THIS OVERRIDES EVERYTHING 🚨🚨🚨\n\n🎯 TODAY'S FEATURED SERVICES (ABSOLUTE PRIORITY - MUST FOCUS ON THESE):\n${todaysServices.map((s: any) => `- ${s.serviceName}: ${s.description || 'Premium service offering'}`).join('\n')}\n\n⚠️ CRITICAL REQUIREMENTS:\n- Content MUST be specifically about ${todaysServices.map((s: any) => s.serviceName).join(', ')}\n- Headlines MUST relate to ${todaysServices[0].serviceName}\n- DO NOT create generic financial content\n- DO NOT use vague terms like "financial journey" or "financial horizon"\n- BE SPECIFIC: If it's Payments, talk about payments, transactions, sending money\n- Examples for Payments: "Send Money Instantly", "Pay Anyone, Anywhere", "Seamless Payment Solutions"\n\n🚫 FORBIDDEN GENERIC CONTENT:\n- "Elevate Your Financial Journey" ❌\n- "Redefine Your Financial Horizon" ❌\n- "Transform Your Finances" ❌\n- "Empower Your Financial Future" ❌\n\n✅ REQUIRED SPECIFIC CONTENT:\n- "${todaysServices[0].serviceName === 'Payments' ? 'Instant Payments Made Simple' : todaysServices[0].serviceName + ' Available Today'}" ✓\n- "${todaysServices[0].serviceName === 'Payments' ? 'Send Money in Seconds' : 'Get ' + todaysServices[0].serviceName + ' Now'}" ✓\n- Focus on the ACTUAL SERVICE, not generic finance`;
+        serviceContext = `\n\n🚨🚨🚨 MANDATORY SERVICE FOCUS - THIS OVERRIDES EVERYTHING 🚨🚨🚨\n\n🎯 TODAY'S FEATURED SERVICES (ABSOLUTE PRIORITY - MUST FOCUS ON THESE):\n${todaysServices.map((s: any) => `- ${s.serviceName}: ${s.description || 'Premium service offering'}`).join('\n')}\n\n⚠️ CRITICAL REQUIREMENTS:\n- Content MUST be specifically about ${todaysServices.map((s: any) => s.serviceName).join(', ')}\n- Headlines MUST relate to ${todaysServices[0].serviceName}\n- DO NOT create generic financial content\n- DO NOT use vague terms like "financial journey" or "financial horizon"\n- BE SPECIFIC: If it's Payments, talk about payments, transactions, sending money\n- Examples for Payments: "Send Money Instantly", "Pay Anyone, Anywhere", "Seamless Payment Solutions"\n\n🚫 FORBIDDEN CORPORATE JARGON (NEVER USE):\n- "Step into a world where..." ❌\n- "Tired of [X]? Try [Y]" ❌\n- "We're dedicated to..." ❌\n- "Redefines [industry]" ❌\n- "Experience seamless..." ❌\n- "Unlock your..." ❌\n- "Elevate your..." ❌\n- "Transform your..." ❌\n- "Navigating your [X] should be effortless" ❌\n- "Done right" / "Built for you" ❌\n- "[Product] puts [feature] front and center" ❌\n- "brings a human, professional touch to..." ❌\n- "authentic, high-impact" ❌\n- "reliable, modern" ❌\n\n✅ HUMAN CONTENT RULES (MANDATORY):\n1. START WITH CRISIS/CONFLICT:\n   - "It's 2pm. Your supplier needs payment now. Bank transfer takes 2 days. Client meeting at 4pm..."\n   - "Week 3 of semester. Your laptop crashes during group project at midnight. Everyone's counting on you."\n   - "Three customers walked away this week. Not because your prices were wrong—because paying upfront was too much."\n\n2. USE SPECIFIC DETAILS:\n   - Times: Monday, 8am, Week 3, 2pm\n   - Amounts: KES 15,000, KES 847, KES 3,200\n   - Places: Gikomba, Mombasa Road, Eastleigh, Westlands\n   - Items: textbooks, school shoes, matatu ride\n\n3. TELL STORIES WITH CHARACTERS:\n   - "Mama Wanjiku runs three market stalls in Gikomba. Last month, she lost KES 15,000 to a payment scam..."\n   - Use real Kenyan names: Mama Wanjiku, Kamau, Akinyi\n   - Show what happened, how they felt, resolution\n\n4. CONVERSATIONAL LANGUAGE:\n   - Write how people actually talk\n   - Use contractions (you're, it's, we've)\n   - Local context: matatu, boda boda, MPESA\n   - Swahili phrases when appropriate\n\n5. SHOW EMOTION, DON'T STATE IT:\n   - "You watched them leave. That hurt." ✓\n   - NOT "stress-free" or "effortless" ❌\n\n6. REAL VERBS ONLY:\n   ❌ Experience, Explore, Discover, Unlock, Transform, Elevate, Revolutionize, Navigate\n   ✅ Crashed, Walked away, Lost, Stuck, Waiting, Failed, Broke down\n\n7. TEST: Could this be ANY product? If yes, REWRITE.\n\n✅ PAYMENT-SPECIFIC HUMAN CONTENT EXAMPLES:\n- "It's Monday morning. Your daughter needs new school shoes by Wednesday. The textbook list just came—5 books at KES 3,200 each. Your account says KES 847."\n- "Between the matatu ride to your meeting and the bank queue that never moves—your whole morning's gone. Your supplier's still waiting."\n- "Mama Wanjiku's phone buzzes. 'Payment confirmed.' Her customer smiles. No cash counting. No change drama. Just done."`;
         featuredServices = todaysServices;
       } else if (upcomingServices.length > 0) {
         serviceFocus = upcomingServices[0].serviceName;
@@ -3027,14 +3027,57 @@ CREATIVE CAPTION STARTERS (Don't copy - use for inspiration):
 - Local hooks: "Every [Location] resident deserves...", "We've been serving [Location] because..."
 - Problem hooks: "Stop struggling with...", "Never again worry about..."
 
-Output format:
-HEADLINE: [your unique headline - not using patterns above]
-SUBHEADLINE: [your creative subheadline] 
-CAPTION: [your engaging caption with fresh opener]
-CTA: [your specific, benefit-focused call-to-action]
-HASHTAGS: [your relevant hashtags]
+🚨 HUMAN CONTENT RULES (MANDATORY - OVERRIDE ALL OTHER INSTRUCTIONS):
 
-Remember: Be completely unique, avoid ALL repetitive patterns, create fresh content every time!`;
+1. NEVER USE CORPORATE JARGON:
+❌ "Step into a world where..." ❌ "Experience seamless..." ❌ "Transform your..." ❌ "Unlock your..." ❌ "Elevate your..." ❌ "Redefines [industry]" ❌ "We're dedicated to..." ❌ "Done right" ❌ "Built for you"
+
+2. START WITH CRISIS/CONFLICT (MANDATORY):
+✅ "It's 2pm. Your supplier needs payment now. Bank transfer takes 2 days. Client meeting at 4pm..."
+✅ "Week 3 of semester. Your laptop crashes during group project at midnight. Everyone's counting on you."
+✅ "Three customers walked away this week. Not because your prices were wrong—because paying upfront was too much."
+
+3. USE SPECIFIC DETAILS (MANDATORY):
+✅ Times: Monday, 8am, Week 3, 2pm, Friday
+✅ Amounts: KES 15,000, KES 847, KES 3,200
+✅ Places: Gikomba, Mombasa Road, Eastleigh, Westlands, Nairobi CBD
+✅ Items: textbooks, school shoes, matatu ride, MPESA
+
+4. TELL STORIES WITH KENYAN CHARACTERS:
+✅ "Mama Wanjiku runs three market stalls in Gikomba. Last month, she lost KES 15,000 to a payment scam..."
+✅ Use names: Mama Wanjiku, Kamau, Akinyi, Njeri
+✅ Local context: matatu, boda boda, MPESA, Gikomba market
+
+5. CONVERSATIONAL LANGUAGE:
+✅ Write how people actually talk
+✅ Use contractions (you're, it's, we've)
+✅ Short sentences for impact
+✅ Local slang when appropriate
+
+6. SHOW EMOTION, DON'T STATE IT:
+✅ "You watched them leave. That hurt." 
+❌ Never say "stress-free" or "effortless"
+
+7. USE REAL VERBS ONLY:
+❌ Experience, Explore, Discover, Unlock, Transform, Elevate, Revolutionize, Navigate
+✅ Crashed, Walked away, Lost, Stuck, Waiting, Failed, Broke down, Buzzed, Confirmed
+
+8. TEST: Could this be ANY product? If yes, REWRITE.
+
+Output format:
+HEADLINE: [Start with crisis/conflict - specific time/place/amount]
+SUBHEADLINE: [Continue the story - show the problem and solution] 
+CAPTION: [Complete the story with character, emotion, resolution - 2-3 sentences max]
+CTA: [Natural next step from the story]
+HASHTAGS: [relevant hashtags]
+
+EXAMPLE FOR PAYMENTS:
+HEADLINE: It's Monday Morning. School Fees Due Friday.
+SUBHEADLINE: Your account says KES 847. The reminder says KES 15,000. Paya lets you pay over time.
+CAPTION: Mama Wanjiku's phone buzzes. "Payment confirmed." Her daughter stays in school. No stress, no drama, just done.
+CTA: Pay Smart Today
+
+Remember: HUMAN STORIES ONLY. NO CORPORATE SPEAK. KENYAN CONTEXT ALWAYS.`;
 
     let businessHeadline, businessSubheadline, businessCaption;
     
@@ -3149,10 +3192,25 @@ Remember: Be completely unique, avoid ALL repetitive patterns, create fresh cont
         console.warn(`Generated headline: ${finalContent.headline}`);
         console.warn(`Expected service focus: ${featuredServices[0].serviceName}`);
         
-        // Force service-specific content if generic content was generated
+        // Force human, story-driven content if generic content was generated
         if (serviceName === 'payments' || serviceName.includes('payment')) {
-          finalContent.headline = 'Send Money Instantly';
-          finalContent.subheadline = 'Fast, secure payments to anyone, anywhere with Paya';
+          const humanPaymentContent = [
+            {
+              headline: "It's 2pm. Supplier Needs Payment Now.",
+              subheadline: "Bank transfer takes 2 days. Client meeting at 4pm. Paya sends money in seconds."
+            },
+            {
+              headline: "Three Customers Walked Away This Week",
+              subheadline: "Not because your prices were wrong. Because paying upfront was too much. Paya fixes that."
+            },
+            {
+              headline: "Your Account Says KES 847",
+              subheadline: "School fees reminder pops up. KES 15,000 due Friday. Paya lets you pay over time."
+            }
+          ];
+          const selected = humanPaymentContent[Math.floor(Math.random() * humanPaymentContent.length)];
+          finalContent.headline = selected.headline;
+          finalContent.subheadline = selected.subheadline;
         }
       }
     }
