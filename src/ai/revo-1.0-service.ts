@@ -2611,12 +2611,42 @@ export async function generateRevo10Content(input: {
     let serviceContext = '';
     let featuredServices: any[] = [];
 
-    // Use scheduled services from enhanced real-time context
-    const scheduledServices = realTimeContext.scheduledServices || [];
+    // Use scheduled services from enhanced real-time context OR direct input
+    let scheduledServices = realTimeContext.scheduledServices || input.scheduledServices || [];
+    
+    // 🚨 TEMPORARY: Create test scheduled service if none provided (for debugging)
+    if (scheduledServices.length === 0 && input.businessName?.toLowerCase().includes('paya')) {
+      scheduledServices = [{
+        serviceId: 'payments-001',
+        serviceName: 'Payments',
+        description: 'Fast, secure digital payments and money transfers',
+        contentType: 'promotional',
+        platform: input.platform,
+        priority: 'high',
+        isToday: true,
+        isUpcoming: false,
+        daysUntil: 0
+      }];
+      console.log('🚨 [Revo 1.0] Created test scheduled service for Paya:', scheduledServices);
+    }
+
+    console.log('🎯 [Revo 1.0] Scheduled Services Debug:', {
+      totalScheduledServices: scheduledServices.length,
+      scheduledServices: scheduledServices,
+      inputScheduledServices: input.scheduledServices || [],
+      realTimeContextKeys: Object.keys(realTimeContext)
+    });
 
     if (scheduledServices.length > 0) {
       const todaysServices = scheduledServices.filter((s: any) => s.isToday);
       const upcomingServices = scheduledServices.filter((s: any) => s.isUpcoming);
+      
+      console.log('🎯 [Revo 1.0] Service Filtering Debug:', {
+        todaysServicesCount: todaysServices.length,
+        todaysServices: todaysServices,
+        upcomingServicesCount: upcomingServices.length,
+        upcomingServices: upcomingServices
+      });
 
       if (todaysServices.length > 0) {
         serviceFocus = todaysServices.map((s: any) => s.serviceName).join(', ');
