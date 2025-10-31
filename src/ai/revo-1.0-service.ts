@@ -3550,21 +3550,21 @@ ANTI-GENERIC REQUIREMENTS:
 🎯 PRODUCT-SPECIFIC MARKETING REQUIREMENTS (HIGHEST PRIORITY):
 
 ${todaysServices.length > 0 ? `
-⚡ TODAY'S FEATURED PRODUCTS (Create URGENT, product-focused visuals):
+ TODAY'S FEATURED PRODUCTS (Create URGENT, product-focused visuals):
 ${todaysServices.map(s => `- ${s.serviceName}: ${s.description || 'Available today'}`).join('\n')}
 
 URGENT VISUAL REQUIREMENTS:
-- PROMINENTLY display the specific product names in the design
-- Show the actual products (phones, laptops, etc.) in the visual
+- Create visuals that showcase these specific products in action
+- Show the actual products (phones, laptops, etc.) being used naturally
 - Use product-focused imagery and layouts
-- Create urgency with "TODAY ONLY", "Available Now", "Don't Miss Out"
+- Create urgency through visual design and composition
 - Make the products the MAIN FOCAL POINT of the design
 - Use product-specific colors and styling
-- Include product specifications or key features visually
+- Show the benefits and usage of these products visually
 ` : ''}
 
 ${upcomingServices.length > 0 ? `
-📅 UPCOMING PRODUCTS (Build anticipation with visual teasers):
+ UPCOMING PRODUCTS (Build anticipation with visual teasers):
 ${upcomingServices.map(s => `- ${s.serviceName} (in ${s.daysUntil} days): ${s.description || 'Coming soon'}`).join('\n')}
 
 ANTICIPATION VISUAL REQUIREMENTS:
@@ -3575,14 +3575,14 @@ ANTICIPATION VISUAL REQUIREMENTS:
 ` : ''}
 
 ⚠️ CRITICAL VISUAL REQUIREMENTS:
-- The design MUST specifically feature and promote ONLY these scheduled products
-- DO NOT create generic business visuals or mention other products
-- Focus ENTIRELY on the scheduled products listed above
-- Use the EXACT product names in visual text and design elements
-- Make the products the HERO ELEMENTS of the design
-- Show actual product imagery, not generic business imagery
+- The design MUST visually showcase these specific products in use
+- DO NOT create generic business visuals or show other products
+- Focus ENTIRELY on visualizing the scheduled products above
+- Make the products the HERO ELEMENTS through imagery, not text lists
+- Show actual product usage scenarios, not generic business imagery
 - Create product-specific layouts and compositions
 - Use product-focused color schemes and styling
+- The visual should tell the story of these products without listing them
 `;
     }
 
