@@ -2620,7 +2620,7 @@ export async function generateRevo10Content(input: {
 
       if (todaysServices.length > 0) {
         serviceFocus = todaysServices.map((s: any) => s.serviceName).join(', ');
-        serviceContext = `\n\n🎯 TODAY'S FEATURED SERVICES (ABSOLUTE PRIORITY - MUST FOCUS ON THESE):\n${todaysServices.map((s: any) => `- ${s.serviceName}: ${s.description || 'Premium service offering'}`).join('\n')}\n\n⚠️ CRITICAL: Content MUST be about these specific services today. Do NOT create generic content.`;
+        serviceContext = `\n\n🚨🚨🚨 MANDATORY SERVICE FOCUS - THIS OVERRIDES EVERYTHING 🚨🚨🚨\n\n🎯 TODAY'S FEATURED SERVICES (ABSOLUTE PRIORITY - MUST FOCUS ON THESE):\n${todaysServices.map((s: any) => `- ${s.serviceName}: ${s.description || 'Premium service offering'}`).join('\n')}\n\n⚠️ CRITICAL REQUIREMENTS:\n- Content MUST be specifically about ${todaysServices.map((s: any) => s.serviceName).join(', ')}\n- Headlines MUST relate to ${todaysServices[0].serviceName}\n- DO NOT create generic financial content\n- DO NOT use vague terms like "financial journey" or "financial horizon"\n- BE SPECIFIC: If it's Payments, talk about payments, transactions, sending money\n- Examples for Payments: "Send Money Instantly", "Pay Anyone, Anywhere", "Seamless Payment Solutions"\n\n🚫 FORBIDDEN GENERIC CONTENT:\n- "Elevate Your Financial Journey" ❌\n- "Redefine Your Financial Horizon" ❌\n- "Transform Your Finances" ❌\n- "Empower Your Financial Future" ❌\n\n✅ REQUIRED SPECIFIC CONTENT:\n- "${todaysServices[0].serviceName === 'Payments' ? 'Instant Payments Made Simple' : todaysServices[0].serviceName + ' Available Today'}" ✓\n- "${todaysServices[0].serviceName === 'Payments' ? 'Send Money in Seconds' : 'Get ' + todaysServices[0].serviceName + ' Now'}" ✓\n- Focus on the ACTUAL SERVICE, not generic finance`;
         featuredServices = todaysServices;
       } else if (upcomingServices.length > 0) {
         serviceFocus = upcomingServices[0].serviceName;
@@ -3084,15 +3084,14 @@ Remember: Be completely unique, avoid ALL repetitive patterns, create fresh cont
       platform: input.platform,
       businessType: input.businessType,
       location: input.location,
-      realTimeContext: realTimeContext, // Pass context to image generator
-      creativeContext: { // Enhanced creative context for image generation
+      realTimeContext: realTimeContext,
+      creativeContext: {
         style: businessHeadline.approach,
         tone: businessHeadline.emotionalImpact,
         framework: businessSubheadline.framework,
         businessInsights: contentPlan,
         variation: uniqueContentVariation
       },
-      // 🧠 BUSINESS INTELLIGENCE DATA
       businessIntelligence: {
         contentGoal: contentPlan?.strategy?.goal || 'awareness',
         businessStrengths: contentPlan?.businessStrengths || ['Professional service'],
@@ -3104,10 +3103,29 @@ Remember: Be completely unique, avoid ALL repetitive patterns, create fresh cont
       variants: [{
         platform: input.platform,
         aspectRatio: getPlatformAspectRatio(input.platform),
-        imageUrl: '' // Will be generated separately
+        imageUrl: ''
       }],
       generatedAt: new Date().toISOString()
     };
+
+    // 🚨 VALIDATION: Ensure content mentions scheduled services
+    if (featuredServices.length > 0) {
+      const contentText = `${finalContent.headline} ${finalContent.subheadline} ${finalContent.content}`.toLowerCase();
+      const serviceName = featuredServices[0].serviceName.toLowerCase();
+      
+      // Check if content mentions the scheduled service
+      if (!contentText.includes(serviceName) && !contentText.includes('payment') && serviceName === 'payments') {
+        console.warn(`⚠️ WARNING: Generated content doesn't mention scheduled service: ${featuredServices[0].serviceName}`);
+        console.warn(`Generated headline: ${finalContent.headline}`);
+        console.warn(`Expected service focus: ${featuredServices[0].serviceName}`);
+        
+        // Force service-specific content if generic content was generated
+        if (serviceName === 'payments' || serviceName.includes('payment')) {
+          finalContent.headline = 'Send Money Instantly';
+          finalContent.subheadline = 'Fast, secure payments to anyone, anywhere with Paya';
+        }
+      }
+    }
 
     // 🎨 ENHANCED: Content Cohesion Analysis and Optimization
     try {
