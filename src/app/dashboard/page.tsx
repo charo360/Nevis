@@ -51,20 +51,19 @@ export default function DashboardPage() {
     }
   }, [authLoading, user, router]);
 
-  // Temporarily disable brand context to ensure dashboard renders
+  // Use unified brand context
   let currentBrand = null;
   let brands: any[] = [];
   let brandContextError = null;
 
-  // TODO: Re-enable brand context once authentication is stable
-  // try {
-  //   const brandContext = useUnifiedBrand();
-  //   currentBrand = brandContext.currentBrand;
-  //   brands = brandContext.brands;
-  // } catch (error: any) {
-  //   console.warn('Brand context error:', error.message);
-  //   brandContextError = error.message;
-  // }
+  try {
+    const brandContext = useUnifiedBrand();
+    currentBrand = brandContext.currentBrand as any;
+    brands = brandContext.brands as any[];
+  } catch (error: any) {
+    console.warn('Brand context error:', error?.message || error);
+    brandContextError = error?.message || String(error);
+  }
   const brandLabel = currentBrand?.businessName ?? (currentBrand as unknown as { name?: string })?.name ?? 'Unnamed Brand';
   const hasBrands = brands.length > 0;
   const brandCount = brands.length;
@@ -186,9 +185,14 @@ export default function DashboardPage() {
       return;
     }
 
-    if (feature.status === 'requires-setup' && !currentBrand) {
-      // Redirect to brand profile setup first
-      router.push('/brand-profile');
+    if (!currentBrand) {
+      // If user has brands but none active, take them to brand manager
+      if (brands && brands.length > 0) {
+        router.push('/brands');
+        return;
+      }
+      // No brands yet: send to brand profile setup
+      router.push('/brand-profile?mode=create');
       return;
     }
 
@@ -269,9 +273,17 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between mb-6 bg-white/80 backdrop-blur-sm border rounded-lg p-3 shadow-sm">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded flex items-center justify-center text-white font-semibold">
-                {brandLabel.slice(0, 2).toUpperCase()}
-              </div>
+              {currentBrand?.logoDataUrl ? (
+                <img
+                  src={currentBrand.logoDataUrl}
+                  alt={brandLabel}
+                  className="w-10 h-10 rounded object-cover border"
+                />
+              ) : (
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded flex items-center justify-center text-white font-semibold">
+                  {brandLabel.slice(0, 2).toUpperCase()}
+                </div>
+              )}
               <div className="hidden sm:block">
                 <div className="text-xs text-gray-500">Working on</div>
                 <div className="font-semibold text-sm">{brandLabel}</div>
@@ -422,7 +434,7 @@ export default function DashboardPage() {
                 <Button
                   variant="outline"
                   onClick={() => router.push(`/brand-profile?mode=edit&id=${(currentBrand as any)?.id}`)}
-                  className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                  className="border-blue-200 text-blue-700 hover:bg-transparent hover:text-blue-700"
                 >
                   Edit Brand
                 </Button>
@@ -477,6 +489,7 @@ export default function DashboardPage() {
                       size="sm"
                       className="w-full"
                       disabled={feature.status === 'coming-soon'}
+                      onClick={(e) => { e.stopPropagation(); handleFeatureClick(feature); }}
                     >
                       {feature.status === 'setup-needed' ? 'Set Up' :
                         feature.status === 'requires-setup' ? 'Requires Setup' :

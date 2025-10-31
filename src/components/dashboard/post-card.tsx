@@ -611,7 +611,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
                   <Download className="h-4 w-4" />
                   Download Image
                 </button>
-                <button 
+                {/* <button 
                   className="flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-gray-100"
                   onClick={() => {
                     setDropdownOpen(false);
@@ -620,7 +620,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
                 >
                   <Send className="h-4 w-4" />
                   Post to Social Media
-                </button>
+                </button> */}
               </div>
             )}
           </div>

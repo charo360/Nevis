@@ -230,12 +230,13 @@ export async function withCreditTracking<T>(
     const creditCheck = await hasEnoughCreditsForModel(params.userId, params.modelVersion);
     
     if (!creditCheck.hasCredits) {
+      const errorMessage = `Insufficient credits. Need ${creditCheck.requiredCredits} credits, but only have ${creditCheck.remainingCredits} credits.`;
       return {
         success: false,
-        error: `Insufficient credits. Need ${creditCheck.requiredCredits} credits, but only have ${creditCheck.remainingCredits}.`,
+        error: errorMessage,
         creditInfo: {
           success: false,
-          message: 'Insufficient credits',
+          message: errorMessage,
           remainingCredits: creditCheck.remainingCredits,
           costDeducted: 0
         }
