@@ -2384,6 +2384,27 @@ function getLocationSpecificLanguageInstructions(location: string): string {
 - EXPRESSIONS: "Kein Problem" (no problem), "Los geht's" (let's go), "Perfekt" (perfect)`;
   }
 
+  if (locationKey.includes('ghana')) {
+    return `- TWI ELEMENTS: "Akwaaba" (welcome), "Medaase" (thank you), "Yie" (good), "Ntɛm" (fast)
+- BUSINESS CONTEXT: "Adwuma" (work/business), "Sika" (money), "Dwuma" (business), "Som" (service)
+- GREETINGS: "Maakye" (good morning), "Maaha" (good afternoon), "Wo ho te sɛn" (how are you)
+- EXPRESSIONS: "Ɛyɛ" (it's good), "Ampa" (truly), "Sɛ ɛyɛ a" (if it's good), "Yɛnkɔ" (let's go)`;
+  }
+
+  if (locationKey.includes('singapore')) {
+    return `- SINGLISH ELEMENTS: "Lah" (emphasis), "Can" (yes/okay), "Shiok" (great), "Steady" (good)
+- BUSINESS CONTEXT: "Business" (business), "Work" (work), "Money" (money), "Service" (service)
+- GREETINGS: "Hello", "How are you", "What's up"
+- EXPRESSIONS: "No problem lah", "Can do", "Very good", "Let's go"`;
+  }
+
+  if (locationKey.includes('malaysia')) {
+    return `- MALAY ELEMENTS: "Selamat" (greetings), "Terima kasih" (thank you), "Bagus" (good), "Cepat" (fast)
+- BUSINESS CONTEXT: "Perniagaan" (business), "Perkhidmatan" (service), "Kerja" (work), "Wang" (money)
+- GREETINGS: "Selamat pagi" (good morning), "Apa khabar" (how are you)
+- EXPRESSIONS: "Tiada masalah" (no problem), "Jom" (let's go), "Hebat" (great)`;
+  }
+
   return `- Use appropriate local language elements for ${location}
 - Mix naturally with English for authentic feel
 - Focus on greetings, business terms, and common expressions
