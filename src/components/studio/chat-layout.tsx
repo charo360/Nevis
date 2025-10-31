@@ -11,6 +11,7 @@ import { Bot, ChevronDown, ChevronUp, Wand2 } from 'lucide-react';
 import { generateCreativeAssetAction, generateEnhancedDesignAction } from '@/app/actions';
 import { generateRevo2CreativeAssetAction } from '@/app/actions/revo-2-actions';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth-supabase';
 import { type RevoModel } from '@/components/ui/revo-model-selector';
 import { useDesignColors } from '@/contexts/design-color-context';
 import { DesignColorPicker } from './design-color-picker';
@@ -36,6 +37,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
     const [selectedProductId, setSelectedProductId] = React.useState<string | null>(null);
     const { toast } = useToast();
     const { designColors, updateDesignColors } = useDesignColors();
+    const { getAccessToken } = useAuth();
 
 
 
@@ -156,6 +158,9 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 // Use Creative Studio's advanced creative asset generation for Revo 2.0
                 // This provides unique Creative Studio features like inpainting, outpainting,
                 // character consistency, and intelligent editing capabilities
+                // Get access token as fallback if cookies don't work
+                const accessToken = await getAccessToken().catch(() => null);
+                
                 result = await generateCreativeAssetAction(
                     currentInput,
                     outputType,
@@ -164,8 +169,9 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     brandProfile,
                     null, // maskDataUrl - Creative Studio can handle inpainting
                     outputType === 'video' ? aspectRatio : undefined,
-                    'gemini-2.5-flash-image-preview', // Use Revo 2.0 model specifically
-                    designColors // Pass design-specific colors
+                    'revo-2.0-gemini-2.5-flash-image-preview', // Use Revo 2.0 model specifically (4 credits)
+                    designColors, // Pass design-specific colors
+                    accessToken || undefined // Pass access token as fallback
                 );
 
                 aiResponse = {
@@ -179,6 +185,9 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 // Use Creative Studio's advanced creative asset generation for Revo 1.5
                 // This provides unique Creative Studio features like inpainting, outpainting,
                 // character consistency, and intelligent editing capabilities
+                // Get access token as fallback if cookies don't work
+                const accessToken = await getAccessToken().catch(() => null);
+                
                 result = await generateCreativeAssetAction(
                     currentInput,
                     outputType,
@@ -187,8 +196,9 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     brandProfile,
                     null, // maskDataUrl - Creative Studio can handle inpainting
                     outputType === 'video' ? aspectRatio : undefined,
-                    'gemini-2.5-flash-image-preview', // Use Revo 1.5 model specifically
-                    designColors // Pass design-specific colors
+                    'revo-1.5-gemini-2.5-flash-image-preview', // Use Revo 1.5 model specifically (3 credits)
+                    designColors, // Pass design-specific colors
+                    accessToken || undefined // Pass access token as fallback
                 );
 
                 aiResponse = {
@@ -202,6 +212,9 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 // Use Creative Studio's advanced creative asset generation for Revo 1.0
                 // This provides unique Creative Studio features like inpainting, outpainting,
                 // character consistency, and intelligent editing capabilities
+                // Get access token as fallback if cookies don't work
+                const accessToken = await getAccessToken().catch(() => null);
+                
                 result = await generateCreativeAssetAction(
                     currentInput,
                     outputType,
@@ -210,7 +223,9 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     brandProfile,
                     null, // maskDataUrl - Creative Studio can handle inpainting
                     outputType === 'video' ? aspectRatio : undefined,
-                    'gemini-2.5-flash-image-preview' // Use Revo 1.0 model specifically
+                    'revo-1.0-gemini-2.5-flash-image-preview', // Use Revo 1.0 model specifically (2 credits)
+                    undefined, // designColors
+                    accessToken || undefined // Pass access token as fallback
                 );
 
                 aiResponse = {
@@ -222,6 +237,9 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 };
             } else {
                 // Use standard creative asset generation for fallback
+                // Get access token as fallback if cookies don't work
+                const accessToken = await getAccessToken().catch(() => null);
+                
                 result = await generateCreativeAssetAction(
                     currentInput,
                     outputType,
@@ -230,6 +248,9 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     brandProfile,
                     null, // maskDataUrl
                     outputType === 'video' ? aspectRatio : undefined,
+                    undefined, // preferredModel
+                    undefined, // designColors
+                    accessToken || undefined // Pass access token as fallback
                 );
 
                 aiResponse = {
@@ -244,33 +265,43 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
             setMessages(prevMessages => [...prevMessages, aiResponse]);
 
         } catch (error) {
+            const { getUserFriendlyErrorMessage, extractCreditInfo, isCreditError } = await import('@/lib/error-messages');
             const errorMessage = (error as Error).message;
-            let friendlyMessage = errorMessage;
             
-            // Handle specific error types with user-friendly messages
-            if (errorMessage.includes('429') || errorMessage.includes('quota') || errorMessage.includes('Too Many Requests')) {
-                friendlyMessage = '😅 Creative Studio is experiencing high demand right now! Please try again in a few minutes or switch to Revo 2.0.';
-            } else if (errorMessage.includes('401') || errorMessage.includes('unauthorized') || errorMessage.includes('API key')) {
-                friendlyMessage = '🔧 Creative Studio is having a technical hiccup. Please try Revo 2.0 while we fix this!';
-            } else if (errorMessage.includes('403') || errorMessage.includes('forbidden')) {
-                friendlyMessage = '🔧 Creative Studio is having a technical hiccup. Please try Revo 2.0 while we fix this!';
-            } else if (errorMessage.includes('network') || errorMessage.includes('timeout') || errorMessage.includes('ECONNRESET')) {
-                friendlyMessage = '🌐 Connection hiccup! Please try again in a moment.';
-            } else if (!errorMessage.includes('😅') && !errorMessage.includes('🔧') && !errorMessage.includes('🌐')) {
-                // Only modify if it's not already a friendly message
-                friendlyMessage = '😅 Creative Studio is having some trouble right now! Try Revo 2.0 for great results while we get things sorted out.';
-            }
+            // Extract credit information if available
+            const creditInfo = extractCreditInfo(errorMessage);
+            
+            // Get user-friendly error message
+            const friendlyMessage = getUserFriendlyErrorMessage(errorMessage, {
+                feature: 'creative_studio',
+                modelVersion: selectedRevoModel,
+                creditsRequired: creditInfo?.creditsRequired,
+                creditsAvailable: creditInfo?.creditsAvailable,
+            });
+            
+            // Split multi-line messages for chat display
+            const chatMessage = friendlyMessage.includes('\n\n') 
+                ? friendlyMessage.split('\n\n').join('\n') 
+                : friendlyMessage;
+            
+            // Extract title and description for toast
+            const parts = friendlyMessage.split('\n\n');
+            const title = parts[0] || 'Generation Issue';
+            const description = parts.slice(1).join('\n\n') || friendlyMessage;
             
             const errorResponse: Message = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
-                content: friendlyMessage,
+                content: chatMessage,
             };
             setMessages(prevMessages => [...prevMessages, errorResponse]);
+            
+            // Use appropriate toast variant based on error type
             toast({
-                variant: 'destructive',
-                title: 'Generation Issue',
-                description: friendlyMessage,
+                variant: isCreditError(errorMessage) ? 'destructive' : 'destructive',
+                title: title.replace(/\n/g, ' '), // Remove line breaks from title
+                description: description,
+                duration: isCreditError(errorMessage) ? 8000 : 5000, // Longer duration for credit errors
             });
         } finally {
             setIsLoading(false);
