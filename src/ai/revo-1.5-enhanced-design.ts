@@ -1917,8 +1917,10 @@ async function generateLegacyCaptionAndHashtags(
 }> {
   try {
     // Fetch trending data for current, relevant content
-    // PRIORITY: Use scheduled services if available, otherwise fall back to brand services or business type
+    // PRIORITY: Use scheduled services if available (Revo 2.0 Style Integration)
     let trendingContext = businessType;
+    let serviceContext = '';
+    let featuredServices: ScheduledService[] = [];
 
     if (scheduledServices && scheduledServices.length > 0) {
       // Use scheduled services with ABSOLUTE PRIORITY - never fall back to brand services
@@ -1928,12 +1930,18 @@ async function generateLegacyCaptionAndHashtags(
       if (todaysServices.length > 0) {
         // ABSOLUTE PRIORITY: Today's services override everything
         trendingContext = todaysServices.map(s => s.serviceName).join('\n');
+        featuredServices = todaysServices;
+        serviceContext = `\n\n🎯 TODAY'S FEATURED SERVICES (ABSOLUTE PRIORITY):\n${todaysServices.map(s => `- ${s.serviceName}: ${s.description || 'Premium service offering'}`).join('\n')}\n\n⚠️ CRITICAL: Content MUST focus on these specific services today.`;
       } else if (upcomingServices.length > 0) {
         // Use upcoming services
         trendingContext = upcomingServices.map(s => s.serviceName).join('\n');
+        featuredServices = upcomingServices.slice(0, 2);
+        serviceContext = `\n\n📅 UPCOMING SERVICES (Build Anticipation):\n${upcomingServices.slice(0, 2).map(s => `- ${s.serviceName} (in ${s.daysUntil} days): ${s.description || ''}`).join('\n')}\n\n⚠️ Create excitement for these upcoming services.`;
       } else {
         // Use all scheduled services
         trendingContext = scheduledServices.map(s => s.serviceName).join('\n');
+        featuredServices = scheduledServices;
+        serviceContext = `\n\n📅 SCHEDULED SERVICES:\n${scheduledServices.map(s => `- ${s.serviceName}: ${s.description || ''}`).join('\n')}`;
       }
     } else if (brandProfile.services) {
       // Only fall back to general brand services if NO scheduled services exist
@@ -2024,9 +2032,13 @@ ${localLanguageElements ? `- Local Language Elements: ${localLanguageElements}` 
 Key Messages: ${businessAnalysis.keyMessages?.slice(0, 2).join(', ') || 'Professional service, customer satisfaction'}
 Pain Points: ${businessAnalysis.targetPainPoints?.slice(0, 2).join(', ') || 'Common industry challenges'}
 Value Props: ${businessAnalysis.uniqueValueProps?.slice(0, 2).join(', ') || 'Quality service, reliable results'}
-
-${scheduledServices && scheduledServices.length > 0 ? `
-Services Focus: ${scheduledServices.map(s => s.serviceName).join(', ')}` : ''}
+${serviceContext}
+${featuredServices.length > 0 ? `
+🎯 SERVICE-SPECIFIC CONTENT REQUIREMENTS:
+- Headlines MUST mention or relate to: ${featuredServices.map(s => s.serviceName).join(', ')}
+- Captions MUST specifically promote these services
+- CTAs MUST drive action for these specific services
+- DO NOT mention other services not listed above` : ''}
 
 Trending: ${trendingData.trendingHashtags.slice(0, 3).join(', ')}
 

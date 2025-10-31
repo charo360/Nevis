@@ -2606,9 +2606,10 @@ export async function generateRevo10Content(input: {
       input.scheduledServices || [] // Pass scheduled services from input
     );
 
-    // 🎯 ENHANCED: Scheduled Services Integration from Real-Time Context
-    let serviceFocus = input.services || 'Business services';
+    // 🎯 ENHANCED: Scheduled Services Integration from Real-Time Context (Revo 2.0 Style)
+    let serviceFocus = '';
     let serviceContext = '';
+    let featuredServices: any[] = [];
 
     // Use scheduled services from enhanced real-time context
     const scheduledServices = realTimeContext.scheduledServices || [];
@@ -2619,49 +2620,13 @@ export async function generateRevo10Content(input: {
 
       if (todaysServices.length > 0) {
         serviceFocus = todaysServices.map((s: any) => s.serviceName).join(', ');
-
-        // Enhanced service context with sales focus detection
-        const hasProductSpecs = todaysServices.some((s: any) =>
-          s.description && (
-            s.description.includes('$') ||
-            s.description.includes('GB') ||
-            s.description.includes('MP') ||
-            s.description.includes('Pro') ||
-            s.description.includes('starting at') ||
-            s.description.includes('price') ||
-            s.description.toLowerCase().includes('available')
-          )
-        );
-
-        serviceContext = `\n🎯 PRIORITY SERVICES (HIGHEST PRIORITY - Focus ALL content on these specific services scheduled for TODAY):
-${todaysServices.map((s: any) => `- ${s.serviceName}: ${s.description || 'Available today'}`).join('\n')}
-
-⚠️ CRITICAL SALES-FOCUSED REQUIREMENTS:
-${hasProductSpecs ? `
-🛍️ PRODUCT SALES MODE ACTIVATED:
-- Extract and PROMINENTLY feature ALL product specifications (storage, camera, processor, etc.)
-- Include ALL pricing information in headlines, subheadlines, or captions
-- Create DIRECT SALES content with purchase incentives and urgency
-- Use product specs as the PRIMARY content focus, not general business promotion
-- Generate content that drives immediate purchase decisions
-` : ''}
-- The content MUST specifically promote ONLY these TODAY'S services
-- Use the EXACT service names and specifications in headlines, subheadlines, and captions
-- Create urgent, today-focused language: "today", "now", "available today", "don't miss out"
-- Balance local context - mention location strategically but don't overemphasize for broader market appeal
-- DO NOT mention other business services not listed above`;
-
+        serviceContext = `\n\n🎯 TODAY'S FEATURED SERVICES (ABSOLUTE PRIORITY - MUST FOCUS ON THESE):\n${todaysServices.map((s: any) => `- ${s.serviceName}: ${s.description || 'Premium service offering'}`).join('\n')}\n\n⚠️ CRITICAL: Content MUST be about these specific services today. Do NOT create generic content.`;
+        featuredServices = todaysServices;
       } else if (upcomingServices.length > 0) {
-        serviceFocus = upcomingServices.map((s: any) => s.serviceName).join(', ');
-        serviceContext = `\n📅 UPCOMING SERVICES (Build anticipation for these services):
-${upcomingServices.map((s: any) => `- ${s.serviceName} (in ${s.daysUntil} days): ${s.description || ''}`).join('\n')}
-
-⚠️ ANTICIPATION BUILDING REQUIREMENTS:
-- Focus on creating excitement for upcoming product launches
-- Highlight key specifications and expected pricing if available
-- Use anticipation language: "coming soon", "get ready", "pre-order now"`;
+        serviceFocus = upcomingServices[0].serviceName;
+        serviceContext = `\n\n📅 UPCOMING SERVICE HIGHLIGHT (Priority Focus):\n- ${upcomingServices[0].serviceName}: ${upcomingServices[0].description || 'Coming soon'}\n\n⚠️ Build anticipation for this upcoming service.`;
+        featuredServices = [upcomingServices[0]];
       }
-    } else {
     }
 
     // Direct Vertex AI model initialization
