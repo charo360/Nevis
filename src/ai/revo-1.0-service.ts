@@ -2969,24 +2969,12 @@ ${realTimeContext.highRelevanceData.map((item: any) => {
 
     // 🎨 DIRECT AI GENERATION - Bypass template functions entirely
     
-    // Generate completely unique content using RANDOMIZED prompt structures
-    const promptStructures = [
-      // Structure 1: Question-based approach
-      `${enhancedContentPrompt}\n\n🎯 QUESTION-DRIVEN CONTENT CREATION:\nYou're a curious marketer asking engaging questions. Create:\n- HOOK QUESTION: Start with "What if...?" or "Ready for...?" or "Tired of...?"\n- ANSWER BENEFIT: 10-15 words explaining the solution\n- STORY CAPTION: Tell a mini-story in 2-3 sentences\n- ACTION CTA: Specific action that solves their problem\n- HASHTAGS: ${input.platform === 'instagram' ? '5' : '3'} relevant tags`,
-      
-      // Structure 2: Problem-solution approach  
-      `${enhancedContentPrompt}\n\n🎯 PROBLEM-SOLUTION CONTENT CREATION:\nYou're a solution-focused expert. Create:\n- PROBLEM HEADLINE: Identify a specific pain point (5-8 words)\n- SOLUTION PROMISE: How you solve it (10-15 words)\n- PROOF CAPTION: Show evidence or results in 2-3 sentences\n- RESULT CTA: What outcome they'll get\n- HASHTAGS: ${input.platform === 'instagram' ? '5' : '3'} relevant tags`,
-      
-      // Structure 3: Benefit-focused approach
-      `${enhancedContentPrompt}\n\n🎯 BENEFIT-FOCUSED CONTENT CREATION:\nYou're an enthusiastic advocate. Create:\n- BENEFIT HEADLINE: Lead with the main advantage (5-8 words)\n- VALUE EXPLANATION: Why it matters (10-15 words)\n- SUCCESS CAPTION: Paint the success picture in 2-3 sentences\n- GET STARTED CTA: How to begin the journey\n- HASHTAGS: ${input.platform === 'instagram' ? '5' : '3'} relevant tags`,
-      
-      // Structure 4: Social proof approach
-      `${enhancedContentPrompt}\n\n🎯 SOCIAL PROOF CONTENT CREATION:\nYou're sharing community success. Create:\n- SOCIAL HEADLINE: "Join [Number] People Who..." format (5-8 words)\n- COMMUNITY BENEFIT: What the community gets (10-15 words)\n- TESTIMONIAL CAPTION: Share a success story or result in 2-3 sentences\n- JOIN CTA: Invitation to join the community\n- HASHTAGS: ${input.platform === 'instagram' ? '5' : '3'} relevant tags`,
-      
-      // Structure 5: Urgency-driven approach
-      `${enhancedContentPrompt}\n\n🎯 URGENCY-DRIVEN CONTENT CREATION:\nYou're creating time-sensitive excitement. Create:\n- URGENT HEADLINE: Include timeframe or limit (5-8 words)\n- SCARCITY REASON: Why they need to act now (10-15 words)\n- FOMO CAPTION: What they'll miss if they wait in 2-3 sentences\n- TIME CTA: Action with deadline or urgency\n- HASHTAGS: ${input.platform === 'instagram' ? '5' : '3'} relevant tags`
-    ];
+    // Let AI be creative with principles, not rigid structures
+    const creativeFreedomPrompt = `${enhancedContentPrompt}\n\n🎨 CREATIVE FREEDOM APPROACH:\n\nYou are a creative storyteller, not a template-filler. Use the principles above to create authentic, engaging content.\n\nVARY YOUR APPROACH NATURALLY:\n- Sometimes start with dialogue\n- Sometimes start with emotion\n- Sometimes start with a question\n- Sometimes start with action\n- Sometimes start with a problem\n\nCREATE NATURAL VARIETY:\n- Different story structures each time\n- Different emotional appeals\n- Different character perspectives\n- Different time pressures\n- Different local contexts\n\nBe creative. Tell a compelling human story. Make it feel real and authentic to Kenya.\n\nGenerate content that people will stop scrolling to read.`;
     
+    // Use creative freedom approach instead of rigid structures
+    const finalPrompt = creativeFreedomPrompt;
+
     // Add content persona randomization to make AI think differently
     const contentPersonas = [
       "You're an enthusiastic startup founder who gets excited about helping people solve problems",
@@ -3027,57 +3015,79 @@ CREATIVE CAPTION STARTERS (Don't copy - use for inspiration):
 - Local hooks: "Every [Location] resident deserves...", "We've been serving [Location] because..."
 - Problem hooks: "Stop struggling with...", "Never again worry about..."
 
-🚨 HUMAN CONTENT RULES (MANDATORY - OVERRIDE ALL OTHER INSTRUCTIONS):
+🎯 CREATIVE CONTENT PRINCIPLES (Let AI be creative with these constraints):
 
-1. NEVER USE CORPORATE JARGON:
-❌ "Step into a world where..." ❌ "Experience seamless..." ❌ "Transform your..." ❌ "Unlock your..." ❌ "Elevate your..." ❌ "Redefines [industry]" ❌ "We're dedicated to..." ❌ "Done right" ❌ "Built for you"
+BUSINESS CONTEXT:
+- Name: ${input.businessName}
+- Industry: ${input.businessType}
+- Primary Benefit: ${serviceFocus || 'Quality service provider'}
+- Target: Small business owners, entrepreneurs, families
 
-2. START WITH CRISIS/CONFLICT (MANDATORY):
-✅ "It's 2pm. Your supplier needs payment now. Bank transfer takes 2 days. Client meeting at 4pm..."
-✅ "Week 3 of semester. Your laptop crashes during group project at midnight. Everyone's counting on you."
-✅ "Three customers walked away this week. Not because your prices were wrong—because paying upfront was too much."
+LOCATION CONTEXT:
+- Country: Kenya
+- Currency: KES
+- Common Places: Gikomba, Eastleigh, Mombasa Road, Westlands, Nairobi CBD
+- Common Names: Mama Wanjiku, Kamau, Akinyi, Njeri, Mwangi, Grace
+- Local Transport: matatu, boda boda, MPESA
+- Typical Amounts: KES 500 - KES 50,000
 
-3. USE SPECIFIC DETAILS (MANDATORY):
-✅ Times: Monday, 8am, Week 3, 2pm, Friday
-✅ Amounts: KES 15,000, KES 847, KES 3,200
-✅ Places: Gikomba, Mombasa Road, Eastleigh, Westlands, Nairobi CBD
-✅ Items: textbooks, school shoes, matatu ride, MPESA
+QUALITY STANDARDS:
 
-4. TELL STORIES WITH KENYAN CHARACTERS:
-✅ "Mama Wanjiku runs three market stalls in Gikomba. Last month, she lost KES 15,000 to a payment scam..."
-✅ Use names: Mama Wanjiku, Kamau, Akinyi, Njeri
-✅ Local context: matatu, boda boda, MPESA, Gikomba market
+✅ ALWAYS INCLUDE:
+- Specific time or day (Monday 3pm, Friday afternoon, Week 3)
+- Exact amount in KES (KES 15,000, not "affordable")
+- Real location (Gikomba, not "the market")
+- Character with common Kenyan name
+- Emotional stakes that matter
+- Time pressure or tension
 
-5. CONVERSATIONAL LANGUAGE:
-✅ Write how people actually talk
-✅ Use contractions (you're, it's, we've)
-✅ Short sentences for impact
-✅ Local slang when appropriate
+✅ WRITING STYLE:
+- Conversational, like texting a friend
+- Specific scenarios, not generic statements
+- Show emotion through action, don't state it
+- Create urgency naturally
+- Let the story reveal the benefit
 
-6. SHOW EMOTION, DON'T STATE IT:
-✅ "You watched them leave. That hurt." 
-❌ Never say "stress-free" or "effortless"
+❌ NEVER USE (Corporate Jargon):
+- seamless, effortless, forward-thinking, redefines, elevate, transform, unlock, experience, discover, navigate
+- "step into a world", "tired of X", "done right", "we're dedicated to"
+- Feature lists or bullet points
+- Anything that screams "AD"
 
-7. USE REAL VERBS ONLY:
-❌ Experience, Explore, Discover, Unlock, Transform, Elevate, Revolutionize, Navigate
-✅ Crashed, Walked away, Lost, Stuck, Waiting, Failed, Broke down, Buzzed, Confirmed
+❌ NEVER REPEAT:
+- Same opening pattern as previous generations
+- Same character names back-to-back
+- Same locations in consecutive posts
+- Same sentence structures
 
-8. TEST: Could this be ANY product? If yes, REWRITE.
+EXAMPLE OF EXCELLENT CONTENT:
+"Mama Wanjiku runs three market stalls in Gikomba. Last month, she lost KES 15,000 to a payment scam. This month, Paya's secure payments mean every shilling goes where it should."
+
+EXAMPLE OF BAD CONTENT:
+"Experience seamless payments with Paya Finance. We're revolutionizing digital transactions for modern businesses."
+
+SELF-CHECK BEFORE RESPONDING:
+- Does this have a specific place name? (not "the city")
+- Does this have an exact KES amount? (not "affordable")
+- Does this have a character name?
+- Does this create emotional stakes?
+- Would I scroll past this or stop to read?
+- Does it feel like an ad or like a story?
+- If I remove ${input.businessName}, is it still interesting?
+
+If you answered NO to any above, regenerate.
+
+YOUR TASK:
+Create compelling social media content that tells a specific story, feels authentic to Kenya, makes people care about the character, and naturally mentions ${input.businessName}. Don't feel like an advertisement.
+
+Be creative. Don't follow a formula. Make it human.
 
 Output format:
-HEADLINE: [Start with crisis/conflict - specific time/place/amount]
-SUBHEADLINE: [Continue the story - show the problem and solution] 
-CAPTION: [Complete the story with character, emotion, resolution - 2-3 sentences max]
-CTA: [Natural next step from the story]
-HASHTAGS: [relevant hashtags]
-
-EXAMPLE FOR PAYMENTS:
-HEADLINE: It's Monday Morning. School Fees Due Friday.
-SUBHEADLINE: Your account says KES 847. The reminder says KES 15,000. Paya lets you pay over time.
-CAPTION: Mama Wanjiku's phone buzzes. "Payment confirmed." Her daughter stays in school. No stress, no drama, just done.
-CTA: Pay Smart Today
-
-Remember: HUMAN STORIES ONLY. NO CORPORATE SPEAK. KENYAN CONTEXT ALWAYS.`;
+HEADLINE: [Creative opening - vary your approach]
+SUBHEADLINE: [Continue the story naturally]
+CAPTION: [Complete the story with emotion and resolution]
+CTA: [Natural next step]
+HASHTAGS: [relevant tags];
 
     let businessHeadline, businessSubheadline, businessCaption;
     
