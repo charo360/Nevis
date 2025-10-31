@@ -220,7 +220,7 @@ ${todaysServices.length > 0 ? `- Highlight today's featured service: ${todaysSer
 Return a brief creative concept (2-3 sentences) that will guide the content creation.`;
 
       const response = await anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-sonnet-4-5-20250929',
         max_tokens: 300,
         temperature: 0.8,
         messages: [{ role: 'user', content: conceptPrompt }]
@@ -415,7 +415,7 @@ Return a brief creative concept (2-3 sentences) that will guide the content crea
       });
       const prompt = `You are a world-class copy editor. Correct spelling and grammar ONLY. Do not add facts. Do not change meaning. Keep the SAME JSON keys and structure. Return JSON only.\n\nJSON:\n${json}`;
       const resp = await client.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-sonnet-4-5-20250929',
         max_tokens: 800,
         temperature: 0,
         messages: [{ role: 'user', content: prompt }]
@@ -485,7 +485,7 @@ Return a brief creative concept (2-3 sentences) that will guide the content crea
     // Log prompt details for debugging
 
     const response = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-sonnet-4-5-20250929',
       max_tokens: 2000,
       temperature: 0.9, // Revo 2.0 uses 0.9 for better balance
       messages: [{
@@ -662,7 +662,7 @@ Return a brief creative concept (2-3 sentences) that will guide the content crea
       const retryExtra = `${culturalIssue ? `MUST include ${culturalRule?.name || 'regional'} cultural elements as specified.` : ''}${factIssue ? '\nREMOVE all numeric claims, percentages, or specific numbers.' : ''}`;
       const retryPrompt = this.buildClaudePrompt(request, hashtagCount, avoid, enforcedFormat, retryExtra, productBlock);
       const retryResp = await anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-sonnet-4-5-20250929',
         max_tokens: 2000,
         temperature: 0.9, // Match main generation temperature
         messages: [{ role: 'user', content: retryPrompt }]
@@ -700,17 +700,11 @@ Return a brief creative concept (2-3 sentences) that will guide the content crea
             this.applyQualityGuards(p2);
             parsed = p2;
             // Optional grammar refine on retry
-            // Enhanced fallback content system (Revo 2.0 approach)
+            // REMOVED: Fallback captions that were causing corporate language
+            // If caption is empty or generic, force regeneration instead of using templates
             if (!p2.caption || p2.caption.includes('Experience the excellence of')) {
-              const creativityLevel = Math.floor(Math.random() * 10);
-              const fallbackCaptions = [
-                `Transform your ${request.businessType.toLowerCase()} experience with ${request.businessName}. We're redefining excellence in ${request.location || 'the industry'}.`,
-                `Ready to elevate your ${request.businessType.toLowerCase()} journey? ${request.businessName} brings innovation and expertise to ${request.location || 'every project'}.`,
-                `Discover why ${request.businessName} is the preferred choice for ${request.businessType.toLowerCase()} solutions in ${request.location || 'the market'}.`,
-                `Your success is our mission. ${request.businessName} delivers exceptional ${request.businessType.toLowerCase()} services with a personal touch.`,
-                `Innovation meets reliability at ${request.businessName}. Experience the future of ${request.businessType.toLowerCase()} today.`
-              ];
-              p2.caption = fallbackCaptions[creativityLevel % fallbackCaptions.length];
+              console.log('🚫 [Claude Sonnet 4] Empty or generic caption detected, forcing regeneration...');
+              throw new Error('Caption validation failed - forcing regeneration');
             }
 
             // Always-on grammar refine on retry parse as well

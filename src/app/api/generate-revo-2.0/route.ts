@@ -5,8 +5,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { generateWithRevo20 } from '@/ai/revo-2.0-service';
-import { withSubscriptionGuard } from '@/lib/middleware/subscription-guard-server';
-import { SubscriptionService } from '@/lib/subscription/subscription-service';
 
 export async function POST(request: NextRequest) {
   try {

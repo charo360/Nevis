@@ -6,6 +6,7 @@
 import type { BrandProfile, Platform } from '@/lib/types';
 import { ContentQualityEnhancer } from '@/utils/content-quality-enhancer';
 import { getVertexAIClient } from '@/lib/services/vertex-ai-client';
+import { getClaudeClient } from '@/lib/services/claude-client';
 
 // Direct Vertex AI function for all AI generation
 async function generateContentDirect(promptOrParts: string | any[], modelName: string, isImageGeneration: boolean): Promise<any> {
@@ -94,9 +95,123 @@ const REVO_2_0_MODEL = 'gemini-2.5-flash-image';
 
 // === Revo 2.0 Creativity & Anti-Repetition Utilities ===
 
-type RecentOutput = { headlines: string[]; captions: string[] };
+type RecentOutput = { headlines: string[]; captions: string[]; concepts: string[] };
 const recentOutputs = new Map<string, RecentOutput>();
 const recentStyles = new Map<string, string>();
+const recentConcepts = new Map<string, Array<{ concept: string; timestamp: number }>>;
+
+// Enhanced variety system for concept generation
+interface ConceptDimensions {
+  setting: string;
+  customerType: string;
+  visualStyle: string;
+  composition: string;
+  benefit: string;
+  emotionalTone: string;
+  format: string;
+  approach: string;
+}
+
+const CONCEPT_DIMENSIONS = {
+  settings: [
+    'Workspace', 'Home', 'Transit', 'Public', 'Digital', 'Nature', 'Abstract', 'Metaphorical'
+  ],
+  customerTypes: [
+    'Young Professional', 'Entrepreneur', 'Family Person', 'Senior Professional', 'Student'
+  ],
+  visualStyles: [
+    'Clean Minimalist', 'Single Product Focus', 'Simple Portrait', 'Clean Illustration', 
+    'Minimal Graphics', 'Focused Lifestyle', 'Clean Documentary', 'Simple Professional',
+    'Uncluttered Environmental', 'Clean Abstract'
+  ],
+  compositions: [
+    'Standing Shot', 'Over-Shoulder Angle', 'Hand Detail Focus', 'Small Group Dynamic',
+    'Left-Aligned Layout', 'Right-Aligned Layout', 'Centered Composition', 'Split Layout'
+  ],
+  benefits: [
+    'Speed', 'Ease', 'Cost', 'Quality', 'Growth', 'Security', 'Freedom', 'Connection', 'Innovation'
+  ],
+  emotionalTones: [
+    'Urgent', 'Aspirational', 'Reassuring', 'Exciting', 'Warm', 'Confident', 'Playful', 'Serious'
+  ],
+  formats: [
+    'Testimonial', 'Statistic', 'Question', 'Problem-Solution', 'Comparison', 
+    'Before-After', 'Day-in-Life', 'Success Story', 'Community Impact', 'Transformation'
+  ],
+  approaches: [
+    'Innovation-Focus', 'Results-Driven', 'Customer-Centric', 'Quality-Emphasis',
+    'Speed-Focus', 'Security-Focus', 'Community-Impact', 'Cost-Savings',
+    'Convenience', 'Growth-Enabler', 'Trust-Builder', 'Accessibility',
+    'Problem-Solver', 'Lifestyle-Enhancement', 'Transformation-Story'
+  ]
+};
+
+// Generate unique concept using 6-dimensional system
+function generateUniqueConceptDimensions(brandKey: string): ConceptDimensions {
+  const timeBasedSeed = Date.now();
+  const recent = recentConcepts.get(brandKey) || [];
+  
+  // Clean old concepts (older than 1 hour)
+  const oneHourAgo = Date.now() - (60 * 60 * 1000);
+  const recentConcepts_filtered = recent.filter(c => c.timestamp > oneHourAgo);
+  
+  let attempts = 0;
+  const maxAttempts = 10;
+  
+  while (attempts < maxAttempts) {
+    attempts++;
+    
+    // Use time-based randomization for better variety
+    const settingSeed = (timeBasedSeed + attempts * 1000) % CONCEPT_DIMENSIONS.settings.length;
+    const customerSeed = (timeBasedSeed + attempts * 2000) % CONCEPT_DIMENSIONS.customerTypes.length;
+    const styleSeed = (timeBasedSeed + attempts * 3000) % CONCEPT_DIMENSIONS.visualStyles.length;
+    const benefitSeed = (timeBasedSeed + attempts * 4000) % CONCEPT_DIMENSIONS.benefits.length;
+    const toneSeed = (timeBasedSeed + attempts * 5000) % CONCEPT_DIMENSIONS.emotionalTones.length;
+    const formatSeed = (timeBasedSeed + attempts * 6000) % CONCEPT_DIMENSIONS.formats.length;
+    const approachSeed = (timeBasedSeed + attempts * 7000) % CONCEPT_DIMENSIONS.approaches.length;
+    
+    const compositionSeed = (timeBasedSeed + attempts * 8000) % CONCEPT_DIMENSIONS.compositions.length;
+    
+    const concept: ConceptDimensions = {
+      setting: CONCEPT_DIMENSIONS.settings[settingSeed],
+      customerType: CONCEPT_DIMENSIONS.customerTypes[customerSeed],
+      visualStyle: CONCEPT_DIMENSIONS.visualStyles[styleSeed],
+      composition: CONCEPT_DIMENSIONS.compositions[compositionSeed],
+      benefit: CONCEPT_DIMENSIONS.benefits[benefitSeed],
+      emotionalTone: CONCEPT_DIMENSIONS.emotionalTones[toneSeed],
+      format: CONCEPT_DIMENSIONS.formats[formatSeed],
+      approach: CONCEPT_DIMENSIONS.approaches[approachSeed]
+    };
+    
+    // Check if this combination is too similar to recent ones
+    const conceptString = `${concept.setting}-${concept.customerType}-${concept.visualStyle}`;
+    const isTooSimilar = recentConcepts_filtered.some(recent => {
+      const recentString = recent.concept;
+      return recentString === conceptString;
+    });
+    
+    if (!isTooSimilar || attempts === maxAttempts) {
+      // Store this concept
+      recentConcepts_filtered.push({ concept: conceptString, timestamp: Date.now() });
+      recentConcepts.set(brandKey, recentConcepts_filtered.slice(-9)); // Keep last 9
+      
+      console.log(`🎲 [Revo 2.0] Generated 6D Concept (Attempt ${attempts}): ${conceptString}`);
+      return concept;
+    }
+  }
+  
+  // Fallback if all attempts failed
+  return {
+    setting: 'Digital',
+    customerType: 'Young Professional', 
+    visualStyle: 'Lifestyle Photography',
+    composition: 'Centered Composition',
+    benefit: 'Innovation',
+    emotionalTone: 'Confident',
+    format: 'Success Story',
+    approach: 'Innovation-Focus'
+  };
+}
 
 function brandKey(brand: any, platform: any) {
   return `${brand.businessName || 'unknown'}|${platform}`.toLowerCase();
@@ -134,8 +249,8 @@ function tooSimilar(text: string | undefined, previous: string[] = [], threshold
   return false;
 }
 
-function rememberOutput(key: string, { headline, caption }: { headline?: string; caption?: string }) {
-  const entry = recentOutputs.get(key) || { headlines: [], captions: [] };
+function rememberOutput(key: string, { headline, caption, concept }: { headline?: string; caption?: string; concept?: string }) {
+  const entry = recentOutputs.get(key) || { headlines: [], captions: [], concepts: [] };
   if (headline) {
     entry.headlines.unshift(headline);
     entry.headlines = entry.headlines.slice(0, 10);
@@ -144,10 +259,34 @@ function rememberOutput(key: string, { headline, caption }: { headline?: string;
     entry.captions.unshift(caption);
     entry.captions = entry.captions.slice(0, 10);
   }
+  if (concept) {
+    entry.concepts.unshift(concept);
+    entry.concepts = entry.concepts.slice(0, 10);
+  }
   recentOutputs.set(key, entry);
 }
 
-const OVERUSED_WORDS = new Set<string>(['journey', 'journeys', 'everyday', 'kenyan', 'financial']); // add more as needed
+const OVERUSED_WORDS = new Set<string>(['journey', 'journeys', 'everyday', 'seamless', 'effortless', 'transform', 'empower', 'ambitions', 'revolutionize', 'innovative', 'cutting-edge']); // Enhanced list
+
+// Banned headline patterns that cause repetition
+const BANNED_HEADLINE_PATTERNS = [
+  /finance your ambitions/i,
+  /transform your business/i,
+  /empower your future/i,
+  /revolutionize your/i,
+  /seamless .+ solutions/i,
+  /effortless .+ experience/i,
+  /cutting-edge .+ technology/i,
+  /innovative .+ approach/i,
+  /next-generation .+/i,
+  /^[a-z]+ your [a-z]+$/i // Generic "[Action] Your [Concept]" pattern
+];
+
+// Check if text matches banned patterns
+function hasBannedPattern(text: string): boolean {
+  if (!text) return false;
+  return BANNED_HEADLINE_PATTERNS.some(pattern => pattern.test(text));
+}
 
 function stripOverusedWords(text: string): string {
   let cleaned = (text || '')
@@ -278,6 +417,7 @@ export interface Revo20GenerationOptions {
   includeContacts?: boolean;
   followBrandColors?: boolean;
   scheduledServices?: any[];
+  contentApproach?: string;
 }
 
 export interface Revo20GenerationResult {
@@ -348,7 +488,7 @@ function getPlatformDimensions(platform: string): string {
 }
 
 /**
- * Generate creative concept for Revo 2.0 with enhanced AI creativity
+ * Generate creative concept for Revo 2.0 with enhanced variety and anti-repetition
  */
 async function generateCreativeConcept(options: Revo20GenerationOptions): Promise<any> {
   const { businessType, brandProfile, platform, scheduledServices } = options;
@@ -357,56 +497,160 @@ async function generateCreativeConcept(options: Revo20GenerationOptions): Promis
   const todaysServices = scheduledServices?.filter(s => s.isToday) || [];
   const upcomingServices = scheduledServices?.filter(s => s.isUpcoming) || [];
 
+  // Generate unique concept dimensions for variety
+  const bKey = brandKey(brandProfile, platform);
+  const dimensions = generateUniqueConceptDimensions(bKey);
+  
+  // Check recent concepts to avoid repetition
+  const recentData = recentOutputs.get(bKey) || { headlines: [], captions: [], concepts: [] };
+  
   try {
-
-    // Build service-aware concept prompt
+    // Build service-aware concept prompt with variety dimensions
     let serviceContext = '';
     if (todaysServices.length > 0) {
       serviceContext = `\n\n🎯 TODAY'S FEATURED SERVICES (Priority Focus):\n${todaysServices.map(s => `- ${s.serviceName}: ${s.description || 'Premium service offering'}`).join('\n')}`;
     }
 
-    const conceptPrompt = `Generate a creative concept for ${brandProfile.businessName || businessType} (${businessType}) on ${platform}.
+    // Enhanced concept prompt with variety instructions
+    const conceptPrompt = `Generate a unique creative concept for ${brandProfile.businessName || businessType} (${businessType}) on ${platform}.
     ${serviceContext}
+
+    🎯 CONCEPT VARIETY REQUIREMENTS:
+    - Setting: ${dimensions.setting} environment
+    - Target Customer: ${dimensions.customerType}
+    - Visual Style: ${dimensions.visualStyle}
+    - Composition: ${dimensions.composition}
+    - Key Benefit: ${dimensions.benefit}
+    - Emotional Tone: ${dimensions.emotionalTone}
+    - Content Format: ${dimensions.format}
+    - Marketing Approach: ${dimensions.approach}
+
+    🚫 ANTI-REPETITION RULES:
+    - NEVER repeat these recent concepts: ${recentData.concepts.slice(0, 3).join(', ')}
+    - AVOID generic phrases like "Finance Your Ambitions", "Transform Your Business"
+    - CREATE completely different messaging and visual approach
+    - USE specific, unique value propositions
+
+    🎯 HUMAN-CENTERED MESSAGING (MANDATORY):
+    - Use HUMAN, conversational tone (not corporate speak)
+    - Focus on LIFE OUTCOMES, not banking features
+    - Make it PERSONAL and relatable to everyday experiences
+    - AVOID business jargon like "leverage", "optimize", "synergize", "empowering your financial flow"
+    - AVOID corporate phrases like "Transform Your Business", "Unlock Your Potential"
+    - Examples: "Your goals. Your rhythm. One simple app that fits your flow" vs "Empowering your financial flow"
+    - Focus on lifestyle outcomes: "Banking that actually works for you" vs "Advanced financial solutions"
 
     Business Context:
     - Location: ${brandProfile.location || 'Global'}
     - Target Audience: ${brandProfile.targetAudience || 'General audience'}
     - Writing Tone: ${brandProfile.writingTone || 'Professional'}
 
-    Create a concept that feels authentic and locally relevant.
-    ${todaysServices.length > 0 ? `Highlight today's featured service: ${todaysServices[0].serviceName}` : ''}
+    🎨 CONCEPT REQUIREMENTS:
+    - Create a UNIQUE concept that combines the variety dimensions above
+    - Focus on specific business benefits, not generic statements
+    - Make it visually distinctive and memorable
+    - Ensure it's different from recent generations
+    ${todaysServices.length > 0 ? `- Highlight today's featured service: ${todaysServices[0].serviceName}` : ''}
 
-    Return a brief creative concept (2-3 sentences) that will guide the visual design.`;
+    Return a brief creative concept (2-3 sentences) that will guide unique visual design.`;
+
+    // Add randomization to temperature for more variety
+    const temperature = 0.8 + (Math.random() * 0.3); // 0.8-1.1 range
+    console.log(`🎲 [Revo 2.0] Using temperature: ${temperature.toFixed(2)} for concept variety`);
 
     const result = await generateContentWithProxy(conceptPrompt, REVO_2_0_MODEL, false);
     const response = await result.response;
     const conceptText = response.text();
 
+    const finalConcept = conceptText.trim() || generateFallbackConcept(brandProfile, businessType, dimensions);
+    
+    // Remember this concept to avoid repetition
+    rememberOutput(bKey, { concept: finalConcept });
+
     return {
-      concept: conceptText.trim() || 'Professional content creation',
-      visualTheme: 'modern-authentic',
-      emotionalTone: 'engaging-professional',
-      designElements: ['clean typography', 'professional imagery', 'brand colors'],
+      concept: finalConcept,
+      visualTheme: dimensions.visualStyle.toLowerCase().replace(' ', '-'),
+      emotionalTone: dimensions.emotionalTone.toLowerCase(),
+      designElements: getDesignElementsForStyle(dimensions.visualStyle),
       colorSuggestions: [brandProfile.primaryColor || '#3B82F6'],
-      moodKeywords: ['professional', 'trustworthy', 'engaging'],
+      moodKeywords: getMoodKeywordsForTone(dimensions.emotionalTone),
       featuredServices: todaysServices,
-      upcomingServices: upcomingServices.slice(0, 2)
+      upcomingServices: upcomingServices.slice(0, 2),
+      dimensions: dimensions // Include for debugging
     };
 
   } catch (error) {
-    console.warn('⚠️ Revo 2.0: Creative concept generation failed, using fallback');
-    const fallbackConcept = todaysServices.length > 0
-      ? `Create engaging visual content for ${brandProfile.businessName} featuring today's ${todaysServices[0].serviceName} with authentic, professional appeal.`
-      : `Create engaging visual content for ${brandProfile.businessName} that showcases their ${businessType} expertise with authentic, professional appeal.`;
+    console.warn('⚠️ Revo 2.0: Creative concept generation failed, using enhanced fallback');
+    const fallbackConcept = generateFallbackConcept(brandProfile, businessType, dimensions, todaysServices);
+    
+    // Remember fallback concept too
+    rememberOutput(bKey, { concept: fallbackConcept });
 
     return {
       concept: fallbackConcept,
-      visualTheme: 'modern-authentic',
-      emotionalTone: 'engaging-professional',
+      visualTheme: dimensions.visualStyle.toLowerCase().replace(' ', '-'),
+      emotionalTone: dimensions.emotionalTone.toLowerCase(),
       featuredServices: todaysServices,
-      upcomingServices: upcomingServices.slice(0, 2)
+      upcomingServices: upcomingServices.slice(0, 2),
+      dimensions: dimensions
     };
   }
+}
+
+/**
+ * Generate fallback concept with variety
+ */
+function generateFallbackConcept(brandProfile: any, businessType: string, dimensions: ConceptDimensions, todaysServices?: any[]): string {
+  const service = todaysServices?.length > 0 ? todaysServices[0].serviceName : businessType;
+  const company = brandProfile.businessName || 'the business';
+  
+  const conceptTemplates = [
+    `Show ${dimensions.customerType.toLowerCase()} experiencing ${dimensions.benefit.toLowerCase()} through ${service} in a ${dimensions.setting.toLowerCase()} setting with ${dimensions.emotionalTone.toLowerCase()} energy.`,
+    `Capture ${dimensions.format.toLowerCase()} showcasing how ${company} delivers ${dimensions.benefit.toLowerCase()} via ${service} using ${dimensions.visualStyle.toLowerCase()} approach.`,
+    `Create ${dimensions.approach.toLowerCase()} content featuring ${dimensions.customerType.toLowerCase()} achieving ${dimensions.benefit.toLowerCase()} with ${service} in ${dimensions.emotionalTone.toLowerCase()} tone.`,
+    `Demonstrate ${service} impact through ${dimensions.format.toLowerCase()} showing ${dimensions.benefit.toLowerCase()} for ${dimensions.customerType.toLowerCase()} in ${dimensions.setting.toLowerCase()}.`
+  ];
+  
+  const selectedTemplate = conceptTemplates[Date.now() % conceptTemplates.length];
+  return selectedTemplate;
+}
+
+/**
+ * Get design elements based on visual style
+ */
+function getDesignElementsForStyle(visualStyle: string): string[] {
+  const styleMap: Record<string, string[]> = {
+    'Clean Minimalist': ['generous white space', 'single focal point', 'clean typography'],
+    'Single Product Focus': ['isolated product', 'clean background', 'professional lighting'],
+    'Simple Portrait': ['single person', 'uncluttered background', 'natural lighting'],
+    'Clean Illustration': ['minimal graphics', 'simple shapes', 'clear messaging'],
+    'Minimal Graphics': ['essential elements only', 'clean lines', 'purposeful design'],
+    'Focused Lifestyle': ['single activity', 'authentic moment', 'clear context'],
+    'Clean Documentary': ['real environment', 'single story', 'authentic capture'],
+    'Simple Professional': ['business context', 'clean composition', 'professional tone'],
+    'Uncluttered Environmental': ['simple setting', 'clear background', 'focused scene'],
+    'Clean Abstract': ['minimal elements', 'clear concept', 'simple execution']
+  };
+  
+  return styleMap[visualStyle] || ['clean composition', 'single focus', 'minimal elements'];
+}
+
+/**
+ * Get mood keywords based on emotional tone
+ */
+function getMoodKeywordsForTone(emotionalTone: string): string[] {
+  const toneMap: Record<string, string[]> = {
+    'Urgent': ['immediate', 'action-oriented', 'decisive'],
+    'Aspirational': ['inspiring', 'uplifting', 'motivational'],
+    'Reassuring': ['trustworthy', 'reliable', 'comforting'],
+    'Exciting': ['dynamic', 'energetic', 'vibrant'],
+    'Warm': ['friendly', 'approachable', 'welcoming'],
+    'Confident': ['strong', 'assured', 'professional'],
+    'Playful': ['fun', 'creative', 'engaging'],
+    'Serious': ['professional', 'focused', 'authoritative']
+  };
+  
+  return toneMap[emotionalTone] || ['professional', 'trustworthy', 'engaging'];
 }
 
 /**
@@ -518,12 +762,17 @@ function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: any): st
     if (email) contacts.push(`📧 ${email}`);
     // Only include website if it actually exists in brand profile - NEVER generate fake URLs
     if (website && website.trim() && !website.includes('example.com') && !website.includes('placeholder')) {
-      contacts.push(`🌐 ${website}`);
+      // Clean website format: remove https:// and http://, ensure www. prefix
+      let cleanWebsite = website.replace(/^https?:\/\//, '');
+      if (!cleanWebsite.startsWith('www.')) {
+        cleanWebsite = `www.${cleanWebsite}`;
+      }
+      contacts.push(`🌐 ${cleanWebsite}`);
     }
     if (address) contacts.push(`📍 ${address}`);
 
     if (contacts.length > 0) {
-      contactInstruction = `\n\n📞 CONTACT INFORMATION (Include in design):\n${contacts.join('\n')}\n- Display contact info prominently in footer/corner area\n- Ensure contact details are readable and well-formatted\n- Use professional styling that complements the brand colors`;
+      contactInstruction = `\n\n📞 MANDATORY CONTACT FOOTER:\n${contacts.join('\n')}\n- ALWAYS place contact information at the BOTTOM FOOTER of the design\n- Create a clean contact strip/bar at the bottom edge\n- Use contrasting background (dark bar with light text OR light bar with dark text)\n- Ensure contact details are large enough to read (minimum 14px equivalent)\n- Format: ${contacts.join(' | ')}\n- NEVER place contacts anywhere except the footer area`;
     }
 
   }
@@ -534,11 +783,112 @@ CREATIVE CONCEPT: ${concept.concept}
 
 🎯 VISUAL CONTEXT REQUIREMENT: ${visualContext}${serviceVisualContext}
 
-🎛️ STYLE VARIATION DIRECTIVES (Do not repeat last style for this brand/platform):
-- Design Style: ${chosenStyle}
-- Layout: ${chosenLayout}
-- Typography: ${chosenType}
-- Subtle Effects: ${chosenEffect}
+🎯 STRONG FLEXIBLE TEMPLATE STRUCTURE (MANDATORY):
+1. NEUTRAL BACKGROUND: White or soft gradient (never busy patterns)
+2. ACCENT COLOR: Tied to post theme using brand colors strategically
+3. SINGLE FOCAL ELEMENT: 1 person photo OR 1 relatable object (never both)
+4. EMOTIONAL HEADLINE: Human tone, not corporate speak
+5. OPTIONAL IDENTITY ELEMENT: Small icon or motif for brand consistency
+
+🌟 NATURAL, AUTHENTIC IMAGERY REQUIREMENTS:
+- Show REAL people using technology naturally (no artificial tech effects)
+- Use CLEAN, simple backgrounds without digital overlays
+- Display phones/devices as normal objects (no glowing or connection lines)
+- Focus on HUMAN moments and authentic interactions
+- Avoid any artificial tech visualizations or digital effects
+- Keep technology integration SUBTLE and realistic
+
+📱 REALISTIC PHONE POSITIONING (CRITICAL):
+- Phone screens must be visible from the VIEWER'S perspective, not from behind
+- Show phones held naturally - screen facing toward camera/viewer
+- NEVER show phone screens from impossible angles (back of phone showing screen)
+- Use realistic viewing angles: over-shoulder, side view, or front-facing
+- Phone should be held naturally in hands, not floating or awkwardly positioned
+- Screen content should be logically visible from the camera's viewpoint
+- Ensure phone orientation matches natural human interaction patterns
+
+📸 CONSISTENT LIGHTING & TONE (MANDATORY):
+- Apply WARM, BALANCED lighting across ALL images for brand consistency
+- Use consistent photographic tone and color temperature (NO orange/red tints)
+- Ensure natural, flattering skin tones without heavy color casts
+- NO washed out or overly cool lighting that breaks brand continuity
+- Maintain same lighting quality and warmth across entire feed
+- CONSISTENT photographic filter/LUT for unified brand appearance
+
+🎨 STRATEGIC TEXT PLACEMENT SYSTEM (MANDATORY):
+- BACKGROUND: Clean white (#FFFFFF) or subtle gradient using brand colors
+- ACCENT COLOR: Use ${primaryColor} or ${accentColor} strategically for theme connection
+- FOCAL ELEMENT: Choose ONE - either person OR object, positioned prominently
+
+📍 STRATEGIC HEADLINE & SUBHEADLINE PLACEMENT:
+- HEADLINE POSITION: Top-left or top-right corner for maximum impact and readability
+- SUBHEADLINE POSITION: Directly below headline with consistent spacing (never scattered)
+- VISUAL FLOW: Create clear reading path - headline → image → subheadline → CTA
+- GOLDEN RATIO: Place text in upper third or lower third zones, never center-cramped
+- BRAND MOTIF: Opposite corner from headline for balanced composition
+- BREATHING SPACE: At least one-third negative space around all text elements
+- NO RANDOM PLACEMENT: Text positioned with clear design intention and visual hierarchy
+- LAYOUT SYSTEM: Left-aligned headline with right image OR right-aligned headline with left image
+- COMPOSITION VARIETY: ${concept.composition} - vary poses and angles to keep series fresh
+
+🚫 AVOID POOR TEXT PLACEMENT:
+- NO text scattered randomly across the design
+- NO headlines placed wherever there's leftover space
+- NO subheadlines disconnected from headlines
+- NO text overlapping or competing with focal elements
+- NO center-heavy text that creates cramped layouts
+
+🚫 ELIMINATE GENERIC FINTECH CLICHÉS (CRITICAL):
+- NEVER use: "Unlock Your Tomorrow", "The Future is Now", "Banking Made Simple"
+- NEVER use: "Transform Your Business", "Empower Your Journey", "Revolutionize"
+- NEVER use: "Seamless", "Effortless", "Streamlined", "Next-Generation"
+- NEVER use: "thoughtful details, measurable outcomes" (meaningless corporate speak)
+- AVOID: Any headline that could apply to ANY bank or fintech company
+- BANNED PHRASES: "stripped away the confusion", "future-proof", "game-changer"
+
+💬 AUTHENTIC HUMAN VOICE REQUIREMENTS (MANDATORY):
+- Write like a REAL PERSON talking to a friend, not a corporate press release
+- Use conversational, warm tone: "Hey" instead of "We are pleased to announce"
+- Include personality and character - sound distinctly like Paya, not generic fintech
+- Use specific, concrete language instead of vague corporate buzzwords
+- Sound like someone who actually understands Kenyan life and challenges
+- NO corporate jargon: "featuring", "thoughtful details", "measurable outcomes"
+
+🚨 ELIMINATE ALL CORPORATE SPEAK (ABSOLUTELY CRITICAL):
+- BANNED PHRASES (NEVER USE THESE): 
+  * "authentic, high-impact"
+  * "BNPL is today's focus"
+  * "Paya Finance puts Buy Now Pay Later (BNPL) front and center today"
+  * "makes it practical, useful, and..."
+  * "timing is everything"
+  * "We've all been there"
+  * "brings a human, professional touch"
+  * "See how Paya Finance makes it..."
+- NEVER sound like a PowerPoint presentation or press release
+- NEVER use generic filler text that could apply to any product
+- WRITE LIKE: A friend explaining a solution they discovered
+- USE REAL SCENARIOS: "It's week 3. Professor just assigned 5 new textbooks at $80 each. Your account says $47."
+
+🎭 REAL HUMAN STORYTELLING (MANDATORY):
+- START with a REAL SCENARIO: "Three weeks into semester and your laptop died. Again."
+- CREATE A SCENE: Paint a picture people can see and feel
+- USE REAL EMOTIONS: stress, relief, hope, frustration, excitement
+- SHOW, DON'T TELL: "Mom's birthday is coming up" vs "family obligations"
+- ADD PERSONALITY: "Here's the thing:", "Plot twist:", "Real talk:"
+- END WITH EMPATHY: "We get it", "You're not alone", "Been there"
+
+🚫 TEMPLATE VIOLATIONS TO AVOID:
+- NO busy or complex backgrounds
+- NO multiple competing focal points
+- NO corporate jargon in headlines
+- NO overwhelming brand elements
+- NO cramped layouts without white space
+
+🎛️ SIMPLIFIED STYLE DIRECTIVES:
+- Design Style: ${chosenStyle} (applied minimally)
+- Layout: ${chosenLayout} (with generous white space)
+- Typography: ${chosenType} (clean and readable)
+- Effects: ${chosenEffect} (subtle, not distracting)
 
 DESIGN REQUIREMENTS:
 - Platform: ${platform} (${getPlatformDimensions(platform)})
@@ -548,13 +898,15 @@ DESIGN REQUIREMENTS:
 - Visual Theme: ${visualContext}
 ${concept.featuredServices && concept.featuredServices.length > 0 ? `- Featured Service: ${concept.featuredServices[0].serviceName} (TODAY'S FOCUS)` : ''}
 
-🎨 BRAND COLOR SCHEME (MANDATORY):
+🎨 STRICT BRAND COLOR CONSISTENCY (MANDATORY):
 ${colorScheme}
-- Use these EXACT brand colors throughout the design
-- Primary color should dominate (60% of color usage)
-- Accent color for highlights and emphasis (30% of color usage)
-- Background color for base and contrast (10% of color usage)
-- Ensure high contrast and readability with these colors
+- Use EXACT brand colors with NO variations or different shades
+- Primary color: ${primaryColor} (60% of color usage) - NO other reds/corals
+- Accent color: ${accentColor} (30% of color usage) - NO other secondary colors  
+- Background: ${backgroundColor} (10% of color usage) - NO other neutrals
+- NEVER use similar but different shades (e.g., different reds, browns, beiges)
+- CONSISTENT color temperature across all designs for brand recognition
+- NO color variations that make the feed look uncoordinated
 
 REVO 2.0 ENHANCED FEATURES:
 🚀 Next-generation AI design with sophisticated visual storytelling
@@ -581,6 +933,13 @@ REVO 2.0 ENHANCED FEATURES:
 ❌ AI-generated abstract patterns
 ❌ Futuristic tech interfaces
 ❌ Holographic or digital overlays
+❌ ELECTRICAL/DIGITAL CONNECTION LINES from phones or devices
+❌ Network visualization lines, nodes, or connection patterns
+❌ Digital current/electricity effects around electronics
+❌ Tech circuit patterns or digital network overlays
+❌ Artificial connection lines between person and device
+❌ Glowing digital pathways or data streams
+❌ Electronic signal visualizations or tech auras
 
 CRITICAL REQUIREMENTS:
 - Resolution: 992x1056px (1:1 square format)
@@ -592,15 +951,17 @@ ${shouldFollowBrandColors ? `- MANDATORY: Use the specified brand colors (${prim
 - Professional typography that complements the brand colors
 - VISUAL CONSISTENCY: Ensure the image clearly represents ${visualContext}
 
-📝 TEXT ELEMENT REQUIREMENTS:
-- Include clear, readable headline text in the design (NO company name with colon)
-- Include supporting subheadline text that complements the headline
+📝 STRONG TYPOGRAPHY HIERARCHY (MANDATORY):
+- HEADLINE: Bold, heavy font weight - 2X larger than other text elements
+- SUBHEADLINE: Medium weight - 50% smaller than headline, supports main message
+- STRONG CONTRAST: White text on dark backgrounds OR dark text on light backgrounds
+- NO thin or light font weights that blend into backgrounds
+- LOGO PLACEMENT: Isolated in consistent corner with proper spacing for brand memory
+- Clear visual separation between headline, subheadline, and body text
 - NEVER use text like "COMPANY:", "PAYA:", or "BusinessName:" in the design
 - NEVER include "journey", "everyday", or repetitive corporate language in design text
-- Ensure all text is legible and professionally styled
-- Text should be integrated naturally into the design composition
-- Use typography that matches the brand aesthetic
-- Headlines in design should be engaging phrases, not company announcements
+- Headlines must be engaging phrases, not company announcements
+- Ensure maximum readability across all text elements
 
 🎯 TEXT-CAPTION ALIGNMENT STRATEGY:
 - The text in the image should be the "hook" that grabs attention
@@ -756,6 +1117,9 @@ async function generateCaptionAndHashtags(options: Revo20GenerationOptions, conc
   const uniqueSeed = Date.now() + Math.random();
   const creativityBoost = Math.floor(uniqueSeed % 10) + 1;
 
+  // Get recent data for anti-repetition
+  const recentData = recentOutputs.get(brandKey(brandProfile, platform)) || { headlines: [], captions: [], concepts: [] };
+
   try {
 
     // Build service-specific content context
@@ -797,6 +1161,35 @@ async function generateCaptionAndHashtags(options: Revo20GenerationOptions, conc
     ];
     const selectedTheme = variationThemes[creativityBoost % variationThemes.length];
 
+    // Select enhanced content approach for variety
+    const contentApproaches = getEnhancedContentApproaches();
+    const selectedApproach = options.contentApproach || contentApproaches[Math.floor(Math.random() * contentApproaches.length)];
+    
+    // Build local language integration if enabled
+    let localLanguageInstructions = '';
+    if (options.useLocalLanguage && brandProfile.location) {
+      localLanguageInstructions = `\n\n🌍 CRITICAL LOCAL LANGUAGE INTEGRATION FOR ${brandProfile.location.toUpperCase()}:
+- MANDATORY: Mix English (70%) with local language elements (30%)
+- NATURAL INTEGRATION: Don't force it - only add when it flows naturally
+- CONTEXTUAL USE: Match local language to business type and audience
+- VARIETY: Use different local phrases for each generation (avoid repetition)
+
+📍 LOCATION-SPECIFIC LANGUAGE ELEMENTS:
+${getLocationSpecificLanguageInstructions(brandProfile.location)}
+
+🎯 INTEGRATION EXAMPLES (ADAPTS TO USER'S COUNTRY):
+- Headlines: "Digital Banking Made Simple" → Add local welcome (Karibu/Hola/Bonjour/etc.)
+- Subheadlines: "Fast payments, zero hassle" → Mix with local reassurance phrases
+- Benefits: "Secure transactions" → Include local trust expressions
+- CTAs: "Get Started Today" → Use local action phrases (Twende/Vamos/Allons-y/etc.)
+- Social Proof: "Trusted by customers" → Localize with country-specific language
+- Urgency: "Don't wait" → Use local urgency expressions
+- Captions: Mix English (70%) with local language (30%) naturally
+- ADAPTS TO: Kenya, Nigeria, Ghana, South Africa, India, Philippines, Indonesia, Thailand, Vietnam, Brazil, Mexico, Spain, France, Germany, and more
+
+⚠️ CRITICAL: Local language should enhance, not confuse. Keep it natural and contextual.`;
+    }
+
     const contentPrompt = `Create engaging social media content for ${brandProfile.businessName} (${businessType}) on ${platform}.
 
 🎯 BUSINESS CONTEXT:
@@ -804,10 +1197,34 @@ async function generateCaptionAndHashtags(options: Revo20GenerationOptions, conc
 - Industry: ${businessType}
 - Location: ${brandProfile.location || 'Global'}
 - Platform: ${platform}
+- Content Approach: ${selectedApproach} (use this strategic angle)${localLanguageInstructions}
+
+💼 BUSINESS INTELLIGENCE:
+${Array.isArray(brandProfile.keyFeatures) ? `- Key Features: ${brandProfile.keyFeatures.slice(0, 5).join(', ')}` : ''}
+${Array.isArray(brandProfile.competitiveAdvantages) ? `- Competitive Advantages: ${brandProfile.competitiveAdvantages.slice(0, 3).join(', ')}` : ''}
+${Array.isArray(brandProfile.services) ? `- Services: ${brandProfile.services.map(s => s.name).slice(0, 4).join(', ')}` : ''}
+${brandProfile.targetAudience ? `- Target Audience: ${brandProfile.targetAudience}` : ''}
+${brandProfile.competitivePositioning ? `- Positioning: ${brandProfile.competitivePositioning}` : ''}
+${brandProfile.description ? `- Business Description: ${brandProfile.description.substring(0, 200)}` : ''}
+
+🏆 COMPETITIVE ANALYSIS:
+${getCompetitorAnalysis(brandProfile)}
 
 🖼️ VISUAL CONTEXT:
 The generated image shows: ${concept.concept}
 ${imagePrompt ? `Image elements include: ${getDetailedVisualContext(imagePrompt, businessType)}` : ''}${serviceContentContext}${imageAnalysisContext}
+
+📸 REALISTIC PHOTOGRAPHY REQUIREMENTS:
+- Show REAL people in NATURAL settings (not staged poses)
+- Use CLEAN, SIMPLE compositions without artificial effects
+- Focus on AUTHENTIC interactions with technology
+- Avoid ANY flowing lines, glowing effects, or abstract elements
+- Show actual mobile banking interfaces, not fantasy effects
+- Use natural lighting and realistic environments
+- NO computer-generated visual effects that look fake
+
+📖 AUTHENTIC STORYTELLING SCENARIOS (USE THESE REAL-LIFE STORIES):
+${getAuthenticStoryScenarios(brandProfile, businessType)}
 
 🎯 CONTENT ALIGNMENT REQUIREMENTS:
 - Caption MUST be relevant to the visual elements in the image
@@ -819,6 +1236,14 @@ ${concept.featuredServices && concept.featuredServices.length > 0 ? `- Highlight
 📝 CONTENT REQUIREMENTS - MUST WORK TOGETHER AS ONE STORY:
 1. HEADLINE (max 6 words): This will appear as text IN the image design - make it compelling
 2. SUBHEADLINE (max 25 words): This will also appear IN the image - should support the headline
+
+✏️ GRAMMAR & LANGUAGE RULES (CRITICAL):
+- CORRECT: "Payments that fit your day" (plural subject = plural verb)
+- WRONG: "Payments that fits your day" (grammar error)
+- CORRECT: "Business that grows" (singular) / "Businesses that grow" (plural)
+- CHECK subject-verb agreement in ALL content
+- USE proper English grammar throughout
+- AVOID grammatical errors that make content look unprofessional
 3. CAPTION (50-100 words): Should continue the story started by the headline/subheadline in the image
 4. CALL-TO-ACTION (2-4 words): Action-oriented and contextually appropriate
 5. HASHTAGS (EXACTLY ${hashtagCount}): ${platform === 'instagram' ? '5 hashtags for Instagram' : '3 hashtags for other platforms'}
@@ -834,11 +1259,172 @@ ${concept.featuredServices && concept.featuredServices.length > 0 ? `- Highlight
 - NEVER use "journey", "everyday", or repetitive corporate language
 - Headlines should be engaging standalone phrases, not company announcements
 
-🚫 CRITICAL CONTENT RESTRICTIONS:
-- NEVER generate fake website URLs or domain names
-- NEVER assume the business has a website unless explicitly provided
-- NEVER create fictional contact information or web addresses
-- Only use actual contact details provided in the brand profile
+🚨 CRITICAL: UNIFIED STORY REQUIREMENT (MANDATORY):
+ALL ELEMENTS MUST TELL ONE COHERENT STORY - NO DISCONNECTED PIECES!
+
+📝 CONTENT REQUIREMENTS - SINGLE NARRATIVE THREAD:
+1. HEADLINE (max 6 words): Sets the CORE MESSAGE - everything else builds on this
+2. SUBHEADLINE (max 12 words): DIRECTLY supports and expands the headline message
+3. CAPTION (2-3 sentences): CONTINUES the exact story started in headline, NO topic shifts
+4. HASHTAGS (exactly 5 tags): REFLECT the same theme as headline/caption
+5. CALL-TO-ACTION: COMPLETES the story with clear next step
+
+🚨 BUSINESS RELEVANCE VALIDATION (CRITICAL):
+- NEVER create content about industries/services the business doesn't offer
+- If business is FINTECH → NO textbooks, education, semester themes unless specifically relevant
+- If business is HEALTHCARE → NO banking, payments, technology themes unless relevant  
+- If business is EDUCATION → NO banking, medical, retail themes unless relevant
+- ALWAYS check: Does this headline relate to the actual business services?
+- BANNED for Paya Finance: Textbook themes, education scenarios, semester content (unless specifically about education financing)
+- REQUIRED: Headlines must connect to actual business services and target audience
+
+🔗 STORY COHERENCE VALIDATION (NON-NEGOTIABLE):
+- HEADLINE and CAPTION must share common keywords or themes
+- If headline mentions "TEXTBOOK" → caption MUST mention textbooks/education/studying
+- If headline mentions "POCKET" → caption MUST mention phone/mobile/payment in pocket
+- If headline mentions "SECURE" → caption MUST mention security/protection/safety
+- If headline mentions "DAILY" → caption MUST mention everyday/routine activities
+- NEVER write generic captions that could work with any headline
+- Caption must SPECIFICALLY relate to and expand on the headline message
+- NO corporate filler language: "puts BNPL front and center today"
+
+💡 SERVICE-SPECIFIC CONTENT RULES:
+${Array.isArray(brandProfile.services) ? brandProfile.services.map(service => 
+  `- ${service.name}: ${service.description || 'Focus on specific benefits and outcomes'}`
+).join('\n') : ''}
+${Array.isArray(brandProfile.keyFeatures) ? `- Use these key features: ${brandProfile.keyFeatures.slice(0, 3).join(', ')}` : ''}
+${Array.isArray(brandProfile.competitiveAdvantages) ? `- Highlight advantages: ${brandProfile.competitiveAdvantages.slice(0, 2).join(', ')}` : ''}
+
+🎯 CUSTOMER PAIN POINTS & SOLUTIONS:
+${getCustmerPainPointsForBusiness(businessType, brandProfile)}
+
+💰 VALUE PROPOSITIONS (USE THESE):
+${getValuePropositionsForBusiness(businessType, brandProfile)}
+
+🎯 PAYA-SPECIFIC CONTENT FOCUS (MANDATORY):
+- Focus on REAL Paya services: Mobile Banking, Buy Now Pay Later, Instant Payments, Business Payments
+- Target REAL audiences: Small business owners, entrepreneurs, unbanked Kenyans, mobile money users
+- Address REAL pain points: Bank queues, credit requirements, high fees, slow transfers
+- Use REAL benefits: No credit checks, instant account opening, transparent fees, mobile convenience
+- AVOID: Generic education themes, textbook scenarios, semester content (unless specifically about education financing)
+- CREATE: Authentic fintech scenarios that Paya customers actually experience
+
+🚫 ANTI-AI VISUAL RULES (CRITICAL):
+- NO flowing lines, waves, or streams coming from devices
+- NO glowing trails, light beams, or energy effects around phones
+- NO abstract colorful ribbons or flowing elements
+- NO overly stylized lighting effects or artificial glows
+- NO computer-generated looking visual effects
+- USE: Clean, realistic photography without artificial effects
+- SHOW: Real people using real devices in natural settings
+- AVOID: Any elements that look obviously AI-generated or fake
+
+🚫 BANNED CORPORATE JARGON (ELIMINATE THESE):
+- "Payments that fits your day" (WRONG GRAMMAR + GENERIC)
+- "focuses on what matters and cuts the noise" (CORPORATE SPEAK)
+- "streamlined solutions" / "seamless experience" / "cutting-edge technology"
+- "empowering businesses" / "driving growth" / "innovative solutions"
+- "best-in-class" / "world-class" / "industry-leading"
+- REPLACE WITH: Specific, measurable benefits and real business scenarios
+- USE: "98% faster means your supplier gets paid before lunch, your team sees deposits by Friday morning"
+- SHOW: Concrete outcomes, not abstract concepts
+
+🏆 COMPETITIVE MESSAGING RULES (USE THESE):
+${getCompetitiveMessagingRules(brandProfile)}
+
+📱 HASHTAG REQUIREMENTS (CRITICAL - EXACTLY 5 ONLY):
+- MAXIMUM 5 hashtags total - NO MORE than 5
+- NEVER exceed 5 hashtags - this is non-negotiable
+- Choose the BEST 5 most relevant hashtags only
+- Example format: #Paya #DigitalBanking #Kenya #Fintech #MobileMoney
+- DO NOT include: #PayaFintech #BNPLKenya #SmartSpending #NairobiFinance #FinTechKenya #PaymentPlans #BuyNowPayLater #DeferredPayment #FlexiblePayment #InstallmentPlans
+- PRIORITIZE: Brand name (#Paya) + Service type + Location + Industry + One specific feature
+- QUALITY over quantity - 5 strategic hashtags perform better than 10 generic ones
+
+🇰🇪 KENYAN CULTURAL CONNECTION (MANDATORY):
+- Reference real Kenyan experiences: matatu rides, M-Pesa, university fees, family support
+- Use locally relevant scenarios: "When your cousin needs school fees", "After a long day at work"
+- Include Kenyan context: Nairobi traffic, campus life, family obligations, side hustles
+- Sound like someone who actually lives in Kenya and understands daily challenges
+- Reference local pain points: expensive bank charges, long queues, complicated processes
+
+💪 SPECIFIC VALUE PROPOSITIONS (NO VAGUE BENEFITS):
+- Instead of "thoughtful details" → "No hidden fees, ever"
+- Instead of "measurable outcomes" → "Save KES 500 monthly on bank charges"
+- Instead of "stripped away confusion" → "Open account in 3 minutes, not 3 hours"
+- Use EXACT numbers, SPECIFIC benefits, CONCRETE improvements
+- Answer "So what?" - why should someone care about this specific feature?
+
+💔 EMOTIONAL PAIN POINTS & SOLUTIONS:
+- Address real struggles: "Tired of banks treating you like a number?"
+- Connect to family: "Your family deserves better than expensive bank fees"
+- Student focus: "University fees shouldn't break your budget"
+- Entrepreneur angle: "Your business dreams shouldn't wait for bank approval"
+- Show understanding: "We get it - banking shouldn't be this hard"
+
+📢 COMPELLING CALL-TO-ACTION (NO TRAILING OFF):
+- NEVER end captions with "..." or weak conclusions
+- Use action-driving CTAs: "Download now", "Join 1M+ Kenyans", "Start saving today"
+- Create urgency: "Limited time", "This month only", "Don't wait"
+- Make it specific: "Get your account in 5 minutes", "Save KES 200 this week"
+
+🎭 CONTENT STRUCTURE VARIETY (BREAK REPETITIVE PATTERNS):
+- REAL SCENARIO: "Three weeks into semester and your laptop died. Again. But next month's rent is due..."
+- EMOTIONAL MOMENT: "Your mom calls. The shop needs new equipment. Your heart sinks because..."
+- RELATABLE STRUGGLE: "It's 2am. Assignment due tomorrow. Laptop screen goes black. Panic mode."
+- TRANSFORMATION STORY: "Last month: stressed about money. This month: sleeping peacefully. What changed?"
+- FRIEND CONVERSATION: "Real talk: remember when banking meant standing in line for hours?"
+- BREAKTHROUGH MOMENT: "Plot twist: what if paying bills didn't have to stress you out?"
+- EMPATHY FIRST: "We've all been there. Paycheck delayed, bills due, options limited."
+- SOLUTION REVEAL: "Here's what nobody tells you about managing money in Kenya..."
+
+🚫 ELIMINATE GENERIC HEADLINES (CRITICAL):
+- NEVER use: "Family Fun, On Your Terms" (could be Netflix, Airbnb, anything)
+- NEVER use: "Shop. Travel. Live. Easy." (zero personality)
+- AVOID: Headlines that could apply to ANY product or service
+- CREATE: Headlines that could ONLY be about Paya's specific solution
+- MAKE IT: Memorable, shareable, and distinctly Paya
+
+🚫 ELIMINATE CAPTION PROBLEMS (CRITICAL):
+- NEVER trail off with "..." (incomplete thoughts) - COMPLETE THE STORY
+- NEVER copy-paste generic text: "Paya Finance puts Buy Now Pay Later (BNPL) front and center today"
+- NEVER use same caption structure for different headlines
+- NEVER end abruptly - always complete the thought with strong CTA
+- BANNED INCOMPLETE PHRASES: "makes it practical, useful, and..." ← FINISH THE SENTENCE!
+
+✅ CORRECT CAPTION EXAMPLES BY HEADLINE:
+- "TEXTBOOK STRESS?" → "It's week 3. Professor just assigned 5 new textbooks at $80 each. Your account says $47. Paya Finance lets you get every book today, pay over time. Stay in class, not behind."
+- "DREAM IT, GET IT." → "That vision board isn't decoration—it's a to-do list. The laptop upgrade, the desk setup, the tools that turn ideas into income. Paya Finance funds your hustle now, you pay as you profit."
+- "OWN YOUR EDUCATION. PAY LATER" → "Tuition. Books. Lab fees. Accommodation. The list is long, the bank account isn't. Paya Finance breaks down the barriers between you and your degree. Learn now, pay as you earn."
+- Each caption tells a COMPLETE, SPECIFIC story that matches its headline
+
+🚫 ELIMINATE JARGON OVERUSE (CRITICAL):
+- NEVER overuse "BNPL" acronym or "(BNPL)" in parentheses
+- INSTEAD OF: "Buy Now Pay Later (BNPL)" → "Get what you need now, pay when you're ready"
+- FOCUS ON: Benefits and outcomes, not technical terms
+- WRITE FOR: Regular people, not fintech insiders
+- ASSUME: People care about solutions, not acronyms
+
+💡 BENEFIT-FOCUSED, NOT FEATURE-FOCUSED (MANDATORY):
+- WRONG: "Paya offers Buy Now Pay Later feature"
+- RIGHT: "Get your laptop today, pay next month when your freelance project pays out"
+- WRONG: "Our BNPL solution provides flexible payment options"
+- RIGHT: "Sleep better knowing you can handle emergencies without stress"
+- SHOW: How life gets better, not what the product does
+- FOCUS: On transformation and outcomes, not features and functions
+
+🎯 AUTHENTIC PAYA PERSONALITY TRAITS:
+- UNDERSTANDING: "We get the hustle - banking shouldn't add stress"
+- SUPPORTIVE: "Your dreams matter, whether big or small"
+- PRACTICAL: "Real solutions for real Kenyans"
+- ACCESSIBLE: "Banking that speaks your language"
+- EMPOWERING: "Take control of your money, your way"
+- RELIABLE: "Always there when you need us"
+- NEVER start headlines with company name followed by colon (e.g., "PAYA:", "CompanyName:")
+- Use DISTINCT vocabulary and a different angle from common phrases
+- Vary sentence length; avoid template-like structures
+- Headlines should be engaging and standalone, not company-prefixed
+- CULTURAL INTELLIGENCE: Use language and concepts that local people easily understand
 
 🎨 WRITING GUIDELINES:
 - Write in a conversational, authentic tone that resonates with local culture
@@ -863,13 +1449,23 @@ ${concept.featuredServices && concept.featuredServices.length > 0 ? `- Highlight
 - USE: Only actual contact information provided in the brand profile
 - Uniqueness token (do not print): ${uniqueId}
 
-🚨 CRITICAL CONTENT ALIGNMENT:
+🚨 CRITICAL CONTENT ALIGNMENT & ANTI-REPETITION:
 - The headline and subheadline you generate MUST match the text elements shown in the image
 - If the image shows "Smart Banking Solutions", your headline should be "Smart Banking Solutions"
 - If the image shows "Quality You Can Trust", your caption should reinforce this message
 - NEVER contradict what's visually shown in the image with different text in the caption
 - However, NEVER generate headlines with company name prefix or "journey" language, even if it appears in the image
 - The caption should tell the story that the visual headline/subheadline starts
+
+🚫 CRITICAL ANTI-REPETITION RULES (MANDATORY):
+- NEVER use these overused phrases: "Finance Your Ambitions", "Transform Your Business", "Empower Your Future"
+- NEVER use "journey", "everyday", "seamless", "effortless" in headlines
+- AVOID generic templates like "[Action] Your [Business Concept]"
+- CREATE unique, specific value propositions instead of generic corporate speak
+- USE concrete benefits and specific outcomes
+- VARY sentence structure and vocabulary completely from recent generations
+- Recent concepts to AVOID: ${recentData.concepts.slice(0, 3).join(', ')}
+- Recent headlines to AVOID: ${recentData.headlines.slice(0, 3).join(', ')}
 
 🌍 PLATFORM & CULTURAL CONTEXT:
 - Platform: ${String(platform).toLowerCase() === 'instagram' ? 'Instagram - Visual storytelling with lifestyle focus' : 'Professional business platform'}
@@ -899,9 +1495,26 @@ Format as JSON:
     // Add the text prompt to generation parts
     generationParts.push(contentPrompt);
 
-    const result = await generateContentWithProxy(generationParts, REVO_2_0_MODEL, false);
-    const response = await result.response;
-    const content = response.text();
+    // Retry mechanism - attempt AI generation multiple times before fallback
+    const maxRetries = 3;
+    let lastError: any = null;
+    const fallbackTheme = 'customer-centric'; // Define theme for headline generation
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`🤖 [Revo 2.0] AI Generation Attempt ${attempt}/${maxRetries} - Using Claude Sonnet 4.5`);
+        
+        const claudeResult = await getClaudeClient().generateText(
+          contentPrompt,
+          'claude-sonnet-4-5-20250929',
+          {
+            temperature: 0.8 + (Math.random() * 0.3), // 0.8-1.1 for variety
+            maxTokens: 1000
+          }
+        );
+        const content = claudeResult.text;
+        console.log(`📊 [Revo 2.0] Claude tokens used: ${claudeResult.tokensUsed.total}`);
+        console.log(`⏱️ [Revo 2.0] Claude processing time: ${claudeResult.processingTime}ms`);
 
     try {
       // Clean the response to extract JSON
@@ -929,14 +1542,15 @@ Format as JSON:
 
       // Anti-repetition enforcement
       const key = brandKey(brandProfile, platform);
-      const recent = recentOutputs.get(key) || { headlines: [], captions: [] };
+      const recent = recentOutputs.get(key) || { headlines: [], captions: [], concepts: [] };
 
       // Enhanced caption validation with multiple checks
       let caption = parsed.caption || '';
 
-      // Check for repetitive or problematic captions
+      // Enhanced caption validation with more checks
       const captionHasJourney = /\b(journey|everyday)\b/i.test(caption);
       const captionTooSimilar = tooSimilar(caption, recent.captions, 0.40);
+      const captionHasBannedPatterns = hasBannedPattern(caption);
       const captionIsGeneric = caption.includes('Experience the excellence of') ||
         caption.includes('makes financial technology company effortless') ||
         /makes .+ effortless and effective/i.test(caption) ||
@@ -944,28 +1558,65 @@ Format as JSON:
         caption.includes('crafted for Kenya') ||
         caption.includes('crafted for Nigeria') ||
         caption.includes('crafted for Ghana') ||
-        /crafted for [A-Z][a-z]+/i.test(caption);
+        /crafted for [A-Z][a-z]+/i.test(caption) ||
+        /transform your .+ with/i.test(caption) ||
+        /empower your .+ through/i.test(caption);
       const captionIsEmpty = !caption || caption.trim().length === 0;
 
-      if (captionIsEmpty || captionHasJourney || captionTooSimilar || captionIsGeneric) {
-        caption = generateUniqueFallbackCaption(brandProfile, businessType, creativityBoost);
+      // NEW: Add headline-caption coherence validation
+      const headlineWords = (parsed.headline || '').toLowerCase().split(/\s+/);
+      const captionWords = caption.toLowerCase().split(/\s+/);
+      const hasCommonWords = headlineWords.some(word => 
+        word.length > 3 && captionWords.some(capWord => capWord.includes(word) || word.includes(capWord))
+      );
+      const captionDisconnected = !hasCommonWords && caption.length > 50; // Only check if caption is substantial
+
+      if (captionIsEmpty || captionHasJourney || captionTooSimilar || captionIsGeneric || captionHasBannedPatterns || captionDisconnected) {
+        const reason = captionIsEmpty ? 'empty' : 
+                      captionHasJourney ? 'journey words' : 
+                      captionTooSimilar ? 'too similar' : 
+                      captionIsGeneric ? 'generic pattern' : 
+                      captionHasBannedPatterns ? 'banned pattern' : 
+                      'disconnected from headline';
+        console.log(`🚫 [Revo 2.0] Attempt ${attempt}/${maxRetries} - Rejected caption - Reason: ${reason}`);
+        
+        if (attempt < maxRetries) {
+          console.log(`🔄 [Revo 2.0] Retrying with different temperature and creativity...`);
+          // Adjust temperature for next attempt
+          continue;
+        } else {
+          console.log('❌ [Revo 2.0] All AI attempts failed validation - using fallback');
+          throw new Error(`Caption validation failed after ${maxRetries} attempts: ${reason}`);
+        }
       }
 
       let headline = stripOverusedWords(parsed.headline || '');
 
-      // Multiple validation layers for headline quality
+      // Enhanced validation layers for headline quality
       const hasJourneyWords = /\b(journey|everyday)\b/i.test(headline);
       const hasColonPrefix = /^[A-Z]+:\s/.test(headline);
+      const hasBannedPatterns = hasBannedPattern(headline);
       const isTooSimilar = tooSimilar(headline, recent.headlines, 0.55);
       const isEmpty = !headline || headline.trim().length === 0;
+      const isGenericPattern = /^[a-z]+ your [a-z]+$/i.test(headline.trim());
 
-      if (isEmpty || hasJourneyWords || hasColonPrefix || isTooSimilar) {
-        headline = generateUniqueHeadline(brandProfile, businessType, selectedTheme);
+      if (isEmpty || hasJourneyWords || hasColonPrefix || hasBannedPatterns || isTooSimilar || isGenericPattern) {
+        const headlineReason = isEmpty ? 'empty' : hasJourneyWords ? 'journey words' : hasColonPrefix ? 'colon prefix' : hasBannedPatterns ? 'banned pattern' : isTooSimilar ? 'too similar' : 'generic pattern';
+        console.log(`🚫 [Revo 2.0] Attempt ${attempt}/${maxRetries} - Rejected headline: "${headline}" - Reason: ${headlineReason}`);
+        
+        if (attempt < maxRetries) {
+          console.log(`🔄 [Revo 2.0] Retrying with different approach...`);
+          continue;
+        } else {
+          console.log('❌ [Revo 2.0] All AI attempts failed headline validation - using fallback');
+          headline = generateUniqueHeadline(brandProfile, businessType, fallbackTheme);
+        }
       }
 
       // Remember accepted output for future anti-repetition checks
       rememberOutput(key, { headline, caption });
 
+      console.log(`✅ [Revo 2.0] AI Generation Successful on attempt ${attempt}/${maxRetries}`);
       return {
         caption: sanitizeGeneratedCopy(caption, brandProfile, businessType) as string,
         hashtags: finalHashtags,
@@ -975,10 +1626,29 @@ Format as JSON:
         captionVariations: [sanitizeGeneratedCopy(caption, brandProfile, businessType) as string]
       };
 
-    } catch (parseError) {
-      console.warn('⚠️ Revo 2.0: Failed to parse content JSON, generating unique fallback');
-      return generateUniqueFallbackContent(brandProfile, businessType, platform, hashtagCount, creativityBoost, concept);
+      } catch (parseError) {
+        console.warn(`⚠️ [Revo 2.0] Attempt ${attempt}/${maxRetries} - Failed to parse JSON: ${parseError.message}`);
+        lastError = parseError;
+        if (attempt < maxRetries) {
+          console.log(`🔄 [Revo 2.0] Retrying with different temperature...`);
+          continue;
+        }
+      }
+
+      } catch (aiError) {
+        console.warn(`⚠️ [Revo 2.0] Attempt ${attempt}/${maxRetries} - AI generation failed: ${aiError.message}`);
+        lastError = aiError;
+        if (attempt < maxRetries) {
+          console.log(`🔄 [Revo 2.0] Retrying AI generation...`);
+          continue;
+        }
+      }
     }
+
+    // All retries failed, use fallback
+    console.warn(`❌ [Revo 2.0] All ${maxRetries} AI attempts failed. Using fallback content.`);
+    console.warn(`Last error: ${lastError?.message || 'Unknown error'}`);
+    return generateUniqueFallbackContent(brandProfile, businessType, platform, hashtagCount, creativityBoost, concept);
 
   } catch (error) {
     console.warn('⚠️ Revo 2.0: Content generation failed, generating unique fallback');
@@ -1005,23 +1675,23 @@ function generateUniqueFallbackContent(brandProfile: any, businessType: string, 
   const loc = brandProfile.location || 'your area';
 
   const uniqueCaptions = todayService ? [
-    `${base} puts ${svc} front and center today—authentic, high-impact results for ${loc}.`,
-    `${svc} is today's focus. See how ${base} makes it practical, useful, and genuinely better for ${loc}.`,
-    `On the agenda: ${svc}. Real benefits, clear value—delivered by ${base}.`,
-    `${svc}, done right. ${base} brings a human, professional touch to ${businessType.toLowerCase()} in ${loc}.`,
-    `Today's highlight: ${svc}. Built for your needs by ${base}—reliable, modern, and effective.`,
-    `From idea to action—${svc} by ${base}. Designed to work for real people in ${loc}.`,
-    `We’re featuring ${svc}: thoughtful details, measurable outcomes. That’s ${base}.`,
-    `${svc} that fits your day. ${base} focuses on what matters and cuts the noise.`
+    `${svc} that actually works. Your ${loc} supplier gets paid in 3 minutes, not 3 days.`,
+    `KES 50,000 sent at 9 AM, confirmed by 9:03 AM. Your inventory arrives tomorrow, not next week.`,
+    `Your Friday payroll runs automatically while you're in client meetings. No more payment delays.`,
+    `Mombasa Road supplier paid before lunch. Your team sees deposits by Friday morning.`,
+    `98% faster payments mean you stop being the bottleneck. Focus on growing, not admin chaos.`,
+    `Student needs lunch money at 1 PM. Parent sends KES 500, student buying food by 1:03 PM.`,
+    `Emergency medicine money sent instantly. Baby gets treatment, family sends grateful messages.`,
+    `Business cash flow that actually flows. Payments in minutes, not days or weeks.`
   ] : [
-    `${base} brings a fresh take on ${businessType.toLowerCase()} in ${loc}—useful, polished, and built for real-world impact.`,
-    `Clear, modern ${businessType.toLowerCase()}—delivered by ${base} for people in ${loc}.`,
-    `From strategy to delivery, ${base} elevates ${businessType.toLowerCase()} with a practical, human approach.`,
-    `${base} makes ${businessType.toLowerCase()} effortless and effective—crafted for ${loc}.`,
-    `Quality-first ${businessType.toLowerCase()} from ${base}. Thoughtful details, consistent results.`,
-    `Real impact, no fluff. ${base} leads with smart ${businessType.toLowerCase()} built for ${loc}.`,
-    `${base}: a better standard for ${businessType.toLowerCase()}—reliable, clean, and professional.`,
-    `We keep it simple—and excellent. ${base} for ${businessType.toLowerCase()} that actually works.`
+    `Your ${loc} business runs smoother when payments work instantly. No more waiting days for confirmations.`,
+    `KES 25,000 supplier payment sent at 2 PM, confirmed by 2:02 PM. Your ${loc} operations never skip a beat.`,
+    `While competitors take 3-5 business days, ${base} processes payments in under 3 minutes.`,
+    `Friday payroll for your ${loc} team runs automatically. You focus on business, we handle the money flow.`,
+    `Emergency funds sent instantly to your ${loc} branch. Crisis handled, business continues.`,
+    `Your ${loc} customers pay instantly, you receive money immediately. Cash flow that actually flows.`,
+    `98% faster than traditional banking means your ${loc} suppliers get paid before lunch, not next week.`,
+    `Student in ${loc} needs transport money. Parent sends KES 200, student catches the next matatu.`
   ];
 
   const selectedCaption = uniqueCaptions[creativityLevel % uniqueCaptions.length];
@@ -1164,94 +1834,216 @@ function getVisualContextForBusiness(businessType: string, concept: string): str
 }
 
 /**
- * Generate unique fallback caption
+ * Get customer pain points for specific business types
  */
-function generateUniqueFallbackCaption(brandProfile: any, businessType: string, creativityLevel: number): string {
-  const business = brandProfile?.businessName || 'Our Business';
+function getCustmerPainPointsForBusiness(businessType: string, brandProfile: any): string {
+  const businessLower = businessType.toLowerCase();
   const location = brandProfile?.location || 'your area';
-  const service = businessType || 'services';
-
-  // Generate timestamp-based seed for more variety
-  const timeSeed = Date.now() + creativityLevel;
-  const variationIndex = timeSeed % 24; // 24 different caption styles
-
-  // These captions are designed to work with common headline patterns
-  const captionTemplates = [
-    // For "Smart/Modern" headlines - explain the simplicity
-    `No more complicated processes or confusing interfaces. ${business} makes ${service.toLowerCase()} as simple as it should be. Whether you're managing daily tasks or planning for the future, our approach adapts to how you actually live and work in ${location}.`,
-
-    // For "Quality/Trust" headlines - build on reliability
-    `You deserve ${service.toLowerCase()} that actually works. ${business} has built our reputation in ${location} by delivering consistent results, honest communication, and genuine care for every customer. That's not just a promise—it's how we do business.`,
-
-    // For "Innovation/Technology" headlines - make it relatable
-    `Technology should make life easier, not more complicated. ${business} brings cutting-edge ${service.toLowerCase()} solutions to ${location}, but we keep the experience human. Advanced capabilities, simple interactions—that's how innovation should work.`,
-
-    // For "Community/Local" headlines - emphasize connection
-    `${business} isn't just another ${service.toLowerCase()} provider—we're part of the ${location} community. We understand local needs, respect local values, and build lasting relationships. When you succeed, we succeed.`,
-
-    // For "Results/Performance" headlines - show outcomes
-    `Talk is cheap. Results matter. ${business} has helped countless people in ${location} achieve their goals through reliable ${service.toLowerCase()}. We measure our success by your success, and we're proud of what we've accomplished together.`,
-
-    // For "Simple/Easy" headlines - explain the ease
-    `Why should ${service.toLowerCase()} be complicated? ${business} strips away the unnecessary complexity and focuses on what actually matters to you. Clear communication, straightforward processes, and results you can see—that's our approach in ${location}.`,
-
-    // For "Professional/Expert" headlines - demonstrate expertise
-    `Experience makes the difference. ${business} brings years of ${service.toLowerCase()} expertise to ${location}, but we never forget that every customer is unique. Professional service with a personal touch—that's what sets us apart.`,
-
-    // For "Affordable/Value" headlines - justify the value
-    `Great ${service.toLowerCase()} doesn't have to break the bank. ${business} offers exceptional value to ${location} by focusing on efficiency, transparency, and results. You get premium quality without the premium price tag.`,
-
-    // For "Fast/Efficient" headlines - explain the speed
-    `Time is precious. ${business} respects that by delivering fast, efficient ${service.toLowerCase()} without cutting corners. We've streamlined our processes so you can get what you need quickly, without sacrificing quality in ${location}.`,
-
-    // For "Reliable/Dependable" headlines - build trust
-    `When you need ${service.toLowerCase()} you can count on, ${business} delivers. We've built our reputation in ${location} one satisfied customer at a time. Consistent quality, reliable service, and genuine care—that's what you can expect from us.`,
-
-    // For "Custom/Personalized" headlines - show individual attention
-    `One size doesn't fit all. ${business} understands that every customer in ${location} has unique needs and goals. That's why we take the time to listen, understand, and deliver ${service.toLowerCase()} solutions that actually fit your situation.`,
-
-    // For "Secure/Safe" headlines - address peace of mind
-    `Your security is our priority. ${business} uses industry-leading practices to protect what matters most to you. In ${location}, you can trust us with your ${service.toLowerCase()} needs because we take that responsibility seriously.`,
-
-    // For "Growth/Success" headlines - inspire achievement
-    `Your success story starts here. ${business} has helped people throughout ${location} achieve their goals through strategic ${service.toLowerCase()} support. We're not just a service provider—we're your partner in growth.`,
-
-    // For "Convenient/Accessible" headlines - highlight ease of access
-    `${service.toLowerCase()} should fit into your life, not the other way around. ${business} makes it convenient for ${location} residents to get what they need, when they need it, how they need it. Accessibility without compromise.`,
-
-    // For "Transparent/Honest" headlines - build credibility
-    `No hidden fees, no confusing terms, no surprises. ${business} believes in complete transparency with our ${location} customers. You'll always know exactly what you're getting and what it costs—that's our commitment to honest business.`,
-
-    // For "Local/Community" headlines - emphasize local connection
-    `${location} is our home too. ${business} is deeply rooted in this community, and we understand what makes it special. Our ${service.toLowerCase()} reflects local values while meeting global standards.`,
-
-    // For "Experienced/Proven" headlines - showcase track record
-    `Results speak louder than promises. ${business} has a proven track record of delivering exceptional ${service.toLowerCase()} throughout ${location}. Our experience means you get solutions that actually work, backed by real success stories.`,
-
-    // For "Flexible/Adaptable" headlines - show versatility
-    `Life changes, and your ${service.toLowerCase()} should adapt with you. ${business} offers flexible solutions that grow and change as your needs evolve. In ${location}, we're known for our ability to adjust and deliver exactly what you need.`,
-
-    // For "Comprehensive/Complete" headlines - show full service
-    `Why work with multiple providers when one can handle everything? ${business} offers comprehensive ${service.toLowerCase()} solutions for ${location}, covering all your needs under one roof. Complete service, consistent quality, single point of contact.`,
-
-    // For "Innovative/Forward-thinking" headlines - balance innovation with practicality
-    `The future of ${service.toLowerCase()} is here, but it's designed for real people living real lives in ${location}. ${business} combines innovative approaches with practical solutions that make sense for your daily routine.`,
-
-    // For "Dedicated/Committed" headlines - show dedication
-    `Your success is our mission. ${business} is completely dedicated to delivering outstanding ${service.toLowerCase()} results for every customer in ${location}. We don't just work for you—we work with you to achieve your goals.`,
-
-    // For "Efficient/Streamlined" headlines - explain the process
-    `We've eliminated the waste and focused on what works. ${business} has streamlined our ${service.toLowerCase()} delivery to give ${location} customers maximum value with minimum hassle. Efficient processes, exceptional results.`,
-
-    // For "Trusted/Established" headlines - leverage reputation
-    `Trust is earned, not given. ${business} has earned the confidence of ${location} through consistent delivery of quality ${service.toLowerCase()}. Our reputation is built on real results and genuine relationships with every customer.`,
-
-    // For "Personalized/Individual" headlines - emphasize personal attention
-    `You're not just another customer—you're an individual with unique needs and goals. ${business} takes the time to understand what matters most to you and delivers ${service.toLowerCase()} solutions that reflect your personal priorities in ${location}.`
-  ];
-
-  return captionTemplates[variationIndex];
+  
+  // Fintech/Financial Services
+  if (businessLower.includes('financial') || businessLower.includes('fintech') || 
+      businessLower.includes('banking') || businessLower.includes('payment')) {
+    return `- PAIN: Long bank queues and slow approval processes
+- PAIN: Complex credit requirements that exclude many people
+- PAIN: High transaction fees eating into profits
+- PAIN: Delayed payments affecting cash flow
+- PAIN: Limited banking access in remote areas
+- SOLUTION: Instant account opening in minutes
+- SOLUTION: No credit checks required - banking for everyone
+- SOLUTION: Transparent, low fees with no hidden charges
+- SOLUTION: Real-time payments and transfers`;
+  }
+  
+  // Technology/Software
+  if (businessLower.includes('technology') || businessLower.includes('software') || 
+      businessLower.includes('app') || businessLower.includes('digital')) {
+    return `- PAIN: Complex software that's hard to use
+- PAIN: Expensive implementation and maintenance costs
+- PAIN: Poor customer support and long response times
+- PAIN: Data security concerns and privacy issues
+- SOLUTION: User-friendly interface anyone can master
+- SOLUTION: Affordable pricing with transparent costs
+- SOLUTION: 24/7 support with real human experts
+- SOLUTION: Bank-level security protecting your data`;
+  }
+  
+  // E-commerce/Retail
+  if (businessLower.includes('retail') || businessLower.includes('shop') || 
+      businessLower.includes('store') || businessLower.includes('commerce')) {
+    return `- PAIN: High shipping costs and slow delivery
+- PAIN: Limited payment options for customers
+- PAIN: Difficulty finding quality products at fair prices
+- PAIN: Poor customer service and return policies
+- SOLUTION: Fast, affordable delivery to ${location}
+- SOLUTION: Multiple secure payment methods
+- SOLUTION: Quality products at competitive prices
+- SOLUTION: Excellent customer service and easy returns`;
+  }
+  
+  // Default for any business
+  return `- PAIN: Slow, inefficient processes wasting time
+- PAIN: High costs without clear value
+- PAIN: Poor customer service experiences
+- PAIN: Lack of transparency and hidden fees
+- SOLUTION: Fast, efficient service that saves time
+- SOLUTION: Clear, competitive pricing with real value
+- SOLUTION: Excellent customer support when you need it
+- SOLUTION: Complete transparency with no surprises`;
 }
+
+/**
+ * Get competitor analysis for marketing positioning
+ */
+function getCompetitorAnalysis(brandProfile: any): string {
+  if (!Array.isArray(brandProfile.competitors) || brandProfile.competitors.length === 0) {
+    return '- No specific competitor data available - focus on general market advantages';
+  }
+
+  let analysis = '';
+  brandProfile.competitors.forEach((competitor: any, index: number) => {
+    if (index < 3) { // Limit to top 3 competitors
+      analysis += `\n🆚 VS ${competitor.name}:`;
+      if (Array.isArray(competitor.weaknesses)) {
+        analysis += `\n  - Their weaknesses: ${competitor.weaknesses.join(', ')}`;
+      }
+      if (Array.isArray(competitor.ourAdvantages)) {
+        analysis += `\n  - Our advantages: ${competitor.ourAdvantages.join(', ')}`;
+      }
+    }
+  });
+
+  return analysis || '- Focus on unique value propositions and market differentiation';
+}
+
+/**
+ * Get authentic storytelling scenarios for real-life use cases
+ */
+function getAuthenticStoryScenarios(brandProfile: any, businessType: string): string {
+  const businessLower = businessType.toLowerCase();
+  const location = brandProfile?.location?.country || 'Kenya';
+  
+  // Fintech/Financial Services Stories
+  if (businessLower.includes('financial') || businessLower.includes('fintech') || 
+      businessLower.includes('banking') || businessLower.includes('payment')) {
+    
+    return `CHOOSE ONE OF THESE REAL-LIFE STORIES TO TELL:
+
+📱 FAMILY CONNECTION STORIES:
+- University student in Nairobi sends money to mother in village, mother receives notification and sends "Asante sana" message back
+- Young professional sends school fees to younger sibling, sibling confirms receipt with gratitude
+- Daughter working in city sends monthly support to parents, parents reply with blessing message
+- Son abroad sends money home for family emergency, family receives instantly and calls to thank
+
+💼 BUSINESS REALITY STORIES:  
+- Small shop owner pays supplier instantly via mobile, supplier confirms goods will be delivered today
+- Market vendor receives payment from customer, immediately sends money to restock inventory
+- Taxi driver receives fare payment, uses same app to pay for fuel at next station
+- Food vendor gets paid by customer, instantly transfers money to buy fresh ingredients
+
+🎓 STUDENT LIFE STORIES:
+- Student runs out of lunch money, parent sends money instantly, student buys meal within minutes
+- Student needs textbook money urgently, parent transfers funds, student purchases book same day
+- Student's phone credit runs out during exam period, parent sends money for airtime top-up
+- Student needs transport money to get home, parent sends fare money instantly
+
+🏥 EMERGENCY STORIES:
+- Mother needs medicine money for sick child, relative sends money immediately, medicine purchased within hour
+- Family member in hospital needs money for treatment, relatives contribute and send funds instantly
+- Emergency car repair needed, family member sends money, car fixed same day
+- School fees deadline today, parent receives money from relative and pays fees on time
+
+USE THESE STORY ELEMENTS:
+- Show BOTH sender and receiver in the story
+- Include the EMOTIONAL connection (gratitude, relief, joy)
+- Show the IMMEDIATE impact of the transaction
+- Use REAL locations (Nairobi to village, campus to home, etc.)
+- Include authentic Kenyan expressions of gratitude
+- Show the COMPLETE transaction journey from send to receive to outcome`;
+  }
+  
+  // Default for other business types
+  return `CREATE AUTHENTIC CUSTOMER JOURNEY STORIES:
+- Show real people using your service in their daily lives
+- Include the problem, solution, and positive outcome
+- Use specific locations and realistic scenarios
+- Show emotional connections and genuine reactions
+- Focus on how the service improves real situations`;
+}
+
+/**
+ * Get competitive messaging rules for content generation
+ */
+function getCompetitiveMessagingRules(brandProfile: any): string {
+  if (!Array.isArray(brandProfile.competitors) || brandProfile.competitors.length === 0) {
+    return '- Focus on unique value propositions and market leadership\n- Highlight what makes you different from generic alternatives\n- Use specific benefits rather than generic claims';
+  }
+
+  let rules = '';
+  brandProfile.competitors.forEach((competitor: any, index: number) => {
+    if (index < 2) { // Focus on top 2 competitors
+      rules += `\n- VS ${competitor.name}: `;
+      if (Array.isArray(competitor.ourAdvantages) && competitor.ourAdvantages.length > 0) {
+        rules += `Emphasize "${competitor.ourAdvantages[0]}" advantage`;
+      }
+      if (Array.isArray(competitor.weaknesses) && competitor.weaknesses.length > 0) {
+        rules += ` (they have: ${competitor.weaknesses[0]})`;
+      }
+    }
+  });
+
+  // Add general competitive messaging rules
+  rules += `\n- Use specific numbers and concrete benefits (not generic claims)
+- Position as the BETTER alternative, not just another option
+- Address competitor weaknesses without naming them directly
+- Focus on what customers get that they can't get elsewhere`;
+
+  return rules;
+}
+
+/**
+ * Get value propositions for specific business types
+ */
+function getValuePropositionsForBusiness(businessType: string, brandProfile: any): string {
+  const businessLower = businessType.toLowerCase();
+  const businessName = brandProfile?.businessName || 'Our Business';
+  const location = brandProfile?.location || 'your area';
+  
+  // Fintech/Financial Services
+  if (businessLower.includes('financial') || businessLower.includes('fintech') || 
+      businessLower.includes('banking') || businessLower.includes('payment')) {
+    return `- "Open account in minutes, not days"
+- "No credit checks - banking for everyone in ${location}"
+- "Save money with transparent, low fees"
+- "Bank-level security protecting every transaction"
+- "Mobile banking anywhere, anytime"
+- "Join thousands already banking smarter"`;
+  }
+  
+  // Technology/Software
+  if (businessLower.includes('technology') || businessLower.includes('software') || 
+      businessLower.includes('app') || businessLower.includes('digital')) {
+    return `- "Technology that actually works for you"
+- "Save time with automated solutions"
+- "Reduce costs while improving efficiency"
+- "24/7 support from real experts"
+- "Secure, reliable platform you can trust"
+- "Easy setup - running in minutes, not months"`;
+  }
+  
+  // Default value propositions
+  return `- "${businessName} delivers real results"
+- "Save time and money with our efficient solutions"
+- "Professional service with personal attention"
+- "Trusted by customers throughout ${location}"
+- "Quality results at competitive prices"
+- "Your success is our priority"`;
+}
+
+/**
+ * REMOVED: Fallback caption function replaced with forced regeneration
+ * This function was causing generic corporate language to override AI output
+ * Now we force Claude to regenerate with stricter coherence rules instead
+ */
 
 /**
  * Main Revo 2.0 generation function
@@ -1331,17 +2123,19 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
 
     return {
       imageUrl: imageResult.imageUrl,
-      model: 'Revo 2.0 (Gemini 2.5 Flash Image Preview)',
+      model: 'Revo 2.0 Claude Edition (Claude Sonnet 4.5 + Gemini Image)',
       qualityScore: 9.5,
       processingTime,
       enhancementsApplied: [
-        'Next-generation AI design',
-        'Creative concept generation',
-        'Enhanced prompt engineering',
+        'Claude Sonnet 4.5 content generation',
+        'Global localization (13+ countries)',
+        '15 enhanced content approaches',
+        'Advanced anti-repetition system',
+        'Image analysis integration',
+        'Cultural intelligence',
         'Brand consistency optimization',
         'Platform-specific formatting',
-        'Cultural relevance integration',
-        'Advanced visual storytelling'
+        'Spell check integration'
       ],
       caption: finalContentResult.caption,
       hashtags: finalContentResult.hashtags,
@@ -1483,4 +2277,131 @@ function generateUniqueCTA(theme: string): string {
   const themeCTAs = ctas[theme as keyof typeof ctas] || ctas['innovation-focused'];
   const randomIndex = Math.floor(Math.random() * themeCTAs.length);
   return themeCTAs[randomIndex];
+}
+
+/**
+ * Get location-specific language instructions for global localization
+ * Supports 13+ countries with authentic local language integration
+ */
+function getLocationSpecificLanguageInstructions(location: string): string {
+  const locationKey = location.toLowerCase();
+
+  if (locationKey.includes('kenya')) {
+    return `- SWAHILI ELEMENTS: "Karibu" (welcome), "Asante" (thank you), "Haraka" (fast), "Poa" (cool/good), "Mambo" (what's up)
+- BUSINESS CONTEXT: "Biashara" (business), "Huduma" (service), "Kazi" (work), "Pesa" (money), "Benki" (bank)
+- FINTECH TERMS: "M-Pesa" (mobile money), "Simu" (phone), "Mitandao" (networks), "Usalama" (security)
+- GREETINGS: "Jambo" (hello), "Habari" (how are you), "Sawa" (okay/fine), "Vipi" (how's it going)
+- EXPRESSIONS: "Hakuna matata" (no problem), "Pole pole" (slowly/carefully), "Twende" (let's go), "Fanya haraka" (do it quickly)
+- ENCOURAGEMENT: "Hongera" (congratulations), "Vizuri sana" (very good), "Umefanya vizuri" (you did well)
+- INTEGRATION EXAMPLES: 
+  * "Fast payments" → "Malipo ya haraka"
+  * "No worries" → "Hakuna wasiwasi" 
+  * "Let's start" → "Twende tuanze"
+  * "Very secure" → "Salama sana"`;
+  }
+
+  if (locationKey.includes('nigeria')) {
+    return `- PIDGIN ELEMENTS: "How far?" (how are you), "Wetin dey happen?" (what's happening), "No wahala" (no problem)
+- BUSINESS CONTEXT: "Business dey boom" (business is booming), "Make we go" (let's go), "Sharp sharp" (quickly)
+- GREETINGS: "Bawo" (Yoruba hello), "Ndewo" (Igbo hello), "Sannu" (Hausa hello)
+- EXPRESSIONS: "E go better" (it will be better), "God dey" (God is there), "Correct" (right/good)`;
+  }
+
+  if (locationKey.includes('ghana')) {
+    return `- TWI ELEMENTS: "Akwaaba" (welcome), "Medaase" (thank you), "Yie" (good), "Adwo" (peace)
+- BUSINESS CONTEXT: "Adwuma" (work), "Sika" (money), "Dwuma" (business)
+- GREETINGS: "Maakye" (good morning), "Maaha" (good afternoon)
+- EXPRESSIONS: "Ɛyɛ" (it's good), "Ampa" (truly), "Sɛ ɛyɛ a" (if it's good)`;
+  }
+
+  if (locationKey.includes('south africa')) {
+    return `- MIXED ELEMENTS: "Howzit" (how are you), "Sharp" (good), "Lekker" (nice), "Eish" (expression)
+- BUSINESS CONTEXT: "Bakkie" (pickup truck), "Robot" (traffic light), "Braai" (barbecue)
+- GREETINGS: "Sawubona" (Zulu hello), "Dumela" (Sotho hello)
+- EXPRESSIONS: "Ag man" (oh man), "Just now" (later), "Now now" (soon)`;
+  }
+
+  if (locationKey.includes('india')) {
+    return `- HINDI ELEMENTS: "Namaste" (hello), "Dhanyawad" (thank you), "Accha" (good), "Jaldi" (quickly)
+- BUSINESS CONTEXT: "Vyavasaya" (business), "Seva" (service), "Kaam" (work), "Paisa" (money)
+- GREETINGS: "Namaskar" (respectful hello), "Sat Sri Akal" (Punjabi hello)
+- EXPRESSIONS: "Bahut accha" (very good), "Chalo" (let's go), "Kya baat hai" (what's the matter)`;
+  }
+
+  if (locationKey.includes('philippines')) {
+    return `- FILIPINO ELEMENTS: "Kumusta" (how are you), "Salamat" (thank you), "Mabuti" (good), "Bilisan" (hurry up)
+- BUSINESS CONTEXT: "Negosyo" (business), "Serbisyo" (service), "Trabaho" (work), "Pera" (money)
+- GREETINGS: "Magandang umaga" (good morning), "Kamusta ka" (how are you)
+- EXPRESSIONS: "Walang problema" (no problem), "Tara na" (let's go), "Sulit" (difficult/valuable)`;
+  }
+
+  if (locationKey.includes('indonesia')) {
+    return `- BAHASA ELEMENTS: "Halo" (hello), "Terima kasih" (thank you), "Bagus" (good), "Cepat" (fast)
+- BUSINESS CONTEXT: "Bisnis" (business), "Layanan" (service), "Kerja" (work), "Uang" (money)
+- GREETINGS: "Selamat pagi" (good morning), "Apa kabar" (how are you)
+- EXPRESSIONS: "Tidak masalah" (no problem), "Ayo" (let's go), "Mantap" (great/solid)`;
+  }
+
+  if (locationKey.includes('thailand')) {
+    return `- THAI ELEMENTS: "Sawasdee" (hello), "Khob khun" (thank you), "Dee" (good), "Rew" (fast)
+- BUSINESS CONTEXT: "Thurakit" (business), "Borikan" (service), "Ngan" (work), "Ngern" (money)
+- GREETINGS: "Sawasdee krab/ka" (hello), "Sabai dee mai" (how are you)
+- EXPRESSIONS: "Mai pen rai" (no problem), "Pai kan" (let's go), "Jai yen" (stay calm)`;
+  }
+
+  if (locationKey.includes('vietnam')) {
+    return `- VIETNAMESE ELEMENTS: "Xin chào" (hello), "Cảm ơn" (thank you), "Tốt" (good), "Nhanh" (fast)
+- BUSINESS CONTEXT: "Kinh doanh" (business), "Dịch vụ" (service), "Công việc" (work), "Tiền" (money)
+- GREETINGS: "Chào bạn" (hello friend), "Bạn khỏe không" (how are you)
+- EXPRESSIONS: "Không sao" (no problem), "Đi thôi" (let's go), "Tuyệt vời" (excellent)`;
+  }
+
+  if (locationKey.includes('brazil')) {
+    return `- PORTUGUESE ELEMENTS: "Olá" (hello), "Obrigado/a" (thank you), "Bom" (good), "Rápido" (fast)
+- BUSINESS CONTEXT: "Negócio" (business), "Serviço" (service), "Trabalho" (work), "Dinheiro" (money)
+- GREETINGS: "Bom dia" (good morning), "Como vai" (how are you)
+- EXPRESSIONS: "Sem problema" (no problem), "Vamos lá" (let's go), "Perfeito" (perfect)`;
+  }
+
+  if (locationKey.includes('mexico') || locationKey.includes('spain')) {
+    return `- SPANISH ELEMENTS: "Hola" (hello), "Gracias" (thank you), "Bueno" (good), "Rápido" (fast)
+- BUSINESS CONTEXT: "Negocio" (business), "Servicio" (service), "Trabajo" (work), "Dinero" (money)
+- GREETINGS: "Buenos días" (good morning), "¿Cómo estás?" (how are you)
+- EXPRESSIONS: "Sin problema" (no problem), "Vamos" (let's go), "Excelente" (excellent)`;
+  }
+
+  if (locationKey.includes('france')) {
+    return `- FRENCH ELEMENTS: "Bonjour" (hello), "Merci" (thank you), "Bon" (good), "Rapide" (fast)
+- BUSINESS CONTEXT: "Affaires" (business), "Service" (service), "Travail" (work), "Argent" (money)
+- GREETINGS: "Salut" (hi), "Comment allez-vous" (how are you)
+- EXPRESSIONS: "Pas de problème" (no problem), "Allons-y" (let's go), "Parfait" (perfect)`;
+  }
+
+  if (locationKey.includes('germany')) {
+    return `- GERMAN ELEMENTS: "Hallo" (hello), "Danke" (thank you), "Gut" (good), "Schnell" (fast)
+- BUSINESS CONTEXT: "Geschäft" (business), "Service" (service), "Arbeit" (work), "Geld" (money)
+- GREETINGS: "Guten Tag" (good day), "Wie geht's" (how are you)
+- EXPRESSIONS: "Kein Problem" (no problem), "Los geht's" (let's go), "Perfekt" (perfect)`;
+  }
+
+  return `- Use appropriate local language elements for ${location}
+- Mix naturally with English for authentic feel
+- Focus on greetings, business terms, and common expressions
+- Keep it contextual and business-appropriate
+- Research local business language and cultural expressions
+- Maintain professional tone while adding cultural authenticity`;
+}
+
+/**
+ * Get enhanced content approaches for Claude-powered generation
+ * Expanded from 5 to 15 approaches for maximum variety
+ */
+function getEnhancedContentApproaches(): string[] {
+  return [
+    'Storytelling-Master', 'Cultural-Connector', 'Problem-Solver-Pro',
+    'Innovation-Showcase', 'Trust-Builder-Elite', 'Community-Champion',
+    'Speed-Emphasis', 'Security-Focus', 'Accessibility-First',
+    'Growth-Enabler', 'Cost-Savings-Expert', 'Convenience-King',
+    'Social-Proof-Power', 'Transformation-Story', 'Local-Hero'
+  ];
 }
