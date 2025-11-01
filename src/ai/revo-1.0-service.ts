@@ -2969,12 +2969,24 @@ ${realTimeContext.highRelevanceData.map((item: any) => {
 
     // 🎨 DIRECT AI GENERATION - Bypass template functions entirely
     
-    // Let AI be creative with principles, not rigid structures
-    const creativeFreedomPrompt = `${enhancedContentPrompt}\n\n🎨 CREATIVE FREEDOM APPROACH:\n\nYou are a creative storyteller, not a template-filler. Use the principles above to create authentic, engaging content.\n\nVARY YOUR APPROACH NATURALLY:\n- Sometimes start with dialogue\n- Sometimes start with emotion\n- Sometimes start with a question\n- Sometimes start with action\n- Sometimes start with a problem\n\nCREATE NATURAL VARIETY:\n- Different story structures each time\n- Different emotional appeals\n- Different character perspectives\n- Different time pressures\n- Different local contexts\n\nBe creative. Tell a compelling human story. Make it feel real and authentic to Kenya.\n\nGenerate content that people will stop scrolling to read.`;
+    // Generate completely unique content using RANDOMIZED prompt structures
+    const promptStructures = [
+      // Structure 1: Question-based approach
+      `${enhancedContentPrompt}\n\n🎯 QUESTION-DRIVEN CONTENT CREATION:\nYou're a curious marketer asking engaging questions. Create:\n- HOOK QUESTION: Start with "What if...?" or "Ready for...?" or "Tired of...?"\n- ANSWER BENEFIT: 10-15 words explaining the solution\n- STORY CAPTION: Tell a mini-story in 2-3 sentences\n- ACTION CTA: Specific action that solves their problem\n- HASHTAGS: ${input.platform === 'instagram' ? '5' : '3'} relevant tags`,
+      
+      // Structure 2: Problem-solution approach  
+      `${enhancedContentPrompt}\n\n🎯 PROBLEM-SOLUTION CONTENT CREATION:\nYou're a solution-focused expert. Create:\n- PROBLEM HEADLINE: Identify a specific pain point (5-8 words)\n- SOLUTION PROMISE: How you solve it (10-15 words)\n- PROOF CAPTION: Show evidence or results in 2-3 sentences\n- RESULT CTA: What outcome they'll get\n- HASHTAGS: ${input.platform === 'instagram' ? '5' : '3'} relevant tags`,
+      
+      // Structure 3: Benefit-focused approach
+      `${enhancedContentPrompt}\n\n🎯 BENEFIT-FOCUSED CONTENT CREATION:\nYou're an enthusiastic advocate. Create:\n- BENEFIT HEADLINE: Lead with the main advantage (5-8 words)\n- VALUE EXPLANATION: Why it matters (10-15 words)\n- SUCCESS CAPTION: Paint the success picture in 2-3 sentences\n- GET STARTED CTA: How to begin the journey\n- HASHTAGS: ${input.platform === 'instagram' ? '5' : '3'} relevant tags`,
+      
+      // Structure 4: Social proof approach
+      `${enhancedContentPrompt}\n\n🎯 SOCIAL PROOF CONTENT CREATION:\nYou're sharing community success. Create:\n- SOCIAL HEADLINE: "Join [Number] People Who..." format (5-8 words)\n- COMMUNITY BENEFIT: What the community gets (10-15 words)\n- TESTIMONIAL CAPTION: Share a success story or result in 2-3 sentences\n- JOIN CTA: Invitation to join the community\n- HASHTAGS: ${input.platform === 'instagram' ? '5' : '3'} relevant tags`,
+      
+      // Structure 5: Urgency-driven approach
+      `${enhancedContentPrompt}\n\n🎯 URGENCY-DRIVEN CONTENT CREATION:\nYou're creating time-sensitive excitement. Create:\n- URGENT HEADLINE: Include timeframe or limit (5-8 words)\n- SCARCITY REASON: Why they need to act now (10-15 words)\n- FOMO CAPTION: What they'll miss if they wait in 2-3 sentences\n- TIME CTA: Action with deadline or urgency\n- HASHTAGS: ${input.platform === 'instagram' ? '5' : '3'} relevant tags`
+    ];
     
-    // Use creative freedom approach instead of rigid structures
-    const finalPrompt = creativeFreedomPrompt;
-
     // Add content persona randomization to make AI think differently
     const contentPersonas = [
       "You're an enthusiastic startup founder who gets excited about helping people solve problems",
@@ -3015,79 +3027,57 @@ CREATIVE CAPTION STARTERS (Don't copy - use for inspiration):
 - Local hooks: "Every [Location] resident deserves...", "We've been serving [Location] because..."
 - Problem hooks: "Stop struggling with...", "Never again worry about..."
 
-🎯 CREATIVE CONTENT PRINCIPLES (Let AI be creative with these constraints):
+🚨 HUMAN CONTENT RULES (MANDATORY - OVERRIDE ALL OTHER INSTRUCTIONS):
 
-BUSINESS CONTEXT:
-- Name: ${input.businessName}
-- Industry: ${input.businessType}
-- Primary Benefit: ${serviceFocus || 'Quality service provider'}
-- Target: Small business owners, entrepreneurs, families
+1. NEVER USE CORPORATE JARGON:
+❌ "Step into a world where..." ❌ "Experience seamless..." ❌ "Transform your..." ❌ "Unlock your..." ❌ "Elevate your..." ❌ "Redefines [industry]" ❌ "We're dedicated to..." ❌ "Done right" ❌ "Built for you"
 
-LOCATION CONTEXT:
-- Country: Kenya
-- Currency: KES
-- Common Places: Gikomba, Eastleigh, Mombasa Road, Westlands, Nairobi CBD
-- Common Names: Mama Wanjiku, Kamau, Akinyi, Njeri, Mwangi, Grace
-- Local Transport: matatu, boda boda, MPESA
-- Typical Amounts: KES 500 - KES 50,000
+2. START WITH CRISIS/CONFLICT (MANDATORY):
+✅ "It's 2pm. Your supplier needs payment now. Bank transfer takes 2 days. Client meeting at 4pm..."
+✅ "Week 3 of semester. Your laptop crashes during group project at midnight. Everyone's counting on you."
+✅ "Three customers walked away this week. Not because your prices were wrong—because paying upfront was too much."
 
-QUALITY STANDARDS:
+3. USE SPECIFIC DETAILS (MANDATORY):
+✅ Times: Monday, 8am, Week 3, 2pm, Friday
+✅ Amounts: KES 15,000, KES 847, KES 3,200
+✅ Places: Gikomba, Mombasa Road, Eastleigh, Westlands, Nairobi CBD
+✅ Items: textbooks, school shoes, matatu ride, MPESA
 
-✅ ALWAYS INCLUDE:
-- Specific time or day (Monday 3pm, Friday afternoon, Week 3)
-- Exact amount in KES (KES 15,000, not "affordable")
-- Real location (Gikomba, not "the market")
-- Character with common Kenyan name
-- Emotional stakes that matter
-- Time pressure or tension
+4. TELL STORIES WITH KENYAN CHARACTERS:
+✅ "Mama Wanjiku runs three market stalls in Gikomba. Last month, she lost KES 15,000 to a payment scam..."
+✅ Use names: Mama Wanjiku, Kamau, Akinyi, Njeri
+✅ Local context: matatu, boda boda, MPESA, Gikomba market
 
-✅ WRITING STYLE:
-- Conversational, like texting a friend
-- Specific scenarios, not generic statements
-- Show emotion through action, don't state it
-- Create urgency naturally
-- Let the story reveal the benefit
+5. CONVERSATIONAL LANGUAGE:
+✅ Write how people actually talk
+✅ Use contractions (you're, it's, we've)
+✅ Short sentences for impact
+✅ Local slang when appropriate
 
-❌ NEVER USE (Corporate Jargon):
-- seamless, effortless, forward-thinking, redefines, elevate, transform, unlock, experience, discover, navigate
-- "step into a world", "tired of X", "done right", "we're dedicated to"
-- Feature lists or bullet points
-- Anything that screams "AD"
+6. SHOW EMOTION, DON'T STATE IT:
+✅ "You watched them leave. That hurt." 
+❌ Never say "stress-free" or "effortless"
 
-❌ NEVER REPEAT:
-- Same opening pattern as previous generations
-- Same character names back-to-back
-- Same locations in consecutive posts
-- Same sentence structures
+7. USE REAL VERBS ONLY:
+❌ Experience, Explore, Discover, Unlock, Transform, Elevate, Revolutionize, Navigate
+✅ Crashed, Walked away, Lost, Stuck, Waiting, Failed, Broke down, Buzzed, Confirmed
 
-EXAMPLE OF EXCELLENT CONTENT:
-"Mama Wanjiku runs three market stalls in Gikomba. Last month, she lost KES 15,000 to a payment scam. This month, Paya's secure payments mean every shilling goes where it should."
-
-EXAMPLE OF BAD CONTENT:
-"Experience seamless payments with Paya Finance. We're revolutionizing digital transactions for modern businesses."
-
-SELF-CHECK BEFORE RESPONDING:
-- Does this have a specific place name? (not "the city")
-- Does this have an exact KES amount? (not "affordable")
-- Does this have a character name?
-- Does this create emotional stakes?
-- Would I scroll past this or stop to read?
-- Does it feel like an ad or like a story?
-- If I remove ${input.businessName}, is it still interesting?
-
-If you answered NO to any above, regenerate.
-
-YOUR TASK:
-Create compelling social media content that tells a specific story, feels authentic to Kenya, makes people care about the character, and naturally mentions ${input.businessName}. Don't feel like an advertisement.
-
-Be creative. Don't follow a formula. Make it human.
+8. TEST: Could this be ANY product? If yes, REWRITE.
 
 Output format:
-HEADLINE: [Creative opening - vary your approach]
-SUBHEADLINE: [Continue the story naturally]
-CAPTION: [Complete the story with emotion and resolution]
-CTA: [Natural next step]
-HASHTAGS: [relevant tags];
+HEADLINE: [Start with crisis/conflict - specific time/place/amount]
+SUBHEADLINE: [Continue the story - show the problem and solution] 
+CAPTION: [Complete the story with character, emotion, resolution - 2-3 sentences max]
+CTA: [Natural next step from the story]
+HASHTAGS: [relevant hashtags]
+
+EXAMPLE FOR PAYMENTS:
+HEADLINE: It's Monday Morning. School Fees Due Friday.
+SUBHEADLINE: Your account says KES 847. The reminder says KES 15,000. Paya lets you pay over time.
+CAPTION: Mama Wanjiku's phone buzzes. "Payment confirmed." Her daughter stays in school. No stress, no drama, just done.
+CTA: Pay Smart Today
+
+Remember: HUMAN STORIES ONLY. NO CORPORATE SPEAK. KENYAN CONTEXT ALWAYS.`;
 
     let businessHeadline, businessSubheadline, businessCaption;
     
@@ -3104,49 +3094,49 @@ HASHTAGS: [relevant tags];
       const hashtagsMatch = directResponse.match(/HASHTAGS:\s*([^\n]+)/i);
       
       businessHeadline = {
-        headline: headlineMatch ? headlineMatch[1].trim() : contentGenerationInput.businessName + ' - Your ' + contentGenerationInput.businessType + ' Solution',
+        headline: headlineMatch ? headlineMatch[1].trim() : `${contentGenerationInput.businessName} - Your ${contentGenerationInput.businessType} Solution`,
         approach: 'direct-ai',
         emotionalImpact: 'engaging'
       };
       
       businessSubheadline = {
-        subheadline: subheadlineMatch ? subheadlineMatch[1].trim() : 'Professional ' + contentGenerationInput.businessType + ' services for your needs',
+        subheadline: subheadlineMatch ? subheadlineMatch[1].trim() : `Professional ${contentGenerationInput.businessType} services for your needs`,
         framework: 'direct-ai',
         benefit: 'value-focused'
       };
       
       businessCaption = {
-        caption: captionMatch ? captionMatch[1].trim() : 'Discover quality ' + contentGenerationInput.businessType + ' services from ' + contentGenerationInput.businessName + '. We provide exceptional value and professional results.',
+        caption: captionMatch ? captionMatch[1].trim() : `Discover quality ${contentGenerationInput.businessType} services from ${contentGenerationInput.businessName}. We provide exceptional value and professional results.`,
         callToAction: ctaMatch ? ctaMatch[1].trim() : 'Get Started Today',
         engagementHooks: ['professional service', 'quality results']
       };
       
       // Store hashtags for later use
-      var generatedHashtags = hashtagsMatch ? hashtagsMatch[1].trim() : '#' + contentGenerationInput.businessType.replace(/\s+/g, '') + ' #quality #professional';
+      var generatedHashtags = hashtagsMatch ? hashtagsMatch[1].trim() : `#${contentGenerationInput.businessType.replace(/\s+/g, '')} #quality #professional`;
       
     } catch (error) {
       console.error('Direct AI generation failed:', error);
       
       // Simple fallback without templates
       businessHeadline = {
-        headline: contentGenerationInput.businessName + ' - Your ' + contentGenerationInput.businessType + ' Solution',
+        headline: `${contentGenerationInput.businessName} - Your ${contentGenerationInput.businessType} Solution`,
         approach: 'fallback',
         emotionalImpact: 'professional'
       };
       
       businessSubheadline = {
-        subheadline: 'Quality ' + contentGenerationInput.businessType + ' services you can trust',
+        subheadline: `Quality ${contentGenerationInput.businessType} services you can trust`,
         framework: 'benefit-focused',
         benefit: 'trust'
       };
       
       businessCaption = {
-        caption: 'Experience the difference with ' + contentGenerationInput.businessName + '. We provide professional ' + contentGenerationInput.businessType + ' services with a focus on quality and customer satisfaction.',
+        caption: `Experience the difference with ${contentGenerationInput.businessName}. We provide professional ${contentGenerationInput.businessType} services with a focus on quality and customer satisfaction.`,
         callToAction: 'Contact Us Today',
         engagementHooks: ['quality service', 'customer satisfaction']
       };
       
-      var generatedHashtags = '#' + contentGenerationInput.businessType.replace(/\s+/g, '') + ' #quality #professional';
+      var generatedHashtags = `#${contentGenerationInput.businessType.replace(/\s+/g, '')} #quality #professional`;
     }
     
     // 🎯 DIRECT AI CONTENT GENERATION COMPLETE
@@ -3158,7 +3148,7 @@ HASHTAGS: [relevant tags];
       headline: businessHeadline.headline,
       subheadline: businessSubheadline.subheadline,
       callToAction: businessCaption.callToAction,
-      hashtags: generatedHashtags || '#' + input.businessType.replace(/\s+/g, '') + ' #quality #professional',
+      hashtags: generatedHashtags || `#${input.businessType.replace(/\s+/g, '')} #quality #professional`,
       catchyWords: businessHeadline.headline, // Use business-specific headline
       contentStrategy: contentPlan?.strategy || 'awareness',
       businessStrengths: contentPlan?.businessStrengths || ['Professional service'],
@@ -3193,14 +3183,14 @@ HASHTAGS: [relevant tags];
 
     // 🚨 VALIDATION: Ensure content mentions scheduled services
     if (featuredServices.length > 0) {
-      const contentText = (finalContent.headline + ' ' + finalContent.subheadline + ' ' + finalContent.content).toLowerCase();
+      const contentText = `${finalContent.headline} ${finalContent.subheadline} ${finalContent.content}`.toLowerCase();
       const serviceName = featuredServices[0].serviceName.toLowerCase();
       
       // Check if content mentions the scheduled service
       if (!contentText.includes(serviceName) && !contentText.includes('payment') && serviceName === 'payments') {
-        console.warn('⚠️ WARNING: Generated content doesn\'t mention scheduled service: ' + featuredServices[0].serviceName);
-        console.warn('Generated headline: ' + finalContent.headline);
-        console.warn('Expected service focus: ' + featuredServices[0].serviceName);
+        console.warn(`⚠️ WARNING: Generated content doesn't mention scheduled service: ${featuredServices[0].serviceName}`);
+        console.warn(`Generated headline: ${finalContent.headline}`);
+        console.warn(`Expected service focus: ${featuredServices[0].serviceName}`);
         
         // Force human, story-driven content if generic content was generated
         if (serviceName === 'payments' || serviceName.includes('payment')) {
@@ -3601,12 +3591,28 @@ ANTI-GENERIC REQUIREMENTS:
       'Use the provided brand logo (do NOT create new logo - integrate existing one naturally)' :
       'Create professional design without logo overlay';
 
-    // 🚫 NO TEXT ON IMAGE - Keep text in caption only
-    // Only use minimal brand name or logo, no story content on the visual
+    // Prepare structured content display with hierarchy
     const contentStructure = [];
+    if (input.headline) contentStructure.push(`PRIMARY (Largest, most prominent): "${input.headline}"`);
+    if (input.subheadline) contentStructure.push(`SECONDARY (Medium, supporting): "${input.subheadline}"`);
+    if (input.callToAction) contentStructure.push(`CTA (Bold, action-oriented, prominent and unmissable): "${input.callToAction}"`);
 
-    // NO CTA BUTTONS - Content should be in caption, not on image
-    const ctaInstructions = '';
+    // 🎯 CTA PROMINENCE INSTRUCTIONS
+    const ctaInstructions = input.callToAction ? `
+
+🎯 CRITICAL CTA DISPLAY REQUIREMENTS:
+- The CTA "${input.callToAction}" MUST be displayed prominently on the design
+- Make it BOLD, LARGE, and VISUALLY STRIKING
+- Use high contrast colors to make the CTA stand out
+- Position it prominently - top, center, or as a banner across the design
+- Make the CTA text the MAIN FOCAL POINT of the design
+- Use typography that commands attention - bold, modern, impactful
+- Add visual elements (borders, backgrounds, highlights) to emphasize the CTA
+- The CTA should be the FIRST thing people notice when they see the design
+- Make it look like a professional marketing campaign CTA
+- Ensure it's readable from mobile devices - minimum 32px equivalent font size
+- STYLE: Bold, prominent, unmissable - like premium brand campaign CTAs
+    ` : '';
 
     // Get advanced design features
     const businessDesignDNA = getBusinessDesignDNA(input.businessType);
@@ -3730,31 +3736,28 @@ ${locationTextForDesign}
 
 ${ctaInstructions}
 
-🚫 NO TEXT OVERLAY ON IMAGE:
-- Keep the visual clean and focused
-- Text content belongs in the caption, not on the image
-- Only include brand name/logo if absolutely necessary
-- Let the visual tell the story without text clutter
+TEXT CONTENT TO DISPLAY:
+${contentStructure.map(item => `- ${item}`).join('\n')}
 
-**CONSISTENT BRAND DESIGN REQUIREMENTS:**
-- Maintain consistent visual style across all designs
-- Use the same design approach: clean, professional, modern
-- Consistent color usage: ${colorScheme}
-- Single focal point - avoid multiple competing elements
-- Professional fintech aesthetic - trustworthy and reliable
-- Clean layouts with plenty of white space
-- Avoid cluttered or busy compositions
+**VISUAL APPEAL REQUIREMENTS:**
+- Create a design that DEMANDS ATTENTION and encourages engagement
+- Use modern design trends: gradients, shadows, contemporary typography, clean layouts
+- Focus on strong visual hierarchy with one clear focal point
+- Make it look like a premium brand campaign, not a generic business post
+- Ensure the design feels current and on-trend
 
 **DESIGN STYLE EXECUTION:**
 - Follow the specific style: ${designVariations.style}
 - Each style must look completely different and unique
 - ${designVariations.description}
 - Each style should have its own distinct visual language
-**SIMPLE TYPOGRAPHY:**
-- Use ONE consistent font family throughout
-- Clear hierarchy: large headline, medium subheadline
-- No competing text elements or multiple fonts
-- Clean, readable typography that doesn't overwhelm
+- **CRITICAL: Include ALL text content listed above in the design**
+
+**HUMAN-DESIGNED TYPOGRAPHY (NOT AI-LOOKING):**
+- HEADLINE: 32-36px, Bold, clean sans-serif (Inter/Roboto), natural placement, max 6 words
+- SUBHEADLINE: 18-22px, Medium weight, readable and natural, max 25 words
+- CTA BUTTON: 16-18px, Bold, looks like a real button humans would design, solid background, clear borders
+- BODY TEXT: 14-16px, Regular, natural line spacing, readable color (#374151)
 
 **CLEAN, NATURAL DESIGN ELEMENTS:**
 - AUTHENTIC shadows: subtle, natural-looking (0-2px blur, 5% opacity max)
