@@ -3158,7 +3158,7 @@ HASHTAGS: [relevant tags];
       headline: businessHeadline.headline,
       subheadline: businessSubheadline.subheadline,
       callToAction: businessCaption.callToAction,
-      hashtags: generatedHashtags || `#${input.businessType.replace(/\s+/g, '')} #quality #professional`,
+      hashtags: generatedHashtags || '#' + input.businessType.replace(/\s+/g, '') + ' #quality #professional',
       catchyWords: businessHeadline.headline, // Use business-specific headline
       contentStrategy: contentPlan?.strategy || 'awareness',
       businessStrengths: contentPlan?.businessStrengths || ['Professional service'],
