@@ -83,7 +83,7 @@ const getModelCost = (modelVersion: string): number => {
 };
 
 export default function CreditManagementPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, getAccessToken } = useAuth();
   const [userCredits, setUserCredits] = useState<UserCredits | null>(null);
   const [transactions, setTransactions] = useState<PaymentTransaction[]>([]);
   const [creditUsage, setCreditUsage] = useState<CreditUsage[]>([]);
@@ -113,12 +113,17 @@ export default function CreditManagementPage() {
       }
       setError(null);
       try {
-        const headers = {
+        const headers: Record<string,string> = {
           'Content-Type': 'application/json',
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
           'Expires': '0',
         };
+        // Attach bearer token if available to allow server to identify the user reliably
+        const token = await getAccessToken().catch(() => null as any);
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
         const creditsResponse = await fetch(`/api/user/credits?t=${Date.now()}`, {
           method: 'GET',
           headers,
@@ -433,31 +438,80 @@ export default function CreditManagementPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {userCredits?.last_payment_at ? (
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-sm font-medium">Last Purchase</p>
-                      <p className="text-sm text-muted-foreground">
-                        {formatDate(userCredits.last_payment_at)}
-                      </p>
+                {(() => {
+                  const rows: { date: string; type: 'Purchase' | 'Usage'; details: string; credits: number; amount?: number; status?: string }[] = [];
+                  // Map transactions (purchases)
+                  transactions?.forEach(t => {
+                    rows.push({
+                      date: t.created_at,
+                      type: 'Purchase',
+                      details: getPlanName(t.plan_id),
+                      credits: t.credits_added,
+                      amount: t.amount,
+                      status: t.status,
+                    });
+                  });
+                  // Map credit usage
+                  creditUsage?.forEach(u => {
+                    rows.push({
+                      date: u.date,
+                      type: 'Usage',
+                      details: `${getModelDisplayName(u.model_version)} – ${u.feature}`,
+                      credits: -Math.abs(u.credits_used),
+                    });
+                  });
+                  // Sort desc by date and take latest 10
+                  rows.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                  const latest = rows.slice(0, 10);
+
+                  if (latest.length === 0) {
+                    return (
+                      <div className="text-center py-4">
+                        <p className="text-sm text-muted-foreground">No recent activity yet</p>
+                        <Link href="/pricing">
+                          <Button size="sm" className="mt-2">
+                            Get Started
+                          </Button>
+                        </Link>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="overflow-x-auto">
+                      <div className="max-h-96 overflow-y-auto">
+                      <table className="min-w-[900px] w-full text-sm">
+                        <thead>
+                          <tr className="text-left text-muted-foreground border-b">
+                            <th className="py-2 pr-4">Date</th>
+                            <th className="py-2 pr-4">Type</th>
+                            <th className="py-2 pr-4">Details</th>
+                            <th className="py-2 pr-4">Credits</th>
+                            <th className="py-2 pr-4">Amount</th>
+                            <th className="py-2 pr-0">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {latest.map((r, i) => (
+                            <tr key={i} className="border-b last:border-0">
+                              <td className="py-2 pr-4 whitespace-nowrap">{formatDate(r.date)}</td>
+                              <td className="py-2 pr-4">
+                                <Badge variant={r.type === 'Purchase' ? 'default' : 'secondary'} className={r.type === 'Purchase' ? 'bg-green-600' : ''}>
+                                  {r.type}
+                                </Badge>
+                              </td>
+                              <td className="py-2 pr-4">{r.details}</td>
+                              <td className={`py-2 pr-4 ${r.credits >= 0 ? 'text-green-600' : 'text-red-600'}`}>{r.credits > 0 ? `+${r.credits}` : r.credits}</td>
+                              <td className="py-2 pr-4">{typeof r.amount === 'number' ? `$${r.amount}` : '—'}</td>
+                              <td className="py-2 pr-0">{r.status ? <Badge variant={r.status === 'completed' ? 'default' : 'secondary'} className={r.status === 'completed' ? 'bg-green-600' : ''}>{r.status}</Badge> : '—'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium">Account Status</p>
-                      <Badge variant="secondary" className="text-green-600">
-                        Active
-                      </Badge>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-4">
-                    <p className="text-sm text-muted-foreground">No purchase history yet</p>
-                    <Link href="/pricing">
-                      <Button size="sm" className="mt-2">
-                        Get Started
-                      </Button>
-                    </Link>
-                  </div>
-                )}
+                  );
+                })()}
               </CardContent>
             </Card>
           </div>

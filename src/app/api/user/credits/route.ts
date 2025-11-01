@@ -7,17 +7,28 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 export async function GET(request: NextRequest) {
   try {
-    // Create server-side Supabase client with cookie handling
-    const supabase = await createClient();
+    // Authenticate user: prefer Authorization header (Bearer JWT), fallback to cookie-based (legacy)
+    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
+    const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
 
-    // Get authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    let userId: string | null = null;
+
+    if (bearerToken) {
+      const adminForAuth = createAdminClient(supabaseUrl, supabaseServiceKey);
+      const { data: userData, error: tokenErr } = await adminForAuth.auth.getUser(bearerToken);
+      if (tokenErr || !userData?.user) {
+        return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+      }
+      userId = userData.user.id;
+    } else {
+      // Legacy fallback: attempt cookie-based client, but this may not have user context with current server client
+      const supabase = await createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+      }
+      userId = user.id;
     }
-
-    const userId = user.id;
 
     // Create service role client for database operations
     const supabaseAdmin = createAdminClient(supabaseUrl, supabaseServiceKey);
@@ -26,7 +37,7 @@ export async function GET(request: NextRequest) {
     const { data: userCredits, error: creditsError } = await supabaseAdmin
       .from('user_credits')
       .select('*')
-      .eq('user_id', userId)
+      .eq('user_id', userId!)
       .single();
 
     if (creditsError && creditsError.code !== 'PGRST116') {

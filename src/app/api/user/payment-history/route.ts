@@ -7,14 +7,25 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 export async function GET(request: NextRequest) {
   try {
-    // Create server-side Supabase client with cookie handling
-    const supabase = await createClient();
+    // Prefer Authorization bearer JWT; fallback to cookie-based auth
+    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
+    const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+    let userId: string | null = null;
 
-    // Get authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    if (bearerToken) {
+      const adminForAuth = createAdminClient(supabaseUrl, supabaseServiceKey);
+      const { data: userData, error: tokenErr } = await adminForAuth.auth.getUser(bearerToken);
+      if (tokenErr || !userData?.user) {
+        return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+      }
+      userId = userData.user.id;
+    } else {
+      const supabase = await createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+      }
+      userId = user.id;
     }
 
     // Create service role client for database operations
@@ -24,7 +35,7 @@ export async function GET(request: NextRequest) {
     const { data: transactions, error } = await supabaseAdmin
       .from('payment_transactions')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', userId!)
       .order('created_at', { ascending: false })
       .limit(50);
 

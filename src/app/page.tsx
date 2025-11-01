@@ -336,15 +336,16 @@ export default function HomePage() {
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
 
-              <Button
-                onClick={handleWatchDemo}
-                variant="outline"
-                size="lg"
-                className="text-lg px-8 py-4 h-auto border-gray-300 hover:bg-gray-50"
-              >
-                <Play className="mr-2 w-5 h-5" />
-                Watch 30s Demo
-              </Button>
+              <Link href={AppRoutesPaths.features}>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="text-lg px-8 py-4 h-auto border-gray-300 hover:bg-gray-50 text-black hover:text-black"
+                >
+                  <span className="text-black">Explore Features</span>
+                  <ArrowRight className="ml-2 w-5 h-5 text-black" />
+                </Button>
+              </Link>
             </div>
 
             {/* Social Proof */}

@@ -146,10 +146,30 @@ export function ContentCalendar({
       // Deduct credits before generation
       const creditResult = await useCreditsForModel(selectedRevoModel, 'content_generation', 'post');
       if (!creditResult.success) {
+        const { getUserFriendlyErrorMessage, extractCreditInfo } = await import('@/lib/error-messages');
+        const errorMessage = creditResult.error || "Failed to deduct credits";
+        
+        // Extract credit information if available
+        const creditInfo = extractCreditInfo(errorMessage);
+        
+        // Get user-friendly error message
+        const friendlyMessage = getUserFriendlyErrorMessage(errorMessage, {
+          feature: 'quick_content',
+          modelVersion: selectedRevoModel,
+          creditsRequired: creditInfo?.creditsRequired,
+          creditsAvailable: creditInfo?.creditsAvailable,
+        });
+        
+        // Split title and description for toast
+        const parts = friendlyMessage.split('\n\n');
+        const title = parts[0] || 'Credit Deduction Failed';
+        const description = parts.slice(1).join('\n\n') || friendlyMessage;
+        
         toast({
-          title: "Credit Deduction Failed",
-          description: creditResult.error || "Failed to deduct credits",
           variant: "destructive",
+          title: title.replace(/\n/g, ' '), // Remove line breaks from title
+          description: description,
+          duration: 8000, // Longer duration for credit errors
         });
         return;
       }
@@ -399,10 +419,30 @@ export function ContentCalendar({
         description
       });
     } catch (error) {
+      const { getUserFriendlyErrorMessage, extractCreditInfo } = await import('@/lib/error-messages');
+      const errorMessage = (error as Error).message;
+      
+      // Extract credit information if available
+      const creditInfo = extractCreditInfo(errorMessage);
+      
+      // Get user-friendly error message
+      const friendlyMessage = getUserFriendlyErrorMessage(errorMessage, {
+        feature: 'quick_content',
+        modelVersion: selectedRevoModel,
+        creditsRequired: creditInfo?.creditsRequired,
+        creditsAvailable: creditInfo?.creditsAvailable,
+      });
+      
+      // Split title and description for toast
+      const parts = friendlyMessage.split('\n\n');
+      const title = parts[0] || 'Generation Failed';
+      const description = parts.slice(1).join('\n\n') || friendlyMessage;
+      
       toast({
         variant: "destructive",
-        title: "Generation Failed",
-        description: (error as Error).message,
+        title: title.replace(/\n/g, ' '), // Remove line breaks from title
+        description: description,
+        duration: creditInfo ? 8000 : 5000, // Longer duration for credit errors
       });
     } finally {
       setIsGenerating(null);

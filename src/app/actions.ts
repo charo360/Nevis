@@ -12,7 +12,9 @@ import { generateEnhancedDesign } from "@/ai/gemini-2.5-design";
 import { generateRevo2ContentAction, generateRevo2CreativeAssetAction } from "@/app/actions/revo-2-actions";
 import { brandProfileSupabaseService } from '@/lib/supabase/services/brand-profile-service';
 import { supabaseService } from "@/lib/services/supabase-service";
+import { createClient } from '@/lib/supabase-server';
 import type { ScheduledService } from "@/services/calendar-service";
+import { MODEL_COSTS } from '@/lib/credit-integration';
 
 // Helper function to convert logo URL to base64 data URL for AI models
 async function convertLogoToDataUrl(logoUrl?: string): Promise<string | undefined> {
@@ -400,19 +402,93 @@ export async function generateCreativeAssetAction(
     primaryColor?: string;
     accentColor?: string;
     backgroundColor?: string;
-  }
+  },
+  accessToken?: string // Optional: pass access token from client as fallback
 ): Promise<CreativeAsset> {
   try {
-
     // Enforce credit deduction for creative studio generations
-    const supabaseServer = await createClient();
-    const { data: { user } } = await supabaseServer.auth.getUser();
-    if (!user?.id) {
-      throw new Error('Unauthorized');
+    let userId: string | null = null;
+    
+    // Try to get user from cookies (preferred method)
+    try {
+      const { cookies } = await import('next/headers');
+      const { createServerClient } = await import('@supabase/ssr');
+      
+      const cookieStore = await cookies();
+      
+      // Create Supabase client with SSR support for server actions
+      const supabaseServer = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            getAll() {
+              return cookieStore.getAll();
+            },
+            setAll() {
+              // Server actions can't modify cookies, so we do nothing here
+            },
+          },
+        }
+      );
+      
+      const { data: { user }, error: authError } = await supabaseServer.auth.getUser();
+      
+      if (!authError && user?.id) {
+        userId = user.id;
+      } else {
+        console.warn('⚠️ [Creative Studio] Cookie auth failed, trying access token fallback');
+      }
+    } catch (cookieError) {
+      console.warn('⚠️ [Creative Studio] Cookie access error:', cookieError);
     }
+    
+    // Fallback: Use access token if provided and cookie auth failed
+    if (!userId && accessToken) {
+      try {
+        const { createClient: createAdminClient } = await import('@supabase/supabase-js');
+        const supabaseAdmin = createAdminClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!
+        );
+        
+        const { data: { user }, error: tokenError } = await supabaseAdmin.auth.getUser(accessToken);
+        
+        if (!tokenError && user?.id) {
+          userId = user.id;
+          console.log('✅ [Creative Studio] Authenticated via access token');
+        }
+      } catch (tokenError) {
+        console.warn('⚠️ [Creative Studio] Token auth failed:', tokenError);
+      }
+    }
+    
+    if (!userId) {
+      console.error('❌ [Creative Studio] All authentication methods failed');
+      throw new Error('Unauthorized - Please log in to use Creative Studio');
+    }
+    
+    const user = { id: userId };
 
     const { withCreditTracking } = await import('@/lib/credit-integration');
-    const modelVersion = (preferredModel && preferredModel.includes('2.5')) ? 'revo-2.0' : 'revo-1.5';
+    
+    // Map preferredModel to correct ModelVersion based on the selected model
+    // Matches the same credit costs as Quick Content: revo-1.0 (2 credits), revo-1.5 (3 credits), revo-2.0 (4 credits)
+    let modelVersion: 'revo-1.0' | 'revo-1.5' | 'revo-2.0' = 'revo-1.5'; // default to 1.5
+    
+    if (preferredModel) {
+      // Check for explicit model identifiers first (most specific)
+      if (preferredModel.includes('revo-2.0')) {
+        modelVersion = 'revo-2.0'; // 4 credits
+      } else if (preferredModel.includes('revo-1.0')) {
+        modelVersion = 'revo-1.0'; // 2 credits
+      } else if (preferredModel.includes('revo-1.5')) {
+        modelVersion = 'revo-1.5'; // 3 credits
+      } else if (preferredModel.includes('2.5') || preferredModel.includes('gemini-2.5')) {
+        // Default to revo-2.0 for Gemini 2.5 models (same as Quick Content logic)
+        modelVersion = 'revo-2.0'; // 4 credits
+      }
+    }
 
     const wrapped = await withCreditTracking(
       {
@@ -439,18 +515,35 @@ export async function generateCreativeAssetAction(
     );
 
     if (!wrapped.success) {
-      throw new Error(wrapped.error || wrapped.creditInfo?.message || 'Credit deduction failed');
+      // Extract credit information from error message if available
+      const errorMessage = wrapped.error || wrapped.creditInfo?.message || 'Credit deduction failed';
+      
+      // Check if it's a credit error and format it nicely
+      if (wrapped.creditInfo?.remainingCredits !== undefined && wrapped.creditInfo?.costDeducted === 0) {
+        const creditsRequired = MODEL_COSTS[modelVersion] || 0;
+        const creditsAvailable = wrapped.creditInfo.remainingCredits;
+        const needed = creditsRequired - creditsAvailable;
+        
+        throw new Error(
+          `Insufficient credits. Need ${creditsRequired} credits, but only have ${creditsAvailable} credits.`
+        );
+      }
+      
+      throw new Error(errorMessage);
     }
 
     const result = wrapped.result!;
 
+    let finalImageUrl = result.imageUrl;
+    let imagePath: string | undefined;
+    let imageBuffer: Buffer | undefined;
+
     // Upload image to Supabase storage if it's a data URL
     if (result.imageUrl && result.imageUrl.startsWith('data:image/')) {
       try {
-
         // Convert data URL to buffer
         const base64Data = result.imageUrl.split(',')[1];
-        const imageBuffer = Buffer.from(base64Data, 'base64');
+        imageBuffer = Buffer.from(base64Data, 'base64');
 
         // Generate unique filename
         const timestamp = Date.now();
@@ -467,13 +560,58 @@ export async function generateCreativeAssetAction(
 
         if (uploadResult) {
           // Replace data URL with Supabase URL
-          result.imageUrl = uploadResult.url;
-        } else {
+          finalImageUrl = uploadResult.url;
+          imagePath = uploadResult.path;
         }
       } catch (uploadError) {
+        console.warn('⚠️ [Creative Studio] Image upload failed:', uploadError);
         // Keep the original data URL if upload fails
       }
     }
+
+    // Save to database (similar to Quick Content)
+    try {
+      // For Creative Studio, we save to generated_posts table
+      // Only save if we have a brand profile (brand_profile_id is required by schema)
+      if (brandProfile?.id && finalImageUrl) {
+        const savedPost = await supabaseService.saveGeneratedPost(
+          user.id,
+          brandProfile.id,
+          {
+            content: `Creative Studio: ${prompt}`, // Use prompt as content
+            imageText: prompt, // Store the prompt as image text
+            platform: 'creative_studio', // Mark as creative studio
+            aspectRatio: aspectRatio || undefined,
+            generationModel: preferredModel || modelVersion,
+            generationPrompt: prompt,
+            generationSettings: {
+              outputType,
+              useBrandProfile,
+              hasBrand: true,
+              referenceAssetUrl,
+              designColors,
+              modelVersion
+            }
+          },
+          imageBuffer // Pass the buffer if we have it
+        );
+
+        if (savedPost) {
+          console.log('✅ [Creative Studio] Saved to database:', savedPost.id);
+          // Update result with database ID if needed
+          result.id = savedPost.id;
+        }
+      } else if (finalImageUrl && !brandProfile?.id) {
+        // Log warning if we have an image but no brand profile to save it
+        console.warn('⚠️ [Creative Studio] Generated image but no brand profile - not saving to database');
+      }
+    } catch (dbError) {
+      // Log but don't fail - image was already generated and uploaded
+      console.warn('⚠️ [Creative Studio] Failed to save to database:', dbError);
+    }
+
+    // Update result with final image URL
+    result.imageUrl = finalImageUrl;
 
     return result;
   } catch (error) {
