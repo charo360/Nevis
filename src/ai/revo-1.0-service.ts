@@ -3193,14 +3193,14 @@ HASHTAGS: [relevant tags];
 
     // 🚨 VALIDATION: Ensure content mentions scheduled services
     if (featuredServices.length > 0) {
-      const contentText = `${finalContent.headline} ${finalContent.subheadline} ${finalContent.content}`.toLowerCase();
+      const contentText = (finalContent.headline + ' ' + finalContent.subheadline + ' ' + finalContent.content).toLowerCase();
       const serviceName = featuredServices[0].serviceName.toLowerCase();
       
       // Check if content mentions the scheduled service
       if (!contentText.includes(serviceName) && !contentText.includes('payment') && serviceName === 'payments') {
-        console.warn(`⚠️ WARNING: Generated content doesn't mention scheduled service: ${featuredServices[0].serviceName}`);
-        console.warn(`Generated headline: ${finalContent.headline}`);
-        console.warn(`Expected service focus: ${featuredServices[0].serviceName}`);
+        console.warn('⚠️ WARNING: Generated content doesn\'t mention scheduled service: ' + featuredServices[0].serviceName);
+        console.warn('Generated headline: ' + finalContent.headline);
+        console.warn('Expected service focus: ' + featuredServices[0].serviceName);
         
         // Force human, story-driven content if generic content was generated
         if (serviceName === 'payments' || serviceName.includes('payment')) {
