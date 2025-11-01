@@ -3104,49 +3104,49 @@ HASHTAGS: [relevant tags];
       const hashtagsMatch = directResponse.match(/HASHTAGS:\s*([^\n]+)/i);
       
       businessHeadline = {
-        headline: headlineMatch ? headlineMatch[1].trim() : `${contentGenerationInput.businessName} - Your ${contentGenerationInput.businessType} Solution`,
+        headline: headlineMatch ? headlineMatch[1].trim() : contentGenerationInput.businessName + ' - Your ' + contentGenerationInput.businessType + ' Solution',
         approach: 'direct-ai',
         emotionalImpact: 'engaging'
       };
       
       businessSubheadline = {
-        subheadline: subheadlineMatch ? subheadlineMatch[1].trim() : `Professional ${contentGenerationInput.businessType} services for your needs`,
+        subheadline: subheadlineMatch ? subheadlineMatch[1].trim() : 'Professional ' + contentGenerationInput.businessType + ' services for your needs',
         framework: 'direct-ai',
         benefit: 'value-focused'
       };
       
       businessCaption = {
-        caption: captionMatch ? captionMatch[1].trim() : `Discover quality ${contentGenerationInput.businessType} services from ${contentGenerationInput.businessName}. We provide exceptional value and professional results.`,
+        caption: captionMatch ? captionMatch[1].trim() : 'Discover quality ' + contentGenerationInput.businessType + ' services from ' + contentGenerationInput.businessName + '. We provide exceptional value and professional results.',
         callToAction: ctaMatch ? ctaMatch[1].trim() : 'Get Started Today',
         engagementHooks: ['professional service', 'quality results']
       };
       
       // Store hashtags for later use
-      var generatedHashtags = hashtagsMatch ? hashtagsMatch[1].trim() : `#${contentGenerationInput.businessType.replace(/\s+/g, '')} #quality #professional`;
+      var generatedHashtags = hashtagsMatch ? hashtagsMatch[1].trim() : '#' + contentGenerationInput.businessType.replace(/\s+/g, '') + ' #quality #professional';
       
     } catch (error) {
       console.error('Direct AI generation failed:', error);
       
       // Simple fallback without templates
       businessHeadline = {
-        headline: `${contentGenerationInput.businessName} - Your ${contentGenerationInput.businessType} Solution`,
+        headline: contentGenerationInput.businessName + ' - Your ' + contentGenerationInput.businessType + ' Solution',
         approach: 'fallback',
         emotionalImpact: 'professional'
       };
       
       businessSubheadline = {
-        subheadline: `Quality ${contentGenerationInput.businessType} services you can trust`,
+        subheadline: 'Quality ' + contentGenerationInput.businessType + ' services you can trust',
         framework: 'benefit-focused',
         benefit: 'trust'
       };
       
       businessCaption = {
-        caption: `Experience the difference with ${contentGenerationInput.businessName}. We provide professional ${contentGenerationInput.businessType} services with a focus on quality and customer satisfaction.`,
+        caption: 'Experience the difference with ' + contentGenerationInput.businessName + '. We provide professional ' + contentGenerationInput.businessType + ' services with a focus on quality and customer satisfaction.',
         callToAction: 'Contact Us Today',
         engagementHooks: ['quality service', 'customer satisfaction']
       };
       
-      var generatedHashtags = `#${contentGenerationInput.businessType.replace(/\s+/g, '')} #quality #professional`;
+      var generatedHashtags = '#' + contentGenerationInput.businessType.replace(/\s+/g, '') + ' #quality #professional';
     }
     
     // 🎯 DIRECT AI CONTENT GENERATION COMPLETE
