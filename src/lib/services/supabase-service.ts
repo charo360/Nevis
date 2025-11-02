@@ -3,7 +3,7 @@
  * Replaces MongoDB for data storage and fixes image storage issues
  */
 
-import { createClient } from '@/lib/supabase-client';
+import { createClient as createServerSupabase } from '@/lib/supabase-server';
 import type { BrandProfile } from '@/lib/types';
 
 export interface SupabaseBrandProfile {
@@ -61,22 +61,22 @@ export class SupabaseService {
     if (this.initialized) return;
 
     try {
-      const supabase = createClient();
+      const supabase = await createServerSupabase();
       
       // Check if we have a real Supabase client (not mock)
-      if (!supabase.storage || typeof supabase.storage.listBuckets !== 'function') {
+      if (!supabase.storage || typeof (supabase.storage as any).listBuckets !== 'function') {
         console.warn('Supabase storage not available - using mock client');
         this.initialized = true;
         return;
       }
       
       // Check if bucket exists
-      const { data: buckets } = await supabase.storage.listBuckets();
+      const { data: buckets } = await (supabase.storage as any).listBuckets();
       const bucketExists = buckets?.some(bucket => bucket.name === this.bucketName);
 
       if (!bucketExists) {
         // Create bucket
-        const { error } = await supabase.storage.createBucket(this.bucketName, {
+        const { error } = await (supabase.storage as any).createBucket(this.bucketName, {
           public: true,
           allowedMimeTypes: ['image/*', 'application/pdf'],
           fileSizeLimit: 10485760 // 10MB
@@ -102,9 +102,9 @@ export class SupabaseService {
     contentType?: string
   ): Promise<{ url: string; path: string } | null> {
     try {
-      const supabase = createClient();
+      const supabase = await createServerSupabase();
       
-      const { data, error } = await supabase.storage
+      const { data, error } = await (supabase.storage as any)
         .from(this.bucketName)
         .upload(path, file, {
           contentType: contentType || 'image/png',
@@ -118,7 +118,7 @@ export class SupabaseService {
       }
 
       // Get public URL
-      const { data: urlData } = supabase.storage
+      const { data: urlData } = (supabase.storage as any)
         .from(this.bucketName)
         .getPublicUrl(data.path);
 
@@ -140,7 +140,7 @@ export class SupabaseService {
     brandProfile: Partial<BrandProfile>,
     logoFile?: File | Buffer
   ): Promise<SupabaseBrandProfile | null> {
-    if (!supabase) return null;
+    // Client will be created per-operation
 
     try {
       let logoUrl = brandProfile.logoUrl;
@@ -167,18 +167,19 @@ export class SupabaseService {
         website_url: brandProfile.websiteUrl,
         description: brandProfile.description,
         target_audience: brandProfile.targetAudience,
-        services: brandProfile.services,
+        services: (brandProfile as any).services ?? brandProfile.services,
         logo_url: logoUrl,
         logo_data: logoPath ? { path: logoPath, uploaded_at: new Date().toISOString() } : null,
-        brand_colors: brandProfile.brandColors,
-        contact_info: brandProfile.contactInfo,
-        social_handles: brandProfile.socialHandles,
-        website_analysis: brandProfile.websiteAnalysis,
-        brand_voice: brandProfile.brandVoice,
+        brand_colors: (brandProfile as any).brandColors,
+        contact_info: (brandProfile as any).contactInfo,
+        social_handles: (brandProfile as any).socialHandles,
+        website_analysis: (brandProfile as any).websiteAnalysis,
+        brand_voice: (brandProfile as any).brandVoice,
         is_active: true
       };
 
       // Insert or update brand profile
+      const supabase = await createServerSupabase();
       const { data, error } = await supabase
         .from('brand_profiles')
         .upsert(supabaseData)
@@ -201,9 +202,8 @@ export class SupabaseService {
    * Get brand profiles for user
    */
   async getBrandProfiles(userId: string): Promise<SupabaseBrandProfile[]> {
-    if (!supabase) return [];
-
     try {
+      const supabase = await createServerSupabase();
       const { data, error } = await supabase
         .from('brand_profiles')
         .select('*')
@@ -241,8 +241,6 @@ export class SupabaseService {
     },
     imageFile?: File | Buffer
   ): Promise<SupabaseGeneratedPost | null> {
-    if (!supabase) return null;
-
     try {
       let imageUrl = '';
       let imagePath = '';
@@ -266,6 +264,7 @@ export class SupabaseService {
       }
 
       // Save post data
+      const supabase = await createServerSupabase();
       const { data, error } = await supabase
         .from('generated_posts')
         .insert({
@@ -307,9 +306,8 @@ export class SupabaseService {
     brandProfileId?: string,
     limit: number = 50
   ): Promise<SupabaseGeneratedPost[]> {
-    if (!supabase) return [];
-
     try {
+      const supabase = await createServerSupabase();
       let query = supabase
         .from('generated_posts')
         .select('*')
@@ -340,9 +338,9 @@ export class SupabaseService {
    */
   async deleteImage(path: string): Promise<boolean> {
     try {
-      const supabase = createClient();
+      const supabase = await createServerSupabase();
       
-      const { error } = await supabase.storage
+      const { error } = await (supabase.storage as any)
         .from(this.bucketName)
         .remove([path]);
 

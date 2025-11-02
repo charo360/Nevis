@@ -74,7 +74,7 @@ export async function generateRevo2ContentAction(
     // Generate with Revo 2.0
     const result = await generateWithRevo20(revo2Options);
 
-    // Convert to GeneratedPost format
+    // Convert to GeneratedPost format (UNIFIED across all Revo versions)
     const generatedPost: GeneratedPost = {
       id: `revo2-${Date.now()}`,
       date: new Date().toISOString(),
@@ -82,7 +82,10 @@ export async function generateRevo2ContentAction(
       postType: 'post',
       imageUrl: result.imageUrl,
       content: result.caption,
-      hashtags: result.hashtags,
+      hashtags: Array.isArray(result.hashtags) ? result.hashtags.join(' ') : result.hashtags,
+      catchyWords: result.headline,
+      subheadline: result.subheadline,
+      callToAction: result.cta,
       status: 'generated',
       variants: [
         {

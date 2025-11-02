@@ -7,9 +7,48 @@ import type { BrandProfile, Platform } from '@/lib/types';
 import { ContentQualityEnhancer } from '@/utils/content-quality-enhancer';
 import { getVertexAIClient } from '@/lib/services/vertex-ai-client';
 import { getClaudeClient } from '@/lib/services/claude-client';
+import {
+  TextGenerationHandler,
+  TextGenerationParams,
+  normalizeServiceList,
+  normalizeStringList,
+  getBrandKey
+} from './revo/shared-pipeline';
+
+type VertexGenerationOptions = {
+  temperature?: number;
+  maxOutputTokens?: number;
+  logoImage?: string;
+};
+
+export const defaultClaudeGenerator: TextGenerationHandler = {
+  label: 'Claude Sonnet 4.5',
+  async generate(prompt, params) {
+    const result = await getClaudeClient().generateText(
+      prompt,
+      'claude-sonnet-4-5-20250929',
+      {
+        temperature: params.temperature,
+        maxTokens: params.maxTokens
+      }
+    );
+
+    return {
+      text: result.text,
+      model: result.model,
+      tokensUsed: result.tokensUsed?.total,
+      processingTime: result.processingTime
+    };
+  }
+};
 
 // Direct Vertex AI function for all AI generation
-async function generateContentDirect(promptOrParts: string | any[], modelName: string, isImageGeneration: boolean): Promise<any> {
+export async function generateContentDirect(
+  promptOrParts: string | any[],
+  modelName: string,
+  isImageGeneration: boolean,
+  options: VertexGenerationOptions = {}
+): Promise<any> {
 
   // Check if Vertex AI is enabled
   if (!process.env.VERTEX_AI_ENABLED || process.env.VERTEX_AI_ENABLED !== 'true') {
@@ -38,9 +77,9 @@ async function generateContentDirect(promptOrParts: string | any[], modelName: s
     if (isImageGeneration) {
       // Use Vertex AI for image generation
       const result = await getVertexAIClient().generateImage(prompt, modelName, {
-        temperature: 0.7,
-        maxOutputTokens: 8192,
-        logoImage
+        temperature: options.temperature ?? 0.7,
+        maxOutputTokens: options.maxOutputTokens ?? 8192,
+        logoImage: options.logoImage ?? logoImage
       });
 
       // Return in expected format
@@ -62,8 +101,8 @@ async function generateContentDirect(promptOrParts: string | any[], modelName: s
     } else {
       // Use Vertex AI for text generation
       const result = await getVertexAIClient().generateText(prompt, modelName, {
-        temperature: 0.7,
-        maxOutputTokens: 16384  // Increased for content generation
+        temperature: options.temperature ?? 0.7,
+        maxOutputTokens: options.maxOutputTokens ?? 16384  // Increased for content generation
       });
 
       // Return in expected format for text generation
@@ -86,12 +125,17 @@ async function generateContentDirect(promptOrParts: string | any[], modelName: s
 // All AI calls now use direct Vertex AI for reliability and performance
 
 // Direct Vertex AI function (replaces proxy routing)
-async function generateContentWithProxy(promptOrParts: string | any[], modelName: string, isImageGeneration: boolean = false): Promise<any> {
-  return await generateContentDirect(promptOrParts, modelName, isImageGeneration);
+export async function generateContentWithProxy(
+  promptOrParts: string | any[],
+  modelName: string,
+  isImageGeneration: boolean = false,
+  options: VertexGenerationOptions = {}
+): Promise<any> {
+  return await generateContentDirect(promptOrParts, modelName, isImageGeneration, options);
 }
 
 // Direct Vertex AI models (no proxy dependencies)
-const REVO_2_0_MODEL = 'gemini-2.5-flash-image';
+export const REVO_2_0_MODEL = 'gemini-2.5-flash-image';
 
 // === Revo 2.0 Creativity & Anti-Repetition Utilities ===
 
@@ -211,10 +255,6 @@ function generateUniqueConceptDimensions(brandKey: string): ConceptDimensions {
     format: 'Success Story',
     approach: 'Innovation-Focus'
   };
-}
-
-function brandKey(brand: any, platform: any) {
-  return `${brand.businessName || 'unknown'}|${platform}`.toLowerCase();
 }
 
 function tokenize(text: string): Set<string> {
@@ -490,7 +530,7 @@ function getPlatformDimensions(platform: string): string {
 /**
  * Generate creative concept for Revo 2.0 with enhanced variety and anti-repetition
  */
-async function generateCreativeConcept(options: Revo20GenerationOptions): Promise<any> {
+export async function generateCreativeConcept(options: Revo20GenerationOptions): Promise<any> {
   const { businessType, brandProfile, platform, scheduledServices } = options;
 
   // Extract today's services for focused content
@@ -498,7 +538,7 @@ async function generateCreativeConcept(options: Revo20GenerationOptions): Promis
   const upcomingServices = scheduledServices?.filter(s => s.isUpcoming) || [];
 
   // Generate unique concept dimensions for variety
-  const bKey = brandKey(brandProfile, platform);
+  const bKey = getBrandKey(brandProfile, platform);
   const dimensions = generateUniqueConceptDimensions(bKey);
   
   // Check recent concepts to avoid repetition
@@ -600,8 +640,9 @@ async function generateCreativeConcept(options: Revo20GenerationOptions): Promis
 /**
  * Generate fallback concept with variety
  */
-function generateFallbackConcept(brandProfile: any, businessType: string, dimensions: ConceptDimensions, todaysServices?: any[]): string {
-  const service = todaysServices?.length > 0 ? todaysServices[0].serviceName : businessType;
+export function generateFallbackConcept(brandProfile: any, businessType: string, dimensions: ConceptDimensions, todaysServices?: any[]): string {
+  const services = todaysServices ?? [];
+  const service = services.length > 0 ? services[0].serviceName : businessType;
   const company = brandProfile.businessName || 'the business';
   
   const conceptTemplates = [
@@ -656,7 +697,7 @@ function getMoodKeywordsForTone(emotionalTone: string): string[] {
 /**
  * Build enhanced prompt for Revo 2.0 with brand integration, visual consistency, and scheduled services
  */
-function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: any): string {
+export function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: any): string {
 
   const { businessType, platform, brandProfile, aspectRatio = '1:1', visualStyle = 'modern', scheduledServices } = options;
 
@@ -725,7 +766,7 @@ function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: any): st
   const typographySet = ['bold sans-serif headline + light subhead', 'elegant serif display + sans body', 'condensed uppercase headline', 'playful rounded sans', 'high-contrast modern serif'];
   const effects = ['subtle grain', 'soft vignette', 'gentle drop shadow', 'glassmorphism card', 'gradient overlay'];
 
-  const bKey = brandKey(brandProfile, platform);
+  const bKey = getBrandKey(brandProfile, platform);
   const lastStyle = recentStyles.get(bKey);
   const chosenStyle = pickNonRepeating(styles, lastStyle);
   recentStyles.set(bKey, chosenStyle);
@@ -1100,7 +1141,13 @@ The client specifically requested their brand logo to be included. FAILURE TO IN
 /**
  * Generate unique caption and hashtags for Revo 2.0 that align with the image
  */
-async function generateCaptionAndHashtags(options: Revo20GenerationOptions, concept: any, imagePrompt: string, imageUrl?: string): Promise<{
+export async function generateCaptionAndHashtags(
+  options: Revo20GenerationOptions,
+  concept: any,
+  imagePrompt: string,
+  imageUrl?: string,
+  textGenerator: TextGenerationHandler = defaultClaudeGenerator
+): Promise<{
   caption: string;
   hashtags: string[];
   headline?: string;
@@ -1111,14 +1158,21 @@ async function generateCaptionAndHashtags(options: Revo20GenerationOptions, conc
   const { businessType, brandProfile, platform } = options;
 
   // Determine hashtag count based on platform
-  const hashtagCount = String(platform).toLowerCase() === 'instagram' ? 5 : 3;
+  const normalizedPlatform = String(platform).toLowerCase();
+  const hashtagCount = normalizedPlatform === 'instagram' ? 5 : 3;
+
+  const keyFeaturesList = normalizeStringList((brandProfile as any).keyFeatures ?? brandProfile.keyFeatures);
+  const competitiveAdvantagesList = normalizeStringList((brandProfile as any).competitiveAdvantages ?? brandProfile.competitiveAdvantages);
+  const servicesList = normalizeServiceList((brandProfile as any).services ?? brandProfile.services);
+  const positioning = (brandProfile as any).competitivePositioning;
+  const brandKey = getBrandKey(brandProfile, platform);
 
   // Generate unique timestamp-based seed for variety
   const uniqueSeed = Date.now() + Math.random();
   const creativityBoost = Math.floor(uniqueSeed % 10) + 1;
 
   // Get recent data for anti-repetition
-  const recentData = recentOutputs.get(brandKey(brandProfile, platform)) || { headlines: [], captions: [], concepts: [] };
+  const recentData = recentOutputs.get(brandKey) || { headlines: [], captions: [], concepts: [] };
 
   try {
 
@@ -1200,17 +1254,16 @@ ${getLocationSpecificLanguageInstructions(brandProfile.location)}
 - Content Approach: ${selectedApproach} (use this strategic angle)${localLanguageInstructions}
 
 💼 BUSINESS INTELLIGENCE:
-${Array.isArray(brandProfile.keyFeatures) ? `- Key Features: ${brandProfile.keyFeatures.slice(0, 5).join(', ')}` : ''}
-${Array.isArray(brandProfile.competitiveAdvantages) ? `- Competitive Advantages: ${brandProfile.competitiveAdvantages.slice(0, 3).join(', ')}` : ''}
-${Array.isArray(brandProfile.services) ? `- Services: ${brandProfile.services.map(s => s.name).slice(0, 4).join(', ')}` : ''}
+${keyFeaturesList.length > 0 ? `- Key Features: ${keyFeaturesList.slice(0, 5).join(', ')}` : ''}
+${competitiveAdvantagesList.length > 0 ? `- Competitive Advantages: ${competitiveAdvantagesList.slice(0, 3).join(', ')}` : ''}
+${servicesList.length > 0 ? `- Services: ${servicesList.slice(0, 4).join(', ')}` : ''}
 ${brandProfile.targetAudience ? `- Target Audience: ${brandProfile.targetAudience}` : ''}
-${brandProfile.competitivePositioning ? `- Positioning: ${brandProfile.competitivePositioning}` : ''}
+${typeof positioning === 'string' && positioning.trim().length > 0 ? `- Positioning: ${positioning}` : ''}
 ${brandProfile.description ? `- Business Description: ${brandProfile.description.substring(0, 200)}` : ''}
+
 
 🏆 COMPETITIVE ANALYSIS:
 ${getCompetitorAnalysis(brandProfile)}
-
-🖼️ VISUAL CONTEXT:
 The generated image shows: ${concept.concept}
 ${imagePrompt ? `Image elements include: ${getDetailedVisualContext(imagePrompt, businessType)}` : ''}${serviceContentContext}${imageAnalysisContext}
 
@@ -1246,7 +1299,7 @@ ${concept.featuredServices && concept.featuredServices.length > 0 ? `- Highlight
 - AVOID grammatical errors that make content look unprofessional
 3. CAPTION (50-100 words): Should continue the story started by the headline/subheadline in the image
 4. CALL-TO-ACTION (2-4 words): Action-oriented and contextually appropriate
-5. HASHTAGS (EXACTLY ${hashtagCount}): ${platform === 'instagram' ? '5 hashtags for Instagram' : '3 hashtags for other platforms'}
+5. HASHTAGS (EXACTLY ${hashtagCount}): ${normalizedPlatform === 'instagram' ? '5 hashtags for Instagram' : '3 hashtags for other platforms'}
 
 🔗 CONTENT COHESION REQUIREMENTS:
 - The headline and subheadline will be embedded as text elements in the visual design
@@ -1289,11 +1342,9 @@ ALL ELEMENTS MUST TELL ONE COHERENT STORY - NO DISCONNECTED PIECES!
 - NO corporate filler language: "puts BNPL front and center today"
 
 💡 SERVICE-SPECIFIC CONTENT RULES:
-${Array.isArray(brandProfile.services) ? brandProfile.services.map(service => 
-  `- ${service.name}: ${service.description || 'Focus on specific benefits and outcomes'}`
-).join('\n') : ''}
-${Array.isArray(brandProfile.keyFeatures) ? `- Use these key features: ${brandProfile.keyFeatures.slice(0, 3).join(', ')}` : ''}
-${Array.isArray(brandProfile.competitiveAdvantages) ? `- Highlight advantages: ${brandProfile.competitiveAdvantages.slice(0, 2).join(', ')}` : ''}
+${servicesList.length > 0 ? servicesList.map(service => `- ${service}: Focus on specific benefits and outcomes`).join('\n') : ''}
+${keyFeaturesList.length > 0 ? `- Use these key features: ${keyFeaturesList.slice(0, 3).join(', ')}` : ''}
+${competitiveAdvantagesList.length > 0 ? `- Highlight advantages: ${competitiveAdvantagesList.slice(0, 2).join(', ')}` : ''}
 
 🎯 CUSTOMER PAIN POINTS & SOLUTIONS:
 ${getCustmerPainPointsForBusiness(businessType, brandProfile)}
@@ -1504,17 +1555,21 @@ Format as JSON:
       try {
         console.log(`🤖 [Revo 2.0] AI Generation Attempt ${attempt}/${maxRetries} - Using Claude Sonnet 4.5`);
         
-        const claudeResult = await getClaudeClient().generateText(
-          contentPrompt,
-          'claude-sonnet-4-5-20250929',
-          {
-            temperature: 0.8 + (Math.random() * 0.3), // 0.8-1.1 for variety
-            maxTokens: 1000
-          }
-        );
-        const content = claudeResult.text;
-        console.log(`📊 [Revo 2.0] Claude tokens used: ${claudeResult.tokensUsed.total}`);
-        console.log(`⏱️ [Revo 2.0] Claude processing time: ${claudeResult.processingTime}ms`);
+        const temperature = 0.8 + (Math.random() * 0.3);
+        console.log(`🤖 [Revo 2.0] AI Generation Attempt ${attempt}/${maxRetries} - Using ${textGenerator.label}`);
+
+        const generationResult = await textGenerator.generate(contentPrompt, {
+          temperature,
+          maxTokens: 1000
+        });
+
+        const content = generationResult.text;
+        if (generationResult.tokensUsed !== undefined) {
+          console.log(`📊 [Revo 2.0] ${textGenerator.label} tokens used: ${generationResult.tokensUsed}`);
+        }
+        if (generationResult.processingTime !== undefined) {
+          console.log(`⏱️ [Revo 2.0] ${textGenerator.label} processing time: ${generationResult.processingTime}ms`);
+        }
 
     try {
       // Clean the response to extract JSON
@@ -1526,6 +1581,7 @@ Format as JSON:
       }
 
       const parsed = JSON.parse(cleanContent);
+      const caption = typeof parsed.caption === 'string' ? parsed.caption : '';
 
       // Ensure hashtag count is EXACTLY correct (5 for Instagram, 3 for others)
       let finalHashtags = parsed.hashtags || [];
@@ -1536,20 +1592,9 @@ Format as JSON:
         // Generate platform-appropriate hashtags if count is wrong
         finalHashtags = generateFallbackHashtags(brandProfile, businessType, platform, hashtagCount);
       }
-
-      // Final validation - ensure EXACTLY the right count
-      finalHashtags = finalHashtags.slice(0, hashtagCount);
-
-      // Anti-repetition enforcement
-      const key = brandKey(brandProfile, platform);
-      const recent = recentOutputs.get(key) || { headlines: [], captions: [], concepts: [] };
-
-      // Enhanced caption validation with multiple checks
-      let caption = parsed.caption || '';
-
       // Enhanced caption validation with more checks
       const captionHasJourney = /\b(journey|everyday)\b/i.test(caption);
-      const captionTooSimilar = tooSimilar(caption, recent.captions, 0.40);
+      const captionTooSimilar = tooSimilar(caption, recentData.captions, 0.40);
       const captionHasBannedPatterns = hasBannedPattern(caption);
       const captionIsGeneric = caption.includes('Experience the excellence of') ||
         caption.includes('makes financial technology company effortless') ||
@@ -1596,7 +1641,7 @@ Format as JSON:
       const hasJourneyWords = /\b(journey|everyday)\b/i.test(headline);
       const hasColonPrefix = /^[A-Z]+:\s/.test(headline);
       const hasBannedPatterns = hasBannedPattern(headline);
-      const isTooSimilar = tooSimilar(headline, recent.headlines, 0.55);
+      const isTooSimilar = tooSimilar(headline, recentData.headlines, 0.55);
       const isEmpty = !headline || headline.trim().length === 0;
       const isGenericPattern = /^[a-z]+ your [a-z]+$/i.test(headline.trim());
 
@@ -1614,7 +1659,7 @@ Format as JSON:
       }
 
       // Remember accepted output for future anti-repetition checks
-      rememberOutput(key, { headline, caption });
+      rememberOutput(brandKey, { headline, caption });
 
       console.log(`✅ [Revo 2.0] AI Generation Successful on attempt ${attempt}/${maxRetries}`);
       return {
@@ -1659,7 +1704,7 @@ Format as JSON:
 /**
  * Generate contextually relevant fallback content based on visual and business context
  */
-function generateUniqueFallbackContent(brandProfile: any, businessType: string, platform: string, hashtagCount: number, creativityLevel: number, concept?: any) {
+export function generateUniqueFallbackContent(brandProfile: any, businessType: string, platform: string, hashtagCount: number, creativityLevel: number, concept?: any) {
   // Check if we have today's featured service
   const todayService = concept?.featuredServices?.[0];
 
@@ -1701,8 +1746,8 @@ function generateUniqueFallbackContent(brandProfile: any, businessType: string, 
   const subheadline = generateUniqueSubheadline(brandProfile, businessType, selectedTheme, todayService);
 
   // Anti-repetition memory
-  const key = brandKey(brandProfile, platform);
-  rememberOutput(key, { headline, caption: selectedCaption });
+  const fallbackKey = getBrandKey(brandProfile, platform);
+  rememberOutput(fallbackKey, { headline, caption: selectedCaption });
 
   return {
     caption: sanitizeGeneratedCopy(selectedCaption, brandProfile, businessType) as string,
@@ -2071,17 +2116,24 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
     const imageResult = await Promise.race([
       generateImageWithGemini(enhancedPrompt, enhancedOptions),
       new Promise((_, reject) => setTimeout(() => reject(new Error('Image generation timeout')), 20000))
-    ]);
+    ]) as { imageUrl: string };
 
     // Step 4: Generate caption and hashtags with timeout
     const contentResult = await Promise.race([
       generateCaptionAndHashtags(enhancedOptions, concept, enhancedPrompt, imageResult.imageUrl),
       new Promise((_, reject) => setTimeout(() => reject(new Error('Content generation timeout')), 60000))
-    ]);
+    ]) as {
+      caption: string;
+      hashtags: string[];
+      headline?: string;
+      subheadline?: string;
+      cta?: string;
+      captionVariations?: string[];
+    };
 
     const processingTime = Date.now() - startTime;
 
-    // 🔤 SPELL CHECK: Ensure headlines and subheadlines are spell-checked before final result
+    // SPELL CHECK: Ensure headlines and subheadlines are spell-checked before final result
     let finalContentResult = contentResult;
     try {
 
@@ -2117,7 +2169,7 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
       }
 
     } catch (error) {
-      console.warn('🔤 [Revo 2.0] Spell check failed, using original content:', error);
+      console.warn(' SPELL CHECK failed, using original content:', error);
       finalContentResult = contentResult;
     }
 
@@ -2151,7 +2203,7 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
     };
 
   } catch (error) {
-    console.error('❌ Revo 2.0: Generation failed:', error);
+    console.error(' Revo 2.0: Generation failed:', error);
     throw new Error(`Revo 2.0 generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -2298,111 +2350,6 @@ function getLocationSpecificLanguageInstructions(location: string): string {
   * "No worries" → "Hakuna wasiwasi" 
   * "Let's start" → "Twende tuanze"
   * "Very secure" → "Salama sana"`;
-  }
-
-  if (locationKey.includes('nigeria')) {
-    return `- PIDGIN ELEMENTS: "How far?" (how are you), "Wetin dey happen?" (what's happening), "No wahala" (no problem)
-- BUSINESS CONTEXT: "Business dey boom" (business is booming), "Make we go" (let's go), "Sharp sharp" (quickly)
-- GREETINGS: "Bawo" (Yoruba hello), "Ndewo" (Igbo hello), "Sannu" (Hausa hello)
-- EXPRESSIONS: "E go better" (it will be better), "God dey" (God is there), "Correct" (right/good)`;
-  }
-
-  if (locationKey.includes('ghana')) {
-    return `- TWI ELEMENTS: "Akwaaba" (welcome), "Medaase" (thank you), "Yie" (good), "Adwo" (peace)
-- BUSINESS CONTEXT: "Adwuma" (work), "Sika" (money), "Dwuma" (business)
-- GREETINGS: "Maakye" (good morning), "Maaha" (good afternoon)
-- EXPRESSIONS: "Ɛyɛ" (it's good), "Ampa" (truly), "Sɛ ɛyɛ a" (if it's good)`;
-  }
-
-  if (locationKey.includes('south africa')) {
-    return `- MIXED ELEMENTS: "Howzit" (how are you), "Sharp" (good), "Lekker" (nice), "Eish" (expression)
-- BUSINESS CONTEXT: "Bakkie" (pickup truck), "Robot" (traffic light), "Braai" (barbecue)
-- GREETINGS: "Sawubona" (Zulu hello), "Dumela" (Sotho hello)
-- EXPRESSIONS: "Ag man" (oh man), "Just now" (later), "Now now" (soon)`;
-  }
-
-  if (locationKey.includes('india')) {
-    return `- HINDI ELEMENTS: "Namaste" (hello), "Dhanyawad" (thank you), "Accha" (good), "Jaldi" (quickly)
-- BUSINESS CONTEXT: "Vyavasaya" (business), "Seva" (service), "Kaam" (work), "Paisa" (money)
-- GREETINGS: "Namaskar" (respectful hello), "Sat Sri Akal" (Punjabi hello)
-- EXPRESSIONS: "Bahut accha" (very good), "Chalo" (let's go), "Kya baat hai" (what's the matter)`;
-  }
-
-  if (locationKey.includes('philippines')) {
-    return `- FILIPINO ELEMENTS: "Kumusta" (how are you), "Salamat" (thank you), "Mabuti" (good), "Bilisan" (hurry up)
-- BUSINESS CONTEXT: "Negosyo" (business), "Serbisyo" (service), "Trabaho" (work), "Pera" (money)
-- GREETINGS: "Magandang umaga" (good morning), "Kamusta ka" (how are you)
-- EXPRESSIONS: "Walang problema" (no problem), "Tara na" (let's go), "Sulit" (difficult/valuable)`;
-  }
-
-  if (locationKey.includes('indonesia')) {
-    return `- BAHASA ELEMENTS: "Halo" (hello), "Terima kasih" (thank you), "Bagus" (good), "Cepat" (fast)
-- BUSINESS CONTEXT: "Bisnis" (business), "Layanan" (service), "Kerja" (work), "Uang" (money)
-- GREETINGS: "Selamat pagi" (good morning), "Apa kabar" (how are you)
-- EXPRESSIONS: "Tidak masalah" (no problem), "Ayo" (let's go), "Mantap" (great/solid)`;
-  }
-
-  if (locationKey.includes('thailand')) {
-    return `- THAI ELEMENTS: "Sawasdee" (hello), "Khob khun" (thank you), "Dee" (good), "Rew" (fast)
-- BUSINESS CONTEXT: "Thurakit" (business), "Borikan" (service), "Ngan" (work), "Ngern" (money)
-- GREETINGS: "Sawasdee krab/ka" (hello), "Sabai dee mai" (how are you)
-- EXPRESSIONS: "Mai pen rai" (no problem), "Pai kan" (let's go), "Jai yen" (stay calm)`;
-  }
-
-  if (locationKey.includes('vietnam')) {
-    return `- VIETNAMESE ELEMENTS: "Xin chào" (hello), "Cảm ơn" (thank you), "Tốt" (good), "Nhanh" (fast)
-- BUSINESS CONTEXT: "Kinh doanh" (business), "Dịch vụ" (service), "Công việc" (work), "Tiền" (money)
-- GREETINGS: "Chào bạn" (hello friend), "Bạn khỏe không" (how are you)
-- EXPRESSIONS: "Không sao" (no problem), "Đi thôi" (let's go), "Tuyệt vời" (excellent)`;
-  }
-
-  if (locationKey.includes('brazil')) {
-    return `- PORTUGUESE ELEMENTS: "Olá" (hello), "Obrigado/a" (thank you), "Bom" (good), "Rápido" (fast)
-- BUSINESS CONTEXT: "Negócio" (business), "Serviço" (service), "Trabalho" (work), "Dinheiro" (money)
-- GREETINGS: "Bom dia" (good morning), "Como vai" (how are you)
-- EXPRESSIONS: "Sem problema" (no problem), "Vamos lá" (let's go), "Perfeito" (perfect)`;
-  }
-
-  if (locationKey.includes('mexico') || locationKey.includes('spain')) {
-    return `- SPANISH ELEMENTS: "Hola" (hello), "Gracias" (thank you), "Bueno" (good), "Rápido" (fast)
-- BUSINESS CONTEXT: "Negocio" (business), "Servicio" (service), "Trabajo" (work), "Dinero" (money)
-- GREETINGS: "Buenos días" (good morning), "¿Cómo estás?" (how are you)
-- EXPRESSIONS: "Sin problema" (no problem), "Vamos" (let's go), "Excelente" (excellent)`;
-  }
-
-  if (locationKey.includes('france')) {
-    return `- FRENCH ELEMENTS: "Bonjour" (hello), "Merci" (thank you), "Bon" (good), "Rapide" (fast)
-- BUSINESS CONTEXT: "Affaires" (business), "Service" (service), "Travail" (work), "Argent" (money)
-- GREETINGS: "Salut" (hi), "Comment allez-vous" (how are you)
-- EXPRESSIONS: "Pas de problème" (no problem), "Allons-y" (let's go), "Parfait" (perfect)`;
-  }
-
-  if (locationKey.includes('germany')) {
-    return `- GERMAN ELEMENTS: "Hallo" (hello), "Danke" (thank you), "Gut" (good), "Schnell" (fast)
-- BUSINESS CONTEXT: "Geschäft" (business), "Service" (service), "Arbeit" (work), "Geld" (money)
-- GREETINGS: "Guten Tag" (good day), "Wie geht's" (how are you)
-- EXPRESSIONS: "Kein Problem" (no problem), "Los geht's" (let's go), "Perfekt" (perfect)`;
-  }
-
-  if (locationKey.includes('ghana')) {
-    return `- TWI ELEMENTS: "Akwaaba" (welcome), "Medaase" (thank you), "Yie" (good), "Ntɛm" (fast)
-- BUSINESS CONTEXT: "Adwuma" (work/business), "Sika" (money), "Dwuma" (business), "Som" (service)
-- GREETINGS: "Maakye" (good morning), "Maaha" (good afternoon), "Wo ho te sɛn" (how are you)
-- EXPRESSIONS: "Ɛyɛ" (it's good), "Ampa" (truly), "Sɛ ɛyɛ a" (if it's good), "Yɛnkɔ" (let's go)`;
-  }
-
-  if (locationKey.includes('singapore')) {
-    return `- SINGLISH ELEMENTS: "Lah" (emphasis), "Can" (yes/okay), "Shiok" (great), "Steady" (good)
-- BUSINESS CONTEXT: "Business" (business), "Work" (work), "Money" (money), "Service" (service)
-- GREETINGS: "Hello", "How are you", "What's up"
-- EXPRESSIONS: "No problem lah", "Can do", "Very good", "Let's go"`;
-  }
-
-  if (locationKey.includes('malaysia')) {
-    return `- MALAY ELEMENTS: "Selamat" (greetings), "Terima kasih" (thank you), "Bagus" (good), "Cepat" (fast)
-- BUSINESS CONTEXT: "Perniagaan" (business), "Perkhidmatan" (service), "Kerja" (work), "Wang" (money)
-- GREETINGS: "Selamat pagi" (good morning), "Apa khabar" (how are you)
-- EXPRESSIONS: "Tiada masalah" (no problem), "Jom" (let's go), "Hebat" (great)`;
   }
 
   return `- Use appropriate local language elements for ${location}

@@ -10,15 +10,12 @@ export interface SupabaseImageUploadResult {
   error?: string;
 }
 
-function dataUrlToBuffer(dataUrl: string): { buffer: ArrayBuffer; mime: string } {
+function dataUrlToBuffer(dataUrl: string): { buffer: Uint8Array; mime: string } {
   const [meta, base64] = dataUrl.split(',');
   const mimeMatch = /data:(.*?);base64/.exec(meta || '') || [];
   const mime = mimeMatch[1] || 'image/png';
-  const binary = atob(base64 || '');
-  const len = binary.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
-  return { buffer: bytes, mime };
+  const bytes = Buffer.from(base64 || '', 'base64');
+  return { buffer: new Uint8Array(bytes), mime };
 }
 
 export async function uploadDataUrlToSupabase(

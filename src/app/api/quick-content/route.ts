@@ -2,52 +2,136 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateContentAction } from '@/app/actions';
 import { generateRevo15ContentAction } from '@/app/actions/revo-1.5-actions';
+import { generateRevo1ContentAction } from '@/app/actions/revo-1-actions';
 import type { BrandProfile, Platform, BrandConsistencyPreferences } from '@/lib/types';
+
 import type { ScheduledService } from '@/services/calendar-service';
 import { withCreditTracking, type ModelVersion } from '@/lib/credit-integration';
 import { createClient as createServerSupabase } from '@/lib/supabase-server';
 import { brandProfileSupabaseService } from '@/lib/supabase/services/brand-profile-service';
 import { BusinessProfileResolver } from '@/ai/business-profile/resolver';
+import { normalizeStringList, normalizeServiceList } from '@/ai/revo/shared-pipeline';
+
+type ExtendedBrandProfile = BrandProfile & {
+  id?: string;
+  contact?: {
+    phone?: string;
+    email?: string;
+    website?: string;
+    address?: string;
+  };
+  brandColors?: {
+    primary?: string;
+    secondary?: string;
+    background?: string;
+  };
+  brandVoice?: string;
+};
+
+type LooseBrandProfile = ExtendedBrandProfile | Record<string, unknown> | null | undefined;
+
+const normalizeBrandProfileInput = (input: LooseBrandProfile): ExtendedBrandProfile => {
+  const record = (input ?? {}) as Record<string, any>;
+
+  const toString = (value: unknown, fallback = ''): string => {
+    if (typeof value === 'string') return value;
+    if (value === null || value === undefined) return fallback;
+    return String(value);
+  };
+
+  const normalizeLocation = (): string => {
+    const value = record.location;
+    if (typeof value === 'string') return value;
+    if (value && typeof value === 'object') {
+      const { city, region, country } = value as Record<string, string>;
+      return [city, region, country].filter(Boolean).join(', ');
+    }
+    return '';
+  };
+
+  const servicesList = normalizeServiceList(record.services);
+  const keyFeaturesList = normalizeStringList(record.keyFeatures);
+  const competitiveAdvantagesList = normalizeStringList(record.competitiveAdvantages);
+
+  const idValue = toString(record.id || record.brandId || '');
+
+  return {
+    businessName: toString(record.businessName),
+    businessType: toString(record.businessType),
+    location: normalizeLocation(),
+    visualStyle: toString(record.visualStyle || 'modern'),
+    writingTone: toString(record.writingTone || 'professional'),
+    contentThemes: toString(record.contentThemes || ''),
+    websiteUrl: toString(record.websiteUrl || record.website || ''),
+    description: toString(record.description || ''),
+    services: servicesList.join('\n'),
+    targetAudience: toString(record.targetAudience || ''),
+    keyFeatures: keyFeaturesList.join('\n'),
+    competitiveAdvantages: competitiveAdvantagesList.join('\n'),
+    contactInfo: {
+      phone: toString(record.contactInfo?.phone ?? record.contact?.phone ?? ''),
+      email: toString(record.contactInfo?.email ?? record.contact?.email ?? ''),
+      address: toString(record.contactInfo?.address ?? record.contact?.address ?? ''),
+    },
+    contact: record.contact as ExtendedBrandProfile['contact'],
+    brandVoice: toString(record.brandVoice || record.writingTone || ''),
+    socialMedia: record.socialMedia as BrandProfile['socialMedia'],
+    primaryColor: toString(record.primaryColor ?? record.brandColors?.primary ?? ''),
+    accentColor: toString(record.accentColor ?? record.brandColors?.secondary ?? ''),
+    backgroundColor: toString(record.backgroundColor ?? record.brandColors?.background ?? ''),
+    brandColors: record.brandColors as ExtendedBrandProfile['brandColors'],
+    designExamples: Array.isArray(record.designExamples) ? record.designExamples : undefined,
+    productImages: Array.isArray(record.productImages) ? record.productImages as BrandProfile['productImages'] : undefined,
+    productImageDescriptions: record.productImageDescriptions as BrandProfile['productImageDescriptions'],
+    logoUrl: toString(record.logoUrl ?? record.logo_url ?? ''),
+    logoDataUrl: toString(record.logoDataUrl ?? record.logo_data_url ?? ''),
+    id: idValue || undefined,
+  };
+};
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    console.log('📥 [QuickContent] Raw request body:', body);
     const {
       revoModel,
-      brandProfile,
+      brandProfile: rawBrandProfile,
       platform,
       brandConsistency,
       useLocalLanguage = false,
       scheduledServices = [],
       includePeopleInDesigns = true
-    }: {
+    } = body as {
       revoModel: 'revo-1.0' | 'revo-1.5';
-      brandProfile: BrandProfile;
+      brandProfile: LooseBrandProfile;
       platform: Platform;
       brandConsistency?: BrandConsistencyPreferences;
       useLocalLanguage?: boolean;
       scheduledServices?: ScheduledService[];
       includePeopleInDesigns?: boolean;
-    } = body;
+    };
 
     // Validate required parameters
-    if (!brandProfile || !platform) {
+    if (!rawBrandProfile || !platform) {
       return NextResponse.json(
         { error: 'Missing required parameters: brandProfile and platform are required' },
         { status: 400 }
       );
     }
 
+    // Normalize incoming profile so downstream logic always works with expected structure
+    const normalizedBrandProfile = normalizeBrandProfileInput(rawBrandProfile);
+
     // 🔄 FETCH FRESH BRAND PROFILE DATA FROM DATABASE
     // This ensures we always use the latest colors and data, not cached frontend data
-    let freshBrandProfile: BrandProfile = brandProfile;
+    let freshBrandProfile: ExtendedBrandProfile = normalizedBrandProfile;
 
-    if (brandProfile.id) {
-      console.log('🔄 [QuickContent] Fetching fresh brand profile from database:', brandProfile.id);
+    if (normalizedBrandProfile.id) {
+      console.log('🔄 [QuickContent] Fetching fresh brand profile from database:', normalizedBrandProfile.id);
       try {
-        const latestProfile = await brandProfileSupabaseService.loadBrandProfile(brandProfile.id);
+        const latestProfile = await brandProfileSupabaseService.loadBrandProfile(normalizedBrandProfile.id);
         if (latestProfile) {
-          freshBrandProfile = latestProfile;
+          freshBrandProfile = normalizeBrandProfileInput(latestProfile as unknown as ExtendedBrandProfile);
           console.log('✅ [QuickContent] Fresh brand profile loaded with colors:', {
             primaryColor: latestProfile.primaryColor,
             accentColor: latestProfile.accentColor,
@@ -62,8 +146,20 @@ export async function POST(request: NextRequest) {
         console.log('⚠️ [QuickContent] Falling back to provided brand profile data');
       }
     } else {
-      console.log('⚠️ [QuickContent] No brand profile ID provided, using frontend data');
+      console.log(' [QuickContent] No brand profile ID provided, using frontend data');
     }
+
+    const normalizedFrontendProfile = normalizedBrandProfile;
+
+    type VisualStyleOption = 'bold' | 'modern' | 'minimalist' | 'elegant' | 'playful' | 'professional';
+    const allowedVisualStyles: VisualStyleOption[] = ['bold', 'modern', 'minimalist', 'elegant', 'playful', 'professional'];
+
+    const getSafeVisualStyle = (value: string | undefined): VisualStyleOption => {
+      if (value && allowedVisualStyles.includes(value as VisualStyleOption)) {
+        return value as VisualStyleOption;
+      }
+      return 'modern';
+    };
 
     // Use passed services directly - brand filtering should happen on frontend
     let brandSpecificServices: ScheduledService[] = scheduledServices || [];
@@ -76,347 +172,133 @@ export async function POST(request: NextRequest) {
       const userId = 'test-user-id'; // TODO: Get from authentication
       const user = { id: userId };
 
-      const modelVersion: ModelVersion = revoModel === 'revo-1.5' ? 'revo-1.5' : 'revo-1.0';
+      const modelVersion: ModelVersion = revoModel === 'revo-1.5' ? 'revo-1.5' : revoModel === 'revo-2.0' ? 'revo-2.0' : 'revo-1.0';
 
-      if (revoModel === 'revo-1.5') {
-        // Use Revo 1.5 enhanced generation - Skip credits check for testing (consistent with other routes)
-        result = await generateRevo15ContentAction(
-          freshBrandProfile, // Use fresh data from database
+      if (revoModel === 'revo-2.0') {
+        // Use Revo 2.0 unified architecture (perfect format that others should follow)
+        const { generateRevo2ContentAction } = await import('@/app/actions/revo-2-actions');
+        result = await generateRevo2ContentAction(
+          freshBrandProfile as BrandProfile,
           platform,
           brandConsistency || { strictConsistency: false, followBrandColors: true, includeContacts: false },
           '',
           {
             aspectRatio: '1:1',
-            visualStyle: freshBrandProfile.visualStyle || 'modern',
+            visualStyle: getSafeVisualStyle(freshBrandProfile.visualStyle),
             includePeopleInDesigns,
             useLocalLanguage
           },
           brandSpecificServices
         );
+      } else if (revoModel === 'revo-1.5') {
+        // Use Revo 1.5 enhanced generation - Skip credits check for testing (consistent with other routes)
+        result = await generateRevo15ContentAction(
+          freshBrandProfile as BrandProfile, // Use fresh data from database
+          platform,
+          brandConsistency || { strictConsistency: false, followBrandColors: true, includeContacts: false },
+          '',
+          {
+            aspectRatio: '1:1',
+            visualStyle: getSafeVisualStyle(freshBrandProfile.visualStyle),
+            includePeopleInDesigns,
+            useLocalLanguage
+          },
+          brandSpecificServices
+        );
+
+        // 🔄 UPLOAD REVO 1.5 IMAGE TO SUPABASE STORAGE (Fix broken images)
+        if (result && result.imageUrl && result.imageUrl.startsWith('data:')) {
+          try {
+            console.log('📤 [QuickContent] Uploading Revo 1.5 image to Supabase...');
+
+            // Check if Supabase is properly configured
+            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+            const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+            console.log('🔍 [QuickContent] Revo 1.5 Supabase config check:', {
+              hasUrl: !!supabaseUrl,
+              urlLength: supabaseUrl?.length || 0,
+              hasKey: !!supabaseKey,
+              keyLength: supabaseKey?.length || 0
+            });
+
+            if (!supabaseUrl || !supabaseKey || supabaseKey === 'REPLACE_WITH_REAL_ANON_KEY_FROM_SUPABASE_DASHBOARD') {
+              console.warn('⚠️ [QuickContent] Supabase not configured - keeping data URL for Revo 1.5');
+              console.warn('⚠️ [QuickContent] URL present:', !!supabaseUrl);
+              console.warn('⚠️ [QuickContent] Key present:', !!supabaseKey);
+              // Keep data URL - images will work in current session but not persist
+            } else {
+              console.log('📤 [QuickContent] Revo 1.5 Data URL length:', result.imageUrl.length);
+              console.log('📤 [QuickContent] User ID:', userId);
+              console.log('📤 [QuickContent] Brand ID:', freshBrandProfile.id);
+
+              const { SupabasePostStorageService } = await import('@/lib/services/supabase-post-storage');
+              const storageService = new SupabasePostStorageService();
+
+              const uploadResult = await storageService.uploadImageFromDataUrl(
+                result.imageUrl,
+                userId,
+                freshBrandProfile.id || 'unknown-brand',
+                `revo15-${Date.now()}.png`
+              );
+
+              console.log('📤 [QuickContent] Revo 1.5 Upload result:', {
+                success: uploadResult.success,
+                url: uploadResult.url?.substring(0, 100) + '...',
+                error: uploadResult.error
+              });
+
+              if (uploadResult.success && uploadResult.url) {
+                console.log('✅ [QuickContent] Revo 1.5 image uploaded successfully:', uploadResult.url);
+                result.imageUrl = uploadResult.url; // Replace data URL with hosted URL
+
+                // Also update variants if they exist
+                if (result.variants) {
+                  result.variants = result.variants.map(variant => ({
+                    ...variant,
+                    imageUrl: uploadResult.url
+                  }));
+                }
+              } else {
+                console.warn('⚠️ [QuickContent] Revo 1.5 image upload failed, keeping data URL:', uploadResult.error);
+              }
+            }
+          } catch (uploadError) {
+            console.error('❌ [QuickContent] Revo 1.5 image upload error:', uploadError);
+            console.error('❌ [QuickContent] Revo 1.5 Upload error stack:', uploadError instanceof Error ? uploadError.stack : 'No stack');
+          }
+        }
       } else {
-        // Use Revo 1.0 with Business Profile Resolver (strict validation)
-        const resolver = new BusinessProfileResolver();
-
-        // Resolve business profile with strict validation
-        let resolvedProfile;
-        try {
-          resolvedProfile = await resolver.resolveProfile(
-            freshBrandProfile.id || freshBrandProfile.businessName || 'unknown',
-            userId,
-            freshBrandProfile as any,
-            {
-              allowExternalContext: false, // Disable external context by default
-              requireContacts: true,
-              strictValidation: true
-            }
-          );
-
-          // Validate for generation
-          const validation = resolver.validateForGeneration(resolvedProfile, {
-            requireContacts: true,
-            strictValidation: true
-          });
-
-          if (!validation.valid) {
-            return NextResponse.json(
-              { 
-                error: `Business profile validation failed: ${validation.errors.join(', ')}`,
-                details: 'Please complete your business profile with all required information.',
-                missingFields: resolvedProfile.completeness.missingCritical
-              },
-              { status: 400 }
-            );
-          }
-
-        } catch (error) {
-          console.log(' [QuickContent] Business Profile Resolver failed, using provided data:', error.message);
-          
-          // Use the provided fresh brand profile data directly with proper structure
-          resolvedProfile = {
-            id: freshBrandProfile.id || 'test-profile',
-            businessName: freshBrandProfile.businessName,
-            businessType: freshBrandProfile.businessType,
-            description: freshBrandProfile.description || `${freshBrandProfile.businessType} services`,
-            location: freshBrandProfile.location ? 
-              (typeof freshBrandProfile.location === 'string' ? 
-                { country: freshBrandProfile.location.includes('Kenya') ? 'KE' : freshBrandProfile.location } : 
-                freshBrandProfile.location) : 
-              undefined,
-            contact: freshBrandProfile.contactInfo || freshBrandProfile.contact,
-            services: Array.isArray(freshBrandProfile.services) ? 
-              freshBrandProfile.services : 
-              (freshBrandProfile.services ? [{ name: freshBrandProfile.services, description: '' }] : []),
-            keyFeatures: freshBrandProfile.keyFeatures || [],
-            competitiveAdvantages: freshBrandProfile.competitiveAdvantages || [],
-            targetAudience: freshBrandProfile.targetAudience || 'General audience',
-            brandVoice: freshBrandProfile.brandVoice || freshBrandProfile.writingTone,
-            brandColors: {
-              primary: freshBrandProfile.primaryColor,
-              secondary: freshBrandProfile.accentColor
-            },
-            logoUrl: freshBrandProfile.logoUrl,
-            logoDataUrl: freshBrandProfile.logoDataUrl,
-            sources: {
-              businessName: 'user',
-              businessType: 'user', 
-              description: 'user',
-              location: 'user',
-              contact: 'user',
-              services: 'user',
-              keyFeatures: 'user',
-              competitiveAdvantages: 'user',
-              targetAudience: 'user',
-              brandVoice: 'user',
-              brandColors: 'user',
-              logoUrl: 'missing',
-              logoDataUrl: 'missing',
-              designExamples: 'missing'
-            },
-            completeness: {
-              score: 90,
-              missingCritical: [],
-              missingOptional: ['logoUrl']
-            }
-          };
-          
-          console.log(' [QuickContent] Using provided business profile:', {
-            businessName: resolvedProfile.businessName,
-            businessType: resolvedProfile.businessType,
-            location: resolvedProfile.location,
-            servicesCount: resolvedProfile.services?.length || 0,
-            hasColors: !!(resolvedProfile.brandColors?.primary)
-          });
-          
-          // Fallback for Paya testing only if business name includes 'paya' and no data provided
-          if (freshBrandProfile.businessName?.toLowerCase().includes('paya') && !freshBrandProfile.services) {
-            return NextResponse.json(
-              { 
-                error: `Failed to resolve business profile: ${error instanceof Error ? error.message : 'Unknown error'}`,
-                details: 'Please ensure your business profile is complete and try again.'
-              },
-              { status: 400 }
-            );
-          }
-        }
-
-        const { generateRevo10Content } = await import('@/ai/revo-1.0-service');
-
-        const today = new Date();
-        const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long' });
-        const currentDate = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-
-        // Convert services to string format
-        const servicesString = resolvedProfile.services
-          ? resolvedProfile.services.map(service => 
-              `${service.name}: ${service.description || ''}`
-            ).join('\n')
-          : '';
-
-        const keyFeaturesString = resolvedProfile.keyFeatures
-          ? resolvedProfile.keyFeatures.join('\n')
-          : '';
-
-        const competitiveAdvantagesString = resolvedProfile.competitiveAdvantages
-          ? resolvedProfile.competitiveAdvantages.join('\n')
-          : '';
-
-        // Format location
-        const locationString = resolvedProfile.location
-          ? `${resolvedProfile.location.city || ''}, ${resolvedProfile.location.country || ''}`.replace(/^,\s*|,\s*$/g, '')
-          : '';
-
-        // Prepare contact information for Revo 1.0
-        const finalContactInfo = {
-          phone: resolvedProfile.contact?.phone || freshBrandProfile.contactInfo?.phone || (freshBrandProfile as any).phone || '',
-          email: resolvedProfile.contact?.email || freshBrandProfile.contactInfo?.email || (freshBrandProfile as any).email || '',
-          address: resolvedProfile.contact?.address || freshBrandProfile.contactInfo?.address || freshBrandProfile.location || ''
-        };
-
-        const finalWebsiteUrl = resolvedProfile.contact?.website || freshBrandProfile.websiteUrl || (freshBrandProfile as any).websiteUrl || '';
-
-        const revo10Result = await generateRevo10Content({
-          businessType: resolvedProfile.businessType,
-          businessName: resolvedProfile.businessName,
-          location: locationString,
-          platform: platform.toLowerCase(),
-          writingTone: resolvedProfile.brandVoice || 'professional',
-          contentThemes: [],
-          targetAudience: resolvedProfile.targetAudience || '',
-          services: servicesString,
-          keyFeatures: keyFeaturesString,
-          competitiveAdvantages: competitiveAdvantagesString,
-          dayOfWeek,
-          currentDate,
-          primaryColor: resolvedProfile.brandColors?.primary || freshBrandProfile.primaryColor,
-          visualStyle: freshBrandProfile.visualStyle || 'modern',
-          // Include contact information based on user toggle setting
-          includeContacts: brandConsistency?.includeContacts === true,
-          contactInfo: {
-            phone: resolvedProfile.contact?.phone || finalContactInfo.phone || '',
-            email: resolvedProfile.contact?.email || finalContactInfo.email || '',
-            address: resolvedProfile.contact?.address || finalContactInfo.address || ''
+        // Use Revo 1.0 unified architecture (same pattern as Revo 2.0)
+        result = await generateRevo1ContentAction(
+          freshBrandProfile as BrandProfile, // Use fresh data from database
+          platform,
+          brandConsistency || { strictConsistency: false, followBrandColors: true, includeContacts: false },
+          '',
+          {
+            aspectRatio: '1:1',
+            visualStyle: getSafeVisualStyle(freshBrandProfile.visualStyle),
+            includePeopleInDesigns,
+            useLocalLanguage
           },
-          websiteUrl: resolvedProfile.contact?.website || finalWebsiteUrl || ''
-        });
-
-        // Generate image using Revo 1.0 image service
-        const { generateRevo10Image } = await import('@/ai/revo-1.0-service');
-
-        // Prepare structured text for image
-        const imageTextComponents = [];
-        if (revo10Result.catchyWords) imageTextComponents.push(revo10Result.catchyWords);
-        if (revo10Result.subheadline) imageTextComponents.push(revo10Result.subheadline);
-        if (revo10Result.callToAction) imageTextComponents.push(revo10Result.callToAction);
-
-        const structuredImageText = imageTextComponents.join(' | ');
-
-        // 🎨📞 ENHANCED VALIDATION FOR BRAND COLORS AND CONTACT INFO (using fresh data)
-        const finalPrimaryColor = freshBrandProfile.primaryColor || '#3B82F6';
-        const finalAccentColor = freshBrandProfile.accentColor || '#1E40AF';
-        const finalBackgroundColor = freshBrandProfile.backgroundColor || '#FFFFFF';
-
-        console.log('🎨 [QuickContent] Brand Colors Validation (Fresh Data):', {
-          frontendPrimaryColor: brandProfile.primaryColor,
-          frontendAccentColor: brandProfile.accentColor,
-          frontendBackgroundColor: brandProfile.backgroundColor,
-          freshPrimaryColor: freshBrandProfile.primaryColor,
-          freshAccentColor: freshBrandProfile.accentColor,
-          freshBackgroundColor: freshBrandProfile.backgroundColor,
-          finalPrimaryColor,
-          finalAccentColor,
-          finalBackgroundColor,
-          followBrandColors: brandConsistency?.followBrandColors,
-          hasValidColors: !!(freshBrandProfile.primaryColor && freshBrandProfile.accentColor && freshBrandProfile.backgroundColor),
-          colorsChanged: (brandProfile.primaryColor !== freshBrandProfile.primaryColor ||
-            brandProfile.accentColor !== freshBrandProfile.accentColor ||
-            brandProfile.backgroundColor !== freshBrandProfile.backgroundColor)
-        });
-
-        console.log('📞 [QuickContent] Contact Info Validation (Fresh Data):', {
-          includeContacts: brandConsistency?.includeContacts,
-          frontendContactInfo: brandProfile.contactInfo,
-          freshContactInfo: freshBrandProfile.contactInfo,
-          resolvedContactInfo: resolvedProfile.contact,
-          finalContactInfo,
-          finalWebsiteUrl,
-          hasValidContacts: !!(finalContactInfo.phone || finalContactInfo.email || finalWebsiteUrl),
-          willPassToContentGeneration: {
-            includeContacts: brandConsistency?.includeContacts === true,
-            contactInfo: {
-              phone: resolvedProfile.contact?.phone || finalContactInfo.phone || '',
-              email: resolvedProfile.contact?.email || finalContactInfo.email || '',
-              address: resolvedProfile.contact?.address || finalContactInfo.address || ''
-            },
-            websiteUrl: resolvedProfile.contact?.website || finalWebsiteUrl || ''
-          },
-          willPassToImageGeneration: {
-            includeContacts: brandConsistency?.includeContacts === true,
-            contactInfo: {
-              phone: resolvedProfile.contact?.phone || finalContactInfo.phone || '',
-              email: resolvedProfile.contact?.email || finalContactInfo.email || '',
-              address: resolvedProfile.contact?.address || finalContactInfo.address || ''
-            },
-            websiteUrl: resolvedProfile.contact?.website || finalWebsiteUrl || ''
-          }
-        });
-
-        // Skip credits check for testing (consistent with other Revo routes)
-        try {
-          // Enhanced brand color extraction with fallbacks (using fresh data)
-          const brandColors = (freshBrandProfile as any).brand_colors || {};
-          const primaryColor = brandColors.primaryColor || freshBrandProfile.primaryColor || '#3B82F6';
-          const accentColor = brandColors.accentColor || freshBrandProfile.accentColor || '#1E40AF';
-          const backgroundColor = brandColors.backgroundColor || freshBrandProfile.backgroundColor || '#FFFFFF';
-
-          console.log('🎨 Brand colors for generation (Fresh Data):', {
-            primaryColor,
-            accentColor,
-            backgroundColor,
-            fromFreshProfile: true,
-            brandId: freshBrandProfile.id
-          });
-
-          const imageResult = await generateRevo10Image({
-            businessType: resolvedProfile.businessType,
-            businessName: resolvedProfile.businessName,
-            platform: platform.toLowerCase(),
-            visualStyle: freshBrandProfile.visualStyle || 'modern',
-            primaryColor: resolvedProfile.brandColors?.primary || finalPrimaryColor,
-            accentColor: resolvedProfile.brandColors?.secondary || finalAccentColor,
-            backgroundColor: finalBackgroundColor,
-            imageText: structuredImageText,
-            designDescription: `Professional ${resolvedProfile.businessType} content with structured headline, subheadline, and CTA for ${platform.toLowerCase()}`,
-            logoDataUrl: resolvedProfile.logoDataUrl || freshBrandProfile.logoDataUrl,
-            logoUrl: resolvedProfile.logoUrl || (freshBrandProfile as any).logoUrl,
-            location: locationString,
-            headline: revo10Result.catchyWords,
-            subheadline: revo10Result.subheadline,
-            callToAction: revo10Result.callToAction,
-            includeContacts: brandConsistency?.includeContacts === true,
-            contactInfo: {
-              phone: resolvedProfile.contact?.phone || finalContactInfo.phone || '',
-              email: resolvedProfile.contact?.email || finalContactInfo.email || ''
-            },
-            websiteUrl: resolvedProfile.contact?.website || finalWebsiteUrl || '',
-            includePeople: includePeopleInDesigns,
-            scheduledServices: brandSpecificServices || [],
-            // Brand colors toggle
-            followBrandColors: brandConsistency?.followBrandColors !== false // Default to true
-          });
-
-          // Convert to GeneratedPost format
-          result = {
-            id: `revo10-${Date.now()}`,
-            date: new Date().toISOString(),
-            platform: platform.toLowerCase(),
-            postType: 'post' as const,
-            imageUrl: imageResult.imageUrl,
-            content: revo10Result.content,
-            hashtags: revo10Result.hashtags,
-            status: 'generated' as const,
-            variants: [{
-              platform: platform.toLowerCase(),
-              imageUrl: imageResult.imageUrl
-            }],
-            catchyWords: revo10Result.catchyWords,
-            subheadline: revo10Result.subheadline,
-            callToAction: revo10Result.callToAction,
-            metadata: {
-              model: 'Revo 1.0 Enhanced',
-              aiService: 'gemini-2.5-flash-image-preview',
-              // Preserve enhanced metadata from Revo 1.0 model
-              ...(revo10Result.metadata || {}),
-              qualityScore: revo10Result.qualityScore || 8.5,
-              enhancementsApplied: [
-                'enhanced-ai-engine',
-                'real-time-context',
-                'trending-topics',
-                'advanced-prompting',
-                'quality-optimization',
-                'content-validation',
-                'hashtag-enhancement',
-                'gemini-2.5-flash-image'
-              ]
-            }
-          } as const;
-        } catch (revo10Error) {
-          console.error('❌ Revo 1.0 generation error:', revo10Error);
-          throw revo10Error;
-        }
+          brandSpecificServices
+        );
       }
     } catch (generationError) {
       console.error(`❌ ${revoModel} generation failed:`, generationError);
 
-      // Check if it's already a user-friendly error message
-      if (generationError instanceof Error &&
-        (generationError.message.includes('🚀') ||
-          generationError.message.includes('🔧') ||
-          generationError.message.includes('🎨'))) {
-        throw generationError; // Pass through user-friendly messages
-      }
+      const errorMessage = generationError instanceof Error
+        ? generationError.message
+        : 'Unknown error occurred during content generation';
 
-      // Pass through the actual error message (no masking)
-      throw generationError;
+      return NextResponse.json(
+        {
+          error: errorMessage,
+          details: generationError,
+          message: `${revoModel} generation failed`,
+        },
+        { status: 500 }
+      );
     }
 
     // Validate result before returning
@@ -427,7 +309,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(result);
+    const diagnostics = {
+      supabaseConfig: {
+        hasUrl: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),
+        hasKey: Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+        urlLength: process.env.NEXT_PUBLIC_SUPABASE_URL?.length ?? 0,
+        keyLength: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length ?? 0,
+        urlPreview: process.env.NEXT_PUBLIC_SUPABASE_URL?.slice(0, 20) || 'missing',
+        keyPreview: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.slice(0, 10) || 'missing'
+      }
+    };
+
+    console.log('✅ [QuickContent] Returning result with imageUrl type:', typeof result.imageUrl);
+    console.log('✅ [QuickContent] ImageUrl starts with data:', result.imageUrl?.startsWith('data:'));
+    console.log('✅ [QuickContent] ImageUrl starts with http:', result.imageUrl?.startsWith('http'));
+    console.log('✅ [QuickContent] ImageUrl length:', result.imageUrl?.length || 0);
+    console.log('✅ [QuickContent] Diagnostics:', diagnostics);
+
+    return NextResponse.json({
+      ...result,
+      diagnostics
+    });
   } catch (error) {
     console.error('❌ Quick Content API Error:', error);
     // Provide user-friendly error messages without re-reading the request body
@@ -436,7 +338,7 @@ export async function POST(request: NextRequest) {
       if (error.message.includes('🚀') || error.message.includes('🔧') || error.message.includes('🎨')) {
         errorMessage = error.message;
       } else {
-        errorMessage = `🚀 ${revoModel || 'The AI model'} is being updated! Try a different model or wait a moment for amazing results.`;
+        errorMessage = '🚀 The AI model is being updated! Try a different model or wait a moment for amazing results.';
       }
     }
 

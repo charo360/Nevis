@@ -5,7 +5,7 @@
  */
 
 import { supabaseService } from './supabase-service';
-import type { GeneratedPost } from '@/lib/types';
+import type { GeneratedPost, Platform } from '@/lib/types';
 
 export interface ImageUploadResult {
   success: boolean;
@@ -34,14 +34,13 @@ export class SupabasePostStorageService {
    * Convert data URL to Buffer (for server-side)
    */
   private dataUrlToBuffer(dataUrl: string): Buffer {
-    const arr = dataUrl.split(',');
-    const bstr = atob(arr[1]);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    while (n--) {
-      u8arr[n] = bstr.charCodeAt(n);
+    const [meta, base64] = dataUrl.split(',');
+    // Validate prefix
+    if (!meta?.startsWith('data:image/')) {
+      throw new Error('Invalid data URL for image upload');
     }
-    return Buffer.from(u8arr);
+    // Decode base64 directly with Buffer (Node-safe)
+    return Buffer.from(base64, 'base64');
   }
 
   /**
@@ -54,7 +53,13 @@ export class SupabasePostStorageService {
     filename?: string
   ): Promise<ImageUploadResult> {
     try {
+      console.log('🔧 [SupabasePostStorage] Starting upload process...');
+      console.log('🔧 [SupabasePostStorage] Data URL valid:', dataUrl?.startsWith('data:image/'));
+      console.log('🔧 [SupabasePostStorage] User ID:', userId);
+      console.log('🔧 [SupabasePostStorage] Brand ID:', brandProfileId);
+      
       if (!dataUrl || !dataUrl.startsWith('data:image/')) {
+        console.error('🔧 [SupabasePostStorage] Invalid data URL provided');
         return {
           success: false,
           error: 'Invalid data URL provided'
@@ -65,31 +70,44 @@ export class SupabasePostStorageService {
       const timestamp = Date.now();
       const finalFilename = filename || `generated_${timestamp}.png`;
       const storagePath = `posts/${brandProfileId}/${finalFilename}`;
+      
+      console.log('🔧 [SupabasePostStorage] Storage path:', storagePath);
 
       // Convert data URL to buffer for upload
       const imageBuffer = this.dataUrlToBuffer(dataUrl);
+      console.log('🔧 [SupabasePostStorage] Buffer size:', imageBuffer.length);
 
       // Upload to Supabase
+      console.log('🔧 [SupabasePostStorage] Calling supabaseService.uploadImage...');
       const uploadResult = await supabaseService.uploadImage(
         imageBuffer,
         storagePath,
         'image/png'
       );
 
+      console.log('🔧 [SupabasePostStorage] Upload result:', {
+        success: !!uploadResult,
+        hasUrl: !!uploadResult?.url,
+        hasPath: !!uploadResult?.path
+      });
+
       if (!uploadResult) {
+        console.error('🔧 [SupabasePostStorage] Upload result is null');
         return {
           success: false,
-          error: 'Failed to upload image to Supabase'
+          error: 'Failed to upload image to Supabase - uploadResult is null'
         };
       }
 
+      console.log('🔧 [SupabasePostStorage] Upload successful:', uploadResult.url);
       return {
         success: true,
         url: uploadResult.url,
         path: uploadResult.path
       };
     } catch (error) {
-      console.error('Image upload error:', error);
+      console.error('🔧 [SupabasePostStorage] Upload error:', error);
+      console.error('🔧 [SupabasePostStorage] Error stack:', error instanceof Error ? error.stack : 'No stack');
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown upload error'
@@ -235,24 +253,29 @@ export class SupabasePostStorageService {
         limit
       );
 
-      // Convert Supabase format to app format
+      // Convert Supabase format to GeneratedPost format
       return supabasePosts.map(post => ({
-        _id: post.id,
-        userId: post.user_id,
-        brandProfileId: post.brand_profile_id,
+        id: post.id,
+        date: post.created_at,
+        platform: (post.platform?.toLowerCase() || 'instagram') as Platform,
+        postType: 'post' as const,
+        imageUrl: post.image_url,
         content: post.content,
-        hashtags: post.hashtags,
-        imageText: post.image_text,
-        imageUrl: post.image_url, // This should now work properly!
-        platform: post.platform,
-        aspectRatio: post.aspect_ratio,
-        generationModel: post.generation_model,
-        generationPrompt: post.generation_prompt,
-        generationSettings: post.generation_settings,
-        status: post.status,
-        createdAt: post.created_at,
-        updatedAt: post.updated_at,
-        publishedAt: post.published_at
+        hashtags: post.hashtags || '',
+        status: (post.status === 'published' ? 'posted' : post.status === 'scheduled' ? 'generated' : 'generated') as 'generated' | 'edited' | 'posted',
+        variants: [{
+          platform: (post.platform?.toLowerCase() || 'instagram') as Platform,
+          imageUrl: post.image_url || ''
+        }],
+        catchyWords: post.image_text || '',
+        subheadline: '',
+        callToAction: '',
+        metadata: {
+          model: post.generation_model || 'Unknown',
+          qualityScore: 8.5,
+          processingTime: 0,
+          enhancementsApplied: []
+        }
       }));
     } catch (error) {
       console.error('Get generated posts error:', error);

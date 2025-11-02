@@ -3,13 +3,13 @@
 import type { MarketingKnowledge } from './types'
 
 export class MarketingKnowledgeBase {
-  
+
   /**
    * Get comprehensive knowledge for a specific framework
    */
   async getRelevantKnowledge(framework: string): Promise<MarketingKnowledge> {
     const frameworkData = this.getFrameworkData(framework)
-    
+
     return {
       frameworkTemplate: frameworkData.template,
       frameworkReasoning: frameworkData.reasoning,
@@ -20,7 +20,7 @@ export class MarketingKnowledgeBase {
       emotionalTriggerGuidance: this.getEmotionalTriggerGuidance()
     }
   }
-  
+
   /**
    * Get framework-specific data
    */
@@ -62,7 +62,7 @@ export class MarketingKnowledgeBase {
           }
         ]
       },
-      
+
       AIDA: {
         template: `Attention → Interest → Desire → Action`,
         reasoning: `AIDA is perfect for awareness-stage content where you need to educate and build interest before conversion.`,
@@ -109,7 +109,7 @@ export class MarketingKnowledgeBase {
           }
         ]
       },
-      
+
       BAB: {
         template: `Before → After → Bridge`,
         reasoning: `BAB excels when you can show a clear transformation. Perfect for service businesses and results-focused offers.`,
@@ -146,7 +146,7 @@ export class MarketingKnowledgeBase {
           }
         ]
       },
-      
+
       PASTOR: {
         template: `Problem → Amplify → Story → Testimony → Offer → Response`,
         reasoning: `PASTOR is best for high-ticket, complex services where trust and credibility are essential. It's longer but highly effective.`,
@@ -207,7 +207,7 @@ export class MarketingKnowledgeBase {
           }
         ]
       },
-      
+
       FAB: {
         template: `Features → Advantages → Benefits`,
         reasoning: `FAB works for product-focused businesses and logical buyers. Bridges features to emotional benefits.`,
@@ -241,7 +241,7 @@ export class MarketingKnowledgeBase {
           }
         ]
       },
-      
+
       '4Ps': {
         template: `Picture → Promise → Prove → Push`,
         reasoning: `4Ps is excellent for results-driven campaigns where you need to establish credibility quickly.`,
@@ -286,10 +286,10 @@ export class MarketingKnowledgeBase {
         ]
       }
     }
-    
+
     return frameworks[framework] || frameworks.PAS
   }
-  
+
   /**
    * Get proven headline formulas
    */
@@ -337,7 +337,7 @@ export class MarketingKnowledgeBase {
       }
     ]
   }
-  
+
   /**
    * Get proven hook patterns
    */
@@ -385,7 +385,7 @@ export class MarketingKnowledgeBase {
       }
     ]
   }
-  
+
   /**
    * Get banned AI-detection phrases
    */
@@ -423,34 +423,34 @@ export class MarketingKnowledgeBase {
       'Multifaceted'
     ]
   }
-  
+
   /**
    * Get emotional trigger guidance
    */
   private getEmotionalTriggerGuidance(): Record<string, string> {
     return {
-      fear: 'Use fear of missing out, falling behind, or making mistakes. Be specific about what they might lose. Example: "While you're stuck using outdated methods, your competitors are 3x-ing their results."',
-      
+      fear: 'Use fear of missing out, falling behind, or making mistakes. Be specific about what they might lose. Example: "While you\'re stuck using outdated methods, your competitors are 3x-ing their results."',
+
       desire: 'Appeal to what they deeply want - not surface level. Go beyond "better results" to "feeling confident in your skin" or "finally proving everyone wrong." Make them FEEL the outcome.',
-      
+
       urgency: 'Create time-based pressure with deadlines, limited spots, seasonal opportunities. Must be genuine. Example: "Summer bookings close Friday" not fake "Only 24 hours left!" every day.',
-      
+
       trust: 'Build through social proof (testimonials, numbers), authority (credentials, media), or guarantees. Be specific: "87 local businesses" not "many happy customers."',
-      
+
       curiosity: 'Create information gaps. Tease a secret, method, or insight. Example: "The one ingredient that changes everything" then deliver on the promise.',
-      
+
       belonging: 'Make them part of a tribe/community. Use "us vs them" language carefully. Example: "For dog owners who refuse to settle for stressed groomers."',
-      
+
       pride: 'Appeal to their identity and values. Example: "For professionals who value their time" or "You\'re not the type to cut corners."',
-      
+
       relief: 'Promise to end frustration or pain. Example: "No more [specific annoying thing]" - be concrete about what stress they can drop.',
-      
+
       excitement: 'Create anticipation for something new, different, or better. Use sensory language. Example: "Imagine walking in and everyone knowing your name..."',
-      
+
       validation: 'Confirm their feelings are valid and they\'re not alone. Example: "You\'re right to be frustrated with cookie-cutter programs that ignore your body."'
     }
   }
-  
+
   /**
    * Get power words for different emotions
    */
@@ -462,7 +462,7 @@ export class MarketingKnowledgeBase {
       desire: ['imagine', 'picture', 'dream', 'ultimate', 'perfect', 'ideal', 'finally', 'achieve', 'transform'],
       fear: ['warning', 'danger', 'risk', 'mistake', 'avoid', 'prevent', 'protect', 'don\'t miss', 'losing out']
     }
-    
+
     return powerWords[emotion] || []
   }
 }

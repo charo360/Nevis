@@ -121,7 +121,7 @@ export async function generateRevo15ContentAction(
       throw new Error('🚫 [Revo 1.5 Actions] Pure AI response incomplete - missing required fields. No fallbacks allowed!');
     }
 
-    // Convert to GeneratedPost format
+    // Convert to GeneratedPost format (UNIFIED - following Revo 2.0 format exactly)
     const generatedPost: GeneratedPost = {
       id: `revo-1.5-${Date.now()}`,
       date: new Date().toISOString(),
@@ -129,7 +129,7 @@ export async function generateRevo15ContentAction(
       postType: 'post',
       imageUrl: result.imageUrl,
       content: result.caption,
-      hashtags: result.hashtags.join(' '),
+      hashtags: Array.isArray(result.hashtags) ? result.hashtags.join(' ') : result.hashtags,
       catchyWords: result.headline,
       subheadline: result.subheadline,
       callToAction: result.callToAction,
@@ -140,7 +140,6 @@ export async function generateRevo15ContentAction(
           imageUrl: result.imageUrl
         }
       ],
-      format: result.format,
       metadata: {
         model: result.model,
         qualityScore: result.qualityScore,

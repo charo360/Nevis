@@ -5,7 +5,6 @@
 // Updated: Using direct Vertex AI for all AI generation (no proxy dependencies)
 import { BrandProfile } from '@/lib/types';
 import { getVertexAIClient } from '@/lib/services/vertex-ai-client';
-import { generateContentDirect } from './revo-2.0-service';
 import { revo10Config, revo10Prompts } from './models/versions/revo-1.0/config';
 import type { ScheduledService } from '@/services/calendar-service';
 import { advancedContentGenerator, BusinessProfile } from './advanced-content-generator';
@@ -31,7 +30,10 @@ import {
 } from './creative-enhancement';
 // Import shared pipeline utilities
 import {
-  TextGenerationHandler
+  TextGenerationHandler,
+  normalizeStringList,
+  normalizeServiceList,
+  getBrandKey
 } from './revo/shared-pipeline';
 // Enhanced features integration (copied from Revo 1.5)
 import { ensureExactDimensions } from './utils/image-dimensions';
@@ -1419,6 +1421,51 @@ function getBusinessIntelligenceEngine(businessType: string, location: string): 
         ]
       }
     },
+    'default': {
+      name: 'Professional Services',
+      localExpertise: {
+        experience: '20+ years in professional services and local business',
+        marketDynamics: [
+          'Local business environment and competition',
+          'Community business needs and trends',
+          'Local economic conditions',
+          'Business development opportunities',
+          'Community partnerships and networking'
+        ],
+        localPhrases: [
+          'Your local business partner',
+          'Professional excellence in [location]',
+          'Local business expertise',
+          'Your success partner',
+          'Local professional leadership',
+          'Community business partner',
+          'Your business guide',
+          'Local professional excellence',
+          'Community business expert',
+          'Success close to home'
+        ],
+        contentStrategies: [
+          'Local business success stories',
+          'Community business initiatives',
+          'Local business insights',
+          'Business development opportunities',
+          'Local business trends',
+          'Community business events',
+          'Local business partnerships',
+          'Community business support'
+        ],
+        engagementHooks: [
+          'Business growth and success',
+          'Local business community',
+          'Professional development',
+          'Business opportunities',
+          'Local business pride',
+          'Community business support',
+          'Business innovation',
+          'Local business expertise'
+        ]
+      }
+    },
     'financial technology software': {
       name: 'Financial Technology Software',
       localExpertise: {
@@ -1460,6 +1507,49 @@ function getBusinessIntelligenceEngine(businessType: string, location: string): 
         'Digital banking for [location]',
         'Your fintech partner',
         'Payment innovation'
+      ]
+    },
+    'default': {
+      name: 'Professional Services',
+      localExpertise: {
+        experience: '20+ years in professional services',
+        marketDynamics: [
+          'Local business environment and competition',
+          'Market trends and opportunities',
+          'Customer needs and preferences',
+          'Industry best practices and standards',
+          'Local economic conditions and growth'
+        ],
+        contentStrategies: [
+          'Professional excellence and expertise',
+          'Client success stories',
+          'Industry insights and trends',
+          'Local market knowledge',
+          'Service quality and reliability',
+          'Innovation and solutions',
+          'Community involvement',
+          'Professional development'
+        ],
+        engagementHooks: [
+          'Professional excellence',
+          'Client success',
+          'Industry expertise',
+          'Local market knowledge',
+          'Quality service',
+          'Innovation solutions',
+          'Community partnership',
+          'Professional growth'
+        ]
+      },
+      localPhrases: [
+        'Your local professional partner',
+        'Excellence in [location]',
+        'Local expertise you can trust',
+        'Your success partner',
+        'Professional solutions for [location]',
+        'Local industry leadership',
+        'Your trusted advisor',
+        'Professional excellence'
       ]
     }
   };
@@ -1803,9 +1893,86 @@ function generateLocalOpportunities(businessType: string, location: string): any
   return opportunities.slice(0, 2);
 }
 // Direct Vertex AI models (no proxy dependencies)
-const REVO_1_0_IMAGE_MODEL = 'gemini-2.5-flash-image'; // Same model as Revo 2.0 (confirmed working)
+const REVO_1_0_IMAGE_MODEL = 'gemini-2.5-flash-image'; // Direct Vertex AI model
 const REVO_1_0_TEXT_MODEL = 'gemini-2.5-flash'; // Direct Vertex AI model
-// Using imported generateContentDirect from revo-2.0-service.ts
+// Direct Vertex AI function (no proxy dependencies)
+async function generateContentDirect(promptOrParts: string | any[], modelName: string, isImageGeneration: boolean): Promise<any> {
+  // Check if Vertex AI is enabled
+  if (!process.env.VERTEX_AI_ENABLED || process.env.VERTEX_AI_ENABLED !== 'true') {
+    throw new Error('🚫 Vertex AI is not enabled. Please set VERTEX_AI_ENABLED=true in your environment variables.');
+  }
+  try {
+    if (isImageGeneration) {
+      // Handle multimodal requests (text + images) for image generation
+      let prompt: string;
+      let logoImage: string | undefined;
+      if (Array.isArray(promptOrParts)) {
+        // Extract text parts
+        const textParts = promptOrParts.filter(part => typeof part === 'string');
+        prompt = textParts.join(' ');
+        // Extract image parts (logo)
+        const imageParts = promptOrParts.filter(part =>
+          typeof part === 'object' && part.inlineData
+        );
+        if (imageParts.length > 0) {
+          // Convert back to data URL format for Vertex AI
+          const firstImage = imageParts[0];
+          const mimeType = firstImage.inlineData.mimeType || 'image/png';
+          logoImage = `data:${mimeType};base64,${firstImage.inlineData.data}`;
+        }
+      } else {
+        prompt = promptOrParts;
+      }
+      const result = await getVertexAIClient().generateImage(prompt, modelName, {
+        temperature: 0.7,
+        maxOutputTokens: 8192,
+        logoImage
+      });
+      // Convert to expected format
+      return {
+        response: {
+          candidates: [{
+            content: {
+              parts: [{
+                inlineData: {
+                  mimeType: result.mimeType,
+                  data: result.imageData
+                }
+              }]
+            }
+          }]
+        }
+      };
+    } else {
+      // Text generation using Vertex AI
+      let prompt: string;
+      if (Array.isArray(promptOrParts)) {
+        // Extract text parts only
+        const textParts = promptOrParts.filter(part => typeof part === 'string');
+        prompt = textParts.join(' ');
+      } else {
+        prompt = promptOrParts;
+      }
+      const result = await getVertexAIClient().generateText(prompt, modelName, {
+        temperature: 0.7,
+        maxOutputTokens: 8192
+      });
+      // Convert to expected format
+      return {
+        response: {
+          text: () => result.text
+        }
+      };
+    }
+  } catch (error) {
+    console.error('❌ Revo 1.0: Direct Vertex AI call failed:', error);
+    throw new Error(`Revo 1.0 direct generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+// Direct Vertex AI function (replaces proxy routing)
+async function generateContentWithProxy(promptOrParts: string | any[], modelName: string, isImageGeneration: boolean = false): Promise<any> {
+  return await generateContentDirect(promptOrParts, modelName, isImageGeneration);
+}
 /**
  * Get platform-specific aspect ratio - ALL PLATFORMS USE 1:1 FOR HIGHEST QUALITY
  */
@@ -2100,1070 +2267,116 @@ async function generateRevo10CreativeConcept(options: any): Promise<any> {
   const upcomingServices = scheduledServices?.filter((s: any) => s.isUpcoming) || [];
   // Generate creative concept using same approach as Revo 2.0
   return {
-    concept: `Dynamic ${businessType} content for ${platform}`,
+    concept: `Dynamic ${businessType}content for ${platform}`,
     visualTheme: options.visualStyle || 'modern',
     contentStrategy: 'engagement',
     businessStrengths: brandProfile.uniqueSellingPoints || ['Professional service'],
     marketOpportunities: ['Market growth', 'Customer engagement'],
-    valueProposition: `Quality ${businessType} services`,
+    valueProposition: `Quality ${businessType}services`,
     todaysServices,
     upcomingServices
   };
 }
 /**
- * Generate content using Gemini (following Revo 2.0 advanced content generation pattern)
+ * Generate content using Gemini (following Revo 2.0 content generation pattern)
  */
 async function generateRevo10ContentWithGemini(options: any, concept: any): Promise<any> {
-  const maxRetries = 3;
-  let lastError: Error | null = null;
-
-  // Get brand key for anti-repetition system
-  const brandKey = getBrandKey(options.brandProfile, options.platform);
-  const recentData = recentOutputs.get(brandKey) || { headlines: [], captions: [], concepts: [] };
-
-  console.log('🚀 [Revo 1.0] Starting advanced content generation with Gemini');
-  console.log('🔍 [Revo 1.0] Options:', {
-    businessType: options.businessType,
-    businessName: options.brandProfile?.businessName,
-    platform: options.platform,
-    useLocalLanguage: options.useLocalLanguage
-  });
-
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      console.log(`🤖 [Revo 1.0] Content Generation Attempt ${attempt}/${maxRetries} - Using Gemini 2.5 Flash`);
-
-      // Build advanced prompt using Revo 2.0 system
-      const prompt = buildRevo10ContentPrompt(options, concept);
-      console.log('📝 [Revo 1.0] Generated advanced prompt length:', prompt.length);
-
-      // Add randomization to temperature for more variety
-      const temperature = 0.8 + (Math.random() * 0.3); // 0.8-1.1 range
-      console.log(`🎲 [Revo 1.0] Using temperature: ${temperature.toFixed(2)} for content variety`);
-
-      // Call Gemini for content generation with enhanced options
-      const response = await callGeminiForContent(prompt, { ...options, temperature });
-      console.log('📥 [Revo 1.0] Received response from Gemini:', JSON.stringify(response, null, 2));
-      console.log('📥 [Revo 1.0] Response type:', typeof response);
-      console.log('📥 [Revo 1.0] Response keys:', response ? Object.keys(response) : 'null');
-
-      // Validate and enhance the response
-      if (response && (response.headline || response.caption)) {
-        console.log('✅ [Revo 1.0] Response structure validation PASSED');
-        // Parse and validate content structure
-        const parsed = {
-          headline: response.headline || '',
-          subheadline: response.subheadline || '',
-          caption: response.caption || '',
-          cta: response.cta || response.callToAction || '',
-          hashtags: Array.isArray(response.hashtags) ? response.hashtags : []
-        };
-
-        // Content validation (similar to Revo 2.0) - MADE MORE LENIENT FOR DEBUGGING
-        const headlineValid = parsed.headline && parsed.headline.trim().length > 0 && parsed.headline.split(' ').length <= 8; // Increased from 6 to 8
-        const subheadlineValid = parsed.subheadline && parsed.subheadline.trim().length > 0 && parsed.subheadline.split(' ').length <= 30; // Increased from 25 to 30
-        const captionValid = parsed.caption && parsed.caption.trim().length >= 10; // Reduced from 20 to 10
-        const ctaValid = parsed.cta && parsed.cta.trim().length > 0;
-        const hashtagsValid = Array.isArray(parsed.hashtags) && parsed.hashtags.length >= 1; // Reduced from 3 to 1
-
-        // Check for banned patterns and repetition
-        const headlineHasBannedPatterns = hasBannedPattern(parsed.headline);
-        const captionHasBannedPatterns = hasBannedPattern(parsed.caption);
-        const headlineTooSimilar = tooSimilar(parsed.headline, recentData.headlines, 0.55);
-        const captionTooSimilar = tooSimilar(parsed.caption, recentData.captions, 0.40);
-
-        // Enhanced validation checks
-        const headlineIsGeneric = /^[a-z]+ your [a-z]+$/i.test(parsed.headline.trim()) ||
-          parsed.headline.includes('Experience the excellence') ||
-          parsed.headline.includes('Transform your');
-
-        const captionIsGeneric = parsed.caption.includes('Experience the excellence of') ||
-          parsed.caption.includes('makes financial technology company effortless') ||
-          /makes .+ effortless and effective/i.test(parsed.caption);
-
-        console.log('🔍 [Revo 1.0] Content validation results:', {
-          headlineValid,
-          subheadlineValid,
-          captionValid,
-          ctaValid,
-          hashtagsValid,
-          headlineHasBannedPatterns,
-          captionHasBannedPatterns,
-          headlineTooSimilar,
-          captionTooSimilar,
-          headlineIsGeneric,
-          captionIsGeneric
-        });
-
-        // NEW: Add headline-caption coherence validation (ported from Revo 2.0) - ENHANCED FOR FINANCIAL TECH
-        const headlineWords = (parsed.headline || '').toLowerCase().split(/\s+/).filter(w => w.length > 3);
-        const captionWords = parsed.caption.toLowerCase().split(/\s+/).filter(w => w.length > 3);
-
-        console.log(`🔍 [Revo 1.0] COHERENCE DEBUG - Headline: "${parsed.headline}"`);
-        console.log(`🔍 [Revo 1.0] COHERENCE DEBUG - Caption: "${parsed.caption}"`);
-        console.log(`🔍 [Revo 1.0] COHERENCE DEBUG - Headline words: ${headlineWords.join(', ')}`);
-        console.log(`🔍 [Revo 1.0] COHERENCE DEBUG - Caption words: ${captionWords.slice(0, 10).join(', ')}`);
-
-        // Enhanced semantic matching for financial technology business
-        const hasCommonWords = headlineWords.some(headlineWord =>
-          captionWords.some(captionWord => {
-            // Exact match
-            if (headlineWord === captionWord) return true;
-
-            // Financial Technology specific semantic matches
-            if (headlineWord === 'finance' && ['financial', 'money', 'payment', 'banking', 'cash', 'paya'].includes(captionWord)) return true;
-            if (headlineWord === 'financial' && ['finance', 'money', 'payment', 'banking', 'cash', 'paya'].includes(captionWord)) return true;
-            if (headlineWord === 'technology' && ['tech', 'digital', 'mobile', 'app', 'system', 'solution'].includes(captionWord)) return true;
-            if (headlineWord === 'paya' && ['finance', 'financial', 'money', 'payment', 'banking'].includes(captionWord)) return true;
-
-            // General business semantic matches
-            if (headlineWord === 'banking' && ['bank', 'money', 'payment', 'finance', 'financial', 'paya'].includes(captionWord)) return true;
-            if (headlineWord === 'payment' && ['pay', 'money', 'banking', 'finance', 'financial', 'paya'].includes(captionWord)) return true;
-            if (headlineWord === 'secure' && ['security', 'safe', 'protection', 'protect', 'trust'].includes(captionWord)) return true;
-            if (headlineWord === 'daily' && ['every', 'everyday', 'routine', 'regular'].includes(captionWord)) return true;
-            if (headlineWord === 'business' && ['company', 'shop', 'enterprise', 'commercial', 'work'].includes(captionWord)) return true;
-            if (headlineWord === 'money' && ['cash', 'payment', 'finance', 'financial', 'banking', 'paya'].includes(captionWord)) return true;
-            if (headlineWord === 'smart' && ['intelligent', 'clever', 'advanced', 'modern', 'tech'].includes(captionWord)) return true;
-
-            // Root word matching (more conservative)
-            if (headlineWord.length > 4 && captionWord.length > 4) {
-              const headlineRoot = headlineWord.substring(0, Math.min(5, headlineWord.length));
-              const captionRoot = captionWord.substring(0, Math.min(5, captionWord.length));
-              if (headlineRoot === captionRoot) return true;
-            }
-            return false;
-          })
-        );
-
-        // More lenient coherence check - only flag as disconnected if caption is substantial AND has no semantic connection
-        const captionDisconnected = !hasCommonWords && parsed.caption.length > 80; // Increased threshold
-
-        console.log(`🔗 [Revo 1.0] COHERENCE DEBUG - Has common words: ${hasCommonWords}`);
-        console.log(`🚫 [Revo 1.0] COHERENCE DEBUG - Caption disconnected: ${captionDisconnected}`);
-
-        // Enhanced validation debugging
-        console.log(`🔍 [Revo 1.0] VALIDATION DEBUG:`);
-        console.log(`   📏 headlineValid: ${headlineValid}`);
-        console.log(`   📏 subheadlineValid: ${subheadlineValid}`);
-        console.log(`   📏 captionValid: ${captionValid}`);
-        console.log(`   📏 ctaValid: ${ctaValid}`);
-        console.log(`   📏 hashtagsValid: ${hashtagsValid}`);
-        console.log(`   🚫 headlineHasBannedPatterns: ${headlineHasBannedPatterns}`);
-        console.log(`   🚫 captionHasBannedPatterns: ${captionHasBannedPatterns}`);
-        console.log(`   🔄 headlineTooSimilar: ${headlineTooSimilar}`);
-        console.log(`   🔄 captionTooSimilar: ${captionTooSimilar}`);
-        console.log(`   📝 headlineIsGeneric: ${headlineIsGeneric}`);
-        console.log(`   📝 captionIsGeneric: ${captionIsGeneric}`);
-        console.log(`   🔗 captionDisconnected: ${captionDisconnected}`);
-
-        // TEMPORARILY DISABLE COHERENCE VALIDATION TO DEBUG
-        const skipCoherenceValidation = true; // TODO: Remove this after debugging
-
-        // If content passes validation, apply quality enhancement
-        if (headlineValid && subheadlineValid && captionValid && ctaValid && hashtagsValid &&
-          !headlineHasBannedPatterns && !captionHasBannedPatterns &&
-          !headlineTooSimilar && !captionTooSimilar &&
-          !headlineIsGeneric && !captionIsGeneric && (skipCoherenceValidation || !captionDisconnected)) {
-
-          console.log('✅ [Revo 1.0] Content passed validation, applying quality enhancement');
-
-          // Apply spell checking and content quality enhancement
-          let finalResult = parsed;
-
-          // TODO: Re-enable ContentQualityEnhancer after debugging
-          console.log('🔤 [Revo 1.0] Skipping spell checking for debugging - using original content');
-          finalResult = parsed;
-
-          /* TEMPORARILY DISABLED FOR DEBUGGING
-          try {
-            const spellCheckedContent = await ContentQualityEnhancer.enhanceGeneratedContent({
-              headline: parsed.headline,
-              subheadline: parsed.subheadline,
-              caption: parsed.caption,
-              callToAction: parsed.cta
-            }, options.businessType, {
-              autoCorrect: true,
-              logCorrections: true,
-              validateQuality: true
-            });
-
-            // Update content with spell-checked versions
-            finalResult = {
-              caption: spellCheckedContent.caption || parsed.caption,
-              headline: spellCheckedContent.headline || parsed.headline,
-              subheadline: spellCheckedContent.subheadline || parsed.subheadline,
-              cta: spellCheckedContent.callToAction || parsed.cta,
-              hashtags: parsed.hashtags
-            };
-
-            console.log('🔤 [Revo 1.0] Applied spell checking and quality enhancement');
-          } catch (spellError) {
-            console.warn('⚠️ [Revo 1.0] Spell check failed, using original content:', spellError);
-            finalResult = parsed;
-          }
-          */
-
-          // Remember this content to avoid repetition
-          rememberOutput(brandKey, {
-            headline: finalResult.headline,
-            caption: finalResult.caption
-          });
-
-          console.log('✅ [Revo 1.0] Final enhanced result:', finalResult);
-          return finalResult;
-        } else {
-          // Enhanced validation failure logging
-          const reasons = [];
-          if (!headlineValid) reasons.push('invalid headline');
-          if (!subheadlineValid) reasons.push('invalid subheadline');
-          if (!captionValid) reasons.push('invalid caption');
-          if (!ctaValid) reasons.push('invalid CTA');
-          if (!hashtagsValid) reasons.push('invalid hashtags');
-          if (headlineHasBannedPatterns) reasons.push('headline has banned patterns');
-          if (captionHasBannedPatterns) reasons.push('caption has banned patterns');
-          if (headlineTooSimilar) reasons.push('headline too similar');
-          if (captionTooSimilar) reasons.push('caption too similar');
-          if (headlineIsGeneric) reasons.push('headline is generic');
-          if (captionIsGeneric) reasons.push('caption is generic');
-          if (captionDisconnected) reasons.push('caption disconnected from headline');
-
-          console.warn(`⚠️ [Revo 1.0] Content validation failed on attempt ${attempt} - Reasons: ${reasons.join(', ')}`);
-          console.warn(`🔍 [Revo 1.0] Headline: "${parsed.headline}"`);
-          console.warn(`🔍 [Revo 1.0] Caption: "${parsed.caption}"`);
-
-          if (captionDisconnected) {
-            console.warn(`🚫 [Revo 1.0] COHERENCE ISSUE: Caption doesn't share keywords with headline`);
-            console.warn(`📝 [Revo 1.0] Headline words: ${headlineWords.filter(w => w.length > 3).join(', ')}`);
-            console.warn(`📝 [Revo 1.0] Caption words: ${captionWords.filter(w => w.length > 3).slice(0, 10).join(', ')}`);
-          }
-
-          lastError = new Error(`Content validation failed: ${reasons.join(', ')}`);
-          continue;
-        }
-      } else {
-        console.warn(`⚠️ [Revo 1.0] Invalid response structure on attempt ${attempt}, retrying...`);
-        console.warn(`🔍 [Revo 1.0] Response was:`, response);
-        console.warn(`🔍 [Revo 1.0] Expected: response.headline or response.caption to exist`);
-        console.warn(`🔍 [Revo 1.0] Got headline:`, response?.headline);
-        console.warn(`🔍 [Revo 1.0] Got caption:`, response?.caption);
-        lastError = new Error('Invalid response structure');
-        continue;
-      }
-    } catch (error) {
-      console.error(`❌ [Revo 1.0] Content generation attempt ${attempt} failed:`, error);
-      lastError = error instanceof Error ? error : new Error(String(error));
-
-      if (attempt === maxRetries) {
-        break;
-      }
-
-      // Wait before retry
-      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-    }
+  try {
+    // Build prompt using Revo 2.0 style (clean, no templates)
+    const prompt = buildRevo10ContentPrompt(options, concept);
+    // Call Gemini for content generation
+    const response = await callGeminiForContent(prompt, options);
+    return {
+      caption: response.caption || `Dynamic ${options.businessType}content for ${options.platform}`,
+      headline: response.headline || `${options.brandProfile.businessName}- Your ${options.businessType}Solution`,
+      subheadline: response.subheadline || `Quality ${options.businessType}services you can trust`,
+      cta: response.cta || 'Learn More',
+      hashtags: response.hashtags || [`#${options.businessType.replace(/\s+/g, '')}`, '#quality', '#professional']
+    };
+  } catch (error) {
+    console.error('❌ [Revo 1.0] Gemini content generation failed:', error);
+    // Simple fallback without templates
+    return {
+      caption: `${options.brandProfile.businessName}provides quality ${options.businessType}services.`,
+      headline: `${options.brandProfile.businessName}- Your ${options.businessType}Solution`,
+      subheadline: `Quality ${options.businessType}services you can trust`,
+      cta: 'Learn More',
+      hashtags: [`#${options.businessType.replace(/\s+/g, '')}`, '#quality', '#professional']
+    };
   }
-
-  // All retries failed, generate unique fallback content
-  console.warn(`❌ [Revo 1.0] All ${maxRetries} attempts failed. Generating unique fallback content.`);
-  console.warn(`Last error: ${lastError?.message || 'Unknown error'}`);
-  console.warn(`🚨 [Revo 1.0] CRITICAL: AI content generation is failing - using templates instead of real AI content!`);
-  console.warn(`🔧 [Revo 1.0] This means validation is too strict or AI responses are malformed`);
-
-  return generateUniqueFallbackContent(options.brandProfile, options.businessType, options.platform, 3, Date.now() % 10, concept);
 }
 /**
- * Build advanced content prompt for Revo 1.0 (using Revo 2.0 sophisticated system)
+ * Build content prompt for Revo 1.0 (following Revo 2.0 clean approach)
  */
 function buildRevo10ContentPrompt(options: any, concept: any): string {
-  const { businessType, brandProfile, platform, scheduledServices } = options;
-
-  // Normalize platform and determine hashtag count
-  const normalizedPlatform = String(platform).toLowerCase();
-  const hashtagCount = normalizedPlatform === 'instagram' ? 5 : 3;
-
-  // Extract business intelligence data
-  const keyFeaturesList = normalizeStringList((brandProfile as any).keyFeatures ?? brandProfile.keyFeatures);
-  const competitiveAdvantagesList = normalizeStringList((brandProfile as any).competitiveAdvantages ?? brandProfile.competitiveAdvantages);
-  const servicesList = normalizeServiceList((brandProfile as any).services ?? brandProfile.services);
-  const positioning = (brandProfile as any).competitivePositioning;
-
-  // Build service-specific content context
-  let serviceContentContext = '';
-  if (concept.featuredServices && concept.featuredServices.length > 0) {
-    const todayService = concept.featuredServices[0];
-    serviceContentContext = `\n\n🎯 TODAY'S FEATURED SERVICE (Primary Focus):\n- Service: ${todayService.serviceName}\n- Description: ${todayService.description || 'Premium service offering'}\n- Content Focus: Write about THIS specific service as today's highlight\n- Call-to-Action: Encourage engagement with this service`;
-
-    if (concept.upcomingServices && concept.upcomingServices.length > 0) {
-      serviceContentContext += `\n\n📅 UPCOMING SERVICES (Mention briefly):\n${concept.upcomingServices.map((s: any) => `- ${s.serviceName}`).join('\n')}`;
-    }
-  }
-
-  // Select enhanced content approach for variety
-  const contentApproaches = getEnhancedContentApproaches();
-  const selectedApproach = options.contentApproach || contentApproaches[Math.floor(Math.random() * contentApproaches.length)];
-
-  // Build local language integration if enabled
-  let localLanguageInstructions = '';
-  if (options.useLocalLanguage && brandProfile.location) {
-    localLanguageInstructions = `\n\n🌍 CRITICAL LOCAL LANGUAGE INTEGRATION FOR ${brandProfile.location.toUpperCase()}:
-- MANDATORY: Mix English (70%) with local language elements (30%)
-- NATURAL INTEGRATION: Don't force it - only add when it flows naturally
-- CONTEXTUAL USE: Match local language to business type and audience
-- VARIETY: Use different local phrases for each generation (avoid repetition)
-
-📍 LOCATION-SPECIFIC LANGUAGE ELEMENTS:
-${getLocationSpecificLanguageInstructions(brandProfile.location)}
-
-🎯 INTEGRATION EXAMPLES (ADAPTS TO USER'S COUNTRY):
-- Headlines: "Digital Banking Made Simple" → Add local welcome (Karibu/Hola/Bonjour/etc.)
-- Subheadlines: "Fast payments, zero hassle" → Mix with local reassurance phrases
-- Benefits: "Secure transactions" → Include local trust expressions
-- CTAs: "Get Started Today" → Use local action phrases (Twende/Vamos/Allons-y/etc.)
-- Social Proof: "Trusted by customers" → Localize with country-specific language
-- Urgency: "Don't wait" → Use local urgency expressions
-- Captions: Mix English (70%) with local language (30%) naturally
-- ADAPTS TO: Kenya, Nigeria, Ghana, South Africa, India, Philippines, Indonesia, Thailand, Vietnam, Brazil, Mexico, Spain, France, Germany, and more
-
-⚠️ CRITICAL: Local language should enhance, not confuse. Keep it natural and contextual.`;
-  }
-
-  return `Create engaging social media content for ${brandProfile.businessName} (${businessType}) on ${platform}.
-
-🎯 BUSINESS CONTEXT:
-- Business: ${brandProfile.businessName}
-- Industry: ${businessType}
-- Location: ${brandProfile.location || 'Global'}
-- Platform: ${platform}
-- Content Approach: ${selectedApproach} (use this strategic angle)${localLanguageInstructions}
-
-💼 BUSINESS INTELLIGENCE:
-${keyFeaturesList.length > 0 ? `- Key Features: ${keyFeaturesList.slice(0, 5).join(', ')}` : ''}
-${competitiveAdvantagesList.length > 0 ? `- Competitive Advantages: ${competitiveAdvantagesList.slice(0, 3).join(', ')}` : ''}
-${servicesList.length > 0 ? `- Services: ${servicesList.slice(0, 4).join(', ')}` : ''}
-${brandProfile.targetAudience ? `- Target Audience: ${brandProfile.targetAudience}` : ''}
-${typeof positioning === 'string' && positioning.trim().length > 0 ? `- Positioning: ${positioning}` : ''}
-${brandProfile.description ? `- Business Description: ${brandProfile.description.substring(0, 200)}` : ''}
-
-🏆 COMPETITIVE ANALYSIS:
-${getCompetitorAnalysis(brandProfile)}
-The generated image shows: ${concept.concept}${serviceContentContext}
-
-📸 REALISTIC PHOTOGRAPHY REQUIREMENTS:
-- Show REAL people in NATURAL settings (not staged poses)
-- Use CLEAN, SIMPLE compositions without artificial effects
-- Focus on AUTHENTIC interactions with technology
-- Avoid ANY flowing lines, glowing effects, or abstract elements
-- Show actual mobile banking interfaces, not fantasy effects
-- Use natural lighting and realistic environments
-- NO computer-generated visual effects that look fake
-
-📖 AUTHENTIC STORYTELLING SCENARIOS (USE THESE REAL-LIFE STORIES):
-${getAuthenticStoryScenarios(brandProfile, businessType)}
-
-🎯 CONTENT ALIGNMENT REQUIREMENTS:
-- Caption MUST be relevant to the visual elements in the image
-- Write about what's actually shown in the design
-- Match the tone and context of the visual setting
-- Be specific about the business services that relate to the visual context
-${concept.featuredServices && concept.featuredServices.length > 0 ? `- Highlight today's featured service: "${concept.featuredServices[0].serviceName}"` : ''}
-
-📝 CONTENT REQUIREMENTS - MUST WORK TOGETHER AS ONE STORY:
-1. HEADLINE (max 6 words): This will appear as text IN the image design - make it compelling
-2. SUBHEADLINE (max 25 words): This will also appear IN the image - should support the headline
-
-✏️ GRAMMAR & LANGUAGE RULES (CRITICAL):
-- CORRECT: "Payments that fit your day" (plural subject = plural verb)
-- WRONG: "Payments that fits your day" (grammar error)
-- CORRECT: "Business that grows" (singular) / "Businesses that grow" (plural)
-- CHECK subject-verb agreement in ALL content
-- USE proper English grammar throughout
-- AVOID grammatical errors that make content look unprofessional
-3. CAPTION (50-100 words): Should continue the story started by the headline/subheadline in the image
-4. CALL-TO-ACTION (2-4 words): Action-oriented and contextually appropriate
-5. HASHTAGS (EXACTLY ${hashtagCount}): ${normalizedPlatform === 'instagram' ? '5 hashtags for Instagram' : '3 hashtags for other platforms'}
-
-🔗 CONTENT COHESION REQUIREMENTS:
-- The headline and subheadline will be embedded as text elements in the visual design
-- Your caption must continue and expand on the message shown in the image text
-- Think of it as: Image shows the "hook" → Caption provides the "story" → CTA drives "action"
-- Example: If image shows "Smart Banking" → Caption explains why it's smart and what that means for the customer
-
-🚫 CRITICAL HEADLINE RESTRICTIONS:
-- NEVER start with company name followed by colon (e.g., "PAYA:", "COMPANY:")
-- NEVER use "journey", "everyday", or repetitive corporate language
-- Headlines should be engaging standalone phrases, not company announcements
-
-🚨 CRITICAL: UNIFIED STORY REQUIREMENT (MANDATORY):
-ALL ELEMENTS MUST TELL ONE COHERENT STORY - NO DISCONNECTED PIECES!
-
-📝 CONTENT REQUIREMENTS - SINGLE NARRATIVE THREAD:
-1. HEADLINE (max 6 words): Sets the CORE MESSAGE - everything else builds on this
-2. SUBHEADLINE (max 12 words): DIRECTLY supports and expands the headline message
-3. CAPTION (2-3 sentences): CONTINUES the exact story started in headline, NO topic shifts
-4. HASHTAGS (exactly ${hashtagCount} tags): REFLECT the same theme as headline/caption
-5. CALL-TO-ACTION: COMPLETES the story with clear next step
-
-🚨 BUSINESS RELEVANCE VALIDATION (CRITICAL):
-- NEVER create content about industries/services the business doesn't offer
-- If business is FINTECH → Focus ONLY on payments, banking, transfers, business finance, mobile money
-- If business is HEALTHCARE → Focus ONLY on medical services, patient care, health solutions
-- If business is EDUCATION → Focus ONLY on learning, courses, academic services
-- ALWAYS check: Does this headline relate to the actual business services?
-- BANNED for Paya Finance: Education themes, academic scenarios, student content, textbook references
-- REQUIRED: Headlines must connect to actual business services and target audience
-
-🔗 STORY COHERENCE VALIDATION (NON-NEGOTIABLE):
-- HEADLINE and CAPTION must share common keywords or themes
-- If headline mentions "PAYMENTS" → caption MUST mention money transfers/transactions/payments
-- If headline mentions "SECURE" → caption MUST mention security/protection/safety
-- If headline mentions "DAILY" → caption MUST mention everyday/routine activities
-- If headline mentions "BUSINESS" → caption MUST mention business operations/growth/management
-- If headline mentions "MOBILE" → caption MUST mention phone/app/mobile banking
-- NEVER write generic captions that could work with any headline
-- Caption must SPECIFICALLY relate to and expand on the headline message
-- NO corporate filler language: "puts BNPL front and center today"
-
-💡 SERVICE-SPECIFIC CONTENT RULES:
-${servicesList.length > 0 ? servicesList.map(service => `- ${service}: Focus on specific benefits and outcomes`).join('\n') : ''}
-${keyFeaturesList.length > 0 ? `- Use these key features: ${keyFeaturesList.slice(0, 3).join(', ')}` : ''}
-${competitiveAdvantagesList.length > 0 ? `- Highlight advantages: ${competitiveAdvantagesList.slice(0, 2).join(', ')}` : ''}
-
-🎯 CUSTOMER PAIN POINTS & SOLUTIONS:
-${getCustmerPainPointsForBusiness(businessType, brandProfile)}
-
-💰 VALUE PROPOSITIONS (USE THESE):
-${getValuePropositionsForBusiness(businessType, brandProfile)}
-
-🎯 PAYA-SPECIFIC CONTENT FOCUS (MANDATORY):
-- Focus on REAL Paya services: Mobile Banking, Buy Now Pay Later, Instant Payments, Business Payments
-- Target REAL audiences: Small business owners, entrepreneurs, unbanked Kenyans, mobile money users
-- Address REAL pain points: Bank queues, credit requirements, high fees, slow transfers
-- Use REAL benefits: No credit checks, instant account opening, transparent fees, mobile convenience
-- AVOID: Education themes, academic scenarios, student content, textbook references, school-related content
-- CREATE: Authentic fintech scenarios that Paya customers actually experience
-
-📊 USE ACTUAL COMPANY DATA (MANDATORY):
-- Business Name: ${brandProfile.businessName}
-- Location: ${brandProfile.location || 'Kenya'}
-- Services: ${normalizeStringList(brandProfile.services || []).join(', ') || 'Financial Technology Services'}
-- Key Features: ${normalizeStringList(brandProfile.keyFeatures || []).join(', ') || 'Mobile Banking, Instant Payments'}
-- Unique Selling Points: ${normalizeStringList(brandProfile.uniqueSellingPoints || []).join(', ') || 'Fast, Secure, Affordable'}
-- Target Audience: ${brandProfile.targetAudience || 'Small Business Owners, Entrepreneurs'}
-- NEVER use generic placeholders - ALWAYS reference actual business data above
-
-🎯 REAL BUSINESS SCENARIOS TO USE:
-- "Supplier payment due today, bank transfer takes 3 days"
-- "Customer wants to pay, but your POS machine is down"
-- "Rent collection from 50 tenants, manual tracking nightmare"
-- "Business growing fast, need instant payment solutions"
-- "M-Pesa limits hit, need bigger transaction capacity"
-- "International client wants to pay, bank charges 15%"
-- "Cash flow tight, need Buy Now Pay Later for inventory"
-
-🎯 DIVERSE MARKETING APPROACHES (USE DIFFERENT ONES EACH TIME):
-1. PROBLEM-SOLUTION: Start with pain point → Show Paya solution
-2. SUCCESS STORY: "How [business type] increased revenue 40% with Paya"
-3. COMPARISON: "Traditional banks vs Paya Finance"
-4. URGENCY: "Don't lose another sale to payment delays"
-5. SOCIAL PROOF: "Join 10,000+ businesses already using Paya"
-6. FEATURE SPOTLIGHT: Deep dive into one specific feature
-7. LIFESTYLE: "A day in the life of a Paya-powered business"
-8. EMOTIONAL: Focus on stress relief, confidence, peace of mind
-9. TECHNICAL: Highlight security, speed, reliability specs
-10. LOCAL PRIDE: "Built for Kenya, by Kenyans"
-
-🚫 ANTI-AI VISUAL RULES (CRITICAL):
-- NO flowing lines, waves, or streams coming from devices
-- NO glowing trails, light beams, or energy effects around phones
-- NO abstract colorful ribbons or flowing elements
-- NO overly stylized lighting effects or artificial glows
-- NO computer-generated looking visual effects
-- USE: Clean, realistic photography without artificial effects
-- SHOW: Real people using real devices in natural settings
-- AVOID: Any elements that look obviously AI-generated or fake
-
-🚫 BANNED CORPORATE JARGON (ELIMINATE THESE):
-- "Payments that fits your day" (WRONG GRAMMAR + GENERIC)
-- "focuses on what matters and cuts the noise" (CORPORATE SPEAK)
-- "streamlined solutions" / "seamless experience" / "cutting-edge technology"
-- "empowering businesses" / "driving growth" / "innovative solutions"
-- "best-in-class" / "world-class" / "industry-leading"
-- REPLACE WITH: Specific, measurable benefits and real business scenarios
-- USE: "98% faster means your supplier gets paid before lunch, your team sees deposits by Friday morning"
-- SHOW: Concrete outcomes, not abstract concepts
-
-🏆 COMPETITIVE MESSAGING RULES (USE THESE):
-${getCompetitiveMessagingRules(brandProfile)}
-
-📱 HASHTAG REQUIREMENTS (CRITICAL - EXACTLY ${hashtagCount} ONLY):
-- MAXIMUM ${hashtagCount} hashtags total - NO MORE than ${hashtagCount}
-- NEVER exceed ${hashtagCount} hashtags - this is non-negotiable
-- Choose the BEST ${hashtagCount} most relevant hashtags only
-- Example format: #Paya #DigitalBanking #Kenya #Fintech #MobileMoney
-- DO NOT include: #PayaFintech #BNPLKenya #SmartSpending #NairobiFinance #FinTechKenya #PaymentPlans #BuyNowPayLater #DeferredPayment #FlexiblePayment #InstallmentPlans
-- PRIORITIZE: Brand name (#Paya) + Service type + Location + Industry + One specific feature
-- QUALITY over quantity - ${hashtagCount} strategic hashtags perform better than 10 generic ones
-
-🇰🇪 KENYAN CULTURAL CONNECTION (MANDATORY):
-- Reference real Kenyan experiences: matatu rides, M-Pesa, university fees, family support
-- Use locally relevant scenarios: "When your cousin needs school fees", "After a long day at work"
-- Include Kenyan context: Nairobi traffic, campus life, family obligations, side hustles
-- Sound like someone who actually lives in Kenya and understands daily challenges
-- Reference local pain points: expensive bank charges, long queues, complicated processes
-
-CRITICAL: You MUST return ONLY valid JSON in this exact format. No additional text, no explanations, no markdown formatting:
-
+  const { businessType, brandProfile, platform } = options;
+  return `Create engaging ${businessType}content for ${platform}with the following requirements:
+Business: ${brandProfile.businessName}
+Type: ${businessType}
+Location: ${brandProfile.location}
+Platform: ${platform}
+Generate:
+1. A compelling headline (max 6 words)
+2. An engaging subheadline (max 25 words)
+3. A conversational caption that tells a story
+4. A specific call-to-action
+5. Relevant hashtags
+Focus on authentic, human content that avoids corporate jargon. Use local context when appropriate.
+Return as JSON:
 {
-  "headline": "your 6-word headline here",
-  "subheadline": "your subheadline here (max 25 words)",
-  "caption": "your caption here (50-100 words)",
-  "cta": "your call-to-action here",
-  "hashtags": ["#hashtag1", "#hashtag2", "#hashtag3", "#hashtag4", "#hashtag5"]
+  "headline": "...",
+  "subheadline": "...",
+  "caption": "...",
+  "cta": "...",
+  "hashtags": ["...", "..."]
 }
-
-IMPORTANT: Return ONLY the JSON object above. Do not include any other text, explanations, or formatting.`;
-}
-
-/**
- * Helper functions for advanced prompt system (ported from Revo 2.0)
- */
-
-// Normalize string list helper
-function normalizeStringList(input: any): string[] {
-  if (Array.isArray(input)) return input.filter(item => typeof item === 'string' && item.trim().length > 0);
-  if (typeof input === 'string') return input.split(',').map(s => s.trim()).filter(s => s.length > 0);
-  return [];
-}
-
-// Normalize service list helper
-function normalizeServiceList(input: any): string[] {
-  if (Array.isArray(input)) {
-    return input.map(service => {
-      if (typeof service === 'string') return service;
-      if (typeof service === 'object' && service.name) return service.name;
-      if (typeof service === 'object' && service.serviceName) return service.serviceName;
-      return String(service);
-    }).filter(s => s && s.trim().length > 0);
-  }
-  if (typeof input === 'string') return input.split(',').map(s => s.trim()).filter(s => s.length > 0);
-  return [];
-}
-
-// Get enhanced content approaches
-function getEnhancedContentApproaches(): string[] {
-  return [
-    'Storytelling-Master', 'Cultural-Connector', 'Problem-Solver-Pro',
-    'Innovation-Showcase', 'Trust-Builder-Elite', 'Community-Champion',
-    'Speed-Emphasis', 'Security-Focus', 'Accessibility-First',
-    'Growth-Enabler', 'Cost-Savings-Expert', 'Convenience-King',
-    'Social-Proof-Power', 'Transformation-Story', 'Local-Hero'
-  ];
-}
-
-// Get location-specific language instructions
-function getLocationSpecificLanguageInstructions(location: string): string {
-  const locationKey = location.toLowerCase();
-
-  if (locationKey.includes('kenya')) {
-    return `- SWAHILI ELEMENTS: "Karibu" (welcome), "Asante" (thank you), "Haraka" (fast), "Poa" (cool/good), "Mambo" (what's up)
-- BUSINESS CONTEXT: "Biashara" (business), "Huduma" (service), "Kazi" (work), "Pesa" (money), "Benki" (bank)
-- FINTECH TERMS: "M-Pesa" (mobile money), "Simu" (phone), "Mitandao" (networks), "Usalama" (security)
-- INTEGRATION EXAMPLES:
-  * "Fast payments" → "Malipo ya haraka"
-  * "No worries" → "Hakuna wasiwasi"
-  * "Let's start" → "Twende tuanze"
-  * "Very secure" → "Salama sana"`;
-  }
-
-  if (locationKey.includes('nigeria')) {
-    return `- PIDGIN ELEMENTS: "How far?" (how are you), "No wahala" (no problem), "Chop money" (spend money), "Sharp sharp" (quickly)
-- BUSINESS CONTEXT: "Business" (business), "Work" (work), "Money" (money), "Bank" (bank)
-- FINTECH TERMS: "Transfer" (transfer), "Account" (account), "Card" (card), "Mobile banking"
-- INTEGRATION EXAMPLES:
-  * "Fast payments" → "Quick transfer, no wahala"
-  * "No worries" → "No stress at all"
-  * "Let's start" → "Make we start"
-  * "Very secure" → "100% secure"`;
-  }
-
-  // Default for other locations
-  return `- Use appropriate local language elements for ${location}
-- Mix English (70%) with local language (30%) naturally
-- Include culturally relevant terms and expressions
-- Maintain professional tone while being locally authentic`;
-}
-
-// Get competitor analysis
-function getCompetitorAnalysis(brandProfile: any): string {
-  if (!Array.isArray(brandProfile.competitors) || brandProfile.competitors.length === 0) {
-    return '- No specific competitor data available - focus on general market advantages';
-  }
-
-  let analysis = '';
-  brandProfile.competitors.forEach((competitor: any, index: number) => {
-    if (index < 3) { // Limit to top 3 competitors
-      analysis += `\n🆚 VS ${competitor.name}:`;
-      if (Array.isArray(competitor.weaknesses)) {
-        analysis += `\n  - Their weaknesses: ${competitor.weaknesses.join(', ')}`;
-      }
-      if (Array.isArray(competitor.ourAdvantages)) {
-        analysis += `\n  - Our advantages: ${competitor.ourAdvantages.join(', ')}`;
-      }
-    }
-  });
-
-  return analysis || '- Focus on unique value proposition and market differentiation';
-}
-
-// Get authentic story scenarios
-function getAuthenticStoryScenarios(brandProfile: any, businessType: string): string {
-  const scenarios = [];
-
-  if (businessType.toLowerCase().includes('fintech') || businessType.toLowerCase().includes('finance')) {
-    scenarios.push(
-      '- Small business owner needs to pay suppliers quickly to maintain relationships',
-      '- University student managing limited budget while supporting family',
-      '- Entrepreneur growing business but struggling with traditional banking limitations',
-      '- Family member sending money home for school fees or medical expenses'
-    );
-  } else if (businessType.toLowerCase().includes('health')) {
-    scenarios.push(
-      '- Patient needing convenient access to healthcare services',
-      '- Family caring for elderly relative with ongoing medical needs',
-      '- Professional managing health while maintaining busy work schedule',
-      '- Community member seeking preventive care and wellness support'
-    );
-  } else {
-    scenarios.push(
-      '- Customer facing daily challenges that your service solves',
-      '- Professional needing reliable solutions for work efficiency',
-      '- Family member seeking quality services for loved ones',
-      '- Community member looking for trusted local business'
-    );
-  }
-
-  return scenarios.join('\n');
-}
-
-// Get customer pain points for business
-function getCustmerPainPointsForBusiness(businessType: string, brandProfile: any): string {
-  const painPoints = [];
-
-  if (businessType.toLowerCase().includes('fintech') || businessType.toLowerCase().includes('finance')) {
-    painPoints.push(
-      '- Long bank queues and limited banking hours',
-      '- High transaction fees and hidden charges',
-      '- Complicated account opening processes',
-      '- Limited access to credit and financial services',
-      '- Slow money transfers and payment processing'
-    );
-  } else if (businessType.toLowerCase().includes('health')) {
-    painPoints.push(
-      '- Long waiting times for appointments',
-      '- Limited access to quality healthcare',
-      '- High medical costs and insurance complications',
-      '- Difficulty finding trusted healthcare providers',
-      '- Lack of convenient healthcare options'
-    );
-  } else {
-    painPoints.push(
-      '- Limited access to quality services',
-      '- High costs and hidden fees',
-      '- Poor customer service experience',
-      '- Complicated processes and procedures',
-      '- Lack of reliable service providers'
-    );
-  }
-
-  return painPoints.join('\n');
-}
-
-// Get value propositions for business
-function getValuePropositionsForBusiness(businessType: string, brandProfile: any): string {
-  const valueProps = [];
-
-  if (businessType.toLowerCase().includes('fintech') || businessType.toLowerCase().includes('finance')) {
-    valueProps.push(
-      '- Instant account opening with no paperwork',
-      '- Zero hidden fees and transparent pricing',
-      '- 24/7 mobile banking convenience',
-      '- Fast money transfers and payments',
-      '- No minimum balance requirements'
-    );
-  } else if (businessType.toLowerCase().includes('health')) {
-    valueProps.push(
-      '- Quick appointment scheduling and minimal wait times',
-      '- Affordable healthcare with transparent pricing',
-      '- Qualified and experienced healthcare professionals',
-      '- Convenient location and flexible hours',
-      '- Comprehensive care and follow-up support'
-    );
-  } else {
-    valueProps.push(
-      '- High-quality service delivery',
-      '- Competitive and transparent pricing',
-      '- Professional and reliable service',
-      '- Convenient and accessible solutions',
-      '- Excellent customer support'
-    );
-  }
-
-  return valueProps.join('\n');
-}
-
-// Get competitive messaging rules
-function getCompetitiveMessagingRules(brandProfile: any): string {
-  return `- Focus on unique differentiators and competitive advantages
-- Highlight specific benefits that competitors don't offer
-- Use concrete examples and measurable outcomes
-- Address customer pain points that competitors ignore
-- Emphasize superior value proposition and customer experience`;
-}
-
-// Anti-repetition system helpers (ported from Revo 2.0)
-type RecentOutput = { headlines: string[]; captions: string[]; concepts: string[] };
-const recentOutputs = new Map<string, RecentOutput>();
-const recentStyles = new Map<string, string>();
-const recentConcepts = new Map<string, Array<{ concept: string; timestamp: number }>>();
-
-function getBrandKey(brandProfile: any, platform: string): string {
-  return `${brandProfile.businessName || 'unknown'}-${platform}`.toLowerCase().replace(/\s+/g, '-');
-}
-
-function rememberOutput(brandKey: string, output: { headline?: string; caption?: string; concept?: string }) {
-  if (!recentOutputs.has(brandKey)) {
-    recentOutputs.set(brandKey, { headlines: [], captions: [], concepts: [] });
-  }
-
-  const data = recentOutputs.get(brandKey)!;
-
-  if (output.headline) {
-    data.headlines.push(output.headline);
-    if (data.headlines.length > 10) data.headlines.shift(); // Keep only last 10
-  }
-
-  if (output.caption) {
-    data.captions.push(output.caption);
-    if (data.captions.length > 10) data.captions.shift(); // Keep only last 10
-  }
-
-  if (output.concept) {
-    data.concepts.push(output.concept);
-    if (data.concepts.length > 10) data.concepts.shift(); // Keep only last 10
-  }
-}
-
-function tooSimilar(text: string, recentTexts: string[], threshold: number): boolean {
-  if (!text || recentTexts.length === 0) return false;
-
-  const textWords = text.toLowerCase().split(/\s+/);
-
-  for (const recentText of recentTexts) {
-    const recentWords = recentText.toLowerCase().split(/\s+/);
-    const commonWords = textWords.filter(word => recentWords.includes(word));
-    const similarity = commonWords.length / Math.max(textWords.length, recentWords.length);
-
-    if (similarity > threshold) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-function hasBannedPattern(text: string): boolean {
-  if (!text) return false;
-
-  const bannedPatterns = [
-    /unlock\s+.*('s|s)?\s+/i,
-    /.*'s\s+best\s+/i,
-    /experience\s+the\s+/i,
-    /discover\s+.*\s+in\s+/i,
-    /transform\s+your\s+/i,
-    /your\s+.*\s+solution/i,
-    /journey/i,
-    /everyday/i,
-    /streamlined solutions/i,
-    /seamless experience/i,
-    /cutting-edge technology/i,
-    /empowering businesses/i,
-    /driving growth/i,
-    /innovative solutions/i,
-    /best-in-class/i,
-    /world-class/i,
-    /industry-leading/i,
-    // TEXTBOOK AND EDUCATION BANS FOR FINTECH
-    /textbook/i,
-    /semester/i,
-    /professor/i,
-    /student/i,
-    /academic/i,
-    /school/i,
-    /university/i,
-    /college/i,
-    /education/i,
-    /study/i,
-    /studying/i,
-    /homework/i,
-    /assignment/i,
-    /exam/i,
-    /grade/i,
-    /class/i,
-    /course/i,
-    /tuition/i,
-    /scholarship/i
-  ];
-
-  return bannedPatterns.some(pattern => pattern.test(text));
-}
-
-// Generate unique fallback content (ported from Revo 2.0)
-function generateUniqueFallbackContent(brandProfile: any, businessType: string, platform: string, hashtagCount: number, creativityBoost: number, concept: any): any {
-  const businessName = brandProfile.businessName || 'Business';
-  const location = brandProfile.location || 'Local';
-
-  // Generate unique variations based on creativity boost
-  const headlineVariations = [
-    `${businessName} Delivers`,
-    `Smart ${businessType} Solutions`,
-    `${location} Trusts ${businessName}`,
-    `Quality ${businessType} Services`,
-    `${businessName} Excellence`,
-    `Professional ${businessType} Care`,
-    `Reliable ${businessType} Partner`,
-    `${businessName} Innovation`
-  ];
-
-  const subheadlineVariations = [
-    `Experience professional ${businessType} services tailored for ${location}`,
-    `Quality solutions that deliver real results for your business`,
-    `Trusted by customers across ${location} for reliable service`,
-    `Professional expertise meets innovative ${businessType} solutions`,
-    `Your success is our priority with dedicated ${businessType} support`,
-    `Comprehensive ${businessType} services designed for modern needs`,
-    `Excellence in ${businessType} with personalized customer care`,
-    `Leading ${businessType} provider committed to your success`
-  ];
-
-  const captionVariations = [
-    `At ${businessName}, we understand the unique challenges facing ${businessType} customers in ${location}. Our dedicated team works tirelessly to provide solutions that make a real difference in your daily operations.`,
-    `Quality ${businessType} services shouldn't be complicated. That's why ${businessName} focuses on delivering straightforward, effective solutions that work for businesses like yours in ${location}.`,
-    `When you choose ${businessName}, you're choosing a partner committed to your success. Our ${businessType} expertise combined with local knowledge makes us the right choice for ${location} businesses.`,
-    `${businessName} has been serving the ${location} community with professional ${businessType} services that businesses can rely on. Experience the difference that dedicated service makes.`,
-    `Your business deserves ${businessType} solutions that actually work. ${businessName} combines industry expertise with personalized service to deliver results that matter to your bottom line.`
-  ];
-
-  const ctaVariations = [
-    'Get Started',
-    'Learn More',
-    'Contact Us',
-    'Try Today',
-    'Book Now',
-    'Call Now',
-    'Visit Us',
-    'Join Now'
-  ];
-
-  // Select variations based on creativity boost
-  const selectedHeadline = headlineVariations[creativityBoost % headlineVariations.length];
-  const selectedSubheadline = subheadlineVariations[creativityBoost % subheadlineVariations.length];
-  const selectedCaption = captionVariations[creativityBoost % captionVariations.length];
-  const selectedCta = ctaVariations[creativityBoost % ctaVariations.length];
-
-  // Generate hashtags
-  const baseHashtags = [
-    `#${businessName.replace(/\s+/g, '')}`,
-    `#${businessType.replace(/\s+/g, '')}`,
-    `#${location.replace(/\s+/g, '')}`
-  ];
-
-  const additionalHashtags = ['#Quality', '#Professional', '#Trusted', '#Local', '#Service', '#Excellence'];
-  const selectedHashtags = baseHashtags.concat(
-    additionalHashtags.slice(0, Math.max(0, hashtagCount - baseHashtags.length))
-  );
-
-  return {
-    headline: selectedHeadline,
-    subheadline: selectedSubheadline,
-    caption: selectedCaption,
-    cta: selectedCta,
-    hashtags: selectedHashtags.slice(0, hashtagCount)
-  };
-}
-
-// === MISSING HELPER FUNCTIONS FROM REVO 2.0 ===
-
-function pickNonRepeating<T>(arr: T[], last?: T): T {
-  if (!arr.length) throw new Error('Empty choices');
-  if (arr.length === 1) return arr[0];
-  const filtered = last == null ? arr : arr.filter((x) => x !== last);
-  return filtered[Math.floor(Math.random() * filtered.length)] || arr[0];
-}
-
-function getCulturalBusinessGuidance(businessType: string): string {
-  const businessLower = businessType.toLowerCase();
-
-  if (businessLower.includes('bank') || businessLower.includes('financial') || businessLower.includes('money')) {
-    return `💰 FINANCIAL SERVICES GUIDANCE:
-- GOOD: Show families saving for goals, mobile money transfers, small business growth
-- GOOD: People using mobile banking for everyday transactions, paying school fees
-- GOOD: Small business owners managing cash flow, market vendors using digital payments
-- AVOID: Complex trading floors, stock market graphs, corporate boardrooms
-- AVOID: Western banking imagery that doesn't reflect local financial habits`;
-  }
-
-  if (businessLower.includes('tech') || businessLower.includes('software') || businessLower.includes('app')) {
-    return `💻 TECHNOLOGY SERVICES GUIDANCE:
-- GOOD: People using phones naturally, simple app interfaces, everyday tech use
-- GOOD: Small business owners using tech to grow, students learning online
-- GOOD: Community members connecting through technology, solving real problems
-- AVOID: Complex coding screens, server rooms, abstract tech concepts
-- AVOID: Futuristic interfaces that feel disconnected from daily life`;
-  }
-
-  if (businessLower.includes('education') || businessLower.includes('school') || businessLower.includes('learning')) {
-    return `📚 EDUCATION SERVICES GUIDANCE:
-- GOOD: Students in local classroom settings, community learning spaces
-- GOOD: Teachers and students interacting, practical learning scenarios
-- GOOD: Family education moments, skill development in real contexts
-- AVOID: Generic classroom stock photos, overly formal academic settings
-- AVOID: Western educational imagery that doesn't reflect local learning culture`;
-  }
-
-  return `🏢 GENERAL BUSINESS GUIDANCE:
-- GOOD: Real people in authentic local business settings
-- GOOD: Community-focused business interactions, local market contexts
-- GOOD: Service providers helping real customers with genuine needs
-- AVOID: Generic corporate imagery, stock photo business scenarios
-- AVOID: Western business culture that doesn't resonate locally`;
-}
-
-function getVisualContextForBusiness(businessType: string, concept: string): string {
-  const businessLower = businessType.toLowerCase();
-
-  // Financial services - culturally appropriate visuals
-  if (businessLower.includes('bank') || businessLower.includes('financial') || businessLower.includes('money') || businessLower.includes('payment')) {
-    return 'Simple, relatable financial scenarios: people saving money, family financial planning, mobile money transactions, or small business growth - AVOID complex charts or trading graphs';
-  }
-
-  // Technology services - realistic tech use
-  if (businessLower.includes('tech') || businessLower.includes('software') || businessLower.includes('app') || businessLower.includes('digital')) {
-    return 'Natural technology usage: people using phones/computers for real tasks, simple app interfaces, everyday digital solutions - AVOID futuristic tech or complex coding imagery';
-  }
-
-  // Education services - authentic learning
-  if (businessLower.includes('education') || businessLower.includes('school') || businessLower.includes('learning') || businessLower.includes('training')) {
-    return 'Authentic learning environments: students in classrooms, practical skill development, community education - AVOID generic academic stock photos';
-  }
-
-  // Healthcare services - caring and professional
-  if (businessLower.includes('health') || businessLower.includes('medical') || businessLower.includes('clinic') || businessLower.includes('hospital')) {
-    return 'Professional healthcare settings: caring medical professionals, clean clinic environments, patient care scenarios - AVOID overly clinical or intimidating imagery';
-  }
-
-  // Retail/E-commerce - product focus
-  if (businessLower.includes('retail') || businessLower.includes('shop') || businessLower.includes('store') || businessLower.includes('commerce')) {
-    return 'Product-focused visuals: attractive product displays, shopping experiences, customer satisfaction - AVOID cluttered or overwhelming retail imagery';
-  }
-
-  // Food services - appetizing and inviting
-  if (businessLower.includes('food') || businessLower.includes('restaurant') || businessLower.includes('cafe') || businessLower.includes('catering')) {
-    return 'Appetizing food presentation: beautifully prepared dishes, inviting dining environments, satisfied customers - AVOID messy or unappetizing food imagery';
-  }
-
-  // Real estate - property and lifestyle
-  if (businessLower.includes('real estate') || businessLower.includes('property') || businessLower.includes('housing')) {
-    return 'Attractive property visuals: well-presented homes/offices, happy families in properties, professional real estate interactions - AVOID cluttered or poorly lit property images';
-  }
-
-  // Professional services - trustworthy and competent
-  if (businessLower.includes('consulting') || businessLower.includes('legal') || businessLower.includes('accounting') || businessLower.includes('professional')) {
-    return 'Professional service delivery: competent professionals helping clients, clean office environments, successful business outcomes - AVOID intimidating or overly formal imagery';
-  }
-
-  // Default for other business types
-  return `Professional ${businessType} service delivery: competent professionals, clean business environments, satisfied customers - AVOID generic stock imagery`;
-}
-
-function getPlatformDimensions(platform: string): string {
-  const platformLower = platform.toLowerCase();
-  if (platformLower.includes('instagram')) return '1080x1080px (1:1 square)';
-  if (platformLower.includes('facebook')) return '1200x630px (1.91:1)';
-  if (platformLower.includes('twitter') || platformLower.includes('x')) return '1200x675px (16:9)';
-  if (platformLower.includes('linkedin')) return '1200x627px (1.91:1)';
-  return '1080x1080px (1:1 square)';
-}
-
 /**
  * Call Gemini for content generation (clean API call)
  */
 async function callGeminiForContent(prompt: string, options: any): Promise<any> {
   try {
-    console.log('🔍 [Revo 1.0] Calling Vertex AI with prompt length:', prompt.length);
-    console.log('🔍 [Revo 1.0] Using model: gemini-2.5-flash');
-
-    // Use direct Vertex AI call (same as Revo 2.0)
-    const response = await generateContentDirect(prompt, 'gemini-2.5-flash', false);
-
-    console.log('📥 [Revo 1.0] Vertex AI response:', {
-      hasText: Boolean(response.text),
-      hasContent: Boolean(response.content),
-      textLength: response.text?.length || 0,
-      contentLength: response.content?.length || 0,
-      responseKeys: Object.keys(response)
+    // Use Vertex AI Gemini for content generation
+    const response = await fetch('/api/vertex-ai/generate-text', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt,
+        model: 'gemini-2.5-flash',
+        maxTokens: 1000,
+        temperature: 0.7
+      })
     });
-
+    if (!response.ok) {
+      throw new Error(`Gemini API failed: ${ response.status } `);
+    }
+    const data = await response.json();
     // Try to parse JSON response
     try {
-      // FIXED: response.text is a function, not a string!
-      let text = '';
-      if (typeof response.response?.text === 'function') {
-        text = response.response.text();
-      } else if (response.response?.text) {
-        text = response.response.text;
-      } else if (response.text) {
-        text = response.text;
-      } else if (response.content) {
-        text = response.content;
-      } else {
-        text = '{}';
-      }
-
-      console.log('🔍 [Revo 1.0] Raw response text:', text);
-
-      // Clean up the text to extract JSON
-      let cleanText = text.trim();
-
-      // Remove markdown code blocks if present
-      if (cleanText.startsWith('```json')) {
-        cleanText = cleanText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-      } else if (cleanText.startsWith('```')) {
-        cleanText = cleanText.replace(/^```\s*/, '').replace(/\s*```$/, '');
-      }
-
-      // Find JSON object boundaries
-      const jsonStart = cleanText.indexOf('{');
-      const jsonEnd = cleanText.lastIndexOf('}');
-
-      if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
-        cleanText = cleanText.substring(jsonStart, jsonEnd + 1);
-      }
-
-      console.log('🔍 [Revo 1.0] Cleaned text for JSON parsing:', cleanText.substring(0, 200) + '...');
-      const parsed = JSON.parse(cleanText);
-      console.log('✅ [Revo 1.0] Successfully parsed JSON:', parsed);
-      return parsed;
-    } catch (parseError) {
-      console.error('❌ [Revo 1.0] JSON parse failed. Parse error:', parseError.message);
-      console.error('❌ [Revo 1.0] Raw text that failed to parse:', text);
-      console.error('❌ [Revo 1.0] This indicates the AI is not following JSON format instructions');
-
-      // Don't return fallback content here - let the retry logic handle it
-      throw new Error(`JSON parsing failed: ${parseError.message}`);
+      return JSON.parse(data.text || '{}');
+    } catch {
+      // If not JSON, return simple structure
+      return {
+        caption: data.text || '',
+        headline: `${ options.brandProfile.businessName } `,
+        subheadline: `Quality ${ options.businessType } services`,
+        cta: 'Learn More',
+        hashtags: [`#${ options.businessType.replace(/\s+/g, '') } `]
+      };
     }
   } catch (error) {
     console.error('❌ [Revo 1.0] Gemini API call failed:', error);
     throw error;
   }
+}
+// Helper function to get platform aspect ratio
+function getPlatformAspectRatio(platform: string): string {
+  const aspectRatios: { [key: string]: string } = {
+    'Instagram': '1:1',
+    'Facebook': '1:1',
+    'Twitter': '1:1',
+    'LinkedIn': '1:1'
+  };
+  return aspectRatios[platform] || '1:1';
 }
 /**
  * Generate image using Revo 1.0 with Gemini (following Revo 2.0 architecture)
@@ -3196,35 +2409,8 @@ export async function generateRevo10Image(input: {
   followBrandColors?: boolean;
 }) {
   try {
-    // Create concept object for enhanced prompt
-    const concept = {
-      concept: input.designDescription || `Professional ${input.businessType} design`,
-      composition: 'balanced',
-      featuredServices: input.scheduledServices?.filter(s => s.isToday) || []
-    };
-
-    // Use Revo 2.0 style image generation with enhanced prompt
-    const options = {
-      businessType: input.businessType,
-      platform: input.platform,
-      brandProfile: {
-        businessName: input.businessName,
-        location: input.location,
-        primaryColor: input.primaryColor,
-        accentColor: input.accentColor || input.primaryColor,
-        backgroundColor: input.backgroundColor || '#FFFFFF',
-        contactInfo: input.contactInfo,
-        websiteUrl: input.websiteUrl
-      },
-      aspectRatio: '1:1',
-      visualStyle: input.visualStyle || 'modern',
-      scheduledServices: input.scheduledServices,
-      followBrandColors: input.followBrandColors,
-      includePeopleInDesigns: input.includePeople,
-      includeContacts: input.includeContacts
-    };
-
-    const prompt = buildRevo10ImagePrompt(options, concept);
+    // Use Revo 2.0 style image generation (clean, no templates)
+    const prompt = buildRevo10ImagePrompt(input);
     // Call Gemini for image generation
     const response = await callGeminiForImage(prompt, input);
     return {
@@ -3235,340 +2421,51 @@ export async function generateRevo10Image(input: {
       quality: 'enhanced'
     };
   } catch (error) {
-    throw new Error('Revo 1.0 design generation failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    throw new Error(`Revo 1.0 design generation failed: ${ error instanceof Error ? error.message : 'Unknown error' } `);
   }
 }
 /**
- * Build enhanced prompt for Revo 1.0 with brand integration, visual consistency, and scheduled services
- * (COMPLETE COPY FROM REVO 2.0)
+ * Build image prompt for Revo 1.0 (following Revo 2.0 clean approach)
  */
-function buildRevo10ImagePrompt(options: any, concept: any): string {
-  const { businessType, platform, brandProfile, aspectRatio = '1:1', visualStyle = 'modern', scheduledServices } = options;
-
-  // Extract brand colors from profile with toggle support
-  const shouldFollowBrandColors = options.followBrandColors !== false; // Default to true if not specified
-
-  const primaryColor = shouldFollowBrandColors ? (brandProfile.primaryColor || '#3B82F6') : '#3B82F6';
-  const accentColor = shouldFollowBrandColors ? (brandProfile.accentColor || '#1E40AF') : '#1E40AF';
-  const backgroundColor = shouldFollowBrandColors ? (brandProfile.backgroundColor || '#FFFFFF') : '#FFFFFF';
-
-  console.log('🎨 [Revo 1.0] Brand Colors Debug:', {
-    followBrandColors: shouldFollowBrandColors,
-    inputPrimaryColor: brandProfile.primaryColor,
-    inputAccentColor: brandProfile.accentColor,
-    inputBackgroundColor: brandProfile.backgroundColor,
-    finalPrimaryColor: primaryColor,
-    finalAccentColor: accentColor,
-    finalBackgroundColor: backgroundColor,
-    hasValidColors: !!(brandProfile.primaryColor && brandProfile.accentColor && brandProfile.backgroundColor),
-    usingBrandColors: shouldFollowBrandColors && !!(brandProfile.primaryColor && brandProfile.accentColor && brandProfile.backgroundColor)
-  });
-
-  // Build color scheme instruction
-  const colorScheme = `Primary: ${primaryColor} (60% dominant), Accent: ${accentColor} (30% secondary), Background: ${backgroundColor} (10% highlights)`;
-
-  // Brand location info
-  const brandInfo = brandProfile.location ? ` based in ${brandProfile.location}` : '';
-
-  // Determine specific visual context based on business type and concept
-  const visualContext = getVisualContextForBusiness(businessType, concept.concept);
-
-  // Build scheduled services context for visual design
-  let serviceVisualContext = '';
-  if (concept.featuredServices && concept.featuredServices.length > 0) {
-    const todayService = concept.featuredServices[0];
-    serviceVisualContext = `\n\n🎯 TODAY'S FEATURED SERVICE INTEGRATION:\n- Service: ${todayService.serviceName}\n- Description: ${todayService.description || 'Premium service offering'}\n- Visual Focus: Create imagery that showcases this specific service in action\n- Service Priority: This should be the PRIMARY visual element in the design`;
-  }
-
-  // Build culturally intelligent visual instructions
-  let culturalInstructions = '';
-  const location = brandProfile.location || 'Global';
-  const africanCountries = ['kenya', 'nigeria', 'south africa', 'ghana', 'uganda', 'tanzania', 'ethiopia', 'rwanda', 'zambia', 'botswana', 'malawi'];
-  const isAfricanCountry = africanCountries.some(country => location.toLowerCase().includes(country.toLowerCase()));
-
-  // Build people inclusion instructions based on toggle
-  let peopleInstructions = '';
-  if (options.includePeopleInDesigns === false) {
-    peopleInstructions = `\n\n👥 PEOPLE EXCLUSION REQUIREMENT:\n- MANDATORY: Create a clean, professional design WITHOUT any people or human figures\n- AVOID: Any human faces, bodies, or silhouettes\n- FOCUS: Products, services, abstract elements, or clean minimalist design\n- STYLE: Professional, clean aesthetics without human elements\n- EMPHASIS: Brand elements, typography, and non-human visual elements`;
-  } else {
-    if (isAfricanCountry) {
-      peopleInstructions = `\n\n👥 PEOPLE INCLUSION (AFRICAN REPRESENTATION):\n- Include authentic Black/African people who represent the target market\n- Show people who would actually use ${businessType} services\n- Display local African people in settings relevant to ${businessType} business\n- Ensure faces are fully visible, well-lit, and anatomically correct\n- PRIORITY: 80%+ of people should be Black/African for cultural authenticity\n- Context: Show people in ${businessType}-relevant settings, not generic offices`;
-    } else {
-      peopleInstructions = `\n\n👥 PEOPLE INCLUSION (DIVERSE REPRESENTATION):\n- Include diverse, authentic people who represent the target market\n- Show people who would actually use ${businessType} services\n- Display people in settings relevant to ${businessType} business\n- Ensure faces are fully visible, well-lit, and anatomically correct\n- Context: Show people in ${businessType}-relevant settings`;
-    }
-  }
-
-  // Add cultural intelligence for visual elements
-  if (isAfricanCountry) {
-    const businessSpecificGuidance = getCulturalBusinessGuidance(businessType);
-    culturalInstructions = `\n\n🌍 AFRICAN CULTURAL INTELLIGENCE:\n- AVOID: Complex trading graphs, stock charts, or financial diagrams that are hard to understand\n- AVOID: Western corporate imagery that doesn't resonate locally\n- AVOID: Abstract business concepts that feel disconnected from daily life\n- USE: Simple, clear visuals that everyday people can relate to\n- USE: Local cultural elements, colors, and symbols that feel familiar\n- USE: Real-life scenarios people experience (family, community, daily activities)\n- FOCUS: Visual storytelling that connects with local values and experiences\n- SIMPLICITY: Keep visual elements clean and easy to understand at first glance\n- AUTHENTICITY: Show genuine African environments, not generic stock imagery\n\n${businessSpecificGuidance}`;
-  }
-
-  // Style/Layout/Typography variation (avoid repeating last style per brand/platform)
-  const styles = ['modern-minimal', 'bold-color-blocking', 'editorial-magazine', 'organic-textured', 'geometric-abstract', 'photo-forward', 'duotone', 'retro-modern', 'ultra-clean', 'dynamic-diagonal'];
-  const layouts = ['grid', 'asymmetrical', 'centered', 'diagonal-flow', 'layered-collage', 'rule-of-thirds', 'framed', 'split-screen'];
-  const typographySet = ['bold sans-serif headline + light subhead', 'elegant serif display + sans body', 'condensed uppercase headline', 'playful rounded sans', 'high-contrast modern serif'];
-  const effects = ['subtle grain', 'soft vignette', 'gentle drop shadow', 'glassmorphism card', 'gradient overlay'];
-
-  const bKey = getBrandKey(brandProfile, platform);
-  const lastStyle = recentStyles.get(bKey);
-  const chosenStyle = pickNonRepeating(styles, lastStyle);
-  recentStyles.set(bKey, chosenStyle);
-  const chosenLayout = pickNonRepeating(layouts);
-  const chosenType = pickNonRepeating(typographySet);
-  const chosenEffect = pickNonRepeating(effects);
-
-  // Lightweight contact integration - only add if contacts toggle is enabled
-  let contactInstruction = '';
-  if (options.includeContacts === true) {
-    const contacts: string[] = [];
-
-    // Simple contact detection (multiple data structure support)
-    const phone = brandProfile?.contactInfo?.phone ||
-      (brandProfile as any)?.contact?.phone ||
-      (brandProfile as any)?.contactPhone ||
-      (brandProfile as any)?.phone;
-
-    const email = brandProfile?.contactInfo?.email ||
-      (brandProfile as any)?.contact?.email ||
-      (brandProfile as any)?.contactEmail ||
-      (brandProfile as any)?.email;
-
-    const website = brandProfile?.websiteUrl ||
-      (brandProfile as any)?.contact?.website ||
-      (brandProfile as any)?.website;
-
-    const address = brandProfile?.contactInfo?.address ||
-      (brandProfile as any)?.contact?.address ||
-      (brandProfile as any)?.contactAddress ||
-      (brandProfile as any)?.address;
-
-    if (phone) contacts.push(`📞 ${phone}`);
-    if (email) contacts.push(`📧 ${email}`);
-    // Only include website if it actually exists in brand profile - NEVER generate fake URLs
-    if (website && website.trim() && !website.includes('example.com') && !website.includes('placeholder')) {
-      // Clean website format: remove https:// and http://, ensure www. prefix
-      let cleanWebsite = website.replace(/^https?:\/\//, '');
-      if (!cleanWebsite.startsWith('www.')) {
-        cleanWebsite = `www.${cleanWebsite}`;
-      }
-      contacts.push(`🌐 ${cleanWebsite}`);
-    }
-    if (address) contacts.push(`📍 ${address}`);
-
-    if (contacts.length > 0) {
-      contactInstruction = `\n\n📞 MANDATORY CONTACT FOOTER:\n${contacts.join('\n')}\n- ALWAYS place contact information at the BOTTOM FOOTER of the design\n- Create a clean contact strip/bar at the bottom edge\n- Use contrasting background (dark bar with light text OR light bar with dark text)\n- Ensure contact details are large enough to read (minimum 14px equivalent)\n- Format: ${contacts.join(' | ')}\n- NEVER place contacts anywhere except the footer area`;
-    }
-  }
-
-  return `🎨 Create a ${visualStyle} social media design for ${brandProfile.businessName} (${businessType}) for ${platform}.
-
-CREATIVE CONCEPT: ${concept.concept}
-
-🎯 VISUAL CONTEXT REQUIREMENT: ${visualContext}${serviceVisualContext}
-
-🎯 STRONG FLEXIBLE TEMPLATE STRUCTURE (MANDATORY):
-1. NEUTRAL BACKGROUND: White or soft gradient (never busy patterns)
-2. ACCENT COLOR: Tied to post theme using brand colors strategically
-3. SINGLE FOCAL ELEMENT: 1 person photo OR 1 relatable object (never both)
-4. EMOTIONAL HEADLINE: Human tone, not corporate speak
-5. OPTIONAL IDENTITY ELEMENT: Small icon or motif for brand consistency
-
-🌟 NATURAL, AUTHENTIC IMAGERY REQUIREMENTS:
-- Show REAL people using technology naturally (no artificial tech effects)
-- Use CLEAN, simple backgrounds without digital overlays
-- Display phones/devices as normal objects (no glowing or connection lines)
-- Focus on HUMAN moments and authentic interactions
-- Avoid any artificial tech visualizations or digital effects
-- Keep technology integration SUBTLE and realistic
-
-📱 REALISTIC PHONE POSITIONING (CRITICAL):
-- Phone screens must be visible from the VIEWER'S perspective, not from behind
-- Show phones held naturally - screen facing toward camera/viewer
-- NEVER show phone screens from impossible angles (back of phone showing screen)
-- Use realistic viewing angles: over-shoulder, side view, or front-facing
-- Phone should be held naturally in hands, not floating or awkwardly positioned
-- Screen content should be logically visible from the camera's viewpoint
-- Ensure phone orientation matches natural human interaction patterns
-
-📸 CONSISTENT LIGHTING & TONE (MANDATORY):
-- Apply WARM, BALANCED lighting across ALL images for brand consistency
-- Use consistent photographic tone and color temperature (NO orange/red tints)
-- Ensure natural, flattering skin tones without heavy color casts
-- NO washed out or overly cool lighting that breaks brand continuity
-- Maintain same lighting quality and warmth across entire feed
-- CONSISTENT photographic filter/LUT for unified brand appearance
-
-🎨 STRATEGIC TEXT PLACEMENT SYSTEM (MANDATORY):
-- BACKGROUND: Clean white (#FFFFFF) or subtle gradient using brand colors
-- ACCENT COLOR: Use ${primaryColor} or ${accentColor} strategically for theme connection
-- FOCAL ELEMENT: Choose ONE - either person OR object, positioned prominently
-
-📍 STRATEGIC HEADLINE & SUBHEADLINE PLACEMENT:
-- HEADLINE POSITION: Top-left or top-right corner for maximum impact and readability
-- SUBHEADLINE POSITION: Directly below headline with consistent spacing (never scattered)
-- VISUAL FLOW: Create clear reading path - headline → image → subheadline → CTA
-- GOLDEN RATIO: Place text in upper third or lower third zones, never center-cramped
-- BRAND MOTIF: Opposite corner from headline for balanced composition
-- BREATHING SPACE: At least one-third negative space around all text elements
-- NO RANDOM PLACEMENT: Text positioned with clear design intention and visual hierarchy
-- LAYOUT SYSTEM: Left-aligned headline with right image OR right-aligned headline with left image
-- COMPOSITION VARIETY: ${concept.composition} - vary poses and angles to keep series fresh
-
-🚫 AVOID POOR TEXT PLACEMENT:
-- NO text scattered randomly across the design
-- NO headlines placed wherever there's leftover space
-- NO subheadlines disconnected from headlines
-- NO text overlapping or competing with focal elements
-- NO center-heavy text that creates cramped layouts
-
-🚫 ELIMINATE GENERIC FINTECH CLICHÉS (CRITICAL):
-- NEVER use: "Unlock Your Tomorrow", "The Future is Now", "Banking Made Simple"
-- NEVER use: "Transform Your Business", "Empower Your Journey", "Revolutionize"
-- NEVER use: "Seamless", "Effortless", "Streamlined", "Next-Generation"
-- NEVER use: "thoughtful details, measurable outcomes" (meaningless corporate speak)
-- AVOID: Any headline that could apply to ANY bank or fintech company
-- BANNED PHRASES: "stripped away the confusion", "future-proof", "game-changer"
-
-💬 AUTHENTIC HUMAN VOICE REQUIREMENTS (MANDATORY):
-- Write like a REAL PERSON talking to a friend, not a corporate press release
-- Use conversational, warm tone: "Hey" instead of "We are pleased to announce"
-- Include personality and character - sound distinctly like ${brandProfile.businessName}, not generic fintech
-- Use specific, concrete language instead of vague corporate buzzwords
-- Sound like someone who actually understands ${location} life and challenges
-- NO corporate jargon: "featuring", "thoughtful details", "measurable outcomes"
-
-🚨 ELIMINATE ALL CORPORATE SPEAK (ABSOLUTELY CRITICAL):
-- BANNED PHRASES (NEVER USE THESE):
-  * "authentic, high-impact"
-  * "BNPL is today's focus"
-  * "${brandProfile.businessName} puts Buy Now Pay Later (BNPL) front and center today"
-  * "makes it practical, useful, and..."
-  * "timing is everything"
-  * "We've all been there"
-  * "brings a human, professional touch"
-  * "See how ${brandProfile.businessName} makes it..."
-- NEVER sound like a PowerPoint presentation or press release
-- NEVER use generic filler text that could apply to any product
-- WRITE LIKE: A friend explaining a solution they discovered
-- USE REAL SCENARIOS: "It's month-end. Rent is due tomorrow. Your business account shows KSh 15,000 but you need KSh 25,000."
-
-🎭 REAL HUMAN STORYTELLING (MANDATORY):
-- START with a REAL SCENARIO: "Three weeks waiting for bank loan approval. Your supplier needs payment today."
-- CREATE A SCENE: Paint a picture people can see and feel
-- USE REAL EMOTIONS: stress, relief, hope, frustration, excitement
-- SHOW, DON'T TELL: "Mom's birthday is coming up" vs "family obligations"
-- ADD PERSONALITY: "Here's the thing:", "Plot twist:", "Real talk:"
-- END WITH EMPATHY: "We get it", "You're not alone", "Been there"
-
-🚫 TEMPLATE VIOLATIONS TO AVOID:
-- NO busy or complex backgrounds
-- NO multiple competing focal points
-- NO corporate jargon in headlines
-- NO overwhelming brand elements
-- NO cramped layouts without white space
-
-🎛️ SIMPLIFIED STYLE DIRECTIVES:
-- Design Style: ${chosenStyle} (applied minimally)
-- Layout: ${chosenLayout} (with generous white space)
-- Typography: ${chosenType} (clean and readable)
-- Effects: ${chosenEffect} (subtle, not distracting)
-
-DESIGN REQUIREMENTS:
-- Platform: ${platform} (${getPlatformDimensions(platform)})
-- Visual Style: ${visualStyle}
-- Business: ${brandProfile.businessName} - ${businessType}${brandInfo}
-- Location: ${brandProfile.location || 'Global'}
-- Visual Theme: ${visualContext}
-${concept.featuredServices && concept.featuredServices.length > 0 ? `- Featured Service: ${concept.featuredServices[0].serviceName} (TODAY'S FOCUS)` : ''}
-
-🎨 STRICT BRAND COLOR CONSISTENCY (MANDATORY):
-${colorScheme}
-- Use EXACT brand colors with NO variations or different shades
-- Primary color: ${primaryColor} (60% of color usage) - NO other reds/corals
-- Accent color: ${accentColor} (30% of color usage) - NO other secondary colors
-- Background: ${backgroundColor} (10% of color usage) - NO other neutrals
-- NEVER use similar but different shades (e.g., different reds, browns, beiges)
-- CONSISTENT color temperature across all designs for brand recognition
-- NO color variations that make the feed look uncoordinated
-
-REVO 1.0 ENHANCED FEATURES:
-🚀 Next-generation AI design with sophisticated visual storytelling
-🎯 Advanced brand consistency and cultural intelligence
-🌟 Premium quality with authentic human-made aesthetics
-🔥 Platform-optimized for maximum engagement
-🎨 Precise brand color integration and logo placement
-
-❌ CRITICAL VISUAL RESTRICTIONS - NEVER INCLUDE:
-❌ Company name with colon format in text (e.g., "PAYA:", "COMPANY:")
-❌ Text containing "journey", "everyday", or repetitive corporate language
-❌ Fake website URLs or made-up domain names (e.g., "payaventures.com")
-❌ Fictional contact information or web addresses not provided in brand profile
-❌ Website mockups or computer screens showing fake websites
-❌ Complex trading graphs, stock charts, or financial diagrams
-❌ Western corporate imagery that doesn't resonate with local culture
-❌ Generic business charts, analytics dashboards, or complex data visualizations
-❌ Glowing AI portals and tech visualizations
-❌ Perfect corporate stock scenarios
-❌ Overly dramatic lighting effects
-❌ Artificial neon glows or sci-fi elements
-❌ Generic stock photo poses
-❌ Unrealistic perfect lighting setups
-❌ AI-generated abstract patterns
-❌ Futuristic tech interfaces
-❌ Holographic or digital overlays
-❌ ELECTRICAL/DIGITAL CONNECTION LINES from phones or devices
-❌ Network visualization lines, nodes, or connection patterns
-❌ Digital current/electricity effects around electronics
-❌ Tech circuit patterns or digital network overlays
-❌ Artificial connection lines between person and device
-❌ Glowing digital pathways or data streams
-❌ Electronic signal visualizations or tech auras
-
-CRITICAL REQUIREMENTS:
-- Resolution: 992x1056px (1:1 square format)
-- High-quality, professional appearance
-${shouldFollowBrandColors ? `- MANDATORY: Use the specified brand colors (${primaryColor}, ${accentColor}, ${backgroundColor})` : `- Use professional, modern colors that complement the ${visualStyle} style`}
-- Clear, readable text elements with proper contrast
-- Engaging visual composition with brand consistency
-- Cultural sensitivity and relevance
-- Professional typography that complements the brand colors
-- VISUAL CONSISTENCY: Ensure the image clearly represents ${visualContext}
-
-📝 STRONG TYPOGRAPHY HIERARCHY (MANDATORY):
-- HEADLINE: Bold, heavy font weight - 2X larger than other text elements
-- SUBHEADLINE: Medium weight - 50% smaller than headline, supports main message
-- STRONG CONTRAST: White text on dark backgrounds OR dark text on light backgrounds
-- NO thin or light font weights that blend into backgrounds
-- LOGO PLACEMENT: Isolated in consistent corner with proper spacing for brand memory
-
-${peopleInstructions}
-${culturalInstructions}
-${contactInstruction}`;
+function buildRevo10ImagePrompt(input: any): string {
+  return `Create a professional ${ input.businessType } design for ${ input.platform } with:
+    Business: ${ input.businessName }
+  Style: ${ input.visualStyle }
+  Colors: ${ input.primaryColor }
+  Text: ${ input.imageText }
+  Description: ${ input.designDescription }
+  Requirements:
+  - High - quality, professional design
+    - Clear, readable text
+      - Brand - appropriate colors
+        - Platform - optimized layout
+          - Modern, engaging visual style
+${ input.includePeople ? 'Include relevant people in the design' : 'Focus on clean design without people' }
+${ input.logoDataUrl ? 'Integrate the provided logo naturally' : '' } `;
 }
 /**
  * Call Gemini for image generation (clean API call)
  */
 async function callGeminiForImage(prompt: string, input: any): Promise<any> {
   try {
-    console.log('🖼️ [Revo 1.0] Calling Vertex AI for IMAGE with model:', REVO_1_0_IMAGE_MODEL);
-
-    // Prefer direct Vertex client to avoid shape mismatches
-    const client = getVertexAIClient();
-    const res = await client.generateImage(prompt, REVO_1_0_IMAGE_MODEL, {
-      temperature: 0.7,
-      maxOutputTokens: 8192,
-      logoImage: input?.logoDataUrl
+    // Use Vertex AI Gemini for image generation
+    const response = await fetch('/api/vertex-ai/generate-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt,
+        model: 'gemini-2.5-flash-image',
+        aspectRatio: getPlatformAspectRatio(input.platform),
+        quality: 'enhanced'
+      })
     });
-
-    if (!res || !res.imageData) {
-      console.error('❌ [Revo 1.0] Vertex returned no image data');
-      throw new Error('No image data returned from Vertex AI');
+    if (!response.ok) {
+      throw new Error(`Gemini Image API failed: ${ response.status } `);
     }
-
-    const mime = res.mimeType || 'image/png';
-    const dataUrl = 'data:' + mime + ';base64,' + res.imageData;
-    return { imageUrl: dataUrl };
+    const data = await response.json();
+    return {
+      imageUrl: data.imageUrl || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
+    };
   } catch (error) {
     console.error('❌ [Revo 1.0] Gemini Image API call failed:', error);
     throw error;

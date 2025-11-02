@@ -1,4 +1,48 @@
 import type { NextConfig } from 'next';
+import type { RemotePattern } from 'next/dist/shared/lib/image-config';
+
+// Dynamically allow the Supabase host from environment for Next/Image
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_HOST = SUPABASE_URL ? new URL(SUPABASE_URL).hostname : undefined;
+
+// Base remote patterns
+const baseRemotePatterns: RemotePattern[] = [
+  {
+    protocol: 'https',
+    hostname: 'placehold.co',
+    port: '',
+    pathname: '/**',
+  },
+  {
+    protocol: 'https',
+    hostname: 'images.unsplash.com',
+    port: '',
+    pathname: '/**',
+  },
+  {
+    protocol: 'https',
+    hostname: 'picsum.photos',
+    port: '',
+    pathname: '/**',
+  },
+  {
+    protocol: 'https',
+    hostname: 'oaidalleapiprodscus.blob.core.windows.net',
+    port: '',
+    pathname: '/**',
+  },
+  {
+    protocol: 'https',
+    hostname: 'nrfceylvtiwpqsoxurrv.supabase.co',
+    port: '',
+    pathname: '/**',
+  },
+];
+
+const remotePatterns: RemotePattern[] = [...baseRemotePatterns];
+if (SUPABASE_HOST && !remotePatterns.some((p) => p.hostname === SUPABASE_HOST)) {
+  remotePatterns.push({ protocol: 'https', hostname: SUPABASE_HOST, port: '', pathname: '/**' });
+}
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -13,38 +57,9 @@ const nextConfig: NextConfig = {
   // on a local fast disk or RAM disk when working on network-mounted repos.
   distDir: process.env.NEXT_DIST_DIR || '.next-alt',
   images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'placehold.co',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'picsum.photos',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'oaidalleapiprodscus.blob.core.windows.net',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'nrfceylvtiwpqsoxurrv.supabase.co',
-        port: '',
-        pathname: '/**',
-      },
-    ],
+    remotePatterns,
+    // Also allow direct domains list for safety
+    domains: SUPABASE_HOST ? [SUPABASE_HOST] : [],
   },
   async headers() {
     return [

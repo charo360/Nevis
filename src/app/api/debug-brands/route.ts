@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase-server';
 
 export async function GET(request: NextRequest) {
   try {
+    const supabase = await createClient();
+
     // Get all brand profiles from Supabase (for debugging)
     const { data: allProfiles, error } = await supabase
       .from('brand_profiles')

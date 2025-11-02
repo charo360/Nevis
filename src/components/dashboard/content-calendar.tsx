@@ -124,12 +124,12 @@ export function ContentCalendar({
       // Clear any cached timestamp to force fresh fetch
       localStorage.setItem('calendarLastChecked', Date.now().toString());
       await onRefreshCalendar();
-      
+
       // Wait a moment to ensure refresh is complete
       await new Promise(resolve => setTimeout(resolve, 500));
       console.log('✅ Calendar refresh complete, proceeding with generation...');
     }
-    
+
     // Check if user has enough credits for the selected model
     const hasCredits = await hasEnoughCreditsForModel(selectedRevoModel);
     if (!hasCredits) {
@@ -148,10 +148,10 @@ export function ContentCalendar({
       if (!creditResult.success) {
         const { getUserFriendlyErrorMessage, extractCreditInfo } = await import('@/lib/error-messages');
         const errorMessage = creditResult.error || "Failed to deduct credits";
-        
+
         // Extract credit information if available
         const creditInfo = extractCreditInfo(errorMessage);
-        
+
         // Get user-friendly error message
         const friendlyMessage = getUserFriendlyErrorMessage(errorMessage, {
           feature: 'quick_content',
@@ -159,12 +159,12 @@ export function ContentCalendar({
           creditsRequired: creditInfo?.creditsRequired,
           creditsAvailable: creditInfo?.creditsAvailable,
         });
-        
+
         // Split title and description for toast
         const parts = friendlyMessage.split('\n\n');
         const title = parts[0] || 'Credit Deduction Failed';
         const description = parts.slice(1).join('\n\n') || friendlyMessage;
-        
+
         toast({
           variant: "destructive",
           title: title.replace(/\n/g, ' '), // Remove line breaks from title
@@ -302,8 +302,8 @@ export function ContentCalendar({
           scheduledServices // Pass scheduled services
         );
       } else if (selectedRevoModel === 'revo-1.0') {
-        // Use Revo 1.0 direct generation via Quick Content API
-        console.log(`🎨 Calling Revo 1.0 Direct Generation via Quick Content API:`, {
+        // Use Revo 1.0 unified architecture (same pattern as Revo 2.0)
+        console.log(`🎨 Calling Revo 1.0 Unified Action:`, {
           platform,
           scheduledServicesCount: scheduledServices?.length || 0,
           scheduledServiceNames: scheduledServices?.map(s => s.serviceName) || [],
@@ -312,28 +312,32 @@ export function ContentCalendar({
           hasScheduledContent
         });
 
-        // Call the Quick Content API directly for Revo 1.0
-        const response = await fetch('/api/quick-content', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
+        // Import and call the new Revo 1.0 action
+        const { generateRevo1ContentAction } = await import('@/app/actions/revo-1-actions');
+
+        newPost = await generateRevo1ContentAction(
+          brandProfile,
+          platform,
+          brandConsistency,
+          '',
+          {
+            aspectRatio: '1:1',
+            visualStyle: (brandProfile.visualStyle as any) || 'modern',
+            includePeopleInDesigns,
+            useLocalLanguage
           },
-          body: JSON.stringify({
-            revoModel: 'revo-1.0',
-            platform: platform.toLowerCase(),
-            brandProfile,
-            brandConsistency,
-            useLocalLanguage,
-            scheduledServices,
-            includePeopleInDesigns
-          })
+          scheduledServices
+        );
+
+        // Debug the response
+        console.log('🔍 [ContentCalendar] Received response from quick-content API:', {
+          hasImageUrl: !!newPost.imageUrl,
+          imageUrlType: typeof newPost.imageUrl,
+          imageUrlStartsWithData: newPost.imageUrl?.startsWith('data:'),
+          imageUrlStartsWithHttp: newPost.imageUrl?.startsWith('http'),
+          imageUrlLength: newPost.imageUrl?.length || 0,
+          imageUrlPreview: newPost.imageUrl?.substring(0, 100) + '...'
         });
-
-        if (!response.ok) {
-          throw new Error(`Revo 1.0 generation failed: ${response.statusText}`);
-        }
-
-        newPost = await response.json();
       } else if (useEnhancedGeneration) {
         // Use artifact-enhanced generation - will automatically use active artifacts from artifacts page
         newPost = await generateContentWithArtifactsAction(
@@ -421,10 +425,10 @@ export function ContentCalendar({
     } catch (error) {
       const { getUserFriendlyErrorMessage, extractCreditInfo } = await import('@/lib/error-messages');
       const errorMessage = (error as Error).message;
-      
+
       // Extract credit information if available
       const creditInfo = extractCreditInfo(errorMessage);
-      
+
       // Get user-friendly error message
       const friendlyMessage = getUserFriendlyErrorMessage(errorMessage, {
         feature: 'quick_content',
@@ -432,12 +436,12 @@ export function ContentCalendar({
         creditsRequired: creditInfo?.creditsRequired,
         creditsAvailable: creditInfo?.creditsAvailable,
       });
-      
+
       // Split title and description for toast
       const parts = friendlyMessage.split('\n\n');
       const title = parts[0] || 'Generation Failed';
       const description = parts.slice(1).join('\n\n') || friendlyMessage;
-      
+
       toast({
         variant: "destructive",
         title: title.replace(/\n/g, ' '), // Remove line breaks from title
@@ -463,7 +467,7 @@ export function ContentCalendar({
               </div>
               <div className="flex items-center gap-6 flex-wrap">
                 <div className="flex items-center gap-3 min-w-[110px] cursor-pointer p-1 rounded hover:bg-gray-50"
-                     onClick={() => setBrandConsistency(prev => ({ ...prev, strictConsistency: !prev.strictConsistency }))}>
+                  onClick={() => setBrandConsistency(prev => ({ ...prev, strictConsistency: !prev.strictConsistency }))}>
                   <Palette className="h-4 w-4 text-gray-500" />
                   <span className="text-sm text-gray-700 select-none">Strict</span>
                   <Switch
@@ -475,7 +479,7 @@ export function ContentCalendar({
                   />
                 </div>
                 <div className="flex items-center gap-3 min-w-[110px] cursor-pointer p-1 rounded hover:bg-gray-50"
-                     onClick={() => setBrandConsistency(prev => ({ ...prev, followBrandColors: !prev.followBrandColors }))}>
+                  onClick={() => setBrandConsistency(prev => ({ ...prev, followBrandColors: !prev.followBrandColors }))}>
                   <Sparkles className="h-4 w-4 text-gray-500" />
                   <span className="text-sm text-gray-700 select-none">Colors</span>
                   <Switch
@@ -487,7 +491,7 @@ export function ContentCalendar({
                   />
                 </div>
                 <div className="flex items-center gap-3 min-w-[110px] cursor-pointer p-1 rounded hover:bg-gray-50"
-                     onClick={() => setBrandConsistency(prev => ({ ...prev, includeContacts: !prev.includeContacts }))}>
+                  onClick={() => setBrandConsistency(prev => ({ ...prev, includeContacts: !prev.includeContacts }))}>
                   <Phone className="h-4 w-4 text-gray-500" />
                   <span className="text-sm text-gray-700 select-none">Contacts</span>
                   <Switch
@@ -499,7 +503,7 @@ export function ContentCalendar({
                   />
                 </div>
                 <div className="flex items-center gap-3 min-w-[110px] cursor-pointer p-1 rounded hover:bg-gray-50"
-                     onClick={() => setIncludePeopleInDesigns(!includePeopleInDesigns)}>
+                  onClick={() => setIncludePeopleInDesigns(!includePeopleInDesigns)}>
                   <span className="text-sm text-gray-700 select-none">👥 People</span>
                   <Switch
                     checked={includePeopleInDesigns}
@@ -508,7 +512,7 @@ export function ContentCalendar({
                   />
                 </div>
                 <div className="flex items-center gap-3 min-w-[110px] cursor-pointer p-1 rounded hover:bg-gray-50"
-                     onClick={() => setUseLocalLanguage(!useLocalLanguage)}>
+                  onClick={() => setUseLocalLanguage(!useLocalLanguage)}>
                   <span className="text-sm text-gray-700 select-none">🌍 Local</span>
                   <Switch
                     checked={useLocalLanguage}
