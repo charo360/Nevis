@@ -2477,9 +2477,27 @@ ${concept.featuredServices && concept.featuredServices.length > 0 ? `- Highlight
 - CHECK subject-verb agreement in ALL content
 - USE proper English grammar throughout
 - AVOID grammatical errors that make content look unprofessional
+- AVOID awkward phrasing like "Finance my service banking enterprise"
+- KEEP language natural and conversational
+
+📱 COPY READABILITY & VISUAL HIERARCHY (USER FEEDBACK):
+- MOBILE-FIRST: All text must be easily readable on mobile devices
+- CONCISE SUBHEADINGS: Make subheadings scannable and concise
+- AVOID CLUTTER: Don't have too many elements competing for attention
+- CLEAR HIERARCHY: Primary message should dominate, supporting text secondary
+- NO SMALL TEXT: Avoid text that becomes unreadable when compressed
+- READABLE CONTRAST: Ensure text works well when overlaid on images
 3. CAPTION (50-100 words): Should continue the story started by the headline/subheadline in the image
 4. CALL-TO-ACTION (2-4 words): Action-oriented and contextually appropriate
 5. HASHTAGS (EXACTLY ${hashtagCount}): ${normalizedPlatform === 'instagram' ? '5 hashtags for Instagram' : '3 hashtags for other platforms'}
+
+🎯 CTA IMPROVEMENT REQUIREMENTS (USER FEEDBACK):
+- SPECIFIC ACTION: "Open Account" not generic "Learn More"
+- BENEFIT-DRIVEN: "Start Saving" not "Get Started"
+- URGENCY WHEN APPROPRIATE: "Join Today" not "Contact Us"
+- CONTEXTUAL: Match the headline theme - if headline is about speed, CTA should be "Get Instant Access"
+- CLEAR VALUE: "Try Free" better than "Sign Up"
+- WEBSITE PROMINENCE: Always include website URL prominently in design
 
 🔗 CONTENT COHESION REQUIREMENTS:
 - The headline and subheadline will be embedded as text elements in the visual design
@@ -2501,6 +2519,22 @@ ALL ELEMENTS MUST TELL ONE COHERENT STORY - NO DISCONNECTED PIECES!
 3. CAPTION (2-3 sentences): CONTINUES the exact story started in headline, NO topic shifts
 4. HASHTAGS (exactly ${hashtagCount} tags): REFLECT the same theme as headline/caption
 5. CALL-TO-ACTION: COMPLETES the story with clear next step
+
+🎯 HEADLINE CLARITY REQUIREMENTS (BASED ON USER FEEDBACK):
+- SPECIFIC BENEFITS: "Accept Payments Instantly", "Zero Transaction Fees", "Open Account 5 Minutes"
+- AVOID VAGUE: Never use "Business flows. Money moves." - too unclear
+- CLEAR VALUE: What exactly does Paya do? Be specific about the benefit
+- BENEFIT-FIRST: Lead with what customer gets, not abstract concepts
+- PAIN POINT DIRECT: "End Payment Delays", "Skip Bank Queues", "Stop Cash Flow Issues"
+- READABLE: Ensure text works well in image designs and mobile viewing
+
+💡 VALUE PROPOSITION CLARITY (USER FEEDBACK):
+- EXPLAIN WHY: Don't just say "Easy banking" - explain WHY it's easy
+- DIFFERENTIATION: What makes Paya different from other options?
+- SPECIFIC FEATURES: "5-minute setup", "No hidden fees", "24/7 support"
+- PROOF POINTS: Use numbers, timeframes, guarantees when possible
+- CUSTOMER BENEFIT: Focus on what the customer gains, not what Paya offers
+- CLEAR COMPARISON: "Traditional banks: 3 days. Paya: 3 seconds"
 
 🚨 BUSINESS RELEVANCE VALIDATION (CRITICAL):
 - NEVER create content about industries/services the business doesn't offer
@@ -2550,7 +2584,7 @@ ${getValuePropositionsForBusiness(businessType, brandProfile)}
 - Target Audience: ${brandProfile.targetAudience || 'Small Business Owners, Entrepreneurs'}
 - NEVER use generic placeholders - ALWAYS reference actual business data above
 
-🎯 REAL BUSINESS SCENARIOS TO USE:
+🎯 REAL BUSINESS SCENARIOS TO USE (SPECIFIC & RELATABLE):
 - "Supplier payment due today, bank transfer takes 3 days"
 - "Customer wants to pay, but your POS machine is down"
 - "Rent collection from 50 tenants, manual tracking nightmare"
@@ -2559,17 +2593,25 @@ ${getValuePropositionsForBusiness(businessType, brandProfile)}
 - "International client wants to pay, bank charges 15%"
 - "Cash flow tight, need Buy Now Pay Later for inventory"
 
+🧪 A/B TESTING PAIN POINTS (USER SUGGESTION):
+- "Tired of waiting for payments?" vs "Payment delays killing sales?"
+- "Cash flow problems?" vs "Need money faster?"
+- "Bank queues wasting time?" vs "Skip the bank entirely"
+- "High transaction fees?" vs "Pay zero fees"
+- "Complicated banking?" vs "Banking made simple"
+- "Slow money transfers?" vs "Instant money movement"
+
 🎯 DIVERSE MARKETING APPROACHES (USE DIFFERENT ONES EACH TIME):
-1. PROBLEM-SOLUTION: Start with pain point → Show Paya solution
-2. SUCCESS STORY: "How [business type] increased revenue 40% with Paya"
-3. COMPARISON: "Traditional banks vs Paya Finance"
-4. URGENCY: "Don't lose another sale to payment delays"
-5. SOCIAL PROOF: "Join 10,000+ businesses already using Paya"
-6. FEATURE SPOTLIGHT: Deep dive into one specific feature
-7. LIFESTYLE: "A day in the life of a Paya-powered business"
-8. EMOTIONAL: Focus on stress relief, confidence, peace of mind
-9. TECHNICAL: Highlight security, speed, reliability specs
-10. LOCAL PRIDE: "Built for Kenya, by Kenyans"
+1. SPECIFIC BENEFIT-FOCUSED: "Accept payments instantly", "No transaction fees", "Open account in 5 minutes"
+2. PAIN POINT DIRECT: "Tired of waiting for payments?", "Cash flow problems?", "Bank queues wasting your time?"
+3. COMPARISON CLEAR: "Traditional banks: 3 days. Paya: 3 seconds"
+4. URGENCY WITH BENEFIT: "Stop losing sales to payment delays - Get Paya today"
+5. SOCIAL PROOF SPECIFIC: "10,000+ Kenyan businesses trust Paya for payments"
+6. FEATURE SPOTLIGHT CLEAR: "Instant M-Pesa integration", "Zero setup fees", "24/7 customer support"
+7. LIFESTYLE BENEFIT: "Run your business from anywhere with mobile banking"
+8. EMOTIONAL RELIEF: "Sleep better knowing payments are secure and instant"
+9. TECHNICAL ADVANTAGE: "99.9% uptime, bank-level security, instant notifications"
+10. LOCAL SOLUTION: "Built for Kenyan businesses, by Kenyan entrepreneurs"
 
 🚫 ANTI-AI VISUAL RULES (CRITICAL):
 - NO flowing lines, waves, or streams coming from devices
