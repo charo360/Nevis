@@ -195,7 +195,15 @@ export function WebsiteAnalysisStep({
 
       setAnalysisProgress('📊 Processing analysis results and organizing data...');
 
-      // Debug: Log what business name was extracted
+      console.log('🎉 Analysis result received:', result);
+      console.log('🔍 Debug - Full result structure:', JSON.stringify(result, null, 2));
+
+      console.log('📋 Debug - Extracted fields:');
+      console.log('   Business Name:', result.businessName);
+      console.log('   Description:', result.description);
+      console.log('   Business Type:', result.businessType);
+      console.log('   Services:', result.services);
+      console.log('   Visual Style:', result.visualStyle);
 
       // Ensure we have a proper business name - fallback to extracting from URL if needed
       let businessName = result.businessName?.trim();
@@ -304,6 +312,9 @@ export function WebsiteAnalysisStep({
 
         // Store design examples for future AI reference (combine existing + new)
         designExamples: [...existingDesignExamples, ...designImageUris],
+        
+        // Store enhanced data if available
+        enhancedData: result.enhancedData || undefined,
       });
 
       setAnalysisProgress('Analysis complete! Extracted comprehensive brand information.');
@@ -342,10 +353,35 @@ export function WebsiteAnalysisStep({
         setDialogMessage('The AI could not extract enough detailed information from the website. This can happen when sites block scrapers or the site has minimal content. You can try another URL or continue to complete your profile manually.');
         setShowAnalysisDialog(true);
       } else {
-        toast({
-          title: "🎉 Enhanced Analysis Complete!",
-          description: `AI extracted ${extractedCount} pieces of detailed brand information including target audience, comprehensive services, and color analysis from your designs.`,
-        });
+        // Check if we have enhanced data
+        const enhancedData = result.enhancedData;
+        const hasEnhancedData = enhancedData && (
+          enhancedData.products?.length > 0 ||
+          enhancedData.uniqueSellingPropositions?.length > 0 ||
+          enhancedData.totalImagesFound > 0
+        );
+
+        if (hasEnhancedData) {
+          toast({
+            title: "🚀 COMPREHENSIVE Analysis Complete!",
+            description: `Found ${enhancedData.products?.length || 0} products, ${enhancedData.totalImagesFound || 0} images, ${enhancedData.uniqueSellingPropositions?.length || 0} USPs, and ${enhancedData.marketGaps?.length || 0} opportunities!`,
+          });
+          
+          // Log enhanced data for debugging
+          console.log('🎉 Enhanced Analysis Results:', {
+            products: enhancedData.products?.length || 0,
+            images: enhancedData.totalImagesFound || 0,
+            usps: enhancedData.uniqueSellingPropositions?.length || 0,
+            painPoints: enhancedData.customerPainPoints?.length || 0,
+            opportunities: enhancedData.marketGaps?.length || 0,
+            campaignAngles: enhancedData.adCampaignAngles?.length || 0
+          });
+        } else {
+          toast({
+            title: "🎉 Enhanced Analysis Complete!",
+            description: `AI extracted ${extractedCount} pieces of detailed brand information including target audience, comprehensive services, and color analysis from your designs.`,
+          });
+        }
       }
 
     } catch (error) {
@@ -876,6 +912,120 @@ export function WebsiteAnalysisStep({
                 </div>
               </div>
             </div>
+
+            {/* Enhanced Data Display */}
+            {(() => {
+              // Check if we have enhanced data to display
+              const enhancedData = brandProfile.enhancedData;
+              const hasEnhancedData = enhancedData && (
+                enhancedData.products?.length > 0 ||
+                enhancedData.uniqueSellingPropositions?.length > 0 ||
+                enhancedData.totalImagesFound > 0 ||
+                enhancedData.marketGaps?.length > 0
+              );
+
+              if (!hasEnhancedData) return null;
+
+              return (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-4">
+                  <div className="flex items-start gap-3">
+                    <Sparkles className="h-5 w-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-blue-800">
+                        🚀 Comprehensive Analysis Results
+                      </p>
+                      <p className="text-xs text-blue-700 mt-1">
+                        Advanced AI analysis found detailed business intelligence beyond basic brand info.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                    {enhancedData.products?.length > 0 && (
+                      <div className="bg-white rounded-lg p-3">
+                        <div className="text-lg font-bold text-blue-600">{enhancedData.products.length}</div>
+                        <div className="text-xs text-blue-700">Products Found</div>
+                      </div>
+                    )}
+                    {enhancedData.totalImagesFound > 0 && (
+                      <div className="bg-white rounded-lg p-3">
+                        <div className="text-lg font-bold text-green-600">{enhancedData.totalImagesFound}</div>
+                        <div className="text-xs text-green-700">Images Analyzed</div>
+                      </div>
+                    )}
+                    {enhancedData.uniqueSellingPropositions?.length > 0 && (
+                      <div className="bg-white rounded-lg p-3">
+                        <div className="text-lg font-bold text-purple-600">{enhancedData.uniqueSellingPropositions.length}</div>
+                        <div className="text-xs text-purple-700">Unique Advantages</div>
+                      </div>
+                    )}
+                    {enhancedData.marketGaps?.length > 0 && (
+                      <div className="bg-white rounded-lg p-3">
+                        <div className="text-lg font-bold text-orange-600">{enhancedData.marketGaps.length}</div>
+                        <div className="text-xs text-orange-700">Opportunities</div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Sample Enhanced Data */}
+                  <div className="space-y-3">
+                    {enhancedData.products?.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-blue-800 mb-1">Sample Products:</p>
+                        <div className="text-xs text-blue-700 space-y-1">
+                          {enhancedData.products.slice(0, 3).map((product, index) => (
+                            <div key={index} className="flex justify-between">
+                              <span>{product.name}</span>
+                              <span className="font-medium">{product.price || 'Price not found'}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {enhancedData.uniqueSellingPropositions?.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-blue-800 mb-1">Key Advantages:</p>
+                        <div className="text-xs text-blue-700">
+                          {enhancedData.uniqueSellingPropositions.slice(0, 3).map((usp, index) => (
+                            <div key={index} className="flex items-start gap-1">
+                              <span>•</span>
+                              <span>{usp}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {enhancedData.customerPainPoints?.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-blue-800 mb-1">Customer Pain Points:</p>
+                        <div className="text-xs text-blue-700">
+                          {enhancedData.customerPainPoints.slice(0, 3).map((pain, index) => (
+                            <div key={index} className="flex items-start gap-1">
+                              <span>•</span>
+                              <span>{pain}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="bg-white rounded-lg p-3">
+                    <p className="text-xs font-medium text-blue-800 mb-1">
+                      💡 This enhanced data will power superior content generation:
+                    </p>
+                    <div className="text-xs text-blue-700 space-y-1">
+                      <div>• Real product names and prices in ads</div>
+                      <div>• Specific customer pain point targeting</div>
+                      <div>• Authentic competitive advantages</div>
+                      <div>• Business opportunity-based campaigns</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
       )}

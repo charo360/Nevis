@@ -80,6 +80,44 @@ export interface CompleteBrandProfile {
 
   // AI-trained descriptions of product images
   productImageDescriptions?: {[key: string]: string};
+
+  // Enhanced Analysis Data (from comprehensive website analysis)
+  enhancedData?: {
+    // Product catalog
+    products?: Array<{
+      name: string;
+      price?: string;
+      category: string;
+      inStock: boolean;
+      description?: string;
+    }>;
+    
+    // Marketing intelligence
+    uniqueSellingPropositions?: string[];
+    customerPainPoints?: string[];
+    valuePropositions?: string[];
+    adCampaignAngles?: string[];
+    seoKeywords?: string[];
+    
+    // Media assets
+    productImages?: string[];
+    logoUrls?: string[];
+    totalImagesFound?: number;
+    
+    // Business opportunities
+    marketGaps?: string[];
+    contentOpportunities?: string[];
+    improvementAreas?: string[];
+    
+    // Analysis metadata
+    analysisMetadata?: {
+      dataCompleteness: number;
+      confidenceScore: number;
+      productsFound: number;
+      imagesDownloaded: number;
+      analysisVersion: string;
+    };
+  };
 }
 
 const STEPS = [

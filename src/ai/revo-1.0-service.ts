@@ -963,6 +963,66 @@ function getIndustryDesignIntelligence(businessType: string): any {
       ],
       industryTrends: ['Digital property viewing', 'Sustainable properties', 'Luxury market growth', 'Technology integration', 'Global investment']
     },
+    'beauty': {
+      name: 'Beauty & Wellness',
+      worldClassBrands: ['Sephora', 'Ulta', 'L\'Oréal', 'MAC', 'Fenty Beauty', 'Glossier'],
+      designBenchmarks: {
+        visualStyle: 'Elegant, aspirational, luxurious, inclusive',
+        colorPalettes: ['Soft pinks', 'Elegant golds', 'Pure whites', 'Rich purples', 'Natural tones'],
+        typography: 'Elegant serifs, modern sans-serifs, luxury hierarchy',
+        imagery: 'Beauty transformations, product close-ups, diverse models, spa environments',
+        layout: 'Clean, luxurious, product-focused, aspirational',
+        creativeElements: ['Beauty transformation scenes', 'Elegant spa environments', 'Product showcase displays', 'Diverse beauty representation', 'Luxurious texture elements']
+      },
+      creativityFrameworks: [
+        'Beauty transformation storytelling',
+        'Inclusive representation',
+        'Luxury experience creation',
+        'Product showcase excellence',
+        'Confidence building imagery'
+      ],
+      industryTrends: ['Inclusive beauty', 'Natural ingredients', 'Sustainable packaging', 'Personalized beauty', 'Social media influence']
+    },
+    'automotive': {
+      name: 'Automotive & Transportation',
+      worldClassBrands: ['BMW', 'Mercedes-Benz', 'Tesla', 'Toyota', 'Audi', 'Porsche'],
+      designBenchmarks: {
+        visualStyle: 'Dynamic, powerful, premium, innovative',
+        colorPalettes: ['Metallic silvers', 'Deep blacks', 'Racing reds', 'Premium blues', 'Bold accents'],
+        typography: 'Bold, dynamic fonts, automotive hierarchy, strong messaging',
+        imagery: 'Vehicles in motion, premium interiors, road scenes, technology features',
+        layout: 'Dynamic, powerful, motion-focused, premium',
+        creativeElements: ['Vehicles in dynamic motion', 'Premium interior showcases', 'Technology integration displays', 'Road and lifestyle scenes', 'Performance and luxury elements']
+      },
+      creativityFrameworks: [
+        'Dynamic motion storytelling',
+        'Premium luxury positioning',
+        'Technology innovation showcase',
+        'Performance demonstration',
+        'Lifestyle integration'
+      ],
+      industryTrends: ['Electric vehicles', 'Autonomous driving', 'Connected cars', 'Sustainable mobility', 'Luxury experiences']
+    },
+    'legal': {
+      name: 'Legal & Professional Services',
+      worldClassBrands: ['Baker McKenzie', 'Clifford Chance', 'Latham & Watkins', 'Skadden', 'White & Case'],
+      designBenchmarks: {
+        visualStyle: 'Authoritative, trustworthy, professional, sophisticated',
+        colorPalettes: ['Deep navy', 'Professional grays', 'Gold accents', 'Clean whites', 'Trustworthy blues'],
+        typography: 'Authoritative serifs, professional hierarchy, legal clarity',
+        imagery: 'Professional environments, legal symbols, handshakes, document signing',
+        layout: 'Structured, authoritative, professional, trustworthy',
+        creativeElements: ['Professional consultation scenes', 'Legal document environments', 'Handshake and agreement imagery', 'Courthouse and office settings', 'Justice and balance symbols']
+      },
+      creativityFrameworks: [
+        'Authority and trust building',
+        'Professional expertise demonstration',
+        'Legal solution storytelling',
+        'Client success representation',
+        'Justice and fairness imagery'
+      ],
+      industryTrends: ['Legal technology', 'Remote consultations', 'Document automation', 'Client experience', 'Specialized expertise']
+    },
     'default': {
       name: 'Professional Services',
       worldClassBrands: ['McKinsey', 'Bain', 'BCG', 'Deloitte', 'PwC', 'EY'],
@@ -984,7 +1044,47 @@ function getIndustryDesignIntelligence(businessType: string): any {
       industryTrends: ['Digital transformation', 'Remote work', 'Sustainability', 'Innovation focus', 'Global expansion']
     }
   };
-  return industryIntelligence[businessType.toLowerCase()] || industryIntelligence['default'];
+  return getBusinessTypeIntelligence(businessType, industryIntelligence);
+}
+
+/**
+ * Enhanced business type intelligence matching
+ */
+function getBusinessTypeIntelligence(businessType: string, industryIntelligence: Record<string, any>): any {
+  const businessLower = businessType.toLowerCase();
+
+  // Direct matches first
+  if (industryIntelligence[businessLower]) {
+    return industryIntelligence[businessLower];
+  }
+
+  // Keyword-based matching for better coverage
+  if (businessLower.includes('restaurant') || businessLower.includes('food') || businessLower.includes('cafe') || businessLower.includes('dining')) {
+    return industryIntelligence['restaurant'];
+  } else if (businessLower.includes('tech') || businessLower.includes('software') || businessLower.includes('digital') || businessLower.includes('app')) {
+    return industryIntelligence['technology'];
+  } else if (businessLower.includes('health') || businessLower.includes('medical') || businessLower.includes('clinic') || businessLower.includes('hospital')) {
+    return industryIntelligence['healthcare'];
+  } else if (businessLower.includes('fitness') || businessLower.includes('gym') || businessLower.includes('workout') || businessLower.includes('training')) {
+    return industryIntelligence['fitness'];
+  } else if (businessLower.includes('bank') || businessLower.includes('finance') || businessLower.includes('fintech') || businessLower.includes('payment')) {
+    return industryIntelligence['finance'];
+  } else if (businessLower.includes('education') || businessLower.includes('school') || businessLower.includes('learning') || businessLower.includes('course')) {
+    return industryIntelligence['education'];
+  } else if (businessLower.includes('retail') || businessLower.includes('shop') || businessLower.includes('store') || businessLower.includes('ecommerce')) {
+    return industryIntelligence['retail'];
+  } else if (businessLower.includes('real estate') || businessLower.includes('property') || businessLower.includes('housing') || businessLower.includes('realty')) {
+    return industryIntelligence['real estate'];
+  } else if (businessLower.includes('beauty') || businessLower.includes('salon') || businessLower.includes('spa') || businessLower.includes('cosmetic')) {
+    return industryIntelligence['beauty'];
+  } else if (businessLower.includes('automotive') || businessLower.includes('car') || businessLower.includes('vehicle') || businessLower.includes('auto')) {
+    return industryIntelligence['automotive'];
+  } else if (businessLower.includes('legal') || businessLower.includes('law') || businessLower.includes('attorney') || businessLower.includes('lawyer')) {
+    return industryIntelligence['legal'];
+  }
+
+  // Default fallback
+  return industryIntelligence['default'];
 }
 // NEW: Enhanced Creativity System with Industry Intelligence
 function getEnhancedCreativityFramework(businessType: string, designStyle: string, seed: number): any {
@@ -1461,11 +1561,234 @@ function getBusinessIntelligenceEngine(businessType: string, location: string): 
         'Your fintech partner',
         'Payment innovation'
       ]
+    },
+    'default': {
+      name: 'Professional Services',
+      localExpertise: {
+        experience: '20+ years in professional services and business solutions',
+        marketDynamics: [
+          'Local market competition and positioning',
+          'Customer service expectations in the region',
+          'Industry trends and best practices',
+          'Quality standards and professional requirements',
+          'Local business partnerships and networking'
+        ],
+        contentStrategies: [
+          'Professional expertise showcase',
+          'Customer success stories',
+          'Industry insights and trends',
+          'Quality service delivery',
+          'Local market knowledge',
+          'Professional development',
+          'Community involvement',
+          'Business growth strategies'
+        ],
+        engagementHooks: [
+          'Professional excellence',
+          'Quality service delivery',
+          'Customer satisfaction',
+          'Industry expertise',
+          'Reliable solutions',
+          'Professional growth',
+          'Business success',
+          'Trusted partnership'
+        ]
+      },
+      localPhrases: [
+        'Your professional partner',
+        'Excellence in [location]',
+        'Professional solutions',
+        'Your trusted advisor',
+        'Quality service provider',
+        'Professional expertise in [location]',
+        'Your business partner',
+        'Professional excellence'
+      ]
     }
   };
-  const result = businessIntelligence[businessType.toLowerCase()] || businessIntelligence['default'];
+  let result = businessIntelligence[businessType.toLowerCase()] || businessIntelligence['default'];
+
+  // If no specific business type found, generate dynamic engagement hooks
+  if (!businessIntelligence[businessType.toLowerCase()]) {
+    result = {
+      ...result,
+      name: businessType.charAt(0).toUpperCase() + businessType.slice(1),
+      localExpertise: {
+        ...result.localExpertise,
+        engagementHooks: generateDynamicEngagementHooks(businessType),
+        contentStrategies: generateDynamicContentStrategies(businessType),
+        marketDynamics: generateDynamicMarketDynamics(businessType)
+      },
+      localPhrases: generateDynamicLocalPhrases(businessType)
+    };
+  }
+
   return result;
 }
+
+/**
+ * Generate dynamic engagement hooks based on business type
+ */
+function generateDynamicEngagementHooks(businessType: string): string[] {
+  const businessLower = businessType.toLowerCase();
+
+  // Base hooks that work for any business
+  const baseHooks = [
+    'Professional excellence',
+    'Customer satisfaction',
+    'Quality service delivery',
+    'Trusted expertise'
+  ];
+
+  // Business-type-specific hooks
+  const specificHooks: Record<string, string[]> = {
+    'healthcare': ['Patient care', 'Health improvement', 'Medical expertise', 'Wellness solutions'],
+    'education': ['Learning success', 'Student achievement', 'Educational excellence', 'Knowledge growth'],
+    'consulting': ['Business growth', 'Strategic solutions', 'Expert guidance', 'Results delivery'],
+    'retail': ['Product quality', 'Shopping experience', 'Customer value', 'Local shopping'],
+    'restaurant': ['Culinary excellence', 'Dining experience', 'Fresh ingredients', 'Food satisfaction'],
+    'fitness': ['Health transformation', 'Fitness goals', 'Wellness journey', 'Active lifestyle'],
+    'beauty': ['Beauty enhancement', 'Self-care', 'Confidence building', 'Personal style'],
+    'automotive': ['Vehicle reliability', 'Service quality', 'Transportation solutions', 'Automotive expertise'],
+    'legal': ['Legal protection', 'Justice advocacy', 'Legal expertise', 'Rights protection'],
+    'accounting': ['Financial clarity', 'Tax solutions', 'Business finances', 'Financial growth']
+  };
+
+  // Find matching business type or use base hooks
+  for (const [type, hooks] of Object.entries(specificHooks)) {
+    if (businessLower.includes(type)) {
+      return [...hooks, ...baseHooks.slice(0, 4)];
+    }
+  }
+
+  // Generate generic hooks based on business type keywords
+  const generatedHooks = [
+    `${businessType} excellence`,
+    `Quality ${businessType} solutions`,
+    `Professional ${businessType} service`,
+    `${businessType} expertise`
+  ];
+
+  return [...generatedHooks, ...baseHooks];
+}
+
+/**
+ * Generate dynamic content strategies based on business type
+ */
+function generateDynamicContentStrategies(businessType: string): string[] {
+  const businessLower = businessType.toLowerCase();
+
+  const baseStrategies = [
+    'Customer success stories',
+    'Professional expertise showcase',
+    'Industry insights and trends',
+    'Local market knowledge',
+    'Quality service delivery',
+    'Community involvement',
+    'Business growth strategies',
+    'Professional development'
+  ];
+
+  const specificStrategies: Record<string, string[]> = {
+    'healthcare': ['Patient testimonials', 'Health education', 'Medical breakthroughs', 'Wellness tips'],
+    'education': ['Student success stories', 'Learning methodologies', 'Educational resources', 'Academic achievements'],
+    'consulting': ['Business case studies', 'Strategic insights', 'Industry analysis', 'Growth strategies'],
+    'retail': ['Product highlights', 'Shopping guides', 'Customer reviews', 'Seasonal promotions'],
+    'restaurant': ['Menu highlights', 'Chef stories', 'Ingredient sourcing', 'Dining experiences'],
+    'fitness': ['Transformation stories', 'Workout tips', 'Nutrition advice', 'Fitness challenges'],
+    'beauty': ['Beauty tutorials', 'Style guides', 'Product reviews', 'Transformation stories'],
+    'automotive': ['Vehicle features', 'Maintenance tips', 'Service quality', 'Customer experiences'],
+    'legal': ['Legal insights', 'Case studies', 'Rights education', 'Legal updates'],
+    'accounting': ['Financial tips', 'Tax strategies', 'Business insights', 'Financial planning']
+  };
+
+  // Find matching business type or use base strategies
+  for (const [type, strategies] of Object.entries(specificStrategies)) {
+    if (businessLower.includes(type)) {
+      return [...strategies, ...baseStrategies.slice(0, 4)];
+    }
+  }
+
+  return baseStrategies;
+}
+
+/**
+ * Generate dynamic market dynamics based on business type
+ */
+function generateDynamicMarketDynamics(businessType: string): string[] {
+  const businessLower = businessType.toLowerCase();
+
+  const baseDynamics = [
+    'Local market competition and positioning',
+    'Customer service expectations in the region',
+    'Industry trends and best practices',
+    'Quality standards and professional requirements',
+    'Local business partnerships and networking'
+  ];
+
+  const specificDynamics: Record<string, string[]> = {
+    'healthcare': ['Healthcare regulations', 'Patient care standards', 'Medical technology advances', 'Insurance requirements'],
+    'education': ['Educational standards', 'Learning technology trends', 'Student performance metrics', 'Curriculum requirements'],
+    'consulting': ['Business consulting demand', 'Industry expertise requirements', 'Strategic planning trends', 'Client success metrics'],
+    'retail': ['Consumer shopping patterns', 'Product demand trends', 'Seasonal sales cycles', 'Customer loyalty programs'],
+    'restaurant': ['Food service regulations', 'Culinary trends', 'Customer dining preferences', 'Local ingredient sourcing'],
+    'fitness': ['Health and wellness trends', 'Fitness equipment innovations', 'Member retention strategies', 'Health regulations'],
+    'beauty': ['Beauty industry trends', 'Product innovation cycles', 'Customer beauty preferences', 'Seasonal beauty demands'],
+    'automotive': ['Vehicle technology advances', 'Service quality standards', 'Customer transportation needs', 'Automotive regulations'],
+    'legal': ['Legal service demand', 'Regulatory changes', 'Client legal needs', 'Legal technology adoption'],
+    'accounting': ['Tax regulation changes', 'Financial reporting standards', 'Business accounting needs', 'Technology adoption']
+  };
+
+  // Find matching business type or use base dynamics
+  for (const [type, dynamics] of Object.entries(specificDynamics)) {
+    if (businessLower.includes(type)) {
+      return [...dynamics, ...baseDynamics.slice(0, 1)];
+    }
+  }
+
+  return baseDynamics;
+}
+
+/**
+ * Generate dynamic local phrases based on business type
+ */
+function generateDynamicLocalPhrases(businessType: string): string[] {
+  const businessLower = businessType.toLowerCase();
+
+  const basePhrases = [
+    'Your professional partner',
+    'Excellence in [location]',
+    'Professional solutions',
+    'Your trusted advisor',
+    'Quality service provider',
+    'Professional expertise in [location]',
+    'Your business partner',
+    'Professional excellence'
+  ];
+
+  const specificPhrases: Record<string, string[]> = {
+    'healthcare': ['Your health partner', 'Healthcare excellence in [location]', 'Your medical team', 'Health solutions'],
+    'education': ['Your learning partner', 'Educational excellence in [location]', 'Your academic guide', 'Learning solutions'],
+    'consulting': ['Your business advisor', 'Consulting excellence in [location]', 'Your strategic partner', 'Business solutions'],
+    'retail': ['Your shopping destination', 'Retail excellence in [location]', 'Your local store', 'Shopping solutions'],
+    'restaurant': ['Your dining destination', 'Culinary excellence in [location]', 'Your local restaurant', 'Dining solutions'],
+    'fitness': ['Your fitness partner', 'Wellness excellence in [location]', 'Your health journey', 'Fitness solutions'],
+    'beauty': ['Your beauty partner', 'Beauty excellence in [location]', 'Your style guide', 'Beauty solutions'],
+    'automotive': ['Your automotive partner', 'Service excellence in [location]', 'Your vehicle expert', 'Automotive solutions'],
+    'legal': ['Your legal advocate', 'Legal excellence in [location]', 'Your rights protector', 'Legal solutions'],
+    'accounting': ['Your financial partner', 'Accounting excellence in [location]', 'Your financial advisor', 'Financial solutions']
+  };
+
+  // Find matching business type or use base phrases
+  for (const [type, phrases] of Object.entries(specificPhrases)) {
+    if (businessLower.includes(type)) {
+      return [...phrases, ...basePhrases.slice(0, 4)];
+    }
+  }
+
+  return basePhrases;
+}
+
 // NEW: Dynamic Content Strategy Engine - Never Repetitive
 function getDynamicContentStrategy(businessType: string, location: string, seed: number): any {
   const businessIntel = getBusinessIntelligenceEngine(businessType, location);
@@ -1513,9 +1836,16 @@ function getDynamicContentStrategy(businessType: string, location: string, seed:
   ];
   return contentStrategies[seed % contentStrategies.length];
 }
-// NEW: Human Writing Style Generator - Authentic, Engaging
-function getHumanWritingStyle(businessType: string, location: string, seed: number): any {
+// NEW: Human Writing Style Generator - Authentic, Engaging with Brand Voice Integration
+function getHumanWritingStyle(businessType: string, location: string, seed: number, brandProfile?: any): any {
   const businessIntel = getBusinessIntelligenceEngine(businessType, location);
+
+  // Check for brand voice override
+  const brandVoice = brandProfile?.brandVoice || brandProfile?.writingTone;
+  if (brandVoice) {
+    return generateBrandVoiceStyle(brandVoice, businessType, businessIntel);
+  }
+
   const writingStyles = [
     {
       name: 'Conversational Expert',
@@ -1606,10 +1936,10 @@ function getHumanWritingStyle(businessType: string, location: string, seed: numb
   return writingStyles[seed % writingStyles.length];
 }
 // NEW: Anti-Repetition Content Engine
-function generateUniqueContentVariation(businessType: string, location: string, seed: number): any {
+function generateUniqueContentVariation(businessType: string, location: string, seed: number, brandProfile?: any): any {
   const businessIntel = getBusinessIntelligenceEngine(businessType, location);
   const contentStrategy = getDynamicContentStrategy(businessType, location, seed);
-  const writingStyle = getHumanWritingStyle(businessType, location, seed);
+  const writingStyle = getHumanWritingStyle(businessType, location, seed, brandProfile);
   // Generate unique content angle based on multiple factors
   const contentAngles = [
     {
@@ -2030,6 +2360,9 @@ export async function generateRevo10Content(input: {
   useLocalLanguage?: boolean;
   scheduledServices?: ScheduledService[];
   includePeople?: boolean;
+  designExamples?: string[];
+  accentColor?: string;
+  backgroundColor?: string;
 }) {
   const startTime = Date.now();
   try {
@@ -2058,7 +2391,11 @@ export async function generateRevo10Content(input: {
           background: '#ffffff'
         },
         contactInfo: input.contactInfo,
-        websiteUrl: input.websiteUrl
+        websiteUrl: input.websiteUrl,
+        designExamples: input.designExamples || [],
+        primaryColor: input.primaryColor,
+        accentColor: input.accentColor,
+        backgroundColor: input.backgroundColor
       }
     };
     // Step 1: Generate creative concept (using Revo 2.0 logic)
@@ -2438,8 +2775,8 @@ ${getLocationSpecificLanguageInstructions(brandProfile.location)}
 💼 BUSINESS INTELLIGENCE:
 ${keyFeaturesList.length > 0 ? `- Key Features: ${keyFeaturesList.slice(0, 5).join(', ')}` : ''}
 ${competitiveAdvantagesList.length > 0 ? `- Competitive Advantages: ${competitiveAdvantagesList.slice(0, 3).join(', ')}` : ''}
-${servicesList.length > 0 ? `- Services: ${servicesList.slice(0, 4).join(', ')}` : ''}
-${brandProfile.targetAudience ? `- Target Audience: ${brandProfile.targetAudience}` : ''}
+${generateEnhancedServicesDisplay(brandProfile.services)}
+${generateEnhancedTargetAudienceDisplay(brandProfile, businessType)}
 ${typeof positioning === 'string' && positioning.trim().length > 0 ? `- Positioning: ${positioning}` : ''}
 ${brandProfile.description ? `- Business Description: ${brandProfile.description.substring(0, 200)}` : ''}
 
@@ -2492,12 +2829,7 @@ ${concept.featuredServices && concept.featuredServices.length > 0 ? `- Highlight
 5. HASHTAGS (EXACTLY ${hashtagCount}): ${normalizedPlatform === 'instagram' ? '5 hashtags for Instagram' : '3 hashtags for other platforms'}
 
 🎯 CTA IMPROVEMENT REQUIREMENTS (USER FEEDBACK):
-- SPECIFIC ACTION: "Open Account" not generic "Learn More"
-- BENEFIT-DRIVEN: "Start Saving" not "Get Started"
-- URGENCY WHEN APPROPRIATE: "Join Today" not "Contact Us"
-- CONTEXTUAL: Match the headline theme - if headline is about speed, CTA should be "Get Instant Access"
-- CLEAR VALUE: "Try Free" better than "Sign Up"
-- WEBSITE PROMINENCE: Always include website URL prominently in design
+${generateBusinessContextAwareCTAGuidance(brandProfile, businessType, concept)}
 
 🔗 CONTENT COHESION REQUIREMENTS:
 - The headline and subheadline will be embedded as text elements in the visual design
@@ -2506,7 +2838,7 @@ ${concept.featuredServices && concept.featuredServices.length > 0 ? `- Highlight
 - Example: If image shows "Smart Banking" → Caption explains why it's smart and what that means for the customer
 
 🚫 CRITICAL HEADLINE RESTRICTIONS:
-- NEVER start with company name followed by colon (e.g., "PAYA:", "COMPANY:")
+- NEVER start with company name followed by colon (e.g., "COMPANY:", "BUSINESS:")
 - NEVER use "journey", "everyday", or repetitive corporate language
 - Headlines should be engaging standalone phrases, not company announcements
 
@@ -2529,12 +2861,12 @@ ALL ELEMENTS MUST TELL ONE COHERENT STORY - NO DISCONNECTED PIECES!
 - READABLE: Ensure text works well in image designs and mobile viewing
 
 💡 VALUE PROPOSITION CLARITY (USER FEEDBACK):
-- EXPLAIN WHY: Don't just say "Easy banking" - explain WHY it's easy
-- DIFFERENTIATION: What makes Paya different from other options?
-- SPECIFIC FEATURES: "5-minute setup", "No hidden fees", "24/7 support"
+- EXPLAIN WHY: Don't just say "Easy ${businessType}" - explain WHY it's easy
+- DIFFERENTIATION: What makes ${brandProfile.businessName} different from other options?
+- SPECIFIC FEATURES: Use concrete details like timeframes, guarantees, unique features
 - PROOF POINTS: Use numbers, timeframes, guarantees when possible
-- CUSTOMER BENEFIT: Focus on what the customer gains, not what Paya offers
-- CLEAR COMPARISON: "Traditional banks: 3 days. Paya: 3 seconds"
+- CUSTOMER BENEFIT: Focus on what the customer gains, not what the business offers
+- CLEAR COMPARISON: "Traditional providers: 3 days. ${brandProfile.businessName}: 3 seconds"
 
 🚨 BUSINESS RELEVANCE VALIDATION (CRITICAL):
 - NEVER create content about industries/services the business doesn't offer
@@ -2557,9 +2889,7 @@ ALL ELEMENTS MUST TELL ONE COHERENT STORY - NO DISCONNECTED PIECES!
 - NO corporate filler language: "puts BNPL front and center today"
 
 💡 SERVICE-SPECIFIC CONTENT RULES:
-${servicesList.length > 0 ? servicesList.map(service => `- ${service}: Focus on specific benefits and outcomes`).join('\n') : ''}
-${keyFeaturesList.length > 0 ? `- Use these key features: ${keyFeaturesList.slice(0, 3).join(', ')}` : ''}
-${competitiveAdvantagesList.length > 0 ? `- Highlight advantages: ${competitiveAdvantagesList.slice(0, 2).join(', ')}` : ''}
+${generateEnhancedServiceContentRules(brandProfile.services, keyFeaturesList, competitiveAdvantagesList)}
 
 🎯 CUSTOMER PAIN POINTS & SOLUTIONS:
 ${getCustmerPainPointsForBusiness(businessType, brandProfile)}
@@ -2567,51 +2897,38 @@ ${getCustmerPainPointsForBusiness(businessType, brandProfile)}
 💰 VALUE PROPOSITIONS (USE THESE):
 ${getValuePropositionsForBusiness(businessType, brandProfile)}
 
-🎯 PAYA-SPECIFIC CONTENT FOCUS (MANDATORY):
-- Focus on REAL Paya services: Mobile Banking, Buy Now Pay Later, Instant Payments, Business Payments
-- Target REAL audiences: Small business owners, entrepreneurs, unbanked Kenyans, mobile money users
-- Address REAL pain points: Bank queues, credit requirements, high fees, slow transfers
-- Use REAL benefits: No credit checks, instant account opening, transparent fees, mobile convenience
-- AVOID: Education themes, academic scenarios, student content, textbook references, school-related content
-- CREATE: Authentic fintech scenarios that Paya customers actually experience
+🎯 BUSINESS-SPECIFIC CONTENT FOCUS (DYNAMIC):
+- Focus on REAL ${brandProfile.businessName} services: ${normalizeStringList(brandProfile.services || []).join(', ') || `${businessType} services`}
+- Target REAL audiences: ${generateEnhancedTargetAudienceContent(brandProfile, businessType)}
+- Address REAL pain points: ${getCustmerPainPointsForBusiness(businessType, brandProfile).replace(/^- /gm, '').split('\n').slice(0, 3).join(', ')}
+- Use REAL benefits: ${getValuePropositionsForBusiness(businessType, brandProfile).replace(/^- /gm, '').split('\n').slice(0, 3).join(', ')}
+- AVOID: Generic content that could apply to any business - be specific to ${businessType}
+- CREATE: Authentic ${businessType} scenarios that ${brandProfile.businessName} customers actually experience
 
 📊 USE ACTUAL COMPANY DATA (MANDATORY):
 - Business Name: ${brandProfile.businessName}
-- Location: ${brandProfile.location || 'Kenya'}
-- Services: ${normalizeStringList(brandProfile.services || []).join(', ') || 'Financial Technology Services'}
-- Key Features: ${normalizeStringList(brandProfile.keyFeatures || []).join(', ') || 'Mobile Banking, Instant Payments'}
-- Unique Selling Points: ${normalizeStringList(brandProfile.uniqueSellingPoints || []).join(', ') || 'Fast, Secure, Affordable'}
-- Target Audience: ${brandProfile.targetAudience || 'Small Business Owners, Entrepreneurs'}
+- Location: ${brandProfile.location || 'Local area'}
+- Business Type: ${businessType}
+- Services: ${normalizeStringList(brandProfile.services || []).join(', ') || `${businessType} services`}
+- Key Features: ${normalizeStringList(brandProfile.keyFeatures || []).join(', ') || `Professional ${businessType} solutions`}
+- Unique Selling Points: ${normalizeStringList(brandProfile.uniqueSellingPoints || []).join(', ') || 'Quality, Reliable, Professional'}
+- Target Audience: ${brandProfile.targetAudience || `${businessType} customers`}
 - NEVER use generic placeholders - ALWAYS reference actual business data above
 
-🎯 REAL BUSINESS SCENARIOS TO USE (SPECIFIC & RELATABLE):
-- "Supplier payment due today, bank transfer takes 3 days"
-- "Customer wants to pay, but your POS machine is down"
-- "Rent collection from 50 tenants, manual tracking nightmare"
-- "Business growing fast, need instant payment solutions"
-- "M-Pesa limits hit, need bigger transaction capacity"
-- "International client wants to pay, bank charges 15%"
-- "Cash flow tight, need Buy Now Pay Later for inventory"
-
-🧪 A/B TESTING PAIN POINTS (USER SUGGESTION):
-- "Tired of waiting for payments?" vs "Payment delays killing sales?"
-- "Cash flow problems?" vs "Need money faster?"
-- "Bank queues wasting time?" vs "Skip the bank entirely"
-- "High transaction fees?" vs "Pay zero fees"
-- "Complicated banking?" vs "Banking made simple"
-- "Slow money transfers?" vs "Instant money movement"
+🎯 DYNAMIC BUSINESS SCENARIOS (ADAPT TO BUSINESS TYPE):
+${getAuthenticStoryScenarios(businessType, brandProfile)}
 
 🎯 DIVERSE MARKETING APPROACHES (USE DIFFERENT ONES EACH TIME):
-1. SPECIFIC BENEFIT-FOCUSED: "Accept payments instantly", "No transaction fees", "Open account in 5 minutes"
-2. PAIN POINT DIRECT: "Tired of waiting for payments?", "Cash flow problems?", "Bank queues wasting your time?"
-3. COMPARISON CLEAR: "Traditional banks: 3 days. Paya: 3 seconds"
-4. URGENCY WITH BENEFIT: "Stop losing sales to payment delays - Get Paya today"
-5. SOCIAL PROOF SPECIFIC: "10,000+ Kenyan businesses trust Paya for payments"
-6. FEATURE SPOTLIGHT CLEAR: "Instant M-Pesa integration", "Zero setup fees", "24/7 customer support"
-7. LIFESTYLE BENEFIT: "Run your business from anywhere with mobile banking"
-8. EMOTIONAL RELIEF: "Sleep better knowing payments are secure and instant"
-9. TECHNICAL ADVANTAGE: "99.9% uptime, bank-level security, instant notifications"
-10. LOCAL SOLUTION: "Built for Kenyan businesses, by Kenyan entrepreneurs"
+1. SPECIFIC BENEFIT-FOCUSED: Highlight concrete benefits of ${brandProfile.businessName} services
+2. PAIN POINT DIRECT: Address specific challenges ${generateAudienceSpecificPainPoints(brandProfile, businessType)}
+3. COMPARISON CLEAR: Show how ${brandProfile.businessName} outperforms alternatives
+4. URGENCY WITH BENEFIT: Create urgency around ${businessType} needs
+5. SOCIAL PROOF SPECIFIC: Reference real customer success with ${brandProfile.businessName}
+6. FEATURE SPOTLIGHT CLEAR: Highlight unique features of ${brandProfile.businessName}
+7. LIFESTYLE BENEFIT: Show how ${brandProfile.businessName} improves daily life
+8. EMOTIONAL RELIEF: Address emotional benefits of choosing ${brandProfile.businessName}
+9. TECHNICAL ADVANTAGE: Emphasize superior ${businessType} capabilities
+10. LOCAL SOLUTION: Position as the local expert in ${brandProfile.location || 'the area'}
 
 🚫 ANTI-AI VISUAL RULES (CRITICAL):
 - NO flowing lines, waves, or streams coming from devices
@@ -2640,17 +2957,12 @@ ${getCompetitiveMessagingRules(brandProfile)}
 - MAXIMUM ${hashtagCount} hashtags total - NO MORE than ${hashtagCount}
 - NEVER exceed ${hashtagCount} hashtags - this is non-negotiable
 - Choose the BEST ${hashtagCount} most relevant hashtags only
-- Example format: #Paya #DigitalBanking #Kenya #Fintech #MobileMoney
-- DO NOT include: #PayaFintech #BNPLKenya #SmartSpending #NairobiFinance #FinTechKenya #PaymentPlans #BuyNowPayLater #DeferredPayment #FlexiblePayment #InstallmentPlans
-- PRIORITIZE: Brand name (#Paya) + Service type + Location + Industry + One specific feature
+- Example format: #${brandProfile.businessName.replace(/\s+/g, '')} #${businessType.replace(/\s+/g, '')} #${(brandProfile.location || 'Local').replace(/\s+/g, '')} #Professional #Quality
+- PRIORITIZE: Brand name (#${brandProfile.businessName.replace(/\s+/g, '')}) + Service type + Location + Industry + One specific feature
 - QUALITY over quantity - ${hashtagCount} strategic hashtags perform better than 10 generic ones
 
-🇰🇪 KENYAN CULTURAL CONNECTION (MANDATORY):
-- Reference real Kenyan experiences: matatu rides, M-Pesa, university fees, family support
-- Use locally relevant scenarios: "When your cousin needs school fees", "After a long day at work"
-- Include Kenyan context: Nairobi traffic, campus life, family obligations, side hustles
-- Sound like someone who actually lives in Kenya and understands daily challenges
-- Reference local pain points: expensive bank charges, long queues, complicated processes
+🌍 LOCAL CULTURAL CONNECTION (DYNAMIC):
+${getLocalCulturalConnectionInstructions(brandProfile.location, businessType)}
 
 CRITICAL: You MUST return ONLY valid JSON in this exact format. No additional text, no explanations, no markdown formatting:
 
@@ -2676,18 +2988,433 @@ function normalizeStringList(input: any): string[] {
   return [];
 }
 
-// Normalize service list helper
+// Enhanced service list processor with rich descriptions
 function normalizeServiceList(input: any): string[] {
   if (Array.isArray(input)) {
     return input.map(service => {
       if (typeof service === 'string') return service;
-      if (typeof service === 'object' && service.name) return service.name;
-      if (typeof service === 'object' && service.serviceName) return service.serviceName;
+      if (typeof service === 'object') {
+        // Extract rich service information
+        const serviceName = service.name || service.serviceName || service.title;
+        const description = service.description || service.details || service.summary;
+
+        if (serviceName && description) {
+          // Combine name with key description points
+          const shortDesc = description.length > 50 ? description.substring(0, 50) + '...' : description;
+          return `${serviceName} (${shortDesc})`;
+        }
+
+        return serviceName || String(service);
+      }
       return String(service);
     }).filter(s => s && s.trim().length > 0);
   }
   if (typeof input === 'string') return input.split(',').map(s => s.trim()).filter(s => s.length > 0);
   return [];
+}
+
+/**
+ * Get detailed service information for content generation
+ */
+function getDetailedServiceInfo(services: any[]): any[] {
+  if (!Array.isArray(services)) return [];
+
+  return services.map(service => {
+    if (typeof service === 'string') {
+      return {
+        name: service,
+        description: null,
+        benefits: [],
+        features: [],
+        targetAudience: null
+      };
+    }
+
+    if (typeof service === 'object') {
+      return {
+        name: service.name || service.serviceName || service.title || 'Service',
+        description: service.description || service.details || service.summary || null,
+        benefits: extractServiceBenefits(service),
+        features: extractServiceFeatures(service),
+        targetAudience: service.targetAudience || service.audience || null,
+        pricing: service.pricing || service.price || null,
+        duration: service.duration || service.timeframe || null
+      };
+    }
+
+    return {
+      name: String(service),
+      description: null,
+      benefits: [],
+      features: [],
+      targetAudience: null
+    };
+  });
+}
+
+/**
+ * Extract service benefits from service object
+ */
+function extractServiceBenefits(service: any): string[] {
+  const benefits: string[] = [];
+
+  if (service.benefits && Array.isArray(service.benefits)) {
+    benefits.push(...service.benefits);
+  }
+
+  if (service.advantages && Array.isArray(service.advantages)) {
+    benefits.push(...service.advantages);
+  }
+
+  if (service.value && typeof service.value === 'string') {
+    benefits.push(service.value);
+  }
+
+  return benefits.filter(b => b && typeof b === 'string').slice(0, 3);
+}
+
+/**
+ * Extract service features from service object
+ */
+function extractServiceFeatures(service: any): string[] {
+  const features: string[] = [];
+
+  if (service.features && Array.isArray(service.features)) {
+    features.push(...service.features);
+  }
+
+  if (service.includes && Array.isArray(service.includes)) {
+    features.push(...service.includes);
+  }
+
+  if (service.specifications && Array.isArray(service.specifications)) {
+    features.push(...service.specifications);
+  }
+
+  return features.filter(f => f && typeof f === 'string').slice(0, 3);
+}
+
+/**
+ * Generate enhanced service content rules using detailed service information
+ */
+function generateEnhancedServiceContentRules(services: any, keyFeaturesList: string[], competitiveAdvantagesList: string[]): string {
+  const rules: string[] = [];
+
+  // Process detailed service information
+  const detailedServices = getDetailedServiceInfo(services || []);
+
+  if (detailedServices.length > 0) {
+    detailedServices.slice(0, 4).forEach(service => {
+      let serviceRule = `- ${service.name}:`;
+
+      if (service.description) {
+        serviceRule += ` ${service.description.substring(0, 100)}${service.description.length > 100 ? '...' : ''}`;
+      }
+
+      if (service.benefits.length > 0) {
+        serviceRule += ` | Benefits: ${service.benefits.slice(0, 2).join(', ')}`;
+      }
+
+      if (service.features.length > 0) {
+        serviceRule += ` | Features: ${service.features.slice(0, 2).join(', ')}`;
+      }
+
+      if (service.targetAudience) {
+        serviceRule += ` | Target: ${service.targetAudience}`;
+      }
+
+      serviceRule += ' - Focus on specific outcomes and customer value';
+      rules.push(serviceRule);
+    });
+  }
+
+  // Add key features if available
+  if (keyFeaturesList.length > 0) {
+    rules.push(`- Use these key features: ${keyFeaturesList.slice(0, 3).join(', ')}`);
+  }
+
+  // Add competitive advantages if available
+  if (competitiveAdvantagesList.length > 0) {
+    rules.push(`- Highlight advantages: ${competitiveAdvantagesList.slice(0, 2).join(', ')}`);
+  }
+
+  // Add fallback if no services
+  if (rules.length === 0) {
+    rules.push('- Focus on core business value and customer benefits');
+    rules.push('- Highlight unique selling points and competitive advantages');
+    rules.push('- Emphasize quality, reliability, and customer satisfaction');
+  }
+
+  return rules.join('\n');
+}
+
+/**
+ * Generate enhanced services display for business intelligence
+ */
+function generateEnhancedServicesDisplay(services: any): string {
+  if (!services) return '';
+
+  const detailedServices = getDetailedServiceInfo(services);
+  if (detailedServices.length === 0) return '';
+
+  const serviceDisplays: string[] = [];
+
+  detailedServices.slice(0, 3).forEach(service => {
+    let display = service.name;
+
+    if (service.description) {
+      const shortDesc = service.description.length > 60 ?
+        service.description.substring(0, 60) + '...' :
+        service.description;
+      display += ` (${shortDesc})`;
+    }
+
+    if (service.benefits.length > 0) {
+      display += ` - ${service.benefits[0]}`;
+    }
+
+    serviceDisplays.push(display);
+  });
+
+  return serviceDisplays.length > 0 ? `- Services: ${serviceDisplays.join(' | ')}` : '';
+}
+
+/**
+ * Enhanced target audience processing and analysis
+ */
+function getEnhancedTargetAudienceInfo(brandProfile: any, businessType: string): any {
+  const targetAudience = brandProfile.targetAudience || '';
+
+  return {
+    primary: targetAudience || `${businessType} customers and clients`,
+    segments: extractAudienceSegments(targetAudience, businessType),
+    demographics: extractAudienceDemographics(targetAudience),
+    painPoints: extractAudiencePainPoints(targetAudience, businessType),
+    motivations: extractAudienceMotivations(targetAudience, businessType),
+    communicationStyle: getAudienceCommunicationStyle(targetAudience, businessType)
+  };
+}
+
+/**
+ * Extract audience segments from target audience description
+ */
+function extractAudienceSegments(targetAudience: string, businessType: string): string[] {
+  if (!targetAudience) return [`${businessType} customers`];
+
+  const segments: string[] = [];
+  const audienceLower = targetAudience.toLowerCase();
+
+  // Common audience segments
+  const segmentKeywords = {
+    'small business': 'Small business owners',
+    'entrepreneur': 'Entrepreneurs',
+    'professional': 'Working professionals',
+    'student': 'Students',
+    'family': 'Families',
+    'parent': 'Parents',
+    'senior': 'Senior citizens',
+    'young adult': 'Young adults',
+    'millennial': 'Millennials',
+    'gen z': 'Gen Z',
+    'corporate': 'Corporate clients',
+    'individual': 'Individual consumers',
+    'b2b': 'Business clients',
+    'b2c': 'Individual customers'
+  };
+
+  for (const [keyword, segment] of Object.entries(segmentKeywords)) {
+    if (audienceLower.includes(keyword)) {
+      segments.push(segment);
+    }
+  }
+
+  return segments.length > 0 ? segments : [targetAudience];
+}
+
+/**
+ * Extract demographic information from target audience
+ */
+function extractAudienceDemographics(targetAudience: string): any {
+  if (!targetAudience) return {};
+
+  const demographics: any = {};
+  const audienceLower = targetAudience.toLowerCase();
+
+  // Age groups
+  if (audienceLower.includes('young') || audienceLower.includes('millennial') || audienceLower.includes('gen z')) {
+    demographics.ageGroup = 'young adults (18-35)';
+  } else if (audienceLower.includes('professional') || audienceLower.includes('working')) {
+    demographics.ageGroup = 'working adults (25-55)';
+  } else if (audienceLower.includes('senior') || audienceLower.includes('elderly')) {
+    demographics.ageGroup = 'seniors (55+)';
+  }
+
+  // Income level
+  if (audienceLower.includes('premium') || audienceLower.includes('luxury') || audienceLower.includes('high-end')) {
+    demographics.incomeLevel = 'high income';
+  } else if (audienceLower.includes('budget') || audienceLower.includes('affordable') || audienceLower.includes('student')) {
+    demographics.incomeLevel = 'budget-conscious';
+  } else if (audienceLower.includes('professional') || audienceLower.includes('business')) {
+    demographics.incomeLevel = 'middle to high income';
+  }
+
+  // Lifestyle
+  if (audienceLower.includes('busy') || audienceLower.includes('professional')) {
+    demographics.lifestyle = 'busy professionals';
+  } else if (audienceLower.includes('family')) {
+    demographics.lifestyle = 'family-oriented';
+  } else if (audienceLower.includes('health') || audienceLower.includes('fitness')) {
+    demographics.lifestyle = 'health-conscious';
+  }
+
+  return demographics;
+}
+
+/**
+ * Extract audience pain points from target audience description
+ */
+function extractAudiencePainPoints(targetAudience: string, businessType: string): string[] {
+  if (!targetAudience) return [];
+
+  const painPoints: string[] = [];
+  const audienceLower = targetAudience.toLowerCase();
+
+  // Common pain point indicators
+  if (audienceLower.includes('busy') || audienceLower.includes('time-constrained')) {
+    painPoints.push('Limited time for complex processes');
+  }
+  if (audienceLower.includes('budget') || audienceLower.includes('cost-conscious')) {
+    painPoints.push('Need for cost-effective solutions');
+  }
+  if (audienceLower.includes('small business') || audienceLower.includes('entrepreneur')) {
+    painPoints.push('Limited resources and need for efficiency');
+  }
+  if (audienceLower.includes('professional') || audienceLower.includes('working')) {
+    painPoints.push('Need for reliable, professional-grade solutions');
+  }
+
+  return painPoints;
+}
+
+/**
+ * Extract audience motivations from target audience description
+ */
+function extractAudienceMotivations(targetAudience: string, businessType: string): string[] {
+  if (!targetAudience) return [];
+
+  const motivations: string[] = [];
+  const audienceLower = targetAudience.toLowerCase();
+
+  // Common motivations
+  if (audienceLower.includes('growth') || audienceLower.includes('entrepreneur')) {
+    motivations.push('Business growth and success');
+  }
+  if (audienceLower.includes('family') || audienceLower.includes('parent')) {
+    motivations.push('Family well-being and security');
+  }
+  if (audienceLower.includes('professional') || audienceLower.includes('career')) {
+    motivations.push('Professional advancement and efficiency');
+  }
+  if (audienceLower.includes('health') || audienceLower.includes('wellness')) {
+    motivations.push('Health and wellness improvement');
+  }
+  if (audienceLower.includes('quality') || audienceLower.includes('premium')) {
+    motivations.push('Quality and excellence');
+  }
+
+  return motivations;
+}
+
+/**
+ * Determine appropriate communication style for target audience
+ */
+function getAudienceCommunicationStyle(targetAudience: string, businessType: string): string {
+  if (!targetAudience) return 'professional and approachable';
+
+  const audienceLower = targetAudience.toLowerCase();
+
+  if (audienceLower.includes('young') || audienceLower.includes('millennial') || audienceLower.includes('gen z')) {
+    return 'casual, energetic, and relatable';
+  } else if (audienceLower.includes('professional') || audienceLower.includes('corporate') || audienceLower.includes('b2b')) {
+    return 'professional, authoritative, and results-focused';
+  } else if (audienceLower.includes('family') || audienceLower.includes('parent')) {
+    return 'warm, trustworthy, and family-focused';
+  } else if (audienceLower.includes('luxury') || audienceLower.includes('premium')) {
+    return 'sophisticated, exclusive, and premium';
+  } else if (audienceLower.includes('student') || audienceLower.includes('budget')) {
+    return 'friendly, supportive, and value-focused';
+  }
+
+  return 'professional and approachable';
+}
+
+/**
+ * Generate enhanced target audience content for prompts
+ */
+function generateEnhancedTargetAudienceContent(brandProfile: any, businessType: string): string {
+  const audienceInfo = getEnhancedTargetAudienceInfo(brandProfile, businessType);
+
+  let content = audienceInfo.primary;
+
+  if (audienceInfo.segments.length > 1) {
+    content += ` (${audienceInfo.segments.slice(0, 3).join(', ')})`;
+  }
+
+  if (audienceInfo.demographics.ageGroup) {
+    content += ` - ${audienceInfo.demographics.ageGroup}`;
+  }
+
+  if (audienceInfo.demographics.lifestyle) {
+    content += ` - ${audienceInfo.demographics.lifestyle}`;
+  }
+
+  if (audienceInfo.motivations.length > 0) {
+    content += ` - motivated by ${audienceInfo.motivations.slice(0, 2).join(' and ')}`;
+  }
+
+  return content;
+}
+
+/**
+ * Generate enhanced target audience display for business intelligence
+ */
+function generateEnhancedTargetAudienceDisplay(brandProfile: any, businessType: string): string {
+  if (!brandProfile.targetAudience) return '';
+
+  const audienceInfo = getEnhancedTargetAudienceInfo(brandProfile, businessType);
+
+  let display = `- Target Audience: ${audienceInfo.primary}`;
+
+  if (audienceInfo.segments.length > 1) {
+    display += ` | Segments: ${audienceInfo.segments.slice(0, 3).join(', ')}`;
+  }
+
+  if (audienceInfo.demographics.ageGroup || audienceInfo.demographics.incomeLevel) {
+    const demographics = [audienceInfo.demographics.ageGroup, audienceInfo.demographics.incomeLevel]
+      .filter(Boolean).join(', ');
+    if (demographics) {
+      display += ` | Demographics: ${demographics}`;
+    }
+  }
+
+  if (audienceInfo.communicationStyle) {
+    display += ` | Communication: ${audienceInfo.communicationStyle}`;
+  }
+
+  return display;
+}
+
+/**
+ * Generate audience-specific pain points for marketing approaches
+ */
+function generateAudienceSpecificPainPoints(brandProfile: any, businessType: string): string {
+  const audienceInfo = getEnhancedTargetAudienceInfo(brandProfile, businessType);
+
+  if (audienceInfo.painPoints.length > 0) {
+    return `${audienceInfo.primary} face: ${audienceInfo.painPoints.slice(0, 2).join(' and ')}`;
+  }
+
+  return `${audienceInfo.primary} face`;
 }
 
 // Get enhanced content approaches
@@ -2701,37 +3428,319 @@ function getEnhancedContentApproaches(): string[] {
   ];
 }
 
-// Get location-specific language instructions
+// Get location-specific language instructions (dynamic)
 function getLocationSpecificLanguageInstructions(location: string): string {
-  const locationKey = location.toLowerCase();
-
-  if (locationKey.includes('kenya')) {
-    return `- SWAHILI ELEMENTS: "Karibu" (welcome), "Asante" (thank you), "Haraka" (fast), "Poa" (cool/good), "Mambo" (what's up)
-- BUSINESS CONTEXT: "Biashara" (business), "Huduma" (service), "Kazi" (work), "Pesa" (money), "Benki" (bank)
-- FINTECH TERMS: "M-Pesa" (mobile money), "Simu" (phone), "Mitandao" (networks), "Usalama" (security)
-- INTEGRATION EXAMPLES:
-  * "Fast payments" → "Malipo ya haraka"
-  * "No worries" → "Hakuna wasiwasi"
-  * "Let's start" → "Twende tuanze"
-  * "Very secure" → "Salama sana"`;
+  if (!location || location.toLowerCase() === 'global') {
+    return `- Use professional, universally accessible language
+- Maintain clear, engaging communication
+- Include culturally neutral terms and expressions
+- Keep professional tone while being approachable`;
   }
 
-  if (locationKey.includes('nigeria')) {
-    return `- PIDGIN ELEMENTS: "How far?" (how are you), "No wahala" (no problem), "Chop money" (spend money), "Sharp sharp" (quickly)
-- BUSINESS CONTEXT: "Business" (business), "Work" (work), "Money" (money), "Bank" (bank)
-- FINTECH TERMS: "Transfer" (transfer), "Account" (account), "Card" (card), "Mobile banking"
-- INTEGRATION EXAMPLES:
-  * "Fast payments" → "Quick transfer, no wahala"
-  * "No worries" → "No stress at all"
-  * "Let's start" → "Make we start"
-  * "Very secure" → "100% secure"`;
+  const locationKey = location.toLowerCase();
+
+  // Dynamic language instructions based on location
+  const locationLanguageMap: Record<string, any> = {
+    'kenya': {
+      language: 'Swahili',
+      elements: ['Karibu (welcome)', 'Asante (thank you)', 'Haraka (fast)', 'Poa (cool/good)'],
+      businessTerms: ['Biashara (business)', 'Huduma (service)', 'Kazi (work)', 'Pesa (money)'],
+      examples: ['Fast service → Huduma ya haraka', 'Welcome → Karibu', 'Thank you → Asante sana']
+    },
+    'nigeria': {
+      language: 'Pidgin English',
+      elements: ['How far? (how are you)', 'No wahala (no problem)', 'Sharp sharp (quickly)'],
+      businessTerms: ['Business', 'Work', 'Money', 'Service'],
+      examples: ['Fast service → Quick service, no wahala', 'No worries → No stress at all']
+    },
+    'south africa': {
+      language: 'Local expressions',
+      elements: ['Howzit (hello)', 'Lekker (good/nice)', 'Sharp (okay/good)', 'Eish (expression of concern)'],
+      businessTerms: ['Business', 'Service', 'Work', 'Money'],
+      examples: ['Good service → Lekker service', 'Hello → Howzit']
+    },
+    'ghana': {
+      language: 'Twi/Local expressions',
+      elements: ['Akwaaba (welcome)', 'Medaase (thank you)', 'Eye (good)', 'Yie (well done)'],
+      businessTerms: ['Business', 'Service', 'Work', 'Money'],
+      examples: ['Welcome → Akwaaba', 'Thank you → Medaase', 'Good → Eye']
+    }
+  };
+
+  // Find matching location
+  for (const [key, config] of Object.entries(locationLanguageMap)) {
+    if (locationKey.includes(key)) {
+      return `- ${config.language.toUpperCase()} ELEMENTS: ${config.elements.join(', ')}
+- BUSINESS CONTEXT: ${config.businessTerms.join(', ')}
+- INTEGRATION EXAMPLES: ${config.examples.join(', ')}
+- Mix English (70%) with local language (30%) naturally
+- Keep culturally authentic while maintaining professionalism`;
+    }
   }
 
   // Default for other locations
   return `- Use appropriate local language elements for ${location}
 - Mix English (70%) with local language (30%) naturally
 - Include culturally relevant terms and expressions
-- Maintain professional tone while being locally authentic`;
+- Maintain professional tone while being locally authentic
+- Research common greetings and business terms for ${location}`;
+}
+
+/**
+ * Generate dynamic local cultural connection instructions
+ */
+function getLocalCulturalConnectionInstructions(location: string, businessType: string): string {
+  if (!location || location.toLowerCase() === 'global') {
+    return `- Reference universal business experiences and challenges
+- Use scenarios that resonate across cultures
+- Include professional contexts that apply globally
+- Sound like someone who understands modern business challenges
+- Reference common pain points: time constraints, quality concerns, cost considerations`;
+  }
+
+  const locationKey = location.toLowerCase();
+
+  // Dynamic cultural contexts based on location and business type
+  const culturalContexts: Record<string, any> = {
+    'kenya': {
+      experiences: ['public transport', 'mobile payments', 'university fees', 'family support'],
+      scenarios: ['When your cousin needs school fees', 'After a long day at work', 'During city traffic'],
+      context: ['campus life', 'family obligations', 'side hustles', 'community support'],
+      painPoints: ['expensive bank charges', 'long queues', 'complicated processes', 'unreliable services']
+    },
+    'nigeria': {
+      experiences: ['Lagos traffic', 'mobile banking', 'family support', 'business ventures'],
+      scenarios: ['When family needs support', 'After work in Lagos', 'During busy market days'],
+      context: ['family obligations', 'business hustle', 'community support', 'entrepreneurship'],
+      painPoints: ['high transaction fees', 'network issues', 'complex procedures', 'unreliable systems']
+    },
+    'south africa': {
+      experiences: ['taxi rides', 'mobile payments', 'family support', 'local business'],
+      scenarios: ['When family needs help', 'After work commute', 'During weekend shopping'],
+      context: ['family support', 'community involvement', 'local business', 'social connections'],
+      painPoints: ['high costs', 'long wait times', 'complicated systems', 'poor service']
+    },
+    'usa': {
+      experiences: ['commuting', 'online banking', 'family support', 'career growth'],
+      scenarios: ['When you need quick service', 'After a busy workday', 'During weekend errands'],
+      context: ['work-life balance', 'family time', 'career goals', 'convenience needs'],
+      painPoints: ['high fees', 'poor customer service', 'time-consuming processes', 'lack of transparency']
+    },
+    'uk': {
+      experiences: ['public transport', 'digital banking', 'family support', 'local services'],
+      scenarios: ['When you need reliable service', 'After work hours', 'During weekend activities'],
+      context: ['work commitments', 'family priorities', 'local community', 'quality expectations'],
+      painPoints: ['expensive services', 'poor communication', 'lengthy procedures', 'unreliable providers']
+    }
+  };
+
+  // Find matching location or use generic approach
+  let context = culturalContexts['usa']; // Default to universal context
+  for (const [key, config] of Object.entries(culturalContexts)) {
+    if (locationKey.includes(key)) {
+      context = config;
+      break;
+    }
+  }
+
+  return `- Reference real ${location} experiences: ${context.experiences.join(', ')}
+- Use locally relevant scenarios: ${context.scenarios.join(', ')}
+- Include ${location} context: ${context.context.join(', ')}
+- Sound like someone who actually lives in ${location} and understands daily challenges
+- Reference local pain points: ${context.painPoints.join(', ')}
+- Adapt language and references to ${businessType} industry context`;
+}
+
+/**
+ * Get dynamic cultural context for visual design
+ */
+function getDynamicCulturalContext(location: string): any {
+  if (!location || location.toLowerCase() === 'global') {
+    return {
+      region: 'global',
+      representation: 'diverse',
+      culturalElements: 'universal',
+      visualStyle: 'professional'
+    };
+  }
+
+  const locationKey = location.toLowerCase();
+
+  // Regional cultural contexts
+  const culturalContexts: Record<string, any> = {
+    'africa': {
+      region: 'african',
+      representation: 'african',
+      culturalElements: 'african',
+      visualStyle: 'authentic-african',
+      countries: ['kenya', 'nigeria', 'south africa', 'ghana', 'uganda', 'tanzania', 'ethiopia', 'rwanda', 'zambia', 'botswana', 'malawi']
+    },
+    'asia': {
+      region: 'asian',
+      representation: 'asian',
+      culturalElements: 'asian',
+      visualStyle: 'authentic-asian',
+      countries: ['india', 'china', 'japan', 'thailand', 'vietnam', 'philippines', 'indonesia', 'malaysia', 'singapore']
+    },
+    'europe': {
+      region: 'european',
+      representation: 'european',
+      culturalElements: 'european',
+      visualStyle: 'authentic-european',
+      countries: ['uk', 'france', 'germany', 'spain', 'italy', 'netherlands', 'sweden', 'norway', 'denmark']
+    },
+    'americas': {
+      region: 'american',
+      representation: 'diverse-american',
+      culturalElements: 'american',
+      visualStyle: 'authentic-american',
+      countries: ['usa', 'canada', 'brazil', 'mexico', 'argentina', 'colombia', 'chile', 'peru']
+    }
+  };
+
+  // Find matching region
+  for (const [region, config] of Object.entries(culturalContexts)) {
+    if (config.countries.some((country: string) => locationKey.includes(country))) {
+      return {
+        ...config,
+        specificCountry: config.countries.find((country: string) => locationKey.includes(country)) || location
+      };
+    }
+  }
+
+  // Default to diverse representation
+  return {
+    region: 'global',
+    representation: 'diverse',
+    culturalElements: 'universal',
+    visualStyle: 'professional',
+    specificCountry: location
+  };
+}
+
+/**
+ * Generate dynamic people inclusion instructions based on cultural context
+ */
+function getDynamicPeopleInstructions(culturalContext: any, businessType: string): string {
+  const representationMap: Record<string, string> = {
+    'african': `👥 PEOPLE INCLUSION (AFRICAN REPRESENTATION):
+- Include authentic Black/African people who represent the target market
+- Show people who would actually use ${businessType} services
+- Display local African people in settings relevant to ${businessType} business
+- Ensure faces are fully visible, well-lit, and anatomically correct
+- PRIORITY: 80%+ of people should be Black/African for cultural authenticity
+- Context: Show people in ${businessType}-relevant settings, not generic offices`,
+
+    'asian': `👥 PEOPLE INCLUSION (ASIAN REPRESENTATION):
+- Include authentic Asian people who represent the target market
+- Show people who would actually use ${businessType} services
+- Display local Asian people in settings relevant to ${businessType} business
+- Ensure faces are fully visible, well-lit, and anatomically correct
+- PRIORITY: 80%+ of people should be Asian for cultural authenticity
+- Context: Show people in ${businessType}-relevant settings`,
+
+    'european': `👥 PEOPLE INCLUSION (EUROPEAN REPRESENTATION):
+- Include authentic European people who represent the target market
+- Show people who would actually use ${businessType} services
+- Display local European people in settings relevant to ${businessType} business
+- Ensure faces are fully visible, well-lit, and anatomically correct
+- Context: Show people in ${businessType}-relevant settings`,
+
+    'diverse': `👥 PEOPLE INCLUSION (DIVERSE REPRESENTATION):
+- Include diverse, authentic people who represent the target market
+- Show people who would actually use ${businessType} services
+- Display people in settings relevant to ${businessType} business
+- Ensure faces are fully visible, well-lit, and anatomically correct
+- Context: Show people in ${businessType}-relevant settings`
+  };
+
+  return `\n\n${representationMap[culturalContext.representation] || representationMap['diverse']}`;
+}
+
+/**
+ * Generate dynamic cultural instructions for visual design
+ */
+function getDynamicCulturalInstructions(culturalContext: any, businessType: string): string {
+  if (culturalContext.region === 'global') {
+    return '';
+  }
+
+  const culturalInstructionsMap: Record<string, any> = {
+    'african': {
+      title: 'AFRICAN CULTURAL INTELLIGENCE',
+      avoid: [
+        'Complex trading graphs, stock charts, or financial diagrams that are hard to understand',
+        'Western corporate imagery that doesn\'t resonate locally',
+        'Abstract business concepts that feel disconnected from daily life'
+      ],
+      use: [
+        'Simple, clear visuals that everyday people can relate to',
+        'Local cultural elements, colors, and symbols that feel familiar',
+        'Real-life scenarios people experience (family, community, daily activities)'
+      ],
+      focus: 'Visual storytelling that connects with local values and experiences',
+      authenticity: 'Show genuine African environments, not generic stock imagery'
+    },
+    'asian': {
+      title: 'ASIAN CULTURAL INTELLIGENCE',
+      avoid: [
+        'Western-centric imagery that doesn\'t resonate locally',
+        'Generic corporate visuals that feel disconnected',
+        'Cultural stereotypes or outdated representations'
+      ],
+      use: [
+        'Modern Asian aesthetics and design principles',
+        'Local cultural elements that feel authentic',
+        'Contemporary Asian lifestyle scenarios'
+      ],
+      focus: 'Visual storytelling that reflects modern Asian values and experiences',
+      authenticity: 'Show genuine Asian environments and contemporary culture'
+    },
+    'european': {
+      title: 'EUROPEAN CULTURAL INTELLIGENCE',
+      avoid: [
+        'Generic American corporate imagery',
+        'Outdated European stereotypes',
+        'One-size-fits-all European representations'
+      ],
+      use: [
+        'Modern European design aesthetics',
+        'Local cultural elements specific to the region',
+        'Contemporary European lifestyle scenarios'
+      ],
+      focus: 'Visual storytelling that reflects European values and sophistication',
+      authenticity: 'Show genuine European environments and modern culture'
+    },
+    'american': {
+      title: 'AMERICAN CULTURAL INTELLIGENCE',
+      avoid: [
+        'Generic corporate imagery that lacks personality',
+        'Outdated American stereotypes',
+        'One-dimensional representations'
+      ],
+      use: [
+        'Modern American design trends',
+        'Diverse American cultural elements',
+        'Contemporary American lifestyle scenarios'
+      ],
+      focus: 'Visual storytelling that reflects American diversity and innovation',
+      authenticity: 'Show genuine American environments and modern culture'
+    }
+  };
+
+  const config = culturalInstructionsMap[culturalContext.region];
+  if (!config) return '';
+
+  const businessSpecificGuidance = getCulturalBusinessGuidance(businessType);
+
+  return `\n\n🌍 ${config.title}:
+- AVOID: ${config.avoid.join('\n- AVOID: ')}
+- USE: ${config.use.join('\n- USE: ')}
+- FOCUS: ${config.focus}
+- SIMPLICITY: Keep visual elements clean and easy to understand at first glance
+- AUTHENTICITY: ${config.authenticity}
+
+${businessSpecificGuidance}`;
 }
 
 // Get competitor analysis
@@ -2756,100 +3765,444 @@ function getCompetitorAnalysis(brandProfile: any): string {
   return analysis || '- Focus on unique value proposition and market differentiation';
 }
 
-// Get authentic story scenarios
+// Get authentic story scenarios (dynamic generation)
 function getAuthenticStoryScenarios(brandProfile: any, businessType: string): string {
-  const scenarios = [];
-
-  if (businessType.toLowerCase().includes('fintech') || businessType.toLowerCase().includes('finance')) {
-    scenarios.push(
-      '- Small business owner needs to pay suppliers quickly to maintain relationships',
-      '- University student managing limited budget while supporting family',
-      '- Entrepreneur growing business but struggling with traditional banking limitations',
-      '- Family member sending money home for school fees or medical expenses'
-    );
-  } else if (businessType.toLowerCase().includes('health')) {
-    scenarios.push(
-      '- Patient needing convenient access to healthcare services',
-      '- Family caring for elderly relative with ongoing medical needs',
-      '- Professional managing health while maintaining busy work schedule',
-      '- Community member seeking preventive care and wellness support'
-    );
-  } else {
-    scenarios.push(
-      '- Customer facing daily challenges that your service solves',
-      '- Professional needing reliable solutions for work efficiency',
-      '- Family member seeking quality services for loved ones',
-      '- Community member looking for trusted local business'
-    );
+  // First, try to extract scenarios from brand profile data
+  const brandSpecificScenarios = extractScenariosFromBrandProfile(brandProfile);
+  if (brandSpecificScenarios.length > 0) {
+    return brandSpecificScenarios.map(scenario => `- ${scenario}`).join('\n');
   }
 
-  return scenarios.join('\n');
+  // Generate dynamic scenarios based on business type and brand profile
+  const scenarios = generateDynamicStoryScenarios(businessType, brandProfile);
+  return scenarios.map(scenario => `- ${scenario}`).join('\n');
 }
 
-// Get customer pain points for business
+/**
+ * Extract story scenarios from brand profile data
+ */
+function extractScenariosFromBrandProfile(brandProfile: any): string[] {
+  const scenarios: string[] = [];
+
+  // Extract from target audience
+  if (brandProfile.targetAudience) {
+    const audience = brandProfile.targetAudience.toLowerCase();
+    if (audience.includes('small business')) {
+      scenarios.push('Small business owner seeking efficient solutions to grow their business');
+    }
+    if (audience.includes('family') || audience.includes('parent')) {
+      scenarios.push('Family member looking for reliable services for their loved ones');
+    }
+    if (audience.includes('professional') || audience.includes('executive')) {
+      scenarios.push('Professional needing quality services to support their career');
+    }
+    if (audience.includes('student')) {
+      scenarios.push('Student seeking affordable and accessible services');
+    }
+  }
+
+  // Extract from services context
+  if (brandProfile.services && Array.isArray(brandProfile.services)) {
+    const detailedServices = getDetailedServiceInfo(brandProfile.services);
+    detailedServices.slice(0, 2).forEach(service => {
+      if (service.targetAudience) {
+        scenarios.push(`${service.targetAudience} needing ${service.name.toLowerCase()} solutions`);
+      }
+    });
+  }
+
+  return scenarios.slice(0, 4); // Limit to 4 most relevant
+}
+
+/**
+ * Generate dynamic story scenarios based on business type
+ */
+function generateDynamicStoryScenarios(businessType: string, brandProfile: any): string[] {
+  const businessLower = businessType.toLowerCase();
+  const location = brandProfile.location || 'local area';
+  const businessName = brandProfile.businessName || 'the business';
+
+  // Business-type-specific scenario templates
+  const scenarioTemplates: Record<string, string[]> = {
+    'fintech': [
+      'Small business owner needs to pay suppliers quickly to maintain relationships',
+      'University student managing limited budget while supporting family',
+      'Entrepreneur growing business but struggling with traditional banking limitations',
+      'Family member sending money home for school fees or medical expenses'
+    ],
+    'healthcare': [
+      'Patient needing convenient access to healthcare services',
+      'Family caring for elderly relative with ongoing medical needs',
+      'Professional managing health while maintaining busy work schedule',
+      'Community member seeking preventive care and wellness support'
+    ],
+    'restaurant': [
+      `Local resident looking for quality dining experience in ${location}`,
+      'Family celebrating special occasion and wanting memorable meal',
+      'Professional needing convenient lunch option during busy workday',
+      'Food lover seeking authentic cuisine and fresh ingredients'
+    ],
+    'retail': [
+      `Customer shopping for quality products in ${location}`,
+      'Family member looking for gifts and special items',
+      'Professional needing reliable products for work or home',
+      'Community member supporting local businesses'
+    ],
+    'fitness': [
+      'Person starting fitness journey and needing supportive environment',
+      'Professional balancing work-life and prioritizing health',
+      'Family member seeking active lifestyle for better wellness',
+      'Community member looking for local fitness solutions'
+    ],
+    'beauty': [
+      'Person preparing for special event and wanting to look their best',
+      'Professional maintaining appearance for career confidence',
+      'Individual seeking self-care and wellness treatments',
+      'Community member looking for trusted beauty services'
+    ],
+    'education': [
+      'Student seeking quality education to advance their career',
+      'Parent looking for educational opportunities for their children',
+      'Professional needing skills development for career growth',
+      'Community member pursuing lifelong learning goals'
+    ],
+    'consulting': [
+      'Business owner needing expert guidance to solve challenges',
+      'Professional seeking strategic advice for career advancement',
+      'Organization looking for specialized expertise and solutions',
+      'Entrepreneur needing support to scale their business'
+    ],
+    'automotive': [
+      'Vehicle owner needing reliable maintenance and repair services',
+      'Family ensuring their car is safe and dependable',
+      'Professional requiring efficient automotive solutions',
+      'Community member seeking trustworthy local automotive service'
+    ],
+    'legal': [
+      'Individual facing legal challenge and needing expert representation',
+      'Business owner requiring legal guidance for operations',
+      'Family member needing legal support for important matters',
+      'Professional seeking legal advice for career decisions'
+    ]
+  };
+
+  // Find matching business type
+  for (const [type, scenarios] of Object.entries(scenarioTemplates)) {
+    if (businessLower.includes(type)) {
+      return scenarios;
+    }
+  }
+
+  // Generate generic scenarios with business context
+  return [
+    `Customer in ${location} facing daily challenges that ${businessName} solves`,
+    `Professional needing reliable ${businessType} solutions for work efficiency`,
+    `Family member seeking quality ${businessType} services for loved ones`,
+    `Community member looking for trusted local ${businessType} provider`
+  ];
+}
+
+// Get customer pain points for business (dynamic generation)
 function getCustmerPainPointsForBusiness(businessType: string, brandProfile: any): string {
-  const painPoints = [];
-
-  if (businessType.toLowerCase().includes('fintech') || businessType.toLowerCase().includes('finance')) {
-    painPoints.push(
-      '- Long bank queues and limited banking hours',
-      '- High transaction fees and hidden charges',
-      '- Complicated account opening processes',
-      '- Limited access to credit and financial services',
-      '- Slow money transfers and payment processing'
-    );
-  } else if (businessType.toLowerCase().includes('health')) {
-    painPoints.push(
-      '- Long waiting times for appointments',
-      '- Limited access to quality healthcare',
-      '- High medical costs and insurance complications',
-      '- Difficulty finding trusted healthcare providers',
-      '- Lack of convenient healthcare options'
-    );
-  } else {
-    painPoints.push(
-      '- Limited access to quality services',
-      '- High costs and hidden fees',
-      '- Poor customer service experience',
-      '- Complicated processes and procedures',
-      '- Lack of reliable service providers'
-    );
+  // First, try to use brand profile data to identify specific pain points
+  const brandSpecificPainPoints = extractPainPointsFromBrandProfile(brandProfile);
+  if (brandSpecificPainPoints.length > 0) {
+    return brandSpecificPainPoints.map(point => `- ${point}`).join('\n');
   }
 
-  return painPoints.join('\n');
+  // Generate dynamic pain points based on business type
+  const painPoints = generateDynamicPainPoints(businessType, brandProfile);
+  return painPoints.map(point => `- ${point}`).join('\n');
 }
 
-// Get value propositions for business
-function getValuePropositionsForBusiness(businessType: string, brandProfile: any): string {
-  const valueProps = [];
+/**
+ * Extract pain points from brand profile data
+ */
+function extractPainPointsFromBrandProfile(brandProfile: any): string[] {
+  const painPoints: string[] = [];
 
-  if (businessType.toLowerCase().includes('fintech') || businessType.toLowerCase().includes('finance')) {
-    valueProps.push(
-      '- Instant account opening with no paperwork',
-      '- Zero hidden fees and transparent pricing',
-      '- 24/7 mobile banking convenience',
-      '- Fast money transfers and payments',
-      '- No minimum balance requirements'
-    );
-  } else if (businessType.toLowerCase().includes('health')) {
-    valueProps.push(
-      '- Quick appointment scheduling and minimal wait times',
-      '- Affordable healthcare with transparent pricing',
-      '- Qualified and experienced healthcare professionals',
-      '- Convenient location and flexible hours',
-      '- Comprehensive care and follow-up support'
-    );
-  } else {
-    valueProps.push(
-      '- High-quality service delivery',
-      '- Competitive and transparent pricing',
-      '- Professional and reliable service',
-      '- Convenient and accessible solutions',
-      '- Excellent customer support'
-    );
+  // Look for pain points in competitive advantages (what they solve)
+  if (brandProfile.competitiveAdvantages && Array.isArray(brandProfile.competitiveAdvantages)) {
+    brandProfile.competitiveAdvantages.forEach((advantage: string) => {
+      if (advantage.toLowerCase().includes('unlike') || advantage.toLowerCase().includes('no more') || advantage.toLowerCase().includes('eliminates')) {
+        // Extract implied pain point from competitive advantage
+        const painPoint = extractPainPointFromAdvantage(advantage);
+        if (painPoint) painPoints.push(painPoint);
+      }
+    });
   }
 
-  return valueProps.join('\n');
+  // Look for pain points in business description
+  if (brandProfile.description) {
+    const description = brandProfile.description.toLowerCase();
+    if (description.includes('solve') || description.includes('problem') || description.includes('challenge')) {
+      // Extract pain points from description context
+      const extractedPainPoints = extractPainPointsFromDescription(brandProfile.description);
+      painPoints.push(...extractedPainPoints);
+    }
+  }
+
+  return painPoints.slice(0, 5); // Limit to 5 most relevant
+}
+
+/**
+ * Generate dynamic pain points based on business type
+ */
+function generateDynamicPainPoints(businessType: string, brandProfile: any): string[] {
+  const businessLower = businessType.toLowerCase();
+
+  // Business-type-specific pain point templates
+  const painPointTemplates: Record<string, string[]> = {
+    'fintech': [
+      'Long bank queues and limited banking hours',
+      'High transaction fees and hidden charges',
+      'Complicated account opening processes',
+      'Limited access to credit and financial services',
+      'Slow money transfers and payment processing'
+    ],
+    'healthcare': [
+      'Long waiting times for appointments',
+      'Limited access to quality healthcare',
+      'High medical costs and insurance complications',
+      'Difficulty finding trusted healthcare providers',
+      'Lack of convenient healthcare options'
+    ],
+    'restaurant': [
+      'Long wait times for food delivery',
+      'Limited healthy dining options',
+      'Inconsistent food quality and service',
+      'High dining costs for quality meals',
+      'Difficulty finding authentic local cuisine'
+    ],
+    'retail': [
+      'Limited product selection and availability',
+      'High prices and lack of competitive deals',
+      'Poor customer service and return policies',
+      'Inconvenient shopping hours and locations',
+      'Difficulty finding quality products locally'
+    ],
+    'fitness': [
+      'Expensive gym memberships and hidden fees',
+      'Crowded facilities and limited equipment access',
+      'Lack of personalized fitness guidance',
+      'Inconvenient class schedules and locations',
+      'Difficulty maintaining consistent workout routines'
+    ],
+    'beauty': [
+      'Expensive beauty treatments and services',
+      'Difficulty finding skilled beauty professionals',
+      'Limited appointment availability',
+      'Inconsistent service quality and results',
+      'Lack of personalized beauty solutions'
+    ],
+    'education': [
+      'High tuition costs and educational expenses',
+      'Limited access to quality educational resources',
+      'Inflexible class schedules and learning formats',
+      'Difficulty finding qualified instructors',
+      'Lack of personalized learning approaches'
+    ],
+    'consulting': [
+      'High consulting fees and unclear pricing',
+      'Difficulty finding industry-specific expertise',
+      'Long project timelines and delayed results',
+      'Poor communication and project management',
+      'Lack of measurable business outcomes'
+    ],
+    'automotive': [
+      'High vehicle maintenance and repair costs',
+      'Unreliable service and poor workmanship',
+      'Long wait times for service appointments',
+      'Difficulty finding trustworthy mechanics',
+      'Lack of transparent pricing and estimates'
+    ],
+    'legal': [
+      'High legal fees and unexpected costs',
+      'Difficulty understanding complex legal processes',
+      'Long case resolution times',
+      'Limited access to specialized legal expertise',
+      'Poor communication from legal representatives'
+    ]
+  };
+
+  // Find matching business type
+  for (const [type, painPoints] of Object.entries(painPointTemplates)) {
+    if (businessLower.includes(type)) {
+      return painPoints;
+    }
+  }
+
+  // Generate generic pain points with business type context
+  return [
+    `Limited access to quality ${businessType} services`,
+    `High costs and hidden fees for ${businessType} solutions`,
+    `Poor customer service experience with ${businessType} providers`,
+    `Complicated processes and procedures in ${businessType} industry`,
+    `Lack of reliable ${businessType} service providers`
+  ];
+}
+
+/**
+ * Helper functions for extracting pain points from brand profile text
+ */
+function extractPainPointFromAdvantage(advantage: string): string | null {
+  // Simple extraction logic - can be enhanced
+  if (advantage.toLowerCase().includes('no more')) {
+    return advantage.replace(/no more/i, '').trim();
+  }
+  if (advantage.toLowerCase().includes('eliminates')) {
+    return advantage.replace(/eliminates/i, '').trim();
+  }
+  return null;
+}
+
+function extractPainPointsFromDescription(description: string): string[] {
+  // Simple extraction logic - can be enhanced with NLP
+  const painPoints: string[] = [];
+  const sentences = description.split(/[.!?]+/);
+
+  sentences.forEach(sentence => {
+    const lower = sentence.toLowerCase();
+    if (lower.includes('problem') || lower.includes('challenge') || lower.includes('difficulty')) {
+      painPoints.push(sentence.trim());
+    }
+  });
+
+  return painPoints.slice(0, 2); // Limit to 2 from description
+}
+
+// Get value propositions for business (dynamic generation)
+function getValuePropositionsForBusiness(businessType: string, brandProfile: any): string {
+  // First, try to use brand profile data for specific value propositions
+  const brandSpecificValueProps = extractValuePropsFromBrandProfile(brandProfile);
+  if (brandSpecificValueProps.length > 0) {
+    return brandSpecificValueProps.map(prop => `- ${prop}`).join('\n');
+  }
+
+  // Generate dynamic value propositions based on business type
+  const valueProps = generateDynamicValuePropositions(businessType, brandProfile);
+  return valueProps.map(prop => `- ${prop}`).join('\n');
+}
+
+/**
+ * Extract value propositions from brand profile data
+ */
+function extractValuePropsFromBrandProfile(brandProfile: any): string[] {
+  const valueProps: string[] = [];
+
+  // Use competitive advantages directly
+  if (brandProfile.competitiveAdvantages && Array.isArray(brandProfile.competitiveAdvantages)) {
+    valueProps.push(...brandProfile.competitiveAdvantages.slice(0, 3));
+  }
+
+  // Use key features as value propositions
+  if (brandProfile.keyFeatures && Array.isArray(brandProfile.keyFeatures)) {
+    valueProps.push(...brandProfile.keyFeatures.slice(0, 2));
+  }
+
+  // Use unique selling points
+  if (brandProfile.uniqueSellingPoints && Array.isArray(brandProfile.uniqueSellingPoints)) {
+    valueProps.push(...brandProfile.uniqueSellingPoints.slice(0, 2));
+  }
+
+  return valueProps.slice(0, 5); // Limit to 5 most relevant
+}
+
+/**
+ * Generate dynamic value propositions based on business type
+ */
+function generateDynamicValuePropositions(businessType: string, brandProfile: any): string[] {
+  const businessLower = businessType.toLowerCase();
+
+  // Business-type-specific value proposition templates
+  const valuePropsTemplates: Record<string, string[]> = {
+    'fintech': [
+      'Instant account opening with no paperwork',
+      'Zero hidden fees and transparent pricing',
+      '24/7 mobile banking convenience',
+      'Fast money transfers and payments',
+      'No minimum balance requirements'
+    ],
+    'healthcare': [
+      'Quick appointment scheduling and minimal wait times',
+      'Affordable healthcare with transparent pricing',
+      'Qualified and experienced healthcare professionals',
+      'Convenient location and flexible hours',
+      'Comprehensive care and follow-up support'
+    ],
+    'restaurant': [
+      'Fresh, high-quality ingredients and authentic flavors',
+      'Fast service and convenient dining options',
+      'Affordable prices with generous portions',
+      'Clean, comfortable dining environment',
+      'Friendly service and customer satisfaction guarantee'
+    ],
+    'retail': [
+      'Wide selection of quality products',
+      'Competitive prices and regular promotions',
+      'Excellent customer service and easy returns',
+      'Convenient shopping hours and locations',
+      'Expert product knowledge and recommendations'
+    ],
+    'fitness': [
+      'State-of-the-art equipment and clean facilities',
+      'Flexible membership options and affordable rates',
+      'Expert trainers and personalized fitness programs',
+      'Convenient class schedules and multiple locations',
+      'Supportive community and proven results'
+    ],
+    'beauty': [
+      'Skilled professionals and latest beauty techniques',
+      'High-quality products and personalized treatments',
+      'Relaxing atmosphere and excellent customer care',
+      'Flexible scheduling and convenient location',
+      'Competitive pricing and satisfaction guarantee'
+    ],
+    'education': [
+      'Expert instructors and proven teaching methods',
+      'Flexible learning options and personalized approach',
+      'Comprehensive curriculum and practical skills',
+      'Affordable tuition and payment plans',
+      'Career support and job placement assistance'
+    ],
+    'consulting': [
+      'Industry expertise and proven track record',
+      'Customized solutions and strategic insights',
+      'Clear communication and project transparency',
+      'Measurable results and ROI focus',
+      'Competitive rates and flexible engagement models'
+    ],
+    'automotive': [
+      'Certified technicians and quality workmanship',
+      'Transparent pricing and detailed estimates',
+      'Fast, reliable service and convenient scheduling',
+      'Warranty on all work and customer satisfaction',
+      'State-of-the-art equipment and genuine parts'
+    ],
+    'legal': [
+      'Experienced attorneys and specialized expertise',
+      'Clear communication and case transparency',
+      'Competitive fees and flexible payment options',
+      'Personalized attention and dedicated support',
+      'Proven track record and successful outcomes'
+    ]
+  };
+
+  // Find matching business type
+  for (const [type, valueProps] of Object.entries(valuePropsTemplates)) {
+    if (businessLower.includes(type)) {
+      return valueProps;
+    }
+  }
+
+  // Generate generic value propositions with business type context
+  return [
+    `High-quality ${businessType} service delivery`,
+    `Competitive and transparent pricing for ${businessType} solutions`,
+    `Professional and reliable ${businessType} service`,
+    `Convenient and accessible ${businessType} solutions`,
+    `Excellent customer support and satisfaction guarantee`
+  ];
 }
 
 // Get competitive messaging rules
@@ -2869,6 +4222,1579 @@ const recentConcepts = new Map<string, Array<{ concept: string; timestamp: numbe
 
 function getBrandKey(brandProfile: any, platform: string): string {
   return `${brandProfile.businessName || 'unknown'}-${platform}`.toLowerCase().replace(/\s+/g, '-');
+}
+
+/**
+ * Generate location-appropriate scenario examples for storytelling
+ */
+function generateLocationAppropriateScenario(location: string, businessType: string): string {
+  const locationLower = (location || '').toLowerCase();
+  const businessLower = businessType.toLowerCase();
+
+  // Currency mapping based on location
+  const currencyMap: Record<string, string> = {
+    'kenya': 'KES',
+    'nigeria': '₦',
+    'south africa': 'R',
+    'ghana': 'GH₵',
+    'usa': '$',
+    'united states': '$',
+    'uk': '£',
+    'united kingdom': '£',
+    'canada': 'CAD$',
+    'australia': 'AUD$',
+    'india': '₹',
+    'philippines': '₱',
+    'indonesia': 'Rp',
+    'thailand': '฿',
+    'vietnam': '₫',
+    'brazil': 'R$',
+    'mexico': 'MX$',
+    'spain': '€',
+    'france': '€',
+    'germany': '€',
+    'italy': '€'
+  };
+
+  // Find appropriate currency
+  let currency = '$'; // Default to USD
+  for (const [loc, curr] of Object.entries(currencyMap)) {
+    if (locationLower.includes(loc)) {
+      currency = curr;
+      break;
+    }
+  }
+
+  // Business-type-specific scenarios
+  if (businessLower.includes('finance') || businessLower.includes('bank') || businessLower.includes('fintech')) {
+    return `"It's month-end. Rent is due tomorrow. Your business account shows ${currency}15,000 but you need ${currency}25,000."`;
+  } else if (businessLower.includes('restaurant') || businessLower.includes('food')) {
+    return `"Friday night rush. 50 orders waiting. Your POS system crashes and customers are getting impatient."`;
+  } else if (businessLower.includes('retail') || businessLower.includes('shop')) {
+    return `"Black Friday sale starts in 2 hours. Your inventory system shows 'out of stock' for your bestselling item."`;
+  } else if (businessLower.includes('healthcare') || businessLower.includes('medical')) {
+    return `"Patient needs urgent consultation. It's 8 PM and your regular clinic is closed."`;
+  } else if (businessLower.includes('fitness') || businessLower.includes('gym')) {
+    return `"New Year resolution starts Monday. You need a gym that fits your busy schedule and budget."`;
+  } else if (businessLower.includes('beauty') || businessLower.includes('salon')) {
+    return `"Wedding is next week. You need a beauty treatment that guarantees perfect results."`;
+  } else if (businessLower.includes('education') || businessLower.includes('school')) {
+    return `"Career advancement depends on new skills. You need flexible learning that fits your work schedule."`;
+  } else if (businessLower.includes('legal') || businessLower.includes('law')) {
+    return `"Contract dispute threatens your business. You need legal expertise that understands your industry."`;
+  } else if (businessLower.includes('automotive') || businessLower.includes('car')) {
+    return `"Car breaks down on highway. You need reliable service that gets you back on the road quickly."`;
+  } else {
+    return `"Deadline is tomorrow. You need professional ${businessType} service that delivers results on time."`;
+  }
+}
+
+/**
+ * Generate enhanced brand voice instructions based on brand profile
+ */
+function generateEnhancedBrandVoiceInstructions(brandProfile: any, businessType: string, location: string): string {
+  const brandVoice = brandProfile.brandVoice || brandProfile.writingTone || '';
+  const businessName = brandProfile.businessName || 'the business';
+
+  // Base voice requirements
+  let instructions = [
+    '- Write like a REAL PERSON talking to a friend, not a corporate press release',
+    '- Use conversational, warm tone: "Hey" instead of "We are pleased to announce"',
+    `- Include personality and character - sound distinctly like ${businessName}, not generic ${businessType}`,
+    '- Use specific, concrete language instead of vague corporate buzzwords',
+    `- Sound like someone who actually understands ${location} life and challenges`
+  ];
+
+  // Enhanced brand voice integration
+  if (brandVoice) {
+    const voiceLower = brandVoice.toLowerCase();
+
+    // Professional voice variations
+    if (voiceLower.includes('professional')) {
+      instructions.push('- Maintain professional credibility while being approachable and human');
+      instructions.push('- Use industry expertise to build trust, but avoid jargon that confuses customers');
+    }
+
+    // Friendly voice variations
+    if (voiceLower.includes('friendly') || voiceLower.includes('casual')) {
+      instructions.push('- Use warm, welcoming language that makes customers feel comfortable');
+      instructions.push('- Include conversational elements like "you know what?" or "here\'s the thing"');
+    }
+
+    // Authoritative voice variations
+    if (voiceLower.includes('authoritative') || voiceLower.includes('expert')) {
+      instructions.push('- Demonstrate expertise through specific knowledge and proven results');
+      instructions.push('- Use confident language that shows mastery of the subject matter');
+    }
+
+    // Inspirational voice variations
+    if (voiceLower.includes('inspirational') || voiceLower.includes('motivational')) {
+      instructions.push('- Use uplifting language that motivates and encourages action');
+      instructions.push('- Include success stories and positive outcomes to inspire confidence');
+    }
+
+    // Trustworthy voice variations
+    if (voiceLower.includes('trustworthy') || voiceLower.includes('reliable')) {
+      instructions.push('- Use honest, transparent language that builds credibility');
+      instructions.push('- Include specific details and proof points to demonstrate reliability');
+    }
+
+    // Innovative voice variations
+    if (voiceLower.includes('innovative') || voiceLower.includes('modern')) {
+      instructions.push('- Use forward-thinking language that shows industry leadership');
+      instructions.push('- Include references to latest trends and cutting-edge solutions');
+    }
+
+    // Caring voice variations
+    if (voiceLower.includes('caring') || voiceLower.includes('compassionate')) {
+      instructions.push('- Use empathetic language that shows genuine concern for customer needs');
+      instructions.push('- Include supportive phrases that demonstrate understanding and care');
+    }
+
+    // Add brand voice override instruction
+    instructions.push(`- BRAND VOICE OVERRIDE: Adapt all content to match ${businessName}'s ${brandVoice} voice`);
+    instructions.push(`- CONSISTENCY: Ensure all content reflects the ${brandVoice} personality consistently`);
+  }
+
+  // Business type specific voice adjustments
+  const businessLower = businessType.toLowerCase();
+  if (businessLower.includes('healthcare') || businessLower.includes('medical')) {
+    instructions.push('- Use caring, professional language that builds trust in health matters');
+  } else if (businessLower.includes('finance') || businessLower.includes('bank')) {
+    instructions.push('- Use trustworthy, secure language that demonstrates financial expertise');
+  } else if (businessLower.includes('education')) {
+    instructions.push('- Use encouraging, knowledgeable language that supports learning goals');
+  } else if (businessLower.includes('restaurant') || businessLower.includes('food')) {
+    instructions.push('- Use appetizing, welcoming language that creates desire and comfort');
+  }
+
+  return instructions.join('\n');
+}
+
+/**
+ * Generate brand voice specific writing style
+ */
+function generateBrandVoiceStyle(brandVoice: string, businessType: string, businessIntel: any): any {
+  const voiceLower = brandVoice.toLowerCase();
+
+  // Professional brand voice
+  if (voiceLower.includes('professional')) {
+    return {
+      name: 'Professional Brand Voice',
+      tone: 'Professional, credible, trustworthy',
+      voice: `Professional ${businessType} expert with ${businessIntel.localExpertise.experience}`,
+      characteristics: [
+        'Use industry expertise to build credibility',
+        'Maintain professional standards while being approachable',
+        'Include specific details and proof points',
+        'Demonstrate knowledge through concrete examples'
+      ]
+    };
+  }
+
+  // Friendly brand voice
+  if (voiceLower.includes('friendly') || voiceLower.includes('casual')) {
+    return {
+      name: 'Friendly Brand Voice',
+      tone: 'Warm, approachable, conversational',
+      voice: `Friendly ${businessType} professional who makes customers feel welcome`,
+      characteristics: [
+        'Use warm, welcoming language',
+        'Include conversational elements and personal touches',
+        'Make complex topics easy to understand',
+        'Create a comfortable, non-intimidating atmosphere'
+      ]
+    };
+  }
+
+  // Authoritative brand voice
+  if (voiceLower.includes('authoritative') || voiceLower.includes('expert')) {
+    return {
+      name: 'Authoritative Brand Voice',
+      tone: 'Confident, knowledgeable, commanding',
+      voice: `Leading ${businessType} authority with proven expertise`,
+      characteristics: [
+        'Demonstrate mastery through specific knowledge',
+        'Use confident, decisive language',
+        'Include industry insights and trends',
+        'Position as the go-to expert in the field'
+      ]
+    };
+  }
+
+  // Inspirational brand voice
+  if (voiceLower.includes('inspirational') || voiceLower.includes('motivational')) {
+    return {
+      name: 'Inspirational Brand Voice',
+      tone: 'Uplifting, motivational, encouraging',
+      voice: `Inspiring ${businessType} leader who motivates positive change`,
+      characteristics: [
+        'Use uplifting, encouraging language',
+        'Include success stories and positive outcomes',
+        'Focus on transformation and growth',
+        'Motivate customers to take action'
+      ]
+    };
+  }
+
+  // Trustworthy brand voice
+  if (voiceLower.includes('trustworthy') || voiceLower.includes('reliable')) {
+    return {
+      name: 'Trustworthy Brand Voice',
+      tone: 'Honest, transparent, dependable',
+      voice: `Reliable ${businessType} professional with proven track record`,
+      characteristics: [
+        'Use honest, transparent communication',
+        'Include specific proof points and guarantees',
+        'Demonstrate consistency and reliability',
+        'Build trust through authentic storytelling'
+      ]
+    };
+  }
+
+  // Default to conversational if no specific match
+  return {
+    name: 'Custom Brand Voice',
+    tone: brandVoice,
+    voice: `${businessType} professional with ${brandVoice} communication style`,
+    characteristics: [
+      `Maintain ${brandVoice} personality consistently`,
+      'Adapt content to match brand voice requirements',
+      'Use authentic, brand-appropriate language',
+      'Ensure voice consistency across all content'
+    ]
+  };
+}
+
+/**
+ * Generate business-context-aware CTA guidance
+ */
+function generateBusinessContextAwareCTAGuidance(brandProfile: any, businessType: string, concept: any): string {
+  const businessName = brandProfile?.businessName || 'the business';
+  const businessLower = businessType.toLowerCase();
+
+  let guidance = [
+    '- SPECIFIC ACTION: Use business-specific actions, not generic "Learn More"',
+    '- BENEFIT-DRIVEN: Focus on the primary benefit customers get',
+    '- URGENCY WHEN APPROPRIATE: Add time-sensitive elements when relevant',
+    '- CONTEXTUAL: Match the headline theme and business context',
+    '- CLEAR VALUE: Communicate what customers get from taking action',
+    '- WEBSITE PROMINENCE: Always include website URL prominently in design'
+  ];
+
+  // Business-type-specific CTA guidance
+  if (businessLower.includes('bank') || businessLower.includes('finance') || businessLower.includes('fintech')) {
+    guidance.push('- FINANCIAL CTAs: "Open Account", "Start Saving", "Apply Now", "Get Approved", "Transfer Money"');
+    guidance.push('- AVOID: Generic "Learn More" - use specific financial actions');
+    guidance.push('- SECURITY FOCUS: "Secure Transfer", "Protected Banking", "Safe Payments"');
+  } else if (businessLower.includes('restaurant') || businessLower.includes('food')) {
+    guidance.push('- FOOD CTAs: "Order Now", "Book Table", "Try Today", "Taste Fresh", "Delivery Available"');
+    guidance.push('- APPETITE APPEAL: "Satisfy Cravings", "Fresh Daily", "Order Fresh"');
+    guidance.push('- CONVENIENCE: "Quick Delivery", "Easy Pickup", "Reserve Now"');
+  } else if (businessLower.includes('retail') || businessLower.includes('shop')) {
+    guidance.push('- RETAIL CTAs: "Shop Now", "Buy Today", "Get Yours", "Limited Stock", "Free Shipping"');
+    guidance.push('- PRODUCT FOCUS: "View Collection", "Try On", "Compare Prices"');
+    guidance.push('- DEALS: "Save Now", "Special Offer", "Limited Time"');
+  } else if (businessLower.includes('healthcare') || businessLower.includes('medical')) {
+    guidance.push('- HEALTHCARE CTAs: "Book Appointment", "Get Care", "Schedule Now", "Consult Doctor", "Health Check"');
+    guidance.push('- CARE FOCUS: "Get Better", "Feel Better", "Improve Health"');
+    guidance.push('- ACCESSIBILITY: "Same Day", "Walk-in Welcome", "24/7 Care"');
+  } else if (businessLower.includes('fitness') || businessLower.includes('gym')) {
+    guidance.push('- FITNESS CTAs: "Start Training", "Join Gym", "Get Fit", "Build Strength", "Transform Body"');
+    guidance.push('- MOTIVATION: "Start Today", "Change Life", "Get Strong"');
+    guidance.push('- TRIAL: "Free Trial", "First Class Free", "Try Workout"');
+  } else if (businessLower.includes('beauty') || businessLower.includes('salon')) {
+    guidance.push('- BEAUTY CTAs: "Book Session", "Look Amazing", "Get Pampered", "Transform Look", "Feel Beautiful"');
+    guidance.push('- TRANSFORMATION: "New Look", "Glow Up", "Style Refresh"');
+    guidance.push('- EXPERIENCE: "Relax Today", "Treat Yourself", "Feel Special"');
+  } else if (businessLower.includes('education') || businessLower.includes('school')) {
+    guidance.push('- EDUCATION CTAs: "Enroll Now", "Start Learning", "Join Course", "Advance Career", "Gain Skills"');
+    guidance.push('- GROWTH FOCUS: "Level Up", "Master Skills", "Achieve Goals"');
+    guidance.push('- OPPORTUNITY: "Apply Today", "Secure Spot", "Limited Seats"');
+  } else if (businessLower.includes('legal') || businessLower.includes('law')) {
+    guidance.push('- LEGAL CTAs: "Get Consultation", "Protect Rights", "Legal Help", "Free Advice", "Resolve Issue"');
+    guidance.push('- PROTECTION: "Secure Future", "Get Justice", "Defend Rights"');
+    guidance.push('- URGENCY: "Act Now", "Time Sensitive", "Don\'t Wait"');
+  } else if (businessLower.includes('automotive') || businessLower.includes('car')) {
+    guidance.push('- AUTOMOTIVE CTAs: "Test Drive", "Get Quote", "Service Now", "Buy Today", "Trade In"');
+    guidance.push('- VEHICLE FOCUS: "Drive Away", "Own Today", "Upgrade Now"');
+    guidance.push('- SERVICE: "Book Service", "Fix Today", "Maintain Car"');
+  } else if (businessLower.includes('real estate') || businessLower.includes('property')) {
+    guidance.push('- REAL ESTATE CTAs: "View Property", "Schedule Tour", "Make Offer", "Find Home", "Invest Now"');
+    guidance.push('- PROPERTY FOCUS: "Own Home", "Perfect Location", "Dream Property"');
+    guidance.push('- OPPORTUNITY: "Act Fast", "Prime Location", "Great Deal"');
+  }
+
+  // Featured service specific CTAs
+  if (concept?.featuredServices && concept.featuredServices.length > 0) {
+    const service = concept.featuredServices[0];
+    guidance.push(`- TODAY'S SERVICE: Create CTA specifically for "${service.serviceName}"`);
+    guidance.push(`- SERVICE ACTION: Use action words that relate to "${service.serviceName}"`);
+  }
+
+  // Location-specific CTA elements
+  const location = brandProfile?.location || '';
+  if (location) {
+    guidance.push(`- LOCAL APPEAL: Consider location-appropriate language for ${location}`);
+    guidance.push('- CULTURAL CONTEXT: Use locally appropriate action phrases when relevant');
+  }
+
+  return guidance.join('\n');
+}
+
+/**
+ * Generate business-specific CTA variations with enhanced service-based intelligence
+ */
+function generateBusinessSpecificCTAs(businessType: string, brandProfile?: any): string[] {
+  const businessLower = businessType.toLowerCase();
+
+  // First, try to generate service-specific CTAs from brand profile
+  const serviceBasedCTAs = generateServiceSpecificCTAs(brandProfile);
+  if (serviceBasedCTAs.length > 0) {
+    return serviceBasedCTAs;
+  }
+
+  // Base CTAs that work for most businesses
+  let ctas = ['Get Started', 'Contact Us', 'Learn More'];
+
+  // Enhanced business-type-specific CTAs with more variations
+  if (businessLower.includes('bank') || businessLower.includes('finance') || businessLower.includes('fintech')) {
+    ctas = [
+      'Open Account',
+      'Start Saving',
+      'Apply Now',
+      'Get Approved',
+      'Transfer Money',
+      'Secure Banking',
+      'Join Today',
+      'Send Money',
+      'Pay Bills',
+      'Invest Now'
+    ];
+  } else if (businessLower.includes('restaurant') || businessLower.includes('food')) {
+    ctas = [
+      'Order Now',
+      'Book Table',
+      'Try Today',
+      'Taste Fresh',
+      'Call Now',
+      'Reserve Now',
+      'Delivery Available',
+      'Menu Online',
+      'Order Ahead',
+      'Dine In'
+    ];
+  } else if (businessLower.includes('retail') || businessLower.includes('shop')) {
+    ctas = [
+      'Shop Now',
+      'Buy Today',
+      'Get Yours',
+      'View Collection',
+      'Save Now',
+      'Limited Time',
+      'Free Shipping',
+      'Browse Catalog',
+      'Compare Prices',
+      'Add to Cart'
+    ];
+  } else if (businessLower.includes('healthcare') || businessLower.includes('medical')) {
+    ctas = [
+      'Book Appointment',
+      'Get Care',
+      'Schedule Now',
+      'Consult Doctor',
+      'Health Check',
+      'Feel Better',
+      'Same Day',
+      'Emergency Care',
+      'Online Booking',
+      'Call Doctor'
+    ];
+  } else if (businessLower.includes('fitness') || businessLower.includes('gym')) {
+    ctas = [
+      'Start Training',
+      'Join Gym',
+      'Get Fit',
+      'Free Trial',
+      'Transform Body',
+      'Start Today',
+      'First Class Free',
+      'Build Muscle',
+      'Lose Weight',
+      'Get Strong'
+    ];
+  } else if (businessLower.includes('beauty') || businessLower.includes('salon')) {
+    ctas = [
+      'Book Session',
+      'Look Amazing',
+      'Get Pampered',
+      'New Look',
+      'Feel Beautiful',
+      'Treat Yourself',
+      'Transform Look',
+      'Book Appointment',
+      'Style Hair',
+      'Glow Up'
+    ];
+  } else if (businessLower.includes('education') || businessLower.includes('school')) {
+    ctas = [
+      'Enroll Now',
+      'Start Learning',
+      'Join Course',
+      'Apply Today',
+      'Gain Skills',
+      'Level Up',
+      'Secure Spot',
+      'Register Now',
+      'Study Online',
+      'Get Certified'
+    ];
+  } else if (businessLower.includes('legal') || businessLower.includes('law')) {
+    ctas = [
+      'Get Consultation',
+      'Free Advice',
+      'Protect Rights',
+      'Legal Help',
+      'Act Now',
+      'Resolve Issue',
+      'Get Justice',
+      'Call Lawyer',
+      'Free Review',
+      'Legal Support'
+    ];
+  } else if (businessLower.includes('automotive') || businessLower.includes('car')) {
+    ctas = [
+      'Test Drive',
+      'Get Quote',
+      'Service Now',
+      'Buy Today',
+      'Trade In',
+      'Drive Away',
+      'Book Service',
+      'Schedule Repair',
+      'View Inventory',
+      'Finance Options'
+    ];
+  } else if (businessLower.includes('real estate') || businessLower.includes('property')) {
+    ctas = [
+      'View Property',
+      'Schedule Tour',
+      'Find Home',
+      'Make Offer',
+      'Invest Now',
+      'Own Home',
+      'Act Fast',
+      'Property Search',
+      'Market Analysis',
+      'List Property'
+    ];
+  } else if (businessLower.includes('consulting') || businessLower.includes('professional')) {
+    ctas = [
+      'Get Consultation',
+      'Book Meeting',
+      'Start Project',
+      'Free Analysis',
+      'Solve Problem',
+      'Expert Help',
+      'Schedule Call',
+      'Strategy Session',
+      'Business Review',
+      'Growth Plan'
+    ];
+  } else if (businessLower.includes('technology') || businessLower.includes('tech') || businessLower.includes('software')) {
+    ctas = [
+      'Try Free',
+      'Start Trial',
+      'Get Demo',
+      'Sign Up',
+      'Download Now',
+      'Go Digital',
+      'Upgrade Now',
+      'Free Version',
+      'Test Drive',
+      'See Features'
+    ];
+  } else if (businessLower.includes('insurance')) {
+    ctas = [
+      'Get Quote',
+      'Compare Rates',
+      'Save Money',
+      'Get Protected',
+      'Free Quote',
+      'Coverage Now',
+      'Secure Future',
+      'Lower Rates',
+      'Get Covered',
+      'Peace of Mind'
+    ];
+  }
+
+  // Add location-specific CTAs if location is available
+  const locationCTAs = generateLocationSpecificCTAs(brandProfile?.location);
+  if (locationCTAs.length > 0) {
+    ctas = [...ctas, ...locationCTAs];
+  }
+
+  // Add generic fallbacks if list is too short
+  if (ctas.length < 7) {
+    ctas.push('Try Today', 'Book Now', 'Call Now', 'Visit Us', 'Join Now', 'Start Free', 'Get Info');
+  }
+
+  // Remove duplicates and return top 10
+  return [...new Set(ctas)].slice(0, 10);
+}
+
+/**
+ * Generate CTAs based on specific services from brand profile
+ */
+function generateServiceSpecificCTAs(brandProfile?: any): string[] {
+  if (!brandProfile?.services) return [];
+
+  const services = Array.isArray(brandProfile.services)
+    ? brandProfile.services
+    : brandProfile.services.split(',').map((s: string) => s.trim());
+
+  const ctas: string[] = [];
+
+  services.forEach((service: string) => {
+    const serviceLower = service.toLowerCase();
+
+    // Generate action-oriented CTAs based on service keywords
+    if (serviceLower.includes('delivery') || serviceLower.includes('shipping')) {
+      ctas.push('Order Now', 'Fast Delivery', 'Ship Today');
+    } else if (serviceLower.includes('consultation') || serviceLower.includes('advice')) {
+      ctas.push('Get Advice', 'Book Consultation', 'Expert Help');
+    } else if (serviceLower.includes('repair') || serviceLower.includes('fix')) {
+      ctas.push('Fix Now', 'Book Repair', 'Service Today');
+    } else if (serviceLower.includes('design') || serviceLower.includes('creative')) {
+      ctas.push('See Designs', 'Create Now', 'Design Today');
+    } else if (serviceLower.includes('training') || serviceLower.includes('course')) {
+      ctas.push('Start Training', 'Join Course', 'Learn Now');
+    } else if (serviceLower.includes('installation') || serviceLower.includes('setup')) {
+      ctas.push('Install Now', 'Setup Today', 'Get Installed');
+    } else if (serviceLower.includes('maintenance') || serviceLower.includes('support')) {
+      ctas.push('Get Support', 'Maintain Now', 'Service Plan');
+    } else if (serviceLower.includes('cleaning') || serviceLower.includes('wash')) {
+      ctas.push('Book Cleaning', 'Clean Today', 'Fresh Start');
+    } else if (serviceLower.includes('photography') || serviceLower.includes('photo')) {
+      ctas.push('Book Session', 'Capture Moments', 'Photo Shoot');
+    } else if (serviceLower.includes('catering') || serviceLower.includes('event')) {
+      ctas.push('Book Event', 'Plan Party', 'Cater Now');
+    }
+  });
+
+  // Remove duplicates and return unique CTAs
+  return [...new Set(ctas)];
+}
+
+/**
+ * Generate location-specific CTAs
+ */
+function generateLocationSpecificCTAs(location?: string): string[] {
+  if (!location) return [];
+
+  const ctas: string[] = [];
+  const locationLower = location.toLowerCase();
+
+  // Add location-appropriate CTAs
+  if (locationLower.includes('online') || locationLower.includes('digital')) {
+    ctas.push('Go Online', 'Digital Service', 'Remote Help');
+  } else {
+    ctas.push('Visit Us', 'Come In', 'Stop By', 'Local Service');
+  }
+
+  return ctas;
+}
+
+/**
+ * Enhanced business-type-aware template selection system
+ */
+function selectOptimalDesignTemplate(businessType: string, brandProfile: any, platform: string): any {
+  const businessLower = businessType.toLowerCase();
+  const location = brandProfile?.location || '';
+  const brandVoice = brandProfile?.brandVoice || brandProfile?.writingTone || '';
+
+  // Define business-type-specific template preferences
+  const templatePreferences: Record<string, any> = {
+    'restaurant': {
+      preferredStyles: ['Photo-Driven Modern', 'Lifestyle Aspirational', 'Bold Vibrant'],
+      visualFocus: 'food-photography',
+      colorScheme: 'warm-appetizing',
+      layoutStyle: 'image-dominant',
+      designPriority: 'visual-appeal'
+    },
+    'healthcare': {
+      preferredStyles: ['Modern Minimalist', 'Luxury Premium', 'Tech Modern'],
+      visualFocus: 'trust-building',
+      colorScheme: 'professional-calming',
+      layoutStyle: 'clean-structured',
+      designPriority: 'credibility'
+    },
+    'fitness': {
+      preferredStyles: ['Bold Vibrant', 'Lifestyle Aspirational', 'Photo-Driven Modern'],
+      visualFocus: 'energy-motivation',
+      colorScheme: 'energetic-bold',
+      layoutStyle: 'dynamic-action',
+      designPriority: 'motivation'
+    },
+    'retail': {
+      preferredStyles: ['Photo-Driven Modern', 'Creative Artistic', 'Bold Vibrant'],
+      visualFocus: 'product-showcase',
+      colorScheme: 'brand-aligned',
+      layoutStyle: 'product-focused',
+      designPriority: 'conversion'
+    },
+    'finance': {
+      preferredStyles: ['Modern Minimalist', 'Luxury Premium', 'Tech Modern'],
+      visualFocus: 'trust-security',
+      colorScheme: 'professional-trustworthy',
+      layoutStyle: 'clean-authoritative',
+      designPriority: 'trust-building'
+    },
+    'beauty': {
+      preferredStyles: ['Luxury Premium', 'Creative Artistic', 'Lifestyle Aspirational'],
+      visualFocus: 'transformation-elegance',
+      colorScheme: 'elegant-sophisticated',
+      layoutStyle: 'aesthetic-focused',
+      designPriority: 'aspiration'
+    },
+    'education': {
+      preferredStyles: ['Modern Minimalist', 'Tech Modern', 'Creative Artistic'],
+      visualFocus: 'knowledge-growth',
+      colorScheme: 'inspiring-professional',
+      layoutStyle: 'information-clear',
+      designPriority: 'clarity'
+    },
+    'legal': {
+      preferredStyles: ['Luxury Premium', 'Modern Minimalist', 'Tech Modern'],
+      visualFocus: 'authority-trust',
+      colorScheme: 'professional-authoritative',
+      layoutStyle: 'structured-formal',
+      designPriority: 'credibility'
+    },
+    'automotive': {
+      preferredStyles: ['Tech Modern', 'Bold Vibrant', 'Photo-Driven Modern'],
+      visualFocus: 'performance-reliability',
+      colorScheme: 'bold-technical',
+      layoutStyle: 'feature-focused',
+      designPriority: 'performance'
+    },
+    'technology': {
+      preferredStyles: ['Tech Modern', 'Modern Minimalist', 'Creative Artistic'],
+      visualFocus: 'innovation-future',
+      colorScheme: 'modern-digital',
+      layoutStyle: 'interface-inspired',
+      designPriority: 'innovation'
+    }
+  };
+
+  // Find best matching business type
+  let selectedPreference = templatePreferences['default'] || {
+    preferredStyles: ['Modern Minimalist', 'Photo-Driven Modern', 'Creative Artistic'],
+    visualFocus: 'professional-quality',
+    colorScheme: 'brand-appropriate',
+    layoutStyle: 'balanced-modern',
+    designPriority: 'engagement'
+  };
+
+  for (const [type, preference] of Object.entries(templatePreferences)) {
+    if (businessLower.includes(type)) {
+      selectedPreference = preference;
+      break;
+    }
+  }
+
+  // Platform-specific adjustments
+  if (platform === 'instagram') {
+    selectedPreference.layoutStyle = 'square-optimized';
+    selectedPreference.visualFocus += '-instagram-native';
+  } else if (platform === 'linkedin') {
+    selectedPreference.preferredStyles = ['Modern Minimalist', 'Luxury Premium', 'Tech Modern'];
+    selectedPreference.designPriority = 'professional-credibility';
+  }
+
+  // Brand voice adjustments
+  if (brandVoice.toLowerCase().includes('luxury') || brandVoice.toLowerCase().includes('premium')) {
+    selectedPreference.preferredStyles = ['Luxury Premium', 'Modern Minimalist', 'Creative Artistic'];
+  } else if (brandVoice.toLowerCase().includes('fun') || brandVoice.toLowerCase().includes('energetic')) {
+    selectedPreference.preferredStyles = ['Bold Vibrant', 'Creative Artistic', 'Lifestyle Aspirational'];
+  }
+
+  return selectedPreference;
+}
+
+/**
+ * Enhanced brand color extraction with intelligent processing
+ */
+function extractEnhancedBrandColors(brandProfile: any, shouldFollowBrandColors: boolean): any {
+  // Extract colors from multiple possible sources
+  const extractedColors = {
+    primary: brandProfile.primaryColor || brandProfile.brandColors?.primary || brandProfile.colors?.primary,
+    accent: brandProfile.accentColor || brandProfile.brandColors?.secondary || brandProfile.brandColors?.accent || brandProfile.colors?.accent,
+    background: brandProfile.backgroundColor || brandProfile.brandColors?.background || brandProfile.colors?.background
+  };
+
+  // Default colors for fallback
+  const defaultColors = {
+    primary: '#3B82F6',
+    accent: '#1E40AF',
+    background: '#FFFFFF'
+  };
+
+  // Business-type-specific color optimization
+  const businessType = brandProfile.businessType || '';
+  const businessOptimizedColors = getBusinessTypeOptimizedColors(businessType, extractedColors);
+
+  let finalColors;
+  if (shouldFollowBrandColors && extractedColors.primary) {
+    // Use brand colors with business-type optimization
+    finalColors = {
+      primary: extractedColors.primary,
+      accent: extractedColors.accent || businessOptimizedColors.accent || defaultColors.accent,
+      background: extractedColors.background || businessOptimizedColors.background || defaultColors.background
+    };
+  } else if (shouldFollowBrandColors && businessOptimizedColors.primary) {
+    // Use business-optimized colors when brand colors are incomplete
+    finalColors = businessOptimizedColors;
+  } else {
+    // Use default colors
+    finalColors = defaultColors;
+  }
+
+  // Color harmony analysis
+  const colorHarmony = analyzeColorHarmony(finalColors.primary, finalColors.accent, finalColors.background);
+
+  return {
+    primary: finalColors.primary,
+    accent: finalColors.accent,
+    background: finalColors.background,
+    hasValidColors: !!(extractedColors.primary && extractedColors.accent && extractedColors.background),
+    usingBrandColors: shouldFollowBrandColors && !!extractedColors.primary,
+    colorHarmony: colorHarmony,
+    businessTypeOptimized: !!businessOptimizedColors.primary
+  };
+}
+
+/**
+ * Get business-type-optimized colors
+ */
+function getBusinessTypeOptimizedColors(businessType: string, extractedColors: any): any {
+  const businessLower = businessType.toLowerCase();
+
+  // Business-type-specific color recommendations
+  const businessColorMappings: Record<string, any> = {
+    'restaurant': {
+      primary: extractedColors.primary || '#FF6B35', // Warm orange
+      accent: extractedColors.accent || '#D73502',    // Deep red
+      background: extractedColors.background || '#FFF8F5' // Warm white
+    },
+    'healthcare': {
+      primary: extractedColors.primary || '#0EA5E9', // Medical blue
+      accent: extractedColors.accent || '#10B981',    // Healing green
+      background: extractedColors.background || '#F8FAFC' // Clean white
+    },
+    'fitness': {
+      primary: extractedColors.primary || '#EF4444', // Energy red
+      accent: extractedColors.accent || '#F97316',    // Orange energy
+      background: extractedColors.background || '#FEF2F2' // Light red
+    },
+    'finance': {
+      primary: extractedColors.primary || '#1E40AF', // Trust blue
+      accent: extractedColors.accent || '#059669',    // Success green
+      background: extractedColors.background || '#F8FAFC' // Professional white
+    },
+    'beauty': {
+      primary: extractedColors.primary || '#EC4899', // Beauty pink
+      accent: extractedColors.accent || '#A855F7',    // Luxury purple
+      background: extractedColors.background || '#FDF2F8' // Soft pink
+    },
+    'education': {
+      primary: extractedColors.primary || '#3B82F6', // Knowledge blue
+      accent: extractedColors.accent || '#10B981',    // Growth green
+      background: extractedColors.background || '#F0F9FF' // Light blue
+    },
+    'legal': {
+      primary: extractedColors.primary || '#1F2937', // Authority dark
+      accent: extractedColors.accent || '#B91C1C',    // Power red
+      background: extractedColors.background || '#F9FAFB' // Professional gray
+    },
+    'technology': {
+      primary: extractedColors.primary || '#6366F1', // Tech purple
+      accent: extractedColors.accent || '#06B6D4',    // Cyan tech
+      background: extractedColors.background || '#F8FAFC' // Clean tech
+    }
+  };
+
+  // Find matching business type
+  for (const [type, colors] of Object.entries(businessColorMappings)) {
+    if (businessLower.includes(type)) {
+      return colors;
+    }
+  }
+
+  return {}; // No specific optimization found
+}
+
+/**
+ * Analyze color harmony and provide recommendations
+ */
+function analyzeColorHarmony(primary: string, accent: string, background: string): string {
+  // Simple color harmony analysis based on color theory
+  const primaryHue = getColorHue(primary);
+  const accentHue = getColorHue(accent);
+
+  const hueDifference = Math.abs(primaryHue - accentHue);
+
+  if (hueDifference < 30) {
+    return 'monochromatic'; // Similar hues
+  } else if (hueDifference >= 150 && hueDifference <= 210) {
+    return 'complementary'; // Opposite hues
+  } else if (hueDifference >= 90 && hueDifference <= 150) {
+    return 'triadic'; // 120-degree separation
+  } else {
+    return 'analogous'; // Adjacent hues
+  }
+}
+
+/**
+ * Extract hue from hex color (simplified)
+ */
+function getColorHue(hexColor: string): number {
+  // Remove # if present
+  const hex = hexColor.replace('#', '');
+
+  // Convert to RGB
+  const r = parseInt(hex.substr(0, 2), 16) / 255;
+  const g = parseInt(hex.substr(2, 2), 16) / 255;
+  const b = parseInt(hex.substr(4, 2), 16) / 255;
+
+  // Find min and max values
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const delta = max - min;
+
+  let hue = 0;
+
+  if (delta !== 0) {
+    if (max === r) {
+      hue = ((g - b) / delta) % 6;
+    } else if (max === g) {
+      hue = (b - r) / delta + 2;
+    } else {
+      hue = (r - g) / delta + 4;
+    }
+  }
+
+  return Math.round(hue * 60);
+}
+
+/**
+ * Enhanced design examples processing for brand consistency
+ */
+function processDesignExamplesForBrandConsistency(brandProfile: any, businessType: string, platform: string): string {
+  const designExamples = brandProfile.designExamples || [];
+
+  if (!designExamples || designExamples.length === 0) {
+    return generateDefaultDesignGuidance(businessType, platform);
+  }
+
+  // Analyze design examples for key patterns
+  const designAnalysis = analyzeDesignExamplesPatterns(designExamples, businessType);
+
+  let guidance = `🎨 BRAND DESIGN CONSISTENCY (Based on ${designExamples.length} Design Examples):
+
+**Visual Style Analysis:**
+- Design Pattern: ${designAnalysis.dominantStyle}
+- Color Approach: ${designAnalysis.colorPattern}
+- Layout Preference: ${designAnalysis.layoutStyle}
+- Typography Style: ${designAnalysis.typographyPattern}
+- Brand Element Usage: ${designAnalysis.brandElementPattern}
+
+**MANDATORY CONSISTENCY REQUIREMENTS:**
+1. VISUAL STYLE: Match the ${designAnalysis.dominantStyle} aesthetic from provided examples
+2. COLOR HARMONY: Follow the ${designAnalysis.colorPattern} color approach consistently
+3. LAYOUT STRUCTURE: Use ${designAnalysis.layoutStyle} layout patterns from examples
+4. TYPOGRAPHY: Apply ${designAnalysis.typographyPattern} typography style
+5. BRAND ELEMENTS: Integrate brand elements using ${designAnalysis.brandElementPattern} approach
+
+**DESIGN EXAMPLES INTEGRATION:**
+- STYLE REFERENCE: Use provided design examples as visual style guide
+- CONSISTENCY PRIORITY: Maintain visual consistency with existing brand designs
+- ADAPTATION: Adapt example styles to current content while preserving brand identity
+- QUALITY MATCH: Match the professional quality and aesthetic of provided examples`;
+
+  // Add business-type-specific design consistency guidance
+  const businessLower = businessType.toLowerCase();
+
+  if (businessLower.includes('restaurant') || businessLower.includes('food')) {
+    guidance += `
+- FOOD PRESENTATION: Match food photography style and presentation from examples
+- MENU CONSISTENCY: Align with menu design patterns and food styling approach
+- ATMOSPHERE: Maintain restaurant ambiance and dining experience consistency`;
+
+  } else if (businessLower.includes('healthcare') || businessLower.includes('medical')) {
+    guidance += `
+- MEDICAL PROFESSIONALISM: Maintain clinical and professional design standards
+- TRUST ELEMENTS: Preserve trust-building visual elements from examples
+- PATIENT COMFORT: Keep calming and reassuring design characteristics`;
+
+  } else if (businessLower.includes('fitness') || businessLower.includes('gym')) {
+    guidance += `
+- ENERGY CONSISTENCY: Maintain motivational and energetic design approach
+- FITNESS IMAGERY: Match exercise and fitness photography style
+- MOTIVATION ELEMENTS: Preserve inspiring and action-oriented design elements`;
+
+  } else if (businessLower.includes('retail') || businessLower.includes('shop')) {
+    guidance += `
+- PRODUCT SHOWCASE: Match product presentation and photography style
+- SHOPPING EXPERIENCE: Maintain retail-focused design and layout approach
+- BRAND RECOGNITION: Preserve consistent product and brand presentation`;
+
+  } else if (businessLower.includes('beauty') || businessLower.includes('salon')) {
+    guidance += `
+- BEAUTY AESTHETICS: Match elegant and sophisticated design approach
+- TRANSFORMATION FOCUS: Maintain before/after and beauty enhancement style
+- LUXURY ELEMENTS: Preserve premium and aspirational design characteristics`;
+  }
+
+  // Add platform-specific consistency guidance
+  if (platform.toLowerCase() === 'instagram') {
+    guidance += `
+- INSTAGRAM CONSISTENCY: Maintain cohesive Instagram feed aesthetic
+- STORY COMPATIBILITY: Ensure designs work well in both feed and stories
+- MOBILE OPTIMIZATION: Preserve mobile-first design approach from examples`;
+  } else if (platform.toLowerCase() === 'linkedin') {
+    guidance += `
+- PROFESSIONAL CONSISTENCY: Maintain business-appropriate design standards
+- CORPORATE ALIGNMENT: Preserve professional and authoritative design approach
+- B2B FOCUS: Keep business-to-business communication style consistent`;
+  }
+
+  return guidance;
+}
+
+/**
+ * Analyze design examples to extract key patterns
+ */
+function analyzeDesignExamplesPatterns(designExamples: string[], businessType: string): any {
+  // Since we can't actually analyze images in this context, we'll provide intelligent defaults
+  // based on business type and common design patterns
+
+  const businessLower = businessType.toLowerCase();
+
+  // Business-type-specific design pattern analysis
+  if (businessLower.includes('restaurant') || businessLower.includes('food')) {
+    return {
+      dominantStyle: 'warm and appetizing with food-focused imagery',
+      colorPattern: 'warm color palette with appetite-stimulating tones',
+      layoutStyle: 'food-centric with prominent product imagery',
+      typographyPattern: 'friendly and inviting typography',
+      brandElementPattern: 'integrated with food presentation'
+    };
+  } else if (businessLower.includes('healthcare') || businessLower.includes('medical')) {
+    return {
+      dominantStyle: 'clean, professional, and trustworthy',
+      colorPattern: 'calming blues and greens with professional neutrals',
+      layoutStyle: 'structured and organized with clear information hierarchy',
+      typographyPattern: 'clean and readable professional fonts',
+      brandElementPattern: 'authoritative and trust-building placement'
+    };
+  } else if (businessLower.includes('fitness') || businessLower.includes('gym')) {
+    return {
+      dominantStyle: 'energetic and motivational with dynamic imagery',
+      colorPattern: 'bold and energetic colors that inspire action',
+      layoutStyle: 'dynamic with action-oriented visual flow',
+      typographyPattern: 'bold and strong typography that motivates',
+      brandElementPattern: 'integrated with fitness and energy themes'
+    };
+  } else if (businessLower.includes('beauty') || businessLower.includes('salon')) {
+    return {
+      dominantStyle: 'elegant and sophisticated with luxury appeal',
+      colorPattern: 'sophisticated color palette with premium feel',
+      layoutStyle: 'aesthetic-focused with beauty and transformation emphasis',
+      typographyPattern: 'elegant and refined typography',
+      brandElementPattern: 'luxurious and aspirational integration'
+    };
+  } else if (businessLower.includes('finance') || businessLower.includes('fintech')) {
+    return {
+      dominantStyle: 'professional and trustworthy with modern tech appeal',
+      colorPattern: 'trustworthy blues and greens with professional accents',
+      layoutStyle: 'clean and organized with clear value propositions',
+      typographyPattern: 'modern and professional typography',
+      brandElementPattern: 'authoritative and security-focused placement'
+    };
+  } else {
+    // Default professional pattern
+    return {
+      dominantStyle: 'modern and professional with business focus',
+      colorPattern: 'professional color palette with brand consistency',
+      layoutStyle: 'balanced and organized with clear messaging',
+      typographyPattern: 'professional and readable typography',
+      brandElementPattern: 'consistent and professional brand integration'
+    };
+  }
+}
+
+/**
+ * Generate default design guidance when no examples are available
+ */
+function generateDefaultDesignGuidance(businessType: string, platform: string): string {
+  const businessLower = businessType.toLowerCase();
+
+  let guidance = `🎨 DEFAULT DESIGN GUIDANCE (No Design Examples Available):
+
+**BUSINESS-TYPE-SPECIFIC DESIGN APPROACH:**`;
+
+  if (businessLower.includes('restaurant') || businessLower.includes('food')) {
+    guidance += `
+- FOOD-FIRST DESIGN: Prioritize appetizing food imagery and warm, inviting colors
+- HOSPITALITY FEEL: Create welcoming and community-focused design atmosphere
+- APPETITE APPEAL: Use colors and imagery that stimulate appetite and dining desire`;
+
+  } else if (businessLower.includes('healthcare') || businessLower.includes('medical')) {
+    guidance += `
+- TRUST-BUILDING DESIGN: Use clean, professional aesthetics that inspire confidence
+- CALMING APPROACH: Apply soothing colors and organized layouts for patient comfort
+- CREDIBILITY FOCUS: Emphasize professional competence and medical authority`;
+
+  } else if (businessLower.includes('fitness') || businessLower.includes('gym')) {
+    guidance += `
+- ENERGY-DRIVEN DESIGN: Use bold, motivational colors and dynamic imagery
+- ACTION-ORIENTED: Create designs that inspire movement and fitness goals
+- STRENGTH EMPHASIS: Apply strong typography and powerful visual elements`;
+
+  } else if (businessLower.includes('beauty') || businessLower.includes('salon')) {
+    guidance += `
+- ELEGANCE-FOCUSED DESIGN: Use sophisticated colors and refined aesthetics
+- TRANSFORMATION THEME: Emphasize beauty enhancement and personal improvement
+- LUXURY APPEAL: Apply premium design elements that suggest high-quality service`;
+
+  } else {
+    guidance += `
+- PROFESSIONAL DESIGN: Use clean, modern aesthetics appropriate for business context
+- BRAND-FOCUSED: Emphasize brand identity and professional competence
+- AUDIENCE-APPROPRIATE: Design for target audience expectations and preferences`;
+  }
+
+  guidance += `
+
+**PLATFORM OPTIMIZATION:**`;
+
+  if (platform.toLowerCase() === 'instagram') {
+    guidance += `
+- INSTAGRAM NATIVE: Design for mobile-first, square format optimization
+- VISUAL IMPACT: Create thumb-stopping designs that stand out in feed
+- STORY READY: Ensure designs work well in both feed and stories format`;
+  } else if (platform.toLowerCase() === 'linkedin') {
+    guidance += `
+- PROFESSIONAL STANDARD: Maintain business-appropriate design aesthetics
+- B2B FOCUS: Design for professional audience and business context
+- AUTHORITY BUILDING: Use design elements that establish professional credibility`;
+  }
+
+  return guidance;
+}
+
+/**
+ * Generate enhanced color scheme instructions
+ */
+function generateEnhancedColorSchemeInstructions(brandColorData: any, businessType: string): string {
+  const { primary, accent, background, colorHarmony, businessTypeOptimized } = brandColorData;
+
+  let instructions = `Primary: ${primary} (60% dominant), Accent: ${accent} (30% secondary), Background: ${background} (10% highlights)`;
+
+  // Add color harmony guidance
+  if (colorHarmony === 'complementary') {
+    instructions += ` - COMPLEMENTARY HARMONY: High contrast, vibrant combination`;
+  } else if (colorHarmony === 'analogous') {
+    instructions += ` - ANALOGOUS HARMONY: Smooth, harmonious blend`;
+  } else if (colorHarmony === 'monochromatic') {
+    instructions += ` - MONOCHROMATIC HARMONY: Unified, sophisticated palette`;
+  } else if (colorHarmony === 'triadic') {
+    instructions += ` - TRIADIC HARMONY: Balanced, dynamic color relationship`;
+  }
+
+  // Add business-type-specific color psychology
+  const businessLower = businessType.toLowerCase();
+  if (businessLower.includes('restaurant')) {
+    instructions += ` - APPETITE STIMULATION: Warm colors to enhance food appeal`;
+  } else if (businessLower.includes('healthcare')) {
+    instructions += ` - TRUST & CALM: Professional colors that inspire confidence`;
+  } else if (businessLower.includes('fitness')) {
+    instructions += ` - ENERGY & MOTIVATION: Bold colors that inspire action`;
+  } else if (businessLower.includes('finance')) {
+    instructions += ` - STABILITY & TRUST: Conservative colors that suggest reliability`;
+  } else if (businessLower.includes('beauty')) {
+    instructions += ` - ELEGANCE & ASPIRATION: Sophisticated colors that inspire transformation`;
+  }
+
+  if (businessTypeOptimized) {
+    instructions += ` - INDUSTRY OPTIMIZED: Colors selected for maximum ${businessType} industry impact`;
+  }
+
+  return instructions;
+}
+
+/**
+ * Generate business-type-specific design template guidance
+ */
+function generateBusinessTypeDesignGuidance(businessType: string, brandProfile: any, platform: string): string {
+  const templateSelection = selectOptimalDesignTemplate(businessType, brandProfile, platform);
+  const businessName = brandProfile?.businessName || 'the business';
+
+  let guidance = `🎨 BUSINESS-TYPE-AWARE TEMPLATE SELECTION:
+**Selected Template Style:** ${templateSelection.preferredStyles[0]}
+**Alternative Styles:** ${templateSelection.preferredStyles.slice(1).join(', ')}
+**Visual Focus:** ${templateSelection.visualFocus}
+**Color Scheme:** ${templateSelection.colorScheme}
+**Layout Style:** ${templateSelection.layoutStyle}
+**Design Priority:** ${templateSelection.designPriority}
+
+🏢 BUSINESS-SPECIFIC DESIGN REQUIREMENTS:`;
+
+  const businessLower = businessType.toLowerCase();
+
+  // Add business-type-specific design requirements
+  if (businessLower.includes('restaurant') || businessLower.includes('food')) {
+    guidance += `
+- FOOD PHOTOGRAPHY: High-quality, appetizing food images as primary visual elements
+- WARM COLORS: Use warm, inviting colors that stimulate appetite (reds, oranges, warm yellows)
+- LIFESTYLE CONTEXT: Show people enjoying food, dining experiences, social moments
+- TEXTURE FOCUS: Emphasize food textures, freshness, and visual appeal
+- ATMOSPHERE: Create warm, welcoming, community-focused design atmosphere`;
+
+  } else if (businessLower.includes('healthcare') || businessLower.includes('medical')) {
+    guidance += `
+- TRUST BUILDING: Clean, professional design that builds confidence and trust
+- CALMING COLORS: Use calming blues, greens, and neutral tones for comfort
+- PEOPLE FOCUS: Show caring interactions, professional staff, patient satisfaction
+- CLEAN AESTHETICS: Minimize clutter, use plenty of white space, ensure readability
+- CREDIBILITY: Professional imagery that conveys expertise and reliability`;
+
+  } else if (businessLower.includes('fitness') || businessLower.includes('gym')) {
+    guidance += `
+- ENERGY & MOTIVATION: Dynamic, high-energy design that inspires action
+- BOLD COLORS: Use energetic colors (bright blues, oranges, reds) that motivate
+- ACTION SHOTS: Show people exercising, achieving goals, transformation results
+- STRENGTH IMAGERY: Emphasize strength, progress, achievement, and transformation
+- MOTIVATIONAL TONE: Design should inspire and energize viewers to take action`;
+
+  } else if (businessLower.includes('retail') || businessLower.includes('shop')) {
+    guidance += `
+- PRODUCT SHOWCASE: Make products the hero of the design with clear visibility
+- BRAND COLORS: Use brand colors consistently to reinforce brand recognition
+- LIFESTYLE CONTEXT: Show products in use, lifestyle integration, customer satisfaction
+- CONVERSION FOCUS: Design should drive purchase decisions and shopping behavior
+- QUALITY EMPHASIS: Highlight product quality, craftsmanship, and value proposition`;
+
+  } else if (businessLower.includes('finance') || businessLower.includes('fintech')) {
+    guidance += `
+- TRUST & SECURITY: Professional design that conveys security and reliability
+- PROFESSIONAL COLORS: Use trustworthy colors (blues, grays, subtle greens)
+- CLEAN LAYOUTS: Structured, organized design that suggests financial competence
+- PEOPLE FOCUS: Show satisfied customers, financial success, peace of mind
+- AUTHORITY: Design should convey expertise and financial leadership`;
+
+  } else if (businessLower.includes('beauty') || businessLower.includes('salon')) {
+    guidance += `
+- TRANSFORMATION: Show before/after, beauty enhancement, personal transformation
+- ELEGANT COLORS: Use sophisticated, elegant color palettes (soft pinks, golds, neutrals)
+- LIFESTYLE ASPIRATION: Create aspirational imagery that customers want to achieve
+- QUALITY FOCUS: Emphasize luxury, pampering, self-care, and personal investment
+- AESTHETIC APPEAL: Design itself should be beautiful and visually inspiring`;
+
+  } else if (businessLower.includes('education') || businessLower.includes('school')) {
+    guidance += `
+- GROWTH & LEARNING: Show progress, achievement, knowledge acquisition, success
+- INSPIRING COLORS: Use colors that inspire learning (blues, greens, warm oranges)
+- PEOPLE FOCUS: Show students succeeding, teachers caring, learning environments
+- CLARITY: Clean, clear design that's easy to read and understand
+- FUTURE FOCUS: Emphasize career advancement, skill development, opportunity`;
+
+  } else if (businessLower.includes('legal') || businessLower.includes('law')) {
+    guidance += `
+- AUTHORITY & TRUST: Professional, authoritative design that conveys legal expertise
+- PROFESSIONAL COLORS: Use traditional professional colors (navy, gray, burgundy)
+- STRUCTURED LAYOUT: Organized, formal design that suggests legal competence
+- PEOPLE FOCUS: Show professional interactions, successful outcomes, client satisfaction
+- CREDIBILITY: Design should reinforce legal authority and professional competence`;
+
+  } else if (businessLower.includes('automotive') || businessLower.includes('car')) {
+    guidance += `
+- PERFORMANCE FOCUS: Emphasize vehicle performance, reliability, and quality
+- BOLD COLORS: Use strong, confident colors that suggest power and reliability
+- TECHNICAL IMAGERY: Show vehicles, technical expertise, service quality
+- LIFESTYLE CONTEXT: Show vehicles enhancing lifestyle, family safety, adventure
+- TRUST BUILDING: Emphasize reliability, expertise, and customer satisfaction`;
+
+  } else if (businessLower.includes('technology') || businessLower.includes('tech')) {
+    guidance += `
+- INNOVATION FOCUS: Modern, cutting-edge design that suggests technological advancement
+- DIGITAL COLORS: Use modern digital colors (blues, teals, modern gradients)
+- INTERFACE INSPIRATION: Clean, interface-inspired layouts with modern aesthetics
+- FUTURE FOCUS: Emphasize innovation, efficiency, digital transformation
+- CLEAN AESTHETICS: Minimalist, modern design that suggests technological sophistication`;
+  }
+
+  return guidance;
+}
+
+/**
+ * Generate industry-specific design guidance for image generation
+ */
+function generateIndustrySpecificDesignGuidance(businessType: string, brandProfile: any): string {
+  const industryIntel = getIndustryDesignIntelligence(businessType);
+  const businessName = brandProfile?.businessName || 'the business';
+
+  let guidance = `🏭 INDUSTRY-SPECIFIC DESIGN INTELLIGENCE:
+**Industry:** ${industryIntel.name}
+**World-Class Benchmarks:** ${industryIntel.worldClassBrands.slice(0, 3).join(', ')}
+**Visual Style:** ${industryIntel.designBenchmarks.visualStyle}
+**Color Palettes:** ${industryIntel.designBenchmarks.colorPalettes.slice(0, 3).join(', ')}
+**Typography:** ${industryIntel.designBenchmarks.typography}
+**Imagery Focus:** ${industryIntel.designBenchmarks.imagery}
+**Layout Style:** ${industryIntel.designBenchmarks.layout}`;
+
+  const businessLower = businessType.toLowerCase();
+
+  // Add business-type-specific design guidance
+  if (businessLower.includes('restaurant') || businessLower.includes('food')) {
+    guidance += `
+
+🍽️ RESTAURANT DESIGN SPECIFICS:
+- FOOD IMAGERY: Show appetizing food presentations, fresh ingredients, dining experiences
+- ATMOSPHERE: Warm, inviting restaurant environments with natural lighting
+- PEOPLE: Diners enjoying meals, chefs in action, family dining moments
+- COLORS: Warm earth tones, rich food colors, appetizing palettes
+- MOOD: Welcoming, satisfying, community-focused, comfort-oriented
+- AVOID: Generic food stock photos, artificial food styling, cold environments`;
+
+  } else if (businessLower.includes('healthcare') || businessLower.includes('medical')) {
+    guidance += `
+
+🏥 HEALTHCARE DESIGN SPECIFICS:
+- MEDICAL IMAGERY: Modern medical facilities, caring professionals, wellness concepts
+- ATMOSPHERE: Clean, trustworthy, professional yet caring environments
+- PEOPLE: Healthcare professionals, patients receiving care, wellness activities
+- COLORS: Calming blues, soft greens, clean whites, trustworthy tones
+- MOOD: Caring, professional, trustworthy, healing-focused
+- AVOID: Sterile hospital imagery, intimidating medical equipment, cold clinical settings`;
+
+  } else if (businessLower.includes('fitness') || businessLower.includes('gym')) {
+    guidance += `
+
+💪 FITNESS DESIGN SPECIFICS:
+- FITNESS IMAGERY: Active people exercising, modern gym equipment, transformation results
+- ATMOSPHERE: Energetic, motivational, inclusive fitness environments
+- PEOPLE: Diverse people working out, trainers coaching, group fitness activities
+- COLORS: Bold energetic colors, motivational reds/oranges, strong contrasts
+- MOOD: Energetic, motivational, empowering, achievement-focused
+- AVOID: Intimidating bodybuilder imagery, exclusive gym environments, unrealistic fitness standards`;
+
+  } else if (businessLower.includes('finance') || businessLower.includes('bank') || businessLower.includes('fintech')) {
+    guidance += `
+
+💰 FINANCIAL DESIGN SPECIFICS:
+- FINANCIAL IMAGERY: People managing money, mobile banking, business growth, financial security
+- ATMOSPHERE: Trustworthy, secure, professional yet approachable environments
+- PEOPLE: Diverse customers using financial services, business owners, families planning
+- COLORS: Trustworthy blues, professional grays, gold accents, stable tones
+- MOOD: Trustworthy, secure, empowering, growth-oriented
+- AVOID: Complex trading floors, intimidating corporate imagery, generic banking clichés`;
+
+  } else if (businessLower.includes('retail') || businessLower.includes('shop')) {
+    guidance += `
+
+🛍️ RETAIL DESIGN SPECIFICS:
+- RETAIL IMAGERY: Product showcases, shopping experiences, lifestyle integration, customer satisfaction
+- ATMOSPHERE: Attractive, commercial, engaging, conversion-focused environments
+- PEOPLE: Customers shopping, trying products, enjoying purchases, lifestyle moments
+- COLORS: Brand-appropriate colors, attractive accents, commercial appeal
+- MOOD: Attractive, desirable, lifestyle-focused, satisfaction-oriented
+- AVOID: Generic product shots, sterile retail environments, pushy sales imagery`;
+
+  } else if (businessLower.includes('education') || businessLower.includes('school')) {
+    guidance += `
+
+📚 EDUCATION DESIGN SPECIFICS:
+- EDUCATION IMAGERY: Learning environments, students engaged, knowledge sharing, skill development
+- ATMOSPHERE: Inspiring, accessible, modern, engaging learning spaces
+- PEOPLE: Students learning, teachers instructing, collaborative study, diverse learners
+- COLORS: Inspiring blues, creative purples, growth greens, engaging tones
+- MOOD: Inspiring, accessible, growth-focused, achievement-oriented
+- AVOID: Boring classroom imagery, intimidating academic settings, outdated educational concepts`;
+
+  } else if (businessLower.includes('beauty') || businessLower.includes('salon')) {
+    guidance += `
+
+💄 BEAUTY DESIGN SPECIFICS:
+- BEAUTY IMAGERY: Beauty transformations, elegant spa environments, diverse beauty representation
+- ATMOSPHERE: Luxurious, elegant, inclusive, confidence-building environments
+- PEOPLE: Diverse models, beauty professionals, transformation moments, self-care activities
+- COLORS: Elegant golds, soft pinks, luxurious purples, natural tones
+- MOOD: Luxurious, confident, transformative, inclusive, empowering
+- AVOID: Unrealistic beauty standards, exclusive imagery, artificial beauty concepts`;
+
+  } else if (businessLower.includes('automotive') || businessLower.includes('car')) {
+    guidance += `
+
+🚗 AUTOMOTIVE DESIGN SPECIFICS:
+- AUTOMOTIVE IMAGERY: Vehicles in motion, premium interiors, road scenes, technology features
+- ATMOSPHERE: Dynamic, powerful, premium, innovation-focused environments
+- PEOPLE: Drivers enjoying vehicles, families traveling, professional commuting
+- COLORS: Metallic silvers, deep blacks, racing reds, premium blues
+- MOOD: Dynamic, aspirational, powerful, premium, adventure-oriented
+- AVOID: Generic car lot imagery, static vehicle shots, unrealistic driving scenarios`;
+
+  } else if (businessLower.includes('legal') || businessLower.includes('law')) {
+    guidance += `
+
+⚖️ LEGAL DESIGN SPECIFICS:
+- LEGAL IMAGERY: Professional consultations, legal environments, handshakes, document signing
+- ATMOSPHERE: Authoritative, trustworthy, professional, sophisticated environments
+- PEOPLE: Legal professionals, clients receiving advice, business meetings, consultation scenes
+- COLORS: Deep navy, professional grays, gold accents, trustworthy blues
+- MOOD: Authoritative, trustworthy, professional, solution-oriented
+- AVOID: Intimidating courtroom imagery, complex legal documents, cold professional settings`;
+  }
+
+  guidance += `
+
+🎯 INDUSTRY EXCELLENCE STANDARDS:
+- QUALITY: Match the design sophistication of ${industryIntel.worldClassBrands.slice(0, 2).join(' and ')}
+- AUTHENTICITY: Create designs that feel genuine to ${industryIntel.name} industry
+- RELEVANCE: Ensure all visual elements are appropriate for ${businessName}'s business context
+- DIFFERENTIATION: Stand out from generic ${businessType} imagery while maintaining industry relevance`;
+
+  return guidance;
+}
+
+/**
+ * Generate enhanced logo integration guidance
+ */
+function generateEnhancedLogoIntegrationGuidance(hasLogo: boolean, businessName: string, businessType: string, brandProfile: any, platform: string): string {
+  const businessLower = businessType.toLowerCase();
+  const platformLower = platform.toLowerCase();
+
+  if (hasLogo) {
+    let logoGuidance = `
+**Enhanced Logo Integration:** MANDATORY - Include ${businessName} logo prominently`;
+
+    // Platform-specific logo placement
+    if (platformLower === 'instagram') {
+      logoGuidance += `
+- INSTAGRAM OPTIMIZATION: Logo in top-right corner for Stories/Feed compatibility
+- LOGO SIZE: 15-20% of total design area for mobile visibility
+- SQUARE FORMAT: Ensure logo works well in 1:1 aspect ratio`;
+    } else if (platformLower === 'linkedin') {
+      logoGuidance += `
+- LINKEDIN PROFESSIONAL: Logo in bottom-right for business credibility
+- LOGO SIZE: 12-18% of design area for professional appearance
+- CORPORATE PLACEMENT: Consistent with business document standards`;
+    } else {
+      logoGuidance += `
+- PLATFORM OPTIMIZED: Logo placement optimized for ${platform} engagement
+- LOGO SIZE: 15-20% of design area for optimal brand recognition`;
+    }
+
+    // Business-type-specific logo integration
+    if (businessLower.includes('restaurant') || businessLower.includes('food')) {
+      logoGuidance += `
+- FOOD CONTEXT: Integrate logo naturally with food imagery
+- APPETITE APPEAL: Ensure logo doesn't compete with food visuals
+- BRAND APPETITE: Logo should enhance, not distract from food presentation`;
+    } else if (businessLower.includes('healthcare') || businessLower.includes('medical')) {
+      logoGuidance += `
+- TRUST BUILDING: Logo placement that reinforces medical credibility
+- PROFESSIONAL STANDARD: Clean, clinical logo presentation
+- PATIENT CONFIDENCE: Logo positioning that inspires trust`;
+    } else if (businessLower.includes('fitness') || businessLower.includes('gym')) {
+      logoGuidance += `
+- ENERGY ALIGNMENT: Logo placement that complements dynamic imagery
+- MOTIVATION SUPPORT: Logo should enhance, not diminish energy
+- ACTION CONTEXT: Integrate logo with fitness/movement visuals`;
+    } else if (businessLower.includes('retail') || businessLower.includes('shop')) {
+      logoGuidance += `
+- PRODUCT HARMONY: Logo placement that doesn't compete with products
+- BRAND RECOGNITION: Consistent logo positioning for shopping recall
+- PURCHASE DECISION: Logo should support, not distract from products`;
+    } else if (businessLower.includes('finance') || businessLower.includes('fintech')) {
+      logoGuidance += `
+- AUTHORITY PLACEMENT: Logo positioning that reinforces financial trust
+- SECURITY EMPHASIS: Clean, professional logo presentation
+- FINANCIAL CONFIDENCE: Logo should inspire monetary trust`;
+    }
+
+    // Universal logo requirements
+    logoGuidance += `
+- LOGO CONTRAST: Ensure logo stands out against all background colors
+- LOGO QUALITY: Use high-resolution logo that maintains clarity at all sizes
+- LOGO SPACING: Adequate white space around logo for visual breathing room
+- LOGO CONSISTENCY: Same placement and size across all designs for brand memory
+- LOGO PROTECTION: Never overlay text or other elements on top of logo`;
+
+    return logoGuidance;
+
+  } else {
+    let nameGuidance = `
+**Enhanced Brand Name Integration:** Since no logo is available, emphasize business name`;
+
+    // Business-type-specific name styling
+    if (businessLower.includes('restaurant') || businessLower.includes('food')) {
+      nameGuidance += `
+- RESTAURANT TYPOGRAPHY: Use warm, inviting fonts that suggest hospitality
+- APPETITE TYPOGRAPHY: Font style that complements food imagery
+- DINING EXPERIENCE: Typography that reflects restaurant's atmosphere`;
+    } else if (businessLower.includes('healthcare') || businessLower.includes('medical')) {
+      nameGuidance += `
+- MEDICAL TYPOGRAPHY: Clean, professional fonts that inspire trust
+- HEALTH AUTHORITY: Typography that suggests medical expertise
+- PATIENT COMFORT: Font style that's reassuring and professional`;
+    } else if (businessLower.includes('fitness') || businessLower.includes('gym')) {
+      nameGuidance += `
+- FITNESS TYPOGRAPHY: Bold, energetic fonts that motivate action
+- STRENGTH EMPHASIS: Typography that suggests power and energy
+- MOTIVATION DESIGN: Font style that inspires fitness goals`;
+    } else if (businessLower.includes('beauty') || businessLower.includes('salon')) {
+      nameGuidance += `
+- BEAUTY TYPOGRAPHY: Elegant, sophisticated fonts that suggest luxury
+- TRANSFORMATION STYLE: Typography that implies beauty enhancement
+- ELEGANCE EMPHASIS: Font style that's aspirational and refined`;
+    } else if (businessLower.includes('legal') || businessLower.includes('law')) {
+      nameGuidance += `
+- LEGAL TYPOGRAPHY: Authoritative, traditional fonts that suggest expertise
+- AUTHORITY EMPHASIS: Typography that implies legal competence
+- PROFESSIONAL STANDARD: Font style that's formal and trustworthy`;
+    }
+
+    // Universal name requirements
+    nameGuidance += `
+- BUSINESS NAME: Include "${businessName}" prominently in design
+- NAME STYLING: Use distinctive typography that becomes brand recognition element
+- NAME PLACEMENT: Consistent positioning across all designs for brand memory
+- NAME CONTRAST: Ensure business name is highly visible and readable
+- BRAND CONSISTENCY: Use consistent typography style across all designs
+- NAME HIERARCHY: Business name should be secondary to main headline but clearly visible`;
+
+    return nameGuidance;
+  }
+}
+
+/**
+ * Generate enhanced brand integration guidance for all business types
+ */
+function generateEnhancedBrandIntegrationGuidance(brandProfile: any, businessType: string): string {
+  const businessName = brandProfile?.businessName || 'the business';
+  const businessLower = businessType.toLowerCase();
+  const logoUrl = brandProfile?.logoUrl;
+  const hasLogo = logoUrl && logoUrl.trim() && !logoUrl.includes('placeholder');
+
+  let guidance = `🏢 ENHANCED BRAND INTEGRATION (MANDATORY):
+**Business Name:** ${businessName}
+**Brand Identity:** Ensure all design elements reflect ${businessName}'s unique identity
+**Brand Consistency:** Maintain consistent brand representation across all visual elements`;
+
+  // Enhanced logo integration guidance
+  const logoGuidance = generateEnhancedLogoIntegrationGuidance(hasLogo, businessName, businessType, brandProfile, 'instagram');
+  guidance += logoGuidance;
+
+  // Business-type-specific brand integration
+  if (businessLower.includes('restaurant') || businessLower.includes('food')) {
+    guidance += `
+**Restaurant Brand Elements:**
+- FOOD SIGNATURE: Showcase signature dishes or specialties that define ${businessName}
+- AMBIANCE: Reflect restaurant's unique atmosphere and dining experience
+- CUISINE STYLE: Visual elements should match cuisine type and restaurant personality
+- MENU HIGHLIGHTS: Feature popular or signature menu items as brand differentiators`;
+
+  } else if (businessLower.includes('healthcare') || businessLower.includes('medical')) {
+    guidance += `
+**Healthcare Brand Elements:**
+- TRUST SYMBOLS: Include elements that build medical credibility and trust
+- CARE PHILOSOPHY: Reflect ${businessName}'s approach to patient care
+- SPECIALIZATION: Highlight medical specialties or unique healthcare services
+- PROFESSIONAL CREDENTIALS: Subtly incorporate professional certifications or awards`;
+
+  } else if (businessLower.includes('fitness') || businessLower.includes('gym')) {
+    guidance += `
+**Fitness Brand Elements:**
+- TRAINING PHILOSOPHY: Reflect ${businessName}'s unique approach to fitness
+- EQUIPMENT/FACILITIES: Showcase distinctive gym features or equipment
+- COMMUNITY ASPECT: Highlight the fitness community and supportive environment
+- RESULTS FOCUS: Include elements that emphasize transformation and achievement`;
+
+  } else if (businessLower.includes('finance') || businessLower.includes('bank') || businessLower.includes('fintech')) {
+    guidance += `
+**Financial Brand Elements:**
+- SECURITY SYMBOLS: Include trust and security indicators appropriate for financial services
+- SERVICE DIFFERENTIATION: Highlight unique financial products or services
+- CUSTOMER SUCCESS: Show financial growth, security, or customer satisfaction
+- INNOVATION: Reflect modern financial technology and user-friendly services`;
+
+  } else if (businessLower.includes('retail') || businessLower.includes('shop')) {
+    guidance += `
+**Retail Brand Elements:**
+- PRODUCT SHOWCASE: Feature signature products or bestselling items
+- SHOPPING EXPERIENCE: Reflect the unique shopping atmosphere of ${businessName}
+- BRAND PERSONALITY: Show the lifestyle and values associated with the brand
+- CUSTOMER SATISFACTION: Include elements showing happy customers and quality products`;
+
+  } else if (businessLower.includes('education') || businessLower.includes('school')) {
+    guidance += `
+**Education Brand Elements:**
+- LEARNING ENVIRONMENT: Showcase modern, engaging educational facilities
+- SUCCESS STORIES: Include elements showing student achievement and growth
+- TEACHING APPROACH: Reflect ${businessName}'s unique educational methodology
+- COMMUNITY: Show collaborative learning and supportive educational community`;
+
+  } else if (businessLower.includes('beauty') || businessLower.includes('salon')) {
+    guidance += `
+**Beauty Brand Elements:**
+- TRANSFORMATION: Show before/after concepts or beauty enhancement
+- LUXURY EXPERIENCE: Reflect the premium, pampering experience of ${businessName}
+- EXPERTISE: Highlight professional skills and beauty expertise
+- INCLUSIVITY: Show diverse beauty and inclusive representation`;
+
+  } else if (businessLower.includes('automotive') || businessLower.includes('car')) {
+    guidance += `
+**Automotive Brand Elements:**
+- VEHICLE SHOWCASE: Feature vehicles in premium, aspirational settings
+- PERFORMANCE: Highlight speed, luxury, or reliability depending on brand positioning
+- LIFESTYLE: Show the lifestyle and status associated with the vehicles
+- TECHNOLOGY: Include modern automotive technology and innovation features`;
+
+  } else if (businessLower.includes('legal') || businessLower.includes('law')) {
+    guidance += `
+**Legal Brand Elements:**
+- AUTHORITY: Include elements that establish legal expertise and authority
+- CLIENT SUCCESS: Show successful case outcomes or satisfied clients
+- PROFESSIONALISM: Maintain sophisticated, trustworthy professional appearance
+- SPECIALIZATION: Highlight specific legal expertise areas or practice focus`;
+  }
+
+  // Universal brand integration elements
+  guidance += `
+
+🎯 UNIVERSAL BRAND INTEGRATION REQUIREMENTS:
+- BRAND VOICE: Ensure visual style matches ${businessName}'s personality and values
+- COMPETITIVE DIFFERENTIATION: Show what makes ${businessName} unique in the market
+- TARGET AUDIENCE: Design elements should appeal to ${businessName}'s specific customers
+- BRAND MEMORY: Create consistent visual elements that customers will remember
+- QUALITY STANDARDS: Maintain premium quality that reflects ${businessName}'s standards
+- AUTHENTICITY: Ensure all brand elements feel genuine and true to ${businessName}'s identity`;
+
+  // Brand profile specific enhancements
+  if (brandProfile?.uniqueSellingPoints && brandProfile.uniqueSellingPoints.length > 0) {
+    guidance += `
+- UNIQUE SELLING POINTS: Visually represent: ${brandProfile.uniqueSellingPoints.slice(0, 2).join(', ')}`;
+  }
+
+  if (brandProfile?.keyFeatures && brandProfile.keyFeatures.length > 0) {
+    guidance += `
+- KEY FEATURES: Highlight: ${brandProfile.keyFeatures.slice(0, 2).join(', ')}`;
+  }
+
+  return guidance;
 }
 
 function rememberOutput(brandKey: string, output: { headline?: string; caption?: string; concept?: string }) {
@@ -2994,16 +5920,7 @@ function generateUniqueFallbackContent(brandProfile: any, businessType: string, 
     `Your business deserves ${businessType} solutions that actually work. ${businessName} combines industry expertise with personalized service to deliver results that matter to your bottom line.`
   ];
 
-  const ctaVariations = [
-    'Get Started',
-    'Learn More',
-    'Contact Us',
-    'Try Today',
-    'Book Now',
-    'Call Now',
-    'Visit Us',
-    'Join Now'
-  ];
+  const ctaVariations = generateBusinessSpecificCTAs(businessType, brandProfile);
 
   // Select variations based on creativity boost
   const selectedHeadline = headlineVariations[creativityBoost % headlineVariations.length];
@@ -3044,31 +5961,112 @@ function pickNonRepeating<T>(arr: T[], last?: T): T {
 function getCulturalBusinessGuidance(businessType: string): string {
   const businessLower = businessType.toLowerCase();
 
-  if (businessLower.includes('bank') || businessLower.includes('financial') || businessLower.includes('money')) {
-    return `💰 FINANCIAL SERVICES GUIDANCE:
-- GOOD: Show families saving for goals, mobile money transfers, small business growth
-- GOOD: People using mobile banking for everyday transactions, paying school fees
-- GOOD: Small business owners managing cash flow, market vendors using digital payments
-- AVOID: Complex trading floors, stock market graphs, corporate boardrooms
-- AVOID: Western banking imagery that doesn't reflect local financial habits`;
-  }
+  // Enhanced business-specific guidance with more categories
+  const businessGuidanceMap: Record<string, any> = {
+    'financial': {
+      icon: '💰',
+      title: 'FINANCIAL SERVICES GUIDANCE',
+      good: [
+        'Show families saving for goals, mobile money transfers, small business growth',
+        'People using mobile banking for everyday transactions, paying school fees',
+        'Small business owners managing cash flow, market vendors using digital payments'
+      ],
+      avoid: [
+        'Complex trading floors, stock market graphs, corporate boardrooms',
+        'Western banking imagery that doesn\'t reflect local financial habits'
+      ]
+    },
+    'technology': {
+      icon: '💻',
+      title: 'TECHNOLOGY SERVICES GUIDANCE',
+      good: [
+        'People using phones naturally, simple app interfaces, everyday tech use',
+        'Small business owners using tech to grow, students learning online',
+        'Community members connecting through technology, solving real problems'
+      ],
+      avoid: [
+        'Complex coding screens, server rooms, abstract tech concepts',
+        'Futuristic interfaces that feel disconnected from daily life'
+      ]
+    },
+    'education': {
+      icon: '📚',
+      title: 'EDUCATION SERVICES GUIDANCE',
+      good: [
+        'Students in local classroom settings, community learning spaces',
+        'Teachers and students interacting, practical learning scenarios',
+        'Family education moments, skill development in real contexts'
+      ],
+      avoid: [
+        'Generic classroom stock photos, overly formal academic settings',
+        'Western educational imagery that doesn\'t reflect local learning culture'
+      ]
+    },
+    'healthcare': {
+      icon: '🏥',
+      title: 'HEALTHCARE SERVICES GUIDANCE',
+      good: [
+        'Patients receiving care in clean, professional medical settings',
+        'Healthcare providers showing compassion and expertise',
+        'Families supporting each other through health journeys'
+      ],
+      avoid: [
+        'Overly clinical or sterile imagery that feels impersonal',
+        'Generic medical stock photos that lack authenticity'
+      ]
+    },
+    'restaurant': {
+      icon: '🍽️',
+      title: 'RESTAURANT SERVICES GUIDANCE',
+      good: [
+        'Fresh ingredients and authentic cooking processes',
+        'Families and friends enjoying meals together',
+        'Local dining atmosphere that reflects community culture'
+      ],
+      avoid: [
+        'Generic food photography that lacks personality',
+        'Overly staged dining scenarios that feel artificial'
+      ]
+    },
+    'retail': {
+      icon: '🛍️',
+      title: 'RETAIL SERVICES GUIDANCE',
+      good: [
+        'Customers discovering and enjoying quality products',
+        'Local shopping experiences that feel authentic',
+        'Product displays that showcase quality and value'
+      ],
+      avoid: [
+        'Generic retail imagery that could be anywhere',
+        'Overly commercial product shots without context'
+      ]
+    },
+    'fitness': {
+      icon: '💪',
+      title: 'FITNESS SERVICES GUIDANCE',
+      good: [
+        'Real people achieving fitness goals in supportive environments',
+        'Community members engaging in healthy activities',
+        'Authentic workout scenarios that inspire motivation'
+      ],
+      avoid: [
+        'Overly perfect fitness models that feel unattainable',
+        'Generic gym imagery that lacks personality'
+      ]
+    }
+  };
 
-  if (businessLower.includes('tech') || businessLower.includes('software') || businessLower.includes('app')) {
-    return `💻 TECHNOLOGY SERVICES GUIDANCE:
-- GOOD: People using phones naturally, simple app interfaces, everyday tech use
-- GOOD: Small business owners using tech to grow, students learning online
-- GOOD: Community members connecting through technology, solving real problems
-- AVOID: Complex coding screens, server rooms, abstract tech concepts
-- AVOID: Futuristic interfaces that feel disconnected from daily life`;
-  }
+  // Find matching business type
+  for (const [type, config] of Object.entries(businessGuidanceMap)) {
+    if (businessLower.includes(type) ||
+      (type === 'financial' && (businessLower.includes('bank') || businessLower.includes('money') || businessLower.includes('fintech'))) ||
+      (type === 'technology' && (businessLower.includes('tech') || businessLower.includes('software') || businessLower.includes('app'))) ||
+      (type === 'education' && (businessLower.includes('school') || businessLower.includes('learning')))) {
 
-  if (businessLower.includes('education') || businessLower.includes('school') || businessLower.includes('learning')) {
-    return `📚 EDUCATION SERVICES GUIDANCE:
-- GOOD: Students in local classroom settings, community learning spaces
-- GOOD: Teachers and students interacting, practical learning scenarios
-- GOOD: Family education moments, skill development in real contexts
-- AVOID: Generic classroom stock photos, overly formal academic settings
-- AVOID: Western educational imagery that doesn't reflect local learning culture`;
+      return `${config.icon} ${config.title}:
+- GOOD: ${config.good.join('\n- GOOD: ')}
+- AVOID: ${config.avoid.join('\n- AVOID: ')}`;
+    }
   }
 
   return `🏢 GENERAL BUSINESS GUIDANCE:
@@ -3236,6 +6234,7 @@ export async function generateRevo10Image(input: {
   includePeople?: boolean;
   scheduledServices?: ScheduledService[];
   followBrandColors?: boolean;
+  designExamples?: string[];
 }) {
   try {
     // Create concept object for enhanced prompt
@@ -3256,7 +6255,9 @@ export async function generateRevo10Image(input: {
         accentColor: input.accentColor || input.primaryColor,
         backgroundColor: input.backgroundColor || '#FFFFFF',
         contactInfo: input.contactInfo,
-        websiteUrl: input.websiteUrl
+        websiteUrl: input.websiteUrl,
+        designExamples: input.designExamples || [],
+        businessType: input.businessType
       },
       aspectRatio: '1:1',
       visualStyle: input.visualStyle || 'modern',
@@ -3287,14 +6288,15 @@ export async function generateRevo10Image(input: {
 function buildRevo10ImagePrompt(options: any, concept: any): string {
   const { businessType, platform, brandProfile, aspectRatio = '1:1', visualStyle = 'modern', scheduledServices } = options;
 
-  // Extract brand colors from profile with toggle support
+  // Enhanced brand colors extraction with intelligent processing
   const shouldFollowBrandColors = options.followBrandColors !== false; // Default to true if not specified
+  const brandColorData = extractEnhancedBrandColors(brandProfile, shouldFollowBrandColors);
 
-  const primaryColor = shouldFollowBrandColors ? (brandProfile.primaryColor || '#3B82F6') : '#3B82F6';
-  const accentColor = shouldFollowBrandColors ? (brandProfile.accentColor || '#1E40AF') : '#1E40AF';
-  const backgroundColor = shouldFollowBrandColors ? (brandProfile.backgroundColor || '#FFFFFF') : '#FFFFFF';
+  const primaryColor = brandColorData.primary;
+  const accentColor = brandColorData.accent;
+  const backgroundColor = brandColorData.background;
 
-  console.log('🎨 [Revo 1.0] Brand Colors Debug:', {
+  console.log('🎨 [Revo 1.0] Enhanced Brand Colors Debug:', {
     followBrandColors: shouldFollowBrandColors,
     inputPrimaryColor: brandProfile.primaryColor,
     inputAccentColor: brandProfile.accentColor,
@@ -3302,12 +6304,14 @@ function buildRevo10ImagePrompt(options: any, concept: any): string {
     finalPrimaryColor: primaryColor,
     finalAccentColor: accentColor,
     finalBackgroundColor: backgroundColor,
-    hasValidColors: !!(brandProfile.primaryColor && brandProfile.accentColor && brandProfile.backgroundColor),
-    usingBrandColors: shouldFollowBrandColors && !!(brandProfile.primaryColor && brandProfile.accentColor && brandProfile.backgroundColor)
+    hasValidColors: brandColorData.hasValidColors,
+    usingBrandColors: brandColorData.usingBrandColors,
+    colorHarmony: brandColorData.colorHarmony,
+    businessTypeOptimized: brandColorData.businessTypeOptimized
   });
 
-  // Build color scheme instruction
-  const colorScheme = `Primary: ${primaryColor} (60% dominant), Accent: ${accentColor} (30% secondary), Background: ${backgroundColor} (10% highlights)`;
+  // Build enhanced color scheme instruction with business-type optimization
+  const colorScheme = generateEnhancedColorSchemeInstructions(brandColorData, businessType);
 
   // Brand location info
   const brandInfo = brandProfile.location ? ` based in ${brandProfile.location}` : '';
@@ -3325,26 +6329,18 @@ function buildRevo10ImagePrompt(options: any, concept: any): string {
   // Build culturally intelligent visual instructions
   let culturalInstructions = '';
   const location = brandProfile.location || 'Global';
-  const africanCountries = ['kenya', 'nigeria', 'south africa', 'ghana', 'uganda', 'tanzania', 'ethiopia', 'rwanda', 'zambia', 'botswana', 'malawi'];
-  const isAfricanCountry = africanCountries.some(country => location.toLowerCase().includes(country.toLowerCase()));
+  const culturalContext = getDynamicCulturalContext(location);
 
   // Build people inclusion instructions based on toggle
   let peopleInstructions = '';
   if (options.includePeopleInDesigns === false) {
     peopleInstructions = `\n\n👥 PEOPLE EXCLUSION REQUIREMENT:\n- MANDATORY: Create a clean, professional design WITHOUT any people or human figures\n- AVOID: Any human faces, bodies, or silhouettes\n- FOCUS: Products, services, abstract elements, or clean minimalist design\n- STYLE: Professional, clean aesthetics without human elements\n- EMPHASIS: Brand elements, typography, and non-human visual elements`;
   } else {
-    if (isAfricanCountry) {
-      peopleInstructions = `\n\n👥 PEOPLE INCLUSION (AFRICAN REPRESENTATION):\n- Include authentic Black/African people who represent the target market\n- Show people who would actually use ${businessType} services\n- Display local African people in settings relevant to ${businessType} business\n- Ensure faces are fully visible, well-lit, and anatomically correct\n- PRIORITY: 80%+ of people should be Black/African for cultural authenticity\n- Context: Show people in ${businessType}-relevant settings, not generic offices`;
-    } else {
-      peopleInstructions = `\n\n👥 PEOPLE INCLUSION (DIVERSE REPRESENTATION):\n- Include diverse, authentic people who represent the target market\n- Show people who would actually use ${businessType} services\n- Display people in settings relevant to ${businessType} business\n- Ensure faces are fully visible, well-lit, and anatomically correct\n- Context: Show people in ${businessType}-relevant settings`;
-    }
+    peopleInstructions = getDynamicPeopleInstructions(culturalContext, businessType);
   }
 
   // Add cultural intelligence for visual elements
-  if (isAfricanCountry) {
-    const businessSpecificGuidance = getCulturalBusinessGuidance(businessType);
-    culturalInstructions = `\n\n🌍 AFRICAN CULTURAL INTELLIGENCE:\n- AVOID: Complex trading graphs, stock charts, or financial diagrams that are hard to understand\n- AVOID: Western corporate imagery that doesn't resonate locally\n- AVOID: Abstract business concepts that feel disconnected from daily life\n- USE: Simple, clear visuals that everyday people can relate to\n- USE: Local cultural elements, colors, and symbols that feel familiar\n- USE: Real-life scenarios people experience (family, community, daily activities)\n- FOCUS: Visual storytelling that connects with local values and experiences\n- SIMPLICITY: Keep visual elements clean and easy to understand at first glance\n- AUTHENTICITY: Show genuine African environments, not generic stock imagery\n\n${businessSpecificGuidance}`;
-  }
+  culturalInstructions = getDynamicCulturalInstructions(culturalContext, businessType);
 
   // Style/Layout/Typography variation (avoid repeating last style per brand/platform)
   const styles = ['modern-minimal', 'bold-color-blocking', 'editorial-magazine', 'organic-textured', 'geometric-abstract', 'photo-forward', 'duotone', 'retro-modern', 'ultra-clean', 'dynamic-diagonal'];
@@ -3409,7 +6405,20 @@ CREATIVE CONCEPT: ${concept.concept}
 
 🎯 VISUAL CONTEXT REQUIREMENT: ${visualContext}${serviceVisualContext}
 
-🎯 STRONG FLEXIBLE TEMPLATE STRUCTURE (MANDATORY):
+${generateBusinessTypeDesignGuidance(businessType, brandProfile, platform)}
+
+${processDesignExamplesForBrandConsistency(brandProfile, businessType, platform)}
+
+${generateIndustrySpecificDesignGuidance(businessType, brandProfile)}
+
+🎯 BUSINESS-TYPE-OPTIMIZED TEMPLATE STRUCTURE (MANDATORY):
+1. TEMPLATE SELECTION: Use business-type-appropriate template style from guidance above
+2. VISUAL HIERARCHY: Prioritize elements based on business type (product, service, people, etc.)
+3. COLOR STRATEGY: Apply business-type-specific color psychology and brand alignment
+4. LAYOUT OPTIMIZATION: Use layout style recommended for this business type and platform
+5. CONTENT FOCUS: Emphasize the design priority identified for this business type
+
+🎯 ENHANCED FLEXIBLE TEMPLATE STRUCTURE (MANDATORY):
 1. NEUTRAL BACKGROUND: White or soft gradient (never busy patterns)
 2. ACCENT COLOR: Tied to post theme using brand colors strategically
 3. SINGLE FOCAL ELEMENT: 1 person photo OR 1 relatable object (never both)
@@ -3473,11 +6482,7 @@ CREATIVE CONCEPT: ${concept.concept}
 - BANNED PHRASES: "stripped away the confusion", "future-proof", "game-changer"
 
 💬 AUTHENTIC HUMAN VOICE REQUIREMENTS (MANDATORY):
-- Write like a REAL PERSON talking to a friend, not a corporate press release
-- Use conversational, warm tone: "Hey" instead of "We are pleased to announce"
-- Include personality and character - sound distinctly like ${brandProfile.businessName}, not generic fintech
-- Use specific, concrete language instead of vague corporate buzzwords
-- Sound like someone who actually understands ${location} life and challenges
+${generateEnhancedBrandVoiceInstructions(brandProfile, businessType, location)}
 - NO corporate jargon: "featuring", "thoughtful details", "measurable outcomes"
 
 🚨 ELIMINATE ALL CORPORATE SPEAK (ABSOLUTELY CRITICAL):
@@ -3493,13 +6498,13 @@ CREATIVE CONCEPT: ${concept.concept}
 - NEVER sound like a PowerPoint presentation or press release
 - NEVER use generic filler text that could apply to any product
 - WRITE LIKE: A friend explaining a solution they discovered
-- USE REAL SCENARIOS: "It's month-end. Rent is due tomorrow. Your business account shows KSh 15,000 but you need KSh 25,000."
+- USE REAL SCENARIOS: ${generateLocationAppropriateScenario(brandProfile.location, businessType)}
 
 🎭 REAL HUMAN STORYTELLING (MANDATORY):
-- START with a REAL SCENARIO: "Three weeks waiting for bank loan approval. Your supplier needs payment today."
+- START with a REAL SCENARIO: ${generateLocationAppropriateScenario(brandProfile.location, businessType)}
 - CREATE A SCENE: Paint a picture people can see and feel
 - USE REAL EMOTIONS: stress, relief, hope, frustration, excitement
-- SHOW, DON'T TELL: "Mom's birthday is coming up" vs "family obligations"
+- SHOW, DON'T TELL: Use specific scenarios instead of generic concepts
 - ADD PERSONALITY: "Here's the thing:", "Plot twist:", "Real talk:"
 - END WITH EMPATHY: "We get it", "You're not alone", "Been there"
 
@@ -3534,6 +6539,8 @@ ${colorScheme}
 - CONSISTENT color temperature across all designs for brand recognition
 - NO color variations that make the feed look uncoordinated
 
+${generateEnhancedBrandIntegrationGuidance(brandProfile, businessType)}
+
 REVO 1.0 ENHANCED FEATURES:
 🚀 Next-generation AI design with sophisticated visual storytelling
 🎯 Advanced brand consistency and cultural intelligence
@@ -3542,9 +6549,9 @@ REVO 1.0 ENHANCED FEATURES:
 🎨 Precise brand color integration and logo placement
 
 ❌ CRITICAL VISUAL RESTRICTIONS - NEVER INCLUDE:
-❌ Company name with colon format in text (e.g., "PAYA:", "COMPANY:")
+❌ Company name with colon format in text (e.g., "COMPANY:", "BUSINESS:")
 ❌ Text containing "journey", "everyday", or repetitive corporate language
-❌ Fake website URLs or made-up domain names (e.g., "payaventures.com")
+❌ Fake website URLs or made-up domain names (e.g., "fakewebsite.com")
 ❌ Fictional contact information or web addresses not provided in brand profile
 ❌ Website mockups or computer screens showing fake websites
 ❌ Complex trading graphs, stock charts, or financial diagrams
