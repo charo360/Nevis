@@ -49,7 +49,7 @@ function validateContentQuality(
   // Check if content mentions business name OR business type (more flexible)
   const contentText = `${content.headline || ''}${content.subheadline || ''}${content.caption || ''}`.toLowerCase();
   const businessNameLower = businessName.toLowerCase();
-  const businessTypeLower = businessType.toLowerCase();
+  const businessTypeLower = String(businessType || 'general business').toLowerCase();
   // Business name or type should appear in content
   const hasBusinessName = contentText.includes(businessNameLower);
   const hasBusinessType = contentText.includes(businessTypeLower);
@@ -302,7 +302,7 @@ function getPlatformOptimization(platform: string): string {
 }
 // Get business-specific design DNA
 function getBusinessDesignDNA(businessType: string): string {
-  const businessTypeLower = businessType.toLowerCase();
+  const businessTypeLower = String(businessType || 'general business').toLowerCase();
   return BUSINESS_TYPE_DESIGN_DNA[businessTypeLower as keyof typeof BUSINESS_TYPE_DESIGN_DNA] || BUSINESS_TYPE_DESIGN_DNA.default || '';
 }
 // Advanced real-time context gathering for Revo 1.0 (enhanced version with unified knowledge service)
@@ -602,7 +602,7 @@ function shouldIncludePeopleInDesign(businessType: string, location: string, vis
     // E-commerce & Tech
     'ecommerce', 'e-commerce', 'electronics', 'tech', 'digital'
   ];
-  const businessTypeLower = businessType.toLowerCase();
+  const businessTypeLower = String(businessType || 'general business').toLowerCase();
   const matchesBusinessType = peopleBusinessTypes.some(type => businessTypeLower.includes(type));
   const matchesVisualStyle = visualStyle === 'lifestyle' || visualStyle === 'authentic';
   return matchesBusinessType || matchesVisualStyle;
@@ -1051,7 +1051,7 @@ function getIndustryDesignIntelligence(businessType: string): any {
  * Enhanced business type intelligence matching
  */
 function getBusinessTypeIntelligence(businessType: string, industryIntelligence: Record<string, any>): any {
-  const businessLower = businessType.toLowerCase();
+  const businessLower = String(businessType || 'general business').toLowerCase();
 
   // Direct matches first
   if (industryIntelligence[businessLower]) {
@@ -1606,10 +1606,10 @@ function getBusinessIntelligenceEngine(businessType: string, location: string): 
       ]
     }
   };
-  let result = businessIntelligence[businessType.toLowerCase()] || businessIntelligence['default'];
+  let result = businessIntelligence[String(businessType || 'general business').toLowerCase()] || businessIntelligence['default'];
 
   // If no specific business type found, generate dynamic engagement hooks
-  if (!businessIntelligence[businessType.toLowerCase()]) {
+  if (!businessIntelligence[String(businessType || 'general business').toLowerCase()]) {
     result = {
       ...result,
       name: businessType.charAt(0).toUpperCase() + businessType.slice(1),
@@ -1630,7 +1630,7 @@ function getBusinessIntelligenceEngine(businessType: string, location: string): 
  * Generate dynamic engagement hooks based on business type
  */
 function generateDynamicEngagementHooks(businessType: string): string[] {
-  const businessLower = businessType.toLowerCase();
+  const businessLower = String(businessType || 'general business').toLowerCase();
 
   // Base hooks that work for any business
   const baseHooks = [
@@ -1676,7 +1676,7 @@ function generateDynamicEngagementHooks(businessType: string): string[] {
  * Generate dynamic content strategies based on business type
  */
 function generateDynamicContentStrategies(businessType: string): string[] {
-  const businessLower = businessType.toLowerCase();
+  const businessLower = String(businessType || 'general business').toLowerCase();
 
   const baseStrategies = [
     'Customer success stories',
@@ -1716,7 +1716,7 @@ function generateDynamicContentStrategies(businessType: string): string[] {
  * Generate dynamic market dynamics based on business type
  */
 function generateDynamicMarketDynamics(businessType: string): string[] {
-  const businessLower = businessType.toLowerCase();
+  const businessLower = String(businessType || 'general business').toLowerCase();
 
   const baseDynamics = [
     'Local market competition and positioning',
@@ -1753,7 +1753,7 @@ function generateDynamicMarketDynamics(businessType: string): string[] {
  * Generate dynamic local phrases based on business type
  */
 function generateDynamicLocalPhrases(businessType: string): string[] {
-  const businessLower = businessType.toLowerCase();
+  const businessLower = String(businessType || 'general business').toLowerCase();
 
   const basePhrases = [
     'Your professional partner',
@@ -2073,7 +2073,7 @@ function generateBusinessWeatherImpact(weatherCondition: string, businessType: s
       'default': 'Weather affects beauty routines and product needs'
     }
   };
-  const businessImpacts = businessWeatherImpacts[businessType.toLowerCase()] || businessWeatherImpacts['retail'];
+  const businessImpacts = businessWeatherImpacts[String(businessType || 'general business').toLowerCase()] || businessWeatherImpacts['retail'];
   // Find the most relevant weather condition
   for (const [weatherKey, impact] of Object.entries(businessImpacts)) {
     if (weatherKey !== 'default' && condition.includes(weatherKey)) {
@@ -2115,7 +2115,7 @@ function generateWeatherContentOpportunities(weatherCondition: string, businessT
       'default': 'Weather-appropriate beauty tips and seasonal product recommendations'
     }
   };
-  const opportunities = contentOpportunities[businessType.toLowerCase()] || contentOpportunities['retail'];
+  const opportunities = contentOpportunities[String(businessType || 'general business').toLowerCase()] || contentOpportunities['retail'];
   // Find the most relevant weather condition
   for (const [weatherKey, opportunity] of Object.entries(opportunities)) {
     if (weatherKey !== 'default' && condition.includes(weatherKey)) {
@@ -2307,7 +2307,7 @@ function validateContentQuality_Enhanced(
   }
   // Check for business specificity
   const hasBusinessName = contentText.includes(businessName.toLowerCase());
-  const hasBusinessType = contentText.includes(businessType.toLowerCase());
+  const hasBusinessType = contentText.includes(String(businessType || 'general business').toLowerCase());
   if (!hasBusinessName && !hasBusinessType) {
     issues.push('Content lacks business specificity - should mention business name or type');
     score -= 1;
@@ -2398,6 +2398,10 @@ export async function generateRevo10Content(input: {
         backgroundColor: input.backgroundColor
       }
     };
+
+    // TASK 21: Log brand profile data usage for analytics
+    const usageLog = logBrandProfileUsage(options.brandProfile, 'content', input.platform);
+
     // Step 1: Generate creative concept (using Revo 2.0 logic)
     const concept = await generateRevo10CreativeConcept(options);
     // Step 2: Generate content using Gemini (instead of Claude)
@@ -2447,6 +2451,1270 @@ async function generateRevo10CreativeConcept(options: any): Promise<any> {
     upcomingServices
   };
 }
+
+// ============================================================================
+// ENHANCED HEADLINES & SUBHEADLINES SYSTEM
+// Addresses critical issues: duplicate headlines, brand names as headlines,
+// vague subheadlines, poor message hierarchy, generic corporate jargon
+// ============================================================================
+
+/**
+ * Story Coherence Engine - Ensures headlines and captions tell ONE complete story
+ */
+interface StoryCoherence {
+  storyTheme: string;
+  emotionalTone: 'urgent' | 'playful' | 'professional' | 'confident' | 'caring' | 'innovative';
+  visualContext: string;
+  moneyFlowDirection: 'incoming' | 'outgoing' | 'neutral';
+  specificBenefit: string;
+  targetAction: string;
+}
+
+/**
+ * Headline Uniqueness Tracking System - Prevents duplicate headlines across campaigns
+ */
+const headlineUniquenessTracker = new Map<string, { headlines: string[], lastUsed: number }>();
+
+/**
+ * Formula Anti-Repetition System - Tracks headline formulas to prevent overuse
+ */
+const headlineFormulaTracker = new Map<string, { formulas: string[], lastUsed: number }>();
+
+/**
+ * Enhanced Cliché Filter - Comprehensive list of banned generic phrases
+ */
+const BANNED_HEADLINE_CLICHES = [
+  // User-identified weak patterns
+  'your way', 'anywhere anytime', 'simple tech for everyone', 'brighter tomorrow',
+  'for all', 'financial technology for a brighter tomorrow', 'manage your money your way',
+
+  // Generic corporate jargon
+  'professional services that', 'solutions that actually work', 'serving the community with',
+  'quality service you can trust', 'experience the excellence of', 'committed to providing',
+  'dedicated to serving', 'excellence in', 'trusted by', 'leading provider of',
+
+  // Vague aspirational phrases
+  'unlock your potential', 'transform your business', 'revolutionize your', 'next level',
+  'cutting edge', 'state of the art', 'world class', 'premium quality', 'innovative solutions'
+];
+
+/**
+ * Proven Headline/Subheadline Patterns - Based on user's best practices
+ */
+interface HeadlinePattern {
+  name: string;
+  headlineStructure: string;
+  subheadlineStructure: string;
+  example: { headline: string; subheadline: string };
+}
+
+const PROVEN_HEADLINE_PATTERNS: HeadlinePattern[] = [
+  {
+    name: 'Problem → Solution',
+    headlineStructure: 'Tired of [problem]?',
+    subheadlineStructure: '[Specific solution] from your [device/location]',
+    example: { headline: 'Tired of 3-Day Transfer Waits?', subheadline: 'Instant payments from your phone' }
+  },
+  {
+    name: 'Benefit → How',
+    headlineStructure: '[Specific benefit] in [timeframe]',
+    subheadlineStructure: '[How it works] that actually works',
+    example: { headline: 'Pay Rent in Seconds', subheadline: 'Mobile banking that actually works' }
+  },
+  {
+    name: 'Big Promise → Specific Proof',
+    headlineStructure: '[Aspirational outcome], Unlocked',
+    subheadlineStructure: '[Specific features]. [Specific benefits]. [Specific guarantee].',
+    example: { headline: 'Financial Freedom, Unlocked', subheadline: 'Zero fees. Instant transfers. 24/7 access.' }
+  },
+  {
+    name: 'Urgent → Relief',
+    headlineStructure: '[Urgent situation]',
+    subheadlineStructure: '[Immediate solution], right now',
+    example: { headline: "Rent's Due Tomorrow", subheadline: 'Transfer instantly, right now' }
+  },
+  {
+    name: 'Direct Benefit → Proof',
+    headlineStructure: '[Action] [Benefit]',
+    subheadlineStructure: '[Specific proof/guarantee]',
+    example: { headline: 'Accept Payments Instantly', subheadline: 'Zero setup fees, live in 5 minutes' }
+  }
+];
+
+// ============================================================================
+// UNIVERSAL MULTI-ANGLE MARKETING FRAMEWORK
+// ============================================================================
+
+/**
+ * Marketing angle definitions for strategic campaign diversity
+ * Each angle ensures ads highlight different aspects of the same product/service
+ */
+interface MarketingAngle {
+  id: string;
+  name: string;
+  description: string;
+  focusArea: string;
+  promptInstructions: string;
+  headlineGuidance: string;
+  captionGuidance: string;
+  visualGuidance: string;
+  examples: {
+    headline: string;
+    subheadline: string;
+    caption: string;
+  };
+}
+
+const MARKETING_ANGLES: MarketingAngle[] = [
+  {
+    id: 'feature',
+    name: 'Feature Angle',
+    description: 'Highlight ONE specific feature/capability',
+    focusArea: 'Product functionality',
+    promptInstructions: 'Focus entirely on ONE specific feature. Do not mention other features. Show how this single feature solves a problem.',
+    headlineGuidance: 'Lead with the specific feature benefit (e.g., "Instant Transfers", "24/7 Support")',
+    captionGuidance: 'Explain how this ONE feature works and why it matters. No feature lists.',
+    visualGuidance: 'Show the feature in action - people using it in real scenarios',
+    examples: {
+      headline: 'Pay in 3 Seconds',
+      subheadline: 'Fastest mobile payments in Kenya',
+      caption: 'No more waiting in long queues or dealing with slow transfers. Our instant payment system processes your transactions in just 3 seconds. Whether you\'re paying rent, buying groceries, or sending money to family, speed matters. Experience the difference that real-time processing makes in your daily life.'
+    }
+  },
+  {
+    id: 'usecase',
+    name: 'Use-Case Angle',
+    description: 'Show specific situation/scenario where product is used',
+    focusArea: 'Real-life application',
+    promptInstructions: 'Focus on ONE specific scenario. Show the context, setting, and how the product fits into this real-life situation.',
+    headlineGuidance: 'Reference the specific situation (e.g., "Late Night Cravings", "Office Lunch Rush")',
+    captionGuidance: 'Tell the story of this specific use case. Make it relatable and contextual.',
+    visualGuidance: 'Show the actual scenario - home, office, travel, emergency, celebration, etc.',
+    examples: {
+      headline: 'Rent Due Tomorrow?',
+      subheadline: 'Pay instantly, avoid late fees',
+      caption: 'It\'s 11 PM and you just remembered rent is due tomorrow morning. Don\'t panic. With our mobile app, you can transfer your rent payment instantly, even at midnight. No need to rush to the bank or worry about late fees. Your landlord gets paid, you sleep peacefully.'
+    }
+  },
+  {
+    id: 'audience',
+    name: 'Audience Segment Angle',
+    description: 'Target specific customer segment with tailored messaging',
+    focusArea: 'Customer demographics',
+    promptInstructions: 'Speak directly to ONE specific audience segment. Use their language, reference their specific needs and pain points.',
+    headlineGuidance: 'Use language that resonates with this specific group (e.g., "Student Budget?", "Small Business Owner?")',
+    captionGuidance: 'Address the specific challenges and needs of this audience segment only.',
+    visualGuidance: 'Show people from this demographic in their typical environment',
+    examples: {
+      headline: 'Student Budget Tight?',
+      subheadline: 'Banking with zero monthly fees',
+      caption: 'University fees, textbooks, accommodation - being a student is expensive enough. Why pay monthly banking fees on top of that? Our student account gives you all the banking features you need with zero monthly charges. Send money to friends, pay for meals, manage your allowance - all without worrying about hidden fees eating into your budget.'
+    }
+  },
+  {
+    id: 'problem',
+    name: 'Problem-Solution Angle',
+    description: 'Lead with specific pain point, end with solution',
+    focusArea: 'Customer pain points',
+    promptInstructions: 'Start with ONE specific problem/frustration. Show the emotional impact, then present the solution.',
+    headlineGuidance: 'Lead with the problem (e.g., "Tired of Long Queues?", "Frustrated with Slow Service?")',
+    captionGuidance: 'Describe the problem\'s impact, then show how the product solves it completely.',
+    visualGuidance: 'Show the contrast - problem situation vs. solution in action',
+    examples: {
+      headline: 'Tired of Bank Queues?',
+      subheadline: 'Do everything from your phone',
+      caption: 'Standing in bank queues for 2 hours just to transfer money? Missing work because banks close at 4 PM? Those days are over. Our mobile banking app lets you transfer money, pay bills, and check balances 24/7. No queues, no time limits, no frustration. Just banking that works around your schedule, not the other way around.'
+    }
+  },
+  {
+    id: 'benefit',
+    name: 'Benefit Level Angle',
+    description: 'Focus on specific level of value (functional, emotional, life-impact)',
+    focusArea: 'Value proposition',
+    promptInstructions: 'Choose ONE benefit level: functional (what it does), emotional (how it feels), or life-impact (how it changes life). Stay consistent.',
+    headlineGuidance: 'Match headline to benefit level - functional: "Transfer in Seconds", emotional: "Peace of Mind", life-impact: "Financial Freedom"',
+    captionGuidance: 'Elaborate on the chosen benefit level without mixing different levels.',
+    visualGuidance: 'Show the benefit level - functional: feature in action, emotional: relieved faces, life-impact: life transformation',
+    examples: {
+      headline: 'Sleep Better Tonight',
+      subheadline: 'Your money is completely secure',
+      caption: 'Financial stress keeps you awake at night? Wondering if your money is safe? With bank-level encryption, 24/7 fraud monitoring, and instant transaction alerts, you can finally relax. Your money is protected by the same security systems that major banks use. No more sleepless nights worrying about your finances.'
+    }
+  },
+  {
+    id: 'transformation',
+    name: 'Before/After Angle',
+    description: 'Show clear transformation from problem state to solution state',
+    focusArea: 'Change/improvement',
+    promptInstructions: 'Create clear contrast between "before" (with problem) and "after" (with solution). Show the transformation.',
+    headlineGuidance: 'Imply transformation (e.g., "From Chaos to Control", "Stressed to Sorted")',
+    captionGuidance: 'Paint the before picture, then show the dramatic after state.',
+    visualGuidance: 'Show the transformation visually - split screen, before/after scenarios',
+    examples: {
+      headline: 'From Broke to Balanced',
+      subheadline: 'Take control of your finances',
+      caption: 'Last month: Overdraft fees, missed payments, financial chaos. This month: Automatic savings, bill reminders, complete control. Our budgeting tools transformed how Sarah manages money. Now she saves ₦50,000 monthly and never misses a payment. Same income, completely different financial life. Your transformation starts today.'
+    }
+  },
+  {
+    id: 'social_proof',
+    name: 'Social Proof Angle',
+    description: 'Highlight customer success, testimonials, or usage statistics',
+    focusArea: 'Trust and credibility',
+    promptInstructions: 'Focus on ONE type of social proof: customer story, testimonial theme, or achievement metric. Make it specific and credible.',
+    headlineGuidance: 'Lead with the proof (e.g., "10,000 Users Trust Us", "Sarah Saved ₦200,000")',
+    captionGuidance: 'Tell the specific success story or elaborate on the social proof with details.',
+    visualGuidance: 'Show real customers, testimonials, or visual proof of success',
+    examples: {
+      headline: 'James Saved ₦500,000',
+      subheadline: 'In just 6 months using our app',
+      caption: 'James from Lagos was spending ₦80,000 monthly on unnecessary expenses. After using our expense tracking and automated savings features, he now saves ₦85,000 every month. "I couldn\'t believe how much I was wasting on small purchases," says James. "The app showed me exactly where my money was going and helped me cut the waste." Join 50,000+ Nigerians who are taking control of their finances.'
+    }
+  }
+];
+
+/**
+ * Campaign angle tracking system - ensures angle diversity across campaigns
+ */
+const campaignAngleTracker = new Map<string, {
+  usedAngles: string[],
+  lastUsed: number,
+  currentCampaignId: string
+}>();
+
+/**
+ * Assign marketing angle for strategic campaign diversity
+ */
+function assignMarketingAngle(brandKey: string, options: any): MarketingAngle {
+  const tracker = campaignAngleTracker.get(brandKey) || {
+    usedAngles: [],
+    lastUsed: Date.now(),
+    currentCampaignId: generateCampaignId(brandKey)
+  };
+
+  // Get available angles (not used in current campaign)
+  const availableAngles = MARKETING_ANGLES.filter(angle =>
+    !tracker.usedAngles.includes(angle.id)
+  );
+
+  // If all angles used, reset and start new campaign cycle
+  let selectedAngle: MarketingAngle;
+  if (availableAngles.length === 0) {
+    console.log(`🔄 [Revo 1.0] All angles used for ${brandKey}, starting new campaign cycle`);
+    tracker.usedAngles = [];
+    tracker.currentCampaignId = generateCampaignId(brandKey);
+    selectedAngle = MARKETING_ANGLES[Math.floor(Math.random() * MARKETING_ANGLES.length)];
+  } else {
+    // Select angle based on business type and context
+    selectedAngle = selectOptimalAngle(availableAngles, options);
+  }
+
+  // Track angle usage
+  tracker.usedAngles.push(selectedAngle.id);
+  tracker.lastUsed = Date.now();
+  campaignAngleTracker.set(brandKey, tracker);
+
+  console.log(`🎯 [Revo 1.0] Assigned marketing angle: ${selectedAngle.name} (${selectedAngle.id})`);
+  console.log(`📊 [Revo 1.0] Campaign progress: ${tracker.usedAngles.length}/${MARKETING_ANGLES.length} angles used`);
+
+  return selectedAngle;
+}
+
+/**
+ * Select optimal angle based on business context
+ */
+function selectOptimalAngle(availableAngles: MarketingAngle[], options: any): MarketingAngle {
+  const businessType = options.businessType?.toLowerCase() || '';
+  const brandProfile = options.brandProfile || {};
+
+  // Business type preferences for angle selection
+  const businessAnglePreferences: { [key: string]: string[] } = {
+    'finance': ['feature', 'problem', 'benefit', 'transformation'],
+    'fintech': ['feature', 'usecase', 'transformation', 'social_proof'],
+    'banking': ['problem', 'benefit', 'usecase', 'transformation'],
+    'restaurant': ['usecase', 'audience', 'social_proof', 'transformation'],
+    'healthcare': ['benefit', 'problem', 'social_proof', 'audience'],
+    'technology': ['feature', 'usecase', 'transformation', 'benefit'],
+    'retail': ['audience', 'usecase', 'social_proof', 'problem'],
+    'education': ['benefit', 'transformation', 'audience', 'social_proof'],
+    'fitness': ['transformation', 'benefit', 'audience', 'social_proof'],
+    'beauty': ['transformation', 'audience', 'social_proof', 'benefit']
+  };
+
+  const preferredAngles = businessAnglePreferences[businessType] || ['feature', 'benefit', 'usecase', 'problem'];
+
+  // Find first available preferred angle
+  for (const preferredId of preferredAngles) {
+    const angle = availableAngles.find(a => a.id === preferredId);
+    if (angle) {
+      console.log(`🎯 [Revo 1.0] Selected optimal angle for ${businessType}: ${angle.name}`);
+      return angle;
+    }
+  }
+
+  // Fallback to random available angle
+  const randomAngle = availableAngles[Math.floor(Math.random() * availableAngles.length)];
+  console.log(`🎲 [Revo 1.0] Selected random angle: ${randomAngle.name}`);
+  return randomAngle;
+}
+
+/**
+ * Generate unique campaign ID for angle tracking
+ */
+function generateCampaignId(brandKey: string): string {
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 8);
+  return `${brandKey}-${timestamp}-${random}`;
+}
+
+/**
+ * Validate that generated content matches assigned marketing angle
+ */
+function validateAngleAdherence(content: any, assignedAngle: MarketingAngle, options: any): {
+  isValid: boolean;
+  adherenceScore: number;
+  issues: string[];
+} {
+  const issues: string[] = [];
+  let adherenceScore = 100;
+
+  const headline = content.headline?.toLowerCase() || '';
+  const caption = content.caption?.toLowerCase() || '';
+  const businessType = options.businessType?.toLowerCase() || '';
+
+  // Angle-specific validation
+  switch (assignedAngle.id) {
+    case 'feature':
+      // Should focus on ONE specific feature
+      if (caption.includes('and') && caption.includes('also') && caption.includes('plus')) {
+        issues.push('Feature angle should focus on ONE feature, not list multiple features');
+        adherenceScore -= 30;
+      }
+      break;
+
+    case 'usecase':
+      // Should reference specific scenario/context
+      const scenarioKeywords = ['when', 'during', 'while', 'at home', 'at work', 'traveling', 'emergency'];
+      const hasScenario = scenarioKeywords.some(keyword => caption.includes(keyword));
+      if (!hasScenario) {
+        issues.push('Use-case angle should reference specific scenario or context');
+        adherenceScore -= 25;
+      }
+      break;
+
+    case 'audience':
+      // Should speak to specific demographic
+      const audienceKeywords = ['student', 'parent', 'business owner', 'professional', 'family', 'entrepreneur'];
+      const hasAudience = audienceKeywords.some(keyword => caption.includes(keyword));
+      if (!hasAudience) {
+        issues.push('Audience angle should speak directly to specific demographic');
+        adherenceScore -= 25;
+      }
+      break;
+
+    case 'problem':
+      // Should lead with problem, then solution
+      const problemKeywords = ['tired of', 'frustrated', 'struggling', 'difficult', 'problem', 'challenge'];
+      const hasProblem = problemKeywords.some(keyword => caption.includes(keyword));
+      if (!hasProblem) {
+        issues.push('Problem-solution angle should clearly state the problem');
+        adherenceScore -= 30;
+      }
+      break;
+
+    case 'transformation':
+      // Should show before/after contrast
+      const transformationKeywords = ['before', 'after', 'was', 'now', 'used to', 'today', 'from', 'to'];
+      const hasTransformation = transformationKeywords.some(keyword => caption.includes(keyword));
+      if (!hasTransformation) {
+        issues.push('Transformation angle should show clear before/after contrast');
+        adherenceScore -= 30;
+      }
+      break;
+
+    case 'social_proof':
+      // Should include testimonial, stats, or customer story
+      const proofKeywords = ['customers', 'users', 'saved', 'testimonial', 'success', 'trust', 'reviews'];
+      const hasProof = proofKeywords.some(keyword => caption.includes(keyword));
+      if (!hasProof) {
+        issues.push('Social proof angle should include customer success or statistics');
+        adherenceScore -= 30;
+      }
+      break;
+  }
+
+  // Check for anti-patterns (everything in every ad)
+  const featureCount = (caption.match(/feature|benefit|advantage/g) || []).length;
+  if (featureCount > 3 && assignedAngle.id !== 'feature') {
+    issues.push('Avoid listing multiple features - focus on assigned angle');
+    adherenceScore -= 20;
+  }
+
+  return {
+    isValid: adherenceScore >= 70,
+    adherenceScore: Math.max(0, adherenceScore),
+    issues
+  };
+}
+
+/**
+ * Check if headline is a duplicate across campaigns
+ */
+function isHeadlineDuplicate(brandKey: string, headline: string): boolean {
+  const tracker = headlineUniquenessTracker.get(brandKey) || { headlines: [], lastUsed: 0 };
+  return tracker.headlines.includes(headline.toLowerCase().trim());
+}
+
+/**
+ * Remember headline usage to prevent duplicates
+ */
+function rememberHeadlineUsage(brandKey: string, headline: string): void {
+  const tracker = headlineUniquenessTracker.get(brandKey) || { headlines: [], lastUsed: Date.now() };
+  tracker.headlines.push(headline.toLowerCase().trim());
+  tracker.lastUsed = Date.now();
+
+  // Keep only last 50 headlines to prevent memory bloat
+  if (tracker.headlines.length > 50) {
+    tracker.headlines = tracker.headlines.slice(-50);
+  }
+
+  headlineUniquenessTracker.set(brandKey, tracker);
+}
+
+/**
+ * Check if headline uses brand name (should be avoided)
+ */
+function isHeadlineBrandName(headline: string, brandName: string): boolean {
+  const cleanHeadline = headline.toLowerCase().trim();
+  const cleanBrandName = brandName.toLowerCase().trim();
+
+  // Check if headline starts with brand name
+  if (cleanHeadline.startsWith(cleanBrandName)) {
+    return true;
+  }
+
+  // Check if headline is just the brand name
+  if (cleanHeadline === cleanBrandName) {
+    return true;
+  }
+
+  // Check if headline is brand name followed by colon or dash
+  if (cleanHeadline.startsWith(cleanBrandName + ':') || cleanHeadline.startsWith(cleanBrandName + ' -')) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Check if text contains clichés from the banned list
+ */
+function containsCliche(text: string): { hasCliche: boolean; cliches: string[] } {
+  const lowerText = text.toLowerCase();
+  const foundCliches: string[] = [];
+
+  for (const cliche of BANNED_HEADLINE_CLICHES) {
+    if (lowerText.includes(cliche.toLowerCase())) {
+      foundCliches.push(cliche);
+    }
+  }
+
+  return {
+    hasCliche: foundCliches.length > 0,
+    cliches: foundCliches
+  };
+}
+
+/**
+ * Validate message hierarchy between headline and subheadline
+ */
+function validateMessageHierarchy(headline: string, subheadline: string): {
+  isValid: boolean;
+  issues: string[];
+  hierarchyScore: number;
+} {
+  const issues: string[] = [];
+  let hierarchyScore = 100;
+
+  // Check if both are vague (anti-pattern)
+  const headlineVague = isTextVague(headline);
+  const subheadlineVague = isTextVague(subheadline);
+
+  if (headlineVague && subheadlineVague) {
+    issues.push('Both headline and subheadline are vague - one must be specific');
+    hierarchyScore -= 40;
+  }
+
+  // Check for proper hierarchy (headline should be hook, subheadline should be specific or vice versa)
+  const headlineSpecific = isTextSpecific(headline);
+  const subheadlineSpecific = isTextSpecific(subheadline);
+
+  if (!headlineSpecific && !subheadlineSpecific) {
+    issues.push('Neither headline nor subheadline provides specific value');
+    hierarchyScore -= 30;
+  }
+
+  // Check for clichés in both
+  const headlineCliches = containsCliche(headline);
+  const subheadlineCliches = containsCliche(subheadline);
+
+  if (headlineCliches.hasCliche) {
+    issues.push(`Headline contains clichés: ${headlineCliches.cliches.join(', ')}`);
+    hierarchyScore -= 25;
+  }
+
+  if (subheadlineCliches.hasCliche) {
+    issues.push(`Subheadline contains clichés: ${subheadlineCliches.cliches.join(', ')}`);
+    hierarchyScore -= 25;
+  }
+
+  return {
+    isValid: issues.length === 0,
+    issues,
+    hierarchyScore: Math.max(0, hierarchyScore)
+  };
+}
+
+/**
+ * Check if text is vague/generic
+ */
+function isTextVague(text: string): boolean {
+  const vaguePhrases = [
+    'money moves', 'simple tech', 'for everyone', 'made simple', 'that works',
+    'solutions', 'services', 'technology', 'innovation', 'excellence'
+  ];
+
+  const lowerText = text.toLowerCase();
+  return vaguePhrases.some(phrase => lowerText.includes(phrase)) && text.split(' ').length <= 4;
+}
+
+/**
+ * Check if text is specific/concrete
+ */
+function isTextSpecific(text: string): boolean {
+  // Look for specific indicators: numbers, timeframes, concrete benefits
+  const specificIndicators = [
+    /\d+\s*(second|minute|hour|day|week|month|year)s?/i, // timeframes
+    /\d+%/i, // percentages
+    /zero|free|instant|immediate/i, // concrete benefits
+    /\$\d+|\d+\s*fee/i, // pricing
+    /24\/7|round.the.clock/i, // availability
+    /guarantee|promise|ensure/i // commitments
+  ];
+
+  return specificIndicators.some(pattern => pattern.test(text));
+}
+
+/**
+ * Extract headline formula pattern
+ */
+function extractHeadlineFormula(headline: string): string {
+  // Common formula patterns (enhanced with user's patterns)
+  const patterns = [
+    /^Your .+, Your .+$/i,
+    /^Finally, .+$/i,
+    /^.+ on the Go$/i,
+    /^.+ Made Simple$/i,
+    /^.+ That Works$/i,
+    /^.+ in Minutes$/i,
+    /^.+ Without .+$/i,
+    /^.+ for .+$/i,
+    /^.+ Like Never Before$/i,
+    /^The .+ Solution$/i,
+    // User's proven patterns
+    /^Tired of .+\?$/i,
+    /^.+ in \d+ .+$/i,
+    /^.+, Unlocked$/i,
+    /^.+'s Due .+$/i,
+    /^Accept .+ Instantly$/i,
+    /^Pay .+ in .+$/i
+  ];
+
+  for (const pattern of patterns) {
+    if (pattern.test(headline)) {
+      return pattern.source;
+    }
+  }
+
+  // Extract general structure
+  const words = headline.split(' ');
+  if (words.length >= 2) {
+    return `${words[0]} ... ${words[words.length - 1]}`;
+  }
+
+  return 'unique';
+}
+
+/**
+ * Check if headline formula is overused
+ */
+function isFormulaOverused(brandKey: string, formula: string, maxUsage: number = 2): boolean {
+  const tracker = headlineFormulaTracker.get(brandKey) || { formulas: [], lastUsed: 0 };
+  const formulaCount = tracker.formulas.filter(f => f === formula).length;
+  return formulaCount >= maxUsage;
+}
+
+/**
+ * Remember headline formula usage
+ */
+function rememberFormulaUsage(brandKey: string, formula: string): void {
+  const tracker = headlineFormulaTracker.get(brandKey) || { formulas: [], lastUsed: Date.now() };
+  tracker.formulas.push(formula);
+  tracker.lastUsed = Date.now();
+
+  // Keep only last 20 formulas to prevent memory bloat
+  if (tracker.formulas.length > 20) {
+    tracker.formulas = tracker.formulas.slice(-20);
+  }
+
+  headlineFormulaTracker.set(brandKey, tracker);
+}
+
+/**
+ * Analyze emotional tone of text
+ */
+function analyzeEmotionalTone(text: string): 'urgent' | 'playful' | 'professional' | 'confident' | 'caring' | 'innovative' {
+  const lowerText = text.toLowerCase();
+
+  // Urgent indicators
+  if (/\b(now|today|urgent|deadline|due|fast|quick|instant|immediately)\b/.test(lowerText)) {
+    return 'urgent';
+  }
+
+  // Playful indicators
+  if (/\b(fun|enjoy|love|amazing|awesome|cool|exciting|celebrate)\b/.test(lowerText)) {
+    return 'playful';
+  }
+
+  // Caring indicators
+  if (/\b(care|support|help|family|community|together|trust|safe)\b/.test(lowerText)) {
+    return 'caring';
+  }
+
+  // Innovative indicators
+  if (/\b(new|innovative|smart|advanced|future|technology|digital|modern)\b/.test(lowerText)) {
+    return 'innovative';
+  }
+
+  // Confident indicators
+  if (/\b(best|top|leading|expert|proven|guaranteed|success|achieve)\b/.test(lowerText)) {
+    return 'confident';
+  }
+
+  return 'professional';
+}
+
+/**
+ * ENHANCED STORY COHERENCE VALIDATION - Fixes Caption-Headline Story Mismatch
+ * Ensures headlines and captions tell ONE unified story, not separate messages
+ */
+function validateStoryCoherence(
+  headline: string,
+  caption: string,
+  businessType: string
+): {
+  isCoherent: boolean;
+  issues: string[];
+  coherenceScore: number;
+  storyTheme: string;
+  emotionalTone: string;
+} {
+  const issues: string[] = [];
+  let coherenceScore = 100;
+
+  // ============================================================================
+  // 1. STORY THEME EXTRACTION AND VALIDATION
+  // ============================================================================
+
+  const headlineTheme = extractStoryTheme(headline, businessType);
+  const captionTheme = extractStoryTheme(caption, businessType);
+
+  console.log(`🔍 [Story Coherence] Headline theme: ${headlineTheme.primary} (${headlineTheme.secondary})`);
+  console.log(`🔍 [Story Coherence] Caption theme: ${captionTheme.primary} (${captionTheme.secondary})`);
+
+  // CRITICAL: Caption must continue the EXACT story theme from headline
+  // BUT: Be more lenient if both themes are 'general' (no specific theme detected)
+  if (headlineTheme.primary !== captionTheme.primary) {
+    if (headlineTheme.primary === 'general' || captionTheme.primary === 'general') {
+      // More lenient penalty for general themes
+      issues.push(`MINOR THEME VARIANCE: Headline theme '${headlineTheme.primary}' vs caption theme '${captionTheme.primary}' (general themes)`);
+      coherenceScore -= 15; // Reduced penalty for general themes
+    } else {
+      // Full penalty for specific theme mismatches
+      issues.push(`STORY MISMATCH: Headline focuses on '${headlineTheme.primary}' but caption switches to '${captionTheme.primary}'`);
+      coherenceScore -= 30; // Reduced from 40 to be less strict
+    }
+  }
+
+  // Secondary theme alignment (less critical but important)
+  if (headlineTheme.secondary && captionTheme.secondary &&
+    headlineTheme.secondary !== captionTheme.secondary &&
+    !areCompatibleSecondaryThemes(headlineTheme.secondary, captionTheme.secondary)) {
+    issues.push(`Secondary theme mismatch: headline '${headlineTheme.secondary}' vs caption '${captionTheme.secondary}'`);
+    coherenceScore -= 20;
+  }
+
+  // ============================================================================
+  // 2. NARRATIVE CONTINUITY VALIDATION
+  // ============================================================================
+
+  const narrativeContinuity = validateNarrativeContinuity(headline, caption, businessType);
+  if (!narrativeContinuity.isValid) {
+    issues.push(...narrativeContinuity.issues);
+    coherenceScore -= narrativeContinuity.penalty;
+  }
+
+  // ============================================================================
+  // 3. TONE CONSISTENCY VALIDATION (ENHANCED)
+  // ============================================================================
+
+  const headlineTone = analyzeEmotionalTone(headline);
+  const captionTone = analyzeEmotionalTone(caption);
+
+  // More lenient tone matching - allow some flexibility
+  if (headlineTone !== captionTone) {
+    // Allow professional as neutral fallback for most tones (more lenient)
+    const allowedFallbacks = ['confident', 'innovative', 'caring', 'professional'];
+    const isCompatibleTone = captionTone === 'professional' ||
+      allowedFallbacks.includes(headlineTone) ||
+      allowedFallbacks.includes(captionTone);
+
+    if (!isCompatibleTone) {
+      issues.push(`TONE MISMATCH: Headline is ${headlineTone} but caption is ${captionTone}`);
+      coherenceScore -= 20; // Reduced penalty from 30 to 20
+    } else {
+      // Minor penalty for tone variance but still compatible
+      issues.push(`MINOR TONE VARIANCE: Headline ${headlineTone} vs caption ${captionTone} (compatible)`);
+      coherenceScore -= 5; // Very small penalty for compatible tones
+    }
+  }
+
+  // ============================================================================
+  // 4. AUDIENCE CONSISTENCY VALIDATION
+  // ============================================================================
+
+  const headlineAudience = extractTargetAudience(headline);
+  const captionAudience = extractTargetAudience(caption);
+
+  if (headlineAudience && captionAudience && headlineAudience !== captionAudience) {
+    issues.push(`AUDIENCE MISMATCH: Headline targets '${headlineAudience}' but caption targets '${captionAudience}'`);
+    coherenceScore -= 25;
+  }
+
+  // ============================================================================
+  // 5. BENEFIT PROMISE VALIDATION
+  // ============================================================================
+
+  const headlineBenefit = extractPromisedBenefit(headline);
+  const captionBenefit = extractDeliveredBenefit(caption);
+
+  if (headlineBenefit && !captionBenefit) {
+    // Only penalize if headline makes a very specific promise
+    const specificPromises = ['speed', 'savings', 'security'];
+    if (specificPromises.includes(headlineBenefit)) {
+      issues.push(`UNFULFILLED PROMISE: Headline promises '${headlineBenefit}' but caption doesn't deliver on it`);
+      coherenceScore -= 25; // Reduced from 35
+    } else {
+      issues.push(`MINOR UNFULFILLED PROMISE: Headline suggests '${headlineBenefit}' benefit`);
+      coherenceScore -= 10; // Much smaller penalty for general benefits
+    }
+  } else if (headlineBenefit && captionBenefit && !areBenefitsAligned(headlineBenefit, captionBenefit)) {
+    issues.push(`BENEFIT MISMATCH: Headline promises '${headlineBenefit}' but caption delivers '${captionBenefit}'`);
+    coherenceScore -= 20; // Reduced from 30
+  }
+
+  // ============================================================================
+  // 6. STORY COMPLETION VALIDATION
+  // ============================================================================
+
+  const storyCompletion = validateStoryCompletion(headline, caption);
+  if (!storyCompletion.isComplete) {
+    issues.push(...storyCompletion.issues);
+    coherenceScore -= storyCompletion.penalty;
+  }
+
+  // ============================================================================
+  // 7. ENHANCED GENERIC CONTENT DETECTION
+  // ============================================================================
+
+  const genericityCheck = validateContentSpecificity(headline, caption, businessType);
+  if (genericityCheck.isGeneric) {
+    issues.push(...genericityCheck.issues);
+    coherenceScore -= genericityCheck.penalty;
+  }
+
+  // ADJUSTED: More lenient coherence requirements to reduce fallback usage
+  // Allow content with minor issues if coherence score is decent
+  const isCoherent = coherenceScore >= 45 && (issues.length === 0 || coherenceScore >= 60);
+
+  console.log(`🔍 [COHERENCE DECISION] Score: ${coherenceScore}, Issues: ${issues.length}, IsCoherent: ${isCoherent}`);
+
+  return {
+    isCoherent,
+    issues,
+    coherenceScore: Math.max(0, coherenceScore),
+    storyTheme: headlineTheme.primary,
+    emotionalTone: headlineTone
+  };
+}
+
+/**
+ * Extract the primary story theme from text
+ */
+function extractStoryTheme(text: string, businessType: string): { primary: string; secondary?: string } {
+  const lowerText = text.toLowerCase();
+  const businessKey = String(businessType || 'general').toLowerCase();
+
+  // Define story themes with their indicators
+  const storyThemes = {
+    'speed': ['fast', 'quick', 'instant', 'immediate', 'seconds', 'now', 'rapid'],
+    'security': ['safe', 'secure', 'protected', 'trust', 'reliable', 'guaranteed'],
+    'convenience': ['easy', 'simple', 'effortless', 'convenient', 'hassle-free', 'smooth'],
+    'savings': ['save', 'cheap', 'affordable', 'discount', 'deal', 'budget', 'cost'],
+    'quality': ['best', 'premium', 'excellent', 'top', 'superior', 'quality'],
+    'support': ['help', 'support', 'care', 'service', 'assistance', 'guidance'],
+    'innovation': ['new', 'modern', 'advanced', 'smart', 'innovative', 'technology'],
+    'community': ['together', 'family', 'community', 'local', 'neighborhood'],
+    'success': ['achieve', 'success', 'win', 'accomplish', 'reach', 'goal'],
+    'transformation': ['change', 'transform', 'improve', 'better', 'upgrade', 'evolve'],
+    'urgency': ['urgent', 'deadline', 'due', 'limited', 'hurry', 'act now'],
+    'exclusivity': ['exclusive', 'special', 'unique', 'limited', 'select', 'premium']
+  };
+
+  // Find primary theme
+  let primaryTheme = 'general';
+  let maxMatches = 0;
+
+  for (const [theme, indicators] of Object.entries(storyThemes)) {
+    const matches = indicators.filter(indicator => lowerText.includes(indicator)).length;
+    if (matches > maxMatches) {
+      maxMatches = matches;
+      primaryTheme = theme;
+    }
+  }
+
+  // Find secondary theme (if any)
+  let secondaryTheme: string | undefined;
+  let secondMaxMatches = 0;
+
+  for (const [theme, indicators] of Object.entries(storyThemes)) {
+    if (theme === primaryTheme) continue;
+    const matches = indicators.filter(indicator => lowerText.includes(indicator)).length;
+    if (matches > secondMaxMatches && matches > 0) {
+      secondMaxMatches = matches;
+      secondaryTheme = theme;
+    }
+  }
+
+  return { primary: primaryTheme, secondary: secondaryTheme };
+}
+
+/**
+ * Check if secondary themes are compatible
+ */
+function areCompatibleSecondaryThemes(theme1: string, theme2: string): boolean {
+  const compatiblePairs = [
+    ['speed', 'convenience'],
+    ['security', 'trust'],
+    ['quality', 'premium'],
+    ['innovation', 'technology'],
+    ['savings', 'budget'],
+    ['support', 'care'],
+    ['success', 'achievement'],
+    ['community', 'local']
+  ];
+
+  return compatiblePairs.some(pair =>
+    (pair.includes(theme1) && pair.includes(theme2))
+  );
+}
+
+/**
+ * Validate narrative continuity between headline and caption
+ */
+function validateNarrativeContinuity(headline: string, caption: string, businessType: string): {
+  isValid: boolean;
+  issues: string[];
+  penalty: number;
+} {
+  const issues: string[] = [];
+  let penalty = 0;
+
+  // Check if caption feels like the natural next sentence
+  const headlineWords = headline.toLowerCase().split(/\s+/);
+  const captionWords = caption.toLowerCase().split(/\s+/);
+
+  // Look for connecting words/concepts
+  const sharedConcepts = headlineWords.filter(word =>
+    word.length > 3 && captionWords.some(capWord =>
+      capWord.includes(word) || word.includes(capWord) ||
+      areRelatedConcepts(word, capWord, businessType)
+    )
+  );
+
+  if (sharedConcepts.length === 0 && caption.length > 30) {
+    issues.push('Caption has no conceptual connection to headline - feels like separate message');
+    penalty += 25;
+  }
+
+  // Check for abrupt topic changes
+  const headlineContext = extractContext(headline);
+  const captionContext = extractContext(caption);
+
+  if (headlineContext && captionContext && headlineContext !== captionContext) {
+    issues.push(`Context shift: headline is about '${headlineContext}' but caption shifts to '${captionContext}'`);
+    penalty += 20;
+  }
+
+  return {
+    isValid: issues.length === 0,
+    issues,
+    penalty
+  };
+}
+
+/**
+ * Extract context from text (what the text is primarily about)
+ */
+function extractContext(text: string): string | null {
+  const lowerText = text.toLowerCase();
+
+  const contexts = {
+    'payment': ['pay', 'payment', 'money', 'transfer', 'send', 'receive'],
+    'service': ['service', 'help', 'support', 'care', 'assistance'],
+    'product': ['product', 'item', 'goods', 'merchandise', 'offer'],
+    'experience': ['experience', 'feel', 'enjoy', 'satisfaction', 'journey'],
+    'technology': ['app', 'digital', 'online', 'tech', 'platform', 'system'],
+    'business': ['business', 'company', 'professional', 'work', 'office']
+  };
+
+  for (const [context, indicators] of Object.entries(contexts)) {
+    if (indicators.some(indicator => lowerText.includes(indicator))) {
+      return context;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Check if two words are related concepts for a business type
+ */
+function areRelatedConcepts(word1: string, word2: string, businessType: string): boolean {
+  const conceptMaps: Record<string, string[][]> = {
+    'finance': [
+      ['money', 'cash', 'payment', 'pay', 'send', 'transfer'],
+      ['fast', 'quick', 'instant', 'immediate', 'speed'],
+      ['safe', 'secure', 'trust', 'reliable', 'protected'],
+      ['mobile', 'phone', 'app', 'digital', 'online']
+    ],
+    'restaurant': [
+      ['food', 'meal', 'dining', 'eat', 'taste', 'flavor'],
+      ['fresh', 'quality', 'delicious', 'authentic', 'local'],
+      ['service', 'experience', 'atmosphere', 'hospitality']
+    ],
+    'healthcare': [
+      ['health', 'medical', 'care', 'treatment', 'wellness'],
+      ['professional', 'expert', 'qualified', 'experienced'],
+      ['patient', 'family', 'community', 'support']
+    ]
+  };
+
+  const businessKey = String(businessType || 'general business').toLowerCase();
+  const concepts = conceptMaps[businessKey] || [];
+
+  return concepts.some(conceptGroup =>
+    conceptGroup.includes(word1) && conceptGroup.includes(word2)
+  );
+}
+
+/**
+ * Extract target audience from text
+ */
+function extractTargetAudience(text: string): string | null {
+  const lowerText = text.toLowerCase();
+
+  const audiences = {
+    'students': ['student', 'college', 'university', 'school', 'study'],
+    'parents': ['parent', 'family', 'children', 'kids', 'mom', 'dad'],
+    'professionals': ['professional', 'business', 'work', 'office', 'career'],
+    'entrepreneurs': ['entrepreneur', 'startup', 'business owner', 'founder'],
+    'seniors': ['senior', 'elderly', 'retirement', 'mature', 'older'],
+    'youth': ['young', 'teen', 'youth', 'millennial', 'gen z']
+  };
+
+  for (const [audience, indicators] of Object.entries(audiences)) {
+    if (indicators.some(indicator => lowerText.includes(indicator))) {
+      return audience;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Extract promised benefit from headline
+ */
+function extractPromisedBenefit(headline: string): string | null {
+  const lowerHeadline = headline.toLowerCase();
+
+  const benefits = {
+    'speed': ['fast', 'quick', 'instant', 'immediate', 'seconds'],
+    'savings': ['save', 'cheap', 'affordable', 'discount', 'free'],
+    'security': ['safe', 'secure', 'protected', 'guaranteed'],
+    'convenience': ['easy', 'simple', 'effortless', 'convenient'],
+    'quality': ['best', 'premium', 'excellent', 'top', 'superior'],
+    'success': ['success', 'achieve', 'win', 'accomplish', 'reach']
+  };
+
+  for (const [benefit, indicators] of Object.entries(benefits)) {
+    if (indicators.some(indicator => lowerHeadline.includes(indicator))) {
+      return benefit;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Extract delivered benefit from caption
+ */
+function extractDeliveredBenefit(caption: string): string | null {
+  const lowerCaption = caption.toLowerCase();
+
+  const benefits = {
+    'speed': ['fast', 'quick', 'instant', 'immediate', 'seconds', 'rapid', 'swift'],
+    'savings': ['save', 'cheap', 'affordable', 'discount', 'free', 'budget', 'cost-effective'],
+    'security': ['safe', 'secure', 'protected', 'guaranteed', 'trust', 'reliable'],
+    'convenience': ['easy', 'simple', 'effortless', 'convenient', 'hassle-free', 'smooth'],
+    'quality': ['best', 'premium', 'excellent', 'top', 'superior', 'quality', 'high-grade'],
+    'success': ['success', 'achieve', 'win', 'accomplish', 'reach', 'attain', 'realize']
+  };
+
+  for (const [benefit, indicators] of Object.entries(benefits)) {
+    if (indicators.some(indicator => lowerCaption.includes(indicator))) {
+      return benefit;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Check if promised and delivered benefits are aligned
+ */
+function areBenefitsAligned(promisedBenefit: string, deliveredBenefit: string): boolean {
+  // Direct match
+  if (promisedBenefit === deliveredBenefit) {
+    return true;
+  }
+
+  // Compatible benefit pairs
+  const compatibleBenefits = [
+    ['speed', 'convenience'],
+    ['security', 'trust'],
+    ['quality', 'premium'],
+    ['savings', 'budget'],
+    ['success', 'achievement']
+  ];
+
+  return compatibleBenefits.some(pair =>
+    (pair.includes(promisedBenefit) && pair.includes(deliveredBenefit))
+  );
+}
+
+/**
+ * Validate story completion - ensure caption completes the story started by headline
+ */
+function validateStoryCompletion(headline: string, caption: string): {
+  isComplete: boolean;
+  issues: string[];
+  penalty: number;
+} {
+  const issues: string[] = [];
+  let penalty = 0;
+
+  // Check if caption provides the "how" or "why" for headline's "what"
+  const headlineIsPromise = /\b(get|achieve|save|win|earn|gain|receive)\b/i.test(headline);
+  const captionExplainsHow = /\b(by|through|with|using|via|because|since|when|while)\b/i.test(caption);
+
+  if (headlineIsPromise && !captionExplainsHow && caption.length > 40) {
+    issues.push('Headline makes promise but caption doesn\'t explain how to achieve it');
+    penalty += 20;
+  }
+
+  // Check if caption answers the natural question raised by headline
+  const headlineRaisesQuestion = /\b(why|how|what|when|where)\b/i.test(headline) ||
+    headline.includes('?') ||
+    /\b(tired of|frustrated|struggling|need|want)\b/i.test(headline);
+
+  const captionAnswersQuestion = caption.length > 20 &&
+    /\b(because|since|with|through|by|our|we|this|that)\b/i.test(caption);
+
+  if (headlineRaisesQuestion && !captionAnswersQuestion) {
+    issues.push('Headline raises question/problem but caption doesn\'t provide answer/solution');
+    penalty += 25;
+  }
+
+  return {
+    isComplete: issues.length === 0,
+    issues,
+    penalty
+  };
+}
+
+/**
+ * Enhanced content specificity validation
+ */
+function validateContentSpecificity(headline: string, caption: string, businessType: string): {
+  isGeneric: boolean;
+  issues: string[];
+  penalty: number;
+} {
+  const issues: string[] = [];
+  let penalty = 0;
+
+  // Enhanced generic phrase detection
+  const genericPhrases = [
+    'professional services that',
+    'solutions that actually work',
+    'serving the community with',
+    'quality service you can trust',
+    'experience the excellence of',
+    'committed to providing',
+    'dedicated to serving',
+    'your trusted partner',
+    'we are here for you',
+    'contact us today',
+    'call us now',
+    'visit our website',
+    'learn more about',
+    'discover the difference',
+    'experience the best',
+    'join thousands of',
+    'don\'t wait, act now'
+  ];
+
+  const captionLower = caption.toLowerCase();
+  const genericPhrasesFound = genericPhrases.filter(phrase =>
+    captionLower.includes(phrase.toLowerCase())
+  );
+
+  if (genericPhrasesFound.length > 0) {
+    issues.push(`Caption contains generic corporate jargon: ${genericPhrasesFound.join(', ')}`);
+    penalty += 20 * genericPhrasesFound.length;
+  }
+
+  // Check if content could work for any competitor
+  const businessKey = String(businessType || 'general').toLowerCase();
+  const headlineWords = headline.toLowerCase().split(/\s+/);
+  const captionWords = caption.toLowerCase().split(/\s+/);
+
+  const hasBusinessSpecificContent =
+    captionLower.includes(businessKey) ||
+    captionWords.some(word => headlineWords.includes(word)) ||
+    hasBusinessSpecificTerms(caption, businessType);
+
+  if (!hasBusinessSpecificContent && caption.length > 30) {
+    issues.push('Caption is too generic - could work for any competitor in any industry');
+    penalty += 25;
+  }
+
+  // Check for vague benefit claims without specifics
+  const vagueBenefits = [
+    'better experience',
+    'improved service',
+    'enhanced quality',
+    'superior results',
+    'excellent value',
+    'outstanding performance'
+  ];
+
+  const vagueBenefitsFound = vagueBenefits.filter(benefit =>
+    captionLower.includes(benefit.toLowerCase())
+  );
+
+  if (vagueBenefitsFound.length > 0) {
+    issues.push(`Caption uses vague benefit claims: ${vagueBenefitsFound.join(', ')}`);
+    penalty += 15 * vagueBenefitsFound.length;
+  }
+
+  return {
+    isGeneric: issues.length > 0,
+    issues,
+    penalty
+  };
+}
+
+/**
+ * Check if content has business-specific terms
+ */
+function hasBusinessSpecificTerms(text: string, businessType: string): boolean {
+  const lowerText = text.toLowerCase();
+  const businessKey = String(businessType || 'general').toLowerCase();
+
+  const businessTerms: Record<string, string[]> = {
+    'finance': ['payment', 'transfer', 'account', 'balance', 'transaction', 'banking'],
+    'fintech': ['app', 'digital', 'mobile', 'wallet', 'crypto', 'blockchain'],
+    'restaurant': ['menu', 'food', 'dining', 'kitchen', 'chef', 'recipe', 'ingredients'],
+    'healthcare': ['patient', 'treatment', 'diagnosis', 'medical', 'clinic', 'doctor'],
+    'retail': ['product', 'inventory', 'shopping', 'store', 'merchandise', 'customer'],
+    'technology': ['software', 'platform', 'system', 'data', 'cloud', 'integration'],
+    'education': ['student', 'learning', 'course', 'curriculum', 'teacher', 'classroom'],
+    'fitness': ['workout', 'exercise', 'training', 'gym', 'health', 'nutrition']
+  };
+
+  const terms = businessTerms[businessKey] || [];
+  return terms.some(term => lowerText.includes(term));
+}
+
+/**
+ * Generate contextual CTA based on story and business type
+ */
+function generateContextualCTA(
+  headline: string,
+  caption: string,
+  businessType: string,
+  moneyFlowDirection: 'incoming' | 'outgoing' | 'neutral'
+): string {
+  const tone = analyzeEmotionalTone(headline);
+  const lowerBusinessType = String(businessType || 'general business').toLowerCase();
+
+  // Context-aware CTAs based on story and business type
+  if (lowerBusinessType.includes('finance') || lowerBusinessType.includes('banking')) {
+    if (moneyFlowDirection === 'outgoing') {
+      return tone === 'urgent' ? 'Send Now' : 'Start Transfer';
+    } else if (moneyFlowDirection === 'incoming') {
+      return tone === 'urgent' ? 'Get Paid Now' : 'Open Account';
+    } else {
+      return tone === 'urgent' ? 'Download App' : 'Get Started';
+    }
+  }
+
+  if (lowerBusinessType.includes('restaurant') || lowerBusinessType.includes('food')) {
+    return tone === 'urgent' ? 'Order Now' : tone === 'playful' ? 'Taste Today' : 'Book Table';
+  }
+
+  if (lowerBusinessType.includes('healthcare') || lowerBusinessType.includes('medical')) {
+    return tone === 'urgent' ? 'Book Now' : tone === 'caring' ? 'Schedule Care' : 'Get Consultation';
+  }
+
+  if (lowerBusinessType.includes('retail') || lowerBusinessType.includes('shop')) {
+    return tone === 'urgent' ? 'Shop Now' : tone === 'playful' ? 'Discover More' : 'Browse Collection';
+  }
+
+  // Default contextual CTAs
+  const urgentCTAs = ['Act Now', 'Get Started', 'Try Today'];
+  const playfulCTAs = ['Explore More', 'Join Us', 'Discover'];
+  const professionalCTAs = ['Learn More', 'Contact Us', 'Get Info'];
+
+  switch (tone) {
+    case 'urgent': return urgentCTAs[Math.floor(Math.random() * urgentCTAs.length)];
+    case 'playful': return playfulCTAs[Math.floor(Math.random() * playfulCTAs.length)];
+    default: return professionalCTAs[Math.floor(Math.random() * professionalCTAs.length)];
+  }
+}
+
 /**
  * Generate content using Gemini (following Revo 2.0 advanced content generation pattern)
  */
@@ -2458,20 +3726,31 @@ async function generateRevo10ContentWithGemini(options: any, concept: any): Prom
   const brandKey = getBrandKey(options.brandProfile, options.platform);
   const recentData = recentOutputs.get(brandKey) || { headlines: [], captions: [], concepts: [] };
 
+  // ============================================================================
+  // UNIVERSAL MULTI-ANGLE MARKETING FRAMEWORK - ANGLE ASSIGNMENT
+  // ============================================================================
+
+  // Assign strategic marketing angle for campaign diversity
+  const assignedAngle = assignMarketingAngle(brandKey, options);
+  console.log(`🎯 [Revo 1.0] Marketing Angle: ${assignedAngle.name}`);
+  console.log(`📋 [Revo 1.0] Angle Focus: ${assignedAngle.focusArea}`);
+  console.log(`💡 [Revo 1.0] Angle Instructions: ${assignedAngle.promptInstructions}`);
+
   console.log('🚀 [Revo 1.0] Starting advanced content generation with Gemini');
   console.log('🔍 [Revo 1.0] Options:', {
     businessType: options.businessType,
     businessName: options.brandProfile?.businessName,
     platform: options.platform,
-    useLocalLanguage: options.useLocalLanguage
+    useLocalLanguage: options.useLocalLanguage,
+    assignedAngle: assignedAngle.name
   });
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       console.log(`🤖 [Revo 1.0] Content Generation Attempt ${attempt}/${maxRetries} - Using Gemini 2.5 Flash`);
 
-      // Build advanced prompt using Revo 2.0 system
-      const prompt = buildRevo10ContentPrompt(options, concept);
+      // Build advanced prompt using Revo 2.0 system with assigned marketing angle
+      const prompt = buildRevo10ContentPrompt(options, concept, assignedAngle);
       console.log('📝 [Revo 1.0] Generated advanced prompt length:', prompt.length);
 
       // Add randomization to temperature for more variety
@@ -2496,12 +3775,69 @@ async function generateRevo10ContentWithGemini(options: any, concept: any): Prom
           hashtags: Array.isArray(response.hashtags) ? response.hashtags : []
         };
 
-        // Content validation (similar to Revo 2.0) - MADE MORE LENIENT FOR DEBUGGING
-        const headlineValid = parsed.headline && parsed.headline.trim().length > 0 && parsed.headline.split(' ').length <= 8; // Increased from 6 to 8
-        const subheadlineValid = parsed.subheadline && parsed.subheadline.trim().length > 0 && parsed.subheadline.split(' ').length <= 30; // Increased from 25 to 30
-        const captionValid = parsed.caption && parsed.caption.trim().length >= 10; // Reduced from 20 to 10
+        // ============================================================================
+        // NEW COHERENT STORY-BASED VALIDATION SYSTEM
+        // ============================================================================
+
+        console.log('🎯 [Revo 1.0] Starting coherent story-based validation');
+
+        // Basic content validation
+        const headlineValid = parsed.headline && parsed.headline.trim().length > 0 && parsed.headline.split(' ').length <= 8;
+        const subheadlineValid = parsed.subheadline && parsed.subheadline.trim().length > 0 && parsed.subheadline.split(' ').length <= 30;
+        const captionValid = parsed.caption && parsed.caption.trim().length >= 10;
         const ctaValid = parsed.cta && parsed.cta.trim().length > 0;
-        const hashtagsValid = Array.isArray(parsed.hashtags) && parsed.hashtags.length >= 1; // Reduced from 3 to 1
+        const hashtagsValid = Array.isArray(parsed.hashtags) && parsed.hashtags.length >= 1;
+
+        // ============================================================================
+        // ENHANCED HEADLINES & SUBHEADLINES VALIDATION SYSTEM
+        // ============================================================================
+
+        // 1. Check for duplicate headlines across campaigns
+        const headlineDuplicate = isHeadlineDuplicate(brandKey, parsed.headline);
+        if (headlineDuplicate) {
+          console.log(`🚫 [Revo 1.0] Duplicate headline detected: "${parsed.headline}"`);
+        }
+
+        // 2. Check if headline uses brand name (should be avoided)
+        const headlineIsBrandName = isHeadlineBrandName(parsed.headline, options.brandProfile?.businessName || '');
+        if (headlineIsBrandName) {
+          console.log(`🚫 [Revo 1.0] Headline uses brand name: "${parsed.headline}"`);
+        }
+
+        // 3. Validate message hierarchy between headline and subheadline
+        const hierarchyValidation = validateMessageHierarchy(parsed.headline, parsed.subheadline);
+        console.log('📊 [Revo 1.0] Message hierarchy validation:', hierarchyValidation);
+
+        // 4. Check headline formula repetition
+        const headlineFormula = extractHeadlineFormula(parsed.headline);
+        const formulaOverused = isFormulaOverused(brandKey, headlineFormula);
+
+        if (formulaOverused) {
+          console.log(`🚫 [Revo 1.0] Headline formula overused: ${headlineFormula}`);
+        }
+
+        // 5. Validate story coherence between headline and caption
+        const coherenceValidation = validateStoryCoherence(
+          parsed.headline,
+          parsed.caption,
+          options.businessType
+        );
+
+        console.log('🔗 [Revo 1.0] Story coherence validation:', coherenceValidation);
+
+        // Enhanced coherence validation logging for debugging
+        if (coherenceValidation.issues.length > 0) {
+          console.log(`🚨 [COHERENCE ISSUES] Found ${coherenceValidation.issues.length} coherence issues:`);
+          coherenceValidation.issues.forEach((issue, index) => {
+            console.log(`   ${index + 1}. ${issue}`);
+          });
+        } else {
+          console.log(`✅ [COHERENCE SUCCESS] No coherence issues found`);
+        }
+
+        // 6. Validate marketing angle adherence
+        const angleValidation = validateAngleAdherence(parsed, assignedAngle, options);
+        console.log('🎯 [Revo 1.0] Marketing angle validation:', angleValidation);
 
         // Check for banned patterns and repetition
         const headlineHasBannedPatterns = hasBannedPattern(parsed.headline);
@@ -2509,16 +3845,15 @@ async function generateRevo10ContentWithGemini(options: any, concept: any): Prom
         const headlineTooSimilar = tooSimilar(parsed.headline, recentData.headlines, 0.55);
         const captionTooSimilar = tooSimilar(parsed.caption, recentData.captions, 0.40);
 
-        // Enhanced validation checks
+        // Enhanced specificity checks
         const headlineIsGeneric = /^[a-z]+ your [a-z]+$/i.test(parsed.headline.trim()) ||
           parsed.headline.includes('Experience the excellence') ||
           parsed.headline.includes('Transform your');
 
-        const captionIsGeneric = parsed.caption.includes('Experience the excellence of') ||
-          parsed.caption.includes('makes financial technology company effortless') ||
-          /makes .+ effortless and effective/i.test(parsed.caption);
+        // Check if caption could work for competitors (specificity test)
+        const captionTooGeneric = coherenceValidation.issues.includes('Caption is too generic - could work for any competitor');
 
-        console.log('🔍 [Revo 1.0] Content validation results:', {
+        console.log('🔍 [Revo 1.0] Enhanced validation results:', {
           headlineValid,
           subheadlineValid,
           captionValid,
@@ -2529,78 +3864,110 @@ async function generateRevo10ContentWithGemini(options: any, concept: any): Prom
           headlineTooSimilar,
           captionTooSimilar,
           headlineIsGeneric,
-          captionIsGeneric
+          captionTooGeneric,
+          formulaOverused,
+          coherenceScore: coherenceValidation.coherenceScore,
+          coherenceIssues: coherenceValidation.issues,
+          storyTheme: coherenceValidation.storyTheme,
+          emotionalTone: coherenceValidation.emotionalTone,
+          // New headline/subheadline validation results
+          headlineDuplicate,
+          headlineIsBrandName,
+          hierarchyScore: hierarchyValidation.hierarchyScore,
+          hierarchyIssues: hierarchyValidation.issues,
+          // Multi-angle marketing framework validation results
+          assignedAngle: assignedAngle.name,
+          angleAdherenceScore: angleValidation.adherenceScore,
+          angleIssues: angleValidation.issues
         });
 
-        // NEW: Add headline-caption coherence validation (ported from Revo 2.0) - ENHANCED FOR FINANCIAL TECH
-        const headlineWords = (parsed.headline || '').toLowerCase().split(/\s+/).filter(w => w.length > 3);
-        const captionWords = parsed.caption.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+        // Determine money flow direction for contextual CTA
+        const moneyFlowDirection: 'incoming' | 'outgoing' | 'neutral' =
+          parsed.headline.toLowerCase().includes('send') || parsed.caption.toLowerCase().includes('send') ? 'outgoing' :
+            parsed.headline.toLowerCase().includes('receive') || parsed.caption.toLowerCase().includes('receive') ||
+              parsed.headline.toLowerCase().includes('paid') || parsed.caption.toLowerCase().includes('paid') ? 'incoming' : 'neutral';
 
-        console.log(`🔍 [Revo 1.0] COHERENCE DEBUG - Headline: "${parsed.headline}"`);
-        console.log(`🔍 [Revo 1.0] COHERENCE DEBUG - Caption: "${parsed.caption}"`);
-        console.log(`🔍 [Revo 1.0] COHERENCE DEBUG - Headline words: ${headlineWords.join(', ')}`);
-        console.log(`🔍 [Revo 1.0] COHERENCE DEBUG - Caption words: ${captionWords.slice(0, 10).join(', ')}`);
+        // Generate contextual CTA if current one is generic
+        const genericCTAs = ['learn more', 'get started', 'contact us', 'find out more'];
+        const isGenericCTA = genericCTAs.some(generic => parsed.cta.toLowerCase().includes(generic));
 
-        // Enhanced semantic matching for financial technology business
-        const hasCommonWords = headlineWords.some(headlineWord =>
-          captionWords.some(captionWord => {
-            // Exact match
-            if (headlineWord === captionWord) return true;
+        if (isGenericCTA || !ctaValid) {
+          const contextualCTA = generateContextualCTA(
+            parsed.headline,
+            parsed.caption,
+            options.businessType,
+            moneyFlowDirection
+          );
+          parsed.cta = contextualCTA;
+          console.log(`🎯 [Revo 1.0] Generated contextual CTA: ${contextualCTA}`);
+        }
 
-            // Financial Technology specific semantic matches
-            if (headlineWord === 'finance' && ['financial', 'money', 'payment', 'banking', 'cash', 'paya'].includes(captionWord)) return true;
-            if (headlineWord === 'financial' && ['finance', 'money', 'payment', 'banking', 'cash', 'paya'].includes(captionWord)) return true;
-            if (headlineWord === 'technology' && ['tech', 'digital', 'mobile', 'app', 'system', 'solution'].includes(captionWord)) return true;
-            if (headlineWord === 'paya' && ['finance', 'financial', 'money', 'payment', 'banking'].includes(captionWord)) return true;
+        // ============================================================================
+        // ENHANCED VALIDATION LOGGING FOR DEBUGGING FALLBACK CAPTION ISSUE
+        // ============================================================================
 
-            // General business semantic matches
-            if (headlineWord === 'banking' && ['bank', 'money', 'payment', 'finance', 'financial', 'paya'].includes(captionWord)) return true;
-            if (headlineWord === 'payment' && ['pay', 'money', 'banking', 'finance', 'financial', 'paya'].includes(captionWord)) return true;
-            if (headlineWord === 'secure' && ['security', 'safe', 'protection', 'protect', 'trust'].includes(captionWord)) return true;
-            if (headlineWord === 'daily' && ['every', 'everyday', 'routine', 'regular'].includes(captionWord)) return true;
-            if (headlineWord === 'business' && ['company', 'shop', 'enterprise', 'commercial', 'work'].includes(captionWord)) return true;
-            if (headlineWord === 'money' && ['cash', 'payment', 'finance', 'financial', 'banking', 'paya'].includes(captionWord)) return true;
-            if (headlineWord === 'smart' && ['intelligent', 'clever', 'advanced', 'modern', 'tech'].includes(captionWord)) return true;
-
-            // Root word matching (more conservative)
-            if (headlineWord.length > 4 && captionWord.length > 4) {
-              const headlineRoot = headlineWord.substring(0, Math.min(5, headlineWord.length));
-              const captionRoot = captionWord.substring(0, Math.min(5, captionWord.length));
-              if (headlineRoot === captionRoot) return true;
-            }
-            return false;
-          })
-        );
-
-        // More lenient coherence check - only flag as disconnected if caption is substantial AND has no semantic connection
-        const captionDisconnected = !hasCommonWords && parsed.caption.length > 80; // Increased threshold
-
-        console.log(`🔗 [Revo 1.0] COHERENCE DEBUG - Has common words: ${hasCommonWords}`);
-        console.log(`🚫 [Revo 1.0] COHERENCE DEBUG - Caption disconnected: ${captionDisconnected}`);
-
-        // Enhanced validation debugging
-        console.log(`🔍 [Revo 1.0] VALIDATION DEBUG:`);
-        console.log(`   📏 headlineValid: ${headlineValid}`);
-        console.log(`   📏 subheadlineValid: ${subheadlineValid}`);
-        console.log(`   📏 captionValid: ${captionValid}`);
-        console.log(`   📏 ctaValid: ${ctaValid}`);
-        console.log(`   📏 hashtagsValid: ${hashtagsValid}`);
+        console.log(`🔍 [VALIDATION DEBUG] Detailed validation breakdown:`);
+        console.log(`   📰 headlineValid: ${headlineValid}`);
+        console.log(`   📝 subheadlineValid: ${subheadlineValid}`);
+        console.log(`   📄 captionValid: ${captionValid}`);
+        console.log(`   🏷️ hashtagsValid: ${hashtagsValid}`);
         console.log(`   🚫 headlineHasBannedPatterns: ${headlineHasBannedPatterns}`);
         console.log(`   🚫 captionHasBannedPatterns: ${captionHasBannedPatterns}`);
         console.log(`   🔄 headlineTooSimilar: ${headlineTooSimilar}`);
         console.log(`   🔄 captionTooSimilar: ${captionTooSimilar}`);
-        console.log(`   📝 headlineIsGeneric: ${headlineIsGeneric}`);
-        console.log(`   📝 captionIsGeneric: ${captionIsGeneric}`);
-        console.log(`   🔗 captionDisconnected: ${captionDisconnected}`);
+        console.log(`   📊 coherenceScore: ${coherenceValidation.coherenceScore} (min: 45)`);
+        console.log(`   📊 hierarchyScore: ${hierarchyValidation.hierarchyScore} (min: 70)`);
+        console.log(`   📊 angleScore: ${angleValidation.adherenceScore} (min: 70)`);
+        console.log(`   🚫 headlineDuplicate: ${headlineDuplicate}`);
+        console.log(`   🚫 headlineIsBrandName: ${headlineIsBrandName}`);
+        console.log(`   🚫 formulaOverused: ${formulaOverused}`);
 
-        // TEMPORARILY DISABLE COHERENCE VALIDATION TO DEBUG
-        const skipCoherenceValidation = true; // TODO: Remove this after debugging
+        // ============================================================================
+        // SMART FALLBACK PREVENTION SYSTEM
+        // ============================================================================
 
-        // If content passes validation, apply quality enhancement
-        if (headlineValid && subheadlineValid && captionValid && ctaValid && hashtagsValid &&
+        // Basic validation (must pass)
+        const basicValidation = headlineValid && subheadlineValid && captionValid && hashtagsValid &&
           !headlineHasBannedPatterns && !captionHasBannedPatterns &&
-          !headlineTooSimilar && !captionTooSimilar &&
-          !headlineIsGeneric && !captionIsGeneric && (skipCoherenceValidation || !captionDisconnected)) {
+          !headlineDuplicate && !headlineIsBrandName;
+
+        // Quality validation (more lenient)
+        const qualityValidation = !headlineTooSimilar && !captionTooSimilar &&
+          !headlineIsGeneric && !captionTooGeneric && !formulaOverused;
+
+        // Advanced validation (most lenient)
+        const advancedValidation = coherenceValidation.coherenceScore >= 35 && // Further lowered
+          hierarchyValidation.hierarchyScore >= 60 && // Lowered from 70
+          angleValidation.adherenceScore >= 60; // Lowered from 70
+
+        // Smart validation logic: prefer AI content over fallback
+        let passesValidation = false;
+        let validationLevel = 'FAILED';
+
+        if (basicValidation && qualityValidation && advancedValidation) {
+          passesValidation = true;
+          validationLevel = 'EXCELLENT';
+        } else if (basicValidation && qualityValidation) {
+          passesValidation = true;
+          validationLevel = 'GOOD';
+          console.log(`⚠️ [SMART VALIDATION] Accepting content with minor advanced validation issues to avoid fallback`);
+        } else if (basicValidation && advancedValidation) {
+          passesValidation = true;
+          validationLevel = 'ACCEPTABLE';
+          console.log(`⚠️ [SMART VALIDATION] Accepting content with minor quality issues to avoid fallback`);
+        } else if (basicValidation) {
+          // Last chance: if basic validation passes, check if it's better than fallback
+          const hasReasonableCoherence = coherenceValidation.coherenceScore >= 25;
+          if (hasReasonableCoherence) {
+            passesValidation = true;
+            validationLevel = 'MINIMAL';
+            console.log(`⚠️ [SMART VALIDATION] Accepting minimal quality content to avoid template fallback`);
+          }
+        }
+
+        console.log(`🎯 [VALIDATION RESULT] Level: ${validationLevel}, Passes: ${passesValidation}`);
+
+        if (passesValidation) {
 
           console.log('✅ [Revo 1.0] Content passed validation, applying quality enhancement');
 
@@ -2646,23 +4013,44 @@ async function generateRevo10ContentWithGemini(options: any, concept: any): Prom
             caption: finalResult.caption
           });
 
-          console.log('✅ [Revo 1.0] Final enhanced result:', finalResult);
+          // Remember headline formula usage to prevent overuse
+          rememberFormulaUsage(brandKey, headlineFormula);
+
+          // Remember headline usage to prevent duplicates
+          rememberHeadlineUsage(brandKey, finalResult.headline);
+
+          console.log('✅ [Revo 1.0] Final enhanced result with coherent story:', finalResult);
+          console.log('📊 [Revo 1.0] Enhanced story coherence validation:');
+          console.log(`   📈 Coherence Score: ${coherenceValidation.coherenceScore}/100`);
+          console.log(`   🎭 Story Theme: ${coherenceValidation.storyTheme}`);
+          console.log(`   💭 Emotional Tone: ${coherenceValidation.emotionalTone}`);
+          console.log(`   ✅ Story Coherent: ${coherenceValidation.isCoherent}`);
+          console.log(`🎉 [AI CONTENT SUCCESS] Using AI-generated content (not fallback):`);
+          console.log(`   📰 AI Headline: "${finalResult.headline}"`);
+          console.log(`   📝 AI Caption: "${finalResult.caption}"`);
+          console.log(`   🎯 AI CTA: "${finalResult.cta}"`);
           return finalResult;
         } else {
-          // Enhanced validation failure logging
+          // Enhanced validation failure logging with new coherence checks
           const reasons = [];
           if (!headlineValid) reasons.push('invalid headline');
           if (!subheadlineValid) reasons.push('invalid subheadline');
           if (!captionValid) reasons.push('invalid caption');
-          if (!ctaValid) reasons.push('invalid CTA');
           if (!hashtagsValid) reasons.push('invalid hashtags');
           if (headlineHasBannedPatterns) reasons.push('headline has banned patterns');
           if (captionHasBannedPatterns) reasons.push('caption has banned patterns');
           if (headlineTooSimilar) reasons.push('headline too similar');
           if (captionTooSimilar) reasons.push('caption too similar');
           if (headlineIsGeneric) reasons.push('headline is generic');
-          if (captionIsGeneric) reasons.push('caption is generic');
-          if (captionDisconnected) reasons.push('caption disconnected from headline');
+          if (captionTooGeneric) reasons.push('caption too generic');
+          if (formulaOverused) reasons.push(`headline formula overused: ${headlineFormula}`);
+          if (coherenceValidation.coherenceScore < 25) reasons.push(`very low coherence score: ${coherenceValidation.coherenceScore}`);
+          if (coherenceValidation.issues.length > 0) reasons.push(`coherence issues: ${coherenceValidation.issues.join(', ')}`);
+          // New headline/subheadline validation failures
+          if (headlineDuplicate) reasons.push('duplicate headline');
+          if (headlineIsBrandName) reasons.push('headline uses brand name');
+          if (hierarchyValidation.hierarchyScore < 70) reasons.push(`poor message hierarchy: ${hierarchyValidation.hierarchyScore}`);
+          if (hierarchyValidation.issues.length > 0) reasons.push(`hierarchy issues: ${hierarchyValidation.issues.join(', ')}`);
 
           console.warn(`⚠️ [Revo 1.0] Content validation failed on attempt ${attempt} - Reasons: ${reasons.join(', ')}`);
           console.warn(`🔍 [Revo 1.0] Headline: "${parsed.headline}"`);
@@ -2704,13 +4092,23 @@ async function generateRevo10ContentWithGemini(options: any, concept: any): Prom
   console.warn(`Last error: ${lastError?.message || 'Unknown error'}`);
   console.warn(`🚨 [Revo 1.0] CRITICAL: AI content generation is failing - using templates instead of real AI content!`);
   console.warn(`🔧 [Revo 1.0] This means validation is too strict or AI responses are malformed`);
+  console.warn(`🚨 [FALLBACK CAPTION ISSUE] Using template captions instead of AI-generated captions!`);
+  console.warn(`🔧 [FALLBACK CAPTION ISSUE] This will cause caption-headline story mismatch!`);
 
-  return generateUniqueFallbackContent(options.brandProfile, options.businessType, options.platform, 3, Date.now() % 10, concept);
+  const fallbackContent = generateUniqueFallbackContent(options.brandProfile, options.businessType, options.platform, 3, Date.now() % 10, concept);
+
+  // Mark this as fallback content for debugging
+  console.warn(`🚨 [FALLBACK CONTENT] Generated fallback content:`);
+  console.warn(`   📰 Headline: "${fallbackContent.headline}"`);
+  console.warn(`   📝 Caption: "${fallbackContent.caption}"`);
+  console.warn(`   🎯 CTA: "${fallbackContent.cta}"`);
+
+  return fallbackContent;
 }
 /**
- * Build advanced content prompt for Revo 1.0 (using Revo 2.0 sophisticated system)
+ * Build advanced content prompt for Revo 1.0 (using Revo 2.0 sophisticated system + multi-angle framework)
  */
-function buildRevo10ContentPrompt(options: any, concept: any): string {
+function buildRevo10ContentPrompt(options: any, concept: any, assignedAngle?: MarketingAngle): string {
   const { businessType, brandProfile, platform, scheduledServices } = options;
 
   // Normalize platform and determine hashtag count
@@ -2772,6 +4170,41 @@ ${getLocationSpecificLanguageInstructions(brandProfile.location)}
 - Platform: ${platform}
 - Content Approach: ${selectedApproach} (use this strategic angle)${localLanguageInstructions}
 
+${assignedAngle ? `
+🎯 UNIVERSAL MULTI-ANGLE MARKETING FRAMEWORK - ASSIGNED ANGLE:
+
+📋 MARKETING ANGLE: ${assignedAngle.name}
+📝 DESCRIPTION: ${assignedAngle.description}
+🎯 FOCUS AREA: ${assignedAngle.focusArea}
+
+🚨 CRITICAL ANGLE INSTRUCTIONS (MANDATORY):
+${assignedAngle.promptInstructions}
+
+📰 HEADLINE GUIDANCE:
+${assignedAngle.headlineGuidance}
+
+📝 CAPTION GUIDANCE:
+${assignedAngle.captionGuidance}
+
+📸 VISUAL GUIDANCE:
+${assignedAngle.visualGuidance}
+
+✅ ANGLE EXAMPLE (FOR REFERENCE ONLY - DO NOT COPY):
+- Headline: "${assignedAngle.examples.headline}"
+- Subheadline: "${assignedAngle.examples.subheadline}"
+- Caption: "${assignedAngle.examples.caption}"
+
+🚫 ANTI-PATTERNS TO AVOID:
+- DO NOT mix multiple angles in one ad
+- DO NOT list all features if angle is "Feature" (focus on ONE)
+- DO NOT use generic language if angle requires specificity
+- DO NOT ignore the assigned angle focus area
+- DO NOT create content that could work for any competitor
+
+⚠️ ANGLE ADHERENCE REQUIREMENT:
+Your content MUST clearly reflect the assigned ${assignedAngle.name} angle. This is not optional.
+` : ''}
+
 💼 BUSINESS INTELLIGENCE:
 ${keyFeaturesList.length > 0 ? `- Key Features: ${keyFeaturesList.slice(0, 5).join(', ')}` : ''}
 ${competitiveAdvantagesList.length > 0 ? `- Competitive Advantages: ${competitiveAdvantagesList.slice(0, 3).join(', ')}` : ''}
@@ -2803,9 +4236,60 @@ ${getAuthenticStoryScenarios(brandProfile, businessType)}
 - Be specific about the business services that relate to the visual context
 ${concept.featuredServices && concept.featuredServices.length > 0 ? `- Highlight today's featured service: "${concept.featuredServices[0].serviceName}"` : ''}
 
+📝 ENHANCED HEADLINES & SUBHEADLINES REQUIREMENTS (CRITICAL):
+
+🚫 HEADLINE RESTRICTIONS (NEVER DO):
+- NEVER use the same headline twice in a campaign (each ad needs unique headline)
+- NEVER start headline with company/brand name (e.g., "Paya Finance:", "Zentech:")
+- NEVER use vague phrases: "Money Moves", "Simple tech for everyone", "Your way"
+- NEVER use generic corporate jargon: "Solutions that work", "Excellence in service"
+
+✅ PROVEN HEADLINE PATTERNS (USE THESE):
+1. Problem → Solution: "Tired of 3-Day Transfer Waits?"
+2. Benefit → Timeframe: "Pay Rent in Seconds"
+3. Big Promise → Proof: "Financial Freedom, Unlocked"
+4. Urgent → Relief: "Rent's Due Tomorrow"
+5. Direct Benefit: "Accept Payments Instantly"
+
+📊 MESSAGE HIERARCHY RULES (MANDATORY):
+- ONE element must be SPECIFIC (numbers, timeframes, concrete benefits)
+- ONE element can be broader (but still meaningful)
+- NEVER stack vague on vague (e.g., "Money Moves" + "Simple tech for everyone")
+
+🔗 ENHANCED STORY COHERENCE REQUIREMENTS (CRITICAL - FIXES CAPTION-HEADLINE MISMATCH):
+
+🚨 STORY UNITY PRINCIPLE:
+Headline + Caption must tell ONE unified story, not two separate messages.
+The caption should feel like the natural next sentence after reading the headline.
+
+✅ STORY COHERENCE CHECKLIST (MANDATORY):
+1. **Theme Consistency**: If headline focuses on SPEED, caption must also focus on SPEED (not security/quality/etc.)
+2. **Tone Matching**: If headline is URGENT, caption must be URGENT (not calm/professional)
+3. **Audience Alignment**: If headline targets STUDENTS, caption must speak to STUDENTS (not business owners)
+4. **Benefit Delivery**: If headline promises INSTANT PAYMENTS, caption must explain HOW to get instant payments
+5. **Narrative Flow**: Caption must answer the question or complete the thought started by headline
+
+🚫 STORY MISMATCH PATTERNS TO AVOID:
+- Headline: "Pay in 3 Seconds" → Caption talks about security features ❌
+- Headline: "Student Budget Tight?" → Caption speaks to business owners ❌
+- Headline: "Tired of Bank Queues?" → Caption discusses app features (not queue solution) ❌
+- Headline: Urgent tone → Caption: Professional/calm tone ❌
+
+✅ CORRECT STORY COHERENCE EXAMPLES:
+- Headline: "Pay in 3 Seconds" → Caption: "No more waiting. Our instant transfer system processes your payment in just 3 seconds..." ✅
+- Headline: "Student Budget Tight?" → Caption: "We understand student life. Split payments, track expenses, and save money with features designed for students..." ✅
+- Headline: "Tired of Bank Queues?" → Caption: "Skip the lines forever. Send money, pay bills, and check balances from your phone..." ✅
+
+🎯 STORY COMPLETION REQUIREMENTS:
+- If headline asks a question → Caption must answer it
+- If headline makes a promise → Caption must explain how to achieve it
+- If headline identifies a problem → Caption must provide the solution
+- If headline uses urgent tone → Caption must maintain urgency and provide immediate action
+- ENSURE proper relationship: Headline hooks → Subheadline explains/proves
+
 📝 CONTENT REQUIREMENTS - MUST WORK TOGETHER AS ONE STORY:
-1. HEADLINE (max 6 words): This will appear as text IN the image design - make it compelling
-2. SUBHEADLINE (max 25 words): This will also appear IN the image - should support the headline
+1. HEADLINE (max 6 words): Lead with SPECIFIC BENEFIT, not brand name. Use proven patterns above.
+2. SUBHEADLINE (max 25 words): DIRECTLY supports headline with specific proof/how/guarantee.
 
 ✏️ GRAMMAR & LANGUAGE RULES (CRITICAL):
 - CORRECT: "Payments that fit your day" (plural subject = plural verb)
@@ -2842,15 +4326,37 @@ ${generateBusinessContextAwareCTAGuidance(brandProfile, businessType, concept)}
 - NEVER use "journey", "everyday", or repetitive corporate language
 - Headlines should be engaging standalone phrases, not company announcements
 
-🚨 CRITICAL: UNIFIED STORY REQUIREMENT (MANDATORY):
-ALL ELEMENTS MUST TELL ONE COHERENT STORY - NO DISCONNECTED PIECES!
+🚨 CRITICAL: COHERENT STORY-BASED CONTENT SYSTEM (MANDATORY):
+Each ad must tell ONE complete, coherent story. NO generic corporate jargon allowed!
 
-📝 CONTENT REQUIREMENTS - SINGLE NARRATIVE THREAD:
-1. HEADLINE (max 6 words): Sets the CORE MESSAGE - everything else builds on this
-2. SUBHEADLINE (max 12 words): DIRECTLY supports and expands the headline message
-3. CAPTION (2-3 sentences): CONTINUES the exact story started in headline, NO topic shifts
-4. HASHTAGS (exactly ${hashtagCount} tags): REFLECT the same theme as headline/caption
-5. CALL-TO-ACTION: COMPLETES the story with clear next step
+📖 STORY COHERENCE REQUIREMENTS:
+1. HEADLINE (max 6 words): Establishes the SPECIFIC story theme and emotional tone
+2. SUBHEADLINE (max 25 words): DIRECTLY continues the headline's story - same tone, same theme
+3. CAPTION: COMPLETES the story the headline started - must reference headline concepts
+4. CTA: MATCHES the story context and emotional tone (urgent story = urgent CTA)
+5. HASHTAGS (exactly ${hashtagCount} tags): REFLECT the same story theme
+
+🎭 TONE MATCHING REQUIREMENTS:
+- If headline is URGENT → Caption must be URGENT (no calm explanations)
+- If headline is PLAYFUL → Caption must be PLAYFUL (no serious corporate speak)
+- If headline is PROFESSIONAL → Caption must be PROFESSIONAL (consistent throughout)
+
+🚫 BANNED GENERIC PHRASES (NEVER USE):
+- "Professional services that..."
+- "Solutions that actually work"
+- "Serving the community with..."
+- "Quality service you can trust"
+- "Experience the excellence of..."
+- "Committed to providing..."
+- "Dedicated to serving..."
+
+✅ SPECIFICITY TEST:
+Could this caption work for ANY competitor? If YES, rewrite to be business-specific!
+
+💰 MONEY FLOW AWARENESS:
+- SENDING money scenarios: Use "Send Now", "Transfer Today"
+- RECEIVING money scenarios: Use "Get Paid", "Open Account"
+- General banking: Use contextual CTAs based on the story
 
 🎯 HEADLINE CLARITY REQUIREMENTS (BASED ON USER FEEDBACK):
 - SPECIFIC BENEFITS: "Accept Payments Instantly", "Zero Transaction Fees", "Open Account 5 Minutes"
@@ -3818,9 +5324,11 @@ function extractScenariosFromBrandProfile(brandProfile: any): string[] {
  * Generate dynamic story scenarios based on business type
  */
 function generateDynamicStoryScenarios(businessType: string, brandProfile: any): string[] {
-  const businessLower = businessType.toLowerCase();
-  const location = brandProfile.location || 'local area';
-  const businessName = brandProfile.businessName || 'the business';
+  // Ensure businessType is a string - comprehensive type safety
+  const businessTypeStr = String(businessType || 'general business');
+  const businessLower = businessTypeStr.toLowerCase();
+  const location = brandProfile?.location || 'local area';
+  const businessName = brandProfile?.businessName || 'the business';
 
   // Business-type-specific scenario templates
   const scenarioTemplates: Record<string, string[]> = {
@@ -3949,7 +5457,7 @@ function extractPainPointsFromBrandProfile(brandProfile: any): string[] {
  * Generate dynamic pain points based on business type
  */
 function generateDynamicPainPoints(businessType: string, brandProfile: any): string[] {
-  const businessLower = businessType.toLowerCase();
+  const businessLower = String(businessType || 'general business').toLowerCase();
 
   // Business-type-specific pain point templates
   const painPointTemplates: Record<string, string[]> = {
@@ -4112,7 +5620,7 @@ function extractValuePropsFromBrandProfile(brandProfile: any): string[] {
  * Generate dynamic value propositions based on business type
  */
 function generateDynamicValuePropositions(businessType: string, brandProfile: any): string[] {
-  const businessLower = businessType.toLowerCase();
+  const businessLower = String(businessType || 'general business').toLowerCase();
 
   // Business-type-specific value proposition templates
   const valuePropsTemplates: Record<string, string[]> = {
@@ -4229,7 +5737,7 @@ function getBrandKey(brandProfile: any, platform: string): string {
  */
 function generateLocationAppropriateScenario(location: string, businessType: string): string {
   const locationLower = (location || '').toLowerCase();
-  const businessLower = businessType.toLowerCase();
+  const businessLower = String(businessType || 'general business').toLowerCase();
 
   // Currency mapping based on location
   const currencyMap: Record<string, string> = {
@@ -4357,7 +5865,7 @@ function generateEnhancedBrandVoiceInstructions(brandProfile: any, businessType:
   }
 
   // Business type specific voice adjustments
-  const businessLower = businessType.toLowerCase();
+  const businessLower = String(businessType || 'general business').toLowerCase();
   if (businessLower.includes('healthcare') || businessLower.includes('medical')) {
     instructions.push('- Use caring, professional language that builds trust in health matters');
   } else if (businessLower.includes('finance') || businessLower.includes('bank')) {
@@ -4471,7 +5979,7 @@ function generateBrandVoiceStyle(brandVoice: string, businessType: string, busin
  */
 function generateBusinessContextAwareCTAGuidance(brandProfile: any, businessType: string, concept: any): string {
   const businessName = brandProfile?.businessName || 'the business';
-  const businessLower = businessType.toLowerCase();
+  const businessLower = String(businessType || 'general business').toLowerCase();
 
   let guidance = [
     '- SPECIFIC ACTION: Use business-specific actions, not generic "Learn More"',
@@ -4546,7 +6054,7 @@ function generateBusinessContextAwareCTAGuidance(brandProfile: any, businessType
  * Generate business-specific CTA variations with enhanced service-based intelligence
  */
 function generateBusinessSpecificCTAs(businessType: string, brandProfile?: any): string[] {
-  const businessLower = businessType.toLowerCase();
+  const businessLower = String(businessType || 'general business').toLowerCase();
 
   // First, try to generate service-specific CTAs from brand profile
   const serviceBasedCTAs = generateServiceSpecificCTAs(brandProfile);
@@ -4810,7 +6318,7 @@ function generateLocationSpecificCTAs(location?: string): string[] {
  * Enhanced business-type-aware template selection system
  */
 function selectOptimalDesignTemplate(businessType: string, brandProfile: any, platform: string): any {
-  const businessLower = businessType.toLowerCase();
+  const businessLower = String(businessType || 'general business').toLowerCase();
   const location = brandProfile?.location || '';
   const brandVoice = brandProfile?.brandVoice || brandProfile?.writingTone || '';
 
@@ -4979,7 +6487,7 @@ function extractEnhancedBrandColors(brandProfile: any, shouldFollowBrandColors: 
  * Get business-type-optimized colors
  */
 function getBusinessTypeOptimizedColors(businessType: string, extractedColors: any): any {
-  const businessLower = businessType.toLowerCase();
+  const businessLower = String(businessType || 'general business').toLowerCase();
 
   // Business-type-specific color recommendations
   const businessColorMappings: Record<string, any> = {
@@ -5124,7 +6632,7 @@ function processDesignExamplesForBrandConsistency(brandProfile: any, businessTyp
 - QUALITY MATCH: Match the professional quality and aesthetic of provided examples`;
 
   // Add business-type-specific design consistency guidance
-  const businessLower = businessType.toLowerCase();
+  const businessLower = String(businessType || 'general business').toLowerCase();
 
   if (businessLower.includes('restaurant') || businessLower.includes('food')) {
     guidance += `
@@ -5180,7 +6688,7 @@ function analyzeDesignExamplesPatterns(designExamples: string[], businessType: s
   // Since we can't actually analyze images in this context, we'll provide intelligent defaults
   // based on business type and common design patterns
 
-  const businessLower = businessType.toLowerCase();
+  const businessLower = String(businessType || 'general business').toLowerCase();
 
   // Business-type-specific design pattern analysis
   if (businessLower.includes('restaurant') || businessLower.includes('food')) {
@@ -5239,7 +6747,7 @@ function analyzeDesignExamplesPatterns(designExamples: string[], businessType: s
  * Generate default design guidance when no examples are available
  */
 function generateDefaultDesignGuidance(businessType: string, platform: string): string {
-  const businessLower = businessType.toLowerCase();
+  const businessLower = String(businessType || 'general business').toLowerCase();
 
   let guidance = `🎨 DEFAULT DESIGN GUIDANCE (No Design Examples Available):
 
@@ -5315,7 +6823,7 @@ function generateEnhancedColorSchemeInstructions(brandColorData: any, businessTy
   }
 
   // Add business-type-specific color psychology
-  const businessLower = businessType.toLowerCase();
+  const businessLower = String(businessType || 'general business').toLowerCase();
   if (businessLower.includes('restaurant')) {
     instructions += ` - APPETITE STIMULATION: Warm colors to enhance food appeal`;
   } else if (businessLower.includes('healthcare')) {
@@ -5352,7 +6860,7 @@ function generateBusinessTypeDesignGuidance(businessType: string, brandProfile: 
 
 🏢 BUSINESS-SPECIFIC DESIGN REQUIREMENTS:`;
 
-  const businessLower = businessType.toLowerCase();
+  const businessLower = String(businessType || 'general business').toLowerCase();
 
   // Add business-type-specific design requirements
   if (businessLower.includes('restaurant') || businessLower.includes('food')) {
@@ -5455,7 +6963,7 @@ function generateIndustrySpecificDesignGuidance(businessType: string, brandProfi
 **Imagery Focus:** ${industryIntel.designBenchmarks.imagery}
 **Layout Style:** ${industryIntel.designBenchmarks.layout}`;
 
-  const businessLower = businessType.toLowerCase();
+  const businessLower = String(businessType || 'general business').toLowerCase();
 
   // Add business-type-specific design guidance
   if (businessLower.includes('restaurant') || businessLower.includes('food')) {
@@ -5573,7 +7081,7 @@ function generateIndustrySpecificDesignGuidance(businessType: string, brandProfi
  * Generate enhanced logo integration guidance
  */
 function generateEnhancedLogoIntegrationGuidance(hasLogo: boolean, businessName: string, businessType: string, brandProfile: any, platform: string): string {
-  const businessLower = businessType.toLowerCase();
+  const businessLower = String(businessType || 'general business').toLowerCase();
   const platformLower = platform.toLowerCase();
 
   if (hasLogo) {
@@ -5685,7 +7193,7 @@ function generateEnhancedLogoIntegrationGuidance(hasLogo: boolean, businessName:
  */
 function generateEnhancedBrandIntegrationGuidance(brandProfile: any, businessType: string): string {
   const businessName = brandProfile?.businessName || 'the business';
-  const businessLower = businessType.toLowerCase();
+  const businessLower = String(businessType || 'general business').toLowerCase();
   const logoUrl = brandProfile?.logoUrl;
   const hasLogo = logoUrl && logoUrl.trim() && !logoUrl.includes('placeholder');
 
@@ -5959,7 +7467,7 @@ function pickNonRepeating<T>(arr: T[], last?: T): T {
 }
 
 function getCulturalBusinessGuidance(businessType: string): string {
-  const businessLower = businessType.toLowerCase();
+  const businessLower = String(businessType || 'general business').toLowerCase();
 
   // Enhanced business-specific guidance with more categories
   const businessGuidanceMap: Record<string, any> = {
@@ -6078,7 +7586,7 @@ function getCulturalBusinessGuidance(businessType: string): string {
 }
 
 function getVisualContextForBusiness(businessType: string, concept: string): string {
-  const businessLower = businessType.toLowerCase();
+  const businessLower = String(businessType || 'general business').toLowerCase();
 
   // Financial services - culturally appropriate visuals
   if (businessLower.includes('bank') || businessLower.includes('financial') || businessLower.includes('money') || businessLower.includes('payment')) {
@@ -6266,6 +7774,9 @@ export async function generateRevo10Image(input: {
       includePeopleInDesigns: input.includePeople,
       includeContacts: input.includeContacts
     };
+
+    // TASK 21: Log brand profile data usage for analytics
+    const usageLog = logBrandProfileUsage(options.brandProfile, 'image', input.platform);
 
     const prompt = buildRevo10ImagePrompt(options, concept);
     // Call Gemini for image generation
@@ -6623,3 +8134,5212 @@ async function callGeminiForImage(prompt: string, input: any): Promise<any> {
     throw error;
   }
 }
+
+// ============================================================================
+// TASK 20: CONTENT QUALITY CHECKS FOR DIFFERENT BUSINESS TYPES
+// ============================================================================
+
+/**
+ * Business-type-specific quality validation system
+ */
+interface ContentQualityScore {
+  overallScore: number;
+  industryAppropriate: number;
+  toneConsistency: number;
+  terminologyAccuracy: number;
+  contentStructure: number;
+  culturalRelevance: number;
+  brandAlignment: number;
+  issues: string[];
+  recommendations: string[];
+}
+
+/**
+ * Validate content quality for specific business types
+ */
+export function validateContentQualityForBusinessTypes(
+  content: string,
+  businessType: string,
+  brandProfile: any,
+  location: string
+): ContentQualityScore {
+  const qualityScore: ContentQualityScore = {
+    overallScore: 0,
+    industryAppropriate: 0,
+    toneConsistency: 0,
+    terminologyAccuracy: 0,
+    contentStructure: 0,
+    culturalRelevance: 0,
+    brandAlignment: 0,
+    issues: [],
+    recommendations: []
+  };
+
+  // Industry-appropriate language validation
+  qualityScore.industryAppropriate = validateIndustryLanguage(content, businessType, qualityScore);
+
+  // Tone consistency validation
+  qualityScore.toneConsistency = validateToneConsistency(content, brandProfile.writingTone || brandProfile.brandVoice, qualityScore);
+
+  // Terminology accuracy validation
+  qualityScore.terminologyAccuracy = validateTerminologyAccuracy(content, businessType, qualityScore);
+
+  // Content structure validation
+  qualityScore.contentStructure = validateContentStructure(content, businessType, qualityScore);
+
+  // Cultural relevance validation
+  qualityScore.culturalRelevance = validateCulturalRelevance(content, location, qualityScore);
+
+  // Brand alignment validation
+  qualityScore.brandAlignment = validateBrandAlignment(content, brandProfile, qualityScore);
+
+  // Calculate overall score
+  qualityScore.overallScore = Math.round(
+    (qualityScore.industryAppropriate +
+      qualityScore.toneConsistency +
+      qualityScore.terminologyAccuracy +
+      qualityScore.contentStructure +
+      qualityScore.culturalRelevance +
+      qualityScore.brandAlignment) / 6
+  );
+
+  return qualityScore;
+}
+
+/**
+ * Validate industry-appropriate language
+ */
+function validateIndustryLanguage(content: string, businessType: string, qualityScore: ContentQualityScore): number {
+  const contentLower = content.toLowerCase();
+  let score = 100;
+
+  const industryTerms: Record<string, { required: string[], inappropriate: string[] }> = {
+    'restaurant': {
+      required: ['food', 'meal', 'dish', 'taste', 'fresh', 'delicious', 'cuisine'],
+      inappropriate: ['prescription', 'diagnosis', 'treatment', 'surgery', 'medication']
+    },
+    'healthcare': {
+      required: ['health', 'care', 'medical', 'treatment', 'doctor', 'patient', 'wellness'],
+      inappropriate: ['delicious', 'tasty', 'workout', 'exercise', 'fashion', 'style']
+    },
+    'fitness gym': {
+      required: ['fitness', 'workout', 'training', 'exercise', 'strength', 'health', 'gym'],
+      inappropriate: ['prescription', 'surgery', 'legal', 'lawsuit', 'contract']
+    },
+    'beauty salon': {
+      required: ['beauty', 'style', 'treatment', 'skin', 'hair', 'elegant', 'glamour'],
+      inappropriate: ['workout', 'exercise', 'medical', 'diagnosis', 'legal']
+    },
+    'finance': {
+      required: ['money', 'financial', 'savings', 'investment', 'banking', 'secure', 'trust'],
+      inappropriate: ['delicious', 'workout', 'beauty', 'style', 'fashion']
+    },
+    'retail store': {
+      required: ['fashion', 'style', 'clothing', 'shopping', 'collection', 'trendy', 'quality'],
+      inappropriate: ['medical', 'treatment', 'workout', 'banking', 'financial']
+    },
+    'legal services': {
+      required: ['legal', 'law', 'attorney', 'counsel', 'advice', 'professional', 'expertise'],
+      inappropriate: ['delicious', 'workout', 'beauty', 'fashion', 'medical']
+    },
+    'technology': {
+      required: ['technology', 'digital', 'innovation', 'solution', 'software', 'tech', 'advanced'],
+      inappropriate: ['delicious', 'workout', 'beauty', 'medical', 'legal']
+    },
+    'education': {
+      required: ['learning', 'education', 'knowledge', 'skills', 'training', 'course', 'study'],
+      inappropriate: ['delicious', 'workout', 'medical', 'legal', 'banking']
+    },
+    'automotive': {
+      required: ['car', 'vehicle', 'automotive', 'driving', 'service', 'maintenance', 'reliable'],
+      inappropriate: ['delicious', 'beauty', 'medical', 'legal', 'education']
+    }
+  };
+
+  const businessTerms = industryTerms[String(businessType || 'general business').toLowerCase()];
+  if (businessTerms) {
+    // Check for required terms
+    const requiredTermsFound = businessTerms.required.filter(term => contentLower.includes(term));
+    if (requiredTermsFound.length < businessTerms.required.length * 0.3) {
+      score -= 30;
+      qualityScore.issues.push(`Missing industry-specific terminology for ${businessType}`);
+      qualityScore.recommendations.push(`Include more ${businessType}-specific terms like: ${businessTerms.required.slice(0, 3).join(', ')}`);
+    }
+
+    // Check for inappropriate terms
+    const inappropriateTermsFound = businessTerms.inappropriate.filter(term => contentLower.includes(term));
+    if (inappropriateTermsFound.length > 0) {
+      score -= inappropriateTermsFound.length * 20;
+      qualityScore.issues.push(`Contains inappropriate terminology: ${inappropriateTermsFound.join(', ')}`);
+      qualityScore.recommendations.push(`Remove terms not relevant to ${businessType} industry`);
+    }
+  }
+
+  return Math.max(0, score);
+}
+
+/**
+ * Validate tone consistency
+ */
+function validateToneConsistency(content: string, expectedTone: string, qualityScore: ContentQualityScore): number {
+  if (!expectedTone) return 100;
+
+  const contentLower = content.toLowerCase();
+  let score = 100;
+
+  const toneIndicators: Record<string, { positive: string[], negative: string[] }> = {
+    'professional': {
+      positive: ['expertise', 'professional', 'quality', 'reliable', 'trusted', 'experienced'],
+      negative: ['awesome', 'super cool', 'amazing', 'wow', 'epic', 'lit']
+    },
+    'casual': {
+      positive: ['friendly', 'easy', 'simple', 'fun', 'relaxed', 'comfortable'],
+      negative: ['pursuant', 'heretofore', 'aforementioned', 'whereas', 'thereby']
+    },
+    'luxury': {
+      positive: ['premium', 'exclusive', 'elegant', 'sophisticated', 'refined', 'exquisite'],
+      negative: ['cheap', 'budget', 'basic', 'simple', 'ordinary', 'standard']
+    },
+    'energetic': {
+      positive: ['exciting', 'dynamic', 'vibrant', 'powerful', 'active', 'energizing'],
+      negative: ['boring', 'dull', 'slow', 'tired', 'passive', 'quiet']
+    },
+    'trustworthy': {
+      positive: ['reliable', 'secure', 'trusted', 'dependable', 'honest', 'transparent'],
+      negative: ['risky', 'uncertain', 'questionable', 'unreliable', 'sketchy']
+    }
+  };
+
+  const toneData = toneIndicators[expectedTone.toLowerCase()];
+  if (toneData) {
+    const positiveFound = toneData.positive.filter(term => contentLower.includes(term)).length;
+    const negativeFound = toneData.negative.filter(term => contentLower.includes(term)).length;
+
+    if (positiveFound === 0) {
+      score -= 20;
+      qualityScore.issues.push(`Content doesn't reflect ${expectedTone} tone`);
+      qualityScore.recommendations.push(`Include ${expectedTone} language like: ${toneData.positive.slice(0, 3).join(', ')}`);
+    }
+
+    if (negativeFound > 0) {
+      score -= negativeFound * 15;
+      qualityScore.issues.push(`Content contains tone-inappropriate language`);
+      qualityScore.recommendations.push(`Avoid language that conflicts with ${expectedTone} tone`);
+    }
+  }
+
+  return Math.max(0, score);
+}
+
+/**
+ * Validate terminology accuracy
+ */
+function validateTerminologyAccuracy(content: string, businessType: string, qualityScore: ContentQualityScore): number {
+  const contentLower = content.toLowerCase();
+  let score = 100;
+
+  // Check for common terminology mistakes by business type
+  const terminologyRules: Record<string, { correct: string[], incorrect: string[] }> = {
+    'healthcare': {
+      correct: ['patient', 'consultation', 'treatment', 'diagnosis', 'medical care'],
+      incorrect: ['customer', 'client', 'buyer', 'shopper', 'user']
+    },
+    'legal services': {
+      correct: ['client', 'consultation', 'legal advice', 'attorney', 'counsel'],
+      incorrect: ['patient', 'customer', 'buyer', 'user', 'member']
+    },
+    'restaurant': {
+      correct: ['customer', 'guest', 'diner', 'patron', 'reservation'],
+      incorrect: ['patient', 'client', 'member', 'user', 'subscriber']
+    },
+    'fitness gym': {
+      correct: ['member', 'client', 'fitness enthusiast', 'athlete', 'trainee'],
+      incorrect: ['patient', 'customer', 'buyer', 'shopper', 'guest']
+    }
+  };
+
+  const rules = terminologyRules[String(businessType || 'general business').toLowerCase()];
+  if (rules) {
+    const incorrectTermsFound = rules.incorrect.filter(term => contentLower.includes(term));
+    if (incorrectTermsFound.length > 0) {
+      score -= incorrectTermsFound.length * 15;
+      qualityScore.issues.push(`Uses incorrect terminology: ${incorrectTermsFound.join(', ')}`);
+      qualityScore.recommendations.push(`Use industry-appropriate terms like: ${rules.correct.slice(0, 3).join(', ')}`);
+    }
+  }
+
+  return Math.max(0, score);
+}
+
+/**
+ * Validate content structure
+ */
+function validateContentStructure(content: string, businessType: string, qualityScore: ContentQualityScore): number {
+  let score = 100;
+
+  // Check for proper content length
+  if (content.length < 50) {
+    score -= 30;
+    qualityScore.issues.push('Content too short for effective communication');
+    qualityScore.recommendations.push('Expand content to provide more value and context');
+  }
+
+  if (content.length > 500) {
+    score -= 20;
+    qualityScore.issues.push('Content may be too long for social media');
+    qualityScore.recommendations.push('Consider condensing content for better engagement');
+  }
+
+  // Check for call-to-action presence
+  const ctaPatterns = ['call', 'visit', 'book', 'contact', 'learn', 'discover', 'try', 'get', 'start', 'join'];
+  const hasCTA = ctaPatterns.some(pattern => content.toLowerCase().includes(pattern));
+
+  if (!hasCTA) {
+    score -= 25;
+    qualityScore.issues.push('Missing clear call-to-action');
+    qualityScore.recommendations.push('Add a compelling call-to-action to drive engagement');
+  }
+
+  return Math.max(0, score);
+}
+
+/**
+ * Validate cultural relevance
+ */
+function validateCulturalRelevance(content: string, location: string, qualityScore: ContentQualityScore): number {
+  let score = 100;
+
+  // Extract country from location
+  const country = location.split(',').pop()?.trim().toLowerCase();
+
+  // Check for cultural sensitivity
+  const culturalElements: Record<string, string[]> = {
+    'kenya': ['kenyan', 'nairobi', 'sheng', 'harambee', 'safari'],
+    'nigeria': ['nigerian', 'lagos', 'nollywood', 'naira', 'jollof'],
+    'ghana': ['ghanaian', 'accra', 'highlife', 'cedi', 'kente'],
+    'egypt': ['egyptian', 'cairo', 'nile', 'pyramid', 'arabic'],
+    'south africa': ['south african', 'cape town', 'rainbow nation', 'rand', 'ubuntu'],
+    'uk': ['british', 'london', 'pound', 'uk', 'britain'],
+    'usa': ['american', 'dollar', 'usa', 'us', 'america'],
+    'japan': ['japanese', 'tokyo', 'yen', 'japan', 'nippon'],
+    'germany': ['german', 'berlin', 'euro', 'germany', 'deutsch'],
+    'australia': ['australian', 'sydney', 'aussie', 'australia', 'oz']
+  };
+
+  if (country && culturalElements[country]) {
+    const hasCulturalElement = culturalElements[country].some(element =>
+      content.toLowerCase().includes(element)
+    );
+
+    if (!hasCulturalElement) {
+      score -= 15;
+      qualityScore.recommendations.push(`Consider adding local cultural context for ${location}`);
+    }
+  }
+
+  return Math.max(0, score);
+}
+
+/**
+ * Validate brand alignment
+ */
+function validateBrandAlignment(content: string, brandProfile: any, qualityScore: ContentQualityScore): number {
+  let score = 100;
+
+  // Check if business name is mentioned
+  if (brandProfile.businessName && !content.includes(brandProfile.businessName)) {
+    score -= 20;
+    qualityScore.issues.push('Business name not prominently featured');
+    qualityScore.recommendations.push(`Include business name "${brandProfile.businessName}" in content`);
+  }
+
+  // Check if key services are mentioned
+  if (brandProfile.services && Array.isArray(brandProfile.services)) {
+    const servicesInContent = brandProfile.services.filter((service: string) =>
+      content.toLowerCase().includes(service.toLowerCase())
+    );
+
+    if (servicesInContent.length === 0) {
+      score -= 15;
+      qualityScore.issues.push('Key services not highlighted in content');
+      qualityScore.recommendations.push('Mention specific services offered by the business');
+    }
+  }
+
+  // Check for competitive advantages
+  if (brandProfile.competitiveAdvantages && Array.isArray(brandProfile.competitiveAdvantages)) {
+    const advantagesInContent = brandProfile.competitiveAdvantages.filter((advantage: string) =>
+      content.toLowerCase().includes(advantage.toLowerCase())
+    );
+
+    if (advantagesInContent.length === 0) {
+      score -= 10;
+      qualityScore.recommendations.push('Consider highlighting unique competitive advantages');
+    }
+  }
+
+  return Math.max(0, score);
+}
+
+// ============================================================================
+// TASK 21: BRAND PROFILE DATA USAGE LOGGING
+// ============================================================================
+
+/**
+ * Brand profile data usage tracking interface
+ */
+interface BrandProfileUsageLog {
+  timestamp: string;
+  businessName: string;
+  businessType: string;
+  location: string;
+  platform: string;
+  usedFields: string[];
+  missingFields: string[];
+  utilizationScore: number;
+  fieldUsageDetails: Record<string, {
+    used: boolean;
+    value?: any;
+    importance: 'critical' | 'high' | 'medium' | 'low';
+    impact: string;
+  }>;
+  recommendations: string[];
+}
+
+/**
+ * Log brand profile data usage for analytics and optimization
+ */
+export function logBrandProfileUsage(
+  brandProfile: any,
+  generationType: 'content' | 'image',
+  platform: string
+): BrandProfileUsageLog {
+  const timestamp = new Date().toISOString();
+
+  // Define field importance levels
+  const fieldImportance: Record<string, 'critical' | 'high' | 'medium' | 'low'> = {
+    businessName: 'critical',
+    businessType: 'critical',
+    location: 'critical',
+    services: 'high',
+    keyFeatures: 'high',
+    targetAudience: 'high',
+    brandColors: 'high',
+    writingTone: 'high',
+    brandVoice: 'high',
+    competitiveAdvantages: 'medium',
+    uniqueSellingPoints: 'medium',
+    websiteUrl: 'medium',
+    designExamples: 'medium',
+    logoUrl: 'low',
+    contactInfo: 'low',
+    description: 'low'
+  };
+
+  const usageLog: BrandProfileUsageLog = {
+    timestamp,
+    businessName: brandProfile.businessName || 'Unknown',
+    businessType: brandProfile.businessType || 'Unknown',
+    location: brandProfile.location || 'Unknown',
+    platform,
+    usedFields: [],
+    missingFields: [],
+    utilizationScore: 0,
+    fieldUsageDetails: {},
+    recommendations: []
+  };
+
+  let totalFields = 0;
+  let usedFields = 0;
+  let criticalFieldsUsed = 0;
+  let totalCriticalFields = 0;
+
+  // Analyze each field
+  Object.keys(fieldImportance).forEach(field => {
+    totalFields++;
+    const importance = fieldImportance[field];
+    const hasValue = brandProfile[field] &&
+      (typeof brandProfile[field] !== 'string' || brandProfile[field].trim() !== '') &&
+      (Array.isArray(brandProfile[field]) ? brandProfile[field].length > 0 : true);
+
+    if (importance === 'critical') {
+      totalCriticalFields++;
+    }
+
+    usageLog.fieldUsageDetails[field] = {
+      used: hasValue,
+      value: hasValue ? brandProfile[field] : undefined,
+      importance,
+      impact: getFieldImpact(field, importance, generationType)
+    };
+
+    if (hasValue) {
+      usageLog.usedFields.push(field);
+      usedFields++;
+      if (importance === 'critical') {
+        criticalFieldsUsed++;
+      }
+    } else {
+      usageLog.missingFields.push(field);
+
+      // Add recommendations for missing important fields
+      if (importance === 'critical' || importance === 'high') {
+        usageLog.recommendations.push(getFieldRecommendation(field, importance, generationType));
+      }
+    }
+  });
+
+  // Calculate utilization score
+  usageLog.utilizationScore = Math.round((usedFields / totalFields) * 100);
+
+  // Add critical field warnings
+  if (criticalFieldsUsed < totalCriticalFields) {
+    usageLog.recommendations.unshift(
+      `⚠️ Missing ${totalCriticalFields - criticalFieldsUsed} critical field(s) - this may significantly impact ${generationType} quality`
+    );
+  }
+
+  // Log to console for development (in production, this would go to a proper logging service)
+  console.log(`📊 [Brand Profile Usage] ${usageLog.businessName} (${generationType}):`, {
+    utilizationScore: usageLog.utilizationScore,
+    usedFields: usageLog.usedFields.length,
+    missingFields: usageLog.missingFields.length,
+    criticalFieldsUsed: `${criticalFieldsUsed}/${totalCriticalFields}`
+  });
+
+  return usageLog;
+}
+
+/**
+ * Get field impact description
+ */
+function getFieldImpact(field: string, importance: string, generationType: string): string {
+  const impacts: Record<string, Record<string, string>> = {
+    businessName: {
+      content: 'Essential for brand recognition and personalization',
+      image: 'Required for logo integration and brand consistency'
+    },
+    businessType: {
+      content: 'Determines industry-specific language and messaging',
+      image: 'Influences design template selection and visual style'
+    },
+    location: {
+      content: 'Enables cultural context and local relevance',
+      image: 'Affects cultural visual elements and local appeal'
+    },
+    services: {
+      content: 'Core for value proposition and service highlighting',
+      image: 'Influences design focus and service representation'
+    },
+    keyFeatures: {
+      content: 'Important for competitive differentiation',
+      image: 'Affects feature highlighting in visual design'
+    },
+    targetAudience: {
+      content: 'Shapes tone, language, and messaging approach',
+      image: 'Influences visual style and demographic appeal'
+    },
+    brandColors: {
+      content: 'Minimal impact on text content',
+      image: 'Critical for brand consistency and visual identity'
+    },
+    writingTone: {
+      content: 'Determines content voice and communication style',
+      image: 'Influences design tone and visual messaging'
+    },
+    brandVoice: {
+      content: 'Shapes overall communication personality',
+      image: 'Affects design personality and visual communication'
+    },
+    competitiveAdvantages: {
+      content: 'Enhances unique positioning and differentiation',
+      image: 'Can be highlighted in design messaging'
+    },
+    designExamples: {
+      content: 'No direct impact on text content',
+      image: 'Crucial for maintaining visual consistency'
+    }
+  };
+
+  return impacts[field]?.[generationType] || `${importance} importance for ${generationType} generation`;
+}
+
+/**
+ * Get field recommendation
+ */
+function getFieldRecommendation(field: string, importance: string, generationType: string): string {
+  const recommendations: Record<string, string> = {
+    businessName: 'Add business name for proper brand recognition',
+    businessType: 'Specify business type for industry-appropriate content',
+    location: 'Add location for cultural context and local relevance',
+    services: 'List key services to highlight value proposition',
+    keyFeatures: 'Add key features for competitive differentiation',
+    targetAudience: 'Define target audience for better messaging',
+    brandColors: 'Add brand colors for consistent visual identity',
+    writingTone: 'Specify writing tone for consistent communication',
+    brandVoice: 'Define brand voice for personality consistency',
+    competitiveAdvantages: 'Add competitive advantages for unique positioning',
+    designExamples: 'Upload design examples for visual consistency'
+  };
+
+  return recommendations[field] || `Consider adding ${field} to improve ${generationType} quality`;
+}
+
+// ============================================================================
+// TASK 22: FALLBACK MECHANISMS FOR MISSING BRAND PROFILE DATA
+// ============================================================================
+
+/**
+ * Enhanced brand profile with intelligent fallbacks
+ */
+interface EnhancedBrandProfile {
+  businessName: string;
+  businessType: string;
+  location: string;
+  services: string[];
+  keyFeatures: string[];
+  targetAudience: string;
+  brandColors: {
+    primary: string;
+    secondary: string;
+    background: string;
+  };
+  writingTone: string;
+  brandVoice: string;
+  competitiveAdvantages: string[];
+  uniqueSellingPoints: string[];
+  websiteUrl?: string;
+  designExamples: string[];
+  logoUrl?: string;
+  contactInfo?: any;
+  description: string;
+  fallbacksUsed: string[];
+}
+
+/**
+ * Apply intelligent fallbacks to incomplete brand profile data
+ */
+export function applyBrandProfileFallbacks(
+  brandProfile: any,
+  businessType?: string,
+  location?: string
+): EnhancedBrandProfile {
+  const fallbacksUsed: string[] = [];
+
+  // Determine business type with fallback
+  const resolvedBusinessType = brandProfile.businessType || businessType || inferBusinessTypeFromServices(brandProfile.services) || 'Business';
+  if (!brandProfile.businessType) {
+    fallbacksUsed.push('businessType');
+  }
+
+  // Determine location with fallback
+  const resolvedLocation = brandProfile.location || location || 'Global';
+  if (!brandProfile.location) {
+    fallbacksUsed.push('location');
+  }
+
+  // Business name fallback
+  const resolvedBusinessName = brandProfile.businessName || generateBusinessNameFallback(resolvedBusinessType);
+  if (!brandProfile.businessName) {
+    fallbacksUsed.push('businessName');
+  }
+
+  // Services fallback
+  const resolvedServices = brandProfile.services && Array.isArray(brandProfile.services) && brandProfile.services.length > 0
+    ? brandProfile.services
+    : generateServicesFallback(resolvedBusinessType);
+  if (!brandProfile.services || !Array.isArray(brandProfile.services) || brandProfile.services.length === 0) {
+    fallbacksUsed.push('services');
+  }
+
+  // Key features fallback
+  const resolvedKeyFeatures = brandProfile.keyFeatures && Array.isArray(brandProfile.keyFeatures) && brandProfile.keyFeatures.length > 0
+    ? brandProfile.keyFeatures
+    : generateKeyFeaturesFallback(resolvedBusinessType);
+  if (!brandProfile.keyFeatures || !Array.isArray(brandProfile.keyFeatures) || brandProfile.keyFeatures.length === 0) {
+    fallbacksUsed.push('keyFeatures');
+  }
+
+  // Target audience fallback
+  const resolvedTargetAudience = brandProfile.targetAudience || generateTargetAudienceFallback(resolvedBusinessType);
+  if (!brandProfile.targetAudience) {
+    fallbacksUsed.push('targetAudience');
+  }
+
+  // Brand colors fallback
+  const resolvedBrandColors = brandProfile.brandColors && brandProfile.brandColors.primary
+    ? brandProfile.brandColors
+    : generateBrandColorsFallback(resolvedBusinessType);
+  if (!brandProfile.brandColors || !brandProfile.brandColors.primary) {
+    fallbacksUsed.push('brandColors');
+  }
+
+  // Writing tone fallback
+  const resolvedWritingTone = brandProfile.writingTone || brandProfile.brandVoice || generateWritingToneFallback(resolvedBusinessType);
+  if (!brandProfile.writingTone && !brandProfile.brandVoice) {
+    fallbacksUsed.push('writingTone');
+  }
+
+  // Brand voice fallback
+  const resolvedBrandVoice = brandProfile.brandVoice || brandProfile.writingTone || generateBrandVoiceFallback(resolvedBusinessType);
+  if (!brandProfile.brandVoice && !brandProfile.writingTone) {
+    fallbacksUsed.push('brandVoice');
+  }
+
+  // Competitive advantages fallback
+  const resolvedCompetitiveAdvantages = brandProfile.competitiveAdvantages && Array.isArray(brandProfile.competitiveAdvantages) && brandProfile.competitiveAdvantages.length > 0
+    ? brandProfile.competitiveAdvantages
+    : generateCompetitiveAdvantagesFallback(resolvedBusinessType);
+  if (!brandProfile.competitiveAdvantages || !Array.isArray(brandProfile.competitiveAdvantages) || brandProfile.competitiveAdvantages.length === 0) {
+    fallbacksUsed.push('competitiveAdvantages');
+  }
+
+  // Unique selling points fallback
+  const resolvedUniqueSellingPoints = brandProfile.uniqueSellingPoints && Array.isArray(brandProfile.uniqueSellingPoints) && brandProfile.uniqueSellingPoints.length > 0
+    ? brandProfile.uniqueSellingPoints
+    : generateUniqueSellingPointsFallback(resolvedBusinessType);
+  if (!brandProfile.uniqueSellingPoints || !Array.isArray(brandProfile.uniqueSellingPoints) || brandProfile.uniqueSellingPoints.length === 0) {
+    fallbacksUsed.push('uniqueSellingPoints');
+  }
+
+  // Description fallback
+  const resolvedDescription = brandProfile.description || generateDescriptionFallback(resolvedBusinessName, resolvedBusinessType, resolvedServices);
+  if (!brandProfile.description) {
+    fallbacksUsed.push('description');
+  }
+
+  // Design examples fallback (empty array is acceptable)
+  const resolvedDesignExamples = brandProfile.designExamples || [];
+
+  return {
+    businessName: resolvedBusinessName,
+    businessType: resolvedBusinessType,
+    location: resolvedLocation,
+    services: resolvedServices,
+    keyFeatures: resolvedKeyFeatures,
+    targetAudience: resolvedTargetAudience,
+    brandColors: {
+      primary: resolvedBrandColors.primary || '#1a73e8',
+      secondary: resolvedBrandColors.secondary || '#34a853',
+      background: resolvedBrandColors.background || '#ffffff'
+    },
+    writingTone: resolvedWritingTone,
+    brandVoice: resolvedBrandVoice,
+    competitiveAdvantages: resolvedCompetitiveAdvantages,
+    uniqueSellingPoints: resolvedUniqueSellingPoints,
+    websiteUrl: brandProfile.websiteUrl,
+    designExamples: resolvedDesignExamples,
+    logoUrl: brandProfile.logoUrl,
+    contactInfo: brandProfile.contactInfo,
+    description: resolvedDescription,
+    fallbacksUsed
+  };
+}
+
+/**
+ * Infer business type from services
+ */
+function inferBusinessTypeFromServices(services: any): string | null {
+  if (!services || !Array.isArray(services) || services.length === 0) return null;
+
+  const servicesText = services.join(' ').toLowerCase();
+
+  if (servicesText.includes('food') || servicesText.includes('restaurant') || servicesText.includes('dining')) return 'Restaurant';
+  if (servicesText.includes('health') || servicesText.includes('medical') || servicesText.includes('doctor')) return 'Healthcare';
+  if (servicesText.includes('fitness') || servicesText.includes('gym') || servicesText.includes('workout')) return 'Fitness Gym';
+  if (servicesText.includes('beauty') || servicesText.includes('salon') || servicesText.includes('spa')) return 'Beauty Salon';
+  if (servicesText.includes('finance') || servicesText.includes('banking') || servicesText.includes('money')) return 'Finance';
+  if (servicesText.includes('retail') || servicesText.includes('shopping') || servicesText.includes('store')) return 'Retail Store';
+  if (servicesText.includes('legal') || servicesText.includes('law') || servicesText.includes('attorney')) return 'Legal Services';
+  if (servicesText.includes('tech') || servicesText.includes('software') || servicesText.includes('digital')) return 'Technology';
+  if (servicesText.includes('education') || servicesText.includes('learning') || servicesText.includes('training')) return 'Education';
+  if (servicesText.includes('car') || servicesText.includes('auto') || servicesText.includes('vehicle')) return 'Automotive';
+
+  return null;
+}
+
+/**
+ * Generate business name fallback
+ */
+function generateBusinessNameFallback(businessType: string): string {
+  const fallbackNames: Record<string, string[]> = {
+    'Restaurant': ['Local Eatery', 'Family Restaurant', 'Dining Place', 'Food Corner'],
+    'Healthcare': ['Health Center', 'Medical Clinic', 'Wellness Center', 'Care Facility'],
+    'Fitness Gym': ['Fitness Center', 'Gym & Wellness', 'Active Life Gym', 'Fitness Hub'],
+    'Beauty Salon': ['Beauty Studio', 'Style Salon', 'Glamour Spa', 'Beauty Corner'],
+    'Finance': ['Financial Services', 'Money Solutions', 'Finance Hub', 'Banking Center'],
+    'Retail Store': ['Retail Shop', 'Shopping Store', 'Fashion Outlet', 'Style Store'],
+    'Legal Services': ['Law Firm', 'Legal Associates', 'Attorney Services', 'Legal Solutions'],
+    'Technology': ['Tech Solutions', 'Digital Services', 'Tech Hub', 'Innovation Center'],
+    'Education': ['Learning Center', 'Education Hub', 'Training Institute', 'Knowledge Center'],
+    'Automotive': ['Auto Service', 'Car Care Center', 'Vehicle Services', 'Auto Hub']
+  };
+
+  const names = fallbackNames[businessType] || ['Professional Services', 'Business Solutions', 'Service Provider'];
+  return names[Math.floor(Math.random() * names.length)];
+}
+
+/**
+ * Generate services fallback
+ */
+function generateServicesFallback(businessType: string): string[] {
+  const fallbackServices: Record<string, string[]> = {
+    'Restaurant': ['Quality dining', 'Fresh ingredients', 'Takeaway service', 'Catering'],
+    'Healthcare': ['General consultation', 'Health checkups', 'Medical care', 'Wellness services'],
+    'Fitness Gym': ['Fitness training', 'Group classes', 'Personal training', 'Wellness programs'],
+    'Beauty Salon': ['Hair styling', 'Beauty treatments', 'Skincare services', 'Wellness spa'],
+    'Finance': ['Financial planning', 'Banking services', 'Investment advice', 'Money management'],
+    'Retail Store': ['Quality products', 'Customer service', 'Shopping experience', 'Product variety'],
+    'Legal Services': ['Legal consultation', 'Professional advice', 'Legal representation', 'Document services'],
+    'Technology': ['Digital solutions', 'Technical support', 'Software services', 'Innovation'],
+    'Education': ['Learning programs', 'Skill development', 'Educational services', 'Training courses'],
+    'Automotive': ['Vehicle maintenance', 'Auto repair', 'Car services', 'Technical support']
+  };
+
+  return fallbackServices[businessType] || ['Professional services', 'Quality solutions', 'Customer support'];
+}
+
+/**
+ * Generate key features fallback
+ */
+function generateKeyFeaturesFallback(businessType: string): string[] {
+  const fallbackFeatures: Record<string, string[]> = {
+    'Restaurant': ['Fresh ingredients', 'Authentic recipes', 'Friendly service', 'Clean environment'],
+    'Healthcare': ['Experienced professionals', 'Modern equipment', 'Comprehensive care', 'Patient-focused'],
+    'Fitness Gym': ['Modern equipment', 'Expert trainers', 'Flexible schedules', 'Results-oriented'],
+    'Beauty Salon': ['Skilled professionals', 'Premium products', 'Relaxing atmosphere', 'Personalized service'],
+    'Finance': ['Trusted expertise', 'Secure transactions', 'Competitive rates', 'Professional advice'],
+    'Retail Store': ['Quality products', 'Competitive prices', 'Excellent service', 'Wide selection'],
+    'Legal Services': ['Experienced attorneys', 'Professional expertise', 'Confidential service', 'Results-focused'],
+    'Technology': ['Cutting-edge solutions', 'Expert team', 'Reliable service', 'Innovation-driven'],
+    'Education': ['Qualified instructors', 'Comprehensive curriculum', 'Flexible learning', 'Practical approach'],
+    'Automotive': ['Certified technicians', 'Quality parts', 'Reliable service', 'Fair pricing']
+  };
+
+  return fallbackFeatures[businessType] || ['Professional service', 'Quality focus', 'Customer satisfaction'];
+}
+
+/**
+ * Generate target audience fallback
+ */
+function generateTargetAudienceFallback(businessType: string): string {
+  const fallbackAudiences: Record<string, string> = {
+    'Restaurant': 'Families, food lovers, local community',
+    'Healthcare': 'Patients, families, health-conscious individuals',
+    'Fitness Gym': 'Fitness enthusiasts, health-conscious individuals, athletes',
+    'Beauty Salon': 'Beauty-conscious individuals, professionals, special occasion clients',
+    'Finance': 'Individuals, families, small businesses, investors',
+    'Retail Store': 'Shoppers, fashion-conscious individuals, local community',
+    'Legal Services': 'Individuals, families, small businesses, corporations',
+    'Technology': 'Businesses, entrepreneurs, tech-savvy individuals',
+    'Education': 'Students, professionals, lifelong learners',
+    'Automotive': 'Vehicle owners, drivers, automotive enthusiasts'
+  };
+
+  return fallbackAudiences[businessType] || 'General public, local community, professionals';
+}
+
+/**
+ * Generate brand colors fallback
+ */
+function generateBrandColorsFallback(businessType: string): { primary: string; secondary: string; background: string } {
+  const fallbackColors: Record<string, { primary: string; secondary: string; background: string }> = {
+    'Restaurant': { primary: '#FF6B35', secondary: '#F7931E', background: '#FFF8F0' },
+    'Healthcare': { primary: '#0EA5E9', secondary: '#10B981', background: '#F0F9FF' },
+    'Fitness Gym': { primary: '#EF4444', secondary: '#F97316', background: '#FEF2F2' },
+    'Beauty Salon': { primary: '#EC4899', secondary: '#A855F7', background: '#FDF2F8' },
+    'Finance': { primary: '#1E40AF', secondary: '#059669', background: '#EFF6FF' },
+    'Retail Store': { primary: '#7C3AED', secondary: '#DB2777', background: '#F5F3FF' },
+    'Legal Services': { primary: '#374151', secondary: '#6B7280', background: '#F9FAFB' },
+    'Technology': { primary: '#3B82F6', secondary: '#8B5CF6', background: '#EFF6FF' },
+    'Education': { primary: '#059669', secondary: '#0891B2', background: '#ECFDF5' },
+    'Automotive': { primary: '#DC2626', secondary: '#EA580C', background: '#FEF2F2' }
+  };
+
+  return fallbackColors[businessType] || { primary: '#1a73e8', secondary: '#34a853', background: '#ffffff' };
+}
+
+/**
+ * Generate writing tone fallback
+ */
+function generateWritingToneFallback(businessType: string): string {
+  const fallbackTones: Record<string, string> = {
+    'Restaurant': 'friendly',
+    'Healthcare': 'professional',
+    'Fitness Gym': 'energetic',
+    'Beauty Salon': 'elegant',
+    'Finance': 'trustworthy',
+    'Retail Store': 'trendy',
+    'Legal Services': 'professional',
+    'Technology': 'innovative',
+    'Education': 'informative',
+    'Automotive': 'reliable'
+  };
+
+  return fallbackTones[businessType] || 'professional';
+}
+
+/**
+ * Generate brand voice fallback
+ */
+function generateBrandVoiceFallback(businessType: string): string {
+  const fallbackVoices: Record<string, string> = {
+    'Restaurant': 'warm and welcoming',
+    'Healthcare': 'caring and professional',
+    'Fitness Gym': 'motivating and energetic',
+    'Beauty Salon': 'sophisticated and elegant',
+    'Finance': 'trustworthy and reliable',
+    'Retail Store': 'trendy and approachable',
+    'Legal Services': 'authoritative and professional',
+    'Technology': 'innovative and forward-thinking',
+    'Education': 'knowledgeable and supportive',
+    'Automotive': 'dependable and expert'
+  };
+
+  return fallbackVoices[businessType] || 'professional and reliable';
+}
+
+/**
+ * Generate competitive advantages fallback
+ */
+function generateCompetitiveAdvantagesFallback(businessType: string): string[] {
+  const fallbackAdvantages: Record<string, string[]> = {
+    'Restaurant': ['Fresh local ingredients', 'Authentic recipes', 'Excellent customer service'],
+    'Healthcare': ['Experienced medical professionals', 'Modern medical equipment', 'Comprehensive care'],
+    'Fitness Gym': ['State-of-the-art equipment', 'Certified trainers', 'Flexible membership options'],
+    'Beauty Salon': ['Skilled beauty professionals', 'Premium beauty products', 'Relaxing atmosphere'],
+    'Finance': ['Competitive interest rates', 'Personalized financial advice', 'Secure transactions'],
+    'Retail Store': ['Wide product selection', 'Competitive pricing', 'Excellent customer service'],
+    'Legal Services': ['Experienced legal team', 'Proven track record', 'Personalized attention'],
+    'Technology': ['Cutting-edge technology', 'Expert technical team', 'Reliable support'],
+    'Education': ['Qualified instructors', 'Comprehensive curriculum', 'Practical learning approach'],
+    'Automotive': ['Certified mechanics', 'Quality auto parts', 'Competitive pricing']
+  };
+
+  return fallbackAdvantages[businessType] || ['Professional expertise', 'Quality service', 'Customer satisfaction'];
+}
+
+/**
+ * Generate unique selling points fallback
+ */
+function generateUniqueSellingPointsFallback(businessType: string): string[] {
+  const fallbackUSPs: Record<string, string[]> = {
+    'Restaurant': ['Family recipes passed down generations', 'Farm-to-table freshness'],
+    'Healthcare': ['24/7 emergency care', 'Comprehensive health screenings'],
+    'Fitness Gym': ['Personal training included', 'Results guarantee program'],
+    'Beauty Salon': ['Organic beauty treatments', 'Customized beauty solutions'],
+    'Finance': ['No hidden fees', 'Same-day loan approval'],
+    'Retail Store': ['Exclusive designer collections', 'Price match guarantee'],
+    'Legal Services': ['Free initial consultation', 'No win, no fee policy'],
+    'Technology': ['24/7 technical support', 'Custom software solutions'],
+    'Education': ['Job placement assistance', 'Industry-recognized certifications'],
+    'Automotive': ['Lifetime warranty on repairs', 'Mobile service available']
+  };
+
+  return fallbackUSPs[businessType] || ['Exceptional service quality', 'Customer-first approach'];
+}
+
+/**
+ * Generate description fallback
+ */
+function generateDescriptionFallback(businessName: string, businessType: string, services: string[]): string {
+  const serviceText = services.length > 0 ? services.slice(0, 2).join(' and ') : 'quality services';
+
+  const templates: Record<string, string> = {
+    'Restaurant': `${businessName} offers exceptional dining with ${serviceText}. Quality ingredients and outstanding service.`,
+    'Healthcare': `${businessName} provides comprehensive healthcare including ${serviceText}. Experienced professionals committed to your wellbeing.`,
+    'Fitness Gym': `${businessName} is your fitness destination offering ${serviceText}. Achieve your goals with expert guidance.`,
+    'Beauty Salon': `${businessName} delivers premium beauty services including ${serviceText}. Skilled professionals, finest products.`,
+    'Finance': `${businessName} provides trusted financial services including ${serviceText}. Expert advice, reliable solutions.`,
+    'Retail Store': `${businessName} offers exceptional shopping with ${serviceText}. Quality products, outstanding service.`,
+    'Legal Services': `${businessName} provides professional legal services including ${serviceText}. Experienced attorneys, proven results.`,
+    'Technology': `${businessName} delivers innovative solutions including ${serviceText}. Cutting-edge technology, expert support.`,
+    'Education': `${businessName} offers comprehensive education including ${serviceText}. Practical skills for success.`,
+    'Automotive': `${businessName} provides reliable automotive services including ${serviceText}. Certified technicians, peak performance.`
+  };
+
+  return templates[businessType] || `${businessName} provides professional ${serviceText} with quality and customer satisfaction.`;
+}
+
+// ============================================================================
+// TASK 24: STANDARDIZE BRAND PROFILE DATA PROCESSING
+// ============================================================================
+
+/**
+ * Standardized brand profile processing pipeline
+ */
+interface ProcessedBrandProfile {
+  // Core identifiers
+  businessName: string;
+  businessType: string;
+  location: string;
+
+  // Business details
+  services: string[];
+  keyFeatures: string[];
+  targetAudience: string;
+  competitiveAdvantages: string[];
+  uniqueSellingPoints: string[];
+  description: string;
+
+  // Brand identity
+  brandColors: {
+    primary: string;
+    secondary: string;
+    background: string;
+    accent?: string;
+  };
+  brandVoice: string;
+  writingTone: string;
+
+  // Assets and contact
+  logoUrl?: string;
+  websiteUrl?: string;
+  designExamples: string[];
+  contactInfo?: {
+    phone?: string;
+    email?: string;
+    address?: string;
+  };
+
+  // Processing metadata
+  processingTimestamp: string;
+  dataQualityScore: number;
+  validationErrors: string[];
+  normalizations: string[];
+  fallbacksApplied: string[];
+}
+
+/**
+ * Unified brand profile data processing pipeline
+ */
+export function processBrandProfileData(
+  rawBrandProfile: any,
+  options: {
+    businessType?: string;
+    location?: string;
+    applyFallbacks?: boolean;
+    validateData?: boolean;
+    normalizeData?: boolean;
+  } = {}
+): ProcessedBrandProfile {
+  const processingTimestamp = new Date().toISOString();
+  const validationErrors: string[] = [];
+  const normalizations: string[] = [];
+  const fallbacksApplied: string[] = [];
+
+  // Step 1: Input validation and sanitization
+  const sanitizedProfile = sanitizeBrandProfileInput(rawBrandProfile, validationErrors);
+
+  // Step 2: Data normalization
+  const normalizedProfile = options.normalizeData !== false
+    ? normalizeBrandProfileData(sanitizedProfile, normalizations)
+    : sanitizedProfile;
+
+  // Step 3: Apply intelligent fallbacks if enabled
+  const enhancedProfile = options.applyFallbacks !== false
+    ? applyBrandProfileFallbacks(normalizedProfile, options.businessType, options.location)
+    : { ...normalizedProfile, fallbacksUsed: [] };
+
+  if (enhancedProfile.fallbacksUsed) {
+    fallbacksApplied.push(...enhancedProfile.fallbacksUsed);
+  }
+
+  // Step 4: Final validation and quality scoring
+  const dataQualityScore = calculateDataQualityScore(enhancedProfile);
+
+  // Step 5: Construct standardized profile
+  const processedProfile: ProcessedBrandProfile = {
+    // Core identifiers
+    businessName: enhancedProfile.businessName || 'Business',
+    businessType: enhancedProfile.businessType || 'Business',
+    location: enhancedProfile.location || 'Global',
+
+    // Business details
+    services: Array.isArray(enhancedProfile.services) ? enhancedProfile.services : [],
+    keyFeatures: Array.isArray(enhancedProfile.keyFeatures) ? enhancedProfile.keyFeatures : [],
+    targetAudience: enhancedProfile.targetAudience || 'General public',
+    competitiveAdvantages: Array.isArray(enhancedProfile.competitiveAdvantages) ? enhancedProfile.competitiveAdvantages : [],
+    uniqueSellingPoints: Array.isArray(enhancedProfile.uniqueSellingPoints) ? enhancedProfile.uniqueSellingPoints : [],
+    description: enhancedProfile.description || '',
+
+    // Brand identity
+    brandColors: {
+      primary: enhancedProfile.brandColors?.primary || '#1a73e8',
+      secondary: enhancedProfile.brandColors?.secondary || '#34a853',
+      background: enhancedProfile.brandColors?.background || '#ffffff',
+      accent: enhancedProfile.accentColor || enhancedProfile.brandColors?.accent
+    },
+    brandVoice: enhancedProfile.brandVoice || 'professional',
+    writingTone: enhancedProfile.writingTone || 'professional',
+
+    // Assets and contact
+    logoUrl: enhancedProfile.logoUrl,
+    websiteUrl: enhancedProfile.websiteUrl,
+    designExamples: Array.isArray(enhancedProfile.designExamples) ? enhancedProfile.designExamples : [],
+    contactInfo: enhancedProfile.contactInfo,
+
+    // Processing metadata
+    processingTimestamp,
+    dataQualityScore,
+    validationErrors,
+    normalizations,
+    fallbacksApplied
+  };
+
+  return processedProfile;
+}
+
+/**
+ * Sanitize brand profile input data
+ */
+function sanitizeBrandProfileInput(rawProfile: any, validationErrors: string[]): any {
+  if (!rawProfile || typeof rawProfile !== 'object') {
+    validationErrors.push('Invalid brand profile: not an object');
+    return {};
+  }
+
+  const sanitized: any = {};
+
+  // Sanitize string fields
+  const stringFields = ['businessName', 'businessType', 'location', 'targetAudience', 'brandVoice', 'writingTone', 'description', 'logoUrl', 'websiteUrl'];
+  stringFields.forEach(field => {
+    if (rawProfile[field] !== undefined && rawProfile[field] !== null) {
+      if (typeof rawProfile[field] === 'string') {
+        const trimmed = rawProfile[field].trim();
+        if (trimmed.length > 0) {
+          sanitized[field] = trimmed.length > 500 ? trimmed.substring(0, 500) + '...' : trimmed;
+        }
+      } else {
+        validationErrors.push(`Invalid ${field}: expected string, got ${typeof rawProfile[field]}`);
+      }
+    }
+  });
+
+  // Sanitize array fields
+  const arrayFields = ['services', 'keyFeatures', 'competitiveAdvantages', 'uniqueSellingPoints', 'designExamples'];
+  arrayFields.forEach(field => {
+    if (rawProfile[field] !== undefined && rawProfile[field] !== null) {
+      if (Array.isArray(rawProfile[field])) {
+        const sanitizedArray = rawProfile[field]
+          .filter((item: any) => item !== null && item !== undefined)
+          .map((item: any) => typeof item === 'string' ? item.trim() : String(item).trim())
+          .filter((item: string) => item.length > 0)
+          .slice(0, 20); // Limit array size
+
+        if (sanitizedArray.length > 0) {
+          sanitized[field] = sanitizedArray;
+        }
+      } else {
+        validationErrors.push(`Invalid ${field}: expected array, got ${typeof rawProfile[field]}`);
+      }
+    }
+  });
+
+  // Sanitize brand colors
+  if (rawProfile.brandColors && typeof rawProfile.brandColors === 'object') {
+    const colors: any = {};
+    const colorFields = ['primary', 'secondary', 'background', 'accent'];
+
+    colorFields.forEach(colorField => {
+      if (rawProfile.brandColors[colorField] && typeof rawProfile.brandColors[colorField] === 'string') {
+        const color = rawProfile.brandColors[colorField].trim();
+        if (color.match(/^#[0-9A-Fa-f]{6}$/) || color.match(/^#[0-9A-Fa-f]{3}$/)) {
+          colors[colorField] = color;
+        } else {
+          validationErrors.push(`Invalid brand color ${colorField}: ${color}`);
+        }
+      }
+    });
+
+    if (Object.keys(colors).length > 0) {
+      sanitized.brandColors = colors;
+    }
+  }
+
+  // Sanitize contact info
+  if (rawProfile.contactInfo && typeof rawProfile.contactInfo === 'object') {
+    const contactInfo: any = {};
+
+    if (rawProfile.contactInfo.phone && typeof rawProfile.contactInfo.phone === 'string') {
+      contactInfo.phone = rawProfile.contactInfo.phone.trim();
+    }
+
+    if (rawProfile.contactInfo.email && typeof rawProfile.contactInfo.email === 'string') {
+      const email = rawProfile.contactInfo.email.trim();
+      if (email.includes('@')) {
+        contactInfo.email = email;
+      } else {
+        validationErrors.push(`Invalid email format: ${email}`);
+      }
+    }
+
+    if (rawProfile.contactInfo.address && typeof rawProfile.contactInfo.address === 'string') {
+      contactInfo.address = rawProfile.contactInfo.address.trim();
+    }
+
+    if (Object.keys(contactInfo).length > 0) {
+      sanitized.contactInfo = contactInfo;
+    }
+  }
+
+  return sanitized;
+}
+
+/**
+ * Normalize brand profile data
+ */
+function normalizeBrandProfileData(profile: any, normalizations: string[]): any {
+  const normalized = { ...profile };
+
+  // Normalize business type
+  if (normalized.businessType) {
+    const businessTypeMap: Record<string, string> = {
+      'restaurant': 'Restaurant',
+      'food': 'Restaurant',
+      'dining': 'Restaurant',
+      'cafe': 'Restaurant',
+      'health': 'Healthcare',
+      'medical': 'Healthcare',
+      'clinic': 'Healthcare',
+      'hospital': 'Healthcare',
+      'fitness': 'Fitness Gym',
+      'gym': 'Fitness Gym',
+      'workout': 'Fitness Gym',
+      'beauty': 'Beauty Salon',
+      'salon': 'Beauty Salon',
+      'spa': 'Beauty Salon',
+      'finance': 'Finance',
+      'bank': 'Finance',
+      'financial': 'Finance',
+      'retail': 'Retail Store',
+      'shop': 'Retail Store',
+      'store': 'Retail Store',
+      'legal': 'Legal Services',
+      'law': 'Legal Services',
+      'attorney': 'Legal Services',
+      'tech': 'Technology',
+      'software': 'Technology',
+      'it': 'Technology',
+      'education': 'Education',
+      'school': 'Education',
+      'training': 'Education',
+      'auto': 'Automotive',
+      'car': 'Automotive',
+      'automotive': 'Automotive'
+    };
+
+    const lowerType = String(normalized.businessType || 'general business').toLowerCase();
+    for (const [key, value] of Object.entries(businessTypeMap)) {
+      if (lowerType.includes(key)) {
+        if (normalized.businessType !== value) {
+          normalizations.push(`businessType: "${normalized.businessType}" → "${value}"`);
+          normalized.businessType = value;
+        }
+        break;
+      }
+    }
+  }
+
+  // Normalize location format
+  if (normalized.location) {
+    // Capitalize first letter of each word
+    const normalizedLocation = normalized.location
+      .split(',')
+      .map((part: string) => part.trim())
+      .map((part: string) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+      .join(', ');
+
+    if (normalized.location !== normalizedLocation) {
+      normalizations.push(`location: "${normalized.location}" → "${normalizedLocation}"`);
+      normalized.location = normalizedLocation;
+    }
+  }
+
+  // Normalize writing tone
+  if (normalized.writingTone) {
+    const toneMap: Record<string, string> = {
+      'casual': 'friendly',
+      'informal': 'friendly',
+      'formal': 'professional',
+      'business': 'professional',
+      'corporate': 'professional',
+      'fun': 'energetic',
+      'exciting': 'energetic',
+      'sophisticated': 'elegant',
+      'classy': 'elegant',
+      'reliable': 'trustworthy',
+      'dependable': 'trustworthy',
+      'modern': 'innovative',
+      'cutting-edge': 'innovative'
+    };
+
+    const lowerTone = normalized.writingTone.toLowerCase();
+    if (toneMap[lowerTone] && normalized.writingTone !== toneMap[lowerTone]) {
+      normalizations.push(`writingTone: "${normalized.writingTone}" → "${toneMap[lowerTone]}"`);
+      normalized.writingTone = toneMap[lowerTone];
+    }
+  }
+
+  // Normalize brand voice
+  if (normalized.brandVoice) {
+    const voiceMap: Record<string, string> = {
+      'casual and friendly': 'warm and welcoming',
+      'professional and reliable': 'trustworthy and reliable',
+      'modern and innovative': 'innovative and forward-thinking',
+      'elegant and sophisticated': 'sophisticated and elegant'
+    };
+
+    const lowerVoice = normalized.brandVoice.toLowerCase();
+    if (voiceMap[lowerVoice] && normalized.brandVoice !== voiceMap[lowerVoice]) {
+      normalizations.push(`brandVoice: "${normalized.brandVoice}" → "${voiceMap[lowerVoice]}"`);
+      normalized.brandVoice = voiceMap[lowerVoice];
+    }
+  }
+
+  // Normalize services (remove duplicates, standardize format)
+  if (normalized.services && Array.isArray(normalized.services)) {
+    const originalLength = normalized.services.length;
+    const uniqueServices = [...new Set(normalized.services.map((s: string) =>
+      s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
+    ))];
+
+    if (originalLength !== uniqueServices.length) {
+      normalizations.push(`services: removed ${originalLength - uniqueServices.length} duplicates`);
+    }
+
+    normalized.services = uniqueServices;
+  }
+
+  // Normalize key features (remove duplicates, standardize format)
+  if (normalized.keyFeatures && Array.isArray(normalized.keyFeatures)) {
+    const originalLength = normalized.keyFeatures.length;
+    const uniqueFeatures = [...new Set(normalized.keyFeatures.map((f: string) =>
+      f.charAt(0).toUpperCase() + f.slice(1).toLowerCase()
+    ))];
+
+    if (originalLength !== uniqueFeatures.length) {
+      normalizations.push(`keyFeatures: removed ${originalLength - uniqueFeatures.length} duplicates`);
+    }
+
+    normalized.keyFeatures = uniqueFeatures;
+  }
+
+  return normalized;
+}
+
+/**
+ * Calculate data quality score for brand profile
+ */
+function calculateDataQualityScore(profile: any): number {
+  let score = 0;
+  let maxScore = 0;
+
+  // Critical fields (40 points total)
+  const criticalFields = [
+    { field: 'businessName', weight: 15 },
+    { field: 'businessType', weight: 15 },
+    { field: 'location', weight: 10 }
+  ];
+
+  criticalFields.forEach(({ field, weight }) => {
+    maxScore += weight;
+    if (profile[field] && typeof profile[field] === 'string' && profile[field].trim().length > 0) {
+      score += weight;
+    }
+  });
+
+  // High importance fields (35 points total)
+  const highImportanceFields = [
+    { field: 'services', weight: 10, isArray: true },
+    { field: 'keyFeatures', weight: 8, isArray: true },
+    { field: 'targetAudience', weight: 7 },
+    { field: 'brandColors', weight: 10, isObject: true }
+  ];
+
+  highImportanceFields.forEach(({ field, weight, isArray, isObject }) => {
+    maxScore += weight;
+    if (isArray && Array.isArray(profile[field]) && profile[field].length > 0) {
+      score += weight;
+    } else if (isObject && profile[field] && typeof profile[field] === 'object' && profile[field].primary) {
+      score += weight;
+    } else if (!isArray && !isObject && profile[field] && typeof profile[field] === 'string' && profile[field].trim().length > 0) {
+      score += weight;
+    }
+  });
+
+  // Medium importance fields (20 points total)
+  const mediumImportanceFields = [
+    { field: 'competitiveAdvantages', weight: 5, isArray: true },
+    { field: 'uniqueSellingPoints', weight: 5, isArray: true },
+    { field: 'brandVoice', weight: 5 },
+    { field: 'writingTone', weight: 5 }
+  ];
+
+  mediumImportanceFields.forEach(({ field, weight, isArray }) => {
+    maxScore += weight;
+    if (isArray && Array.isArray(profile[field]) && profile[field].length > 0) {
+      score += weight;
+    } else if (!isArray && profile[field] && typeof profile[field] === 'string' && profile[field].trim().length > 0) {
+      score += weight;
+    }
+  });
+
+  // Low importance fields (5 points total)
+  const lowImportanceFields = [
+    { field: 'description', weight: 2 },
+    { field: 'logoUrl', weight: 1 },
+    { field: 'websiteUrl', weight: 1 },
+    { field: 'designExamples', weight: 1, isArray: true }
+  ];
+
+  lowImportanceFields.forEach(({ field, weight, isArray }) => {
+    maxScore += weight;
+    if (isArray && Array.isArray(profile[field]) && profile[field].length > 0) {
+      score += weight;
+    } else if (!isArray && profile[field] && typeof profile[field] === 'string' && profile[field].trim().length > 0) {
+      score += weight;
+    }
+  });
+
+  return Math.round((score / maxScore) * 100);
+}
+
+// ============================================================================
+// TASK 25: CREATE REUSABLE BUSINESS INTELLIGENCE FUNCTIONS
+// ============================================================================
+
+/**
+ * Business intelligence context for content generation
+ */
+interface BusinessIntelligenceContext {
+  businessType: string;
+  location: string;
+  services: string[];
+  targetAudience: string;
+  keyFeatures: string[];
+  competitiveAdvantages: string[];
+  brandVoice: string;
+  writingTone: string;
+}
+
+/**
+ * Generated business intelligence data
+ */
+interface BusinessIntelligence {
+  engagementHooks: string[];
+  painPoints: string[];
+  valuePropositions: string[];
+  emotionalTriggers: string[];
+  industryInsights: string[];
+  competitiveEdges: string[];
+  callToActions: string[];
+  culturalContext: {
+    language: string;
+    culturalReferences: string[];
+    localContext: string[];
+    communicationStyle: string;
+  };
+}
+
+/**
+ * Reusable business intelligence generator
+ * Generates contextually appropriate business intelligence for any business type and location
+ */
+export function generateBusinessIntelligence(context: BusinessIntelligenceContext): BusinessIntelligence {
+  return {
+    engagementHooks: generateEngagementHooks(context),
+    painPoints: generateIndustryPainPoints(context),
+    valuePropositions: generateValuePropositions(context),
+    emotionalTriggers: generateEmotionalTriggers(context),
+    industryInsights: generateIndustryInsights(context),
+    competitiveEdges: generateCompetitiveEdges(context),
+    callToActions: generateContextualCTAs(context),
+    culturalContext: generateCulturalContext(context.location, context.businessType)
+  };
+}
+
+/**
+ * Generate engagement hooks based on business context
+ */
+function generateEngagementHooks(context: BusinessIntelligenceContext): string[] {
+  const businessTypeHooks: Record<string, string[]> = {
+    'Restaurant': [
+      'Craving authentic flavors?',
+      'Hungry for something special?',
+      'Ready for a culinary adventure?',
+      'Taste the difference quality makes',
+      'Where every meal tells a story'
+    ],
+    'Healthcare': [
+      'Your health is our priority',
+      'Expert care when you need it most',
+      'Comprehensive healthcare solutions',
+      'Taking care of your wellbeing',
+      'Professional medical expertise'
+    ],
+    'Fitness Gym': [
+      'Ready to transform your fitness?',
+      'Achieve your fitness goals faster',
+      'Unlock your potential',
+      'Stronger starts here',
+      'Your fitness journey begins now'
+    ],
+    'Beauty Salon': [
+      'Ready to look and feel amazing?',
+      'Discover your natural beauty',
+      'Pamper yourself today',
+      'Beauty that radiates confidence',
+      'Transform your look, transform your day'
+    ],
+    'Finance': [
+      'Secure your financial future',
+      'Smart money decisions start here',
+      'Financial freedom within reach',
+      'Your trusted financial partner',
+      'Building wealth, building dreams'
+    ],
+    'Retail Store': [
+      'Discover something special',
+      'Quality products, unbeatable value',
+      'Find exactly what you need',
+      'Shopping made simple',
+      'Your style, your choice'
+    ],
+    'Legal Services': [
+      'Protecting your rights',
+      'Expert legal guidance',
+      'Justice you can trust',
+      'Legal solutions that work',
+      'Your advocate in legal matters'
+    ],
+    'Technology': [
+      'Innovation that transforms',
+      'Technology solutions that work',
+      'Digital transformation starts here',
+      'Cutting-edge solutions',
+      'Future-ready technology'
+    ],
+    'Education': [
+      'Unlock your learning potential',
+      'Knowledge that empowers',
+      'Learn, grow, succeed',
+      'Education that makes a difference',
+      'Your path to success starts here'
+    ],
+    'Automotive': [
+      'Keep your vehicle running smooth',
+      'Expert automotive care',
+      'Reliable service you can trust',
+      'Your car deserves the best',
+      'Professional automotive solutions'
+    ]
+  };
+
+  const hooks = businessTypeHooks[context.businessType] || [
+    'Quality service you can trust',
+    'Professional solutions that work',
+    'Excellence in everything we do',
+    'Your success is our mission',
+    'Experience the difference'
+  ];
+
+  // Personalize hooks based on services and features
+  const personalizedHooks = hooks.map(hook => {
+    if (context.keyFeatures.length > 0) {
+      const feature = context.keyFeatures[0].toLowerCase();
+      return hook.replace(/quality|professional|expert/i, feature);
+    }
+    return hook;
+  });
+
+  return personalizedHooks.slice(0, 3);
+}
+
+/**
+ * Generate industry-specific pain points
+ */
+function generateIndustryPainPoints(context: BusinessIntelligenceContext): string[] {
+  const businessTypePainPoints: Record<string, string[]> = {
+    'Restaurant': [
+      'Tired of bland, overpriced food?',
+      'Long waits for mediocre meals?',
+      'Searching for authentic flavors?',
+      'Disappointed by poor service?',
+      'Craving fresh, quality ingredients?'
+    ],
+    'Healthcare': [
+      'Struggling with health concerns?',
+      'Long wait times for appointments?',
+      'Confused by complex medical processes?',
+      'Need reliable healthcare advice?',
+      'Worried about medical costs?'
+    ],
+    'Fitness Gym': [
+      'Struggling to stay motivated?',
+      'Not seeing fitness results?',
+      'Intimidated by crowded gyms?',
+      'Lack of proper guidance?',
+      'Inconsistent workout routine?'
+    ],
+    'Beauty Salon': [
+      'Tired of bad hair days?',
+      'Struggling with skincare issues?',
+      'Need professional beauty advice?',
+      'Looking for relaxation time?',
+      'Want to enhance your natural beauty?'
+    ],
+    'Finance': [
+      'Worried about financial security?',
+      'Confused by investment options?',
+      'Struggling with debt management?',
+      'Need better financial planning?',
+      'Concerned about retirement savings?'
+    ],
+    'Retail Store': [
+      'Can\'t find what you\'re looking for?',
+      'Tired of poor quality products?',
+      'Frustrated with high prices?',
+      'Need better customer service?',
+      'Want more shopping convenience?'
+    ],
+    'Legal Services': [
+      'Facing legal challenges?',
+      'Confused by legal procedures?',
+      'Need expert legal advice?',
+      'Worried about legal costs?',
+      'Dealing with complex legal matters?'
+    ],
+    'Technology': [
+      'Struggling with outdated systems?',
+      'Need digital transformation?',
+      'Facing technical challenges?',
+      'Want to improve efficiency?',
+      'Need reliable tech support?'
+    ],
+    'Education': [
+      'Struggling to learn new skills?',
+      'Need career advancement?',
+      'Want practical knowledge?',
+      'Looking for quality education?',
+      'Need flexible learning options?'
+    ],
+    'Automotive': [
+      'Car troubles disrupting your day?',
+      'Worried about vehicle reliability?',
+      'Need trustworthy mechanics?',
+      'Facing unexpected repair costs?',
+      'Want preventive maintenance?'
+    ]
+  };
+
+  return businessTypePainPoints[context.businessType] || [
+    'Facing challenges in your industry?',
+    'Need reliable professional services?',
+    'Looking for better solutions?',
+    'Want to improve your situation?',
+    'Seeking expert guidance?'
+  ];
+}
+
+/**
+ * Generate value propositions based on business context
+ */
+function generateValuePropositions(context: BusinessIntelligenceContext): string[] {
+  const basePropositions = [
+    `${context.services[0] || 'Our services'} that exceed expectations`,
+    `${context.keyFeatures[0] || 'Quality'} you can count on`,
+    `Trusted by ${context.targetAudience || 'customers'} everywhere`
+  ];
+
+  // Add competitive advantages as value propositions
+  const competitiveProps = context.competitiveAdvantages.slice(0, 2).map(advantage =>
+    `Experience the advantage of ${advantage.toLowerCase()}`
+  );
+
+  return [...basePropositions, ...competitiveProps].slice(0, 4);
+}
+
+/**
+ * Generate emotional triggers based on business context
+ */
+function generateEmotionalTriggers(context: BusinessIntelligenceContext): string[] {
+  const businessTypeEmotions: Record<string, string[]> = {
+    'Restaurant': ['satisfaction', 'comfort', 'joy', 'nostalgia', 'community'],
+    'Healthcare': ['security', 'trust', 'relief', 'hope', 'care'],
+    'Fitness Gym': ['confidence', 'achievement', 'energy', 'transformation', 'strength'],
+    'Beauty Salon': ['confidence', 'relaxation', 'self-love', 'transformation', 'elegance'],
+    'Finance': ['security', 'confidence', 'peace of mind', 'prosperity', 'stability'],
+    'Retail Store': ['excitement', 'satisfaction', 'discovery', 'value', 'style'],
+    'Legal Services': ['security', 'justice', 'protection', 'peace of mind', 'trust'],
+    'Technology': ['innovation', 'efficiency', 'progress', 'empowerment', 'success'],
+    'Education': ['growth', 'achievement', 'empowerment', 'confidence', 'success'],
+    'Automotive': ['reliability', 'safety', 'peace of mind', 'trust', 'convenience']
+  };
+
+  const emotions = businessTypeEmotions[context.businessType] || ['satisfaction', 'trust', 'confidence', 'success'];
+
+  return emotions.map(emotion => `Feel the ${emotion} of choosing us`).slice(0, 3);
+}
+
+/**
+ * Generate industry insights
+ */
+function generateIndustryInsights(context: BusinessIntelligenceContext): string[] {
+  const businessTypeInsights: Record<string, string[]> = {
+    'Restaurant': [
+      'Fresh ingredients make all the difference',
+      'Authentic recipes create memorable experiences',
+      'Quality service enhances every meal'
+    ],
+    'Healthcare': [
+      'Early prevention saves lives and costs',
+      'Personalized care leads to better outcomes',
+      'Expert diagnosis is crucial for treatment'
+    ],
+    'Fitness Gym': [
+      'Consistency beats intensity in fitness',
+      'Proper form prevents injuries',
+      'Community support accelerates results'
+    ],
+    'Beauty Salon': [
+      'Professional products deliver lasting results',
+      'Skilled techniques enhance natural beauty',
+      'Regular care maintains healthy appearance'
+    ],
+    'Finance': [
+      'Diversification reduces investment risk',
+      'Early planning maximizes compound growth',
+      'Professional advice prevents costly mistakes'
+    ],
+    'Retail Store': [
+      'Quality products provide lasting value',
+      'Customer service builds loyalty',
+      'Competitive pricing attracts smart shoppers'
+    ],
+    'Legal Services': [
+      'Early legal advice prevents bigger problems',
+      'Experienced representation improves outcomes',
+      'Understanding your rights protects your interests'
+    ],
+    'Technology': [
+      'Digital transformation drives business growth',
+      'Reliable systems prevent costly downtime',
+      'Innovation creates competitive advantages'
+    ],
+    'Education': [
+      'Practical skills drive career advancement',
+      'Continuous learning ensures relevance',
+      'Quality education opens opportunities'
+    ],
+    'Automotive': [
+      'Regular maintenance prevents major repairs',
+      'Quality parts ensure vehicle longevity',
+      'Expert service maintains safety standards'
+    ]
+  };
+
+  return businessTypeInsights[context.businessType] || [
+    'Professional expertise makes the difference',
+    'Quality service builds lasting relationships',
+    'Experience guides better decisions'
+  ];
+}
+
+/**
+ * Generate competitive edges based on context
+ */
+function generateCompetitiveEdges(context: BusinessIntelligenceContext): string[] {
+  const edges = [];
+
+  // Use competitive advantages from profile
+  if (context.competitiveAdvantages.length > 0) {
+    edges.push(...context.competitiveAdvantages.slice(0, 2));
+  }
+
+  // Add business-type-specific edges
+  const businessTypeEdges: Record<string, string[]> = {
+    'Restaurant': ['Farm-to-table freshness', 'Authentic family recipes'],
+    'Healthcare': ['24/7 availability', 'Comprehensive care approach'],
+    'Fitness Gym': ['Personal attention', 'Results-driven programs'],
+    'Beauty Salon': ['Premium products', 'Skilled professionals'],
+    'Finance': ['Personalized strategies', 'Transparent pricing'],
+    'Retail Store': ['Curated selection', 'Exceptional service'],
+    'Legal Services': ['Proven track record', 'Client-focused approach'],
+    'Technology': ['Cutting-edge solutions', '24/7 support'],
+    'Education': ['Industry-relevant curriculum', 'Experienced instructors'],
+    'Automotive': ['Certified technicians', 'Quality guarantee']
+  };
+
+  const typeEdges = businessTypeEdges[context.businessType] || ['Professional expertise', 'Customer satisfaction'];
+  edges.push(...typeEdges);
+
+  return [...new Set(edges)].slice(0, 3);
+}
+
+/**
+ * Generate contextual call-to-actions
+ */
+function generateContextualCTAs(context: BusinessIntelligenceContext): string[] {
+  const businessTypeCTAs: Record<string, string[]> = {
+    'Restaurant': ['Book Your Table', 'Order Now', 'Taste the Difference', 'Reserve Today'],
+    'Healthcare': ['Schedule Appointment', 'Get Care Now', 'Book Consultation', 'Start Treatment'],
+    'Fitness Gym': ['Start Your Journey', 'Join Today', 'Get Fit Now', 'Begin Training'],
+    'Beauty Salon': ['Book Appointment', 'Pamper Yourself', 'Look Amazing', 'Schedule Service'],
+    'Finance': ['Get Started', 'Secure Future', 'Plan Today', 'Invest Now'],
+    'Retail Store': ['Shop Now', 'Discover More', 'Find Yours', 'Browse Collection'],
+    'Legal Services': ['Get Legal Help', 'Schedule Consultation', 'Protect Rights', 'Contact Us'],
+    'Technology': ['Get Solution', 'Start Today', 'Upgrade Now', 'Contact Expert'],
+    'Education': ['Enroll Now', 'Start Learning', 'Join Course', 'Begin Journey'],
+    'Automotive': ['Book Service', 'Get Quote', 'Schedule Repair', 'Contact Us']
+  };
+
+  return businessTypeCTAs[context.businessType] || ['Get Started', 'Contact Us', 'Learn More', 'Try Now'];
+}
+
+/**
+ * Generate cultural context based on location
+ */
+function generateCulturalContext(location: string, businessType: string): {
+  language: string;
+  culturalReferences: string[];
+  localContext: string[];
+  communicationStyle: string;
+} {
+  const locationLower = location.toLowerCase();
+
+  // Determine primary language and cultural context
+  let language = 'English';
+  let culturalReferences: string[] = [];
+  let localContext: string[] = [];
+  let communicationStyle = 'professional';
+
+  // African countries
+  if (locationLower.includes('kenya')) {
+    language = 'English with Swahili influences';
+    culturalReferences = ['community spirit', 'ubuntu philosophy', 'local traditions'];
+    localContext = ['local markets', 'community gatherings', 'family values'];
+    communicationStyle = 'warm and community-focused';
+  } else if (locationLower.includes('nigeria')) {
+    language = 'English with local expressions';
+    culturalReferences = ['community bonds', 'entrepreneurial spirit', 'cultural diversity'];
+    localContext = ['local businesses', 'community support', 'family networks'];
+    communicationStyle = 'energetic and community-oriented';
+  } else if (locationLower.includes('ghana')) {
+    language = 'English with local flavor';
+    culturalReferences = ['hospitality', 'community values', 'cultural heritage'];
+    localContext = ['local traditions', 'community events', 'family connections'];
+    communicationStyle = 'friendly and welcoming';
+  } else if (locationLower.includes('south africa')) {
+    language = 'English with multicultural influences';
+    culturalReferences = ['diversity', 'rainbow nation', 'ubuntu'];
+    localContext = ['diverse communities', 'local businesses', 'cultural exchange'];
+    communicationStyle = 'inclusive and diverse';
+  }
+
+  // European countries
+  else if (locationLower.includes('uk') || locationLower.includes('britain') || locationLower.includes('england')) {
+    language = 'British English';
+    culturalReferences = ['tradition', 'quality', 'heritage'];
+    localContext = ['local communities', 'high street', 'traditional values'];
+    communicationStyle = 'polite and professional';
+  } else if (locationLower.includes('germany')) {
+    language = 'English with German precision';
+    culturalReferences = ['efficiency', 'quality', 'reliability'];
+    localContext = ['precision engineering', 'quality standards', 'systematic approach'];
+    communicationStyle = 'direct and efficient';
+  } else if (locationLower.includes('france')) {
+    language = 'English with French elegance';
+    culturalReferences = ['elegance', 'sophistication', 'artistry'];
+    localContext = ['cultural refinement', 'artistic heritage', 'quality craftsmanship'];
+    communicationStyle = 'sophisticated and refined';
+  }
+
+  // American countries
+  else if (locationLower.includes('usa') || locationLower.includes('america') || locationLower.includes('united states')) {
+    language = 'American English';
+    culturalReferences = ['innovation', 'entrepreneurship', 'opportunity'];
+    localContext = ['local communities', 'business innovation', 'customer service'];
+    communicationStyle = 'confident and direct';
+  } else if (locationLower.includes('canada')) {
+    language = 'Canadian English';
+    culturalReferences = ['politeness', 'multiculturalism', 'community'];
+    localContext = ['diverse communities', 'quality service', 'friendly approach'];
+    communicationStyle = 'polite and inclusive';
+  }
+
+  // Asian countries
+  else if (locationLower.includes('japan')) {
+    language = 'English with Japanese courtesy';
+    culturalReferences = ['respect', 'quality', 'attention to detail'];
+    localContext = ['meticulous service', 'quality focus', 'customer respect'];
+    communicationStyle = 'respectful and detail-oriented';
+  } else if (locationLower.includes('singapore')) {
+    language = 'English with multicultural blend';
+    culturalReferences = ['efficiency', 'multiculturalism', 'innovation'];
+    localContext = ['diverse community', 'business efficiency', 'modern approach'];
+    communicationStyle = 'efficient and multicultural';
+  }
+
+  // Australian/Oceania
+  else if (locationLower.includes('australia')) {
+    language = 'Australian English';
+    culturalReferences = ['laid-back attitude', 'quality lifestyle', 'community spirit'];
+    localContext = ['local communities', 'quality living', 'friendly service'];
+    communicationStyle = 'friendly and relaxed';
+  }
+
+  // Adapt context based on business type
+  if (businessType === 'Restaurant') {
+    localContext = localContext.map(ctx => ctx.replace(/business|service/, 'dining'));
+  } else if (businessType === 'Healthcare') {
+    communicationStyle = 'caring and professional';
+  } else if (businessType === 'Fitness Gym') {
+    communicationStyle = 'motivating and energetic';
+  }
+
+  return {
+    language,
+    culturalReferences,
+    localContext,
+    communicationStyle
+  };
+}
+
+/**
+ * Helper function to get business intelligence for specific use cases
+ */
+export function getBusinessIntelligenceForContent(
+  businessType: string,
+  location: string,
+  services: string[],
+  targetAudience: string,
+  keyFeatures: string[],
+  competitiveAdvantages: string[],
+  brandVoice: string,
+  writingTone: string
+): BusinessIntelligence {
+  const context: BusinessIntelligenceContext = {
+    businessType,
+    location,
+    services,
+    targetAudience,
+    keyFeatures,
+    competitiveAdvantages,
+    brandVoice,
+    writingTone
+  };
+
+  return generateBusinessIntelligence(context);
+}
+
+/**
+ * Helper function to get specific business intelligence elements
+ */
+export function getBusinessIntelligenceElement(
+  elementType: 'hooks' | 'painPoints' | 'valueProps' | 'emotions' | 'insights' | 'edges' | 'ctas' | 'cultural',
+  context: BusinessIntelligenceContext
+): string[] | object {
+  switch (elementType) {
+    case 'hooks':
+      return generateEngagementHooks(context);
+    case 'painPoints':
+      return generateIndustryPainPoints(context);
+    case 'valueProps':
+      return generateValuePropositions(context);
+    case 'emotions':
+      return generateEmotionalTriggers(context);
+    case 'insights':
+      return generateIndustryInsights(context);
+    case 'edges':
+      return generateCompetitiveEdges(context);
+    case 'ctas':
+      return generateContextualCTAs(context);
+    case 'cultural':
+      return generateCulturalContext(context.location, context.businessType);
+    default:
+      return [];
+  }
+}
+
+// ============================================================================
+// TASK 26: IMPLEMENT CONSISTENT ERROR HANDLING
+// ============================================================================
+
+/**
+ * Error categories for business intelligence and content generation
+ */
+enum ErrorCategory {
+  VALIDATION = 'VALIDATION',
+  DATA_PROCESSING = 'DATA_PROCESSING',
+  BUSINESS_INTELLIGENCE = 'BUSINESS_INTELLIGENCE',
+  CONTENT_GENERATION = 'CONTENT_GENERATION',
+  EXTERNAL_SERVICE = 'EXTERNAL_SERVICE',
+  SYSTEM = 'SYSTEM'
+}
+
+/**
+ * Error severity levels
+ */
+enum ErrorSeverity {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+  CRITICAL = 'CRITICAL'
+}
+
+/**
+ * Standardized error interface
+ */
+interface BusinessIntelligenceError {
+  category: ErrorCategory;
+  severity: ErrorSeverity;
+  code: string;
+  message: string;
+  details?: any;
+  timestamp: string;
+  context?: {
+    businessType?: string;
+    location?: string;
+    function?: string;
+    input?: any;
+  };
+  recoveryStrategy?: string;
+  fallbackApplied?: boolean;
+}
+
+/**
+ * Error handling result
+ */
+interface ErrorHandlingResult<T> {
+  success: boolean;
+  data?: T;
+  error?: BusinessIntelligenceError;
+  fallbackData?: T;
+  warnings?: string[];
+}
+
+/**
+ * Centralized error handler for business intelligence operations
+ */
+class BusinessIntelligenceErrorHandler {
+  private static instance: BusinessIntelligenceErrorHandler;
+  private errorLog: BusinessIntelligenceError[] = [];
+
+  static getInstance(): BusinessIntelligenceErrorHandler {
+    if (!BusinessIntelligenceErrorHandler.instance) {
+      BusinessIntelligenceErrorHandler.instance = new BusinessIntelligenceErrorHandler();
+    }
+    return BusinessIntelligenceErrorHandler.instance;
+  }
+
+  /**
+   * Handle errors with automatic recovery strategies
+   */
+  handleError<T>(
+    error: Error | BusinessIntelligenceError,
+    context: {
+      category: ErrorCategory;
+      severity: ErrorSeverity;
+      function: string;
+      input?: any;
+      businessType?: string;
+      location?: string;
+    },
+    fallbackFunction?: () => T
+  ): ErrorHandlingResult<T> {
+    const biError: BusinessIntelligenceError = this.normalizeError(error, context);
+    this.logError(biError);
+
+    // Apply recovery strategy
+    const recoveryResult = this.applyRecoveryStrategy(biError, fallbackFunction);
+
+    return {
+      success: recoveryResult.success,
+      data: recoveryResult.data,
+      error: biError,
+      fallbackData: recoveryResult.fallbackData,
+      warnings: recoveryResult.warnings
+    };
+  }
+
+  /**
+   * Normalize different error types to BusinessIntelligenceError
+   */
+  private normalizeError(
+    error: Error | BusinessIntelligenceError,
+    context: {
+      category: ErrorCategory;
+      severity: ErrorSeverity;
+      function: string;
+      input?: any;
+      businessType?: string;
+      location?: string;
+    }
+  ): BusinessIntelligenceError {
+    if ('category' in error && 'severity' in error) {
+      return error as BusinessIntelligenceError;
+    }
+
+    const standardError = error as Error;
+    return {
+      category: context.category,
+      severity: context.severity,
+      code: this.generateErrorCode(context.category, context.function),
+      message: standardError.message || 'Unknown error occurred',
+      details: standardError.stack,
+      timestamp: new Date().toISOString(),
+      context: {
+        businessType: context.businessType,
+        location: context.location,
+        function: context.function,
+        input: context.input
+      },
+      recoveryStrategy: this.determineRecoveryStrategy(context.category, context.severity),
+      fallbackApplied: false
+    };
+  }
+
+  /**
+   * Generate standardized error codes
+   */
+  private generateErrorCode(category: ErrorCategory, functionName: string): string {
+    const timestamp = Date.now().toString().slice(-6);
+    return `${category}_${functionName.toUpperCase()}_${timestamp}`;
+  }
+
+  /**
+   * Determine appropriate recovery strategy
+   */
+  private determineRecoveryStrategy(category: ErrorCategory, severity: ErrorSeverity): string {
+    const strategies: Record<ErrorCategory, Record<ErrorSeverity, string>> = {
+      [ErrorCategory.VALIDATION]: {
+        [ErrorSeverity.LOW]: 'Use default values and continue',
+        [ErrorSeverity.MEDIUM]: 'Apply data sanitization and retry',
+        [ErrorSeverity.HIGH]: 'Use fallback data source',
+        [ErrorSeverity.CRITICAL]: 'Abort operation and notify user'
+      },
+      [ErrorCategory.DATA_PROCESSING]: {
+        [ErrorSeverity.LOW]: 'Skip invalid data and continue',
+        [ErrorSeverity.MEDIUM]: 'Apply data normalization and retry',
+        [ErrorSeverity.HIGH]: 'Use cached or fallback data',
+        [ErrorSeverity.CRITICAL]: 'Abort processing and use emergency fallback'
+      },
+      [ErrorCategory.BUSINESS_INTELLIGENCE]: {
+        [ErrorSeverity.LOW]: 'Use generic business intelligence',
+        [ErrorSeverity.MEDIUM]: 'Apply business-type fallback',
+        [ErrorSeverity.HIGH]: 'Use minimal intelligence set',
+        [ErrorSeverity.CRITICAL]: 'Use emergency static content'
+      },
+      [ErrorCategory.CONTENT_GENERATION]: {
+        [ErrorSeverity.LOW]: 'Use alternative content template',
+        [ErrorSeverity.MEDIUM]: 'Apply simplified content generation',
+        [ErrorSeverity.HIGH]: 'Use cached content or template',
+        [ErrorSeverity.CRITICAL]: 'Use emergency static content'
+      },
+      [ErrorCategory.EXTERNAL_SERVICE]: {
+        [ErrorSeverity.LOW]: 'Retry with exponential backoff',
+        [ErrorSeverity.MEDIUM]: 'Use alternative service endpoint',
+        [ErrorSeverity.HIGH]: 'Use cached data or offline mode',
+        [ErrorSeverity.CRITICAL]: 'Abort external operation and use local fallback'
+      },
+      [ErrorCategory.SYSTEM]: {
+        [ErrorSeverity.LOW]: 'Log error and continue',
+        [ErrorSeverity.MEDIUM]: 'Restart component and retry',
+        [ErrorSeverity.HIGH]: 'Use degraded mode operation',
+        [ErrorSeverity.CRITICAL]: 'Initiate emergency shutdown procedure'
+      }
+    };
+
+    return strategies[category]?.[severity] || 'Apply generic error recovery';
+  }
+
+  /**
+   * Apply recovery strategy
+   */
+  private applyRecoveryStrategy<T>(
+    error: BusinessIntelligenceError,
+    fallbackFunction?: () => T
+  ): { success: boolean; data?: T; fallbackData?: T; warnings: string[] } {
+    const warnings: string[] = [];
+
+    try {
+      // Apply category-specific recovery
+      switch (error.category) {
+        case ErrorCategory.VALIDATION:
+          return this.handleValidationError(error, fallbackFunction, warnings);
+
+        case ErrorCategory.DATA_PROCESSING:
+          return this.handleDataProcessingError(error, fallbackFunction, warnings);
+
+        case ErrorCategory.BUSINESS_INTELLIGENCE:
+          return this.handleBusinessIntelligenceError(error, fallbackFunction, warnings);
+
+        case ErrorCategory.CONTENT_GENERATION:
+          return this.handleContentGenerationError(error, fallbackFunction, warnings);
+
+        case ErrorCategory.EXTERNAL_SERVICE:
+          return this.handleExternalServiceError(error, fallbackFunction, warnings);
+
+        case ErrorCategory.SYSTEM:
+          return this.handleSystemError(error, fallbackFunction, warnings);
+
+        default:
+          warnings.push('Unknown error category, applying generic recovery');
+          return this.applyGenericRecovery(error, fallbackFunction, warnings);
+      }
+    } catch (recoveryError) {
+      warnings.push(`Recovery strategy failed: ${recoveryError.message}`);
+      return this.applyGenericRecovery(error, fallbackFunction, warnings);
+    }
+  }
+
+  /**
+   * Handle validation errors
+   */
+  private handleValidationError<T>(
+    error: BusinessIntelligenceError,
+    fallbackFunction?: () => T,
+    warnings: string[] = []
+  ): { success: boolean; data?: T; fallbackData?: T; warnings: string[] } {
+    if (error.severity === ErrorSeverity.CRITICAL) {
+      warnings.push('Critical validation error, operation aborted');
+      return { success: false, warnings };
+    }
+
+    if (fallbackFunction) {
+      try {
+        const fallbackData = fallbackFunction();
+        warnings.push('Validation error recovered using fallback data');
+        error.fallbackApplied = true;
+        return { success: true, fallbackData, warnings };
+      } catch (fallbackError) {
+        warnings.push(`Fallback function failed: ${fallbackError.message}`);
+      }
+    }
+
+    warnings.push('Validation error, continuing with default behavior');
+    return { success: true, warnings };
+  }
+
+  /**
+   * Handle data processing errors
+   */
+  private handleDataProcessingError<T>(
+    error: BusinessIntelligenceError,
+    fallbackFunction?: () => T,
+    warnings: string[] = []
+  ): { success: boolean; data?: T; fallbackData?: T; warnings: string[] } {
+    if (fallbackFunction) {
+      try {
+        const fallbackData = fallbackFunction();
+        warnings.push('Data processing error recovered using fallback');
+        error.fallbackApplied = true;
+        return { success: true, fallbackData, warnings };
+      } catch (fallbackError) {
+        warnings.push(`Data processing fallback failed: ${fallbackError.message}`);
+      }
+    }
+
+    warnings.push('Data processing error, using minimal data set');
+    return { success: true, warnings };
+  }
+
+  /**
+   * Handle business intelligence errors
+   */
+  private handleBusinessIntelligenceError<T>(
+    error: BusinessIntelligenceError,
+    fallbackFunction?: () => T,
+    warnings: string[] = []
+  ): { success: boolean; data?: T; fallbackData?: T; warnings: string[] } {
+    if (fallbackFunction) {
+      try {
+        const fallbackData = fallbackFunction();
+        warnings.push('Business intelligence error recovered using fallback');
+        error.fallbackApplied = true;
+        return { success: true, fallbackData, warnings };
+      } catch (fallbackError) {
+        warnings.push(`Business intelligence fallback failed: ${fallbackError.message}`);
+      }
+    }
+
+    // Provide minimal business intelligence
+    const minimalIntelligence = {
+      engagementHooks: ['Quality service you can trust'],
+      painPoints: ['Looking for reliable solutions?'],
+      valuePropositions: ['Professional service that delivers'],
+      callToActions: ['Contact Us', 'Learn More']
+    } as T;
+
+    warnings.push('Using minimal business intelligence due to error');
+    error.fallbackApplied = true;
+    return { success: true, fallbackData: minimalIntelligence, warnings };
+  }
+
+  /**
+   * Handle content generation errors
+   */
+  private handleContentGenerationError<T>(
+    error: BusinessIntelligenceError,
+    fallbackFunction?: () => T,
+    warnings: string[] = []
+  ): { success: boolean; data?: T; fallbackData?: T; warnings: string[] } {
+    if (fallbackFunction) {
+      try {
+        const fallbackData = fallbackFunction();
+        warnings.push('Content generation error recovered using fallback');
+        error.fallbackApplied = true;
+        return { success: true, fallbackData, warnings };
+      } catch (fallbackError) {
+        warnings.push(`Content generation fallback failed: ${fallbackError.message}`);
+      }
+    }
+
+    warnings.push('Content generation error, using template content');
+    return { success: true, warnings };
+  }
+
+  /**
+   * Handle external service errors
+   */
+  private handleExternalServiceError<T>(
+    error: BusinessIntelligenceError,
+    fallbackFunction?: () => T,
+    warnings: string[] = []
+  ): { success: boolean; data?: T; fallbackData?: T; warnings: string[] } {
+    if (error.severity === ErrorSeverity.CRITICAL) {
+      warnings.push('Critical external service error, using offline mode');
+      if (fallbackFunction) {
+        try {
+          const fallbackData = fallbackFunction();
+          error.fallbackApplied = true;
+          return { success: true, fallbackData, warnings };
+        } catch (fallbackError) {
+          warnings.push(`Offline fallback failed: ${fallbackError.message}`);
+        }
+      }
+      return { success: false, warnings };
+    }
+
+    warnings.push('External service error, retrying with fallback');
+    return { success: true, warnings };
+  }
+
+  /**
+   * Handle system errors
+   */
+  private handleSystemError<T>(
+    error: BusinessIntelligenceError,
+    fallbackFunction?: () => T,
+    warnings: string[] = []
+  ): { success: boolean; data?: T; fallbackData?: T; warnings: string[] } {
+    if (error.severity === ErrorSeverity.CRITICAL) {
+      warnings.push('Critical system error detected');
+      return { success: false, warnings };
+    }
+
+    if (fallbackFunction) {
+      try {
+        const fallbackData = fallbackFunction();
+        warnings.push('System error recovered using fallback');
+        error.fallbackApplied = true;
+        return { success: true, fallbackData, warnings };
+      } catch (fallbackError) {
+        warnings.push(`System fallback failed: ${fallbackError.message}`);
+      }
+    }
+
+    warnings.push('System error, continuing with degraded functionality');
+    return { success: true, warnings };
+  }
+
+  /**
+   * Apply generic recovery strategy
+   */
+  private applyGenericRecovery<T>(
+    error: BusinessIntelligenceError,
+    fallbackFunction?: () => T,
+    warnings: string[] = []
+  ): { success: boolean; data?: T; fallbackData?: T; warnings: string[] } {
+    if (fallbackFunction) {
+      try {
+        const fallbackData = fallbackFunction();
+        warnings.push('Generic recovery applied using fallback');
+        error.fallbackApplied = true;
+        return { success: true, fallbackData, warnings };
+      } catch (fallbackError) {
+        warnings.push(`Generic fallback failed: ${fallbackError.message}`);
+      }
+    }
+
+    warnings.push('Generic recovery applied, continuing with limited functionality');
+    return { success: true, warnings };
+  }
+
+  /**
+   * Log error to internal error log
+   */
+  private logError(error: BusinessIntelligenceError): void {
+    this.errorLog.push(error);
+
+    // Keep only last 100 errors to prevent memory issues
+    if (this.errorLog.length > 100) {
+      this.errorLog = this.errorLog.slice(-100);
+    }
+
+    // Log to console based on severity
+    const logMessage = `[${error.severity}] ${error.category}: ${error.message} (${error.code})`;
+
+    switch (error.severity) {
+      case ErrorSeverity.LOW:
+        console.log(logMessage);
+        break;
+      case ErrorSeverity.MEDIUM:
+        console.warn(logMessage);
+        break;
+      case ErrorSeverity.HIGH:
+      case ErrorSeverity.CRITICAL:
+        console.error(logMessage);
+        break;
+    }
+  }
+
+  /**
+   * Get error statistics
+   */
+  getErrorStatistics(): {
+    totalErrors: number;
+    errorsByCategory: Record<ErrorCategory, number>;
+    errorsBySeverity: Record<ErrorSeverity, number>;
+    recentErrors: BusinessIntelligenceError[];
+  } {
+    const errorsByCategory = {} as Record<ErrorCategory, number>;
+    const errorsBySeverity = {} as Record<ErrorSeverity, number>;
+
+    // Initialize counters
+    Object.values(ErrorCategory).forEach(category => {
+      errorsByCategory[category] = 0;
+    });
+    Object.values(ErrorSeverity).forEach(severity => {
+      errorsBySeverity[severity] = 0;
+    });
+
+    // Count errors
+    this.errorLog.forEach(error => {
+      errorsByCategory[error.category]++;
+      errorsBySeverity[error.severity]++;
+    });
+
+    return {
+      totalErrors: this.errorLog.length,
+      errorsByCategory,
+      errorsBySeverity,
+      recentErrors: this.errorLog.slice(-10)
+    };
+  }
+
+  /**
+   * Clear error log
+   */
+  clearErrorLog(): void {
+    this.errorLog = [];
+  }
+}
+
+/**
+ * Utility functions for consistent error handling
+ */
+
+/**
+ * Safe execution wrapper with error handling
+ */
+export function safeExecute<T>(
+  operation: () => T,
+  context: {
+    category: ErrorCategory;
+    severity: ErrorSeverity;
+    function: string;
+    businessType?: string;
+    location?: string;
+  },
+  fallbackFunction?: () => T
+): ErrorHandlingResult<T> {
+  const errorHandler = BusinessIntelligenceErrorHandler.getInstance();
+
+  try {
+    const result = operation();
+    return {
+      success: true,
+      data: result,
+      warnings: []
+    };
+  } catch (error) {
+    return errorHandler.handleError(error as Error, context, fallbackFunction);
+  }
+}
+
+/**
+ * Create standardized error
+ */
+export function createBusinessIntelligenceError(
+  category: ErrorCategory,
+  severity: ErrorSeverity,
+  message: string,
+  context?: {
+    businessType?: string;
+    location?: string;
+    function?: string;
+    details?: any;
+  }
+): BusinessIntelligenceError {
+  return {
+    category,
+    severity,
+    code: `${category}_${context?.function?.toUpperCase() || 'UNKNOWN'}_${Date.now().toString().slice(-6)}`,
+    message,
+    details: context?.details,
+    timestamp: new Date().toISOString(),
+    context: context ? {
+      businessType: context.businessType,
+      location: context.location,
+      function: context.function
+    } : undefined,
+    recoveryStrategy: 'Apply appropriate recovery based on category and severity',
+    fallbackApplied: false
+  };
+}
+
+// ============================================================================
+// TASK 27: CREATE UNIFIED GLOBAL CULTURAL CONTEXT APPROACH
+// ============================================================================
+
+/**
+ * Comprehensive cultural context data structure
+ */
+interface GlobalCulturalContext {
+  region: string;
+  country: string;
+  primaryLanguage: string;
+  secondaryLanguages: string[];
+  communicationStyle: string;
+  businessEtiquette: string;
+  culturalValues: string[];
+  localReferences: string[];
+  marketingApproach: string;
+  colorPreferences: {
+    preferred: string[];
+    avoided: string[];
+    meanings: Record<string, string>;
+  };
+  timeFormat: '12h' | '24h';
+  dateFormat: string;
+  currency: {
+    symbol: string;
+    code: string;
+    position: 'before' | 'after';
+  };
+  businessHours: {
+    weekdays: string;
+    weekends: string;
+    timezone: string;
+  };
+  holidays: string[];
+  socialNorms: string[];
+  contentTone: string;
+  trustBuilders: string[];
+  localCompetitors: string[];
+}
+
+/**
+ * Cultural intelligence patterns for different regions
+ */
+const GLOBAL_CULTURAL_PATTERNS: Record<string, GlobalCulturalContext> = {
+  // African Countries
+  'kenya': {
+    region: 'East Africa',
+    country: 'Kenya',
+    primaryLanguage: 'English',
+    secondaryLanguages: ['Swahili', 'Kikuyu', 'Luo'],
+    communicationStyle: 'warm and community-focused',
+    businessEtiquette: 'relationship-first, respectful greetings',
+    culturalValues: ['ubuntu', 'community spirit', 'family bonds', 'respect for elders'],
+    localReferences: ['matatu', 'boda boda', 'nyama choma', 'harambee'],
+    marketingApproach: 'community-centered, family-focused, value-driven',
+    colorPreferences: {
+      preferred: ['green', 'red', 'black', 'gold'],
+      avoided: ['purple'],
+      meanings: { 'green': 'prosperity', 'red': 'strength', 'black': 'heritage' }
+    },
+    timeFormat: '12h',
+    dateFormat: 'DD/MM/YYYY',
+    currency: { symbol: 'KSh', code: 'KES', position: 'before' },
+    businessHours: { weekdays: '8:00-17:00', weekends: '9:00-13:00', timezone: 'EAT' },
+    holidays: ['Jamhuri Day', 'Mashujaa Day', 'Madaraka Day'],
+    socialNorms: ['respect for authority', 'community consultation', 'hospitality'],
+    contentTone: 'conversational with Sheng influences',
+    trustBuilders: ['local testimonials', 'community endorsements', 'family references'],
+    localCompetitors: ['Safaricom', 'Equity Bank', 'KCB']
+  },
+  'nigeria': {
+    region: 'West Africa',
+    country: 'Nigeria',
+    primaryLanguage: 'English',
+    secondaryLanguages: ['Hausa', 'Yoruba', 'Igbo', 'Pidgin'],
+    communicationStyle: 'energetic and expressive',
+    businessEtiquette: 'hierarchical respect, extended greetings',
+    culturalValues: ['entrepreneurship', 'education', 'family success', 'community support'],
+    localReferences: ['Nollywood', 'jollof rice', 'Lagos hustle', 'Abuja'],
+    marketingApproach: 'aspirational, success-focused, community-driven',
+    colorPreferences: {
+      preferred: ['green', 'white', 'gold', 'blue'],
+      avoided: ['black for celebrations'],
+      meanings: { 'green': 'agriculture', 'white': 'peace', 'gold': 'wealth' }
+    },
+    timeFormat: '12h',
+    dateFormat: 'DD/MM/YYYY',
+    currency: { symbol: '₦', code: 'NGN', position: 'before' },
+    businessHours: { weekdays: '8:00-17:00', weekends: '10:00-14:00', timezone: 'WAT' },
+    holidays: ['Independence Day', 'Democracy Day', 'Eid festivals'],
+    socialNorms: ['respect for elders', 'extended family importance', 'religious observance'],
+    contentTone: 'enthusiastic with local expressions',
+    trustBuilders: ['success stories', 'celebrity endorsements', 'peer recommendations'],
+    localCompetitors: ['GTBank', 'Dangote', 'MTN Nigeria']
+  },
+  'ghana': {
+    region: 'West Africa',
+    country: 'Ghana',
+    primaryLanguage: 'English',
+    secondaryLanguages: ['Twi', 'Ga', 'Ewe', 'Dagbani'],
+    communicationStyle: 'friendly and diplomatic',
+    businessEtiquette: 'polite, patient, relationship-building',
+    culturalValues: ['hospitality', 'peace', 'cultural heritage', 'education'],
+    localReferences: ['Accra', 'kente cloth', 'highlife music', 'fufu'],
+    marketingApproach: 'heritage-focused, peaceful, community-oriented',
+    colorPreferences: {
+      preferred: ['red', 'gold', 'green', 'black'],
+      avoided: ['white for mourning'],
+      meanings: { 'red': 'bloodshed for independence', 'gold': 'mineral wealth', 'green': 'forests' }
+    },
+    timeFormat: '12h',
+    dateFormat: 'DD/MM/YYYY',
+    currency: { symbol: 'GH₵', code: 'GHS', position: 'before' },
+    businessHours: { weekdays: '8:00-17:00', weekends: '9:00-13:00', timezone: 'GMT' },
+    holidays: ['Independence Day', 'Republic Day', 'Farmers Day'],
+    socialNorms: ['respect for chiefs', 'communal decision making', 'hospitality to strangers'],
+    contentTone: 'warm and respectful',
+    trustBuilders: ['traditional endorsements', 'community leaders', 'cultural symbols'],
+    localCompetitors: ['MTN Ghana', 'Vodafone Ghana', 'GCB Bank']
+  },
+  'south_africa': {
+    region: 'Southern Africa',
+    country: 'South Africa',
+    primaryLanguage: 'English',
+    secondaryLanguages: ['Afrikaans', 'Zulu', 'Xhosa', 'Sotho'],
+    communicationStyle: 'direct but respectful',
+    businessEtiquette: 'punctual, professional, multicultural awareness',
+    culturalValues: ['ubuntu', 'diversity', 'transformation', 'reconciliation'],
+    localReferences: ['braai', 'rugby', 'Cape Town', 'Johannesburg'],
+    marketingApproach: 'inclusive, diverse, transformation-focused',
+    colorPreferences: {
+      preferred: ['rainbow colors', 'gold', 'green', 'blue'],
+      avoided: ['none specifically'],
+      meanings: { 'rainbow': 'diversity', 'gold': 'mineral wealth', 'green': 'land' }
+    },
+    timeFormat: '24h',
+    dateFormat: 'YYYY/MM/DD',
+    currency: { symbol: 'R', code: 'ZAR', position: 'before' },
+    businessHours: { weekdays: '8:00-17:00', weekends: '9:00-13:00', timezone: 'SAST' },
+    holidays: ['Freedom Day', 'Heritage Day', 'Human Rights Day'],
+    socialNorms: ['multicultural respect', 'ubuntu philosophy', 'transformation support'],
+    contentTone: 'inclusive and professional',
+    trustBuilders: ['diverse testimonials', 'transformation credentials', 'community impact'],
+    localCompetitors: ['Standard Bank', 'FNB', 'Shoprite']
+  },
+
+  // North American Countries
+  'usa': {
+    region: 'North America',
+    country: 'United States',
+    primaryLanguage: 'English',
+    secondaryLanguages: ['Spanish', 'Chinese', 'French'],
+    communicationStyle: 'direct and confident',
+    businessEtiquette: 'punctual, results-oriented, individual achievement',
+    culturalValues: ['innovation', 'entrepreneurship', 'individual success', 'efficiency'],
+    localReferences: ['American Dream', 'Main Street', 'hometown', 'local community'],
+    marketingApproach: 'benefit-focused, competitive, innovation-driven',
+    colorPreferences: {
+      preferred: ['blue', 'red', 'white', 'green'],
+      avoided: ['none specifically'],
+      meanings: { 'blue': 'trust', 'red': 'energy', 'white': 'purity', 'green': 'money' }
+    },
+    timeFormat: '12h',
+    dateFormat: 'MM/DD/YYYY',
+    currency: { symbol: '$', code: 'USD', position: 'before' },
+    businessHours: { weekdays: '9:00-17:00', weekends: '10:00-18:00', timezone: 'varies' },
+    holidays: ['Independence Day', 'Thanksgiving', 'Memorial Day'],
+    socialNorms: ['individual achievement', 'time consciousness', 'direct communication'],
+    contentTone: 'confident and direct',
+    trustBuilders: ['reviews and ratings', 'certifications', 'guarantees'],
+    localCompetitors: ['varies by industry']
+  },
+  'canada': {
+    region: 'North America',
+    country: 'Canada',
+    primaryLanguage: 'English',
+    secondaryLanguages: ['French', 'Chinese', 'Punjabi'],
+    communicationStyle: 'polite and inclusive',
+    businessEtiquette: 'courteous, multicultural sensitivity, consensus-building',
+    culturalValues: ['multiculturalism', 'politeness', 'equality', 'environmental consciousness'],
+    localReferences: ['Tim Hortons', 'hockey', 'maple syrup', 'the Great White North'],
+    marketingApproach: 'inclusive, environmentally conscious, community-focused',
+    colorPreferences: {
+      preferred: ['red', 'white', 'blue', 'green'],
+      avoided: ['none specifically'],
+      meanings: { 'red': 'Canada', 'white': 'peace', 'blue': 'loyalty', 'green': 'environment' }
+    },
+    timeFormat: '12h',
+    dateFormat: 'DD/MM/YYYY',
+    currency: { symbol: '$', code: 'CAD', position: 'before' },
+    businessHours: { weekdays: '9:00-17:00', weekends: '10:00-17:00', timezone: 'varies' },
+    holidays: ['Canada Day', 'Victoria Day', 'Thanksgiving'],
+    socialNorms: ['politeness', 'multiculturalism', 'environmental awareness'],
+    contentTone: 'polite and inclusive',
+    trustBuilders: ['community involvement', 'environmental credentials', 'inclusivity'],
+    localCompetitors: ['varies by province']
+  }
+};
+
+/**
+ * Unified global cultural context generator
+ */
+export function getGlobalCulturalContext(location: string, businessType?: string): GlobalCulturalContext {
+  const locationKey = detectLocationKey(location);
+  const baseContext = GLOBAL_CULTURAL_PATTERNS[locationKey];
+
+  if (!baseContext) {
+    return getDefaultCulturalContext(location, businessType);
+  }
+
+  // Adapt context based on business type if provided
+  if (businessType) {
+    return adaptContextForBusinessType(baseContext, businessType);
+  }
+
+  return baseContext;
+}
+
+/**
+ * Detect location key from location string
+ */
+function detectLocationKey(location: string): string {
+  const locationLower = location.toLowerCase();
+
+  // African countries
+  if (locationLower.includes('kenya') || locationLower.includes('nairobi') || locationLower.includes('mombasa')) {
+    return 'kenya';
+  }
+  if (locationLower.includes('nigeria') || locationLower.includes('lagos') || locationLower.includes('abuja')) {
+    return 'nigeria';
+  }
+  if (locationLower.includes('ghana') || locationLower.includes('accra') || locationLower.includes('kumasi')) {
+    return 'ghana';
+  }
+  if (locationLower.includes('south africa') || locationLower.includes('cape town') || locationLower.includes('johannesburg')) {
+    return 'south_africa';
+  }
+
+  // North American countries
+  if (locationLower.includes('usa') || locationLower.includes('united states') || locationLower.includes('america')) {
+    return 'usa';
+  }
+  if (locationLower.includes('canada') || locationLower.includes('toronto') || locationLower.includes('vancouver')) {
+    return 'canada';
+  }
+
+  return 'unknown';
+}
+
+/**
+ * Get default cultural context for unknown locations
+ */
+function getDefaultCulturalContext(location: string, businessType?: string): GlobalCulturalContext {
+  return {
+    region: 'Global',
+    country: location.split(',').pop()?.trim() || 'Unknown',
+    primaryLanguage: 'English',
+    secondaryLanguages: [],
+    communicationStyle: 'professional and respectful',
+    businessEtiquette: 'punctual and courteous',
+    culturalValues: ['quality', 'reliability', 'customer service', 'innovation'],
+    localReferences: ['local community', 'neighborhood', 'city center'],
+    marketingApproach: 'value-focused, professional, customer-centric',
+    colorPreferences: {
+      preferred: ['blue', 'green', 'white', 'gray'],
+      avoided: [],
+      meanings: { 'blue': 'trust', 'green': 'growth', 'white': 'clarity' }
+    },
+    timeFormat: '24h',
+    dateFormat: 'YYYY-MM-DD',
+    currency: { symbol: '$', code: 'USD', position: 'before' },
+    businessHours: { weekdays: '9:00-17:00', weekends: '10:00-16:00', timezone: 'local' },
+    holidays: ['New Year', 'National Day'],
+    socialNorms: ['respect', 'punctuality', 'professionalism'],
+    contentTone: 'professional and clear',
+    trustBuilders: ['testimonials', 'certifications', 'guarantees'],
+    localCompetitors: ['local businesses']
+  };
+}
+
+/**
+ * Adapt cultural context based on business type
+ */
+function adaptContextForBusinessType(baseContext: GlobalCulturalContext, businessType: string): GlobalCulturalContext {
+  const adaptedContext = { ...baseContext };
+
+  // Business-type-specific adaptations
+  switch (businessType) {
+    case 'Restaurant':
+      adaptedContext.localReferences = [
+        ...baseContext.localReferences,
+        'local cuisine', 'traditional dishes', 'family recipes'
+      ];
+      adaptedContext.culturalValues = [
+        ...baseContext.culturalValues,
+        'hospitality', 'food culture', 'family traditions'
+      ];
+      adaptedContext.contentTone = 'warm and inviting';
+      break;
+
+    case 'Healthcare':
+      adaptedContext.communicationStyle = 'caring and professional';
+      adaptedContext.culturalValues = [
+        ...baseContext.culturalValues,
+        'health', 'family wellbeing', 'trust'
+      ];
+      adaptedContext.contentTone = 'reassuring and professional';
+      adaptedContext.trustBuilders = [
+        'medical credentials', 'patient testimonials', 'health certifications'
+      ];
+      break;
+
+    case 'Finance':
+      adaptedContext.communicationStyle = 'trustworthy and professional';
+      adaptedContext.culturalValues = [
+        ...baseContext.culturalValues,
+        'financial security', 'prosperity', 'future planning'
+      ];
+      adaptedContext.contentTone = 'confident and trustworthy';
+      adaptedContext.trustBuilders = [
+        'financial credentials', 'security certifications', 'regulatory compliance'
+      ];
+      break;
+
+    case 'Technology':
+      adaptedContext.culturalValues = [
+        ...baseContext.culturalValues,
+        'innovation', 'efficiency', 'digital transformation'
+      ];
+      adaptedContext.contentTone = 'innovative and forward-thinking';
+      adaptedContext.trustBuilders = [
+        'technical certifications', 'case studies', 'innovation awards'
+      ];
+      break;
+
+    case 'Education':
+      adaptedContext.culturalValues = [
+        ...baseContext.culturalValues,
+        'knowledge', 'growth', 'achievement', 'future success'
+      ];
+      adaptedContext.contentTone = 'encouraging and knowledgeable';
+      adaptedContext.trustBuilders = [
+        'educational credentials', 'student success stories', 'accreditations'
+      ];
+      break;
+  }
+
+  return adaptedContext;
+}
+
+/**
+ * Generate culturally appropriate content elements
+ */
+export function generateCulturallyAdaptedContent(
+  baseContent: string,
+  culturalContext: GlobalCulturalContext,
+  contentType: 'headline' | 'description' | 'cta' | 'general' = 'general'
+): string {
+  let adaptedContent = baseContent;
+
+  // Apply cultural tone
+  switch (culturalContext.communicationStyle) {
+    case 'warm and community-focused':
+      adaptedContent = addCommunityFocus(adaptedContent);
+      break;
+    case 'energetic and expressive':
+      adaptedContent = addEnergeticTone(adaptedContent);
+      break;
+    case 'direct and confident':
+      adaptedContent = addConfidentTone(adaptedContent);
+      break;
+    case 'polite and inclusive':
+      adaptedContent = addPoliteTone(adaptedContent);
+      break;
+  }
+
+  // Add local references if appropriate
+  if (contentType === 'description' && culturalContext.localReferences.length > 0) {
+    const localRef = culturalContext.localReferences[0];
+    adaptedContent = adaptedContent.replace(/community/gi, localRef);
+  }
+
+  // Adapt currency format
+  if (adaptedContent.includes('$') && culturalContext.currency.symbol !== '$') {
+    adaptedContent = adaptedContent.replace(/\$/g, culturalContext.currency.symbol);
+  }
+
+  return adaptedContent;
+}
+
+/**
+ * Helper functions for tone adaptation
+ */
+function addCommunityFocus(content: string): string {
+  return content
+    .replace(/\byou\b/gi, 'you and your family')
+    .replace(/\bservice\b/gi, 'community service')
+    .replace(/\bquality\b/gi, 'trusted quality');
+}
+
+function addEnergeticTone(content: string): string {
+  return content
+    .replace(/\bgreat\b/gi, 'amazing')
+    .replace(/\bgood\b/gi, 'fantastic')
+    .replace(/\bhelp\b/gi, 'empower');
+}
+
+function addConfidentTone(content: string): string {
+  return content
+    .replace(/\bmay\b/gi, 'will')
+    .replace(/\bcould\b/gi, 'can')
+    .replace(/\btry\b/gi, 'achieve');
+}
+
+function addPoliteTone(content: string): string {
+  return content
+    .replace(/\bneed\b/gi, 'would benefit from')
+    .replace(/\bmust\b/gi, 'should consider')
+    .replace(/\bbuy\b/gi, 'choose');
+}
+
+/**
+ * Get cultural context summary for AI prompts
+ */
+export function getCulturalContextSummary(location: string, businessType?: string): string {
+  const context = getGlobalCulturalContext(location, businessType);
+
+  return `Cultural Context for ${context.country}:
+- Communication Style: ${context.communicationStyle}
+- Primary Values: ${context.culturalValues.slice(0, 3).join(', ')}
+- Content Tone: ${context.contentTone}
+- Local References: ${context.localReferences.slice(0, 2).join(', ')}
+- Trust Builders: ${context.trustBuilders.slice(0, 2).join(', ')}
+- Marketing Approach: ${context.marketingApproach}`;
+}
+
+/**
+ * Validate cultural appropriateness of content
+ */
+export function validateCulturalAppropriateness(
+  content: string,
+  culturalContext: GlobalCulturalContext
+): {
+  isAppropriate: boolean;
+  issues: string[];
+  suggestions: string[];
+} {
+  const issues: string[] = [];
+  const suggestions: string[] = [];
+
+  // Check for avoided colors in color-related content
+  if (culturalContext.colorPreferences.avoided.length > 0) {
+    culturalContext.colorPreferences.avoided.forEach(color => {
+      if (content.toLowerCase().includes(color.toLowerCase())) {
+        issues.push(`Contains avoided color: ${color}`);
+        suggestions.push(`Consider using preferred colors: ${culturalContext.colorPreferences.preferred.join(', ')}`);
+      }
+    });
+  }
+
+  // Check for inappropriate time references
+  if (content.includes('AM') || content.includes('PM')) {
+    if (culturalContext.timeFormat === '24h') {
+      issues.push('Uses 12-hour time format in 24-hour culture');
+      suggestions.push('Use 24-hour time format (e.g., 14:00 instead of 2:00 PM)');
+    }
+  }
+
+  // Check for currency format
+  if (content.includes('$') && culturalContext.currency.symbol !== '$') {
+    issues.push('Uses incorrect currency symbol');
+    suggestions.push(`Use local currency symbol: ${culturalContext.currency.symbol}`);
+  }
+
+  // Check communication style alignment
+  if (culturalContext.communicationStyle.includes('polite') &&
+    (content.includes('must') || content.includes('need to'))) {
+    issues.push('Too direct for polite communication culture');
+    suggestions.push('Use softer language like "would benefit from" or "consider"');
+  }
+
+  return {
+    isAppropriate: issues.length === 0,
+    issues,
+    suggestions
+  };
+}
+
+// ============================================================================
+// TASK 28: ENSURE CONTENT-DESIGN GENERATION CONSISTENCY
+// ============================================================================
+
+/**
+ * Content-Design consistency validation interface
+ */
+interface ContentDesignConsistency {
+  isConsistent: boolean;
+  consistencyScore: number;
+  alignmentIssues: string[];
+  brandingIssues: string[];
+  messagingIssues: string[];
+  visualTextualIssues: string[];
+  recommendations: string[];
+}
+
+/**
+ * Content-Design alignment data structure
+ */
+interface ContentDesignAlignment {
+  content: {
+    headline: string;
+    subheadline?: string;
+    callToAction: string;
+    businessName: string;
+    businessType: string;
+    keyMessage: string;
+    tone: string;
+    targetAudience: string;
+  };
+  design: {
+    visualStyle: string;
+    colorScheme: string[];
+    brandElements: string[];
+    imagePrompt: string;
+    designType: string;
+    aspectRatio: string;
+  };
+  brandProfile: {
+    businessName: string;
+    businessType: string;
+    brandColors: any;
+    brandVoice: string;
+    writingTone: string;
+    keyFeatures: string[];
+    targetAudience: string;
+    location: string;
+  };
+}
+
+/**
+ * Validate content-design consistency
+ */
+export function validateContentDesignConsistency(
+  contentData: any,
+  designPrompt: string,
+  brandProfile: any
+): ContentDesignConsistency {
+  const alignment: ContentDesignAlignment = {
+    content: extractContentElements(contentData),
+    design: extractDesignElements(designPrompt),
+    brandProfile: extractBrandElements(brandProfile)
+  };
+
+  const consistencyScore = calculateConsistencyScore(alignment);
+  const issues = identifyConsistencyIssues(alignment);
+  const recommendations = generateConsistencyRecommendations(alignment, issues);
+
+  return {
+    isConsistent: consistencyScore >= 80,
+    consistencyScore,
+    alignmentIssues: issues.alignment,
+    brandingIssues: issues.branding,
+    messagingIssues: issues.messaging,
+    visualTextualIssues: issues.visualTextual,
+    recommendations
+  };
+}
+
+/**
+ * Extract content elements for consistency checking
+ */
+function extractContentElements(contentData: any): ContentDesignAlignment['content'] {
+  return {
+    headline: contentData.headline || '',
+    subheadline: contentData.subheadline || '',
+    callToAction: contentData.callToAction || '',
+    businessName: contentData.businessName || '',
+    businessType: contentData.businessType || '',
+    keyMessage: contentData.keyMessage || contentData.headline || '',
+    tone: contentData.tone || 'professional',
+    targetAudience: contentData.targetAudience || 'general'
+  };
+}
+
+/**
+ * Extract design elements for consistency checking
+ */
+function extractDesignElements(designPrompt: string): ContentDesignAlignment['design'] {
+  const prompt = designPrompt.toLowerCase();
+
+  return {
+    visualStyle: extractVisualStyle(prompt),
+    colorScheme: extractColorScheme(prompt),
+    brandElements: extractBrandElements(prompt),
+    imagePrompt: designPrompt,
+    designType: extractDesignType(prompt),
+    aspectRatio: extractAspectRatio(prompt)
+  };
+}
+
+/**
+ * Extract brand elements for consistency checking
+ */
+function extractBrandElements(brandProfile: any): ContentDesignAlignment['brandProfile'] {
+  return {
+    businessName: brandProfile.businessName || '',
+    businessType: brandProfile.businessType || '',
+    brandColors: brandProfile.brandColors || {},
+    brandVoice: brandProfile.brandVoice || '',
+    writingTone: brandProfile.writingTone || '',
+    keyFeatures: brandProfile.keyFeatures || [],
+    targetAudience: brandProfile.targetAudience || '',
+    location: brandProfile.location || ''
+  };
+}
+
+/**
+ * Helper functions for design element extraction
+ */
+function extractVisualStyle(prompt: string): string {
+  if (prompt.includes('modern')) return 'modern';
+  if (prompt.includes('professional')) return 'professional';
+  if (prompt.includes('friendly')) return 'friendly';
+  if (prompt.includes('elegant')) return 'elegant';
+  if (prompt.includes('vibrant')) return 'vibrant';
+  return 'standard';
+}
+
+function extractColorScheme(prompt: string): string[] {
+  const colors: string[] = [];
+  const colorKeywords = ['blue', 'red', 'green', 'yellow', 'purple', 'orange', 'pink', 'black', 'white', 'gray'];
+
+  colorKeywords.forEach(color => {
+    if (prompt.includes(color)) {
+      colors.push(color);
+    }
+  });
+
+  return colors;
+}
+
+
+
+/**
+ * Calculate overall consistency score
+ */
+function calculateConsistencyScore(alignment: ContentDesignAlignment): number {
+  let score = 100;
+
+  // Business name consistency (20 points)
+  if (alignment.content.businessName !== alignment.brandProfile.businessName) {
+    score -= 20;
+  }
+
+  // Business type consistency (15 points)
+  if (alignment.content.businessType !== alignment.brandProfile.businessType) {
+    score -= 15;
+  }
+
+  // Brand voice/tone consistency (20 points)
+  const contentTone = alignment.content.tone.toLowerCase();
+  const brandTone = alignment.brandProfile.writingTone.toLowerCase();
+  if (!contentTone.includes(brandTone) && !brandTone.includes(contentTone)) {
+    score -= 20;
+  }
+
+  // Target audience consistency (15 points)
+  if (alignment.content.targetAudience !== alignment.brandProfile.targetAudience) {
+    score -= 15;
+  }
+
+  // Visual-textual coherence (15 points)
+  const visualStyle = alignment.design.visualStyle;
+  const contentToneMatch =
+    (visualStyle === 'professional' && contentTone.includes('professional')) ||
+    (visualStyle === 'friendly' && contentTone.includes('friendly')) ||
+    (visualStyle === 'modern' && contentTone.includes('innovative'));
+
+  if (!contentToneMatch) {
+    score -= 15;
+  }
+
+  // Brand color usage (15 points)
+  const brandColors = alignment.brandProfile.brandColors;
+  const designColors = alignment.design.colorScheme;
+
+  if (brandColors.primary && designColors.length > 0) {
+    const primaryColorUsed = designColors.some(color =>
+      brandColors.primary.toLowerCase().includes(color) ||
+      color.includes(brandColors.primary.toLowerCase())
+    );
+    if (!primaryColorUsed) {
+      score -= 15;
+    }
+  }
+
+  return Math.max(0, score);
+}
+
+/**
+ * Identify specific consistency issues
+ */
+function identifyConsistencyIssues(alignment: ContentDesignAlignment): {
+  alignment: string[];
+  branding: string[];
+  messaging: string[];
+  visualTextual: string[];
+} {
+  const issues = {
+    alignment: [] as string[],
+    branding: [] as string[],
+    messaging: [] as string[],
+    visualTextual: [] as string[]
+  };
+
+  // Business alignment issues
+  if (alignment.content.businessName !== alignment.brandProfile.businessName) {
+    issues.alignment.push('Business name mismatch between content and brand profile');
+  }
+
+  if (alignment.content.businessType !== alignment.brandProfile.businessType) {
+    issues.alignment.push('Business type inconsistency between content and brand profile');
+  }
+
+  // Branding issues
+  const brandColors = alignment.brandProfile.brandColors;
+  const designColors = alignment.design.colorScheme;
+
+  if (brandColors.primary && designColors.length > 0) {
+    const primaryColorUsed = designColors.some(color =>
+      brandColors.primary.toLowerCase().includes(color) ||
+      color.includes(brandColors.primary.toLowerCase())
+    );
+    if (!primaryColorUsed) {
+      issues.branding.push('Brand primary color not reflected in design color scheme');
+    }
+  }
+
+  if (!alignment.design.brandElements.includes('logo') && alignment.brandProfile.businessName) {
+    issues.branding.push('Business logo/name not prominently featured in design');
+  }
+
+  // Messaging issues
+  const contentTone = alignment.content.tone.toLowerCase();
+  const brandTone = alignment.brandProfile.writingTone.toLowerCase();
+
+  if (!contentTone.includes(brandTone) && !brandTone.includes(contentTone)) {
+    issues.messaging.push(`Content tone (${alignment.content.tone}) doesn't match brand voice (${alignment.brandProfile.writingTone})`);
+  }
+
+  if (alignment.content.targetAudience !== alignment.brandProfile.targetAudience) {
+    issues.messaging.push('Target audience mismatch between content and brand profile');
+  }
+
+  // Visual-textual coherence issues
+  const visualStyle = alignment.design.visualStyle;
+  const visualTextualMatch =
+    (visualStyle === 'professional' && contentTone.includes('professional')) ||
+    (visualStyle === 'friendly' && contentTone.includes('friendly')) ||
+    (visualStyle === 'modern' && contentTone.includes('innovative')) ||
+    (visualStyle === 'vibrant' && contentTone.includes('energetic'));
+
+  if (!visualTextualMatch) {
+    issues.visualTextual.push(`Visual style (${visualStyle}) doesn't align with content tone (${alignment.content.tone})`);
+  }
+
+  if (alignment.content.keyMessage && alignment.design.imagePrompt) {
+    const keyMessageWords = alignment.content.keyMessage.toLowerCase().split(' ');
+    const designPromptLower = alignment.design.imagePrompt.toLowerCase();
+
+    const messageReflectedInDesign = keyMessageWords.some(word =>
+      word.length > 3 && designPromptLower.includes(word)
+    );
+
+    if (!messageReflectedInDesign) {
+      issues.visualTextual.push('Key message from content not reflected in visual design prompt');
+    }
+  }
+
+  return issues;
+}
+
+/**
+ * Generate consistency improvement recommendations
+ */
+function generateConsistencyRecommendations(
+  alignment: ContentDesignAlignment,
+  issues: {
+    alignment: string[];
+    branding: string[];
+    messaging: string[];
+    visualTextual: string[];
+  }
+): string[] {
+  const recommendations: string[] = [];
+
+  // Address alignment issues
+  if (issues.alignment.length > 0) {
+    recommendations.push('Ensure business name and type are consistent across content and design');
+    recommendations.push('Verify brand profile data accuracy and completeness');
+  }
+
+  // Address branding issues
+  if (issues.branding.length > 0) {
+    if (alignment.brandProfile.brandColors.primary) {
+      recommendations.push(`Incorporate brand primary color (${alignment.brandProfile.brandColors.primary}) into design`);
+    }
+    recommendations.push('Include business logo or name prominently in visual design');
+    recommendations.push('Ensure brand elements are consistently applied across all materials');
+  }
+
+  // Address messaging issues
+  if (issues.messaging.length > 0) {
+    recommendations.push(`Align content tone with brand voice (${alignment.brandProfile.writingTone})`);
+    recommendations.push(`Target content to specified audience (${alignment.brandProfile.targetAudience})`);
+    recommendations.push('Review brand voice guidelines and apply consistently');
+  }
+
+  // Address visual-textual coherence issues
+  if (issues.visualTextual.length > 0) {
+    recommendations.push('Ensure visual style matches content tone and messaging');
+    recommendations.push('Reflect key content messages in visual design elements');
+    recommendations.push('Create cohesive visual-textual narrative that supports business goals');
+  }
+
+  // General recommendations
+  if (recommendations.length === 0) {
+    recommendations.push('Content and design are well-aligned - maintain current consistency standards');
+  } else {
+    recommendations.push('Review and update content generation and design prompts for better alignment');
+    recommendations.push('Consider creating brand guidelines document for consistent application');
+  }
+
+  return recommendations;
+}
+
+/**
+ * Synchronize content and design generation
+ */
+export function synchronizeContentDesignGeneration(
+  brandProfile: any,
+  platform: string = 'instagram'
+): {
+  synchronizedContent: any;
+  synchronizedDesignPrompt: string;
+  consistencyValidation: ContentDesignConsistency;
+} {
+  // Generate synchronized content
+  const synchronizedContent = generateSynchronizedContent(brandProfile, platform);
+
+  // Generate synchronized design prompt
+  const synchronizedDesignPrompt = generateSynchronizedDesignPrompt(
+    synchronizedContent,
+    brandProfile,
+    platform
+  );
+
+  // Validate consistency
+  const consistencyValidation = validateContentDesignConsistency(
+    synchronizedContent,
+    synchronizedDesignPrompt,
+    brandProfile
+  );
+
+  return {
+    synchronizedContent,
+    synchronizedDesignPrompt,
+    consistencyValidation
+  };
+}
+
+/**
+ * Generate content with design synchronization in mind
+ */
+function generateSynchronizedContent(brandProfile: any, platform: string): any {
+  const businessIntelligence = generateBusinessIntelligence({
+    businessType: brandProfile.businessType,
+    location: brandProfile.location,
+    services: brandProfile.services || [],
+    targetAudience: brandProfile.targetAudience,
+    keyFeatures: brandProfile.keyFeatures || [],
+    competitiveAdvantages: brandProfile.competitiveAdvantages || [],
+    brandVoice: brandProfile.brandVoice,
+    writingTone: brandProfile.writingTone
+  });
+
+  const culturalContext = getGlobalCulturalContext(brandProfile.location, brandProfile.businessType);
+
+  return {
+    businessName: brandProfile.businessName,
+    businessType: brandProfile.businessType,
+    headline: generateSynchronizedHeadline(brandProfile, businessIntelligence),
+    subheadline: generateSynchronizedSubheadline(brandProfile, businessIntelligence),
+    callToAction: generateSynchronizedCTA(brandProfile, businessIntelligence),
+    keyMessage: businessIntelligence.valuePropositions[0] || 'Quality service you can trust',
+    tone: brandProfile.writingTone || culturalContext.contentTone,
+    targetAudience: brandProfile.targetAudience,
+    platform,
+    culturalContext: culturalContext.contentTone,
+    brandVoice: brandProfile.brandVoice,
+    designHints: {
+      visualStyle: determineVisualStyleFromTone(brandProfile.writingTone),
+      colorPreferences: brandProfile.brandColors,
+      businessContext: brandProfile.businessType
+    }
+  };
+}
+
+/**
+ * Generate design prompt synchronized with content
+ */
+function generateSynchronizedDesignPrompt(
+  content: any,
+  brandProfile: any,
+  platform: string
+): string {
+  const visualStyle = content.designHints.visualStyle;
+  const businessType = content.businessType;
+  const keyMessage = content.keyMessage;
+
+  let basePrompt = `Create a ${visualStyle} ${platform} post design for ${businessType} business. `;
+
+  // Add business context
+  basePrompt += `The business "${content.businessName}" focuses on ${keyMessage.toLowerCase()}. `;
+
+  // Add visual style guidance
+  basePrompt += `Design should be ${visualStyle} and reflect ${content.tone} tone. `;
+
+  // Add brand color integration
+  if (brandProfile.brandColors?.primary) {
+    basePrompt += `Use brand primary color ${brandProfile.brandColors.primary} prominently. `;
+  }
+
+  if (brandProfile.brandColors?.secondary) {
+    basePrompt += `Incorporate secondary color ${brandProfile.brandColors.secondary} as accent. `;
+  }
+
+  // Add content-specific elements
+  basePrompt += `Include business name "${content.businessName}" prominently. `;
+
+  if (content.headline) {
+    basePrompt += `Reflect the message "${content.headline}" in the visual composition. `;
+  }
+
+  // Add business-type-specific visual elements
+  basePrompt += getBusinessTypeVisualElements(businessType);
+
+  // Add cultural context
+  const culturalContext = getGlobalCulturalContext(brandProfile.location, businessType);
+  if (culturalContext.localReferences.length > 0) {
+    basePrompt += `Include subtle cultural elements appropriate for ${culturalContext.country}. `;
+  }
+
+  // Add technical specifications
+  basePrompt += `Create in 1:1 aspect ratio suitable for ${platform}. `;
+  basePrompt += `Ensure text is readable and professional. `;
+  basePrompt += `Design should be eye-catching but maintain brand consistency.`;
+
+  return basePrompt;
+}
+
+/**
+ * Helper functions for synchronized generation
+ */
+function generateSynchronizedHeadline(brandProfile: any, businessIntelligence: any): string {
+  const hooks = businessIntelligence.engagementHooks;
+  if (hooks.length > 0) {
+    return hooks[0];
+  }
+
+  return `${brandProfile.businessName} - Quality ${brandProfile.businessType} Service`;
+}
+
+function generateSynchronizedSubheadline(brandProfile: any, businessIntelligence: any): string {
+  const valueProps = businessIntelligence.valuePropositions;
+  if (valueProps.length > 0) {
+    return valueProps[0];
+  }
+
+  return `Professional ${String(brandProfile.businessType || 'general business').toLowerCase()} services you can trust`;
+}
+
+function generateSynchronizedCTA(brandProfile: any, businessIntelligence: any): string {
+  const ctas = businessIntelligence.callToActions;
+  if (ctas.length > 0) {
+    return ctas[0];
+  }
+
+  // Business-type-specific CTAs
+  switch (brandProfile.businessType) {
+    case 'Restaurant':
+      return 'Order Now';
+    case 'Healthcare':
+      return 'Book Appointment';
+    case 'Finance':
+      return 'Get Started';
+    case 'Technology':
+      return 'Learn More';
+    case 'Education':
+      return 'Enroll Today';
+    default:
+      return 'Contact Us';
+  }
+}
+
+function determineVisualStyleFromTone(writingTone: string): string {
+  if (!writingTone) return 'professional';
+
+  const tone = writingTone.toLowerCase();
+
+  if (tone.includes('friendly') || tone.includes('casual')) return 'friendly';
+  if (tone.includes('professional') || tone.includes('formal')) return 'professional';
+  if (tone.includes('energetic') || tone.includes('enthusiastic')) return 'vibrant';
+  if (tone.includes('elegant') || tone.includes('sophisticated')) return 'elegant';
+  if (tone.includes('modern') || tone.includes('innovative')) return 'modern';
+
+  return 'professional';
+}
+
+function getBusinessTypeVisualElements(businessType: string): string {
+  const visualElements: Record<string, string> = {
+    'Restaurant': 'Include food-related imagery and warm, inviting atmosphere. ',
+    'Healthcare': 'Use clean, medical-appropriate imagery with calming colors. ',
+    'Finance': 'Include professional financial imagery with trust-building elements. ',
+    'Technology': 'Use modern, tech-focused imagery with innovative elements. ',
+    'Education': 'Include learning-related imagery with growth and achievement themes. ',
+    'Fitness Gym': 'Use active, energetic imagery with health and fitness themes. ',
+    'Beauty Salon': 'Include beauty and wellness imagery with elegant styling. ',
+    'Retail Store': 'Use product-focused imagery with shopping and lifestyle themes. ',
+    'Legal Services': 'Include professional legal imagery with authority and trust themes. ',
+    'Automotive': 'Use vehicle-related imagery with quality and reliability themes. '
+  };
+
+  return visualElements[businessType] || 'Use business-appropriate professional imagery. ';
+}
+
+/**
+ * Validate and improve content-design alignment
+ */
+export function improveContentDesignAlignment(
+  content: any,
+  designPrompt: string,
+  brandProfile: any
+): {
+  improvedContent: any;
+  improvedDesignPrompt: string;
+  improvementLog: string[];
+} {
+  const validation = validateContentDesignConsistency(content, designPrompt, brandProfile);
+  const improvementLog: string[] = [];
+
+  let improvedContent = { ...content };
+  let improvedDesignPrompt = designPrompt;
+
+  if (validation.consistencyScore < 80) {
+    // Improve content based on issues
+    if (validation.alignmentIssues.length > 0) {
+      improvedContent.businessName = brandProfile.businessName;
+      improvedContent.businessType = brandProfile.businessType;
+      improvementLog.push('Aligned business name and type with brand profile');
+    }
+
+    if (validation.messagingIssues.length > 0) {
+      improvedContent.tone = brandProfile.writingTone || improvedContent.tone;
+      improvedContent.targetAudience = brandProfile.targetAudience || improvedContent.targetAudience;
+      improvementLog.push('Aligned messaging tone and target audience');
+    }
+
+    // Improve design prompt based on issues
+    if (validation.brandingIssues.length > 0) {
+      if (brandProfile.brandColors?.primary && !improvedDesignPrompt.includes(brandProfile.brandColors.primary)) {
+        improvedDesignPrompt += ` Use brand primary color ${brandProfile.brandColors.primary}.`;
+        improvementLog.push('Added brand primary color to design prompt');
+      }
+
+      if (!improvedDesignPrompt.includes(brandProfile.businessName)) {
+        improvedDesignPrompt += ` Prominently feature business name "${brandProfile.businessName}".`;
+        improvementLog.push('Added business name prominence to design prompt');
+      }
+    }
+
+    if (validation.visualTextualIssues.length > 0) {
+      const visualStyle = determineVisualStyleFromTone(brandProfile.writingTone);
+      if (!improvedDesignPrompt.includes(visualStyle)) {
+        improvedDesignPrompt += ` Design should be ${visualStyle} to match brand tone.`;
+        improvementLog.push(`Added visual style (${visualStyle}) to match content tone`);
+      }
+
+      if (improvedContent.keyMessage && !improvedDesignPrompt.includes(improvedContent.keyMessage)) {
+        improvedDesignPrompt += ` Reflect the key message "${improvedContent.keyMessage}" visually.`;
+        improvementLog.push('Added key message reflection to design prompt');
+      }
+    }
+  }
+
+  return {
+    improvedContent,
+    improvedDesignPrompt,
+    improvementLog
+  };
+}
+
+// ============================================================================
+// TASK 29: IMPROVE BRAND PROFILE TO AI PROMPT DATA FLOW
+// ============================================================================
+
+/**
+ * Optimized brand profile data flow interface
+ */
+interface OptimizedBrandProfileFlow {
+  coreIdentity: {
+    businessName: string;
+    businessType: string;
+    location: string;
+    description: string;
+  };
+  businessIntelligence: {
+    services: string[];
+    keyFeatures: string[];
+    competitiveAdvantages: string[];
+    uniqueSellingPoints: string[];
+    targetAudience: string;
+  };
+  brandIdentity: {
+    brandVoice: string;
+    writingTone: string;
+    brandColors: any;
+    logoUrl?: string;
+    designExamples: string[];
+  };
+  contextualData: {
+    culturalContext: any;
+    businessIntelligence: any;
+    marketingContext: string;
+  };
+  promptOptimization: {
+    relevanceScore: number;
+    dataCompleteness: number;
+    promptReadiness: boolean;
+    missingCriticalData: string[];
+  };
+}
+
+/**
+ * AI prompt data structure optimized for different generation types
+ */
+interface OptimizedAIPromptData {
+  contentGeneration: {
+    businessContext: string;
+    brandVoice: string;
+    targetAudience: string;
+    keyMessages: string[];
+    culturalContext: string;
+    competitiveEdge: string;
+    callToActionContext: string;
+  };
+  designGeneration: {
+    visualIdentity: string;
+    brandColors: string;
+    businessType: string;
+    designStyle: string;
+    brandElements: string[];
+    culturalVisualContext: string;
+  };
+  unified: {
+    businessSummary: string;
+    brandEssence: string;
+    marketPosition: string;
+    audienceProfile: string;
+    locationContext: string;
+  };
+}
+
+/**
+ * Optimize brand profile data flow for AI prompt generation
+ */
+export function optimizeBrandProfileDataFlow(
+  brandProfile: any,
+  generationType: 'content' | 'design' | 'unified' = 'unified'
+): OptimizedBrandProfileFlow {
+  // Process and enhance brand profile data
+  const processedProfile = processBrandProfileData(brandProfile, {
+    applyFallbacks: true,
+    validateData: true,
+    normalizeData: true
+  });
+
+  // Generate contextual intelligence
+  const businessIntelligence = generateBusinessIntelligence({
+    businessType: processedProfile.businessType,
+    location: processedProfile.location,
+    services: processedProfile.services,
+    targetAudience: processedProfile.targetAudience,
+    keyFeatures: processedProfile.keyFeatures,
+    competitiveAdvantages: processedProfile.competitiveAdvantages,
+    brandVoice: processedProfile.brandVoice,
+    writingTone: processedProfile.writingTone
+  });
+
+  // Get cultural context
+  const culturalContext = getGlobalCulturalContext(
+    processedProfile.location,
+    processedProfile.businessType
+  );
+
+  // Build optimized flow structure
+  const optimizedFlow: OptimizedBrandProfileFlow = {
+    coreIdentity: {
+      businessName: processedProfile.businessName,
+      businessType: processedProfile.businessType,
+      location: processedProfile.location,
+      description: processedProfile.description
+    },
+    businessIntelligence: {
+      services: processedProfile.services,
+      keyFeatures: processedProfile.keyFeatures,
+      competitiveAdvantages: processedProfile.competitiveAdvantages,
+      uniqueSellingPoints: processedProfile.uniqueSellingPoints,
+      targetAudience: processedProfile.targetAudience
+    },
+    brandIdentity: {
+      brandVoice: processedProfile.brandVoice,
+      writingTone: processedProfile.writingTone,
+      brandColors: processedProfile.brandColors,
+      logoUrl: processedProfile.logoUrl,
+      designExamples: processedProfile.designExamples
+    },
+    contextualData: {
+      culturalContext,
+      businessIntelligence,
+      marketingContext: generateMarketingContext(processedProfile, culturalContext)
+    },
+    promptOptimization: calculatePromptOptimization(processedProfile, generationType)
+  };
+
+  return optimizedFlow;
+}
+
+/**
+ * Generate marketing context from brand profile and cultural data
+ */
+function generateMarketingContext(brandProfile: any, culturalContext: any): string {
+  const contextElements = [];
+
+  // Business positioning
+  contextElements.push(`${brandProfile.businessName} is a ${String(brandProfile.businessType || 'general business').toLowerCase()} business`);
+
+  if (brandProfile.location) {
+    contextElements.push(`located in ${brandProfile.location}`);
+  }
+
+  // Target audience context
+  if (brandProfile.targetAudience) {
+    contextElements.push(`serving ${brandProfile.targetAudience}`);
+  }
+
+  // Key differentiators
+  if (brandProfile.competitiveAdvantages && brandProfile.competitiveAdvantages.length > 0) {
+    contextElements.push(`known for ${brandProfile.competitiveAdvantages.slice(0, 2).join(' and ')}`);
+  }
+
+  // Cultural adaptation
+  if (culturalContext.marketingApproach) {
+    contextElements.push(`with a ${culturalContext.marketingApproach} approach`);
+  }
+
+  // Brand voice integration
+  if (brandProfile.brandVoice) {
+    contextElements.push(`communicating in a ${brandProfile.brandVoice} manner`);
+  }
+
+  return contextElements.join(', ') + '.';
+}
+
+/**
+ * Calculate prompt optimization metrics
+ */
+function calculatePromptOptimization(
+  brandProfile: any,
+  generationType: 'content' | 'design' | 'unified'
+): OptimizedBrandProfileFlow['promptOptimization'] {
+  const criticalFields = {
+    content: ['businessName', 'businessType', 'services', 'targetAudience', 'brandVoice'],
+    design: ['businessName', 'businessType', 'brandColors', 'designExamples'],
+    unified: ['businessName', 'businessType', 'location', 'services', 'targetAudience']
+  };
+
+  const relevantFields = criticalFields[generationType] || criticalFields.unified;
+  const missingCriticalData: string[] = [];
+  let presentFields = 0;
+
+  relevantFields.forEach(field => {
+    const value = brandProfile[field];
+    if (!value || (Array.isArray(value) && value.length === 0) || value === '') {
+      missingCriticalData.push(field);
+    } else {
+      presentFields++;
+    }
+  });
+
+  const dataCompleteness = (presentFields / relevantFields.length) * 100;
+  const relevanceScore = calculateRelevanceScore(brandProfile, generationType);
+  const promptReadiness = dataCompleteness >= 80 && relevanceScore >= 70;
+
+  return {
+    relevanceScore,
+    dataCompleteness,
+    promptReadiness,
+    missingCriticalData
+  };
+}
+
+/**
+ * Calculate relevance score based on data quality and completeness
+ */
+function calculateRelevanceScore(brandProfile: any, generationType: string): number {
+  let score = 0;
+
+  // Business identity completeness (30 points)
+  if (brandProfile.businessName) score += 10;
+  if (brandProfile.businessType) score += 10;
+  if (brandProfile.location) score += 10;
+
+  // Business intelligence completeness (40 points)
+  if (brandProfile.services && brandProfile.services.length > 0) score += 15;
+  if (brandProfile.keyFeatures && brandProfile.keyFeatures.length > 0) score += 10;
+  if (brandProfile.targetAudience) score += 15;
+
+  // Brand identity completeness (30 points)
+  if (brandProfile.brandVoice) score += 10;
+  if (brandProfile.writingTone) score += 10;
+  if (brandProfile.brandColors && brandProfile.brandColors.primary) score += 10;
+
+  // Generation-type-specific bonuses
+  if (generationType === 'design') {
+    if (brandProfile.designExamples && brandProfile.designExamples.length > 0) score += 10;
+    if (brandProfile.logoUrl) score += 5;
+  }
+
+  if (generationType === 'content') {
+    if (brandProfile.competitiveAdvantages && brandProfile.competitiveAdvantages.length > 0) score += 10;
+    if (brandProfile.uniqueSellingPoints && brandProfile.uniqueSellingPoints.length > 0) score += 5;
+  }
+
+  return Math.min(100, score);
+}
+
+/**
+ * Generate optimized AI prompts from brand profile flow
+ */
+export function generateOptimizedAIPrompts(
+  optimizedFlow: OptimizedBrandProfileFlow,
+  generationType: 'content' | 'design' | 'unified' = 'unified'
+): OptimizedAIPromptData {
+  const promptData: OptimizedAIPromptData = {
+    contentGeneration: generateContentPromptData(optimizedFlow),
+    designGeneration: generateDesignPromptData(optimizedFlow),
+    unified: generateUnifiedPromptData(optimizedFlow)
+  };
+
+  return promptData;
+}
+
+/**
+ * Generate content-specific prompt data
+ */
+function generateContentPromptData(flow: OptimizedBrandProfileFlow): OptimizedAIPromptData['contentGeneration'] {
+  const businessContext = `${flow.coreIdentity.businessName} is a ${flow.coreIdentity.businessType} business in ${flow.coreIdentity.location}. ${flow.coreIdentity.description}`;
+
+  const keyMessages = [
+    ...flow.contextualData.businessIntelligence.valuePropositions.slice(0, 2),
+    ...flow.businessIntelligence.competitiveAdvantages.slice(0, 1)
+  ];
+
+  const competitiveEdge = flow.businessIntelligence.competitiveAdvantages.length > 0
+    ? `Key differentiator: ${flow.businessIntelligence.competitiveAdvantages[0]}`
+    : 'Focus on quality and customer satisfaction';
+
+  const callToActionContext = flow.contextualData.businessIntelligence.callToActions.length > 0
+    ? `Preferred CTA style: ${flow.contextualData.businessIntelligence.callToActions[0]}`
+    : 'Use business-appropriate call-to-action';
+
+  return {
+    businessContext,
+    brandVoice: `${flow.brandIdentity.brandVoice} with ${flow.brandIdentity.writingTone} tone`,
+    targetAudience: flow.businessIntelligence.targetAudience,
+    keyMessages,
+    culturalContext: `${flow.contextualData.culturalContext.contentTone} communication style appropriate for ${flow.contextualData.culturalContext.country}`,
+    competitiveEdge,
+    callToActionContext
+  };
+}
+
+/**
+ * Generate design-specific prompt data
+ */
+function generateDesignPromptData(flow: OptimizedBrandProfileFlow): OptimizedAIPromptData['designGeneration'] {
+  const visualIdentity = `${flow.coreIdentity.businessName} visual identity should reflect ${flow.coreIdentity.businessType} industry standards with ${flow.brandIdentity.brandVoice} personality`;
+
+  const brandColors = flow.brandIdentity.brandColors.primary
+    ? `Primary color: ${flow.brandIdentity.brandColors.primary}${flow.brandIdentity.brandColors.secondary ? `, Secondary: ${flow.brandIdentity.brandColors.secondary}` : ''}`
+    : 'Use business-appropriate professional colors';
+
+  const designStyle = determineDesignStyleFromBrand(flow.brandIdentity.writingTone, flow.coreIdentity.businessType);
+
+  const brandElements = [
+    `Business name: ${flow.coreIdentity.businessName}`,
+    `Business type: ${flow.coreIdentity.businessType}`,
+    ...(flow.brandIdentity.logoUrl ? ['Company logo integration'] : []),
+    ...(flow.brandIdentity.designExamples.length > 0 ? ['Consistent with existing design examples'] : [])
+  ];
+
+  const culturalVisualContext = `Visual style appropriate for ${flow.contextualData.culturalContext.country} market with ${flow.contextualData.culturalContext.marketingApproach} approach`;
+
+  return {
+    visualIdentity,
+    brandColors,
+    businessType: flow.coreIdentity.businessType,
+    designStyle,
+    brandElements,
+    culturalVisualContext
+  };
+}
+
+/**
+ * Generate unified prompt data
+ */
+function generateUnifiedPromptData(flow: OptimizedBrandProfileFlow): OptimizedAIPromptData['unified'] {
+  const businessSummary = `${flow.coreIdentity.businessName} is a ${flow.coreIdentity.businessType} business serving ${flow.businessIntelligence.targetAudience} in ${flow.coreIdentity.location}`;
+
+  const brandEssence = `Brand communicates with ${flow.brandIdentity.brandVoice} voice using ${flow.brandIdentity.writingTone} tone, emphasizing ${flow.businessIntelligence.competitiveAdvantages.slice(0, 2).join(' and ')}`;
+
+  const marketPosition = flow.businessIntelligence.uniqueSellingPoints.length > 0
+    ? `Positioned as ${flow.businessIntelligence.uniqueSellingPoints[0]}`
+    : `Professional ${String(flow.coreIdentity.businessType || 'general business').toLowerCase()} service provider`;
+
+  const audienceProfile = `Target audience: ${flow.businessIntelligence.targetAudience} who value ${flow.businessIntelligence.keyFeatures.slice(0, 2).join(' and ')}`;
+
+  const locationContext = `Operating in ${flow.coreIdentity.location} with ${flow.contextualData.culturalContext.communicationStyle} approach suitable for ${flow.contextualData.culturalContext.region}`;
+
+  return {
+    businessSummary,
+    brandEssence,
+    marketPosition,
+    audienceProfile,
+    locationContext
+  };
+}
+
+/**
+ * Helper function to determine design style from brand attributes
+ */
+function determineDesignStyleFromBrand(writingTone: string, businessType: string): string {
+  const tone = writingTone?.toLowerCase() || '';
+  const type = businessType?.toLowerCase() || '';
+
+  // Tone-based style determination
+  if (tone.includes('professional') || tone.includes('formal')) return 'professional and clean';
+  if (tone.includes('friendly') || tone.includes('casual')) return 'approachable and warm';
+  if (tone.includes('energetic') || tone.includes('enthusiastic')) return 'dynamic and vibrant';
+  if (tone.includes('elegant') || tone.includes('sophisticated')) return 'refined and elegant';
+  if (tone.includes('modern') || tone.includes('innovative')) return 'contemporary and sleek';
+
+  // Business-type-based style determination
+  if (type.includes('healthcare') || type.includes('medical')) return 'clean and trustworthy';
+  if (type.includes('finance') || type.includes('legal')) return 'professional and authoritative';
+  if (type.includes('technology') || type.includes('tech')) return 'modern and innovative';
+  if (type.includes('restaurant') || type.includes('food')) return 'warm and inviting';
+  if (type.includes('beauty') || type.includes('salon')) return 'elegant and stylish';
+
+  return 'professional and balanced';
+}
+
+/**
+ * Validate and enhance prompt data flow
+ */
+export function validatePromptDataFlow(
+  brandProfile: any,
+  generatedPrompts: OptimizedAIPromptData
+): {
+  isValid: boolean;
+  completenessScore: number;
+  dataLossIssues: string[];
+  relevanceIssues: string[];
+  recommendations: string[];
+} {
+  const dataLossIssues: string[] = [];
+  const relevanceIssues: string[] = [];
+  const recommendations: string[] = [];
+
+  // Check for data loss in content generation
+  if (brandProfile.businessName && !generatedPrompts.contentGeneration.businessContext.includes(brandProfile.businessName)) {
+    dataLossIssues.push('Business name not properly integrated into content context');
+  }
+
+  if (brandProfile.targetAudience && generatedPrompts.contentGeneration.targetAudience !== brandProfile.targetAudience) {
+    dataLossIssues.push('Target audience information lost in content generation');
+  }
+
+  // Check for data loss in design generation
+  if (brandProfile.brandColors?.primary && !generatedPrompts.designGeneration.brandColors.includes(brandProfile.brandColors.primary)) {
+    dataLossIssues.push('Brand primary color not integrated into design prompts');
+  }
+
+  // Check relevance
+  if (brandProfile.businessType && !generatedPrompts.unified.businessSummary.includes(brandProfile.businessType)) {
+    relevanceIssues.push('Business type not prominently featured in unified summary');
+  }
+
+  // Calculate completeness score
+  const totalChecks = 10;
+  const passedChecks = totalChecks - dataLossIssues.length - relevanceIssues.length;
+  const completenessScore = (passedChecks / totalChecks) * 100;
+
+  // Generate recommendations
+  if (dataLossIssues.length > 0) {
+    recommendations.push('Review data mapping to ensure all critical brand profile elements are preserved');
+  }
+
+  if (relevanceIssues.length > 0) {
+    recommendations.push('Enhance prompt generation to better highlight key business attributes');
+  }
+
+  if (completenessScore < 80) {
+    recommendations.push('Improve brand profile completeness before generating AI prompts');
+  } else {
+    recommendations.push('Data flow optimization is working well - maintain current standards');
+  }
+
+  return {
+    isValid: completenessScore >= 70,
+    completenessScore,
+    dataLossIssues,
+    relevanceIssues,
+    recommendations
+  };
+}
+
+// ============================================================================
+// TASK 30: ADD BRAND PROFILE COMPLETENESS VALIDATION
+// ============================================================================
+
+/**
+ * Brand profile completeness assessment interface
+ */
+interface BrandProfileCompletenessAssessment {
+  overallCompleteness: number;
+  categoryScores: {
+    coreIdentity: number;
+    businessIntelligence: number;
+    brandIdentity: number;
+    contactInformation: number;
+    visualAssets: number;
+  };
+  missingCriticalFields: string[];
+  missingRecommendedFields: string[];
+  missingOptionalFields: string[];
+  recommendations: {
+    immediate: string[];
+    shortTerm: string[];
+    longTerm: string[];
+  };
+  impactAnalysis: {
+    contentGenerationImpact: string;
+    designGenerationImpact: string;
+    overallQualityImpact: string;
+  };
+  completenessLevel: 'Critical' | 'Basic' | 'Good' | 'Excellent';
+}
+
+/**
+ * Field importance levels and categories
+ */
+const BRAND_PROFILE_FIELD_DEFINITIONS = {
+  critical: {
+    coreIdentity: ['businessName', 'businessType', 'location'],
+    businessIntelligence: ['services', 'targetAudience'],
+    brandIdentity: ['brandVoice', 'writingTone']
+  },
+  recommended: {
+    coreIdentity: ['description'],
+    businessIntelligence: ['keyFeatures', 'competitiveAdvantages'],
+    brandIdentity: ['brandColors'],
+    visualAssets: ['logoUrl']
+  },
+  optional: {
+    businessIntelligence: ['uniqueSellingPoints'],
+    contactInformation: ['websiteUrl', 'contactInfo'],
+    visualAssets: ['designExamples']
+  }
+};
+
+/**
+ * Assess brand profile completeness
+ */
+export function assessBrandProfileCompleteness(brandProfile: any): BrandProfileCompletenessAssessment {
+  const categoryScores = calculateCategoryScores(brandProfile);
+  const overallCompleteness = calculateOverallCompleteness(categoryScores);
+
+  const missingFields = identifyMissingFields(brandProfile);
+  const recommendations = generateCompletenessRecommendations(brandProfile, missingFields, categoryScores);
+  const impactAnalysis = analyzeCompletenessImpact(brandProfile, missingFields);
+  const completenessLevel = determineCompletenessLevel(overallCompleteness);
+
+  return {
+    overallCompleteness,
+    categoryScores,
+    missingCriticalFields: missingFields.critical,
+    missingRecommendedFields: missingFields.recommended,
+    missingOptionalFields: missingFields.optional,
+    recommendations,
+    impactAnalysis,
+    completenessLevel
+  };
+}
+
+/**
+ * Calculate completeness scores for each category
+ */
+function calculateCategoryScores(brandProfile: any): BrandProfileCompletenessAssessment['categoryScores'] {
+  const scores = {
+    coreIdentity: 0,
+    businessIntelligence: 0,
+    brandIdentity: 0,
+    contactInformation: 0,
+    visualAssets: 0
+  };
+
+  // Core Identity Score (30% weight)
+  const coreFields = [
+    ...BRAND_PROFILE_FIELD_DEFINITIONS.critical.coreIdentity,
+    ...BRAND_PROFILE_FIELD_DEFINITIONS.recommended.coreIdentity
+  ];
+  scores.coreIdentity = calculateFieldCategoryScore(brandProfile, coreFields, [3, 1]); // Critical: 3 points, Recommended: 1 point
+
+  // Business Intelligence Score (35% weight)
+  const businessFields = [
+    ...BRAND_PROFILE_FIELD_DEFINITIONS.critical.businessIntelligence,
+    ...BRAND_PROFILE_FIELD_DEFINITIONS.recommended.businessIntelligence,
+    ...BRAND_PROFILE_FIELD_DEFINITIONS.optional.businessIntelligence
+  ];
+  scores.businessIntelligence = calculateFieldCategoryScore(brandProfile, businessFields, [3, 2, 1]);
+
+  // Brand Identity Score (25% weight)
+  const brandFields = [
+    ...BRAND_PROFILE_FIELD_DEFINITIONS.critical.brandIdentity,
+    ...BRAND_PROFILE_FIELD_DEFINITIONS.recommended.brandIdentity
+  ];
+  scores.brandIdentity = calculateFieldCategoryScore(brandProfile, brandFields, [3, 2]);
+
+  // Contact Information Score (5% weight)
+  const contactFields = BRAND_PROFILE_FIELD_DEFINITIONS.optional.contactInformation;
+  scores.contactInformation = calculateFieldCategoryScore(brandProfile, contactFields, [1]);
+
+  // Visual Assets Score (5% weight)
+  const visualFields = [
+    ...BRAND_PROFILE_FIELD_DEFINITIONS.recommended.visualAssets,
+    ...BRAND_PROFILE_FIELD_DEFINITIONS.optional.visualAssets
+  ];
+  scores.visualAssets = calculateFieldCategoryScore(brandProfile, visualFields, [2, 1]);
+
+  return scores;
+}
+
+/**
+ * Calculate score for a specific field category
+ */
+function calculateFieldCategoryScore(
+  brandProfile: any,
+  fields: string[],
+  weights: number[]
+): number {
+  let totalScore = 0;
+  let maxPossibleScore = 0;
+  let weightIndex = 0;
+
+  fields.forEach((field, index) => {
+    // Determine weight based on field importance
+    const currentWeight = weights[Math.min(weightIndex, weights.length - 1)];
+    maxPossibleScore += currentWeight;
+
+    // Check if field has value
+    const value = brandProfile[field];
+    const hasValue = value &&
+      (typeof value === 'string' ? value.trim() !== '' : true) &&
+      (Array.isArray(value) ? value.length > 0 : true) &&
+      (typeof value === 'object' && value !== null ? Object.keys(value).length > 0 : true);
+
+    if (hasValue) {
+      totalScore += currentWeight;
+    }
+
+    // Move to next weight group based on field definitions
+    if (field === BRAND_PROFILE_FIELD_DEFINITIONS.critical.coreIdentity?.slice(-1)[0] ||
+      field === BRAND_PROFILE_FIELD_DEFINITIONS.critical.businessIntelligence?.slice(-1)[0] ||
+      field === BRAND_PROFILE_FIELD_DEFINITIONS.critical.brandIdentity?.slice(-1)[0]) {
+      weightIndex++;
+    }
+  });
+
+  return maxPossibleScore > 0 ? (totalScore / maxPossibleScore) * 100 : 0;
+}
+
+/**
+ * Calculate overall completeness score
+ */
+function calculateOverallCompleteness(categoryScores: BrandProfileCompletenessAssessment['categoryScores']): number {
+  const weights = {
+    coreIdentity: 0.30,
+    businessIntelligence: 0.35,
+    brandIdentity: 0.25,
+    contactInformation: 0.05,
+    visualAssets: 0.05
+  };
+
+  return (
+    categoryScores.coreIdentity * weights.coreIdentity +
+    categoryScores.businessIntelligence * weights.businessIntelligence +
+    categoryScores.brandIdentity * weights.brandIdentity +
+    categoryScores.contactInformation * weights.contactInformation +
+    categoryScores.visualAssets * weights.visualAssets
+  );
+}
+
+/**
+ * Identify missing fields by importance level
+ */
+function identifyMissingFields(brandProfile: any): {
+  critical: string[];
+  recommended: string[];
+  optional: string[];
+} {
+  const missing = {
+    critical: [] as string[],
+    recommended: [] as string[],
+    optional: [] as string[]
+  };
+
+  // Check critical fields
+  Object.values(BRAND_PROFILE_FIELD_DEFINITIONS.critical).flat().forEach(field => {
+    if (!hasFieldValue(brandProfile, field)) {
+      missing.critical.push(field);
+    }
+  });
+
+  // Check recommended fields
+  Object.values(BRAND_PROFILE_FIELD_DEFINITIONS.recommended).flat().forEach(field => {
+    if (!hasFieldValue(brandProfile, field)) {
+      missing.recommended.push(field);
+    }
+  });
+
+  // Check optional fields
+  Object.values(BRAND_PROFILE_FIELD_DEFINITIONS.optional).flat().forEach(field => {
+    if (!hasFieldValue(brandProfile, field)) {
+      missing.optional.push(field);
+    }
+  });
+
+  return missing;
+}
+
+/**
+ * Check if a field has a meaningful value
+ */
+function hasFieldValue(brandProfile: any, field: string): boolean {
+  const value = brandProfile[field];
+
+  if (!value) return false;
+
+  if (typeof value === 'string') {
+    return value.trim() !== '';
+  }
+
+  if (Array.isArray(value)) {
+    return value.length > 0 && value.some(item =>
+      typeof item === 'string' ? item.trim() !== '' : !!item
+    );
+  }
+
+  if (typeof value === 'object' && value !== null) {
+    return Object.keys(value).length > 0 &&
+      Object.values(value).some(val =>
+        typeof val === 'string' ? val.trim() !== '' : !!val
+      );
+  }
+
+  return true;
+}
+
+/**
+ * Generate completeness improvement recommendations
+ */
+function generateCompletenessRecommendations(
+  brandProfile: any,
+  missingFields: { critical: string[]; recommended: string[]; optional: string[] },
+  categoryScores: BrandProfileCompletenessAssessment['categoryScores']
+): BrandProfileCompletenessAssessment['recommendations'] {
+  const recommendations = {
+    immediate: [] as string[],
+    shortTerm: [] as string[],
+    longTerm: [] as string[]
+  };
+
+  // Immediate recommendations (critical missing fields)
+  if (missingFields.critical.length > 0) {
+    recommendations.immediate.push('Complete critical business information to enable basic content generation');
+
+    missingFields.critical.forEach(field => {
+      const fieldRecommendation = getFieldRecommendation(field, 'critical');
+      if (fieldRecommendation) {
+        recommendations.immediate.push(fieldRecommendation);
+      }
+    });
+  }
+
+  // Short-term recommendations (recommended missing fields)
+  if (missingFields.recommended.length > 0) {
+    recommendations.shortTerm.push('Add recommended information to improve content quality and brand consistency');
+
+    missingFields.recommended.forEach(field => {
+      const fieldRecommendation = getFieldRecommendation(field, 'recommended');
+      if (fieldRecommendation) {
+        recommendations.shortTerm.push(fieldRecommendation);
+      }
+    });
+  }
+
+  // Long-term recommendations (optional fields and enhancements)
+  if (missingFields.optional.length > 0) {
+    recommendations.longTerm.push('Consider adding optional information for enhanced personalization');
+
+    missingFields.optional.forEach(field => {
+      const fieldRecommendation = getFieldRecommendation(field, 'optional');
+      if (fieldRecommendation) {
+        recommendations.longTerm.push(fieldRecommendation);
+      }
+    });
+  }
+
+  // Category-specific recommendations
+  if (categoryScores.coreIdentity < 80) {
+    recommendations.immediate.push('Strengthen core business identity information for better brand representation');
+  }
+
+  if (categoryScores.businessIntelligence < 70) {
+    recommendations.shortTerm.push('Expand business intelligence data to improve content relevance and targeting');
+  }
+
+  if (categoryScores.brandIdentity < 60) {
+    recommendations.shortTerm.push('Develop comprehensive brand identity guidelines for consistent communication');
+  }
+
+  // Ensure we have recommendations even for complete profiles
+  if (recommendations.immediate.length === 0 && recommendations.shortTerm.length === 0 && recommendations.longTerm.length === 0) {
+    recommendations.longTerm.push('Brand profile is comprehensive - consider periodic reviews to keep information current');
+    recommendations.longTerm.push('Monitor content generation quality and update profile based on performance insights');
+  }
+
+  return recommendations;
+}
+
+
+
+/**
+ * Analyze impact of missing fields on content generation
+ */
+function analyzeCompletenessImpact(
+  brandProfile: any,
+  missingFields: { critical: string[]; recommended: string[]; optional: string[] }
+): BrandProfileCompletenessAssessment['impactAnalysis'] {
+  let contentGenerationImpact = 'Minimal impact';
+  let designGenerationImpact = 'Minimal impact';
+  let overallQualityImpact = 'High quality';
+
+  // Analyze content generation impact
+  if (missingFields.critical.some(field => ['businessName', 'businessType', 'services', 'targetAudience'].includes(field))) {
+    contentGenerationImpact = 'Severe impact - content will be generic and less relevant';
+  } else if (missingFields.recommended.some(field => ['keyFeatures', 'competitiveAdvantages', 'brandVoice'].includes(field))) {
+    contentGenerationImpact = 'Moderate impact - content quality and personalization reduced';
+  } else if (missingFields.optional.length > 0) {
+    contentGenerationImpact = 'Minor impact - some personalization opportunities missed';
+  }
+
+  // Analyze design generation impact
+  if (missingFields.critical.some(field => ['businessName', 'businessType'].includes(field))) {
+    designGenerationImpact = 'Severe impact - designs will lack business context and branding';
+  } else if (missingFields.recommended.some(field => ['brandColors', 'logoUrl'].includes(field))) {
+    designGenerationImpact = 'Moderate impact - visual consistency and brand recognition reduced';
+  } else if (missingFields.optional.some(field => ['designExamples'].includes(field))) {
+    designGenerationImpact = 'Minor impact - some visual consistency opportunities missed';
+  }
+
+  // Determine overall quality impact
+  if (missingFields.critical.length > 2) {
+    overallQualityImpact = 'Significantly reduced quality - critical information missing';
+  } else if (missingFields.critical.length > 0 || missingFields.recommended.length > 3) {
+    overallQualityImpact = 'Moderately reduced quality - important information missing';
+  } else if (missingFields.recommended.length > 0) {
+    overallQualityImpact = 'Slightly reduced quality - some optimization opportunities missed';
+  }
+
+  return {
+    contentGenerationImpact,
+    designGenerationImpact,
+    overallQualityImpact
+  };
+}
+
+/**
+ * Determine completeness level based on overall score
+ */
+function determineCompletenessLevel(overallCompleteness: number): BrandProfileCompletenessAssessment['completenessLevel'] {
+  if (overallCompleteness >= 90) return 'Excellent';
+  if (overallCompleteness >= 75) return 'Good';
+  if (overallCompleteness >= 50) return 'Basic';
+  return 'Critical';
+}
+
+/**
+ * Generate completeness improvement action plan
+ */
+export function generateCompletenessActionPlan(
+  assessment: BrandProfileCompletenessAssessment
+): {
+  priorityActions: string[];
+  quickWins: string[];
+  longTermGoals: string[];
+  estimatedImprovementScore: number;
+} {
+  const priorityActions: string[] = [];
+  const quickWins: string[] = [];
+  const longTermGoals: string[] = [];
+
+  // Priority actions (critical missing fields)
+  if (assessment.missingCriticalFields.length > 0) {
+    priorityActions.push('Complete all critical business information immediately');
+    assessment.missingCriticalFields.forEach(field => {
+      const recommendation = getFieldRecommendation(field, 'critical');
+      if (recommendation) {
+        priorityActions.push(`• ${recommendation}`);
+      }
+    });
+  }
+
+  // Quick wins (easy recommended fields)
+  const easyFields = ['description', 'brandColors', 'logoUrl'];
+  const easyMissingFields = assessment.missingRecommendedFields.filter(field => easyFields.includes(field));
+
+  if (easyMissingFields.length > 0) {
+    quickWins.push('Add these easy improvements for immediate quality boost:');
+    easyMissingFields.forEach(field => {
+      const recommendation = getFieldRecommendation(field, 'recommended');
+      if (recommendation) {
+        quickWins.push(`• ${recommendation}`);
+      }
+    });
+  }
+
+  // Long-term goals (comprehensive improvements)
+  const comprehensiveFields = assessment.missingRecommendedFields.filter(field => !easyFields.includes(field));
+
+  if (comprehensiveFields.length > 0 || assessment.missingOptionalFields.length > 0) {
+    longTermGoals.push('Comprehensive profile enhancement for maximum quality:');
+
+    [...comprehensiveFields, ...assessment.missingOptionalFields.slice(0, 3)].forEach(field => {
+      const recommendation = getFieldRecommendation(field, 'optional');
+      if (recommendation) {
+        longTermGoals.push(`• ${recommendation}`);
+      }
+    });
+  }
+
+  // Calculate estimated improvement score
+  const criticalFieldsWeight = assessment.missingCriticalFields.length * 15;
+  const recommendedFieldsWeight = assessment.missingRecommendedFields.length * 8;
+  const optionalFieldsWeight = assessment.missingOptionalFields.length * 3;
+
+  const estimatedImprovementScore = Math.min(100,
+    assessment.overallCompleteness + criticalFieldsWeight + recommendedFieldsWeight + optionalFieldsWeight
+  );
+
+  return {
+    priorityActions,
+    quickWins,
+    longTermGoals,
+    estimatedImprovementScore
+  };
+}
+
+/**
+ * Validate brand profile completeness for specific use cases
+ */
+export function validateCompletenessForUseCase(
+  brandProfile: any,
+  useCase: 'content_generation' | 'design_generation' | 'full_marketing'
+): {
+  isReady: boolean;
+  readinessScore: number;
+  blockers: string[];
+  recommendations: string[];
+} {
+  const useCaseRequirements = {
+    content_generation: {
+      critical: ['businessName', 'businessType', 'services', 'targetAudience', 'brandVoice'],
+      recommended: ['keyFeatures', 'competitiveAdvantages', 'writingTone'],
+      minScore: 70
+    },
+    design_generation: {
+      critical: ['businessName', 'businessType', 'brandColors'],
+      recommended: ['logoUrl', 'designExamples', 'writingTone'],
+      minScore: 65
+    },
+    full_marketing: {
+      critical: ['businessName', 'businessType', 'location', 'services', 'targetAudience', 'brandVoice', 'brandColors'],
+      recommended: ['keyFeatures', 'competitiveAdvantages', 'uniqueSellingPoints', 'logoUrl', 'writingTone'],
+      minScore: 80
+    }
+  };
+
+  const requirements = useCaseRequirements[useCase];
+  const blockers: string[] = [];
+  const recommendations: string[] = [];
+
+  // Check critical requirements
+  requirements.critical.forEach(field => {
+    if (!hasFieldValue(brandProfile, field)) {
+      blockers.push(`Missing critical field: ${field}`);
+    }
+  });
+
+  // Check recommended requirements
+  requirements.recommended.forEach(field => {
+    if (!hasFieldValue(brandProfile, field)) {
+      recommendations.push(`Add recommended field: ${field}`);
+    }
+  });
+
+  // Calculate readiness score
+  const criticalPresent = requirements.critical.filter(field => hasFieldValue(brandProfile, field)).length;
+  const recommendedPresent = requirements.recommended.filter(field => hasFieldValue(brandProfile, field)).length;
+
+  const criticalScore = (criticalPresent / requirements.critical.length) * 70;
+  const recommendedScore = (recommendedPresent / requirements.recommended.length) * 30;
+  const readinessScore = criticalScore + recommendedScore;
+
+  const isReady = readinessScore >= requirements.minScore && blockers.length === 0;
+
+  return {
+    isReady,
+    readinessScore,
+    blockers,
+    recommendations
+  };
+}
+
+// ============================================================================
+// TASK 31: CREATE FALLBACK STRATEGIES FOR INCOMPLETE PROFILES
+// ============================================================================
+
+/**
+ * Sophisticated fallback strategies interface
+ */
+interface FallbackStrategy {
+  fieldName: string;
+  fallbackValue: any;
+  confidence: number;
+  source: 'industry_standard' | 'business_type_inference' | 'location_inference' | 'ai_inference' | 'generic_default';
+  reasoning: string;
+}
+
+interface IncompleteBrandProfileFallbacks {
+  appliedFallbacks: FallbackStrategy[];
+  enhancedProfile: any;
+  qualityScore: number;
+  confidenceLevel: 'High' | 'Medium' | 'Low';
+  recommendations: string[];
+}
+
+/**
+ * Apply sophisticated fallback strategies for incomplete brand profiles
+ */
+export function applySophisticatedFallbacks(
+  brandProfile: any,
+  useCase: 'content_generation' | 'design_generation' | 'full_marketing' = 'full_marketing'
+): IncompleteBrandProfileFallbacks {
+  const appliedFallbacks: FallbackStrategy[] = [];
+  const enhancedProfile = { ...brandProfile };
+
+  // Apply fallbacks in order of importance
+  applyBusinessNameFallback(enhancedProfile, appliedFallbacks);
+  applyBusinessTypeFallback(enhancedProfile, appliedFallbacks);
+  applyLocationFallback(enhancedProfile, appliedFallbacks);
+  applyServicesFallback(enhancedProfile, appliedFallbacks);
+  applyTargetAudienceFallback(enhancedProfile, appliedFallbacks);
+  applyBrandVoiceFallback(enhancedProfile, appliedFallbacks);
+  applyWritingToneFallback(enhancedProfile, appliedFallbacks);
+  applyBrandColorsFallback(enhancedProfile, appliedFallbacks);
+  applyKeyFeaturesFallback(enhancedProfile, appliedFallbacks);
+  applyCompetitiveAdvantagesFallback(enhancedProfile, appliedFallbacks);
+  applyDescriptionFallback(enhancedProfile, appliedFallbacks);
+
+  // Calculate quality and confidence
+  const qualityScore = calculateFallbackQualityScore(enhancedProfile, appliedFallbacks);
+  const confidenceLevel = determineFallbackConfidenceLevel(appliedFallbacks);
+  const recommendations = generateFallbackRecommendations(appliedFallbacks, useCase);
+
+  return {
+    appliedFallbacks,
+    enhancedProfile,
+    qualityScore,
+    confidenceLevel,
+    recommendations
+  };
+}
+
+/**
+ * Apply business name fallback
+ */
+function applyBusinessNameFallback(profile: any, fallbacks: FallbackStrategy[]): void {
+  if (!profile.businessName || profile.businessName.trim() === '') {
+    const fallbackName = profile.businessType ?
+      `Professional ${profile.businessType} Service` :
+      'Professional Business Service';
+
+    profile.businessName = fallbackName;
+    fallbacks.push({
+      fieldName: 'businessName',
+      fallbackValue: fallbackName,
+      confidence: 30,
+      source: 'business_type_inference',
+      reasoning: 'Generated generic business name based on business type'
+    });
+  }
+}
+
+/**
+ * Apply business type fallback
+ */
+function applyBusinessTypeFallback(profile: any, fallbacks: FallbackStrategy[]): void {
+  if (!profile.businessType || profile.businessType.trim() === '') {
+    // Try to infer from services
+    if (profile.services && profile.services.length > 0) {
+      const inferredType = inferBusinessTypeFromServices(profile.services);
+      profile.businessType = inferredType;
+      fallbacks.push({
+        fieldName: 'businessType',
+        fallbackValue: inferredType,
+        confidence: 70,
+        source: 'ai_inference',
+        reasoning: `Inferred business type from services: ${profile.services.slice(0, 2).join(', ')}`
+      });
+    } else {
+      profile.businessType = 'General Business';
+      fallbacks.push({
+        fieldName: 'businessType',
+        fallbackValue: 'General Business',
+        confidence: 20,
+        source: 'generic_default',
+        reasoning: 'No business type or services provided - using generic default'
+      });
+    }
+  }
+}
+
+/**
+ * Apply location fallback
+ */
+function applyLocationFallback(profile: any, fallbacks: FallbackStrategy[]): void {
+  if (!profile.location || profile.location.trim() === '') {
+    profile.location = 'Global';
+    fallbacks.push({
+      fieldName: 'location',
+      fallbackValue: 'Global',
+      confidence: 40,
+      source: 'generic_default',
+      reasoning: 'No location specified - using global context for universal appeal'
+    });
+  }
+}
+
+/**
+ * Apply services fallback
+ */
+function applyServicesFallback(profile: any, fallbacks: FallbackStrategy[]): void {
+  if (!profile.services || profile.services.length === 0) {
+    const businessType = profile.businessType || 'General Business';
+    const inferredServices = inferServicesFromBusinessType(businessType);
+
+    profile.services = inferredServices;
+    fallbacks.push({
+      fieldName: 'services',
+      fallbackValue: inferredServices,
+      confidence: 60,
+      source: 'business_type_inference',
+      reasoning: `Generated services based on business type: ${businessType}`
+    });
+  }
+}
+
+/**
+ * Apply target audience fallback
+ */
+function applyTargetAudienceFallback(profile: any, fallbacks: FallbackStrategy[]): void {
+  if (!profile.targetAudience || profile.targetAudience.trim() === '') {
+    const businessType = profile.businessType || 'General Business';
+    const inferredAudience = inferTargetAudienceFromBusinessType(businessType);
+
+    profile.targetAudience = inferredAudience;
+    fallbacks.push({
+      fieldName: 'targetAudience',
+      fallbackValue: inferredAudience,
+      confidence: 65,
+      source: 'business_type_inference',
+      reasoning: `Inferred target audience based on business type: ${businessType}`
+    });
+  }
+}
+
+/**
+ * Apply brand voice fallback
+ */
+function applyBrandVoiceFallback(profile: any, fallbacks: FallbackStrategy[]): void {
+  if (!profile.brandVoice || profile.brandVoice.trim() === '') {
+    const businessType = profile.businessType || 'General Business';
+    const inferredVoice = inferBrandVoiceFromBusinessType(businessType);
+
+    profile.brandVoice = inferredVoice;
+    fallbacks.push({
+      fieldName: 'brandVoice',
+      fallbackValue: inferredVoice,
+      confidence: 70,
+      source: 'industry_standard',
+      reasoning: `Applied industry-standard brand voice for ${businessType} businesses`
+    });
+  }
+}
+
+/**
+ * Apply writing tone fallback
+ */
+function applyWritingToneFallback(profile: any, fallbacks: FallbackStrategy[]): void {
+  if (!profile.writingTone || profile.writingTone.trim() === '') {
+    const businessType = profile.businessType || 'General Business';
+    const brandVoice = profile.brandVoice || 'professional';
+    const inferredTone = inferWritingToneFromContext(businessType, brandVoice);
+
+    profile.writingTone = inferredTone;
+    fallbacks.push({
+      fieldName: 'writingTone',
+      fallbackValue: inferredTone,
+      confidence: 75,
+      source: 'industry_standard',
+      reasoning: `Derived writing tone from business type (${businessType}) and brand voice (${brandVoice})`
+    });
+  }
+}
+
+/**
+ * Apply brand colors fallback
+ */
+function applyBrandColorsFallback(profile: any, fallbacks: FallbackStrategy[]): void {
+  if (!profile.brandColors || !profile.brandColors.primary) {
+    const businessType = profile.businessType || 'General Business';
+    const inferredColors = generateBrandColorsFallback(businessType);
+
+    profile.brandColors = inferredColors;
+    fallbacks.push({
+      fieldName: 'brandColors',
+      fallbackValue: inferredColors,
+      confidence: 80,
+      source: 'industry_standard',
+      reasoning: `Applied industry-standard color palette for ${businessType} businesses`
+    });
+  }
+}
+
+/**
+ * Apply key features fallback
+ */
+function applyKeyFeaturesFallback(profile: any, fallbacks: FallbackStrategy[]): void {
+  if (!profile.keyFeatures || profile.keyFeatures.length === 0) {
+    const businessType = profile.businessType || 'General Business';
+    const services = profile.services || [];
+    const inferredFeatures = inferKeyFeaturesFromContext(businessType, services);
+
+    profile.keyFeatures = inferredFeatures;
+    fallbacks.push({
+      fieldName: 'keyFeatures',
+      fallbackValue: inferredFeatures,
+      confidence: 65,
+      source: 'business_type_inference',
+      reasoning: `Generated key features based on business type and services`
+    });
+  }
+}
+
+/**
+ * Apply competitive advantages fallback
+ */
+function applyCompetitiveAdvantagesFallback(profile: any, fallbacks: FallbackStrategy[]): void {
+  if (!profile.competitiveAdvantages || profile.competitiveAdvantages.length === 0) {
+    const businessType = profile.businessType || 'General Business';
+    const keyFeatures = profile.keyFeatures || [];
+    const inferredAdvantages = inferCompetitiveAdvantagesFromContext(businessType, keyFeatures);
+
+    profile.competitiveAdvantages = inferredAdvantages;
+    fallbacks.push({
+      fieldName: 'competitiveAdvantages',
+      fallbackValue: inferredAdvantages,
+      confidence: 60,
+      source: 'business_type_inference',
+      reasoning: `Generated competitive advantages based on business context and key features`
+    });
+  }
+}
+
+/**
+ * Apply description fallback
+ */
+function applyDescriptionFallback(profile: any, fallbacks: FallbackStrategy[]): void {
+  if (!profile.description || profile.description.trim() === '') {
+    const businessType = profile.businessType || 'General Business';
+    const services = profile.services || [];
+    const location = profile.location || 'Global';
+    const inferredDescription = generateBusinessDescription(businessType, services, location);
+
+    profile.description = inferredDescription;
+    fallbacks.push({
+      fieldName: 'description',
+      fallbackValue: inferredDescription,
+      confidence: 70,
+      source: 'ai_inference',
+      reasoning: `Generated business description from available context (type, services, location)`
+    });
+  }
+}
+
+
+
+/**
+ * Infer services from business type
+ */
+function inferServicesFromBusinessType(businessType: string): string[] {
+  const type = String(businessType || 'general business').toLowerCase();
+
+  const serviceMap: Record<string, string[]> = {
+    'restaurant': ['Fine dining', 'Takeout orders', 'Catering services'],
+    'healthcare': ['Medical consultations', 'Health screenings', 'Treatment services'],
+    'fitness': ['Personal training', 'Group fitness classes', 'Wellness programs'],
+    'beauty': ['Hair styling', 'Beauty treatments', 'Wellness services'],
+    'finance': ['Financial planning', 'Investment advice', 'Banking services'],
+    'retail': ['Product sales', 'Customer service', 'Online shopping'],
+    'legal': ['Legal consultation', 'Document preparation', 'Legal representation'],
+    'technology': ['Software development', 'Technical consulting', 'Digital solutions'],
+    'education': ['Educational programs', 'Training courses', 'Academic support'],
+    'automotive': ['Vehicle services', 'Maintenance', 'Automotive solutions']
+  };
+
+  for (const [key, services] of Object.entries(serviceMap)) {
+    if (type.includes(key)) {
+      return services;
+    }
+  }
+
+  return ['Professional services', 'Customer consultation', 'Quality solutions'];
+}
+
+/**
+ * Infer target audience from business type
+ */
+function inferTargetAudienceFromBusinessType(businessType: string): string {
+  const type = String(businessType || 'general business').toLowerCase();
+
+  const audienceMap: Record<string, string> = {
+    'restaurant': 'Food enthusiasts and families',
+    'healthcare': 'Patients and health-conscious individuals',
+    'fitness': 'Health and fitness enthusiasts',
+    'beauty': 'Beauty and wellness seekers',
+    'finance': 'Individuals and businesses seeking financial services',
+    'retail': 'Consumers and shoppers',
+    'legal': 'Individuals and businesses needing legal services',
+    'technology': 'Businesses and tech-savvy consumers',
+    'education': 'Students and lifelong learners',
+    'automotive': 'Vehicle owners and automotive enthusiasts'
+  };
+
+  for (const [key, audience] of Object.entries(audienceMap)) {
+    if (type.includes(key)) {
+      return audience;
+    }
+  }
+
+  return 'General public and potential customers';
+}
+
+/**
+ * Infer brand voice from business type
+ */
+function inferBrandVoiceFromBusinessType(businessType: string): string {
+  const type = String(businessType || 'general business').toLowerCase();
+
+  const voiceMap: Record<string, string> = {
+    'restaurant': 'warm and welcoming',
+    'healthcare': 'caring and professional',
+    'fitness': 'motivational and energetic',
+    'beauty': 'elegant and inspiring',
+    'finance': 'trustworthy and professional',
+    'retail': 'friendly and helpful',
+    'legal': 'authoritative and trustworthy',
+    'technology': 'innovative and professional',
+    'education': 'knowledgeable and supportive',
+    'automotive': 'reliable and expert'
+  };
+
+  for (const [key, voice] of Object.entries(voiceMap)) {
+    if (type.includes(key)) {
+      return voice;
+    }
+  }
+
+  return 'professional and reliable';
+}
+
+/**
+ * Infer writing tone from business context
+ */
+function inferWritingToneFromContext(businessType: string, brandVoice: string): string {
+  const type = String(businessType || 'general business').toLowerCase();
+  const voice = brandVoice.toLowerCase();
+
+  // Combine business type and brand voice for more nuanced tone
+  if (voice.includes('warm') || voice.includes('welcoming')) {
+    return 'friendly and inviting';
+  }
+  if (voice.includes('caring') || voice.includes('professional')) {
+    return 'professional and caring';
+  }
+  if (voice.includes('motivational') || voice.includes('energetic')) {
+    return 'enthusiastic and motivating';
+  }
+  if (voice.includes('elegant') || voice.includes('inspiring')) {
+    return 'sophisticated and inspiring';
+  }
+  if (voice.includes('trustworthy')) {
+    return 'professional and trustworthy';
+  }
+  if (voice.includes('innovative')) {
+    return 'modern and innovative';
+  }
+
+  // Fallback based on business type
+  const toneMap: Record<string, string> = {
+    'restaurant': 'warm and conversational',
+    'healthcare': 'professional and reassuring',
+    'fitness': 'energetic and motivational',
+    'beauty': 'elegant and uplifting',
+    'finance': 'professional and confident',
+    'retail': 'friendly and helpful',
+    'legal': 'formal and authoritative',
+    'technology': 'professional and innovative',
+    'education': 'informative and encouraging',
+    'automotive': 'knowledgeable and reliable'
+  };
+
+  for (const [key, tone] of Object.entries(toneMap)) {
+    if (type.includes(key)) {
+      return tone;
+    }
+  }
+
+  return 'professional and approachable';
+}
+
+/**
+ * Infer key features from business context
+ */
+function inferKeyFeaturesFromContext(businessType: string, services: string[]): string[] {
+  const type = String(businessType || 'general business').toLowerCase();
+
+  const featureMap: Record<string, string[]> = {
+    'restaurant': ['Fresh ingredients', 'Authentic recipes', 'Quality service'],
+    'healthcare': ['Experienced professionals', 'Modern facilities', 'Comprehensive care'],
+    'fitness': ['Expert trainers', 'Modern equipment', 'Personalized programs'],
+    'beauty': ['Skilled professionals', 'Premium products', 'Relaxing environment'],
+    'finance': ['Expert advice', 'Personalized solutions', 'Trusted service'],
+    'retail': ['Quality products', 'Competitive prices', 'Excellent service'],
+    'legal': ['Experienced attorneys', 'Personalized attention', 'Proven results'],
+    'technology': ['Cutting-edge solutions', 'Expert team', 'Reliable support'],
+    'education': ['Qualified instructors', 'Comprehensive curriculum', 'Flexible learning'],
+    'automotive': ['Expert technicians', 'Quality parts', 'Reliable service']
+  };
+
+  for (const [key, features] of Object.entries(featureMap)) {
+    if (type.includes(key)) {
+      return features;
+    }
+  }
+
+  // If services are provided, try to derive features from them
+  if (services.length > 0) {
+    return [
+      'Professional service',
+      'Quality solutions',
+      'Customer satisfaction'
+    ];
+  }
+
+  return ['Professional approach', 'Quality service', 'Customer focus'];
+}
+
+/**
+ * Infer competitive advantages from business context
+ */
+function inferCompetitiveAdvantagesFromContext(businessType: string, keyFeatures: string[]): string[] {
+  const type = String(businessType || 'general business').toLowerCase();
+
+  const advantageMap: Record<string, string[]> = {
+    'restaurant': ['Unique recipes', 'Local sourcing', 'Family atmosphere'],
+    'healthcare': ['Personalized care', 'Advanced technology', 'Comprehensive services'],
+    'fitness': ['Customized programs', 'Expert guidance', 'Supportive community'],
+    'beauty': ['Latest techniques', 'Premium products', 'Personalized treatments'],
+    'finance': ['Tailored strategies', 'Market expertise', 'Long-term relationships'],
+    'retail': ['Curated selection', 'Competitive pricing', 'Exceptional service'],
+    'legal': ['Specialized expertise', 'Strategic approach', 'Client-focused service'],
+    'technology': ['Innovation focus', 'Scalable solutions', 'Technical expertise'],
+    'education': ['Practical approach', 'Industry connections', 'Flexible scheduling'],
+    'automotive': ['Certified expertise', 'Warranty coverage', 'Quick turnaround']
+  };
+
+  for (const [key, advantages] of Object.entries(advantageMap)) {
+    if (type.includes(key)) {
+      return advantages;
+    }
+  }
+
+  // Try to derive from key features
+  if (keyFeatures.length > 0) {
+    return [
+      'Industry expertise',
+      'Customer-focused approach',
+      'Proven track record'
+    ];
+  }
+
+  return ['Professional excellence', 'Customer satisfaction', 'Reliable service'];
+}
+
+/**
+ * Generate business description from context
+ */
+function generateBusinessDescription(businessType: string, services: string[], location: string): string {
+  const type = String(businessType || 'general business').toLowerCase();
+  const locationText = location !== 'Global' ? ` in ${location}` : '';
+  const servicesText = services.length > 0 ? ` specializing in ${services.slice(0, 2).join(' and ')}` : '';
+
+  const descriptionTemplates: Record<string, string> = {
+    'restaurant': `A welcoming restaurant${locationText}${servicesText}, committed to providing exceptional dining experiences with quality ingredients and outstanding service.`,
+    'healthcare': `A trusted healthcare provider${locationText}${servicesText}, dedicated to delivering comprehensive medical care with compassion and expertise.`,
+    'fitness': `A dynamic fitness center${locationText}${servicesText}, helping individuals achieve their health and wellness goals through expert guidance and support.`,
+    'beauty': `A premier beauty destination${locationText}${servicesText}, offering professional treatments and services to help clients look and feel their best.`,
+    'finance': `A reliable financial services provider${locationText}${servicesText}, helping individuals and businesses achieve their financial goals through expert advice and personalized solutions.`,
+    'retail': `A quality retail business${locationText}${servicesText}, committed to providing customers with excellent products and exceptional shopping experiences.`,
+    'legal': `A professional law firm${locationText}${servicesText}, providing expert legal counsel and representation with dedication to client success.`,
+    'technology': `An innovative technology company${locationText}${servicesText}, delivering cutting-edge solutions and expert technical services to drive business success.`,
+    'education': `A dedicated educational institution${locationText}${servicesText}, committed to providing quality learning experiences and supporting student success.`,
+    'automotive': `A trusted automotive service provider${locationText}${servicesText}, delivering expert vehicle care and maintenance with reliability and professionalism.`
+  };
+
+  for (const [key, template] of Object.entries(descriptionTemplates)) {
+    if (type.includes(key)) {
+      return template;
+    }
+  }
+
+  return `A professional ${String(businessType || 'general business').toLowerCase()} business${locationText}${servicesText}, committed to delivering quality services and exceptional customer experiences.`;
+}
+
+/**
+ * Calculate fallback quality score
+ */
+function calculateFallbackQualityScore(enhancedProfile: any, appliedFallbacks: FallbackStrategy[]): number {
+  let baseScore = 100;
+
+  // Reduce score based on number and confidence of fallbacks
+  appliedFallbacks.forEach(fallback => {
+    const confidencePenalty = (100 - fallback.confidence) * 0.3;
+    baseScore -= confidencePenalty;
+  });
+
+  // Bonus for having real data
+  const realDataFields = ['businessName', 'businessType', 'location', 'services', 'targetAudience'];
+  const realDataCount = realDataFields.filter(field => {
+    const fallback = appliedFallbacks.find(f => f.fieldName === field);
+    return !fallback || fallback.confidence > 80;
+  }).length;
+
+  const realDataBonus = (realDataCount / realDataFields.length) * 20;
+  baseScore += realDataBonus;
+
+  return Math.max(0, Math.min(100, baseScore));
+}
+
+/**
+ * Determine fallback confidence level
+ */
+function determineFallbackConfidenceLevel(appliedFallbacks: FallbackStrategy[]): 'High' | 'Medium' | 'Low' {
+  if (appliedFallbacks.length === 0) return 'High';
+
+  const averageConfidence = appliedFallbacks.reduce((sum, f) => sum + f.confidence, 0) / appliedFallbacks.length;
+  const criticalFallbacks = appliedFallbacks.filter(f =>
+    ['businessName', 'businessType', 'services', 'targetAudience'].includes(f.fieldName)
+  );
+
+  if (averageConfidence >= 70 && criticalFallbacks.length <= 1) return 'High';
+  if (averageConfidence >= 50 && criticalFallbacks.length <= 3) return 'Medium';
+  return 'Low';
+}
+
+/**
+ * Generate fallback recommendations
+ */
+function generateFallbackRecommendations(
+  appliedFallbacks: FallbackStrategy[],
+  useCase: string
+): string[] {
+  const recommendations: string[] = [];
+
+  if (appliedFallbacks.length === 0) {
+    recommendations.push('Brand profile is complete - no fallbacks needed');
+    return recommendations;
+  }
+
+  // Critical field recommendations
+  const criticalFallbacks = appliedFallbacks.filter(f =>
+    ['businessName', 'businessType', 'services', 'targetAudience'].includes(f.fieldName)
+  );
+
+  if (criticalFallbacks.length > 0) {
+    recommendations.push('Complete critical business information for better content quality:');
+    criticalFallbacks.forEach(fallback => {
+      recommendations.push(`• Add real ${fallback.fieldName} - currently using: ${fallback.reasoning}`);
+    });
+  }
+
+  // Low confidence recommendations
+  const lowConfidenceFallbacks = appliedFallbacks.filter(f => f.confidence < 60);
+  if (lowConfidenceFallbacks.length > 0) {
+    recommendations.push('Improve low-confidence fallback fields:');
+    lowConfidenceFallbacks.forEach(fallback => {
+      recommendations.push(`• Provide real ${fallback.fieldName} data for better accuracy`);
+    });
+  }
+
+  // Use case specific recommendations
+  if (useCase === 'design_generation') {
+    const designFallbacks = appliedFallbacks.filter(f =>
+      ['brandColors', 'logoUrl', 'designExamples'].includes(f.fieldName)
+    );
+    if (designFallbacks.length > 0) {
+      recommendations.push('Add visual brand elements for better design consistency');
+    }
+  }
+
+  if (useCase === 'content_generation') {
+    const contentFallbacks = appliedFallbacks.filter(f =>
+      ['brandVoice', 'writingTone', 'keyFeatures', 'competitiveAdvantages'].includes(f.fieldName)
+    );
+    if (contentFallbacks.length > 0) {
+      recommendations.push('Define brand voice and messaging for more personalized content');
+    }
+  }
+
+  // General improvement recommendation
+  recommendations.push('Consider completing your brand profile for optimal content generation quality');
+
+  return recommendations;
+}
+
+/**
+ * Validate fallback strategies effectiveness
+ */
+export function validateFallbackStrategies(
+  originalProfile: any,
+  enhancedProfile: any,
+  appliedFallbacks: FallbackStrategy[]
+): {
+  isEffective: boolean;
+  improvementScore: number;
+  strategiesUsed: string[];
+  qualityAssessment: string;
+  recommendations: string[];
+} {
+  // Calculate improvement
+  const originalCompleteness = assessBrandProfileCompleteness(originalProfile).overallCompleteness;
+  const enhancedCompleteness = assessBrandProfileCompleteness(enhancedProfile).overallCompleteness;
+  const improvementScore = enhancedCompleteness - originalCompleteness;
+
+  // Assess strategies used
+  const strategiesUsed = [...new Set(appliedFallbacks.map(f => f.source))];
+
+  // Determine effectiveness
+  const isEffective = improvementScore > 20 && enhancedCompleteness > 60;
+
+  // Quality assessment
+  let qualityAssessment = 'Poor';
+  if (enhancedCompleteness >= 80) qualityAssessment = 'Excellent';
+  else if (enhancedCompleteness >= 65) qualityAssessment = 'Good';
+  else if (enhancedCompleteness >= 50) qualityAssessment = 'Fair';
+
+  // Generate recommendations
+  const recommendations = [];
+  if (improvementScore < 20) {
+    recommendations.push('Fallback strategies had limited impact - consider providing more original data');
+  }
+  if (appliedFallbacks.some(f => f.confidence < 50)) {
+    recommendations.push('Some fallbacks have low confidence - verify and improve these fields');
+  }
+  if (strategiesUsed.includes('generic_default')) {
+    recommendations.push('Generic defaults were used - provide specific business information for better results');
+  }
+
+  return {
+    isEffective,
+    improvementScore,
+    strategiesUsed,
+    qualityAssessment,
+    recommendations
+  };
+}
+
+
