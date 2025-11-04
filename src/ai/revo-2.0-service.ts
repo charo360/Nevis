@@ -137,6 +137,695 @@ export async function generateContentWithProxy(
 // Direct Vertex AI models (no proxy dependencies)
 export const REVO_2_0_MODEL = 'gemini-2.5-flash-image';
 
+// ============================================================================
+// UNIVERSAL MULTI-ANGLE MARKETING FRAMEWORK (Ported from Revo 1.0)
+// ============================================================================
+
+/**
+ * Marketing angle definitions for strategic campaign diversity
+ * Each angle ensures ads highlight different aspects of the same product/service
+ */
+interface MarketingAngle {
+  id: string;
+  name: string;
+  description: string;
+  focusArea: string;
+  promptInstructions: string;
+  headlineGuidance: string;
+  captionGuidance: string;
+  visualGuidance: string;
+  examples: {
+    headline: string;
+    subheadline: string;
+    caption: string;
+  };
+}
+
+const MARKETING_ANGLES: MarketingAngle[] = [
+  {
+    id: 'feature',
+    name: 'Feature Angle',
+    description: 'Highlight ONE specific feature/capability',
+    focusArea: 'Product functionality',
+    promptInstructions: 'Focus entirely on ONE specific feature. Do not mention other features. Show how this single feature solves a problem.',
+    headlineGuidance: 'Lead with the specific feature benefit (e.g., "Instant Transfers", "24/7 Support")',
+    captionGuidance: 'Explain how this ONE feature works and why it matters. No feature lists.',
+    visualGuidance: 'Show the feature in action - people using it in real scenarios',
+    examples: {
+      headline: 'Pay in 3 Seconds',
+      subheadline: 'Fastest mobile payments in Kenya',
+      caption: 'No more waiting in long queues or dealing with slow transfers. Our instant payment system processes your transactions in just 3 seconds. Whether you\'re paying rent, buying groceries, or sending money to family, speed matters. Experience the difference that real-time processing makes in your daily life.'
+    }
+  },
+  {
+    id: 'usecase',
+    name: 'Use-Case Angle',
+    description: 'Show specific situation/scenario where product is used',
+    focusArea: 'Real-life application',
+    promptInstructions: 'Focus on ONE specific scenario. Show the context, setting, and how the product fits into this real-life situation.',
+    headlineGuidance: 'Reference the specific situation (e.g., "Late Night Cravings", "Office Lunch Rush")',
+    captionGuidance: 'Tell the story of this specific use case. Make it relatable and contextual.',
+    visualGuidance: 'Show the actual scenario - home, office, travel, emergency, celebration, etc.',
+    examples: {
+      headline: 'Rent Due Tomorrow?',
+      subheadline: 'Pay instantly, avoid late fees',
+      caption: 'It\'s 11 PM and you just remembered rent is due tomorrow morning. Don\'t panic. With our mobile app, you can transfer your rent payment instantly, even at midnight. No need to rush to the bank or worry about late fees. Your landlord gets paid, you sleep peacefully.'
+    }
+  },
+  {
+    id: 'audience',
+    name: 'Audience Segment Angle',
+    description: 'Target specific customer segment with tailored messaging',
+    focusArea: 'Customer demographics',
+    promptInstructions: 'Speak directly to ONE specific audience segment. Use their language, reference their specific needs and pain points.',
+    headlineGuidance: 'Use language that resonates with this specific group (e.g., "Student Budget?", "Small Business Owner?")',
+    captionGuidance: 'Address the specific challenges and needs of this audience segment only.',
+    visualGuidance: 'Show people from this demographic in their typical environment',
+    examples: {
+      headline: 'Student Budget Tight?',
+      subheadline: 'Banking with zero monthly fees',
+      caption: 'University fees, textbooks, accommodation - being a student is expensive enough. Why pay monthly banking fees on top of that? Our student account gives you all the banking features you need with zero monthly charges. Send money to friends, pay for meals, manage your allowance - all without worrying about hidden fees eating into your budget.'
+    }
+  },
+  {
+    id: 'problem',
+    name: 'Problem-Solution Angle',
+    description: 'Lead with specific pain point, end with solution',
+    focusArea: 'Customer pain points',
+    promptInstructions: 'Start with ONE specific problem/frustration. Show the emotional impact, then present the solution.',
+    headlineGuidance: 'Lead with the problem (e.g., "Tired of Long Queues?", "Frustrated with Slow Service?")',
+    captionGuidance: 'Describe the problem\'s impact, then show how the product solves it completely.',
+    visualGuidance: 'Show the contrast - problem situation vs. solution in action',
+    examples: {
+      headline: 'Tired of Bank Queues?',
+      subheadline: 'Do everything from your phone',
+      caption: 'Standing in bank queues for 2 hours just to transfer money? Missing work because banks close at 4 PM? Those days are over. Our mobile banking app lets you transfer money, pay bills, and check balances 24/7. No queues, no time limits, no frustration. Just banking that works around your schedule, not the other way around.'
+    }
+  },
+  {
+    id: 'benefit',
+    name: 'Benefit Level Angle',
+    description: 'Focus on specific level of value (functional, emotional, life-impact)',
+    focusArea: 'Value proposition',
+    promptInstructions: 'Choose ONE benefit level: functional (what it does), emotional (how it feels), or life-impact (how it changes life). Stay consistent.',
+    headlineGuidance: 'Match headline to benefit level - functional: "Transfer in Seconds", emotional: "Peace of Mind", life-impact: "Financial Freedom"',
+    captionGuidance: 'Elaborate on the chosen benefit level without mixing different levels.',
+    visualGuidance: 'Show the benefit level - functional: feature in action, emotional: relieved faces, life-impact: life transformation',
+    examples: {
+      headline: 'Sleep Better Tonight',
+      subheadline: 'Your money is completely secure',
+      caption: 'Financial stress keeps you awake at night? Wondering if your money is safe? With bank-level encryption, 24/7 fraud monitoring, and instant transaction alerts, you can finally relax. Your money is protected by the same security systems that major banks use. No more sleepless nights worrying about your finances.'
+    }
+  },
+  {
+    id: 'transformation',
+    name: 'Before/After Angle',
+    description: 'Show clear transformation from problem state to solution state',
+    focusArea: 'Change/improvement',
+    promptInstructions: 'Create clear contrast between "before" (with problem) and "after" (with solution). Show the transformation.',
+    headlineGuidance: 'Imply transformation (e.g., "From Chaos to Control", "Stressed to Sorted")',
+    captionGuidance: 'Paint the before picture, then show the dramatic after state.',
+    visualGuidance: 'Show the transformation visually - split screen, before/after scenarios',
+    examples: {
+      headline: 'From Broke to Balanced',
+      subheadline: 'Take control of your finances',
+      caption: 'Last month: Overdraft fees, missed payments, financial chaos. This month: Automatic savings, bill reminders, complete control. Our budgeting tools transformed how Sarah manages money. Now she saves ₦50,000 monthly and never misses a payment. Same income, completely different financial life. Your transformation starts today.'
+    }
+  },
+  {
+    id: 'social_proof',
+    name: 'Social Proof Angle',
+    description: 'Highlight customer success, testimonials, or usage statistics',
+    focusArea: 'Trust and credibility',
+    promptInstructions: 'Focus on ONE type of social proof: customer story, testimonial theme, or achievement metric. Make it specific and credible.',
+    headlineGuidance: 'Lead with the proof (e.g., "10,000 Users Trust Us", "Sarah Saved ₦200,000")',
+    captionGuidance: 'Tell the specific success story or elaborate on the social proof with details.',
+    visualGuidance: 'Show real customers, testimonials, or visual proof of success',
+    examples: {
+      headline: 'James Saved ₦500,000',
+      subheadline: 'In just 6 months using our app',
+      caption: 'James from Lagos was spending ₦80,000 monthly on unnecessary expenses. After using our expense tracking and automated savings features, he now saves ₦85,000 every month. "I couldn\'t believe how much I was wasting on small purchases," says James. "The app showed me exactly where my money was going and helped me cut the waste." Join 50,000+ Nigerians who are taking control of their finances.'
+    }
+  }
+];
+
+/**
+ * Campaign angle tracking system - ensures angle diversity across campaigns
+ */
+const campaignAngleTracker = new Map<string, {
+  usedAngles: string[],
+  lastUsed: number,
+  currentCampaignId: string
+}>();
+
+/**
+ * Generate campaign ID for angle tracking
+ */
+function generateCampaignId(brandKey: string): string {
+  return `${brandKey}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
+/**
+ * Assign marketing angle for strategic campaign diversity
+ */
+function assignMarketingAngle(brandKey: string, options: any): MarketingAngle {
+  const tracker = campaignAngleTracker.get(brandKey) || {
+    usedAngles: [],
+    lastUsed: Date.now(),
+    currentCampaignId: generateCampaignId(brandKey)
+  };
+
+  // Get available angles (not used in current campaign)
+  const availableAngles = MARKETING_ANGLES.filter(angle =>
+    !tracker.usedAngles.includes(angle.id)
+  );
+
+  // If all angles used, reset and start new campaign cycle
+  let selectedAngle: MarketingAngle;
+  if (availableAngles.length === 0) {
+    console.log(`🔄 [Revo 2.0] All angles used for ${brandKey}, starting new campaign cycle`);
+    tracker.usedAngles = [];
+    tracker.currentCampaignId = generateCampaignId(brandKey);
+    selectedAngle = MARKETING_ANGLES[Math.floor(Math.random() * MARKETING_ANGLES.length)];
+  } else {
+    // Select angle based on business type and context
+    selectedAngle = selectOptimalAngle(availableAngles, options);
+  }
+
+  // Track angle usage
+  tracker.usedAngles.push(selectedAngle.id);
+  tracker.lastUsed = Date.now();
+  campaignAngleTracker.set(brandKey, tracker);
+
+  console.log(`🎯 [Revo 2.0] Assigned marketing angle: ${selectedAngle.name} (${selectedAngle.id})`);
+  console.log(`📊 [Revo 2.0] Campaign progress: ${tracker.usedAngles.length}/${MARKETING_ANGLES.length} angles used`);
+
+  return selectedAngle;
+}
+
+/**
+ * Select optimal angle based on business context
+ */
+function selectOptimalAngle(availableAngles: MarketingAngle[], options: any): MarketingAngle {
+  const businessType = options.businessType?.toLowerCase() || '';
+  const brandProfile = options.brandProfile || {};
+
+  // Universal business type preferences for angle selection
+  const businessAnglePreferences: { [key: string]: string[] } = {
+    'finance': ['feature', 'problem', 'benefit', 'transformation'],
+    'fintech': ['feature', 'usecase', 'transformation', 'social_proof'],
+    'banking': ['problem', 'benefit', 'usecase', 'transformation'],
+    'restaurant': ['usecase', 'audience', 'social_proof', 'transformation'],
+    'food': ['usecase', 'audience', 'social_proof', 'problem'],
+    'healthcare': ['benefit', 'problem', 'social_proof', 'audience'],
+    'medical': ['benefit', 'problem', 'social_proof', 'audience'],
+    'technology': ['feature', 'usecase', 'transformation', 'benefit'],
+    'tech': ['feature', 'usecase', 'transformation', 'benefit'],
+    'retail': ['audience', 'usecase', 'social_proof', 'problem'],
+    'ecommerce': ['audience', 'usecase', 'social_proof', 'problem'],
+    'education': ['benefit', 'transformation', 'audience', 'social_proof'],
+    'fitness': ['transformation', 'benefit', 'audience', 'social_proof'],
+    'beauty': ['transformation', 'audience', 'social_proof', 'benefit'],
+    'travel': ['usecase', 'audience', 'benefit', 'social_proof'],
+    'hospitality': ['usecase', 'audience', 'benefit', 'social_proof'],
+    'automotive': ['feature', 'benefit', 'usecase', 'social_proof'],
+    'real_estate': ['benefit', 'usecase', 'social_proof', 'transformation'],
+    'consulting': ['problem', 'benefit', 'social_proof', 'transformation'],
+    'legal': ['problem', 'benefit', 'social_proof', 'audience'],
+    'insurance': ['benefit', 'problem', 'social_proof', 'audience'],
+    'logistics': ['feature', 'usecase', 'benefit', 'problem'],
+    'manufacturing': ['feature', 'benefit', 'usecase', 'social_proof'],
+    'agriculture': ['benefit', 'usecase', 'social_proof', 'transformation'],
+    'entertainment': ['usecase', 'audience', 'social_proof', 'benefit'],
+    'media': ['usecase', 'audience', 'social_proof', 'benefit'],
+    'nonprofit': ['social_proof', 'transformation', 'benefit', 'audience'],
+    'government': ['benefit', 'social_proof', 'usecase', 'audience']
+  };
+
+  const preferredAngles = businessAnglePreferences[businessType] || ['feature', 'benefit', 'usecase', 'problem'];
+
+  // Find first available preferred angle
+  for (const preferredId of preferredAngles) {
+    const angle = availableAngles.find(a => a.id === preferredId);
+    if (angle) {
+      console.log(`🎯 [Revo 2.0] Selected optimal angle for ${businessType}: ${angle.name}`);
+      return angle;
+    }
+  }
+
+  // Fallback to first available angle
+  const fallbackAngle = availableAngles[0];
+  console.log(`🎯 [Revo 2.0] Using fallback angle: ${fallbackAngle.name}`);
+  return fallbackAngle;
+}
+
+// ============================================================================
+// ENHANCED STORY COHERENCE VALIDATION SYSTEM (Ported from Revo 1.0)
+// ============================================================================
+
+/**
+ * ENHANCED STORY COHERENCE VALIDATION - Fixes Caption-Headline Story Mismatch
+ * Ensures headlines and captions tell ONE unified story, not separate messages
+ */
+function validateStoryCoherence(
+  headline: string,
+  caption: string,
+  businessType: string
+): {
+  isCoherent: boolean;
+  issues: string[];
+  coherenceScore: number;
+  storyTheme: string;
+  emotionalTone: string;
+} {
+  const issues: string[] = [];
+  let coherenceScore = 100;
+
+  // ============================================================================
+  // 1. STORY THEME EXTRACTION AND VALIDATION
+  // ============================================================================
+
+  const headlineTheme = extractStoryTheme(headline, businessType);
+  const captionTheme = extractStoryTheme(caption, businessType);
+
+  console.log(`🔍 [Revo 2.0 Story Coherence] Headline theme: ${headlineTheme.primary} (${headlineTheme.secondary})`);
+  console.log(`🔍 [Revo 2.0 Story Coherence] Caption theme: ${captionTheme.primary} (${captionTheme.secondary})`);
+
+  // CRITICAL: Caption must continue the EXACT story theme from headline
+  // BUT: Be more lenient if both themes are 'general' (no specific theme detected)
+  if (headlineTheme.primary !== captionTheme.primary) {
+    if (headlineTheme.primary === 'general' || captionTheme.primary === 'general') {
+      // More lenient penalty for general themes
+      issues.push(`MINOR THEME VARIANCE: Headline theme '${headlineTheme.primary}' vs caption theme '${captionTheme.primary}' (general themes)`);
+      coherenceScore -= 15; // Reduced penalty for general themes
+    } else {
+      // Full penalty for specific theme mismatches
+      issues.push(`STORY MISMATCH: Headline focuses on '${headlineTheme.primary}' but caption switches to '${captionTheme.primary}'`);
+      coherenceScore -= 30; // Reduced from 40 to be less strict
+    }
+  }
+
+  // Secondary theme alignment (less critical but important)
+  if (headlineTheme.secondary && captionTheme.secondary &&
+    headlineTheme.secondary !== captionTheme.secondary &&
+    !areCompatibleSecondaryThemes(headlineTheme.secondary, captionTheme.secondary)) {
+    issues.push(`Secondary theme mismatch: headline '${headlineTheme.secondary}' vs caption '${captionTheme.secondary}'`);
+    coherenceScore -= 20;
+  }
+
+  // ============================================================================
+  // 2. NARRATIVE CONTINUITY VALIDATION
+  // ============================================================================
+
+  const narrativeContinuity = validateNarrativeContinuity(headline, caption, businessType);
+  if (!narrativeContinuity.isValid) {
+    issues.push(...narrativeContinuity.issues);
+    coherenceScore -= narrativeContinuity.penalty;
+  }
+
+  // ============================================================================
+  // 3. TONE CONSISTENCY VALIDATION (ENHANCED)
+  // ============================================================================
+
+  const headlineTone = analyzeEmotionalTone(headline);
+  const captionTone = analyzeEmotionalTone(caption);
+
+  // More lenient tone matching - allow some flexibility
+  if (headlineTone !== captionTone) {
+    // Allow professional as neutral fallback for most tones (more lenient)
+    const allowedFallbacks = ['confident', 'innovative', 'caring', 'professional'];
+    const isCompatibleTone = captionTone === 'professional' ||
+      allowedFallbacks.includes(headlineTone) ||
+      allowedFallbacks.includes(captionTone);
+
+    if (!isCompatibleTone) {
+      issues.push(`TONE MISMATCH: Headline is ${headlineTone} but caption is ${captionTone}`);
+      coherenceScore -= 20; // Reduced penalty from 30 to 20
+    } else {
+      // Minor penalty for tone variance but still compatible
+      issues.push(`MINOR TONE VARIANCE: Headline ${headlineTone} vs caption ${captionTone} (compatible)`);
+      coherenceScore -= 5; // Very small penalty for compatible tones
+    }
+  }
+
+  // ============================================================================
+  // 4. AUDIENCE CONSISTENCY VALIDATION
+  // ============================================================================
+
+  const headlineAudience = extractTargetAudience(headline);
+  const captionAudience = extractTargetAudience(caption);
+
+  if (headlineAudience && captionAudience && headlineAudience !== captionAudience) {
+    issues.push(`AUDIENCE MISMATCH: Headline targets '${headlineAudience}' but caption targets '${captionAudience}'`);
+    coherenceScore -= 25;
+  }
+
+  // ============================================================================
+  // 5. BENEFIT PROMISE VALIDATION
+  // ============================================================================
+
+  const headlineBenefit = extractPromisedBenefit(headline);
+  const captionBenefit = extractDeliveredBenefit(caption);
+
+  if (headlineBenefit && !captionBenefit) {
+    // Only penalize if headline makes a very specific promise
+    const specificPromises = ['speed', 'savings', 'security'];
+    if (specificPromises.includes(headlineBenefit)) {
+      issues.push(`UNFULFILLED PROMISE: Headline promises '${headlineBenefit}' but caption doesn't deliver on it`);
+      coherenceScore -= 25; // Reduced from 35
+    } else {
+      issues.push(`MINOR UNFULFILLED PROMISE: Headline suggests '${headlineBenefit}' benefit`);
+      coherenceScore -= 10; // Much smaller penalty for general benefits
+    }
+  } else if (headlineBenefit && captionBenefit && !areBenefitsAligned(headlineBenefit, captionBenefit)) {
+    issues.push(`BENEFIT MISMATCH: Headline promises '${headlineBenefit}' but caption delivers '${captionBenefit}'`);
+    coherenceScore -= 20; // Reduced from 30
+  }
+
+  // ============================================================================
+  // 6. STORY COMPLETION VALIDATION
+  // ============================================================================
+
+  const storyCompletion = validateStoryCompletion(headline, caption);
+  if (!storyCompletion.isComplete) {
+    issues.push(...storyCompletion.issues);
+    coherenceScore -= storyCompletion.penalty;
+  }
+
+  // ============================================================================
+  // 7. ENHANCED GENERIC CONTENT DETECTION
+  // ============================================================================
+
+  const genericityCheck = validateContentSpecificity(headline, caption, businessType);
+  if (genericityCheck.isGeneric) {
+    issues.push(...genericityCheck.issues);
+    coherenceScore -= genericityCheck.penalty;
+  }
+
+  // ADJUSTED: More lenient coherence requirements to reduce fallback usage
+  // Allow content with minor issues if coherence score is decent
+  const isCoherent = coherenceScore >= 45 && (issues.length === 0 || coherenceScore >= 60);
+
+  console.log(`🔍 [Revo 2.0 COHERENCE DECISION] Score: ${coherenceScore}, Issues: ${issues.length}, IsCoherent: ${isCoherent}`);
+
+  return {
+    isCoherent,
+    issues,
+    coherenceScore: Math.max(0, coherenceScore),
+    storyTheme: headlineTheme.primary,
+    emotionalTone: headlineTone
+  };
+}
+
+/**
+ * Extract story theme from text content
+ */
+function extractStoryTheme(text: string, businessType: string): { primary: string; secondary?: string } {
+  const lowerText = text.toLowerCase();
+
+  // Define theme keywords for universal business types
+  const themeKeywords = {
+    speed: ['instant', 'fast', 'quick', 'immediate', 'seconds', 'rapid', 'swift', 'now'],
+    security: ['secure', 'safe', 'protected', 'encrypted', 'trust', 'reliable', 'guaranteed'],
+    convenience: ['easy', 'simple', 'effortless', 'convenient', 'hassle-free', 'smooth'],
+    savings: ['save', 'cheap', 'affordable', 'discount', 'deal', 'value', 'budget', 'cost'],
+    quality: ['best', 'premium', 'excellent', 'superior', 'top', 'high-quality', 'professional'],
+    support: ['help', 'support', '24/7', 'assistance', 'service', 'care', 'guidance'],
+    innovation: ['new', 'innovative', 'advanced', 'cutting-edge', 'modern', 'latest', 'revolutionary'],
+    community: ['together', 'community', 'family', 'friends', 'social', 'connect', 'share'],
+    success: ['success', 'achieve', 'win', 'accomplish', 'reach', 'attain', 'excel'],
+    transformation: ['transform', 'change', 'improve', 'upgrade', 'better', 'enhance', 'evolve'],
+    urgency: ['urgent', 'now', 'today', 'deadline', 'limited', 'hurry', 'act fast'],
+    exclusivity: ['exclusive', 'special', 'unique', 'limited', 'premium', 'vip', 'select']
+  };
+
+  let primaryTheme = 'general';
+  let secondaryTheme: string | undefined;
+  let maxMatches = 0;
+  let secondMaxMatches = 0;
+
+  // Count keyword matches for each theme
+  for (const [theme, keywords] of Object.entries(themeKeywords)) {
+    const matches = keywords.filter(keyword => lowerText.includes(keyword)).length;
+    if (matches > maxMatches) {
+      secondaryTheme = primaryTheme !== 'general' ? primaryTheme : undefined;
+      secondMaxMatches = maxMatches;
+      primaryTheme = theme;
+      maxMatches = matches;
+    } else if (matches > secondMaxMatches && matches > 0) {
+      secondaryTheme = theme;
+      secondMaxMatches = matches;
+    }
+  }
+
+  return { primary: primaryTheme, secondary: secondaryTheme };
+}
+
+/**
+ * Analyze emotional tone of text
+ */
+function analyzeEmotionalTone(text: string): string {
+  const lowerText = text.toLowerCase();
+
+  const toneKeywords = {
+    urgent: ['urgent', 'now', 'today', 'hurry', 'fast', 'quick', 'immediate', 'deadline'],
+    playful: ['fun', 'enjoy', 'play', 'exciting', 'amazing', 'awesome', 'cool', 'wow'],
+    professional: ['professional', 'business', 'corporate', 'service', 'solution', 'expertise'],
+    confident: ['guaranteed', 'proven', 'trusted', 'reliable', 'sure', 'certain', 'confident'],
+    caring: ['care', 'help', 'support', 'understand', 'family', 'community', 'together'],
+    innovative: ['new', 'innovative', 'advanced', 'modern', 'cutting-edge', 'revolutionary']
+  };
+
+  let dominantTone = 'professional'; // Default tone
+  let maxMatches = 0;
+
+  for (const [tone, keywords] of Object.entries(toneKeywords)) {
+    const matches = keywords.filter(keyword => lowerText.includes(keyword)).length;
+    if (matches > maxMatches) {
+      dominantTone = tone;
+      maxMatches = matches;
+    }
+  }
+
+  return dominantTone;
+}
+
+/**
+ * Check if secondary themes are compatible
+ */
+function areCompatibleSecondaryThemes(theme1: string, theme2: string): boolean {
+  const compatiblePairs = [
+    ['speed', 'convenience'],
+    ['security', 'trust'],
+    ['quality', 'premium'],
+    ['innovation', 'modern'],
+    ['success', 'achievement'],
+    ['community', 'social']
+  ];
+
+  return compatiblePairs.some(pair =>
+    (pair.includes(theme1) && pair.includes(theme2))
+  );
+}
+
+/**
+ * Validate narrative continuity between headline and caption
+ */
+function validateNarrativeContinuity(headline: string, caption: string, businessType: string): {
+  isValid: boolean;
+  issues: string[];
+  penalty: number;
+} {
+  const issues: string[] = [];
+  let penalty = 0;
+
+  // Check if caption continues the story started in headline
+  const headlineWords = headline.toLowerCase().split(/\s+/);
+  const captionWords = caption.toLowerCase().split(/\s+/);
+
+  // Look for narrative bridges (words that connect the story)
+  const narrativeBridges = ['because', 'so', 'that\'s why', 'which means', 'this way', 'now you can'];
+  const hasBridge = narrativeBridges.some(bridge => caption.toLowerCase().includes(bridge));
+
+  // Check for story continuation indicators
+  const continuationWords = ['with', 'using', 'through', 'by', 'when', 'after', 'before'];
+  const hasContinuation = continuationWords.some(word => caption.toLowerCase().includes(word));
+
+  if (!hasBridge && !hasContinuation) {
+    issues.push('Caption does not clearly continue the headline story');
+    penalty += 15;
+  }
+
+  return {
+    isValid: issues.length === 0,
+    issues,
+    penalty
+  };
+}
+
+/**
+ * Extract target audience from text
+ */
+function extractTargetAudience(text: string): string | null {
+  const lowerText = text.toLowerCase();
+
+  const audienceKeywords = {
+    'students': ['student', 'university', 'college', 'campus', 'tuition', 'textbook'],
+    'professionals': ['professional', 'career', 'office', 'business', 'corporate', 'executive'],
+    'families': ['family', 'parent', 'children', 'kids', 'home', 'household'],
+    'seniors': ['senior', 'retirement', 'pension', 'elderly', 'mature', 'golden years'],
+    'entrepreneurs': ['entrepreneur', 'startup', 'business owner', 'founder', 'venture'],
+    'small_business': ['small business', 'local business', 'shop owner', 'merchant']
+  };
+
+  for (const [audience, keywords] of Object.entries(audienceKeywords)) {
+    if (keywords.some(keyword => lowerText.includes(keyword))) {
+      return audience;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Extract promised benefit from headline
+ */
+function extractPromisedBenefit(headline: string): string | null {
+  const lowerText = headline.toLowerCase();
+
+  const benefitKeywords = {
+    'speed': ['fast', 'quick', 'instant', 'immediate', 'seconds', 'rapid'],
+    'savings': ['save', 'cheap', 'affordable', 'discount', 'free', 'low cost'],
+    'security': ['secure', 'safe', 'protected', 'guaranteed', 'trusted'],
+    'convenience': ['easy', 'simple', 'convenient', 'effortless', 'hassle-free'],
+    'quality': ['best', 'premium', 'excellent', 'superior', 'high-quality']
+  };
+
+  for (const [benefit, keywords] of Object.entries(benefitKeywords)) {
+    if (keywords.some(keyword => lowerText.includes(keyword))) {
+      return benefit;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Extract delivered benefit from caption
+ */
+function extractDeliveredBenefit(caption: string): string | null {
+  return extractPromisedBenefit(caption); // Same logic for now
+}
+
+/**
+ * Check if benefits are aligned
+ */
+function areBenefitsAligned(promisedBenefit: string, deliveredBenefit: string): boolean {
+  if (promisedBenefit === deliveredBenefit) return true;
+
+  // Define compatible benefit pairs
+  const compatibleBenefits = [
+    ['speed', 'convenience'],
+    ['security', 'trust'],
+    ['savings', 'value'],
+    ['quality', 'premium']
+  ];
+
+  return compatibleBenefits.some(pair =>
+    pair.includes(promisedBenefit) && pair.includes(deliveredBenefit)
+  );
+}
+
+/**
+ * Validate story completion
+ */
+function validateStoryCompletion(headline: string, caption: string): {
+  isComplete: boolean;
+  issues: string[];
+  penalty: number;
+} {
+  const issues: string[] = [];
+  let penalty = 0;
+
+  // Check if caption provides resolution to headline's setup
+  const headlineLower = headline.toLowerCase();
+  const captionLower = caption.toLowerCase();
+
+  // Look for question-answer pattern
+  if (headlineLower.includes('?') && !captionLower.includes('answer') && !captionLower.includes('solution')) {
+    issues.push('Headline asks question but caption doesn\'t provide clear answer');
+    penalty += 10;
+  }
+
+  // Look for problem-solution pattern
+  const problemWords = ['problem', 'issue', 'trouble', 'difficulty', 'challenge'];
+  const solutionWords = ['solution', 'solve', 'fix', 'resolve', 'answer'];
+
+  const hasProblems = problemWords.some(word => headlineLower.includes(word));
+  const hasSolutions = solutionWords.some(word => captionLower.includes(word));
+
+  if (hasProblems && !hasSolutions) {
+    issues.push('Headline mentions problems but caption doesn\'t provide solutions');
+    penalty += 15;
+  }
+
+  return {
+    isComplete: issues.length === 0,
+    issues,
+    penalty
+  };
+}
+
+/**
+ * Validate content specificity (detect generic content)
+ */
+function validateContentSpecificity(headline: string, caption: string, businessType: string): {
+  isGeneric: boolean;
+  issues: string[];
+  penalty: number;
+} {
+  const issues: string[] = [];
+  let penalty = 0;
+
+  // Check for generic phrases
+  const genericPhrases = [
+    'we understand',
+    'we know',
+    'we believe',
+    'our team',
+    'our company',
+    'we are committed',
+    'we strive',
+    'we pride ourselves',
+    'your trusted partner',
+    'industry leader',
+    'years of experience'
+  ];
+
+  const captionLower = caption.toLowerCase();
+  const genericCount = genericPhrases.filter(phrase => captionLower.includes(phrase)).length;
+
+  if (genericCount > 2) {
+    issues.push(`Caption contains ${genericCount} generic business phrases`);
+    penalty += genericCount * 5;
+  }
+
+  // Check for business name repetition without context
+  const businessName = businessType.toLowerCase();
+  const businessNameCount = (captionLower.match(new RegExp(businessName, 'g')) || []).length;
+
+  if (businessNameCount > 2) {
+    issues.push(`Excessive business name repetition (${businessNameCount} times)`);
+    penalty += 10;
+  }
+
+  return {
+    isGeneric: issues.length > 0,
+    issues,
+    penalty
+  };
+}
+
 // === Revo 2.0 Creativity & Anti-Repetition Utilities ===
 
 type RecentOutput = { headlines: string[]; captions: string[]; concepts: string[] };
@@ -164,7 +853,7 @@ const CONCEPT_DIMENSIONS = {
     'Young Professional', 'Entrepreneur', 'Family Person', 'Senior Professional', 'Student'
   ],
   visualStyles: [
-    'Clean Minimalist', 'Single Product Focus', 'Simple Portrait', 'Clean Illustration', 
+    'Clean Minimalist', 'Single Product Focus', 'Simple Portrait', 'Clean Illustration',
     'Minimal Graphics', 'Focused Lifestyle', 'Clean Documentary', 'Simple Professional',
     'Uncluttered Environmental', 'Clean Abstract'
   ],
@@ -179,7 +868,7 @@ const CONCEPT_DIMENSIONS = {
     'Urgent', 'Aspirational', 'Reassuring', 'Exciting', 'Warm', 'Confident', 'Playful', 'Serious'
   ],
   formats: [
-    'Testimonial', 'Statistic', 'Question', 'Problem-Solution', 'Comparison', 
+    'Testimonial', 'Statistic', 'Question', 'Problem-Solution', 'Comparison',
     'Before-After', 'Day-in-Life', 'Success Story', 'Community Impact', 'Transformation'
   ],
   approaches: [
@@ -194,17 +883,17 @@ const CONCEPT_DIMENSIONS = {
 function generateUniqueConceptDimensions(brandKey: string): ConceptDimensions {
   const timeBasedSeed = Date.now();
   const recent = recentConcepts.get(brandKey) || [];
-  
+
   // Clean old concepts (older than 1 hour)
   const oneHourAgo = Date.now() - (60 * 60 * 1000);
   const recentConcepts_filtered = recent.filter(c => c.timestamp > oneHourAgo);
-  
+
   let attempts = 0;
   const maxAttempts = 10;
-  
+
   while (attempts < maxAttempts) {
     attempts++;
-    
+
     // Use time-based randomization for better variety
     const settingSeed = (timeBasedSeed + attempts * 1000) % CONCEPT_DIMENSIONS.settings.length;
     const customerSeed = (timeBasedSeed + attempts * 2000) % CONCEPT_DIMENSIONS.customerTypes.length;
@@ -213,9 +902,9 @@ function generateUniqueConceptDimensions(brandKey: string): ConceptDimensions {
     const toneSeed = (timeBasedSeed + attempts * 5000) % CONCEPT_DIMENSIONS.emotionalTones.length;
     const formatSeed = (timeBasedSeed + attempts * 6000) % CONCEPT_DIMENSIONS.formats.length;
     const approachSeed = (timeBasedSeed + attempts * 7000) % CONCEPT_DIMENSIONS.approaches.length;
-    
+
     const compositionSeed = (timeBasedSeed + attempts * 8000) % CONCEPT_DIMENSIONS.compositions.length;
-    
+
     const concept: ConceptDimensions = {
       setting: CONCEPT_DIMENSIONS.settings[settingSeed],
       customerType: CONCEPT_DIMENSIONS.customerTypes[customerSeed],
@@ -226,28 +915,28 @@ function generateUniqueConceptDimensions(brandKey: string): ConceptDimensions {
       format: CONCEPT_DIMENSIONS.formats[formatSeed],
       approach: CONCEPT_DIMENSIONS.approaches[approachSeed]
     };
-    
+
     // Check if this combination is too similar to recent ones
     const conceptString = `${concept.setting}-${concept.customerType}-${concept.visualStyle}`;
     const isTooSimilar = recentConcepts_filtered.some(recent => {
       const recentString = recent.concept;
       return recentString === conceptString;
     });
-    
+
     if (!isTooSimilar || attempts === maxAttempts) {
       // Store this concept
       recentConcepts_filtered.push({ concept: conceptString, timestamp: Date.now() });
       recentConcepts.set(brandKey, recentConcepts_filtered.slice(-9)); // Keep last 9
-      
+
       console.log(`🎲 [Revo 2.0] Generated 6D Concept (Attempt ${attempts}): ${conceptString}`);
       return concept;
     }
   }
-  
+
   // Fallback if all attempts failed
   return {
     setting: 'Digital',
-    customerType: 'Young Professional', 
+    customerType: 'Young Professional',
     visualStyle: 'Lifestyle Photography',
     composition: 'Centered Composition',
     benefit: 'Innovation',
@@ -540,10 +1229,10 @@ export async function generateCreativeConcept(options: Revo20GenerationOptions):
   // Generate unique concept dimensions for variety
   const bKey = getBrandKey(brandProfile, platform);
   const dimensions = generateUniqueConceptDimensions(bKey);
-  
+
   // Check recent concepts to avoid repetition
   const recentData = recentOutputs.get(bKey) || { headlines: [], captions: [], concepts: [] };
-  
+
   try {
     // Build service-aware concept prompt with variety dimensions
     let serviceContext = '';
@@ -603,7 +1292,7 @@ export async function generateCreativeConcept(options: Revo20GenerationOptions):
     const conceptText = response.text();
 
     const finalConcept = conceptText.trim() || generateFallbackConcept(brandProfile, businessType, dimensions);
-    
+
     // Remember this concept to avoid repetition
     rememberOutput(bKey, { concept: finalConcept });
 
@@ -622,7 +1311,7 @@ export async function generateCreativeConcept(options: Revo20GenerationOptions):
   } catch (error) {
     console.warn('⚠️ Revo 2.0: Creative concept generation failed, using enhanced fallback');
     const fallbackConcept = generateFallbackConcept(brandProfile, businessType, dimensions, todaysServices);
-    
+
     // Remember fallback concept too
     rememberOutput(bKey, { concept: fallbackConcept });
 
@@ -644,14 +1333,14 @@ export function generateFallbackConcept(brandProfile: any, businessType: string,
   const services = todaysServices ?? [];
   const service = services.length > 0 ? services[0].serviceName : businessType;
   const company = brandProfile.businessName || 'the business';
-  
+
   const conceptTemplates = [
     `Show ${dimensions.customerType.toLowerCase()} experiencing ${dimensions.benefit.toLowerCase()} through ${service} in a ${dimensions.setting.toLowerCase()} setting with ${dimensions.emotionalTone.toLowerCase()} energy.`,
     `Capture ${dimensions.format.toLowerCase()} showcasing how ${company} delivers ${dimensions.benefit.toLowerCase()} via ${service} using ${dimensions.visualStyle.toLowerCase()} approach.`,
     `Create ${dimensions.approach.toLowerCase()} content featuring ${dimensions.customerType.toLowerCase()} achieving ${dimensions.benefit.toLowerCase()} with ${service} in ${dimensions.emotionalTone.toLowerCase()} tone.`,
     `Demonstrate ${service} impact through ${dimensions.format.toLowerCase()} showing ${dimensions.benefit.toLowerCase()} for ${dimensions.customerType.toLowerCase()} in ${dimensions.setting.toLowerCase()}.`
   ];
-  
+
   const selectedTemplate = conceptTemplates[Date.now() % conceptTemplates.length];
   return selectedTemplate;
 }
@@ -672,7 +1361,7 @@ function getDesignElementsForStyle(visualStyle: string): string[] {
     'Uncluttered Environmental': ['simple setting', 'clear background', 'focused scene'],
     'Clean Abstract': ['minimal elements', 'clear concept', 'simple execution']
   };
-  
+
   return styleMap[visualStyle] || ['clean composition', 'single focus', 'minimal elements'];
 }
 
@@ -690,7 +1379,7 @@ function getMoodKeywordsForTone(emotionalTone: string): string[] {
     'Playful': ['fun', 'creative', 'engaging'],
     'Serious': ['professional', 'focused', 'authoritative']
   };
-  
+
   return toneMap[emotionalTone] || ['professional', 'trustworthy', 'engaging'];
 }
 
@@ -1174,6 +1863,14 @@ export async function generateCaptionAndHashtags(
   // Get recent data for anti-repetition
   const recentData = recentOutputs.get(brandKey) || { headlines: [], captions: [], concepts: [] };
 
+  // ============================================================================
+  // UNIVERSAL MULTI-ANGLE MARKETING FRAMEWORK - ANGLE ASSIGNMENT
+  // ============================================================================
+
+  // Assign strategic marketing angle for campaign diversity
+  const assignedAngle = assignMarketingAngle(brandKey, options);
+  console.log(`🎯 [Revo 2.0] Marketing Angle: ${assignedAngle.name}`);
+
   try {
 
     // Build service-specific content context
@@ -1218,7 +1915,7 @@ export async function generateCaptionAndHashtags(
     // Select enhanced content approach for variety
     const contentApproaches = getEnhancedContentApproaches();
     const selectedApproach = options.contentApproach || contentApproaches[Math.floor(Math.random() * contentApproaches.length)];
-    
+
     // Build local language integration if enabled
     let localLanguageInstructions = '';
     if (options.useLocalLanguage && brandProfile.location) {
@@ -1252,6 +1949,28 @@ ${getLocationSpecificLanguageInstructions(brandProfile.location)}
 - Location: ${brandProfile.location || 'Global'}
 - Platform: ${platform}
 - Content Approach: ${selectedApproach} (use this strategic angle)${localLanguageInstructions}
+
+${assignedAngle ? `
+🎯 UNIVERSAL MULTI-ANGLE MARKETING FRAMEWORK - ASSIGNED ANGLE:
+
+📋 MARKETING ANGLE: ${assignedAngle.name}
+📝 DESCRIPTION: ${assignedAngle.description}
+🎯 FOCUS AREA: ${assignedAngle.focusArea}
+
+🎪 ANGLE-SPECIFIC INSTRUCTIONS:
+${assignedAngle.promptInstructions}
+
+📰 HEADLINE GUIDANCE: ${assignedAngle.headlineGuidance}
+📄 CAPTION GUIDANCE: ${assignedAngle.captionGuidance}
+🎨 VISUAL GUIDANCE: ${assignedAngle.visualGuidance}
+
+💡 ANGLE EXAMPLE:
+- Headline: "${assignedAngle.examples.headline}"
+- Subheadline: "${assignedAngle.examples.subheadline}"
+- Caption: "${assignedAngle.examples.caption}"
+
+⚠️ CRITICAL: Follow this marketing angle consistently throughout ALL content elements (headline, subheadline, caption, CTA).
+` : ''}
 
 💼 BUSINESS INTELLIGENCE:
 ${keyFeaturesList.length > 0 ? `- Key Features: ${keyFeaturesList.slice(0, 5).join(', ')}` : ''}
@@ -1550,11 +2269,11 @@ Format as JSON:
     const maxRetries = 3;
     let lastError: any = null;
     const fallbackTheme = 'customer-centric'; // Define theme for headline generation
-    
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         console.log(`🤖 [Revo 2.0] AI Generation Attempt ${attempt}/${maxRetries} - Using Claude Sonnet 4.5`);
-        
+
         const temperature = 0.8 + (Math.random() * 0.3);
         console.log(`🤖 [Revo 2.0] AI Generation Attempt ${attempt}/${maxRetries} - Using ${textGenerator.label}`);
 
@@ -1571,114 +2290,169 @@ Format as JSON:
           console.log(`⏱️ [Revo 2.0] ${textGenerator.label} processing time: ${generationResult.processingTime}ms`);
         }
 
-    try {
-      // Clean the response to extract JSON
-      let cleanContent = content.trim();
-      if (cleanContent.includes('```json')) {
-        cleanContent = cleanContent.split('```json')[1].split('```')[0].trim();
-      } else if (cleanContent.includes('```')) {
-        cleanContent = cleanContent.split('```')[1].split('```')[0].trim();
-      }
+        try {
+          // Clean the response to extract JSON
+          let cleanContent = content.trim();
+          if (cleanContent.includes('```json')) {
+            cleanContent = cleanContent.split('```json')[1].split('```')[0].trim();
+          } else if (cleanContent.includes('```')) {
+            cleanContent = cleanContent.split('```')[1].split('```')[0].trim();
+          }
 
-      const parsed = JSON.parse(cleanContent);
-      const caption = typeof parsed.caption === 'string' ? parsed.caption : '';
+          const parsed = JSON.parse(cleanContent);
+          const caption = typeof parsed.caption === 'string' ? parsed.caption : '';
 
-      // Ensure hashtag count is EXACTLY correct (5 for Instagram, 3 for others)
-      let finalHashtags = parsed.hashtags || [];
-      // ALWAYS enforce exact count - trim if too many, pad if too few
-      if (finalHashtags.length > hashtagCount) {
-        finalHashtags = finalHashtags.slice(0, hashtagCount);
-      } else if (finalHashtags.length < hashtagCount) {
-        // Generate platform-appropriate hashtags if count is wrong
-        finalHashtags = generateFallbackHashtags(brandProfile, businessType, platform, hashtagCount);
-      }
-      // Enhanced caption validation with more checks
-      const captionHasJourney = /\b(journey|everyday)\b/i.test(caption);
-      const captionTooSimilar = tooSimilar(caption, recentData.captions, 0.40);
-      const captionHasBannedPatterns = hasBannedPattern(caption);
-      const captionIsGeneric = caption.includes('Experience the excellence of') ||
-        caption.includes('makes financial technology company effortless') ||
-        /makes .+ effortless and effective/i.test(caption) ||
-        /makes .+ company effortless and effective/i.test(caption) ||
-        caption.includes('crafted for Kenya') ||
-        caption.includes('crafted for Nigeria') ||
-        caption.includes('crafted for Ghana') ||
-        /crafted for [A-Z][a-z]+/i.test(caption) ||
-        /transform your .+ with/i.test(caption) ||
-        /empower your .+ through/i.test(caption);
-      const captionIsEmpty = !caption || caption.trim().length === 0;
+          // Ensure hashtag count is EXACTLY correct (5 for Instagram, 3 for others)
+          let finalHashtags = parsed.hashtags || [];
+          // ALWAYS enforce exact count - trim if too many, pad if too few
+          if (finalHashtags.length > hashtagCount) {
+            finalHashtags = finalHashtags.slice(0, hashtagCount);
+          } else if (finalHashtags.length < hashtagCount) {
+            // Generate platform-appropriate hashtags if count is wrong
+            finalHashtags = generateFallbackHashtags(brandProfile, businessType, platform, hashtagCount);
+          }
+          // ============================================================================
+          // ENHANCED VALIDATION SYSTEM (Ported from Revo 1.0)
+          // ============================================================================
 
-      // NEW: Add headline-caption coherence validation
-      const headlineWords = (parsed.headline || '').toLowerCase().split(/\s+/);
-      const captionWords = caption.toLowerCase().split(/\s+/);
-      const hasCommonWords = headlineWords.some(word => 
-        word.length > 3 && captionWords.some(capWord => capWord.includes(word) || word.includes(capWord))
-      );
-      const captionDisconnected = !hasCommonWords && caption.length > 50; // Only check if caption is substantial
+          let headline = stripOverusedWords(parsed.headline || '');
+          const subheadline = parsed.subheadline || '';
+          const cta = parsed.cta || '';
 
-      if (captionIsEmpty || captionHasJourney || captionTooSimilar || captionIsGeneric || captionHasBannedPatterns || captionDisconnected) {
-        const reason = captionIsEmpty ? 'empty' : 
-                      captionHasJourney ? 'journey words' : 
-                      captionTooSimilar ? 'too similar' : 
-                      captionIsGeneric ? 'generic pattern' : 
-                      captionHasBannedPatterns ? 'banned pattern' : 
-                      'disconnected from headline';
-        console.log(`🚫 [Revo 2.0] Attempt ${attempt}/${maxRetries} - Rejected caption - Reason: ${reason}`);
-        
-        if (attempt < maxRetries) {
-          console.log(`🔄 [Revo 2.0] Retrying with different temperature and creativity...`);
-          // Adjust temperature for next attempt
-          continue;
-        } else {
-          console.log('❌ [Revo 2.0] All AI attempts failed validation - using fallback');
-          throw new Error(`Caption validation failed after ${maxRetries} attempts: ${reason}`);
+          // Basic validation checks
+          const headlineValid = headline && headline.trim().length > 0;
+          const subheadlineValid = subheadline && subheadline.trim().length > 0;
+          const captionValid = caption && caption.trim().length > 0;
+          const hashtagsValid = finalHashtags && finalHashtags.length === hashtagCount;
+
+          // Pattern validation
+          const headlineHasBannedPatterns = hasBannedPattern(headline) || /\b(journey|everyday)\b/i.test(headline) || /^[A-Z]+:\s/.test(headline);
+          const captionHasBannedPatterns = hasBannedPattern(caption) || /\b(journey|everyday)\b/i.test(caption);
+
+          // Similarity validation
+          const headlineTooSimilar = tooSimilar(headline, recentData.headlines, 0.55);
+          const captionTooSimilar = tooSimilar(caption, recentData.captions, 0.40);
+
+          // Generic content detection
+          const headlineIsGeneric = /^[a-z]+ your [a-z]+$/i.test(headline.trim());
+          const captionTooGeneric = caption.includes('Experience the excellence of') ||
+            caption.includes('makes financial technology company effortless') ||
+            /makes .+ effortless and effective/i.test(caption) ||
+            /transform your .+ with/i.test(caption) ||
+            /empower your .+ through/i.test(caption);
+
+          // Duplicate detection
+          const headlineDuplicate = recentData.headlines.includes(headline);
+          const headlineIsBrandName = headline.toLowerCase() === brandProfile.businessName?.toLowerCase();
+
+          // 1. Validate story coherence between headline and caption
+          const coherenceValidation = validateStoryCoherence(
+            headline,
+            caption,
+            options.businessType
+          );
+
+          console.log('🔗 [Revo 2.0] Story coherence validation:', coherenceValidation);
+
+          // Enhanced coherence validation logging for debugging
+          if (coherenceValidation.issues.length > 0) {
+            console.log(`🚨 [Revo 2.0 COHERENCE ISSUES] Found ${coherenceValidation.issues.length} coherence issues:`);
+            coherenceValidation.issues.forEach((issue, index) => {
+              console.log(`   ${index + 1}. ${issue}`);
+            });
+          } else {
+            console.log(`✅ [Revo 2.0 COHERENCE SUCCESS] No coherence issues found`);
+          }
+
+          // ============================================================================
+          // SMART FALLBACK PREVENTION SYSTEM (Ported from Revo 1.0)
+          // ============================================================================
+
+          // Basic validation (must pass)
+          const basicValidation = headlineValid && subheadlineValid && captionValid && hashtagsValid &&
+            !headlineHasBannedPatterns && !captionHasBannedPatterns &&
+            !headlineDuplicate && !headlineIsBrandName;
+
+          // Quality validation (more lenient)
+          const qualityValidation = !headlineTooSimilar && !captionTooSimilar &&
+            !headlineIsGeneric && !captionTooGeneric;
+
+          // Advanced validation (most lenient)
+          const advancedValidation = coherenceValidation.coherenceScore >= 35; // Lowered threshold
+
+          // Smart validation logic: prefer AI content over fallback
+          let passesValidation = false;
+          let validationLevel = 'FAILED';
+
+          if (basicValidation && qualityValidation && advancedValidation) {
+            passesValidation = true;
+            validationLevel = 'EXCELLENT';
+          } else if (basicValidation && qualityValidation) {
+            passesValidation = true;
+            validationLevel = 'GOOD';
+            console.log(`⚠️ [Revo 2.0 SMART VALIDATION] Accepting content with minor advanced validation issues to avoid fallback`);
+          } else if (basicValidation && advancedValidation) {
+            passesValidation = true;
+            validationLevel = 'ACCEPTABLE';
+            console.log(`⚠️ [Revo 2.0 SMART VALIDATION] Accepting content with minor quality issues to avoid fallback`);
+          } else if (basicValidation) {
+            // Last chance: if basic validation passes, check if it's better than fallback
+            const hasReasonableCoherence = coherenceValidation.coherenceScore >= 25;
+            if (hasReasonableCoherence) {
+              passesValidation = true;
+              validationLevel = 'MINIMAL';
+              console.log(`⚠️ [Revo 2.0 SMART VALIDATION] Accepting minimal quality content to avoid template fallback`);
+            }
+          }
+
+          console.log(`🎯 [Revo 2.0 VALIDATION RESULT] Level: ${validationLevel}, Passes: ${passesValidation}`);
+
+          if (!passesValidation) {
+            const reasons = [];
+            if (!basicValidation) reasons.push('basic validation failed');
+            if (!qualityValidation) reasons.push('quality validation failed');
+            if (!advancedValidation) reasons.push('coherence validation failed');
+
+            console.log(`🚫 [Revo 2.0] Attempt ${attempt}/${maxRetries} - Validation failed - Reasons: ${reasons.join(', ')}`);
+
+            if (attempt < maxRetries) {
+              console.log(`🔄 [Revo 2.0] Retrying with different temperature and creativity...`);
+              continue;
+            } else {
+              console.log('❌ [Revo 2.0] All AI attempts failed validation - using fallback');
+              throw new Error(`Content validation failed after ${maxRetries} attempts: ${reasons.join(', ')}`);
+            }
+          }
+
+          // Content passed validation - prepare final result
+          console.log(`🎉 [Revo 2.0 AI CONTENT SUCCESS] Using AI-generated content (not fallback):`);
+          console.log(`   📰 AI Headline: "${headline}"`);
+          console.log(`   📝 AI Caption: "${caption}"`);
+          console.log(`   🎯 AI CTA: "${cta}"`);
+          console.log(`   🎯 Marketing Angle: ${assignedAngle.name}`);
+          console.log(`   📊 Coherence Score: ${coherenceValidation.coherenceScore}`);
+
+          // Remember accepted output for future anti-repetition checks
+          rememberOutput(brandKey, { headline, caption });
+
+          console.log(`✅ [Revo 2.0] AI Generation Successful on attempt ${attempt}/${maxRetries} with ${validationLevel} quality`);
+          return {
+            caption: sanitizeGeneratedCopy(caption, brandProfile, businessType) as string,
+            hashtags: finalHashtags,
+            headline: sanitizeGeneratedCopy(headline, brandProfile, businessType),
+            subheadline: sanitizeGeneratedCopy(subheadline, brandProfile, businessType),
+            cta: sanitizeGeneratedCopy(cta, brandProfile, businessType),
+            captionVariations: [sanitizeGeneratedCopy(caption, brandProfile, businessType) as string]
+          };
+
+        } catch (parseError) {
+          console.warn(`⚠️ [Revo 2.0] Attempt ${attempt}/${maxRetries} - Failed to parse JSON: ${parseError.message}`);
+          lastError = parseError;
+          if (attempt < maxRetries) {
+            console.log(`🔄 [Revo 2.0] Retrying with different temperature...`);
+            continue;
+          }
         }
-      }
-
-      let headline = stripOverusedWords(parsed.headline || '');
-
-      // Enhanced validation layers for headline quality
-      const hasJourneyWords = /\b(journey|everyday)\b/i.test(headline);
-      const hasColonPrefix = /^[A-Z]+:\s/.test(headline);
-      const hasBannedPatterns = hasBannedPattern(headline);
-      const isTooSimilar = tooSimilar(headline, recentData.headlines, 0.55);
-      const isEmpty = !headline || headline.trim().length === 0;
-      const isGenericPattern = /^[a-z]+ your [a-z]+$/i.test(headline.trim());
-
-      if (isEmpty || hasJourneyWords || hasColonPrefix || hasBannedPatterns || isTooSimilar || isGenericPattern) {
-        const headlineReason = isEmpty ? 'empty' : hasJourneyWords ? 'journey words' : hasColonPrefix ? 'colon prefix' : hasBannedPatterns ? 'banned pattern' : isTooSimilar ? 'too similar' : 'generic pattern';
-        console.log(`🚫 [Revo 2.0] Attempt ${attempt}/${maxRetries} - Rejected headline: "${headline}" - Reason: ${headlineReason}`);
-        
-        if (attempt < maxRetries) {
-          console.log(`🔄 [Revo 2.0] Retrying with different approach...`);
-          continue;
-        } else {
-          console.log('❌ [Revo 2.0] All AI attempts failed headline validation - using fallback');
-          headline = generateUniqueHeadline(brandProfile, businessType, fallbackTheme);
-        }
-      }
-
-      // Remember accepted output for future anti-repetition checks
-      rememberOutput(brandKey, { headline, caption });
-
-      console.log(`✅ [Revo 2.0] AI Generation Successful on attempt ${attempt}/${maxRetries}`);
-      return {
-        caption: sanitizeGeneratedCopy(caption, brandProfile, businessType) as string,
-        hashtags: finalHashtags,
-        headline: sanitizeGeneratedCopy(headline, brandProfile, businessType),
-        subheadline: sanitizeGeneratedCopy(parsed.subheadline, brandProfile, businessType),
-        cta: sanitizeGeneratedCopy(parsed.cta, brandProfile, businessType),
-        captionVariations: [sanitizeGeneratedCopy(caption, brandProfile, businessType) as string]
-      };
-
-      } catch (parseError) {
-        console.warn(`⚠️ [Revo 2.0] Attempt ${attempt}/${maxRetries} - Failed to parse JSON: ${parseError.message}`);
-        lastError = parseError;
-        if (attempt < maxRetries) {
-          console.log(`🔄 [Revo 2.0] Retrying with different temperature...`);
-          continue;
-        }
-      }
 
       } catch (aiError) {
         console.warn(`⚠️ [Revo 2.0] Attempt ${attempt}/${maxRetries} - AI generation failed: ${aiError.message}`);
@@ -1691,9 +2465,20 @@ Format as JSON:
     }
 
     // All retries failed, use fallback
+    console.warn(`🚨 [Revo 2.0 FALLBACK CAPTION ISSUE] Using template captions instead of AI-generated captions!`);
+    console.warn(`🔧 [Revo 2.0 FALLBACK CAPTION ISSUE] This will cause caption-headline story mismatch!`);
     console.warn(`❌ [Revo 2.0] All ${maxRetries} AI attempts failed. Using fallback content.`);
     console.warn(`Last error: ${lastError?.message || 'Unknown error'}`);
-    return generateUniqueFallbackContent(brandProfile, businessType, platform, hashtagCount, creativityBoost, concept);
+
+    const fallbackContent = generateUniqueFallbackContent(brandProfile, businessType, platform, hashtagCount, creativityBoost, concept);
+
+    // Mark this as fallback content for debugging
+    console.warn(`🚨 [Revo 2.0 FALLBACK CONTENT] Generated fallback content:`);
+    console.warn(`   📰 Headline: "${fallbackContent.headline}"`);
+    console.warn(`   📝 Caption: "${fallbackContent.caption}"`);
+    console.warn(`   🎯 CTA: "${fallbackContent.cta}"`);
+
+    return fallbackContent;
 
   } catch (error) {
     console.warn('⚠️ Revo 2.0: Content generation failed, generating unique fallback');
@@ -1884,10 +2669,10 @@ function getVisualContextForBusiness(businessType: string, concept: string): str
 function getCustmerPainPointsForBusiness(businessType: string, brandProfile: any): string {
   const businessLower = businessType.toLowerCase();
   const location = brandProfile?.location || 'your area';
-  
+
   // Fintech/Financial Services
-  if (businessLower.includes('financial') || businessLower.includes('fintech') || 
-      businessLower.includes('banking') || businessLower.includes('payment')) {
+  if (businessLower.includes('financial') || businessLower.includes('fintech') ||
+    businessLower.includes('banking') || businessLower.includes('payment')) {
     return `- PAIN: Long bank queues and slow approval processes
 - PAIN: Complex credit requirements that exclude many people
 - PAIN: High transaction fees eating into profits
@@ -1898,10 +2683,10 @@ function getCustmerPainPointsForBusiness(businessType: string, brandProfile: any
 - SOLUTION: Transparent, low fees with no hidden charges
 - SOLUTION: Real-time payments and transfers`;
   }
-  
+
   // Technology/Software
-  if (businessLower.includes('technology') || businessLower.includes('software') || 
-      businessLower.includes('app') || businessLower.includes('digital')) {
+  if (businessLower.includes('technology') || businessLower.includes('software') ||
+    businessLower.includes('app') || businessLower.includes('digital')) {
     return `- PAIN: Complex software that's hard to use
 - PAIN: Expensive implementation and maintenance costs
 - PAIN: Poor customer support and long response times
@@ -1911,10 +2696,10 @@ function getCustmerPainPointsForBusiness(businessType: string, brandProfile: any
 - SOLUTION: 24/7 support with real human experts
 - SOLUTION: Bank-level security protecting your data`;
   }
-  
+
   // E-commerce/Retail
-  if (businessLower.includes('retail') || businessLower.includes('shop') || 
-      businessLower.includes('store') || businessLower.includes('commerce')) {
+  if (businessLower.includes('retail') || businessLower.includes('shop') ||
+    businessLower.includes('store') || businessLower.includes('commerce')) {
     return `- PAIN: High shipping costs and slow delivery
 - PAIN: Limited payment options for customers
 - PAIN: Difficulty finding quality products at fair prices
@@ -1924,7 +2709,7 @@ function getCustmerPainPointsForBusiness(businessType: string, brandProfile: any
 - SOLUTION: Quality products at competitive prices
 - SOLUTION: Excellent customer service and easy returns`;
   }
-  
+
   // Default for any business
   return `- PAIN: Slow, inefficient processes wasting time
 - PAIN: High costs without clear value
@@ -1966,11 +2751,11 @@ function getCompetitorAnalysis(brandProfile: any): string {
 function getAuthenticStoryScenarios(brandProfile: any, businessType: string): string {
   const businessLower = businessType.toLowerCase();
   const location = brandProfile?.location?.country || 'Kenya';
-  
+
   // Fintech/Financial Services Stories
-  if (businessLower.includes('financial') || businessLower.includes('fintech') || 
-      businessLower.includes('banking') || businessLower.includes('payment')) {
-    
+  if (businessLower.includes('financial') || businessLower.includes('fintech') ||
+    businessLower.includes('banking') || businessLower.includes('payment')) {
+
     return `CHOOSE ONE OF THESE REAL-LIFE STORIES TO TELL:
 
 📱 FAMILY CONNECTION STORIES:
@@ -2005,7 +2790,7 @@ USE THESE STORY ELEMENTS:
 - Include authentic Kenyan expressions of gratitude
 - Show the COMPLETE transaction journey from send to receive to outcome`;
   }
-  
+
   // Default for other business types
   return `CREATE AUTHENTIC CUSTOMER JOURNEY STORIES:
 - Show real people using your service in their daily lives
@@ -2052,10 +2837,10 @@ function getValuePropositionsForBusiness(businessType: string, brandProfile: any
   const businessLower = businessType.toLowerCase();
   const businessName = brandProfile?.businessName || 'Our Business';
   const location = brandProfile?.location || 'your area';
-  
+
   // Fintech/Financial Services
-  if (businessLower.includes('financial') || businessLower.includes('fintech') || 
-      businessLower.includes('banking') || businessLower.includes('payment')) {
+  if (businessLower.includes('financial') || businessLower.includes('fintech') ||
+    businessLower.includes('banking') || businessLower.includes('payment')) {
     return `- "Open account in minutes, not days"
 - "No credit checks - banking for everyone in ${location}"
 - "Save money with transparent, low fees"
@@ -2063,10 +2848,10 @@ function getValuePropositionsForBusiness(businessType: string, brandProfile: any
 - "Mobile banking anywhere, anytime"
 - "Join thousands already banking smarter"`;
   }
-  
+
   // Technology/Software
-  if (businessLower.includes('technology') || businessLower.includes('software') || 
-      businessLower.includes('app') || businessLower.includes('digital')) {
+  if (businessLower.includes('technology') || businessLower.includes('software') ||
+    businessLower.includes('app') || businessLower.includes('digital')) {
     return `- "Technology that actually works for you"
 - "Save time with automated solutions"
 - "Reduce costs while improving efficiency"
@@ -2074,7 +2859,7 @@ function getValuePropositionsForBusiness(businessType: string, brandProfile: any
 - "Secure, reliable platform you can trust"
 - "Easy setup - running in minutes, not months"`;
   }
-  
+
   // Default value propositions
   return `- "${businessName} delivers real results"
 - "Save time and money with our efficient solutions"

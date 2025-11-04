@@ -18,6 +18,542 @@ import { ContentQualityValidator } from './content-quality-validator';
 import { SimpleContentDiversifier, type SimpleDiversificationResult } from './simple-content-diversifier';
 import { CustomerCentricContentGenerator } from './customer-centric-content-generator';
 
+// ============================================================================
+// UNIVERSAL MULTI-ANGLE MARKETING FRAMEWORK (Ported from Revo 1.0/2.0)
+// ============================================================================
+
+interface MarketingAngle {
+  id: string;
+  name: string;
+  description: string;
+  focusArea: string;
+  promptInstructions: string;
+  headlineGuidance: string;
+  captionGuidance: string;
+  visualGuidance: string;
+  examples: {
+    headline: string;
+    subheadline: string;
+    caption: string;
+  };
+}
+
+const MARKETING_ANGLES: MarketingAngle[] = [
+  {
+    id: 'feature',
+    name: 'Feature Angle',
+    description: 'Highlight ONE specific feature/capability',
+    focusArea: 'Product functionality',
+    promptInstructions: 'Focus on a single standout feature that differentiates this business. Make it tangible and specific.',
+    headlineGuidance: 'Lead with the feature name or benefit (e.g., "Instant Transfers", "24/7 Support")',
+    captionGuidance: 'Explain how this feature solves a real problem or improves the customer experience',
+    visualGuidance: 'Show the feature in action or its direct benefit to users',
+    examples: {
+      headline: 'Instant Transfers',
+      subheadline: 'Money moves in seconds, not hours',
+      caption: 'Send money to suppliers at 9 AM, confirmed by 9:03 AM. No more waiting for payments to clear.'
+    }
+  },
+  {
+    id: 'usecase',
+    name: 'Use-Case Angle',
+    description: 'Show the business solving a specific real-world scenario',
+    focusArea: 'Practical application',
+    promptInstructions: 'Present a concrete, relatable scenario where this business provides the perfect solution.',
+    headlineGuidance: 'Frame as a situation or need (e.g., "Rent Due Tomorrow?", "Supplier Needs Payment?")',
+    captionGuidance: 'Walk through the scenario and how the business solves it step-by-step',
+    visualGuidance: 'Show the real-world scenario and the solution in action',
+    examples: {
+      headline: 'Rent Due Tomorrow?',
+      subheadline: 'Pay instantly from your phone',
+      caption: 'Landlord calling? Transfer rent in 30 seconds. No bank queues, no delays, no stress.'
+    }
+  },
+  {
+    id: 'audience',
+    name: 'Audience Segment Angle',
+    description: 'Target a specific customer group with tailored messaging',
+    focusArea: 'Customer segment',
+    promptInstructions: 'Speak directly to a specific audience segment with their unique needs and language.',
+    headlineGuidance: 'Address the audience directly (e.g., "Small Business Owners", "Busy Parents")',
+    captionGuidance: 'Use language and examples that resonate specifically with this audience',
+    visualGuidance: 'Show people from this audience segment using the service',
+    examples: {
+      headline: 'Small Business Owners',
+      subheadline: 'Pay suppliers without leaving your shop',
+      caption: 'Running a business means staying focused on customers, not chasing payments. Handle all transactions from your phone.'
+    }
+  },
+  {
+    id: 'problem',
+    name: 'Problem-Solution Angle',
+    description: 'Start with a pain point, then present the solution',
+    focusArea: 'Problem resolution',
+    promptInstructions: 'Identify a specific, relatable problem your audience faces, then position the business as the solution.',
+    headlineGuidance: 'State the problem clearly (e.g., "Tired of Bank Queues?", "Payments Taking Forever?")',
+    captionGuidance: 'Acknowledge the pain, then show how the business eliminates it completely',
+    visualGuidance: 'Contrast the problem (frustration) with the solution (relief/success)',
+    examples: {
+      headline: 'Tired of Bank Queues?',
+      subheadline: 'Skip the line, pay from anywhere',
+      caption: 'Standing in bank queues wastes your valuable time. Send money instantly from your phone, wherever you are.'
+    }
+  },
+  {
+    id: 'benefit',
+    name: 'Benefit Level Angle',
+    description: 'Focus on the end result or outcome for customers',
+    focusArea: 'Customer outcomes',
+    promptInstructions: 'Highlight the ultimate benefit or transformation customers experience.',
+    headlineGuidance: 'Lead with the benefit (e.g., "Save 2 Hours Daily", "Never Miss a Payment")',
+    captionGuidance: 'Paint a picture of life with this benefit - how it changes their day/business/life',
+    visualGuidance: 'Show the positive outcome or the improved state customers achieve',
+    examples: {
+      headline: 'Save 2 Hours Daily',
+      subheadline: 'Automated payments work while you focus on business',
+      caption: 'Stop managing payments manually. Set up once, and your suppliers get paid automatically every month.'
+    }
+  },
+  {
+    id: 'transformation',
+    name: 'Before/After Angle',
+    description: 'Show the transformation from current state to improved state',
+    focusArea: 'Change narrative',
+    promptInstructions: 'Create a clear before/after narrative showing the positive change this business enables.',
+    headlineGuidance: 'Imply transformation (e.g., "From Chaos to Control", "Old Way vs New Way")',
+    captionGuidance: 'Describe the old frustrating way, then contrast with the new, better way',
+    visualGuidance: 'Show the contrast between old problems and new solutions',
+    examples: {
+      headline: 'From Chaos to Control',
+      subheadline: 'Organize your business finances in minutes',
+      caption: 'Before: Scattered receipts, missed payments, stressed nights. After: Everything organized, payments automated, peace of mind.'
+    }
+  },
+  {
+    id: 'social_proof',
+    name: 'Social Proof Angle',
+    description: 'Use customer success, testimonials, or community trust',
+    focusArea: 'Trust and credibility',
+    promptInstructions: 'Leverage social proof, customer success stories, or community trust to build credibility.',
+    headlineGuidance: 'Reference others\' success (e.g., "Join 10,000+ Businesses", "Trusted by Local Shops")',
+    captionGuidance: 'Share specific success stories or community adoption without using fake testimonials',
+    visualGuidance: 'Show community of users, success indicators, or trust symbols',
+    examples: {
+      headline: 'Join 10,000+ Businesses',
+      subheadline: 'Local entrepreneurs trust our platform',
+      caption: 'From corner shops to growing enterprises, thousands of local businesses streamline their payments with us daily.'
+    }
+  }
+];
+
+// Campaign angle tracking for Revo 1.5
+const campaignAngleTracker15 = new Map<string, {
+  usedAngles: string[],
+  lastUsed: number,
+  currentCampaignId: string
+}>();
+
+function generateCampaignId15(brandKey: string): string {
+  return `${brandKey}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
+function getBrandKey15(brandProfile: any, platform: string): string {
+  const businessName = brandProfile?.businessName || brandProfile?.name || 'unknown';
+  return `${businessName.toLowerCase().replace(/\s+/g, '-')}-${platform.toLowerCase()}`;
+}
+
+function assignMarketingAngle15(brandKey: string, options: any): MarketingAngle {
+  const tracker = campaignAngleTracker15.get(brandKey) || {
+    usedAngles: [],
+    lastUsed: Date.now(),
+    currentCampaignId: generateCampaignId15(brandKey)
+  };
+
+  // Get available angles (not used in current campaign)
+  const availableAngles = MARKETING_ANGLES.filter(angle =>
+    !tracker.usedAngles.includes(angle.id)
+  );
+
+  // If all angles used, reset and start new campaign cycle
+  let selectedAngle: MarketingAngle;
+  if (availableAngles.length === 0) {
+    console.log(`🔄 [Revo 1.5] All angles used for ${brandKey}, starting new campaign cycle`);
+    tracker.usedAngles = [];
+    tracker.currentCampaignId = generateCampaignId15(brandKey);
+    selectedAngle = MARKETING_ANGLES[Math.floor(Math.random() * MARKETING_ANGLES.length)];
+  } else {
+    selectedAngle = selectOptimalAngle15(availableAngles, options);
+  }
+
+  // Track angle usage
+  tracker.usedAngles.push(selectedAngle.id);
+  tracker.lastUsed = Date.now();
+  campaignAngleTracker15.set(brandKey, tracker);
+
+  return selectedAngle;
+}
+
+function selectOptimalAngle15(availableAngles: MarketingAngle[], options: any): MarketingAngle {
+  const businessType = options.businessType?.toLowerCase() || '';
+
+  // Universal business type preferences for angle selection
+  const businessAnglePreferences: { [key: string]: string[] } = {
+    'finance': ['feature', 'problem', 'benefit', 'transformation'],
+    'fintech': ['feature', 'usecase', 'transformation', 'social_proof'],
+    'banking': ['problem', 'benefit', 'usecase', 'transformation'],
+    'restaurant': ['usecase', 'audience', 'social_proof', 'transformation'],
+    'food': ['usecase', 'audience', 'social_proof', 'problem'],
+    'healthcare': ['benefit', 'problem', 'social_proof', 'audience'],
+    'medical': ['benefit', 'problem', 'social_proof', 'audience'],
+    'technology': ['feature', 'usecase', 'benefit', 'transformation'],
+    'software': ['feature', 'usecase', 'benefit', 'problem'],
+    'retail': ['usecase', 'social_proof', 'benefit', 'audience'],
+    'ecommerce': ['usecase', 'social_proof', 'benefit', 'problem'],
+    'education': ['benefit', 'transformation', 'social_proof', 'audience'],
+    'fitness': ['transformation', 'benefit', 'social_proof', 'audience'],
+    'beauty': ['transformation', 'social_proof', 'benefit', 'audience'],
+    'travel': ['usecase', 'benefit', 'social_proof', 'transformation'],
+    'hospitality': ['usecase', 'social_proof', 'benefit', 'audience'],
+    'automotive': ['feature', 'benefit', 'usecase', 'social_proof'],
+    'real estate': ['benefit', 'usecase', 'social_proof', 'transformation'],
+    'consulting': ['benefit', 'transformation', 'social_proof', 'problem'],
+    'legal': ['problem', 'benefit', 'social_proof', 'audience'],
+    'insurance': ['problem', 'benefit', 'social_proof', 'transformation'],
+    'logistics': ['feature', 'usecase', 'benefit', 'problem'],
+    'manufacturing': ['feature', 'benefit', 'usecase', 'social_proof'],
+    'agriculture': ['benefit', 'usecase', 'social_proof', 'transformation'],
+    'entertainment': ['usecase', 'social_proof', 'benefit', 'audience'],
+    'media': ['usecase', 'social_proof', 'audience', 'benefit'],
+    'nonprofit': ['social_proof', 'benefit', 'transformation', 'audience'],
+    'government': ['benefit', 'social_proof', 'problem', 'audience']
+  };
+
+  const preferredAngles = businessAnglePreferences[businessType] || ['feature', 'benefit', 'usecase', 'problem'];
+
+  // Find first available preferred angle
+  for (const preferredId of preferredAngles) {
+    const angle = availableAngles.find(a => a.id === preferredId);
+    if (angle) {
+      return angle;
+    }
+  }
+
+  return availableAngles[0];
+}
+
+// ============================================================================
+// ENHANCED STORY COHERENCE VALIDATION SYSTEM (Ported from Revo 1.0/2.0)
+// ============================================================================
+
+function validateStoryCoherence15(
+  headline: string,
+  caption: string,
+  businessType: string
+): {
+  isCoherent: boolean;
+  issues: string[];
+  coherenceScore: number;
+  storyTheme: string;
+  emotionalTone: string;
+} {
+  const issues: string[] = [];
+  let coherenceScore = 100;
+
+  // 1. STORY THEME EXTRACTION AND VALIDATION
+  const headlineTheme = extractStoryTheme15(headline, businessType);
+  const captionTheme = extractStoryTheme15(caption, businessType);
+
+  if (headlineTheme.primary !== captionTheme.primary) {
+    if (headlineTheme.primary === 'general' || captionTheme.primary === 'general') {
+      issues.push(`MINOR THEME VARIANCE: Headline theme '${headlineTheme.primary}' vs caption theme '${captionTheme.primary}' (general themes)`);
+      coherenceScore -= 15;
+    } else {
+      issues.push(`STORY MISMATCH: Headline focuses on '${headlineTheme.primary}' but caption switches to '${captionTheme.primary}'`);
+      coherenceScore -= 30;
+    }
+  }
+
+  // 2. NARRATIVE CONTINUITY VALIDATION
+  const narrativeContinuity = validateNarrativeContinuity15(headline, caption, businessType);
+  if (!narrativeContinuity.isValid) {
+    issues.push(...narrativeContinuity.issues);
+    coherenceScore -= narrativeContinuity.penalty;
+  }
+
+  // 3. TONE CONSISTENCY VALIDATION
+  const headlineTone = analyzeEmotionalTone15(headline);
+  const captionTone = analyzeEmotionalTone15(caption);
+
+  if (headlineTone !== captionTone) {
+    const allowedFallbacks = ['confident', 'innovative', 'caring', 'professional'];
+    const isCompatibleTone = captionTone === 'professional' ||
+      allowedFallbacks.includes(headlineTone) ||
+      allowedFallbacks.includes(captionTone);
+
+    if (!isCompatibleTone) {
+      issues.push(`TONE MISMATCH: Headline is ${headlineTone} but caption is ${captionTone}`);
+      coherenceScore -= 20;
+    } else {
+      issues.push(`MINOR TONE VARIANCE: Headline ${headlineTone} vs caption ${captionTone} (compatible)`);
+      coherenceScore -= 5;
+    }
+  }
+
+  // 4. AUDIENCE CONSISTENCY VALIDATION
+  const headlineAudience = extractTargetAudience15(headline);
+  const captionAudience = extractTargetAudience15(caption);
+
+  if (headlineAudience && captionAudience && headlineAudience !== captionAudience) {
+    issues.push(`AUDIENCE MISMATCH: Headline targets '${headlineAudience}' but caption targets '${captionAudience}'`);
+    coherenceScore -= 15;
+  }
+
+  // 5. BENEFIT PROMISE VALIDATION
+  const promisedBenefit = extractPromisedBenefit15(headline);
+  const deliveredBenefit = extractDeliveredBenefit15(caption);
+
+  if (promisedBenefit && deliveredBenefit && !areBenefitsAligned15(promisedBenefit, deliveredBenefit)) {
+    issues.push(`BENEFIT MISMATCH: Headline promises '${promisedBenefit}' but caption delivers '${deliveredBenefit}'`);
+    coherenceScore -= 25;
+  }
+
+  // 6. STORY COMPLETION VALIDATION
+  const storyCompletion = validateStoryCompletion15(headline, caption);
+  if (!storyCompletion.isComplete) {
+    issues.push(...storyCompletion.issues);
+    coherenceScore -= storyCompletion.penalty;
+  }
+
+  // 7. ENHANCED GENERIC CONTENT DETECTION
+  const contentSpecificity = validateContentSpecificity15(headline, caption, businessType);
+  if (!contentSpecificity.isSpecific) {
+    issues.push(...contentSpecificity.issues);
+    coherenceScore -= contentSpecificity.penalty;
+  }
+
+  const isCoherent = coherenceScore >= 45 && (issues.length === 0 || coherenceScore >= 60);
+
+  return {
+    isCoherent,
+    issues,
+    coherenceScore: Math.max(0, coherenceScore),
+    storyTheme: headlineTheme.primary,
+    emotionalTone: headlineTone
+  };
+}
+
+function extractStoryTheme15(text: string, businessType: string): { primary: string; secondary?: string } {
+  const textLower = text.toLowerCase();
+  const businessLower = businessType.toLowerCase();
+
+  // Theme categories with keywords
+  const themes = {
+    speed: ['instant', 'fast', 'quick', 'immediate', 'seconds', 'minutes', 'rapid', 'swift', 'now'],
+    security: ['secure', 'safe', 'protected', 'trust', 'reliable', 'guaranteed', 'verified', 'encrypted'],
+    convenience: ['easy', 'simple', 'effortless', 'convenient', 'hassle-free', 'seamless', 'smooth'],
+    savings: ['save', 'cheap', 'affordable', 'discount', 'deal', 'value', 'budget', 'cost-effective'],
+    quality: ['quality', 'premium', 'excellent', 'best', 'top', 'superior', 'professional', 'expert'],
+    support: ['support', 'help', 'service', 'care', 'assistance', 'guidance', '24/7', 'always'],
+    innovation: ['new', 'modern', 'advanced', 'cutting-edge', 'innovative', 'smart', 'technology'],
+    community: ['local', 'community', 'together', 'join', 'connect', 'network', 'social'],
+    success: ['success', 'achieve', 'win', 'grow', 'improve', 'better', 'results', 'outcomes'],
+    transformation: ['transform', 'change', 'upgrade', 'evolve', 'revolutionize', 'reimagine'],
+    urgency: ['now', 'today', 'urgent', 'limited', 'hurry', 'deadline', 'expires', 'act'],
+    exclusivity: ['exclusive', 'special', 'unique', 'only', 'limited', 'select', 'premium', 'vip']
+  };
+
+  let primaryTheme = 'general';
+  let maxScore = 0;
+  let secondaryTheme: string | undefined;
+
+  for (const [theme, keywords] of Object.entries(themes)) {
+    const score = keywords.reduce((acc, keyword) => {
+      const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
+      const matches = textLower.match(regex);
+      return acc + (matches ? matches.length : 0);
+    }, 0);
+
+    if (score > maxScore) {
+      secondaryTheme = primaryTheme !== 'general' ? primaryTheme : undefined;
+      primaryTheme = theme;
+      maxScore = score;
+    } else if (score > 0 && score === maxScore && theme !== primaryTheme) {
+      secondaryTheme = theme;
+    }
+  }
+
+  return { primary: primaryTheme, secondary: secondaryTheme };
+}
+
+function analyzeEmotionalTone15(text: string): string {
+  const textLower = text.toLowerCase();
+
+  const toneIndicators = {
+    urgent: ['now', 'today', 'urgent', 'hurry', 'deadline', 'limited time', 'act fast', 'don\'t wait'],
+    playful: ['fun', 'enjoy', 'play', 'exciting', 'amazing', 'awesome', 'cool', 'wow'],
+    professional: ['professional', 'business', 'corporate', 'enterprise', 'solution', 'service'],
+    confident: ['guaranteed', 'proven', 'trusted', 'reliable', 'sure', 'certain', 'confident'],
+    caring: ['care', 'help', 'support', 'understand', 'listen', 'comfort', 'gentle'],
+    innovative: ['new', 'innovative', 'cutting-edge', 'advanced', 'modern', 'smart', 'future']
+  };
+
+  let dominantTone = 'professional';
+  let maxScore = 0;
+
+  for (const [tone, indicators] of Object.entries(toneIndicators)) {
+    const score = indicators.reduce((acc, indicator) => {
+      return acc + (textLower.includes(indicator) ? 1 : 0);
+    }, 0);
+
+    if (score > maxScore) {
+      dominantTone = tone;
+      maxScore = score;
+    }
+  }
+
+  return dominantTone;
+}
+
+// Helper functions for story coherence validation
+function validateNarrativeContinuity15(headline: string, caption: string, businessType: string) {
+  const issues: string[] = [];
+  let penalty = 0;
+  let isValid = true;
+
+  // Check if caption logically follows from headline
+  const headlineWords = headline.toLowerCase().split(/\s+/);
+  const captionWords = caption.toLowerCase().split(/\s+/);
+
+  const hasThematicConnection = headlineWords.some(word =>
+    word.length > 3 && captionWords.some(capWord =>
+      capWord.includes(word) || word.includes(capWord)
+    )
+  );
+
+  if (!hasThematicConnection && caption.length > 30) {
+    issues.push('NARRATIVE DISCONNECT: Caption doesn\'t build on headline theme');
+    penalty += 20;
+    isValid = false;
+  }
+
+  return { isValid, issues, penalty };
+}
+
+function extractTargetAudience15(text: string): string | null {
+  const audiencePatterns = [
+    'business owners', 'entrepreneurs', 'small businesses', 'startups',
+    'families', 'parents', 'students', 'professionals',
+    'customers', 'clients', 'users', 'people'
+  ];
+
+  const textLower = text.toLowerCase();
+  for (const pattern of audiencePatterns) {
+    if (textLower.includes(pattern)) {
+      return pattern;
+    }
+  }
+
+  return null;
+}
+
+function extractPromisedBenefit15(headline: string): string | null {
+  const benefitPatterns = [
+    'save time', 'save money', 'instant', 'fast', 'easy', 'simple',
+    'secure', 'reliable', 'quality', 'professional', 'better'
+  ];
+
+  const headlineLower = headline.toLowerCase();
+  for (const pattern of benefitPatterns) {
+    if (headlineLower.includes(pattern)) {
+      return pattern;
+    }
+  }
+
+  return null;
+}
+
+function extractDeliveredBenefit15(caption: string): string | null {
+  const benefitPatterns = [
+    'save time', 'save money', 'instant', 'fast', 'easy', 'simple',
+    'secure', 'reliable', 'quality', 'professional', 'better'
+  ];
+
+  const captionLower = caption.toLowerCase();
+  for (const pattern of benefitPatterns) {
+    if (captionLower.includes(pattern)) {
+      return pattern;
+    }
+  }
+
+  return null;
+}
+
+function areBenefitsAligned15(promisedBenefit: string, deliveredBenefit: string): boolean {
+  const benefitGroups = {
+    speed: ['instant', 'fast', 'quick', 'save time'],
+    cost: ['save money', 'affordable', 'cheap', 'value'],
+    ease: ['easy', 'simple', 'effortless', 'convenient'],
+    trust: ['secure', 'reliable', 'trusted', 'safe'],
+    quality: ['quality', 'professional', 'better', 'excellent']
+  };
+
+  for (const group of Object.values(benefitGroups)) {
+    if (group.includes(promisedBenefit) && group.includes(deliveredBenefit)) {
+      return true;
+    }
+  }
+
+  return promisedBenefit === deliveredBenefit;
+}
+
+function validateStoryCompletion15(headline: string, caption: string) {
+  const issues: string[] = [];
+  let penalty = 0;
+  let isComplete = true;
+
+  // Check if story has proper structure
+  if (headline.length < 10) {
+    issues.push('INCOMPLETE STORY: Headline too short to establish story');
+    penalty += 10;
+    isComplete = false;
+  }
+
+  if (caption.length < 20) {
+    issues.push('INCOMPLETE STORY: Caption too short to complete story');
+    penalty += 15;
+    isComplete = false;
+  }
+
+  return { isComplete, issues, penalty };
+}
+
+function validateContentSpecificity15(headline: string, caption: string, businessType: string) {
+  const issues: string[] = [];
+  let penalty = 0;
+  let isSpecific = true;
+
+  const genericPatterns = [
+    'experience the excellence',
+    'quality you can trust',
+    'professional service',
+    'we are here for you',
+    'your trusted partner',
+    'committed to excellence'
+  ];
+
+  const fullText = `${headline} ${caption}`.toLowerCase();
+
+  for (const pattern of genericPatterns) {
+    if (fullText.includes(pattern)) {
+      issues.push(`GENERIC CONTENT: Contains generic phrase "${pattern}"`);
+      penalty += 15;
+      isSpecific = false;
+    }
+  }
+
+  return { isSpecific, issues, penalty };
+}
+
 // Helper function to extract text from Vertex AI response
 function extractTextFromResponse(response: any): string {
 
@@ -77,33 +613,33 @@ function analyzeContentForImageMatching(contentResult: any, location: string): {
   }
 
   // CRITICAL: Enhanced Financial Services Detection (for Paya and similar companies)
-  if (fullText.includes('banking') || fullText.includes('money') || fullText.includes('payment') || 
-      fullText.includes('financial') || fullText.includes('smart money') || fullText.includes('effortless banking') ||
-      fullText.includes('business potential') || fullText.includes('unlock') || fullText.includes('merchant') ||
-      fullText.includes('float') || fullText.includes('digital payments') || fullText.includes('fintech') ||
-      fullText.includes('seamless money') || fullText.includes('pocket') || fullText.includes('secure your future') ||
-      fullText.includes('daily finances') || fullText.includes('simplified') || fullText.includes('empowered') ||
-      fullText.includes('transactions') || fullText.includes('paya') || fullText.includes('finance solution')) {
-    
+  if (fullText.includes('banking') || fullText.includes('money') || fullText.includes('payment') ||
+    fullText.includes('financial') || fullText.includes('smart money') || fullText.includes('effortless banking') ||
+    fullText.includes('business potential') || fullText.includes('unlock') || fullText.includes('merchant') ||
+    fullText.includes('float') || fullText.includes('digital payments') || fullText.includes('fintech') ||
+    fullText.includes('seamless money') || fullText.includes('pocket') || fullText.includes('secure your future') ||
+    fullText.includes('daily finances') || fullText.includes('simplified') || fullText.includes('empowered') ||
+    fullText.includes('transactions') || fullText.includes('paya') || fullText.includes('finance solution')) {
+
     // Specific scenario detection based on exact phrases
     if (fullText.includes('pocket') || fullText.includes('seamless money')) {
       detectedPeople.push('person pulling smartphone from pocket', 'customer making mobile payment from pocket');
       detectedSettings.push('payment scenario with phone coming from pocket', 'mobile payment at point of sale');
       visualRequirements.push('Show person taking phone from pocket to pay', 'Show seamless pocket-to-payment action');
     }
-    
+
     if (fullText.includes('secure your future') || fullText.includes('secure') || fullText.includes('future')) {
       detectedPeople.push('person setting financial goals on app', 'user reviewing secure financial dashboard');
       detectedSettings.push('financial planning interface', 'secure banking environment with security indicators');
       visualRequirements.push('Show financial security features', 'Show future planning tools on mobile device');
     }
-    
+
     if (fullText.includes('daily finances') || fullText.includes('simplified') || fullText.includes('empowered')) {
       detectedPeople.push('person managing daily expenses on phone', 'user with simplified financial interface');
       detectedSettings.push('daily life scenario with financial management', 'clean financial app interface');
       visualRequirements.push('Show simplified financial management', 'Show daily financial tasks made easy');
     }
-    
+
     // General fintech scenarios
     detectedPeople.push('business owner using mobile payment', 'entrepreneur with smartphone', 'person making digital transaction');
     detectedSettings.push('modern business environment with digital devices', 'mobile payment scenario', 'business growth setting');
@@ -596,7 +1132,7 @@ function getCulturalCTA(location: string, businessType: string): string | null {
  */
 function getCurrencyInstructions(location: string): string {
   const locationKey = location.toLowerCase();
-  
+
   // Currency mapping by country/region
   const currencyMap: { [key: string]: { currency: string; symbol: string; example: string } } = {
     kenya: { currency: 'Kenyan Shilling', symbol: 'KES', example: 'KES 1,000' },
@@ -658,11 +1194,11 @@ function getCurrencyInstructions(location: string): string {
  */
 function getSignatureBrandMotif(businessName: string, location: string): string {
   const locationKey = location.toLowerCase();
-  
+
   // Fintech-specific signature motifs
   const fintechMotifs = [
     "Subtle diagonal grid pattern overlay (20% opacity) suggesting digital connectivity",
-    "Curved corner elements with gradient fade representing smooth transactions", 
+    "Curved corner elements with gradient fade representing smooth transactions",
     "Geometric hexagon pattern (background) symbolizing security and trust",
     "Flowing wave gradient from top-left corner representing financial flow",
     "Dotted connection lines between elements showing network connectivity",
@@ -670,7 +1206,7 @@ function getSignatureBrandMotif(businessName: string, location: string): string 
     "Rounded rectangle frames with soft inner glow for modern tech aesthetic",
     "Triangular accent elements in corners representing growth and progress"
   ];
-  
+
   // Location-specific authentic imagery suggestions
   const locationImagery: { [key: string]: string } = {
     kenya: "Authentic Kenyan context: Matatu station, MPESA agent, Nairobi CBD, local kiosk, mobile money booth",
@@ -680,10 +1216,10 @@ function getSignatureBrandMotif(businessName: string, location: string): string 
     uganda: "Authentic Ugandan context: Kampala market, mobile money, local business, digital transactions",
     tanzania: "Authentic Tanzanian context: Dar es Salaam business, mobile payments, local entrepreneur"
   };
-  
+
   // Select random motif for variety
   const selectedMotif = fintechMotifs[Math.floor(Math.random() * fintechMotifs.length)];
-  
+
   // Get location-specific imagery
   let locationContext = "Generic business setting with authentic local context";
   for (const [key, context] of Object.entries(locationImagery)) {
@@ -692,7 +1228,7 @@ function getSignatureBrandMotif(businessName: string, location: string): string 
       break;
     }
   }
-  
+
   return `- SIGNATURE MOTIF: ${selectedMotif}
 - AUTHENTIC IMAGERY: ${locationContext}
 - AVOID: Stock photos, generic corporate imagery, posed business people
@@ -711,13 +1247,13 @@ function getDynamicColorRotation(primaryColor: string, accentColor: string, back
       instruction: `Use ${primaryColor} as dominant color (70%), ${accentColor} for accents (20%), ${backgroundColor} for breathing space (10%)`
     },
     {
-      name: "Balanced Harmony", 
+      name: "Balanced Harmony",
       description: "Equal balance between primary and accent with generous white space",
       instruction: `Balance ${primaryColor} (40%) and ${accentColor} (40%) with ${backgroundColor} providing generous white space (20%)`
     },
     {
       name: "Accent Forward",
-      description: "Accent color leads with primary as supporting element", 
+      description: "Accent color leads with primary as supporting element",
       instruction: `Lead with ${accentColor} (60%), support with ${primaryColor} (25%), ${backgroundColor} for clean spacing (15%)`
     },
     {
@@ -726,11 +1262,11 @@ function getDynamicColorRotation(primaryColor: string, accentColor: string, back
       instruction: `Predominantly ${backgroundColor} (60%) with strategic ${primaryColor} (25%) and ${accentColor} accents (15%)`
     }
   ];
-  
+
   // Select rotation based on timestamp for variety
   const rotationIndex = Math.floor(Date.now() / 1000) % colorRotations.length;
   const selectedRotation = colorRotations[rotationIndex];
-  
+
   return `- COLOR ROTATION: ${selectedRotation.name}
 - ${selectedRotation.instruction}
 - VISUAL RHYTHM: Create breathing room between elements
@@ -1756,7 +2292,11 @@ async function generateCaptionAndHashtags(
   callToAction: string;
 }> {
   try {
-    console.log('🎯 [Revo 1.5 Customer-Centric] Starting outcome-focused content generation');
+    console.log('🎯 [Revo 1.5 Universal Multi-Company] Starting universal content generation');
+
+    // ============================================================================
+    // UNIVERSAL MULTI-ANGLE MARKETING FRAMEWORK - ANGLE ASSIGNMENT
+    // ============================================================================
 
     // Prepare brand profile for customer-centric generation
     const fullBrandProfile = {
@@ -1765,37 +2305,121 @@ async function generateCaptionAndHashtags(
       businessType: businessType
     };
 
+    // Get brand key for angle tracking
+    const brandKey = getBrandKey15(fullBrandProfile, platform);
+
+    // Assign strategic marketing angle for campaign diversity
+    const assignedAngle = assignMarketingAngle15(brandKey, {
+      businessType: businessType,
+      platform: platform,
+      brandProfile: fullBrandProfile
+    });
+
+    console.log(`🎯 [Revo 1.5] Marketing Angle: ${assignedAngle.name}`);
     console.log('🚀 [Revo 1.5 Customer-Centric] Using winning formula: Hook → Promise → Proof → CTA');
 
-    // Generate customer-focused content using the winning formula
+    // Enhance adConcept with marketing angle information
+    const enhancedAdConcept = {
+      ...adConcept,
+      marketingAngle: assignedAngle,
+      angleInstructions: `
+🎯 UNIVERSAL MULTI-ANGLE MARKETING FRAMEWORK - ASSIGNED ANGLE:
+
+📋 MARKETING ANGLE: ${assignedAngle.name}
+📝 DESCRIPTION: ${assignedAngle.description}
+🎯 FOCUS AREA: ${assignedAngle.focusArea}
+
+🎪 ANGLE-SPECIFIC INSTRUCTIONS:
+${assignedAngle.promptInstructions}
+
+📰 HEADLINE GUIDANCE: ${assignedAngle.headlineGuidance}
+📄 CAPTION GUIDANCE: ${assignedAngle.captionGuidance}
+🎨 VISUAL GUIDANCE: ${assignedAngle.visualGuidance}
+
+💡 ANGLE EXAMPLE:
+- Headline: "${assignedAngle.examples.headline}"
+- Subheadline: "${assignedAngle.examples.subheadline}"
+- Caption: "${assignedAngle.examples.caption}"
+
+⚠️ CRITICAL: Follow this marketing angle consistently throughout ALL content elements (headline, subheadline, caption, CTA).
+`
+    };
+
+    // Generate customer-focused content using the winning formula with marketing angle
     const result = await CustomerCentricContentGenerator.generateContent(
       fullBrandProfile,
       platform as any,
       trendingData,
       useLocalLanguage,
-      adConcept
+      enhancedAdConcept
     );
 
     console.log('✅ [Revo 1.5 Customer-Centric] Generated outcome-focused content:', {
-      hook: result.hook.substring(0, 30) + '...',
-      promise: result.promise.substring(0, 30) + '...',
-      proof: result.proof.substring(0, 30) + '...',
+      hook: result.hook?.substring(0, 30) + '...',
+      promise: result.promise?.substring(0, 30) + '...',
+      proof: result.proof?.substring(0, 30) + '...',
       cta: result.cta
     });
 
-    return {
-      caption: result.caption,
-      hashtags: result.hashtags,
-      headline: result.headline,
-      subheadline: result.subheadline,
-      callToAction: result.cta
-    };
+    // ============================================================================
+    // ENHANCED STORY COHERENCE VALIDATION SYSTEM
+    // ============================================================================
+
+    // Validate story coherence between headline and caption
+    const coherenceValidation = validateStoryCoherence15(
+      result.headline || '',
+      result.caption || '',
+      businessType
+    );
+
+    console.log('🔗 [Revo 1.5] Story coherence validation:', coherenceValidation);
+
+    // Enhanced coherence validation logging for debugging
+    if (coherenceValidation.issues.length > 0) {
+      console.log(`🚨 [Revo 1.5 COHERENCE ISSUES] Found ${coherenceValidation.issues.length} coherence issues:`);
+      coherenceValidation.issues.forEach((issue, index) => {
+        console.log(`   ${index + 1}. ${issue}`);
+      });
+    } else {
+      console.log(`✅ [Revo 1.5 COHERENCE SUCCESS] No coherence issues found`);
+    }
+
+    // Smart validation logic: prefer AI content over fallback
+    const hasBasicContent = result.headline && result.caption && result.hashtags;
+    const hasReasonableCoherence = coherenceValidation.coherenceScore >= 35; // Lowered threshold
+
+    if (hasBasicContent && hasReasonableCoherence) {
+      console.log(`🎉 [Revo 1.5 AI CONTENT SUCCESS] Using AI-generated content (not fallback):`);
+      console.log(`   📰 AI Headline: "${result.headline}"`);
+      console.log(`   📝 AI Caption: "${result.caption}"`);
+      console.log(`   🎯 AI CTA: "${result.cta}"`);
+      console.log(`   🎯 Marketing Angle: ${assignedAngle.name}`);
+      console.log(`   📊 Coherence Score: ${coherenceValidation.coherenceScore}`);
+
+      return {
+        caption: result.caption,
+        hashtags: result.hashtags,
+        headline: result.headline,
+        subheadline: result.subheadline,
+        callToAction: result.cta
+      };
+    } else {
+      console.warn(`🚨 [Revo 1.5 VALIDATION FAILED] Content validation failed:`);
+      console.warn(`   Basic Content: ${hasBasicContent}`);
+      console.warn(`   Coherence Score: ${coherenceValidation.coherenceScore}`);
+      console.warn(`   Falling back to legacy system...`);
+
+      // Fall through to legacy system
+      throw new Error('Content validation failed - using fallback');
+    }
 
   } catch (error) {
     console.error('❌ [Revo 1.5 Enhanced] Multi-stage generation failed, falling back to legacy system:', error);
+    console.warn(`🚨 [Revo 1.5 FALLBACK CAPTION ISSUE] Using template captions instead of AI-generated captions!`);
+    console.warn(`🔧 [Revo 1.5 FALLBACK CAPTION ISSUE] This may cause caption-headline story mismatch!`);
 
     // Fallback to legacy generation system
-    return await generateLegacyCaptionAndHashtags(
+    const fallbackResult = await generateLegacyCaptionAndHashtags(
       businessType,
       businessName,
       platform,
@@ -1805,6 +2429,14 @@ async function generateCaptionAndHashtags(
       useLocalLanguage,
       scheduledServices
     );
+
+    // Mark this as fallback content for debugging
+    console.warn(`🚨 [Revo 1.5 FALLBACK CONTENT] Generated fallback content:`);
+    console.warn(`   📰 Headline: "${fallbackResult.headline}"`);
+    console.warn(`   📝 Caption: "${fallbackResult.caption}"`);
+    console.warn(`   🎯 CTA: "${fallbackResult.callToAction}"`);
+
+    return fallbackResult;
   }
 }
 
@@ -2445,7 +3077,7 @@ export async function generateFinalImage(
     if (contentResult.subheadline) imageTextComponents.push(contentResult.subheadline);
     if (contentResult.callToAction) imageTextComponents.push(contentResult.callToAction);
     structuredImageText = imageTextComponents.join(' | ');
-    
+
     console.log('📝 [Revo 1.5 Content-Image Sync] Structured text for image:', {
       headline: contentResult.headline,
       subheadline: contentResult.subheadline,
@@ -2456,7 +3088,7 @@ export async function generateFinalImage(
 
   // Build comprehensive image generation prompt based on the design plan
   let imagePrompt = buildEnhancedImagePrompt(input, designPlan, contentResult, adConcept);
-  
+
   // CRITICAL: Add structured text directly to prompt for better content-image sync
   if (structuredImageText) {
     imagePrompt += `\n\n🎯 STRUCTURED CONTENT FOR IMAGE (MANDATORY):
@@ -2479,7 +3111,7 @@ CRITICAL INSTRUCTION: The image MUST visually represent and include the text con
   // REVO 2.0 STYLE: Lightweight contact integration (proven working approach)
   let contactInstruction = '';
   const includeContacts = (input.brandConsistency as any)?.includeContacts === true;
-  
+
   if (includeContacts === true) {
     const contacts: string[] = [];
 
@@ -2874,11 +3506,11 @@ function generate6DimensionalAdConcept(): AdConcept {
   let selectedSetting, selectedCustomer, selectedVisualStyle, selectedBenefit, selectedTone, selectedFormat;
   let attempts = 0;
   const maxAttempts = 10;
-  
+
   // Add timestamp-based randomization for better variety
   const timeBasedSeed = Date.now() % 1000;
   Math.random(); // Warm up random
-  
+
   do {
     // Use timestamp-influenced randomization for better variety
     selectedSetting = settings[Math.floor((Math.random() + timeBasedSeed / 1000) % 1 * settings.length)];
@@ -2887,16 +3519,16 @@ function generate6DimensionalAdConcept(): AdConcept {
     selectedBenefit = benefits[Math.floor((Math.random() + timeBasedSeed / 4000) % 1 * benefits.length)];
     selectedTone = emotionalTones[Math.floor((Math.random() + timeBasedSeed / 5000) % 1 * emotionalTones.length)];
     selectedFormat = formats[Math.floor((Math.random() + timeBasedSeed / 6000) % 1 * formats.length)];
-    
+
     attempts++;
-    
+
     // Check if this combination is too similar to recent concepts
-    const isTooSimilar = recentConcepts.some(recent => 
+    const isTooSimilar = recentConcepts.some(recent =>
       recent.setting.category === selectedSetting.category &&
       recent.customer.type === selectedCustomer.type &&
       recent.visualStyle.style === selectedVisualStyle.style
     );
-    
+
     // If not too similar or we've tried enough times, accept it
     if (!isTooSimilar || attempts >= maxAttempts) {
       break;
@@ -3068,7 +3700,7 @@ function buildEnhancedImagePrompt(
   adConcept?: AdConcept
 ): string {
   console.log('🎨 [Revo 1.5] buildEnhancedImagePrompt called with includePeopleInDesigns:', input.includePeopleInDesigns);
-  
+
   // REVO 1.0 STYLE: Map brandColors to direct properties (ensuring compatibility)
   const profile = input.brandProfile as any;
   if (profile.brandColors && !profile.primaryColor) {
@@ -3076,15 +3708,15 @@ function buildEnhancedImagePrompt(
     profile.accentColor = profile.brandColors.secondary || profile.brandColors.accent;
     profile.backgroundColor = profile.brandColors.background || '#FFFFFF';
   }
-  
+
   // 🎨 ENHANCED BRAND COLORS VALIDATION AND DEBUGGING WITH TOGGLE SUPPORT
   const shouldFollowBrandColors = input.brandConsistency?.followBrandColors !== false; // Default to true if not specified
 
   // REVO 1.0 STYLE: Exact color handling logic (copied from Revo 1.0)
   const isStrictMode = input.brandConsistency?.followBrandColors === true; // Explicit strict mode
-  
+
   let primaryColor, accentColor, backgroundColor;
-  
+
   if (isStrictMode) {
     // STRICT MODE: Only use provided colors, no fallbacks
     primaryColor = input.brandProfile.primaryColor; // Could be undefined - that's intentional
@@ -3103,7 +3735,7 @@ function buildEnhancedImagePrompt(
   }
 
   const brandColors = [primaryColor, accentColor, backgroundColor].filter(Boolean);
-  
+
   // REVO 1.0 STYLE: Color scheme definition (copied from Revo 1.0)
   const colorScheme = `Primary: ${primaryColor} (60% dominant), Accent: ${accentColor} (30% secondary), Background: ${backgroundColor} (10% highlights)`;
 
