@@ -1,6 +1,7 @@
 /**
  * Revo 2.0 Service - Next-Generation AI Content Creation
  * Uses direct Vertex AI for enhanced content generation
+ * Now supports Multi-Assistant Architecture for specialized content generation
  */
 
 import type { BrandProfile, Platform } from '@/lib/types';
@@ -14,6 +15,9 @@ import {
   normalizeStringList,
   getBrandKey
 } from './revo/shared-pipeline';
+import { generateBusinessTypePromptInstructions, getBusinessTypeStrategy } from './prompts/business-type-strategies';
+import { assistantManager } from './assistants';
+import { detectBusinessType } from './adaptive/business-type-detector';
 
 type VertexGenerationOptions = {
   temperature?: number;
@@ -522,11 +526,20 @@ function validateStoryCoherence(
     coherenceScore -= genericityCheck.penalty;
   }
 
-  // ADJUSTED: More lenient coherence requirements to reduce fallback usage
-  // Allow content with minor issues if coherence score is decent
-  const isCoherent = coherenceScore >= 45 && (issues.length === 0 || coherenceScore >= 60);
+  // STRICT COHERENCE REQUIREMENTS: Story must be cohesive
+  // isCoherent = true only if:
+  // 1. Score is at least 60 (good coherence), OR
+  // 2. Score is at least 45 AND no major story mismatches (max 1 minor issue)
+  const hasMajorStoryMismatch = issues.some(issue =>
+    issue.includes('STORY MISMATCH') ||
+    issue.includes('UNFULFILLED PROMISE') ||
+    issue.includes('Headline asks question but caption')
+  );
 
-  console.log(`🔍 [Revo 2.0 COHERENCE DECISION] Score: ${coherenceScore}, Issues: ${issues.length}, IsCoherent: ${isCoherent}`);
+  const isCoherent = coherenceScore >= 60 ||
+    (coherenceScore >= 45 && !hasMajorStoryMismatch && issues.length <= 1);
+
+  console.log(`🔍 [Revo 2.0 COHERENCE DECISION] Score: ${coherenceScore}, Issues: ${issues.length}, MajorMismatch: ${hasMajorStoryMismatch}, IsCoherent: ${isCoherent}`);
 
   return {
     isCoherent,
@@ -1284,7 +1297,8 @@ export async function generateCreativeConcept(options: Revo20GenerationOptions):
     Return a brief creative concept (2-3 sentences) that will guide unique visual design.`;
 
     // Add randomization to temperature for more variety
-    const temperature = 0.8 + (Math.random() * 0.3); // 0.8-1.1 range
+    // Claude API requires temperature 0-1, so cap at 1.0
+    const temperature = 0.8 + (Math.random() * 0.2); // 0.8-1.0 range (safe for Claude)
     console.log(`🎲 [Revo 2.0] Using temperature: ${temperature.toFixed(2)} for concept variety`);
 
     const result = await generateContentWithProxy(conceptPrompt, REVO_2_0_MODEL, false);
@@ -1418,6 +1432,30 @@ export function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: a
   // Determine specific visual context based on business type and concept
   const visualContext = getVisualContextForBusiness(businessType, concept.concept);
 
+  // Get business-type specific visual guidance
+  const businessTypeStrategy = getBusinessTypeStrategy(businessType);
+  let businessTypeVisualGuidance = '';
+  if (businessTypeStrategy) {
+    businessTypeVisualGuidance = `\n\n🎯 INDUSTRY-SPECIFIC VISUAL GUIDANCE FOR ${businessType.toUpperCase()}:\n${businessTypeStrategy.visualGuidance}\n\n📸 VISUAL FOCUS:\n${businessTypeStrategy.contentFocus}`;
+
+    // Add product-specific visual guidance for retail/e-commerce
+    const productCatalog = (brandProfile as any).productCatalog;
+    if (businessTypeStrategy.productDataUsage && productCatalog && Array.isArray(productCatalog) && productCatalog.length > 0) {
+      const randomProduct = productCatalog[Math.floor(Math.random() * Math.min(5, productCatalog.length))];
+      businessTypeVisualGuidance += `\n\n🛍️ PRODUCT-FOCUSED VISUAL (Use this specific product):\n- Product: ${randomProduct.name}`;
+      if (randomProduct.features && randomProduct.features.length > 0) {
+        businessTypeVisualGuidance += `\n- Key Features to Show: ${randomProduct.features.slice(0, 2).join(', ')}`;
+      }
+      if (randomProduct.price) {
+        businessTypeVisualGuidance += `\n- Price to Display: ${randomProduct.price}`;
+      }
+      if (randomProduct.discount) {
+        businessTypeVisualGuidance += `\n- Discount Badge: ${randomProduct.discount}`;
+      }
+      businessTypeVisualGuidance += `\n- Visual Style: Show this product in use or lifestyle context, not just product shot`;
+    }
+  }
+
   // Build scheduled services context for visual design
   let serviceVisualContext = '';
   if (concept.featuredServices && concept.featuredServices.length > 0) {
@@ -1511,7 +1549,7 @@ export function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: a
 
 CREATIVE CONCEPT: ${concept.concept}
 
-🎯 VISUAL CONTEXT REQUIREMENT: ${visualContext}${serviceVisualContext}
+🎯 VISUAL CONTEXT REQUIREMENT: ${visualContext}${serviceVisualContext}${businessTypeVisualGuidance}
 
 🎯 STRONG FLEXIBLE TEMPLATE STRUCTURE (MANDATORY):
 1. NEUTRAL BACKGROUND: White or soft gradient (never busy patterns)
@@ -1828,6 +1866,38 @@ The client specifically requested their brand logo to be included. FAILURE TO IN
 }
 
 /**
+ * Feature flag system for gradual assistant rollout
+ * Controls what percentage of traffic uses assistants vs adaptive framework
+ */
+function shouldUseAssistant(businessType: string): boolean {
+  // Get rollout percentage from environment (0-100)
+  const rolloutPercentages: Record<string, number> = {
+    retail: parseFloat(process.env.ASSISTANT_ROLLOUT_RETAIL || '0'),
+    finance: parseFloat(process.env.ASSISTANT_ROLLOUT_FINANCE || '0'),
+    service: parseFloat(process.env.ASSISTANT_ROLLOUT_SERVICE || '0'),
+    saas: parseFloat(process.env.ASSISTANT_ROLLOUT_SAAS || '0'),
+    food: parseFloat(process.env.ASSISTANT_ROLLOUT_FOOD || '0'),
+    healthcare: parseFloat(process.env.ASSISTANT_ROLLOUT_HEALTHCARE || '0'),
+    realestate: parseFloat(process.env.ASSISTANT_ROLLOUT_REALESTATE || '0'),
+    education: parseFloat(process.env.ASSISTANT_ROLLOUT_EDUCATION || '0'),
+    b2b: parseFloat(process.env.ASSISTANT_ROLLOUT_B2B || '0'),
+    nonprofit: parseFloat(process.env.ASSISTANT_ROLLOUT_NONPROFIT || '0'),
+  };
+
+  const percentage = rolloutPercentages[businessType] || 0;
+
+  // Random selection based on percentage
+  const random = Math.random() * 100;
+  const shouldUse = random < percentage;
+
+  if (percentage > 0) {
+    console.log(`🎲 [Revo 2.0] Assistant rollout for ${businessType}: ${percentage}% (random: ${random.toFixed(2)}, use: ${shouldUse})`);
+  }
+
+  return shouldUse;
+}
+
+/**
  * Generate unique caption and hashtags for Revo 2.0 that align with the image
  */
 export async function generateCaptionAndHashtags(
@@ -1845,6 +1915,73 @@ export async function generateCaptionAndHashtags(
   captionVariations?: string[];
 }> {
   const { businessType, brandProfile, platform } = options;
+
+  // ============================================================================
+  // MULTI-ASSISTANT ARCHITECTURE - FEATURE FLAG SYSTEM
+  // ============================================================================
+
+  // Detect business type for assistant selection
+  const detection = detectBusinessType(brandProfile);
+  const detectedType = detection.primaryType;
+
+  // Check if we should use assistant for this business type
+  const useAssistant = shouldUseAssistant(detectedType);
+
+  // Check if fallback is enabled
+  const fallbackEnabled = process.env.ENABLE_ASSISTANT_FALLBACK !== 'false';
+
+  if (useAssistant && assistantManager.isAvailable(detectedType)) {
+    console.log(`🤖 [Revo 2.0] Using Multi-Assistant Architecture for ${detectedType}`);
+    console.log(`🔧 [Revo 2.0] Fallback to adaptive framework: ${fallbackEnabled ? 'ENABLED' : 'DISABLED'}`);
+
+    try {
+      // Get marketing angle for assistant
+      const brandKey = getBrandKey(brandProfile, platform);
+      const assignedAngle = assignMarketingAngle(brandKey, options);
+
+      // Generate content using specialized assistant
+      const assistantResponse = await assistantManager.generateContent({
+        businessType: detectedType,
+        brandProfile: brandProfile,
+        concept: concept,
+        imagePrompt: imagePrompt,
+        platform: platform,
+        marketingAngle: assignedAngle,
+        useLocalLanguage: options.useLocalLanguage,
+      });
+
+      console.log(`✅ [Revo 2.0] Assistant generation successful`);
+
+      return {
+        headline: assistantResponse.headline,
+        subheadline: assistantResponse.subheadline,
+        caption: assistantResponse.caption,
+        cta: assistantResponse.cta,
+        hashtags: assistantResponse.hashtags,
+      };
+
+    } catch (error) {
+      console.error(`❌ [Revo 2.0] Assistant generation failed for ${detectedType}:`, error);
+
+      if (!fallbackEnabled) {
+        // Fallback disabled - throw error to surface the issue
+        console.error(`🚫 [Revo 2.0] Fallback is DISABLED - throwing error for debugging`);
+        throw new Error(`Assistant generation failed for ${detectedType}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+
+      // Fallback enabled - continue to adaptive framework
+      console.warn(`⚠️ [Revo 2.0] Fallback ENABLED - falling back to adaptive framework`);
+      // Fall through to adaptive framework below
+    }
+  } else if (useAssistant && !assistantManager.isAvailable(detectedType)) {
+    console.warn(`⚠️ [Revo 2.0] Assistant for ${detectedType} not available - using adaptive framework`);
+  } else {
+    console.log(`🎯 [Revo 2.0] Using Adaptive Framework for ${detectedType}`);
+  }
+
+  // ============================================================================
+  // ADAPTIVE FRAMEWORK (FALLBACK OR DEFAULT)
+  // ============================================================================
 
   // Determine hashtag count based on platform
   const normalizedPlatform = String(platform).toLowerCase();
@@ -1941,6 +2078,9 @@ ${getLocationSpecificLanguageInstructions(brandProfile.location)}
 ⚠️ CRITICAL: Local language should enhance, not confuse. Keep it natural and contextual.`;
     }
 
+    // Get business-type specific strategy
+    const businessTypeInstructions = generateBusinessTypePromptInstructions(businessType, brandProfile);
+
     const contentPrompt = `Create engaging social media content for ${brandProfile.businessName} (${businessType}) on ${platform}.
 
 🎯 BUSINESS CONTEXT:
@@ -1949,6 +2089,7 @@ ${getLocationSpecificLanguageInstructions(brandProfile.location)}
 - Location: ${brandProfile.location || 'Global'}
 - Platform: ${platform}
 - Content Approach: ${selectedApproach} (use this strategic angle)${localLanguageInstructions}
+${businessTypeInstructions}
 
 ${assignedAngle ? `
 🎯 UNIVERSAL MULTI-ANGLE MARKETING FRAMEWORK - ASSIGNED ANGLE:
@@ -2365,7 +2506,7 @@ Format as JSON:
           }
 
           // ============================================================================
-          // SMART FALLBACK PREVENTION SYSTEM (Ported from Revo 1.0)
+          // ENHANCED VALIDATION SYSTEM - Story Coherence First
           // ============================================================================
 
           // Basic validation (must pass)
@@ -2377,41 +2518,43 @@ Format as JSON:
           const qualityValidation = !headlineTooSimilar && !captionTooSimilar &&
             !headlineIsGeneric && !captionTooGeneric;
 
-          // Advanced validation (most lenient)
-          const advancedValidation = coherenceValidation.coherenceScore >= 35; // Lowered threshold
+          // Coherence validation - STRICT: Must tell one cohesive story
+          // Use the isCoherent flag from validation, not just score
+          const coherenceValidation_passes = coherenceValidation.isCoherent && coherenceValidation.coherenceScore >= 60;
+          const coherenceValidation_acceptable = coherenceValidation.coherenceScore >= 45 && coherenceValidation.issues.length <= 2;
 
-          // Smart validation logic: prefer AI content over fallback
+          // Smart validation logic: Quality over avoiding fallback
           let passesValidation = false;
           let validationLevel = 'FAILED';
 
-          if (basicValidation && qualityValidation && advancedValidation) {
+          if (basicValidation && qualityValidation && coherenceValidation_passes) {
+            // EXCELLENT: All validations pass with strong coherence
             passesValidation = true;
             validationLevel = 'EXCELLENT';
-          } else if (basicValidation && qualityValidation) {
+          } else if (basicValidation && qualityValidation && coherenceValidation_acceptable) {
+            // GOOD: Minor coherence issues but overall quality is good
             passesValidation = true;
             validationLevel = 'GOOD';
-            console.log(`⚠️ [Revo 2.0 SMART VALIDATION] Accepting content with minor advanced validation issues to avoid fallback`);
-          } else if (basicValidation && advancedValidation) {
+            console.log(`⚠️ [Revo 2.0] Accepting content with minor coherence issues (score: ${coherenceValidation.coherenceScore})`);
+          } else if (basicValidation && coherenceValidation_passes) {
+            // ACCEPTABLE: Strong coherence but some quality issues
             passesValidation = true;
             validationLevel = 'ACCEPTABLE';
-            console.log(`⚠️ [Revo 2.0 SMART VALIDATION] Accepting content with minor quality issues to avoid fallback`);
-          } else if (basicValidation) {
-            // Last chance: if basic validation passes, check if it's better than fallback
-            const hasReasonableCoherence = coherenceValidation.coherenceScore >= 25;
-            if (hasReasonableCoherence) {
-              passesValidation = true;
-              validationLevel = 'MINIMAL';
-              console.log(`⚠️ [Revo 2.0 SMART VALIDATION] Accepting minimal quality content to avoid template fallback`);
-            }
+            console.log(`⚠️ [Revo 2.0] Accepting content with quality issues but strong coherence (score: ${coherenceValidation.coherenceScore})`);
+          } else {
+            // FAILED: Does not meet minimum standards - retry
+            passesValidation = false;
+            validationLevel = 'FAILED';
+            console.log(`❌ [Revo 2.0] Content failed validation - coherence score: ${coherenceValidation.coherenceScore}, isCoherent: ${coherenceValidation.isCoherent}`);
           }
 
           console.log(`🎯 [Revo 2.0 VALIDATION RESULT] Level: ${validationLevel}, Passes: ${passesValidation}`);
 
           if (!passesValidation) {
-            const reasons = [];
+            const reasons: string[] = [];
             if (!basicValidation) reasons.push('basic validation failed');
             if (!qualityValidation) reasons.push('quality validation failed');
-            if (!advancedValidation) reasons.push('coherence validation failed');
+            if (!coherenceValidation_passes && !coherenceValidation_acceptable) reasons.push('coherence validation failed');
 
             console.log(`🚫 [Revo 2.0] Attempt ${attempt}/${maxRetries} - Validation failed - Reasons: ${reasons.join(', ')}`);
 
@@ -2534,12 +2677,15 @@ export function generateUniqueFallbackContent(brandProfile: any, businessType: s
   const fallbackKey = getBrandKey(brandProfile, platform);
   rememberOutput(fallbackKey, { headline, caption: selectedCaption });
 
+  // Generate business-type specific CTA
+  const fallbackCTA = generateUniqueCTA(selectedTheme, businessType);
+
   return {
     caption: sanitizeGeneratedCopy(selectedCaption, brandProfile, businessType) as string,
     hashtags,
     headline: sanitizeGeneratedCopy(headline, brandProfile, businessType),
     subheadline: sanitizeGeneratedCopy(subheadline, brandProfile, businessType),
-    cta: sanitizeGeneratedCopy(todayService ? 'Learn More' : 'Get Started', brandProfile, businessType),
+    cta: sanitizeGeneratedCopy(fallbackCTA, brandProfile, businessType),
     captionVariations: [sanitizeGeneratedCopy(selectedCaption, brandProfile, businessType) as string]
   };
 }
@@ -3100,9 +3246,24 @@ function generateUniqueSubheadline(brandProfile: any, businessType: string, them
 }
 
 /**
- * Generate unique CTAs based on theme
+ * Generate unique CTAs based on theme and business type
  */
-function generateUniqueCTA(theme: string): string {
+function generateUniqueCTA(theme: string, businessType?: string): string {
+  // Check for business-type specific CTA first
+  if (businessType) {
+    const strategy = getBusinessTypeStrategy(businessType);
+    if (strategy) {
+      // Extract CTAs from the strategy's CTA style
+      const ctaExamples = strategy.ctaStyle.match(/"([^"]+)"/g);
+      if (ctaExamples && ctaExamples.length > 0) {
+        const cleanedCTAs = ctaExamples.map(cta => cta.replace(/"/g, ''));
+        const randomIndex = Math.floor(Math.random() * cleanedCTAs.length);
+        return cleanedCTAs[randomIndex];
+      }
+    }
+  }
+
+  // Fallback to theme-based CTAs
   const ctas = {
     'innovation-focused': ['Explore Now', 'Discover More', 'See Innovation', 'Try Today'],
     'results-driven': ['Get Results', 'Start Now', 'Achieve More', 'See Proof'],

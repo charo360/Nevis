@@ -167,7 +167,24 @@ export async function POST(request: NextRequest) {
         if (text.length > 5) allMatches.push(text);
       });
 
-      return [...new Set(allMatches)]; // Remove duplicates
+      // Filter out example/placeholder phone numbers
+      const examplePhonePatterns = [
+        '555-',  // US example numbers
+        '(555)',
+        '1234 1234 1234',  // Credit card numbers
+        '0000 0000 0000',
+        '9999 9999 9999',
+        '458) 555',  // Apple's example number
+        '555-2863',  // Common example suffix
+      ];
+
+      const filtered = allMatches.filter(phone => {
+        const phoneLower = phone.toLowerCase();
+        // Filter out example patterns
+        return !examplePhonePatterns.some(pattern => phoneLower.includes(pattern.toLowerCase()));
+      });
+
+      return [...new Set(filtered)]; // Remove duplicates
     }
 
     function extractEmailAddresses($: any): string[] {
@@ -248,12 +265,33 @@ export async function POST(request: NextRequest) {
 
       const finalEmails = [...new Set(cleanEmails)]; // Remove duplicates
 
+      // Filter out example/placeholder email addresses
+      const exampleEmailPatterns = [
+        'example.com',
+        'test.com',
+        'demo.com',
+        'sample.com',
+        'placeholder.com',
+        'appleseed',  // Apple's example user
+        'johndoe',
+        'janedoe',
+        'noreply',
+        'no-reply',
+        'donotreply',
+      ];
+
+      const filteredEmails = finalEmails.filter(email => {
+        const emailLower = email.toLowerCase();
+        // Filter out example patterns
+        return !exampleEmailPatterns.some(pattern => emailLower.includes(pattern));
+      });
+
       // Debug logging
-      if (finalEmails.length > 0) {
-        console.log(`🔍 [Scraper] Extracted ${finalEmails.length} email addresses:`, finalEmails);
+      if (filteredEmails.length > 0) {
+        console.log(`🔍 [Scraper] Extracted ${filteredEmails.length} email addresses:`, filteredEmails);
       }
 
-      return finalEmails;
+      return filteredEmails;
     }
 
     function extractSocialMediaLinks($: any): { [key: string]: string[] } {
