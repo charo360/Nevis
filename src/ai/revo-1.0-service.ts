@@ -2339,6 +2339,12 @@ function validateContentQuality_Enhanced(
  * Check if we should use assistant for this business type (Revo 1.0)
  */
 function shouldUseAssistant(businessType: string): boolean {
+  // Safety check: ensure businessType is a valid string
+  if (!businessType || typeof businessType !== 'string') {
+    console.warn(`⚠️ [Revo 1.0] Invalid businessType for assistant check:`, businessType);
+    return false;
+  }
+
   const envVar = `ASSISTANT_ROLLOUT_${businessType.toUpperCase()}`;
   const percentage = parseInt(process.env[envVar] || '0', 10);
   const random = Math.random() * 100;
@@ -2419,6 +2425,8 @@ export async function generateRevo10Content(input: {
 
     // Multi-Assistant Architecture Integration
     const detectedType = detectBusinessType(options.brandProfile);
+    console.log(`🔍 [Revo 1.0] Detected business type: ${detectedType}`);
+
     const useAssistant = shouldUseAssistant(detectedType);
     const assistantManager = AssistantManager.getInstance();
     const fallbackEnabled = process.env.ENABLE_ASSISTANT_FALLBACK !== 'false';
