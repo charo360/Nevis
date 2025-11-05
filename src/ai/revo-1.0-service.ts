@@ -14,6 +14,9 @@ import { performanceAnalyzer } from './content-performance-analyzer';
 import { trendingEnhancer } from './trending-content-enhancer';
 import { ContentQualityEnhancer } from '@/utils/content-quality-enhancer';
 import { BUSINESS_TYPE_DESIGN_DNA } from '@/ai/prompts/advanced-design-prompts';
+// Multi-Assistant Architecture imports
+import { AssistantManager } from './assistants/assistant-manager';
+import { detectBusinessType } from './adaptive/business-type-detector';
 import {
   generateCreativeHeadline,
   generateCreativeSubheadline,
@@ -2331,8 +2334,20 @@ function validateContentQuality_Enhanced(
     score: Math.max(score, 0)
   };
 }
+
+/**
+ * Check if we should use assistant for this business type (Revo 1.0)
+ */
+function shouldUseAssistant(businessType: string): boolean {
+  const envVar = `ASSISTANT_ROLLOUT_${businessType.toUpperCase()}`;
+  const percentage = parseInt(process.env[envVar] || '0', 10);
+  const random = Math.random() * 100;
+  return random < percentage;
+}
+
 /**
  * Generate content using Revo 1.0 with Gemini (following Revo 2.0 architecture)
+ * Now with Multi-Assistant Architecture support
  */
 export async function generateRevo10Content(input: {
   businessType: string;
@@ -2401,6 +2416,65 @@ export async function generateRevo10Content(input: {
 
     // TASK 21: Log brand profile data usage for analytics
     const usageLog = logBrandProfileUsage(options.brandProfile, 'content', input.platform);
+
+    // Multi-Assistant Architecture Integration
+    const detectedType = detectBusinessType(options.brandProfile);
+    const useAssistant = shouldUseAssistant(detectedType);
+    const assistantManager = AssistantManager.getInstance();
+    const fallbackEnabled = process.env.ENABLE_ASSISTANT_FALLBACK !== 'false';
+
+    if (useAssistant && assistantManager.isAvailable(detectedType)) {
+      console.log(`🤖 [Revo 1.0] Using Multi-Assistant Architecture for ${detectedType}`);
+      console.log(`🔧 [Revo 1.0] Fallback to standard generation: ${fallbackEnabled ? 'ENABLED' : 'DISABLED'}`);
+
+      try {
+        // Generate content using specialized assistant
+        const assistantResponse = await assistantManager.generateContent({
+          businessType: detectedType,
+          brandProfile: options.brandProfile,
+          platform: input.platform,
+          visualStyle: options.visualStyle,
+          scheduledServices: options.scheduledServices,
+          useLocalLanguage: options.useLocalLanguage,
+          includePeopleInDesigns: options.includePeopleInDesigns
+        });
+
+        console.log(`✅ [Revo 1.0] Assistant generation successful`);
+
+        // Return assistant-generated content
+        const processingTime = Date.now() - startTime;
+        return {
+          content: assistantResponse.caption,
+          headline: assistantResponse.headline,
+          subheadline: assistantResponse.subheadline || '',
+          callToAction: assistantResponse.cta,
+          hashtags: Array.isArray(assistantResponse.hashtags)
+            ? assistantResponse.hashtags.join(' ')
+            : assistantResponse.hashtags,
+          catchyWords: assistantResponse.headline,
+          contentStrategy: 'assistant-generated',
+          businessStrengths: ['Specialized content'],
+          marketOpportunities: ['AI-optimized'],
+          valueProposition: 'Assistant-powered content',
+          platform: input.platform,
+          businessType: detectedType,
+          location: input.location,
+          processingTime,
+          model: 'Revo 1.0 + OpenAI Assistant',
+          qualityScore: 9.0
+        };
+
+      } catch (error) {
+        console.error(`❌ [Revo 1.0] Assistant generation failed for ${detectedType}:`, error);
+
+        if (!fallbackEnabled) {
+          console.error(`🚫 [Revo 1.0] Fallback is DISABLED - throwing error for debugging`);
+          throw new Error(`Assistant generation failed for ${detectedType}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+
+        console.warn(`⚠️ [Revo 1.0] Fallback ENABLED - falling back to standard Gemini generation`);
+      }
+    }
 
     // Step 1: Generate creative concept (using Revo 2.0 logic)
     const concept = await generateRevo10CreativeConcept(options);
