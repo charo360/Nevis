@@ -105,7 +105,7 @@ export class OpenRouterClient {
   /**
    * Call OpenRouter API with specific model
    */
-  private async callOpenRouterAPI(model: string, prompt: string): Promise<string> {
+  async callOpenRouterAPI(model: string, prompt: string): Promise<string> {
     const request: OpenRouterRequest = {
       model: model,
       messages: [
