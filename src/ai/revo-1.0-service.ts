@@ -2424,64 +2424,76 @@ export async function generateRevo10Content(input: {
     const usageLog = logBrandProfileUsage(options.brandProfile, 'content', input.platform);
 
     // Multi-Assistant Architecture Integration
-    const detectedType = detectBusinessType(options.brandProfile);
+    const detectionResult = detectBusinessType(options.brandProfile);
+    const detectedType = typeof detectionResult === 'string' ? detectionResult : detectionResult.primaryType;
     console.log(`🔍 [Revo 1.0] Detected business type: ${detectedType}`);
 
     const useAssistant = shouldUseAssistant(detectedType);
-    const assistantManager = AssistantManager.getInstance();
-    const fallbackEnabled = process.env.ENABLE_ASSISTANT_FALLBACK !== 'false';
 
-    if (useAssistant && assistantManager.isAvailable(detectedType)) {
-      console.log(`🤖 [Revo 1.0] Using Multi-Assistant Architecture for ${detectedType}`);
-      console.log(`🔧 [Revo 1.0] Fallback to standard generation: ${fallbackEnabled ? 'ENABLED' : 'DISABLED'}`);
+    // Skip assistant integration for now - will be enabled after testing
+    const skipAssistant = true;
 
-      try {
-        // Generate content using specialized assistant
-        const assistantResponse = await assistantManager.generateContent({
-          businessType: detectedType,
-          brandProfile: options.brandProfile,
-          platform: input.platform,
-          visualStyle: options.visualStyle,
-          scheduledServices: options.scheduledServices,
-          useLocalLanguage: options.useLocalLanguage,
-          includePeopleInDesigns: options.includePeopleInDesigns
-        });
+    if (!skipAssistant && useAssistant) {
+      console.log(`🤖 [Revo 1.0] Multi-Assistant Architecture would be used for ${detectedType}`);
+      console.log(`⚠️ [Revo 1.0] Assistant integration temporarily disabled - using standard Gemini generation`);
+      // TODO: Enable assistant integration after fixing import issues
+      /*
+      const assistantManager = AssistantManager.getInstance();
+      const fallbackEnabled = process.env.ENABLE_ASSISTANT_FALLBACK !== 'false';
 
-        console.log(`✅ [Revo 1.0] Assistant generation successful`);
+      if (assistantManager.isAvailable(detectedType)) {
+        console.log(`🤖 [Revo 1.0] Using Multi-Assistant Architecture for ${detectedType}`);
+        console.log(`🔧 [Revo 1.0] Fallback to standard generation: ${fallbackEnabled ? 'ENABLED' : 'DISABLED'}`);
 
-        // Return assistant-generated content
-        const processingTime = Date.now() - startTime;
-        return {
-          content: assistantResponse.caption,
-          headline: assistantResponse.headline,
-          subheadline: assistantResponse.subheadline || '',
-          callToAction: assistantResponse.cta,
-          hashtags: Array.isArray(assistantResponse.hashtags)
-            ? assistantResponse.hashtags.join(' ')
-            : assistantResponse.hashtags,
-          catchyWords: assistantResponse.headline,
-          contentStrategy: 'assistant-generated',
-          businessStrengths: ['Specialized content'],
-          marketOpportunities: ['AI-optimized'],
-          valueProposition: 'Assistant-powered content',
-          platform: input.platform,
-          businessType: detectedType,
-          location: input.location,
-          processingTime,
-          model: 'Revo 1.0 + OpenAI Assistant',
-          qualityScore: 9.0
-        };
+        try {
+          // Generate content using specialized assistant
+          const assistantResponse = await assistantManager.generateContent({
+            businessType: detectedType,
+            brandProfile: options.brandProfile,
+            platform: input.platform,
+            visualStyle: options.visualStyle,
+            scheduledServices: options.scheduledServices,
+            useLocalLanguage: options.useLocalLanguage,
+            includePeopleInDesigns: options.includePeopleInDesigns
+          });
 
-      } catch (error) {
-        console.error(`❌ [Revo 1.0] Assistant generation failed for ${detectedType}:`, error);
+          console.log(`✅ [Revo 1.0] Assistant generation successful`);
 
-        if (!fallbackEnabled) {
-          console.error(`🚫 [Revo 1.0] Fallback is DISABLED - throwing error for debugging`);
-          throw new Error(`Assistant generation failed for ${detectedType}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          // Return assistant-generated content
+          const processingTime = Date.now() - startTime;
+          return {
+            content: assistantResponse.caption,
+            headline: assistantResponse.headline,
+            subheadline: assistantResponse.subheadline || '',
+            callToAction: assistantResponse.cta,
+            hashtags: Array.isArray(assistantResponse.hashtags)
+              ? assistantResponse.hashtags.join(' ')
+              : assistantResponse.hashtags,
+            catchyWords: assistantResponse.headline,
+            contentStrategy: 'assistant-generated',
+            businessStrengths: ['Specialized content'],
+            marketOpportunities: ['AI-optimized'],
+            valueProposition: 'Assistant-powered content',
+            platform: input.platform,
+            businessType: detectedType,
+            location: input.location,
+            processingTime,
+            model: 'Revo 1.0 + OpenAI Assistant',
+            qualityScore: 9.0
+          };
+
+        } catch (error) {
+          console.error(`❌ [Revo 1.0] Assistant generation failed for ${detectedType}:`, error);
+
+          if (!fallbackEnabled) {
+            console.error(`🚫 [Revo 1.0] Fallback is DISABLED - throwing error for debugging`);
+            throw new Error(`Assistant generation failed for ${detectedType}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          }
+
+          console.warn(`⚠️ [Revo 1.0] Fallback ENABLED - falling back to standard Gemini generation`);
         }
-
-        console.warn(`⚠️ [Revo 1.0] Fallback ENABLED - falling back to standard Gemini generation`);
       }
+      */
     }
 
     // Step 1: Generate creative concept (using Revo 2.0 logic)
@@ -4072,7 +4084,7 @@ async function generateRevo10ContentWithGemini(options: any, concept: any): Prom
               logCorrections: true,
               validateQuality: true
             });
-
+ 
             // Update content with spell-checked versions
             finalResult = {
               caption: spellCheckedContent.caption || parsed.caption,
@@ -4081,7 +4093,7 @@ async function generateRevo10ContentWithGemini(options: any, concept: any): Prom
               cta: spellCheckedContent.callToAction || parsed.cta,
               hashtags: parsed.hashtags
             };
-
+ 
             console.log('🔤 [Revo 1.0] Applied spell checking and quality enhancement');
           } catch (spellError) {
             console.warn('⚠️ [Revo 1.0] Spell check failed, using original content:', spellError);
