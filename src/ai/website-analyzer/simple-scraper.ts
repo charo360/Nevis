@@ -13,7 +13,7 @@ export interface ComprehensiveAnalysis {
     language: string;
     favicon: string;
   };
-  
+
   // Business Intelligence
   businessIntel: {
     businessType: string;
@@ -36,7 +36,7 @@ export interface ComprehensiveAnalysis {
       url: string;
     }>;
   };
-  
+
   // Media Assets
   mediaAssets: {
     images: Array<{
@@ -46,7 +46,7 @@ export interface ComprehensiveAnalysis {
     }>;
     logos: string[];
   };
-  
+
   // Technical Analysis
   technicalAnalysis: {
     technologies: string[];
@@ -70,7 +70,7 @@ export interface ComprehensiveAnalysis {
       keyboardNavigation: boolean;
     };
   };
-  
+
   // Competitive Intelligence
   competitiveIntel: {
     uniqueSellingPoints: string[];
@@ -83,7 +83,7 @@ export interface ComprehensiveAnalysis {
 export class SimplifiedWebsiteScraper {
   async analyzeWebsiteComprehensively(url: string): Promise<ComprehensiveAnalysis> {
     console.log(`🔍 Starting simplified analysis of: ${url}`);
-    
+
     try {
       // Basic fetch to get HTML content
       const response = await fetch(url, {
@@ -91,55 +91,104 @@ export class SimplifiedWebsiteScraper {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      
+
       const html = await response.text();
       const analysis = this.parseHTMLContent(html, url);
-      
+
       console.log(`✅ Simplified analysis complete for: ${url}`);
       return analysis;
-      
+
     } catch (error) {
       console.warn(`⚠️ Simplified scraping failed for ${url}:`, error);
       return this.createFallbackAnalysis(url);
     }
   }
-  
+
   private parseHTMLContent(html: string, url: string): ComprehensiveAnalysis {
     // Extract title
     const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
     const title = titleMatch ? titleMatch[1].trim() : 'Website';
-    
-    // Extract meta description
+
+    // Extract meta description with better fallback
     const descMatch = html.match(/<meta[^>]*name=["\']description["\'][^>]*content=["\']([^"']+)["\'][^>]*>/i);
-    const description = descMatch ? descMatch[1].trim() : 'Professional services website';
-    
+    let description = descMatch ? descMatch[1].trim() : '';
+
+    // If no meta description, try to extract from first paragraph or heading
+    if (!description) {
+      const firstParagraph = html.match(/<p[^>]*>([^<]{50,300})<\/p>/i);
+      if (firstParagraph) {
+        description = firstParagraph[1].trim().replace(/<[^>]*>/g, '');
+      } else {
+        // Last resort: use title as description
+        description = `${title} - Business website`;
+      }
+    }
+
     // Extract keywords
     const keywordsMatch = html.match(/<meta[^>]*name=["\']keywords["\'][^>]*content=["\']([^"']+)["\'][^>]*>/i);
     const keywords = keywordsMatch ? keywordsMatch[1].split(',').map(k => k.trim()) : [];
-    
-    // Extract phone numbers
-    const phoneRegex = /(\+?[\d\s\-\(\)]{10,})/g;
+
+    // Extract phone numbers (filter out example/placeholder numbers and product IDs)
+    // More specific phone regex to avoid matching product IDs and long digit strings
+    const phoneRegex = /(?:tel:|phone:|call:|contact:)?\s*(\+?\d{1,4}[\s\-\(\)]?\(?\d{1,4}\)?[\s\-]?\d{1,4}[\s\-]?\d{1,9})/gi;
     const phoneMatches = html.match(phoneRegex) || [];
-    const phones = phoneMatches.filter(phone => phone.replace(/\D/g, '').length >= 10).slice(0, 3);
-    
-    // Extract email addresses
+    const examplePhonePatterns = [
+      '555-',  // US example numbers
+      '(555)',
+      '1234 1234 1234',  // Credit card numbers
+      '0000 0000 0000',
+      '9999 9999 9999',
+      '458) 555',  // Apple's example number
+      '555-2863',
+    ];
+    const phones = phoneMatches
+      .map(phone => phone.replace(/^(?:tel:|phone:|call:|contact:)\s*/i, '').trim())
+      .filter(phone => {
+        const cleaned = phone.replace(/\D/g, '');
+        // Must be between 10-15 digits (valid phone number range)
+        if (cleaned.length < 10 || cleaned.length > 15) return false;
+        // Filter out example patterns
+        const phoneStr = phone.toLowerCase();
+        return !examplePhonePatterns.some(pattern => phoneStr.includes(pattern.toLowerCase()));
+      })
+      .slice(0, 3);
+
+    // Extract email addresses (filter out example/placeholder emails)
     const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
     const emailMatches = html.match(emailRegex) || [];
-    const emails = [...new Set(emailMatches)].slice(0, 3);
-    
+    const exampleEmailPatterns = [
+      'example.com',
+      'test.com',
+      'demo.com',
+      'sample.com',
+      'placeholder.com',
+      'appleseed',  // Apple's example user
+      'johndoe',
+      'janedoe',
+      'noreply',
+      'no-reply',
+    ];
+    const emails = [...new Set(emailMatches)]
+      .filter(email => {
+        const emailLower = email.toLowerCase();
+        // Filter out example patterns
+        return !exampleEmailPatterns.some(pattern => emailLower.includes(pattern));
+      })
+      .slice(0, 3);
+
     // Extract images
     const imgRegex = /<img[^>]*src=["\']([^"']+)["\'][^>]*alt=["\']([^"']*)["\'][^>]*>/gi;
-    const images: Array<{url: string; alt: string; type: 'logo' | 'product' | 'banner' | 'other'}> = [];
+    const images: Array<{ url: string; alt: string; type: 'logo' | 'product' | 'banner' | 'other' }> = [];
     let imgMatch;
-    
+
     while ((imgMatch = imgRegex.exec(html)) !== null && images.length < 20) {
       const imgUrl = imgMatch[1];
       const alt = imgMatch[2] || '';
-      
+
       // Determine image type
       let type: 'logo' | 'product' | 'banner' | 'other' = 'other';
       if (alt.toLowerCase().includes('logo') || imgUrl.toLowerCase().includes('logo')) {
@@ -149,49 +198,49 @@ export class SimplifiedWebsiteScraper {
       } else if (alt.toLowerCase().includes('banner') || imgUrl.toLowerCase().includes('banner')) {
         type = 'banner';
       }
-      
+
       images.push({
         url: imgUrl.startsWith('http') ? imgUrl : new URL(imgUrl, url).href,
         alt,
         type
       });
     }
-    
+
     // Extract services/products from common patterns
     const services: string[] = [];
-    const products: Array<{name: string; price?: string; category?: string}> = [];
-    
+    const products: Array<{ name: string; price?: string; category?: string }> = [];
+
     // Look for price patterns
     const priceRegex = /[\$£€¥₹]\s*[\d,]+(?:\.\d{2})?/g;
     const priceMatches = html.match(priceRegex) || [];
-    
+
     // Enhanced product detection
     const productKeywords = ['product', 'item', 'model', 'phone', 'laptop', 'computer', 'device', 'electronics'];
     const productRegex = new RegExp(`(${productKeywords.join('|')})\\s+[^<>]{5,50}`, 'gi');
     const productMatches = html.match(productRegex) || [];
-    
+
     // Extract products with prices
     productMatches.forEach((match, index) => {
       if (products.length < 20) {
         const productName = match.trim().replace(/<[^>]*>/g, '');
         const nearbyPrice = priceMatches[index] || priceMatches[Math.floor(Math.random() * priceMatches.length)];
-        
+
         products.push({
           name: productName,
           price: nearbyPrice,
-          category: productKeywords.find(keyword => 
+          category: productKeywords.find(keyword =>
             productName.toLowerCase().includes(keyword)
           ) || 'Electronics'
         });
       }
     });
-    
+
     // If no products found with keywords, try to extract from titles/headings with prices
     if (products.length === 0 && priceMatches.length > 0) {
       const titleRegex = /<(?:h[1-6]|title|strong|b)[^>]*>([^<]{10,80})<\/(?:h[1-6]|title|strong|b)>/gi;
       let titleMatch;
       let productIndex = 0;
-      
+
       while ((titleMatch = titleRegex.exec(html)) !== null && products.length < 10 && productIndex < priceMatches.length) {
         const title = titleMatch[1].trim().replace(/[^\w\s-]/g, '');
         if (title.length > 5 && title.length < 80) {
@@ -204,36 +253,86 @@ export class SimplifiedWebsiteScraper {
         }
       }
     }
-    
-    // Extract headings for services
-    const headingRegex = /<h[1-6][^>]*>([^<]+)<\/h[1-6]>/gi;
+
+    // Extract services from specific service-related sections (not all headings)
+    // Look for sections that explicitly mention services, products, offerings
+    const serviceKeywords = ['service', 'product', 'offering', 'solution', 'package', 'plan', 'feature'];
+    const headingRegex = /<h[2-4][^>]*>([^<]+)<\/h[2-4]>/gi;
     let headingMatch;
-    while ((headingMatch = headingRegex.exec(html)) !== null && services.length < 10) {
+
+    // First pass: only extract headings that are near service keywords
+    const potentialServices: string[] = [];
+    while ((headingMatch = headingRegex.exec(html)) !== null) {
       const heading = headingMatch[1].trim();
-      if (heading.length > 3 && heading.length < 100 && !heading.toLowerCase().includes('menu') && !heading.toLowerCase().includes('navigation')) {
-        services.push(heading);
+      const headingIndex = headingMatch.index;
+
+      // Get surrounding context (500 chars before and after)
+      const contextStart = Math.max(0, headingIndex - 500);
+      const contextEnd = Math.min(html.length, headingIndex + 500);
+      const context = html.substring(contextStart, contextEnd).toLowerCase();
+
+      // Check if this heading is in a service-related section
+      const isServiceSection = serviceKeywords.some(keyword => context.includes(keyword));
+
+      // Filter out navigation, testimonials, and other non-service content
+      const excludePatterns = [
+        /menu/i, /navigation/i, /footer/i, /header/i,
+        /testimonial/i, /review/i, /customer/i, /client/i,
+        /about/i, /contact/i, /blog/i, /news/i,
+        /\d+\s*,\s*[A-Z][a-z]+/,  // Matches "Brian M., Nairobi" pattern
+        /^[A-Z][a-z]+\s+[A-Z]\.,/  // Matches "Name I., City" pattern
+      ];
+
+      const shouldExclude = excludePatterns.some(pattern => pattern.test(heading));
+
+      if (isServiceSection && !shouldExclude && heading.length > 5 && heading.length < 100) {
+        potentialServices.push(heading);
       }
     }
-    
-    // Determine business type from content
+
+    // Limit to top 10 services
+    services.push(...potentialServices.slice(0, 10));
+
+    // Determine business type from content with better logic
     const htmlLower = html.toLowerCase();
+    const titleLower = title.toLowerCase();
     let businessType = 'General Business';
     let industry = 'General';
-    
-    if (htmlLower.includes('restaurant') || htmlLower.includes('food') || htmlLower.includes('menu')) {
+
+    // Check title and meta description first (more reliable than body content)
+    const combinedText = `${titleLower} ${description.toLowerCase()}`;
+
+    // Electronics/Tech store detection
+    if (combinedText.includes('electronic') || combinedText.includes('gadget') ||
+      (htmlLower.includes('phone') && htmlLower.includes('laptop') && htmlLower.includes('price'))) {
+      businessType = 'Electronics Store';
+      industry = 'Electronics & Technology';
+    }
+    // Restaurant detection (but NOT if it's just navigation menu)
+    else if ((combinedText.includes('restaurant') || combinedText.includes('dining')) &&
+      !combinedText.includes('electronic')) {
       businessType = 'Restaurant';
       industry = 'Food & Beverage';
-    } else if (htmlLower.includes('tech') || htmlLower.includes('software') || htmlLower.includes('app')) {
+    }
+    // Tech company detection
+    else if (combinedText.includes('software') || combinedText.includes('saas') ||
+      combinedText.includes('platform') || combinedText.includes('api')) {
       businessType = 'Technology Company';
       industry = 'Technology';
-    } else if (htmlLower.includes('finance') || htmlLower.includes('bank') || htmlLower.includes('payment')) {
+    }
+    // Financial services detection
+    else if (combinedText.includes('payment') || combinedText.includes('financial') ||
+      combinedText.includes('banking') || combinedText.includes('fintech')) {
       businessType = 'Financial Services';
       industry = 'Financial Technology';
-    } else if (htmlLower.includes('shop') || htmlLower.includes('store') || htmlLower.includes('buy')) {
+    }
+    // E-commerce detection
+    else if ((combinedText.includes('shop') || combinedText.includes('store') ||
+      combinedText.includes('buy online')) && !combinedText.includes('electronic')) {
       businessType = 'E-commerce Store';
       industry = 'Retail';
     }
-    
+
     return {
       basicInfo: {
         url,
@@ -289,11 +388,11 @@ export class SimplifiedWebsiteScraper {
       }
     };
   }
-  
+
   private createFallbackAnalysis(url: string): ComprehensiveAnalysis {
     const domain = new URL(url).hostname.replace('www.', '');
     const businessName = domain.split('.')[0];
-    
+
     return {
       basicInfo: {
         url,
