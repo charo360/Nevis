@@ -10,6 +10,10 @@ import type { ScheduledService } from '@/services/calendar-service';
 import { getVertexAIClient } from '@/lib/services/vertex-ai-client';
 import { ContentQualityEnhancer } from '@/utils/content-quality-enhancer';
 
+// Multi-Assistant Architecture imports
+import { assistantManager } from './assistants';
+import { detectBusinessType } from './adaptive/business-type-detector';
+
 // Import new enhanced systems
 import { MultiStageContentGenerator, type ContentGenerationContext } from './multi-stage-content-generator';
 import { EnhancedPromptBuilder } from './enhanced-prompt-builder';
@@ -4249,6 +4253,29 @@ async function fetchAndConvertLogo(logoUrl: string): Promise<string> {
   }
 }
 
+// ============================================================================
+// MULTI-ASSISTANT ARCHITECTURE HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Check if assistant should be used based on rollout percentage
+ */
+function shouldUseAssistant(businessType: string): boolean {
+  // Safety check: ensure businessType is a valid string
+  if (!businessType || typeof businessType !== 'string') {
+    console.warn(`⚠️ [Revo 1.5] Invalid businessType for assistant check:`, businessType);
+    return false;
+  }
+
+  const envVar = `ASSISTANT_ROLLOUT_${businessType.toUpperCase()}`;
+  const percentage = parseInt(process.env[envVar] || '0', 10);
+  const random = Math.random() * 100;
+
+  console.log(`🎲 [Revo 1.5] Assistant rollout check for ${businessType}: ${percentage}% (rolled: ${random.toFixed(1)})`);
+
+  return random < percentage;
+}
+
 /**
  * Main Revo 1.5 Enhanced Design Generation Function
  */
@@ -4283,6 +4310,117 @@ export async function generateRevo15EnhancedDesign(
 
   try {
     console.log('🚀 [Revo 1.5 Enhanced] Starting enhanced design generation with multi-stage content system');
+
+    // ============================================================================
+    // MULTI-ASSISTANT ARCHITECTURE INTEGRATION
+    // ============================================================================
+
+    // Detect business type from brand profile
+    const detectionResult = detectBusinessType(input.brandProfile);
+    const detectedType = typeof detectionResult === 'string' ? detectionResult : detectionResult.primaryType;
+    console.log(`🔍 [Revo 1.5] Detected business type: ${detectedType}`);
+
+    const useAssistant = shouldUseAssistant(detectedType);
+    const fallbackEnabled = process.env.ENABLE_ASSISTANT_FALLBACK !== 'false';
+
+    if (useAssistant && assistantManager.isAvailable(detectedType)) {
+      console.log(`🤖 [Revo 1.5] Using Multi-Assistant Architecture for ${detectedType}`);
+      console.log(`🔧 [Revo 1.5] Fallback to standard generation: ${fallbackEnabled ? 'ENABLED' : 'DISABLED'}`);
+
+      try {
+        // Generate content using specialized assistant
+        const assistantResponse = await assistantManager.generateContent({
+          businessType: detectedType,
+          brandProfile: input.brandProfile,
+          concept: `${input.visualStyle} design for ${input.platform}`,
+          imagePrompt: input.imageText || '',
+          platform: input.platform,
+          marketingAngle: undefined,
+          useLocalLanguage: input.useLocalLanguage || false,
+        });
+
+        console.log(`✅ [Revo 1.5] Assistant generation successful`);
+
+        // Validate story coherence between headline and caption
+        const coherenceValidation = validateStoryCoherence15(
+          assistantResponse.headline,
+          assistantResponse.caption,
+          detectedType
+        );
+
+        console.log('🔗 [Revo 1.5] Story coherence validation:', coherenceValidation);
+
+        if (coherenceValidation.issues.length > 0) {
+          console.log(`🚨 [Revo 1.5 COHERENCE ISSUES] Found ${coherenceValidation.issues.length} coherence issues:`);
+          coherenceValidation.issues.forEach((issue, index) => {
+            console.log(`   ${index + 1}. ${issue}`);
+          });
+        } else {
+          console.log(`✅ [Revo 1.5 COHERENCE SUCCESS] No coherence issues found`);
+        }
+
+        // Check if coherence is acceptable
+        const coherenceAcceptable = coherenceValidation.isCoherent && coherenceValidation.coherenceScore >= 60;
+
+        if (!coherenceAcceptable) {
+          console.warn(`⚠️ [Revo 1.5] Assistant content has poor coherence (score: ${coherenceValidation.coherenceScore})`);
+
+          if (!fallbackEnabled) {
+            console.error(`🚫 [Revo 1.5] Fallback is DISABLED - throwing error for debugging`);
+            throw new Error(`Assistant content failed coherence validation (score: ${coherenceValidation.coherenceScore})`);
+          }
+
+          console.warn(`⚠️ [Revo 1.5] Falling back to standard generation due to poor coherence`);
+          // Fall through to standard generation
+        } else {
+          console.log(`✅ [Revo 1.5] Assistant content passed coherence validation (score: ${coherenceValidation.coherenceScore})`);
+
+          // Generate image with assistant-generated content
+          const designPlan = await generateDesignPlan(enhancedInput);
+          const adConcept = generate6DimensionalAdConcept();
+
+          const contentResult = {
+            caption: assistantResponse.caption,
+            hashtags: assistantResponse.hashtags,
+            headline: assistantResponse.headline,
+            subheadline: assistantResponse.subheadline || '',
+            callToAction: assistantResponse.cta
+          };
+
+          const imageUrl = await generateFinalImage(enhancedInput, designPlan, contentResult, adConcept);
+
+          const processingTime = Date.now() - startTime;
+
+          return {
+            imageUrl,
+            caption: contentResult.caption,
+            hashtags: contentResult.hashtags,
+            headline: contentResult.headline,
+            subheadline: contentResult.subheadline,
+            callToAction: contentResult.callToAction,
+            designPlan: designPlan.designStrategy || 'Assistant-generated design',
+            enhancementsApplied: [...enhancementsApplied, 'OpenAI Assistant Integration', 'Story Coherence Validation'],
+            processingTime,
+            model: 'Revo 1.5 + OpenAI Assistant',
+            coherenceScore: coherenceValidation.coherenceScore
+          };
+        }
+
+      } catch (error) {
+        console.error(`❌ [Revo 1.5] Assistant generation failed for ${detectedType}:`, error);
+
+        if (!fallbackEnabled) {
+          console.error(`🚫 [Revo 1.5] Fallback is DISABLED - throwing error for debugging`);
+          throw new Error(`Assistant generation failed for ${detectedType}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+
+        console.warn(`⚠️ [Revo 1.5] Fallback ENABLED - falling back to standard generation`);
+      }
+    }
+
+    // ============================================================================
+    // STANDARD GENERATION PATH (Original Revo 1.5 Logic)
+    // ============================================================================
 
     // Step 1: Generate design plan with strategic analysis
     const designPlan = await generateDesignPlan(enhancedInput);
