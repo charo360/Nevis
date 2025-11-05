@@ -2449,28 +2449,64 @@ export async function generateRevo10Content(input: {
 
         console.log(`✅ [Revo 1.0] Assistant generation successful`);
 
-        // Return assistant-generated content
-        const processingTime = Date.now() - startTime;
-        return {
-          content: assistantResponse.caption,
-          headline: assistantResponse.headline,
-          subheadline: assistantResponse.subheadline || '',
-          callToAction: assistantResponse.cta,
-          hashtags: Array.isArray(assistantResponse.hashtags)
-            ? assistantResponse.hashtags.join(' ')
-            : assistantResponse.hashtags,
-          catchyWords: assistantResponse.headline,
-          contentStrategy: 'assistant-generated',
-          businessStrengths: ['Specialized content'],
-          marketOpportunities: ['AI-optimized'],
-          valueProposition: 'Assistant-powered content',
-          platform: input.platform,
-          businessType: detectedType,
-          location: input.location,
-          processingTime,
-          model: 'Revo 1.0 + OpenAI Assistant',
-          qualityScore: 9.0
-        };
+        // Validate story coherence between headline and caption
+        const coherenceValidation = validateStoryCoherence(
+          assistantResponse.headline,
+          assistantResponse.caption,
+          detectedType
+        );
+
+        console.log('🔗 [Revo 1.0] Story coherence validation:', coherenceValidation);
+
+        if (coherenceValidation.issues.length > 0) {
+          console.log(`🚨 [Revo 1.0 COHERENCE ISSUES] Found ${coherenceValidation.issues.length} coherence issues:`);
+          coherenceValidation.issues.forEach((issue, index) => {
+            console.log(`   ${index + 1}. ${issue}`);
+          });
+        } else {
+          console.log(`✅ [Revo 1.0 COHERENCE SUCCESS] No coherence issues found`);
+        }
+
+        // Check if coherence is acceptable
+        const coherenceAcceptable = coherenceValidation.isCoherent && coherenceValidation.coherenceScore >= 60;
+
+        if (!coherenceAcceptable) {
+          console.warn(`⚠️ [Revo 1.0] Assistant content has poor coherence (score: ${coherenceValidation.coherenceScore})`);
+
+          if (!fallbackEnabled) {
+            console.error(`🚫 [Revo 1.0] Fallback is DISABLED - throwing error for debugging`);
+            throw new Error(`Assistant content failed coherence validation (score: ${coherenceValidation.coherenceScore})`);
+          }
+
+          console.warn(`⚠️ [Revo 1.0] Falling back to standard Gemini generation due to poor coherence`);
+          // Fall through to standard generation
+        } else {
+          console.log(`✅ [Revo 1.0] Assistant content passed coherence validation (score: ${coherenceValidation.coherenceScore})`);
+
+          // Return assistant-generated content
+          const processingTime = Date.now() - startTime;
+          return {
+            content: assistantResponse.caption,
+            headline: assistantResponse.headline,
+            subheadline: assistantResponse.subheadline || '',
+            callToAction: assistantResponse.cta,
+            hashtags: Array.isArray(assistantResponse.hashtags)
+              ? assistantResponse.hashtags.join(' ')
+              : assistantResponse.hashtags,
+            catchyWords: assistantResponse.headline,
+            contentStrategy: 'assistant-generated',
+            businessStrengths: ['Specialized content'],
+            marketOpportunities: ['AI-optimized'],
+            valueProposition: 'Assistant-powered content',
+            platform: input.platform,
+            businessType: detectedType,
+            location: input.location,
+            processingTime,
+            model: 'Revo 1.0 + OpenAI Assistant',
+            qualityScore: 9.0,
+            coherenceScore: coherenceValidation.coherenceScore
+          };
+        }
 
       } catch (error) {
         console.error(`❌ [Revo 1.0] Assistant generation failed for ${detectedType}:`, error);
