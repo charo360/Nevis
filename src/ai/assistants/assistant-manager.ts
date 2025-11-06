@@ -243,6 +243,89 @@ export class AssistantManager {
       message += `\n`;
     }
 
+    // Document Data (if available)
+    if (brandProfile.documents && brandProfile.documents.length > 0) {
+      message += `**Business Documents Data:**\n`;
+      message += `The following information has been extracted from uploaded business documents:\n\n`;
+
+      brandProfile.documents.forEach((doc: any) => {
+        if (doc.extractedData) {
+          const data = doc.extractedData;
+
+          // Pricing Information
+          if (data.pricing && data.pricing.length > 0) {
+            message += `**Pricing:**\n`;
+            data.pricing.slice(0, 10).forEach((item: any) => {
+              message += `- ${item.item}: ${item.price}`;
+              if (item.description) message += ` (${item.description})`;
+              if (item.discount) message += ` - ${item.discount}`;
+              message += `\n`;
+            });
+            message += `\n`;
+          }
+
+          // Products
+          if (data.products && data.products.length > 0) {
+            message += `**Products:**\n`;
+            data.products.slice(0, 10).forEach((product: any) => {
+              message += `- ${product.name}`;
+              if (product.description) message += `: ${product.description}`;
+              if (product.features && product.features.length > 0) {
+                message += ` (Features: ${product.features.slice(0, 3).join(', ')})`;
+              }
+              message += `\n`;
+            });
+            message += `\n`;
+          }
+
+          // Services
+          if (data.services && data.services.length > 0) {
+            message += `**Services:**\n`;
+            data.services.slice(0, 10).forEach((service: any) => {
+              message += `- ${service.name}`;
+              if (service.description) message += `: ${service.description}`;
+              if (service.benefits && service.benefits.length > 0) {
+                message += ` (Benefits: ${service.benefits.slice(0, 3).join(', ')})`;
+              }
+              message += `\n`;
+            });
+            message += `\n`;
+          }
+
+          // Value Propositions
+          if (data.valuePropositions && data.valuePropositions.length > 0) {
+            message += `**Value Propositions:**\n`;
+            data.valuePropositions.slice(0, 5).forEach((vp: string) => {
+              message += `- ${vp}\n`;
+            });
+            message += `\n`;
+          }
+
+          // Competitive Advantages
+          if (data.competitiveAdvantages && data.competitiveAdvantages.length > 0) {
+            message += `**Competitive Advantages:**\n`;
+            data.competitiveAdvantages.slice(0, 5).forEach((ca: string) => {
+              message += `- ${ca}\n`;
+            });
+            message += `\n`;
+          }
+
+          // Brand Messaging
+          if (data.brandMessaging) {
+            const bm = data.brandMessaging;
+            if (bm.tagline) message += `**Tagline:** ${bm.tagline}\n`;
+            if (bm.missionStatement) message += `**Mission:** ${bm.missionStatement}\n`;
+            if (bm.keyMessages && bm.keyMessages.length > 0) {
+              message += `**Key Messages:** ${bm.keyMessages.slice(0, 3).join(', ')}\n`;
+            }
+            message += `\n`;
+          }
+        }
+      });
+
+      message += `**IMPORTANT:** Use ONLY the data provided above from business documents. Do not invent or hallucinate any pricing, features, or product/service details not explicitly mentioned.\n\n`;
+    }
+
     // Content Requirements
     message += `Please generate:\n`;
     message += `1. Headline (4-6 words)\n`;
