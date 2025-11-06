@@ -1,20 +1,22 @@
 /**
  * Update OpenAI Assistants Script
- * 
+ *
  * This script updates existing OpenAI Assistants with new instructions
  * from src/ai/assistants/assistant-configs.ts
- * 
+ *
  * Usage:
- *   npx ts-node scripts/update-assistants.ts
- * 
+ *   node --loader ts-node/esm scripts/update-assistants.ts
+ *   OR
+ *   tsx scripts/update-assistants.ts
+ *
  * Requirements:
  *   - OPENAI_API_KEY must be set in environment
  *   - Assistant IDs must be set in .env.local (OPENAI_ASSISTANT_*)
  */
 
-const OpenAI = require('openai').default;
-const { getImplementedConfigs } = require('../src/ai/assistants/assistant-configs');
-const dotenv = require('dotenv');
+import OpenAI from 'openai';
+import { getImplementedConfigs } from '../src/ai/assistants/assistant-configs.js';
+import dotenv from 'dotenv';
 
 // Load environment variables
 dotenv.config({ path: '.env.local' });
@@ -116,8 +118,8 @@ async function updateAssistants() {
   if (updatedAssistants.length > 0) {
     console.log('📊 Summary:\n');
     updatedAssistants.forEach(assistant => {
-      const statusIcon = assistant.status === 'UPDATED' ? '✅' : 
-                        assistant.status === 'FAILED' ? '❌' : '⚠️';
+      const statusIcon = assistant.status === 'UPDATED' ? '✅' :
+        assistant.status === 'FAILED' ? '❌' : '⚠️';
       console.log(`   ${statusIcon} ${assistant.name}`);
       console.log(`      Type: ${assistant.type}`);
       console.log(`      ID: ${assistant.id}`);
