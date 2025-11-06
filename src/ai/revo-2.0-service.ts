@@ -1952,6 +1952,32 @@ export async function generateCaptionAndHashtags(
 
       console.log(`✅ [Revo 2.0] Assistant generation successful`);
 
+      // ============================================================================
+      // STORY COHERENCE VALIDATION FOR ASSISTANT-GENERATED CONTENT
+      // ============================================================================
+
+      // Validate story coherence between headline and caption
+      const coherenceValidation = validateStoryCoherence(
+        assistantResponse.headline,
+        assistantResponse.caption,
+        detectedType
+      );
+
+      console.log('🔗 [Revo 2.0 Assistant] Story coherence validation:', coherenceValidation);
+
+      // Enhanced coherence validation logging for debugging
+      if (coherenceValidation.issues.length > 0) {
+        console.log(`🚨 [Revo 2.0 Assistant COHERENCE ISSUES] Found ${coherenceValidation.issues.length} coherence issues:`);
+        coherenceValidation.issues.forEach((issue, index) => {
+          console.log(`   ${index + 1}. ${issue}`);
+        });
+      } else {
+        console.log(`✅ [Revo 2.0 Assistant COHERENCE SUCCESS] No coherence issues found`);
+      }
+
+      // Log coherence score for monitoring
+      console.log(`📊 [Revo 2.0 Assistant] Coherence Score: ${coherenceValidation.coherenceScore}/100`);
+
       return {
         headline: assistantResponse.headline,
         subheadline: assistantResponse.subheadline,
