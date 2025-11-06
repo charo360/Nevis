@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS brand_profiles (
   social_handles JSONB,
   website_analysis JSONB,
   brand_voice JSONB,
+  documents JSONB, -- Array of uploaded business documents with metadata and extracted data
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

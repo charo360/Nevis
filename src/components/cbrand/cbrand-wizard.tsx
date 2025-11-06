@@ -78,8 +78,50 @@ export interface CompleteBrandProfile {
     preview: string;
   }>;
 
+  // Business Documents (for AI to understand brand better)
+  documents?: Array<{
+    id: string;
+    filename: string;
+    fileType: string;
+    fileSize: number;
+    url: string;
+    path: string;
+    uploadDate: string;
+    extractedData?: {
+      pricing?: Array<{
+        item: string;
+        price: string;
+        description?: string;
+      }>;
+      products?: Array<{
+        name: string;
+        description?: string;
+        features?: string[];
+        specifications?: Record<string, string>;
+      }>;
+      services?: Array<{
+        name: string;
+        description?: string;
+        benefits?: string[];
+      }>;
+      valuePropositions?: string[];
+      targetAudience?: string;
+      competitiveAdvantages?: string[];
+      brandMessaging?: {
+        tagline?: string;
+        missionStatement?: string;
+        keyMessages?: string[];
+      };
+      visualElements?: {
+        colors?: string[];
+        fonts?: string[];
+        logoGuidelines?: string;
+      };
+    };
+  }>;
+
   // AI-trained descriptions of product images
-  productImageDescriptions?: {[key: string]: string};
+  productImageDescriptions?: { [key: string]: string };
 
   // Enhanced Analysis Data (from comprehensive website analysis)
   enhancedData?: {
@@ -91,24 +133,24 @@ export interface CompleteBrandProfile {
       inStock: boolean;
       description?: string;
     }>;
-    
+
     // Marketing intelligence
     uniqueSellingPropositions?: string[];
     customerPainPoints?: string[];
     valuePropositions?: string[];
     adCampaignAngles?: string[];
     seoKeywords?: string[];
-    
+
     // Media assets
     productImages?: string[];
     logoUrls?: string[];
     totalImagesFound?: number;
-    
+
     // Business opportunities
     marketGaps?: string[];
     contentOpportunities?: string[];
     improvementAreas?: string[];
-    
+
     // Analysis metadata
     analysisMetadata?: {
       dataCompleteness: number;
