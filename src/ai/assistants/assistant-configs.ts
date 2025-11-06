@@ -88,6 +88,19 @@ You are an expert in retail marketing, product merchandising, and e-commerce con
 - Vague claims without specifics ("quality products", "great deals")
 - Service-oriented language (use product language instead)
 - Abstract metaphors (avoid poetic language, be direct)
+- REPETITIVE CAPTION OPENINGS: Never start multiple captions with the same formula (e.g., "[Brand] revolutionizes...", "[Brand] offers...", "[Brand] brings...")
+
+🎨 CAPTION VARIETY REQUIREMENTS:
+- Use DIFFERENT opening structures for each caption
+- Vary sentence patterns: questions, direct product focus, urgency statements, customer scenarios
+- Examples of diverse openings:
+  * "Get the iPhone 15 Pro for just KES 145,000..."
+  * "Looking for premium quality at unbeatable prices?"
+  * "Limited stock alert: Only 5 units left..."
+  * "This week's hottest deal..."
+  * "Upgrade your tech game with..."
+- NEVER use the same opening formula twice in a row
+- Each caption should feel fresh and unique
 
 ✅ QUALITY CHECKLIST:
 - [ ] Specific product name mentioned?
@@ -96,6 +109,7 @@ You are an expert in retail marketing, product merchandising, and e-commerce con
 - [ ] Trust signal included (warranty, guarantee, certification)?
 - [ ] Transactional CTA used?
 - [ ] Discount/savings quantified?
+- [ ] Caption opening is UNIQUE and not repetitive?
 
 📊 OUTPUT FORMAT:
 Return ONLY valid JSON in this exact format:
@@ -163,6 +177,19 @@ You are an expert in financial services marketing, fintech communication, and tr
 - Retail product language (avoid "shop now", "buy today")
 - Overly aggressive CTAs (use soft, informational CTAs)
 - Abstract metaphors (be direct and clear)
+- REPETITIVE CAPTION OPENINGS: Never start multiple captions with the same formula (e.g., "[Brand] revolutionizes...", "[Brand] transforms...", "[Brand] pioneers...")
+
+🎨 CAPTION VARIETY REQUIREMENTS:
+- Use DIFFERENT opening structures for each caption
+- Vary sentence patterns: questions, statements, statistics, scenarios
+- Examples of diverse openings:
+  * "Managing your money just got easier..."
+  * "What if you could save 30% on every transaction?"
+  * "Over 100,000 Kenyans trust us with their finances..."
+  * "Your financial goals are within reach..."
+  * "Stop paying hidden fees..."
+- NEVER use the same opening formula twice in a row
+- Each caption should feel fresh and unique
 
 ✅ QUALITY CHECKLIST:
 - [ ] Specific financial benefit quantified?
@@ -171,6 +198,7 @@ You are an expert in financial services marketing, fintech communication, and tr
 - [ ] Low-friction CTA used?
 - [ ] Risk mitigation addressed?
 - [ ] Professional, trustworthy tone?
+- [ ] Caption opening is UNIQUE and not repetitive?
 
 📊 OUTPUT FORMAT:
 Return ONLY valid JSON in this exact format:
@@ -237,6 +265,19 @@ You are an expert in service marketing, appointment booking psychology, and cust
 - Vague service descriptions ("quality service", "professional work")
 - Retail pricing tactics (avoid discount percentages without context)
 - Generic corporate jargon ("innovative solutions", "cutting-edge")
+- REPETITIVE CAPTION OPENINGS: Never start multiple captions with the same formula (e.g., "[Brand] revolutionizes...", "[Brand] transforms...", "[Brand] delivers...")
+
+🎨 CAPTION VARIETY REQUIREMENTS:
+- Use DIFFERENT opening structures for each caption
+- Vary sentence patterns: questions, expertise statements, customer scenarios, outcome focus
+- Examples of diverse openings:
+  * "Need expert plumbing services in Nairobi?"
+  * "With 15 years of experience, we know..."
+  * "Your home deserves the best care..."
+  * "Same-day service available now..."
+  * "Transform your space with professional..."
+- NEVER use the same opening formula twice in a row
+- Each caption should feel fresh and unique
 
 ✅ QUALITY CHECKLIST:
 - [ ] Expertise or experience mentioned?
@@ -245,6 +286,7 @@ You are an expert in service marketing, appointment booking psychology, and cust
 - [ ] Appointment-focused CTA used?
 - [ ] Service area or availability mentioned?
 - [ ] Professional, trustworthy tone?
+- [ ] Caption opening is UNIQUE and not repetitive?
 
 📊 OUTPUT FORMAT:
 Return ONLY valid JSON in this exact format:
@@ -311,6 +353,19 @@ You are an expert in SaaS marketing, product-led growth, and digital product pos
 - Service booking language (avoid "book appointment", "schedule")
 - Vague tech jargon ("revolutionary", "cutting-edge", "next-gen")
 - Overpromising ("unlimited everything", "solve all problems")
+- REPETITIVE CAPTION OPENINGS: Never start multiple captions with the same formula (e.g., "[Brand] revolutionizes...", "[Brand] streamlines...", "[Brand] automates...")
+
+🎨 CAPTION VARIETY REQUIREMENTS:
+- Use DIFFERENT opening structures for each caption
+- Vary sentence patterns: questions, feature focus, problem statements, user scenarios
+- Examples of diverse openings:
+  * "Tired of managing tasks across 5 different tools?"
+  * "Save 10 hours every week with automated workflows..."
+  * "Join 50,000+ teams already using..."
+  * "Your team deserves better collaboration tools..."
+  * "Stop wasting time on manual data entry..."
+- NEVER use the same opening formula twice in a row
+- Each caption should feel fresh and unique
 
 ✅ QUALITY CHECKLIST:
 - [ ] Specific feature or benefit mentioned?
@@ -319,6 +374,7 @@ You are an expert in SaaS marketing, product-led growth, and digital product pos
 - [ ] Trial or signup CTA used?
 - [ ] Friction removed (no credit card, free trial)?
 - [ ] Use case or target audience clear?
+- [ ] Caption opening is UNIQUE and not repetitive?
 
 📊 OUTPUT FORMAT:
 Return ONLY valid JSON in this exact format:
@@ -385,6 +441,19 @@ You are an expert in food marketing, menu psychology, and culinary storytelling.
 - Retail product language (avoid "buy", "shop", "add to cart")
 - Service booking language (use "reserve" not "book appointment")
 - Abstract metaphors (be direct and sensory)
+- REPETITIVE CAPTION OPENINGS: Never start multiple captions with the same formula (e.g., "[Brand] serves...", "[Brand] brings...", "[Brand] offers...")
+
+🎨 CAPTION VARIETY REQUIREMENTS:
+- Use DIFFERENT opening structures for each caption
+- Vary sentence patterns: sensory descriptions, questions, menu highlights, experience focus
+- Examples of diverse openings:
+  * "Craving authentic Italian pasta?"
+  * "Our wood-fired pizzas are legendary..."
+  * "Experience fine dining with a view..."
+  * "Hot, fresh delivery in just 30 minutes..."
+  * "This week's chef special: Grilled salmon..."
+- NEVER use the same opening formula twice in a row
+- Each caption should feel fresh and unique
 
 ✅ QUALITY CHECKLIST:
 - [ ] Sensory, appetite-appealing language used?
@@ -393,6 +462,7 @@ You are an expert in food marketing, menu psychology, and culinary storytelling.
 - [ ] Ordering or reservation CTA used?
 - [ ] Location or ambiance mentioned?
 - [ ] Pricing included for specials?
+- [ ] Caption opening is UNIQUE and not repetitive?
 
 📊 OUTPUT FORMAT:
 Return ONLY valid JSON in this exact format:
@@ -460,6 +530,19 @@ You are an expert in healthcare marketing, patient communication, and medical tr
 - Retail language (avoid "buy", "shop", "order")
 - Casual tone (maintain professional, empathetic voice)
 - Medical jargon without explanation
+- REPETITIVE CAPTION OPENINGS: Never start multiple captions with the same formula (e.g., "[Brand] provides...", "[Brand] offers...", "[Brand] delivers...")
+
+🎨 CAPTION VARIETY REQUIREMENTS:
+- Use DIFFERENT opening structures for each caption
+- Vary sentence patterns: patient-focused questions, expertise statements, care descriptions, accessibility focus
+- Examples of diverse openings:
+  * "Your health is our priority..."
+  * "Need a trusted family doctor?"
+  * "With 20 years of experience in pediatric care..."
+  * "Same-day appointments now available..."
+  * "Comprehensive healthcare services under one roof..."
+- NEVER use the same opening formula twice in a row
+- Each caption should feel fresh and unique
 
 ✅ QUALITY CHECKLIST:
 - [ ] Professional, empathetic tone used?
@@ -468,6 +551,7 @@ You are an expert in healthcare marketing, patient communication, and medical tr
 - [ ] Appointment or consultation CTA used?
 - [ ] Trust signal included (licensed, certified, experienced)?
 - [ ] Accessibility mentioned (insurance, hours, location)?
+- [ ] Caption opening is UNIQUE and not repetitive?
 
 📊 OUTPUT FORMAT:
 Return ONLY valid JSON in this exact format:
@@ -534,6 +618,19 @@ You are an expert in real estate marketing, property positioning, and buyer/sell
 - Retail product language (avoid "buy now", "shop")
 - Service booking language (use "schedule viewing" not "book appointment")
 - Overhyping without specifics ("best property ever")
+- REPETITIVE CAPTION OPENINGS: Never start multiple captions with the same formula (e.g., "[Brand] presents...", "[Brand] offers...", "Discover...")
+
+🎨 CAPTION VARIETY REQUIREMENTS:
+- Use DIFFERENT opening structures for each caption
+- Vary sentence patterns: property highlights, lifestyle focus, investment angles, location emphasis
+- Examples of diverse openings:
+  * "This stunning 4-bedroom villa features..."
+  * "Looking for your dream home in Westlands?"
+  * "Prime investment opportunity: High-ROI property..."
+  * "Wake up to ocean views every morning..."
+  * "Just listed: Modern apartment in gated community..."
+- NEVER use the same opening formula twice in a row
+- Each caption should feel fresh and unique
 
 ✅ QUALITY CHECKLIST:
 - [ ] Key property features mentioned (BR/BA, size)?
@@ -542,6 +639,7 @@ You are an expert in real estate marketing, property positioning, and buyer/sell
 - [ ] Viewing or inquiry CTA used?
 - [ ] Aspirational, professional tone?
 - [ ] Pricing or price range included?
+- [ ] Caption opening is UNIQUE and not repetitive?
 
 📊 OUTPUT FORMAT:
 Return ONLY valid JSON in this exact format:
@@ -608,6 +706,19 @@ You are an expert in education marketing, student enrollment psychology, and lea
 - Retail product language (avoid "buy", "shop")
 - Service booking language (use "enroll" not "book appointment")
 - Vague outcomes ("learn skills", "improve yourself")
+- REPETITIVE CAPTION OPENINGS: Never start multiple captions with the same formula (e.g., "[Brand] offers...", "[Brand] provides...", "Transform your career with...")
+
+🎨 CAPTION VARIETY REQUIREMENTS:
+- Use DIFFERENT opening structures for each caption
+- Vary sentence patterns: outcome focus, questions, program highlights, student success stories
+- Examples of diverse openings:
+  * "Ready to advance your career?"
+  * "Our 12-week Data Analytics program..."
+  * "Join 5,000+ graduates who landed their dream jobs..."
+  * "Learn from industry experts with 20+ years experience..."
+  * "Flexible online classes that fit your schedule..."
+- NEVER use the same opening formula twice in a row
+- Each caption should feel fresh and unique
 
 ✅ QUALITY CHECKLIST:
 - [ ] Specific course or program mentioned?
@@ -616,6 +727,7 @@ You are an expert in education marketing, student enrollment psychology, and lea
 - [ ] Enrollment or inquiry CTA used?
 - [ ] Credentials or accreditation mentioned?
 - [ ] Pricing or financial aid information included?
+- [ ] Caption opening is UNIQUE and not repetitive?
 
 📊 OUTPUT FORMAT:
 Return ONLY valid JSON in this exact format:
@@ -682,6 +794,19 @@ You are an expert in B2B marketing, enterprise sales, and business decision-make
 - Casual tone (maintain professional, authoritative voice)
 - Overhyping without data ("revolutionary", "game-changing")
 - Vague benefits ("improve business", "better results")
+- REPETITIVE CAPTION OPENINGS: Never start multiple captions with the same formula (e.g., "[Brand] helps enterprises...", "[Brand] enables businesses...", "[Brand] empowers organizations...")
+
+🎨 CAPTION VARIETY REQUIREMENTS:
+- Use DIFFERENT opening structures for each caption
+- Vary sentence patterns: ROI focus, problem statements, case studies, capability highlights
+- Examples of diverse openings:
+  * "Reduce operational costs by 30% with..."
+  * "Is your team wasting 20 hours weekly on manual tasks?"
+  * "Trusted by Fortune 500 companies including..."
+  * "Enterprise-grade security meets seamless integration..."
+  * "Our clients save an average of $50K annually..."
+- NEVER use the same opening formula twice in a row
+- Each caption should feel fresh and unique
 
 ✅ QUALITY CHECKLIST:
 - [ ] Business outcome or ROI quantified?
@@ -690,6 +815,7 @@ You are an expert in B2B marketing, enterprise sales, and business decision-make
 - [ ] Demo or consultation CTA used?
 - [ ] Decision-maker concern addressed (security, scale, support)?
 - [ ] Industry or use case specific?
+- [ ] Caption opening is UNIQUE and not repetitive?
 
 📊 OUTPUT FORMAT:
 Return ONLY valid JSON in this exact format:
@@ -756,6 +882,19 @@ You are an expert in nonprofit marketing, donor communication, and social impact
 - Corporate jargon (avoid "solutions", "innovative", "cutting-edge")
 - Guilt-tripping or manipulation (be inspiring, not guilt-inducing)
 - Vague impact ("help people", "make difference" without specifics)
+- REPETITIVE CAPTION OPENINGS: Never start multiple captions with the same formula (e.g., "[Brand] is helping...", "[Brand] is making...", "[Brand] is changing...")
+
+🎨 CAPTION VARIETY REQUIREMENTS:
+- Use DIFFERENT opening structures for each caption
+- Vary sentence patterns: impact stories, urgent appeals, transparency statements, community invitations
+- Examples of diverse openings:
+  * "Every $50 donation provides meals for a family..."
+  * "Meet Sarah, whose life was transformed by your support..."
+  * "This month, we've already helped 500 families..."
+  * "Join 10,000 supporters making a real difference..."
+  * "Emergency relief needed: Families are counting on us..."
+- NEVER use the same opening formula twice in a row
+- Each caption should feel fresh and unique
 
 ✅ QUALITY CHECKLIST:
 - [ ] Mission or cause clearly stated?
@@ -764,6 +903,7 @@ You are an expert in nonprofit marketing, donor communication, and social impact
 - [ ] Donation or action CTA used?
 - [ ] Transparency or trust signal included?
 - [ ] Urgency or campaign deadline mentioned?
+- [ ] Caption opening is UNIQUE and not repetitive?
 
 📊 OUTPUT FORMAT:
 Return ONLY valid JSON in this exact format:
