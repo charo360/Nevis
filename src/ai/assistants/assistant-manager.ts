@@ -9,6 +9,8 @@
 import OpenAI from 'openai';
 import type { BusinessTypeCategory } from '../adaptive/business-type-detector';
 import { getAssistantConfig, isAssistantImplemented } from './assistant-configs';
+import { openAIFileService } from '@/lib/services/openai-file-service';
+import type { BrandDocument } from '@/types/documents';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -94,9 +96,47 @@ export class AssistantManager {
 
     console.log(`🤖 [Assistant Manager] Using ${request.businessType} assistant: ${assistantId}`);
 
+    let vectorStoreId: string | undefined;
+    let uploadedFileIds: string[] = [];
+
     try {
-      // Create thread
-      const thread = await openai.beta.threads.create();
+      // Upload documents to OpenAI if available
+      if (request.brandProfile.documents && request.brandProfile.documents.length > 0) {
+        console.log(`📄 [Assistant Manager] Found ${request.brandProfile.documents.length} documents to upload`);
+
+        try {
+          // Upload files to OpenAI
+          const uploadResults = await openAIFileService.uploadMultipleFiles(request.brandProfile.documents);
+          uploadedFileIds = uploadResults.map(r => r.fileId);
+
+          if (uploadedFileIds.length > 0) {
+            console.log(`✅ [Assistant Manager] Uploaded ${uploadedFileIds.length} files to OpenAI`);
+
+            // Create vector store with uploaded files
+            const vectorStore = await openAIFileService.createVectorStore(
+              uploadedFileIds,
+              `${request.brandProfile.businessName} - Brand Documents`
+            );
+            vectorStoreId = vectorStore.vectorStoreId;
+            console.log(`📚 [Assistant Manager] Created vector store: ${vectorStoreId}`);
+          }
+        } catch (uploadError) {
+          console.error(`⚠️  [Assistant Manager] File upload failed, continuing without files:`, uploadError);
+          // Continue without files if upload fails
+        }
+      }
+
+      // Create thread with vector store if available
+      const threadOptions: any = {};
+      if (vectorStoreId) {
+        threadOptions.tool_resources = {
+          file_search: {
+            vector_store_ids: [vectorStoreId]
+          }
+        };
+      }
+
+      const thread = await openai.beta.threads.create(threadOptions);
       console.log(`📝 [Assistant Manager] Created thread: ${thread.id}`);
 
       // Build message content
@@ -108,10 +148,20 @@ export class AssistantManager {
         content: messageContent,
       });
 
-      // Run assistant
-      const run = await openai.beta.threads.runs.create(thread.id, {
+      // Run assistant with file_search tool if documents are available
+      const runOptions: any = {
         assistant_id: assistantId,
-      });
+      };
+
+      // Enable file_search tool if we have documents
+      if (vectorStoreId) {
+        runOptions.tools = [
+          { type: 'file_search' }
+        ];
+        console.log(`🔍 [Assistant Manager] Enabled file_search tool for document analysis`);
+      }
+
+      const run = await openai.beta.threads.runs.create(thread.id, runOptions);
       console.log(`🏃 [Assistant Manager] Started run: ${run.id}`);
 
       // Wait for completion
@@ -120,12 +170,26 @@ export class AssistantManager {
       // Parse response
       const response = this.parseResponse(result);
 
-      // Clean up thread (optional - saves storage costs)
+      // Clean up resources
       try {
         await openai.beta.threads.delete(thread.id);
         console.log(`🗑️  [Assistant Manager] Deleted thread: ${thread.id}`);
-      } catch (error) {
-        console.warn(`⚠️  Failed to delete thread: ${error}`);
+
+        // Clean up vector store if created
+        if (vectorStoreId) {
+          await openAIFileService.deleteVectorStore(vectorStoreId);
+          console.log(`🗑️  [Assistant Manager] Deleted vector store: ${vectorStoreId}`);
+        }
+
+        // Clean up uploaded files
+        for (const fileId of uploadedFileIds) {
+          await openAIFileService.deleteFile(fileId);
+        }
+        if (uploadedFileIds.length > 0) {
+          console.log(`🗑️  [Assistant Manager] Deleted ${uploadedFileIds.length} uploaded files`);
+        }
+      } catch (cleanupError) {
+        console.warn(`⚠️  Failed to clean up resources:`, cleanupError);
       }
 
       const duration = Date.now() - startTime;
@@ -137,6 +201,19 @@ export class AssistantManager {
     } catch (error) {
       const duration = Date.now() - startTime;
       console.error(`❌ [Assistant Manager] Generation failed after ${duration}ms:`, error);
+
+      // Clean up resources on error
+      try {
+        if (vectorStoreId) {
+          await openAIFileService.deleteVectorStore(vectorStoreId);
+        }
+        for (const fileId of uploadedFileIds) {
+          await openAIFileService.deleteFile(fileId);
+        }
+      } catch (cleanupError) {
+        console.warn(`⚠️  Failed to clean up resources after error:`, cleanupError);
+      }
+
       throw error;
     }
   }
@@ -324,6 +401,7 @@ export class AssistantManager {
       });
 
       message += `**IMPORTANT:** Use ONLY the data provided above from business documents. Do not invent or hallucinate any pricing, features, or product/service details not explicitly mentioned.\n\n`;
+      message += `**NOTE:** The full business documents have been uploaded and are available for you to search and analyze using the file_search tool. You can reference specific details, pricing, and information directly from these documents.\n\n`;
     }
 
     // Content Requirements
