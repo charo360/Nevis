@@ -25,6 +25,8 @@ import {
   // Loader2 // COMMENTED OUT - Products functionality not working yet
 } from 'lucide-react';
 import { CompleteBrandProfile } from '../cbrand-wizard';
+import { DocumentUploadZone } from '@/components/documents/document-upload-zone';
+import type { BrandDocument } from '@/types/documents';
 // import { ProductImageAnalysisService } from '@/lib/services/product-image-analysis-service'; // COMMENTED OUT - Products functionality not working yet
 
 interface BrandDetailsStepProps {
@@ -820,42 +822,15 @@ export function BrandDetailsStep({
                 </p>
               </div>
 
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Document Upload Coming Soon</h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  This feature is currently under development. Soon you'll be able to upload:
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-left max-w-2xl mx-auto">
-                  <div className="bg-gray-50 p-3 rounded-md">
-                    <p className="text-sm font-medium text-gray-900">📊 Pricing Documents</p>
-                    <p className="text-xs text-gray-600 mt-1">Rate sheets, pricing tiers, packages</p>
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded-md">
-                    <p className="text-sm font-medium text-gray-900">📁 Product Catalogs</p>
-                    <p className="text-xs text-gray-600 mt-1">Product lists, specifications, features</p>
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded-md">
-                    <p className="text-sm font-medium text-gray-900">📋 Service Brochures</p>
-                    <p className="text-xs text-gray-600 mt-1">Service descriptions, benefits, details</p>
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded-md">
-                    <p className="text-sm font-medium text-gray-900">🎨 Brand Guidelines</p>
-                    <p className="text-xs text-gray-600 mt-1">Brand voice, messaging, visual identity</p>
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded-md">
-                    <p className="text-sm font-medium text-gray-900">📈 Pitch Decks</p>
-                    <p className="text-xs text-gray-600 mt-1">Value propositions, competitive advantages</p>
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded-md">
-                    <p className="text-sm font-medium text-gray-900">📝 Case Studies</p>
-                    <p className="text-xs text-gray-600 mt-1">Success stories, testimonials, results</p>
-                  </div>
-                </div>
-                <p className="text-xs text-gray-500 mt-6">
-                  ⚡ <strong>Benefits:</strong> More accurate pricing in content, specific product/service references, personalized messaging, no data hallucination
-                </p>
-              </div>
+              <DocumentUploadZone
+                brandProfileId={brandProfile.id || 'temp-id'}
+                existingDocuments={brandProfile.documents || []}
+                onDocumentsChange={(documents: BrandDocument[]) => {
+                  handleInputChange('documents', documents);
+                }}
+                maxFiles={10}
+                maxFileSize={10 * 1024 * 1024}
+              />
             </TabsContent>
 
             {/* Section 7: Social Media */}
