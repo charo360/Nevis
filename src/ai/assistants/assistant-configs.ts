@@ -266,25 +266,19 @@ Each ad in a campaign MUST focus on a DIFFERENT angle. Never repeat the same mes
 **EXAMPLES:**
 
 **Scenario 1: Brand Profile Has Specific Data**
-```
 Brand Profile: "Personal loans KES 5,000-50,000, 0% processing fee, 5-minute approval"
 ✅ CORRECT: "KES 50K Loans - 0% Fees" / "Get approved in 5 minutes"
-❌ WRONG: "KES 100K Loans" / "Approved in 2 minutes"(inventing different numbers)
-  ```
+❌ WRONG: "KES 100K Loans" / "Approved in 2 minutes" (inventing different numbers)
 
 **Scenario 2: Brand Profile Has General Data**
-```
 Brand Profile: "We offer personal loans with competitive rates and fast approval"
 ✅ CORRECT: "Personal Loans - Fast Approval" / "Competitive rates, quick process"
-❌ WRONG: "KES 50K Loans - 0% Fees"(inventing specific numbers not provided)
-  ```
+❌ WRONG: "KES 50K Loans - 0% Fees" (inventing specific numbers not provided)
 
 **Scenario 3: Brand Profile Has Service Names Only**
-```
 Brand Profile: Services: "Savings accounts, Money transfers, Loans"
 ✅ CORRECT: "Savings Accounts - Grow Your Money" / "Secure money transfers"
-❌ WRONG: "Earn 8% Interest" / "Zero transfer fees"(inventing rates not provided)
-  ```
+❌ WRONG: "Earn 8% Interest" / "Zero transfer fees" (inventing rates not provided)
 
 🚫 STRICTLY BANNED PATTERNS:
 
