@@ -142,6 +142,18 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
         // Possible intents: enhance, reference, template, or general context
         const currentImageDataUrl = imageDataUrl;
 
+        // 🔍 DEBUG: Log image upload state
+        console.log('🖼️ [Creative Studio] Image Upload Debug:', {
+            hasImageDataUrl: !!imageDataUrl,
+            imageDataUrlLength: imageDataUrl?.length || 0,
+            imageDataUrlPreview: imageDataUrl?.substring(0, 50) || 'none',
+            currentInput: currentInput,
+            selectedRevoModel: selectedRevoModel,
+            outputType: outputType,
+            hasBrandProfile: !!brandProfile,
+            useBrandProfile: useBrandProfile
+        });
+
         // Build enhanced prompt with image context if image is uploaded
         let enhancedPrompt = currentInput;
         if (imageDataUrl && currentInput) {
@@ -161,6 +173,14 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 // Default: treat as reference/context
                 enhancedPrompt = `[IMAGE UPLOADED - INTENT: CONTEXT] ${currentInput}\n\nIMPORTANT: The user uploaded an image for context. Analyze the image and integrate it naturally into the design based on the user's instructions. Use it as visual context to inform the design direction.`;
             }
+
+            // 🔍 DEBUG: Log enhanced prompt construction
+            console.log('📝 [Creative Studio] Enhanced Prompt Built:', {
+                hasEnhanceIntent,
+                hasReferenceIntent,
+                hasTemplateIntent,
+                enhancedPromptPreview: enhancedPrompt.substring(0, 100)
+            });
         }
 
         setInput('');
@@ -233,6 +253,17 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 // Get access token as fallback if cookies don't work
                 const accessToken = await getAccessToken().catch(() => null);
 
+                // 🔍 DEBUG: Log Revo 1.0 generation parameters
+                console.log('🎯 [Creative Studio] Revo 1.0 Generation Starting:', {
+                    enhancedPromptPreview: enhancedPrompt.substring(0, 100),
+                    hasCurrentImageDataUrl: !!currentImageDataUrl,
+                    currentImageDataUrlLength: currentImageDataUrl?.length || 0,
+                    useBrandProfile: useBrandProfile,
+                    brandProfileId: brandProfile?.id,
+                    outputType: outputType,
+                    preferredModel: 'revo-1.0-gemini-2.5-flash-image-preview'
+                });
+
                 result = await generateCreativeAssetAction(
                     enhancedPrompt, // Use enhanced prompt with image context
                     outputType,
@@ -246,6 +277,13 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     accessToken || undefined // Pass access token as fallback
                 );
 
+                // 🔍 DEBUG: Log generation result
+                console.log('✅ [Creative Studio] Revo 1.0 Generation Complete:', {
+                    hasImageUrl: !!result.imageUrl,
+                    hasVideoUrl: !!result.videoUrl,
+                    aiExplanation: result.aiExplanation
+                });
+
                 aiResponse = {
                     id: (Date.now() + 1).toString(),
                     role: 'assistant',
@@ -254,6 +292,13 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     videoUrl: result.videoUrl,
                 };
             } else {
+                // 🔍 DEBUG: Log fallback generation
+                console.log('⚠️ [Creative Studio] Using Fallback Generation:', {
+                    selectedRevoModel: selectedRevoModel,
+                    outputType: outputType,
+                    hasBrandProfile: !!brandProfile,
+                    reason: !brandProfile ? 'No brand profile' : 'Other condition not met'
+                });
                 // Use standard creative asset generation for fallback
                 // Get access token as fallback if cookies don't work
                 const accessToken = await getAccessToken().catch(() => null);

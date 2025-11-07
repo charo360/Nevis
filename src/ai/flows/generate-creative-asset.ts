@@ -917,6 +917,19 @@ const generateCreativeAssetFlow = ai.defineFlow(
         const promptParts: (string | { text: string } | { media: { url: string; contentType?: string } })[] = [];
         let textPrompt = '';
 
+        // 🔍 DEBUG: Log input parameters
+        console.log('🎨 [Generate Creative Asset] Flow Started:', {
+            hasReferenceAssetUrl: !!input.referenceAssetUrl,
+            referenceAssetUrlLength: input.referenceAssetUrl?.length || 0,
+            referenceAssetUrlPreview: input.referenceAssetUrl?.substring(0, 50) || 'none',
+            useBrandProfile: input.useBrandProfile,
+            hasBrandProfile: !!input.brandProfile,
+            brandProfileId: input.brandProfile?.id,
+            outputType: input.outputType,
+            preferredModel: input.preferredModel,
+            promptPreview: input.prompt.substring(0, 100)
+        });
+
         // Enhanced instruction parsing with intelligent intent analysis
         const parsedInstructions = parseInstructions(input.prompt);
         const userIntent = analyzeUserIntent(input.prompt, parsedInstructions);
@@ -928,6 +941,16 @@ const generateCreativeAssetFlow = ai.defineFlow(
             !!input.referenceAssetUrl,
             input.useBrandProfile ? input.brandProfile : null
         );
+
+        // 🔍 DEBUG: Log enhanced intent analysis
+        console.log('🧠 [Generate Creative Asset] Enhanced Intent Analysis:', {
+            hasUploadedImage: enhancedIntent.contextUnderstanding.hasUploadedImage,
+            imageIntent: enhancedIntent.contextUnderstanding.imageIntent,
+            isLiteralTextRequest: enhancedIntent.isLiteralTextRequest,
+            priorityLevel: enhancedIntent.priorityLevel,
+            noPeople: enhancedIntent.negativeInstructions.noPeople,
+            noText: enhancedIntent.negativeInstructions.noText
+        });
 
         // Detect explicit no-people requirement (enhanced detection)
         const noPeopleRequirement = enhancedIntent.negativeInstructions.noPeople ||
@@ -954,6 +977,13 @@ Recreate the content within the black-masked region based on this instruction, e
 
         } else if (input.referenceAssetUrl) {
             // This is a generation prompt with an uploaded image that should be integrated into the design
+            // 🔍 DEBUG: Log image-only generation path
+            console.log('🖼️ [Generate Creative Asset] Image-Only Generation Path (No Brand Profile):', {
+                hasReferenceAssetUrl: !!input.referenceAssetUrl,
+                referenceAssetUrlLength: input.referenceAssetUrl.length,
+                useBrandProfile: input.useBrandProfile
+            });
+
             let referencePrompt = `You are an expert creative director and AI design specialist with advanced image analysis capabilities. You will be given an uploaded image and a text prompt with instructions.
 
 🚫 **CRITICAL: DO NOT CREATE LOGOS** 🚫
@@ -1086,6 +1116,15 @@ Transform the uploaded image into a professional marketing design by enhancing i
             // May also include an uploaded image for integration
             const bp = input.brandProfile;
             const hasUploadedImage = !!input.referenceAssetUrl;
+
+            // 🔍 DEBUG: Log brand profile generation path
+            console.log('🎨 [Generate Creative Asset] Brand Profile Generation Path:', {
+                hasUploadedImage: hasUploadedImage,
+                referenceAssetUrlLength: input.referenceAssetUrl?.length || 0,
+                brandProfileId: bp.id,
+                businessName: bp.businessName,
+                businessType: bp.businessType
+            });
 
             // Extract services from brand profile for DNA selection
             const servicesText = typeof bp.services === 'string'
@@ -1429,6 +1468,13 @@ ${designDNA}`;
                   * Ensure text is the primary focal point of the design` : 'No text should be added to the asset.'}`;
                 // Handle uploaded image integration with AI intelligence
                 if (hasUploadedImage) {
+                    // 🔍 DEBUG: Log uploaded image integration
+                    console.log('📸 [Generate Creative Asset] Adding Uploaded Image to Prompt:', {
+                        referenceAssetUrlLength: input.referenceAssetUrl!.length,
+                        contentType: getMimeTypeFromDataURI(input.referenceAssetUrl!),
+                        promptPartsLengthBefore: promptParts.length
+                    });
+
                     onBrandPrompt += `\n- **🎯 UPLOADED IMAGE FOCUSED DESIGN:** A user has uploaded an image that must be the PRIMARY visual element. DO NOT generate any additional images.`;
                     onBrandPrompt += `\n  * **AI Analysis Required:** First analyze the uploaded image to understand its content, style, quality, and best enhancement approach`;
                     onBrandPrompt += `\n  * **Enhancement Strategy:** Based on your analysis, choose the optimal enhancement method:`;
@@ -1440,6 +1486,11 @@ ${designDNA}`;
                     onBrandPrompt += `\n  * **Brand Synergy:** Coordinate text and design treatments with brand colors and aesthetic`;
                     onBrandPrompt += `\n  * **Creative Excellence:** The uploaded image should be the main visual element enhanced with professional text and design treatments`;
                     promptParts.push({ media: { url: input.referenceAssetUrl!, contentType: getMimeTypeFromDataURI(input.referenceAssetUrl!) } });
+
+                    // 🔍 DEBUG: Confirm image added
+                    console.log('✅ [Generate Creative Asset] Uploaded Image Added to Prompt Parts:', {
+                        promptPartsLengthAfter: promptParts.length
+                    });
                 }
 
                 onBrandPrompt += `\n- **UPLOADED IMAGE FOCUSED DESIGN:** ${hasUploadedImage ? 'Create a professional marketing design using ONLY the uploaded image as the visual foundation. Enhance it with text overlays, color treatments, and design elements. DO NOT generate any additional images.' : 'Create a complete, professional marketing design with full layout composition. This should be a comprehensive social media post design, NOT just a logo. Include backgrounds, graphics, text elements, and visual hierarchy.'}`;
