@@ -1559,6 +1559,15 @@ CREATIVE CONCEPT: ${concept.concept}
 5. OPTIONAL IDENTITY ELEMENT: Small icon or motif for brand consistency
 
 🚫 CRITICAL: ABSOLUTELY NO BUSY BACKGROUNDS, LINES, OR TECH ELEMENTS:
+
+❌ **ABSOLUTELY NO CIRCULAR PATTERNS (CRITICAL):**
+- NO concentric circles (radar style, target style, HUD style)
+- NO segmented circles (pie chart style, circular tech overlays)
+- NO circular tech patterns (futuristic circles, circular gradients with segments)
+- NO circular geometric patterns of ANY kind
+- ZERO CIRCULAR PATTERNS ALLOWED
+
+❌ **ABSOLUTELY NO LINE PATTERNS:**
 - NO curved digital circuit lines or wavy white/light lines across background
 - NO straight diagonal lines forming circuit board patterns
 - NO angular geometric line patterns or tech-style line overlays
@@ -1567,10 +1576,14 @@ CREATIVE CONCEPT: ${concept.concept}
 - NO decorative overlays, patterns, or "tech" aesthetic elements
 - NO connection lines, network lines, or flowing curved lines
 - NO abstract line patterns or geometric line overlays of ANY kind
+
+❌ **ABSOLUTELY NO TECH AESTHETIC:**
 - NO holographic floating UI elements, dashboards, or transparent screens
 - NO floating charts, graphs, or data visualization overlays
 - NO transparent/glass-effect tables, panels, or interface elements
 - NO futuristic tech overlays or digital interface mockups
+
+✅ **ONLY ALLOWED BACKGROUNDS:**
 - ONLY use clean, SOLID flat backgrounds or simple gradients
 - KEEP backgrounds sleek, minimal, and professional
 - FOCUS on content and people, not decorative background elements

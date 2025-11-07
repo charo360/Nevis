@@ -3972,6 +3972,15 @@ ${useLocalLanguage ? `- Local Authenticity: Include subtle design elements that 
 6. SUPPORTING elements should enhance, not compete
 
 🚫 CRITICAL: CLEAN BACKGROUNDS ONLY (NO BUSY PATTERNS, LINES, OR TECH ELEMENTS):
+
+❌ **ABSOLUTELY NO CIRCULAR PATTERNS (CRITICAL):**
+- NO concentric circles (radar style, target style, HUD style)
+- NO segmented circles (pie chart style, circular tech overlays)
+- NO circular tech patterns (futuristic circles, circular gradients with segments)
+- NO circular geometric patterns of ANY kind
+- ZERO CIRCULAR PATTERNS ALLOWED
+
+❌ **ABSOLUTELY NO LINE PATTERNS:**
 - NO curved digital circuit lines or wavy tech lines across background
 - NO straight diagonal lines forming circuit board patterns
 - NO angular geometric line patterns or tech-style line overlays
@@ -3980,10 +3989,14 @@ ${useLocalLanguage ? `- Local Authenticity: Include subtle design elements that 
 - NO busy decorative overlays or "tech" patterns
 - NO connection lines, network lines, or flowing curved lines
 - NO abstract line patterns or geometric line overlays of ANY kind
+
+❌ **ABSOLUTELY NO TECH AESTHETIC:**
 - NO holographic floating UI elements, dashboards, or transparent screens
 - NO floating charts, graphs, or data visualization overlays
 - NO transparent/glass-effect tables, panels, or interface elements
 - NO futuristic tech overlays or digital interface mockups
+
+✅ **ONLY ALLOWED BACKGROUNDS:**
 - USE clean, SOLID flat backgrounds or simple gradients ONLY
 - KEEP backgrounds sleek, minimal, and professional
 - FOCUS on content, not decorative background elements
