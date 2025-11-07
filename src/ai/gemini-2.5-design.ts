@@ -433,9 +433,7 @@ function generateElegantLayout(params: any): string {
       <!-- Elegant background -->
       <rect width="100%" height="100%" fill="url(#elegantGrad)" />
 
-      <!-- Elegant decorative elements -->
-      <circle cx="150" cy="150" r="80" fill="none" stroke="${primaryColor}" stroke-width="1" opacity="0.3" />
-      <circle cx="930" cy="930" r="60" fill="none" stroke="${secondaryColor}" stroke-width="1" opacity="0.3" />
+      <!-- Clean, minimal design - no decorative elements -->
 
       <!-- Content area -->
       <g transform="translate(540, 450)">
@@ -687,18 +685,7 @@ async function createSVGFromSpecs(specs: any, input: Gemini25DesignInput): Promi
         </g>
       </g>
 
-      <!-- Modern decorative elements -->
-      <circle cx="150" cy="150" r="3" fill="${accentColor}" opacity="0.6" />
-      <circle cx="930" cy="930" r="4" fill="${primaryColor}" opacity="0.5" />
-      <circle cx="200" cy="900" r="2" fill="${secondaryColor}" opacity="0.7" />
-
-      <!-- Subtle grid pattern -->
-      <defs>
-        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-          <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
-        </pattern>
-      </defs>
-      <rect width="100%" height="100%" fill="url(#grid)" />
+      <!-- Clean, minimal design - no decorative elements -->
     </svg>
   `;
 }
@@ -756,7 +743,7 @@ ${useLocalLanguage ? `- You may use local language text when 100% certain of acc
 CREATIVE DESIGN VARIETY:
 - DESIGN STYLES (rotate for variety):
   * Ultra-modern minimalist with bold typography
-  * Dynamic geometric patterns with vibrant colors
+  * Clean flat design with vibrant colors
   * Sophisticated gradient overlays with premium feel
   * Clean photography-focused with subtle overlays
   * Artistic illustration style with contemporary elements
@@ -802,7 +789,16 @@ STYLE DETAILS:
 - High contrast for mobile viewing
 - Sophisticated color harmony with dynamic elements
 
-Create a beautiful, professional design that represents ${brandProfile.businessName || businessType} perfectly.`;
+🚫 CRITICAL: AVOID BUSY BACKGROUNDS:
+- NO curved digital circuit lines or wavy tech lines
+- NO dots, grids, or geometric patterns in background
+- NO tech nodes connected by lines
+- NO network visualization patterns
+- NO busy decorative overlays
+- USE clean, flat backgrounds or simple gradients only
+- KEEP backgrounds minimal and professional
+
+Create a beautiful, professional design with CLEAN, SLEEK backgrounds that represents ${brandProfile.businessName || businessType} perfectly.`;
 
   return prompt;
 }
@@ -1028,10 +1024,10 @@ function getIndustrySpecificElements(businessType: string): string {
 - Natural textures (wood, stone) if appropriate
 - Appetizing color gradients and warm tones`,
 
-    'technology': `- Geometric patterns and digital elements
-- Circuit board inspired subtle patterns
-- Modern icons and tech symbols
-- Futuristic lighting effects and gradients`,
+    'technology': `- Clean, modern design elements
+- Simple icons and tech symbols
+- Professional lighting and clean backgrounds
+- Sleek, minimal aesthetic`,
 
     'healthcare': `- Medical cross or health symbols (subtle)
 - Clean, sterile visual elements
@@ -1082,7 +1078,7 @@ function getIndustrySpecificElements(businessType: string): string {
   }
 
   return `- Universal business symbols and elements
-- Professional geometric patterns
+- Clean, professional design elements
 - Versatile design elements suitable for any industry
-- Clean, modern visual language`;
+- Sleek, modern visual language`;
 }

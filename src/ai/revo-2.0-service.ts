@@ -1552,11 +1552,20 @@ CREATIVE CONCEPT: ${concept.concept}
 🎯 VISUAL CONTEXT REQUIREMENT: ${visualContext}${serviceVisualContext}${businessTypeVisualGuidance}
 
 🎯 STRONG FLEXIBLE TEMPLATE STRUCTURE (MANDATORY):
-1. NEUTRAL BACKGROUND: White or soft gradient (never busy patterns)
+1. NEUTRAL BACKGROUND: White or soft gradient ONLY (NEVER busy patterns, lines, grids, or decorative overlays)
 2. ACCENT COLOR: Tied to post theme using brand colors strategically
 3. SINGLE FOCAL ELEMENT: 1 person photo OR 1 relatable object (never both)
 4. EMOTIONAL HEADLINE: Human tone, not corporate speak
 5. OPTIONAL IDENTITY ELEMENT: Small icon or motif for brand consistency
+
+🚫 CRITICAL: ABSOLUTELY NO BUSY BACKGROUNDS:
+- NO curved digital circuit lines or wavy white lines across background
+- NO dots, grids, or geometric patterns overlaying the design
+- NO tech nodes connected by lines or network visualizations
+- NO decorative overlays, patterns, or "tech" aesthetic elements
+- ONLY use clean, flat backgrounds or simple gradients
+- KEEP backgrounds sleek, minimal, and professional
+- FOCUS on content and people, not decorative background elements
 
 🌟 NATURAL, AUTHENTIC IMAGERY REQUIREMENTS:
 - Show REAL people using technology naturally (no artificial tech effects)

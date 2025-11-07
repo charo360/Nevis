@@ -981,18 +981,18 @@ function getCulturalDesignElements(location: string, useLocalLanguage: boolean):
   if (!useLocalLanguage) return '';
 
   const designElements: Record<string, string> = {
-    'kenya': 'Subtle Maasai patterns, warm earth tones, acacia tree silhouettes, traditional geometric patterns',
-    'nigeria': 'Vibrant Ankara patterns, bold geometric designs, traditional motifs, energetic color combinations',
-    'south africa': 'Rainbow nation colors, traditional beadwork patterns, diverse cultural symbols, ubuntu elements',
-    'ghana': 'Kente cloth patterns, Adinkra symbols, traditional gold accents, cultural geometric designs',
-    'uganda': 'Traditional bark cloth textures, natural patterns, cultural symbols, earth tone accents',
-    'tanzania': 'Swahili coastal patterns, traditional textiles, cultural motifs, natural textures',
-    'ethiopia': 'Traditional cross patterns, ancient script elements, cultural symbols, earth tone designs',
-    'rwanda': 'Traditional basket weaving patterns, unity symbols, cultural geometric designs, natural elements',
-    'india': 'Mandala patterns, traditional motifs, festival colors, cultural geometric designs, paisley elements',
+    'kenya': 'Warm earth tones, acacia tree silhouettes, clean cultural elements',
+    'nigeria': 'Vibrant colors, traditional motifs, energetic color combinations',
+    'south africa': 'Rainbow nation colors, diverse cultural symbols, ubuntu elements',
+    'ghana': 'Traditional gold accents, clean cultural designs',
+    'uganda': 'Natural textures, cultural symbols, earth tone accents',
+    'tanzania': 'Swahili coastal elements, cultural motifs, natural textures',
+    'ethiopia': 'Cultural symbols, earth tone designs',
+    'rwanda': 'Unity symbols, clean cultural designs, natural elements',
+    'india': 'Traditional motifs, festival colors, clean cultural designs',
     'canada': 'Maple leaf elements, natural textures, multicultural symbols, clean modern designs',
-    'usa': 'Stars and stripes elements, diverse cultural symbols, modern geometric patterns',
-    'uk': 'Traditional patterns, heritage elements, classic design motifs, royal colors'
+    'usa': 'Diverse cultural symbols, clean modern designs',
+    'uk': 'Heritage elements, classic design motifs, royal colors'
   };
 
   const locationKey = location.toLowerCase();
@@ -1199,16 +1199,16 @@ function getCurrencyInstructions(location: string): string {
 function getSignatureBrandMotif(businessName: string, location: string): string {
   const locationKey = location.toLowerCase();
 
-  // Fintech-specific signature motifs
+  // Fintech-specific signature motifs - CLEAN & MINIMAL
   const fintechMotifs = [
-    "Subtle diagonal grid pattern overlay (20% opacity) suggesting digital connectivity",
-    "Curved corner elements with gradient fade representing smooth transactions",
-    "Geometric hexagon pattern (background) symbolizing security and trust",
-    "Flowing wave gradient from top-left corner representing financial flow",
-    "Dotted connection lines between elements showing network connectivity",
-    "Subtle card-like shadow depth giving premium fintech feel",
-    "Rounded rectangle frames with soft inner glow for modern tech aesthetic",
-    "Triangular accent elements in corners representing growth and progress"
+    "Clean flat background with subtle gradient representing smooth transactions",
+    "Simple card-like shadow depth giving premium fintech feel",
+    "Rounded rectangle frames for modern tech aesthetic",
+    "Minimal accent elements in corners representing growth and progress",
+    "Sleek, flat design with professional appearance",
+    "Clean white or soft gradient background",
+    "Simple geometric shapes without busy patterns",
+    "Professional minimal aesthetic with focus on content"
   ];
 
   // Location-specific authentic imagery suggestions
@@ -3614,10 +3614,10 @@ function getRandomDesignStyle(): string {
     },
     {
       name: "Geometric Modern",
-      description: "Clean geometric shapes and patterns with modern aesthetic",
-      composition: "Geometric elements as design foundation with structured layout",
+      description: "Clean geometric shapes with modern aesthetic",
+      composition: "Simple geometric elements as design foundation with structured layout",
       mood: "Contemporary, structured, innovative",
-      elements: "Geometric shapes, clean patterns, modern colors, structured composition"
+      elements: "Simple geometric shapes, modern colors, structured composition"
     },
     {
       name: "Elegant Minimal",
@@ -3628,10 +3628,10 @@ function getRandomDesignStyle(): string {
     },
     {
       name: "Dynamic Flow",
-      description: "Flowing, organic elements with subtle movement and energy",
-      composition: "Curved lines and flowing elements creating visual movement",
+      description: "Clean, flowing elements with subtle movement and energy",
+      composition: "Simple flowing elements creating visual movement",
       mood: "Energetic, flowing, dynamic, modern",
-      elements: "Flowing lines, organic shapes, dynamic composition, movement-based design"
+      elements: "Clean flowing shapes, dynamic composition, movement-based design"
     },
     {
       name: "Card-Based Design",
@@ -3959,7 +3959,7 @@ ${useLocalLanguage ? `- Local Authenticity: Include subtle design elements that 
 - VARY phone mockup placement: left, right, center, background, foreground
 - ALTERNATE text positioning: top-left, bottom-right, center, split layout
 - ROTATE visual composition: vertical, horizontal, diagonal, circular
-- CHANGE background approach: solid, gradient, pattern, photo, minimal
+- CHANGE background approach: solid, gradient, photo, minimal (NO BUSY PATTERNS)
 - DIVERSIFY human subjects: age, gender, setting, activity, emotion
 - MANDATORY: Each design must feel completely different from the last
 
@@ -3970,6 +3970,15 @@ ${useLocalLanguage ? `- Local Authenticity: Include subtle design elements that 
 4. BALANCED composition - not cramped or cluttered
 5. FOCAL POINT should be immediately obvious
 6. SUPPORTING elements should enhance, not compete
+
+🚫 CRITICAL: CLEAN BACKGROUNDS ONLY (NO BUSY PATTERNS):
+- NO curved digital circuit lines or wavy tech lines across background
+- NO dots, grids, or geometric patterns overlaying the design
+- NO tech nodes connected by lines or network visualizations
+- NO busy decorative overlays or "tech" patterns
+- USE clean, flat backgrounds or simple gradients ONLY
+- KEEP backgrounds sleek, minimal, and professional
+- FOCUS on content, not decorative background elements
 
 🚫 FIX TOP-HEAVY TEXT LAYOUT:
 - NEVER stack all text at the top of the design
