@@ -8055,23 +8055,48 @@ ${generateIndustrySpecificDesignGuidance(businessType, brandProfile)}
 5. OPTIONAL IDENTITY ELEMENT: Small icon or motif for brand consistency
 
 🚫 CRITICAL: ABSOLUTELY NO BUSY BACKGROUNDS, LINES, OR TECH ELEMENTS:
-- NO curved digital circuit lines or wavy white/light lines across background
-- NO straight diagonal lines forming circuit board patterns
-- NO angular geometric line patterns or tech-style line overlays
-- NO dots, grids, or geometric patterns overlaying the design
-- NO tech nodes connected by lines or network visualizations
-- NO decorative overlays, patterns, or "tech" aesthetic elements
-- NO connection lines, network lines, or flowing curved lines
-- NO abstract line patterns or geometric line overlays of ANY kind
-- NO holographic floating UI elements, dashboards, or transparent screens
-- NO floating charts, graphs, or data visualization overlays
-- NO transparent/glass-effect tables, panels, or interface elements
-- NO futuristic tech overlays or digital interface mockups
-- ONLY use clean, SOLID flat backgrounds or simple gradients
-- KEEP backgrounds sleek, minimal, and professional
-- FOCUS on content and people, not decorative background elements
-- BACKGROUNDS MUST BE: Solid white, solid brand color, or simple 2-color gradient ONLY
-- NO TECH AESTHETIC - keep it clean, modern, and simple
+═══════════════════════════════════════════════════════════════
+⚠️  ZERO TOLERANCE POLICY - IMMEDIATE REJECTION IF VIOLATED:
+═══════════════════════════════════════════════════════════════
+
+❌ ABSOLUTELY NO LINES (ANY TYPE):
+   • NO curved lines (digital circuits, wavy patterns)
+   • NO straight lines (grids, borders, dividers)
+   • NO diagonal lines (circuit boards, geometric patterns)
+   • NO connection lines (networks, nodes, tech visualizations)
+   • NO decorative lines (overlays, patterns, tech aesthetic)
+   • NO line patterns of ANY kind on the background
+   • ZERO LINES ALLOWED - background must be COMPLETELY CLEAN
+
+❌ ABSOLUTELY NO TECH ELEMENTS:
+   • NO floating UI elements (dashboards, panels, screens)
+   • NO holographic displays or transparent interfaces
+   • NO data visualizations (charts, graphs, analytics)
+   • NO glass-effect panels or futuristic overlays
+   • NO digital mockups or tech aesthetic elements
+   • ZERO TECH AESTHETIC - keep it simple and clean
+
+❌ ABSOLUTELY NO DOTS OR NODES:
+   • NO dots at intersections or connection points
+   • NO network nodes or geometric dot patterns
+   • NO decorative dot overlays of any kind
+
+✅ ONLY THESE BACKGROUNDS ARE ALLOWED:
+   ✓ SOLID white (#FFFFFF) - completely flat, no patterns
+   ✓ SOLID brand color (${primaryColor}) - completely flat, no patterns
+   ✓ Simple 2-color gradient using ONLY brand colors
+   ✓ NO patterns, NO lines, NO overlays, NO decorations
+
+✅ DESIGN COMPOSITION (ONLY THESE ELEMENTS):
+   ✓ People (if applicable) - real, natural, authentic
+   ✓ Text overlay - clean typography
+   ✓ Logo - in corner with proper spacing
+   ✓ SOLID background - no decorations
+   ✓ NOTHING ELSE - keep it minimal and professional
+
+═══════════════════════════════════════════════════════════════
+🎯 CRITICAL: Background must be COMPLETELY SOLID and CLEAN
+═══════════════════════════════════════════════════════════════
 
 🌟 NATURAL, AUTHENTIC IMAGERY REQUIREMENTS:
 - Show REAL people using technology naturally (no artificial tech effects)
@@ -8258,7 +8283,57 @@ ${shouldFollowBrandColors ? `- MANDATORY: Use the specified brand colors (${prim
 
 ${peopleInstructions}
 ${culturalInstructions}
-${contactInstruction}`;
+${contactInstruction}
+
+🚨 FINAL CRITICAL REMINDER - ABSOLUTELY MANDATORY:
+═══════════════════════════════════════════════════════════════
+❌ ZERO TOLERANCE - THESE WILL RESULT IN IMMEDIATE REJECTION:
+═══════════════════════════════════════════════════════════════
+
+🚫 NO LINES OF ANY KIND:
+   ❌ NO diagonal lines
+   ❌ NO curved lines
+   ❌ NO straight lines
+   ❌ NO grid lines
+   ❌ NO connection lines
+   ❌ NO network lines
+   ❌ NO circuit patterns
+   ❌ NO geometric line overlays
+   ❌ NO tech line patterns
+   ❌ ABSOLUTELY NO LINES ON THE BACKGROUND
+
+🚫 NO TECH ELEMENTS:
+   ❌ NO floating UI elements
+   ❌ NO holographic dashboards
+   ❌ NO transparent screens
+   ❌ NO data visualizations
+   ❌ NO charts or graphs floating in air
+   ❌ NO glass-effect panels
+   ❌ NO digital overlays
+   ❌ NO tech aesthetic of any kind
+
+🚫 NO DOTS OR NODES:
+   ❌ NO dots at line intersections
+   ❌ NO network nodes
+   ❌ NO connection points
+   ❌ NO geometric dot patterns
+
+✅ ONLY ALLOWED BACKGROUNDS:
+   ✓ SOLID white (#FFFFFF)
+   ✓ SOLID brand color (${primaryColor})
+   ✓ Simple 2-color gradient (brand colors only)
+   ✓ COMPLETELY CLEAN - no patterns, no lines, no overlays
+
+✅ DESIGN SHOULD CONTAIN ONLY:
+   ✓ People (if applicable)
+   ✓ Text overlay
+   ✓ Logo
+   ✓ SOLID background
+   ✓ Nothing else
+
+═══════════════════════════════════════════════════════════════
+🎯 REMEMBER: Clean, simple, professional. NO TECH AESTHETIC.
+═══════════════════════════════════════════════════════════════`;
 }
 /**
  * Call Gemini for image generation (clean API call)
