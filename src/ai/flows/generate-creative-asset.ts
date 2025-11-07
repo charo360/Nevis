@@ -1766,6 +1766,10 @@ Ensure the text is readable and well-composed.`
                             : undefined;
 
                         // 🔍 DEBUG: Log promptParts before sending to AI
+                        // 🔍 DEBUG: Extract full prompt text for analysis
+                        const textPart = promptParts.find(part => typeof part === 'object' && 'text' in part);
+                        const fullPromptText = textPart && 'text' in textPart ? textPart.text : '';
+
                         console.log('🤖 [Generate Creative Asset] Sending to AI Model:', {
                             modelToUse: modelToUse,
                             promptPartsCount: promptParts.length,
@@ -1776,12 +1780,12 @@ Ensure the text is readable and well-composed.`
                                 return 'unknown';
                             }),
                             hasLogoDataUrl: !!logoDataUrl,
-                            firstPartPreview: typeof promptParts[0] === 'string'
-                                ? promptParts[0].substring(0, 100)
-                                : 'text' in promptParts[0]
-                                    ? promptParts[0].text.substring(0, 100)
-                                    : 'media'
+                            hasUploadedImage: !!input.referenceAssetUrl
                         });
+
+                        console.log('📝 [Generate Creative Asset] FULL PROMPT TEXT:');
+                        console.log(fullPromptText);
+                        console.log('📝 [Generate Creative Asset] PROMPT LENGTH:', fullPromptText.length);
 
                         const { media } = await generateWithRetry({
                             model: modelToUse,
