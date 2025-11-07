@@ -1,5 +1,3 @@
-'use server';
-
 /**
  * @fileOverview Enhanced Brand Analysis Flow that integrates comprehensive brand intelligence
  * 
