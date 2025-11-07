@@ -1475,16 +1475,7 @@ ${designDNA}`;
                         promptPartsLengthBefore: promptParts.length
                     });
 
-                    onBrandPrompt += `\n- **🎯 UPLOADED IMAGE FOCUSED DESIGN:** A user has uploaded an image that must be the PRIMARY visual element. DO NOT generate any additional images.`;
-                    onBrandPrompt += `\n  * **AI Analysis Required:** First analyze the uploaded image to understand its content, style, quality, and best enhancement approach`;
-                    onBrandPrompt += `\n  * **Enhancement Strategy:** Based on your analysis, choose the optimal enhancement method:`;
-                    onBrandPrompt += `\n    - If it's a product/object: Make it the hero element with professional styling and text overlays`;
-                    onBrandPrompt += `\n    - If it's a scene/background: Use as backdrop with professional text treatments and overlays`;
-                    onBrandPrompt += `\n    - If it's a person/lifestyle: Add dynamic text layouts and professional treatments`;
-                    onBrandPrompt += `\n    - If it's a logo/graphic: Enhance with complementary text and design treatments`;
-                    onBrandPrompt += `\n  * **Professional Execution:** Use ONLY the uploaded image - enhance with text, color treatments, and styling`;
-                    onBrandPrompt += `\n  * **Brand Synergy:** Coordinate text and design treatments with brand colors and aesthetic`;
-                    onBrandPrompt += `\n  * **Creative Excellence:** The uploaded image should be the main visual element enhanced with professional text and design treatments`;
+                    // Add uploaded image to promptParts (will be referenced in instructions below)
                     promptParts.push({ media: { url: input.referenceAssetUrl!, contentType: getMimeTypeFromDataURI(input.referenceAssetUrl!) } });
 
                     // 🔍 DEBUG: Confirm image added
@@ -1493,31 +1484,53 @@ ${designDNA}`;
                     });
                 }
 
-                onBrandPrompt += `\n- **UPLOADED IMAGE FOCUSED DESIGN:** ${hasUploadedImage ? 'Create a professional marketing design using ONLY the uploaded image as the visual foundation. Enhance it with text overlays, color treatments, and design elements. DO NOT generate any additional images.' : 'Create a complete, professional marketing design with full layout composition. This should be a comprehensive social media post design, NOT just a logo. Include backgrounds, graphics, text elements, and visual hierarchy.'}`;
+                // Instructions for design generation with uploaded image and/or logo
+                if (hasUploadedImage && bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
+                    // Both uploaded image AND logo present - treat both as reference images to incorporate
+                    onBrandPrompt += `\n- **🎯 DUAL IMAGE INTEGRATION:** You have been provided with TWO reference images that MUST both be incorporated into your design:
+  1. **User's Uploaded Image** (provided below) - This MUST be the PRIMARY visual element and hero of the design
+  2. **Brand Logo** (provided below) - This MUST also be prominently featured and clearly visible
+- **Design Approach:** Create a professional marketing design that prominently features the uploaded image as the main visual element while also incorporating the brand logo in a natural, well-integrated way
+- **Uploaded Image Treatment:** The uploaded image should be the focal point and dominant visual element (minimum 60% of visual weight)
+- **Logo Treatment:** The brand logo should be clearly visible and well-positioned (minimum 10% of design area) but complementary to the uploaded image
+- **Integration:** Both images should work together cohesively in a unified, professional design composition`;
+                } else if (hasUploadedImage) {
+                    // Only uploaded image, no logo
+                    onBrandPrompt += `\n- **🎯 UPLOADED IMAGE INTEGRATION:** A user has uploaded an image (provided below) that MUST be prominently featured in your design
+- **Design Approach:** Create a professional marketing design that prominently features the uploaded image as the main visual element
+- **Image Treatment:** The uploaded image should be the focal point and hero of the design
+- **Enhancement:** Add professional text overlays, color treatments, and design elements that complement the uploaded image`;
+                } else if (bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
+                    // Only logo, no uploaded image
+                    onBrandPrompt += `\n- **🎯 BRAND LOGO INTEGRATION:** The brand logo (provided below) MUST be prominently featured in your design
+- **Logo Treatment:** Logo should be clearly visible, well-positioned, and properly sized (minimum 10% of design area)
+- **Design Approach:** Create a complete, professional marketing design with full layout composition that prominently features the brand logo`;
+                } else {
+                    // No uploaded image, no logo
+                    onBrandPrompt += `\n- **Design Approach:** Create a complete, professional marketing design with full layout composition. This should be a comprehensive social media post design, NOT just a logo. Include backgrounds, graphics, text elements, and visual hierarchy.`;
+                }
+
                 if (noPeopleRequirement) {
                     onBrandPrompt += `\n- **PEOPLE EXCLUSION (MANDATORY):** Do NOT include people, faces, silhouettes, or human-like figures in any part of the design.`;
                 }
-                onBrandPrompt += `\n- **🚨 MANDATORY BRAND LOGO INTEGRATION:** ${bp.logoDataUrl ? (hasUploadedImage ? 'You MUST overlay/composite the provided brand logo onto the uploaded image. The uploaded image is the base/background, and you should add the brand logo on top of it as an overlay. DO NOT create a new image - use the uploaded image and add the logo to it.' : 'You MUST prominently include the provided brand logo in your design. The logo should be clearly visible, well-positioned, and properly sized (minimum 10% of design area). This is a critical requirement - the logo must be unmistakably present in the final design.') : 'Create a design that represents the brand identity while focusing on the uploaded image'}.`;
-                onBrandPrompt += `\n- **Design Completeness:** ${hasUploadedImage ? 'Enhance the uploaded image with professional text layouts, color treatments, and design elements - use ONLY the uploaded image as the visual foundation' : 'Generate a full marketing design with backgrounds, graphics, text layouts, and visual elements - NOT just a logo or simple graphic.'}`;
+
                 onBrandPrompt += `\n- **Critical Language Rule:** ALL text must be in clear, readable ENGLISH only. Never use foreign languages, corrupted text, or unreadable symbols.`;
 
+                // Add reference images to promptParts with clear instructions
                 if (bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
-                    // Add logo with strong integration instructions
+                    onBrandPrompt += `\n\n🎯 **CRITICAL REFERENCE IMAGE REQUIREMENTS:**`;
                     if (hasUploadedImage) {
-                        onBrandPrompt += `\n\n🎯 **CRITICAL: UPLOADED IMAGE + LOGO COMPOSITION:**
-- You have TWO images: (1) The user's uploaded image, and (2) The brand logo
-- **PRIMARY TASK:** Use the uploaded image as the BASE/BACKGROUND
-- **SECONDARY TASK:** Overlay/composite the brand logo onto the uploaded image
-- **DO NOT:** Create a new image from scratch
-- **DO:** Enhance the uploaded image with text overlays, color treatments, and the brand logo
-- **LOGO PLACEMENT:** Add the brand logo as an overlay on top of the uploaded image (corner, center, or strategic position)
-- **LOGO SIZE:** Minimum 10% of design area, clearly visible
-- **FINAL RESULT:** The uploaded image enhanced with professional text treatments AND the brand logo overlaid on it`;
+                        onBrandPrompt += `
+- The uploaded image provided below MUST be the PRIMARY visual element in your design (hero/focal point)
+- The brand logo image provided below MUST also be prominently featured and clearly visible
+- Both images are mandatory - incorporate them into a cohesive, professional design
+- Visual hierarchy: Uploaded image (primary/dominant) + Brand logo (secondary/prominent)
+- This is a critical requirement - BOTH images MUST appear in the final design`;
                     } else {
-                        onBrandPrompt += `\n\n🎯 **CRITICAL LOGO REQUIREMENT:**
+                        onBrandPrompt += `
 - The brand logo image provided below MUST be prominently featured in your design
 - Logo should be clearly visible and well-integrated into the composition
-- Minimum logo size: 10% of design area
+- Minimum logo size: 10% of total design area
 - Logo placement should be natural but unmistakable
 - This is a mandatory requirement - the logo MUST appear in the final design`;
                     }
