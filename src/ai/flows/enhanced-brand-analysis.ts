@@ -146,7 +146,18 @@ export class EnhancedBrandAnalyzer {
   private generateInsights(
     brandIntelligence: CompleteBrandIntelligence,
     basicResult: BrandAnalysisResult
-  ): EnhancedBrandAnalysisResult['comprehensive']['insights'] {
+  ): {
+    brandStrength: number;
+    digitalPresence: number;
+    contentQuality: number;
+    visualConsistency: number;
+    recommendations: Array<{
+      category: string;
+      priority: 'high' | 'medium' | 'low';
+      recommendation: string;
+      impact: string;
+    }>;
+  } {
     // Calculate brand strength score (0-100)
     const brandStrength = this.calculateBrandStrength(brandIntelligence);
     
