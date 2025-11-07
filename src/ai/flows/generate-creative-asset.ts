@@ -1497,18 +1497,30 @@ ${designDNA}`;
                 if (noPeopleRequirement) {
                     onBrandPrompt += `\n- **PEOPLE EXCLUSION (MANDATORY):** Do NOT include people, faces, silhouettes, or human-like figures in any part of the design.`;
                 }
-                onBrandPrompt += `\n- **🚨 MANDATORY BRAND LOGO INTEGRATION:** ${bp.logoDataUrl ? 'You MUST prominently include the provided brand logo in your design. The logo should be clearly visible, well-positioned, and properly sized (minimum 10% of design area). This is a critical requirement - the logo must be unmistakably present in the final design.' : 'Create a design that represents the brand identity while focusing on the uploaded image'}.`;
+                onBrandPrompt += `\n- **🚨 MANDATORY BRAND LOGO INTEGRATION:** ${bp.logoDataUrl ? (hasUploadedImage ? 'You MUST overlay/composite the provided brand logo onto the uploaded image. The uploaded image is the base/background, and you should add the brand logo on top of it as an overlay. DO NOT create a new image - use the uploaded image and add the logo to it.' : 'You MUST prominently include the provided brand logo in your design. The logo should be clearly visible, well-positioned, and properly sized (minimum 10% of design area). This is a critical requirement - the logo must be unmistakably present in the final design.') : 'Create a design that represents the brand identity while focusing on the uploaded image'}.`;
                 onBrandPrompt += `\n- **Design Completeness:** ${hasUploadedImage ? 'Enhance the uploaded image with professional text layouts, color treatments, and design elements - use ONLY the uploaded image as the visual foundation' : 'Generate a full marketing design with backgrounds, graphics, text layouts, and visual elements - NOT just a logo or simple graphic.'}`;
                 onBrandPrompt += `\n- **Critical Language Rule:** ALL text must be in clear, readable ENGLISH only. Never use foreign languages, corrupted text, or unreadable symbols.`;
 
                 if (bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
                     // Add logo with strong integration instructions
-                    onBrandPrompt += `\n\n🎯 **CRITICAL LOGO REQUIREMENT:**
+                    if (hasUploadedImage) {
+                        onBrandPrompt += `\n\n🎯 **CRITICAL: UPLOADED IMAGE + LOGO COMPOSITION:**
+- You have TWO images: (1) The user's uploaded image, and (2) The brand logo
+- **PRIMARY TASK:** Use the uploaded image as the BASE/BACKGROUND
+- **SECONDARY TASK:** Overlay/composite the brand logo onto the uploaded image
+- **DO NOT:** Create a new image from scratch
+- **DO:** Enhance the uploaded image with text overlays, color treatments, and the brand logo
+- **LOGO PLACEMENT:** Add the brand logo as an overlay on top of the uploaded image (corner, center, or strategic position)
+- **LOGO SIZE:** Minimum 10% of design area, clearly visible
+- **FINAL RESULT:** The uploaded image enhanced with professional text treatments AND the brand logo overlaid on it`;
+                    } else {
+                        onBrandPrompt += `\n\n🎯 **CRITICAL LOGO REQUIREMENT:**
 - The brand logo image provided below MUST be prominently featured in your design
 - Logo should be clearly visible and well-integrated into the composition
-- Minimum logo size: 10% of total design area
+- Minimum logo size: 10% of design area
 - Logo placement should be natural but unmistakable
 - This is a mandatory requirement - the logo MUST appear in the final design`;
+                    }
                     promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
                 }
                 textPrompt = onBrandPrompt;
