@@ -15,12 +15,17 @@ export interface SupabaseUploadResult {
 
 export class SupabaseStorageService {
   private readonly bucketName = 'nevis-storage';
+  private supabase = createClient();
 
   /**
    * Check if Supabase storage is available
    */
   isAvailable(): boolean {
-    return isSupabaseAvailable();
+    try {
+      return !!this.supabase && !!process.env.NEXT_PUBLIC_SUPABASE_URL;
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -35,12 +40,12 @@ export class SupabaseStorageService {
       upsert?: boolean;
     }
   ): Promise<SupabaseUploadResult> {
-    if (!supabase) {
+    if (!this.supabase) {
       throw new Error('Supabase is not configured');
     }
 
     try {
-      const { data, error } = await supabase.storage
+      const { data, error } = await this.supabase.storage
         .from(this.bucketName)
         .upload(path, file, {
           contentType: options?.contentType,
@@ -53,7 +58,7 @@ export class SupabaseStorageService {
       }
 
       // Get public URL
-      const { data: urlData } = supabase.storage
+      const { data: urlData } = this.supabase.storage
         .from(this.bucketName)
         .getPublicUrl(data.path);
 
@@ -128,11 +133,11 @@ export class SupabaseStorageService {
    * Delete file from storage
    */
   async deleteFile(path: string): Promise<void> {
-    if (!supabase) {
+    if (!this.supabase) {
       throw new Error('Supabase is not configured');
     }
 
-    const { error } = await supabase.storage
+    const { error } = await this.supabase.storage
       .from(this.bucketName)
       .remove([path]);
 
@@ -145,11 +150,11 @@ export class SupabaseStorageService {
    * Get file URL
    */
   getPublicUrl(path: string): string {
-    if (!supabase) {
+    if (!this.supabase) {
       throw new Error('Supabase is not configured');
     }
 
-    const { data } = supabase.storage
+    const { data } = this.supabase.storage
       .from(this.bucketName)
       .getPublicUrl(path);
 
@@ -160,11 +165,11 @@ export class SupabaseStorageService {
    * List files in a folder
    */
   async listFiles(folder: string): Promise<any[]> {
-    if (!supabase) {
+    if (!this.supabase) {
       throw new Error('Supabase is not configured');
     }
 
-    const { data, error } = await supabase.storage
+    const { data, error } = await this.supabase.storage
       .from(this.bucketName)
       .list(folder);
 

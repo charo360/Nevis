@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseStorageService } from '@/lib/services/supabase-storage';
+import { supabaseStorage } from '@/lib/services/supabase-storage';
 
 /**
  * DELETE /api/documents/[id]
@@ -32,7 +32,7 @@ export async function DELETE(
     }
 
     // Delete from Supabase Storage
-    await supabaseStorageService.deleteFile(documentPath);
+    await supabaseStorage.deleteFile(documentPath);
 
     // TODO: Remove document metadata from brand profile in database
 

@@ -11,9 +11,11 @@ import type {
   DocumentFileFormat,
   DocumentProcessingStatus
 } from '@/types/documents';
+import type { BusinessTypeCategory } from '@/ai/adaptive/business-type-detector';
 
 interface DocumentUploadZoneProps {
   brandProfileId: string;
+  businessType?: BusinessTypeCategory;
   existingDocuments?: BrandDocument[];
   onDocumentsChange?: (documents: BrandDocument[]) => void;
   maxFiles?: number;
@@ -22,10 +24,11 @@ interface DocumentUploadZoneProps {
 
 export function DocumentUploadZone({
   brandProfileId,
+  businessType,
   existingDocuments = [],
   onDocumentsChange,
   maxFiles = 10,
-  maxFileSize = 10 * 1024 * 1024, // 10MB
+  maxFileSize = 50 * 1024 * 1024, // 50MB
 }: DocumentUploadZoneProps) {
   const [documents, setDocuments] = useState<BrandDocument[]>(existingDocuments);
   const [uploading, setUploading] = useState(false);
@@ -58,6 +61,11 @@ export function DocumentUploadZone({
         formData.append('file', file);
         formData.append('brandProfileId', brandProfileId);
         formData.append('documentType', detectDocumentType(file.name));
+
+        // Add business type if available for OpenAI processing
+        if (businessType) {
+          formData.append('businessType', businessType);
+        }
 
         // Upload to API
         const response = await fetch('/api/documents/upload', {

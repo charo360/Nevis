@@ -824,12 +824,13 @@ export function BrandDetailsStep({
 
               <DocumentUploadZone
                 brandProfileId={brandProfile.id || 'temp-id'}
+                businessType={brandProfile.businessType as any}
                 existingDocuments={brandProfile.documents || []}
                 onDocumentsChange={(documents: BrandDocument[]) => {
                   handleInputChange('documents', documents);
                 }}
                 maxFiles={10}
-                maxFileSize={10 * 1024 * 1024}
+                maxFileSize={50 * 1024 * 1024}
               />
             </TabsContent>
 

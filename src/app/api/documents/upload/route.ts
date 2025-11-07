@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseStorageService } from '@/lib/services/supabase-storage';
+import { supabaseStorage } from '@/lib/services/supabase-storage';
+import { documentProcessor } from '@/lib/services/document-processor';
 import type { BrandDocument, DocumentFileFormat, DocumentType } from '@/types/documents';
+import type { BusinessTypeCategory } from '@/ai/adaptive/business-type-detector';
 
 /**
  * POST /api/documents/upload
@@ -12,6 +14,16 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File;
     const brandProfileId = formData.get('brandProfileId') as string;
     const documentType = formData.get('documentType') as DocumentType;
+    const businessType = formData.get('businessType') as BusinessTypeCategory | null;
+
+    console.log('📄 Document upload request:', {
+      filename: file?.name,
+      size: file?.size,
+      type: file?.type,
+      brandProfileId,
+      documentType,
+      businessType
+    });
 
     if (!file) {
       return NextResponse.json(
@@ -27,11 +39,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file size (10MB limit)
-    const maxSize = 10 * 1024 * 1024;
+    // Validate file size (50MB limit)
+    const maxSize = 50 * 1024 * 1024;
     if (file.size > maxSize) {
       return NextResponse.json(
-        { success: false, error: 'File size exceeds 10MB limit' },
+        { success: false, error: 'File size exceeds 50MB limit' },
         { status: 400 }
       );
     }
@@ -51,7 +63,7 @@ export async function POST(request: NextRequest) {
 
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { success: false, error: 'Unsupported file type' },
+        { success: false, error: `Unsupported file type: ${file.type}` },
         { status: 400 }
       );
     }
@@ -62,16 +74,20 @@ export async function POST(request: NextRequest) {
     const filename = `${timestamp}_${sanitizedFilename}`;
     const path = `brands/${brandProfileId}/documents/${filename}`;
 
+    console.log('📤 Uploading to path:', path);
+
     // Convert File to Buffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
     // Upload to Supabase Storage
-    const uploadResult = await supabaseStorageService.uploadFile(buffer, path, {
+    const uploadResult = await supabaseStorage.uploadFile(buffer, path, {
       contentType: file.type,
       cacheControl: '3600',
       upsert: false,
     });
+
+    console.log('✅ Upload successful:', uploadResult);
 
     // Detect file format
     const fileFormat = detectFileFormat(file.type);
@@ -89,21 +105,86 @@ export async function POST(request: NextRequest) {
       processingStatus: 'pending',
     };
 
-    // TODO: Trigger document processing in background
-    // This would extract data from the document and update the extractedData field
-    // For now, we'll just return the document with pending status
+    // Automatically process document with OpenAI if business type is provided
+    if (businessType) {
+      console.log(`🤖 Processing document with OpenAI for business type: ${businessType}`);
+
+      try {
+        // Update status to processing
+        document.processingStatus = 'processing';
+
+        // Process document and WAIT for completion
+        // This uploads to OpenAI and attaches to the appropriate assistant
+        const result = await documentProcessor.processDocument(document, businessType);
+
+        if (result.success) {
+          console.log(`✅ Document processed successfully: ${document.filename}`);
+          console.log(`📎 OpenAI File ID: ${result.openaiFileId}`);
+          console.log(`🤖 Assistant ID: ${result.assistantId}`);
+
+          // Update document with OpenAI details
+          document.processingStatus = result.processingStatus;
+          document.openaiFileId = result.openaiFileId;
+          document.openaiAssistantId = result.assistantId;
+          document.openaiUploadDate = new Date().toISOString();
+
+          return NextResponse.json({
+            success: true,
+            document,
+            message: 'Document uploaded and processed successfully',
+            openai: {
+              fileId: result.openaiFileId,
+              assistantId: result.assistantId,
+            },
+          });
+        } else {
+          console.error(`❌ Document processing failed: ${result.errorMessage}`);
+
+          // Update status to failed
+          document.processingStatus = 'failed';
+          document.errorMessage = result.errorMessage;
+
+          return NextResponse.json({
+            success: true,
+            document,
+            message: 'Document uploaded but OpenAI processing failed',
+            warning: result.errorMessage,
+          });
+        }
+      } catch (error) {
+        console.error(`⚠️  Document processing error:`, error);
+
+        // Update status to failed
+        document.processingStatus = 'failed';
+        document.errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+        // Don't fail the upload if processing fails - document is still uploaded to storage
+        return NextResponse.json({
+          success: true,
+          document,
+          message: 'Document uploaded but OpenAI processing failed',
+          warning: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    } else {
+      console.log(`ℹ️  No business type provided - skipping OpenAI processing`);
+    }
 
     return NextResponse.json({
       success: true,
       document,
+      message: 'Document uploaded successfully',
     });
 
   } catch (error) {
-    console.error('Document upload error:', error);
+    console.error('❌ Document upload error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to upload document';
+    console.error('Error details:', errorMessage);
+
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to upload document',
+        error: errorMessage,
       },
       { status: 500 }
     );

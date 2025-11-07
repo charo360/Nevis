@@ -36,7 +36,7 @@ OpenAI's `file_search` tool supports the following file types:
 
 - **OpenAI Limit**: 512MB per file (varies by plan)
 - **Our Limit**: 50MB per file (conservative for performance)
-- **Supabase Upload Limit**: 10MB per file (for initial upload)
+- **Supabase Upload Limit**: 50MB per file (for initial upload)
 
 ### 4. Cost Considerations
 

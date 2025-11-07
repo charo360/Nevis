@@ -152,8 +152,8 @@ CREATE POLICY IF NOT EXISTS "Users can insert their own images" ON images
   FOR INSERT WITH CHECK (auth.uid()::text = user_id);
 
 -- Create storage bucket for images and generated content
-INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types) 
-VALUES ('nevis-storage', 'nevis-storage', true, 10485760, ARRAY['image/*', 'application/pdf'])
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES ('nevis-storage', 'nevis-storage', true, 52428800, ARRAY['image/*', 'application/pdf'])
 ON CONFLICT (id) DO NOTHING;
 
 -- Legacy bucket for compatibility

@@ -62,14 +62,14 @@ export class SupabaseService {
 
     try {
       const supabase = await createServerSupabase();
-      
+
       // Check if we have a real Supabase client (not mock)
       if (!supabase.storage || typeof (supabase.storage as any).listBuckets !== 'function') {
         console.warn('Supabase storage not available - using mock client');
         this.initialized = true;
         return;
       }
-      
+
       // Check if bucket exists
       const { data: buckets } = await (supabase.storage as any).listBuckets();
       const bucketExists = buckets?.some(bucket => bucket.name === this.bucketName);
@@ -79,7 +79,7 @@ export class SupabaseService {
         const { error } = await (supabase.storage as any).createBucket(this.bucketName, {
           public: true,
           allowedMimeTypes: ['image/*', 'application/pdf'],
-          fileSizeLimit: 10485760 // 10MB
+          fileSizeLimit: 52428800 // 50MB
         });
 
         if (error) {
@@ -103,7 +103,7 @@ export class SupabaseService {
   ): Promise<{ url: string; path: string } | null> {
     try {
       const supabase = await createServerSupabase();
-      
+
       const { data, error } = await (supabase.storage as any)
         .from(this.bucketName)
         .upload(path, file, {
@@ -339,7 +339,7 @@ export class SupabaseService {
   async deleteImage(path: string): Promise<boolean> {
     try {
       const supabase = await createServerSupabase();
-      
+
       const { error } = await (supabase.storage as any)
         .from(this.bucketName)
         .remove([path]);

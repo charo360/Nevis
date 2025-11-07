@@ -8,7 +8,7 @@
 /**
  * Supported document types
  */
-export type DocumentType = 
+export type DocumentType =
   | 'pitch-deck'
   | 'pricing-sheet'
   | 'product-catalog'
@@ -22,7 +22,7 @@ export type DocumentType =
 /**
  * Supported file formats
  */
-export type DocumentFileFormat = 
+export type DocumentFileFormat =
   | 'pdf'
   | 'ppt'
   | 'pptx'
@@ -37,7 +37,7 @@ export type DocumentFileFormat =
 /**
  * Document processing status
  */
-export type DocumentProcessingStatus = 
+export type DocumentProcessingStatus =
   | 'pending'
   | 'processing'
   | 'completed'
@@ -135,6 +135,11 @@ export interface BrandDocument {
   processingStatus: DocumentProcessingStatus;
   extractedData?: ExtractedDocumentData;
   errorMessage?: string;
+
+  // OpenAI integration metadata
+  openaiFileId?: string;        // OpenAI file ID for assistant access
+  openaiAssistantId?: string;   // Assistant ID that has access to this file
+  openaiUploadDate?: string;    // When file was uploaded to OpenAI
 }
 
 /**
@@ -201,7 +206,7 @@ export interface DocumentValidationRules {
  * Default validation rules
  */
 export const DEFAULT_DOCUMENT_VALIDATION: DocumentValidationRules = {
-  maxFileSize: 10 * 1024 * 1024, // 10MB
+  maxFileSize: 50 * 1024 * 1024, // 50MB
   maxDocumentsPerProfile: 10,
   allowedFormats: ['pdf', 'ppt', 'pptx', 'xls', 'xlsx', 'csv', 'jpg', 'jpeg', 'png', 'webp'],
   allowedTypes: [
