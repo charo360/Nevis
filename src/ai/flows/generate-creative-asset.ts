@@ -1740,6 +1740,24 @@ Ensure the text is readable and well-composed.`
                             ? input.brandProfile.logoDataUrl
                             : undefined;
 
+                        // 🔍 DEBUG: Log promptParts before sending to AI
+                        console.log('🤖 [Generate Creative Asset] Sending to AI Model:', {
+                            modelToUse: modelToUse,
+                            promptPartsCount: promptParts.length,
+                            promptPartsTypes: promptParts.map(part => {
+                                if (typeof part === 'string') return 'string';
+                                if ('text' in part) return 'text';
+                                if ('media' in part) return `media(${part.media.contentType})`;
+                                return 'unknown';
+                            }),
+                            hasLogoDataUrl: !!logoDataUrl,
+                            firstPartPreview: typeof promptParts[0] === 'string'
+                                ? promptParts[0].substring(0, 100)
+                                : 'text' in promptParts[0]
+                                    ? promptParts[0].text.substring(0, 100)
+                                    : 'media'
+                        });
+
                         const { media } = await generateWithRetry({
                             model: modelToUse,
                             prompt: promptParts,
