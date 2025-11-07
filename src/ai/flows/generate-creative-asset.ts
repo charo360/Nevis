@@ -802,7 +802,42 @@ REQUIREMENTS:
 - ${servicesText ? `🚨 MANDATORY: All content, imagery, and messaging must relate to ${servicesText}` : ''}
 - Brand colors prominently featured throughout the design
 - Professional social media marketing appearance
-- Include backgrounds, imagery, text layouts, and complete design composition`;
+- Include backgrounds, imagery, text layouts, and complete design composition
+
+🚨 **ULTRA-CRITICAL BACKGROUND RESTRICTIONS (ZERO TOLERANCE):**
+❌ **ABSOLUTELY NO CIRCULAR PATTERNS:**
+   • NO concentric circles (radar style, target style, HUD style)
+   • NO segmented circles (pie chart style, circular tech overlays)
+   • NO circular tech patterns (futuristic circles, circular gradients with segments)
+   • NO circular geometric patterns of ANY kind
+   • ZERO CIRCULAR PATTERNS ALLOWED
+
+❌ **ABSOLUTELY NO LINE PATTERNS:**
+   • NO diagonal lines (circuit boards, geometric patterns)
+   • NO curved lines (digital circuits, wavy patterns)
+   • NO straight lines (grids, borders, dividers)
+   • NO connection lines (networks, nodes, tech visualizations)
+   • NO decorative lines (overlays, patterns, tech aesthetic)
+   • ZERO LINES ALLOWED ON BACKGROUND
+
+❌ **ABSOLUTELY NO TECH AESTHETIC:**
+   • NO circuit board patterns (lines with nodes, connection points)
+   • NO holographic UI elements (floating dashboards, digital overlays)
+   • NO tech visualizations (data patterns, network diagrams)
+   • NO futuristic overlays (HUD displays, tech interfaces)
+   • NO digital patterns of any kind
+
+✅ **ONLY ALLOWED BACKGROUNDS:**
+   • SOLID colors (white, brand colors, or simple 2-color gradients)
+   • CLEAN, FLAT backgrounds with NO patterns
+   • SIMPLE gradients (2 colors maximum, no segments)
+   • REAL PHOTOS of actual locations/scenes (if contextually appropriate)
+
+🎯 **FINTECH/FINANCE OVERRIDE (IF APPLICABLE):**
+   • Despite being fintech/finance, use CLEAN, SIMPLE designs
+   • TRUST THROUGH SIMPLICITY: Clean backgrounds build more trust than tech patterns
+   • HUMAN-FOCUSED: Show people naturally, not surrounded by tech visualizations
+   • NO EXCEPTIONS: Even for tech companies, backgrounds must be SOLID and CLEAN`;
 
             // Intelligent design examples processing
             let designDNA = '';
@@ -992,7 +1027,33 @@ ${designDNA}`;
 - PROFESSIONAL LIGHTING: Studio-quality lighting with proper shadows
 - PREMIUM COMPOSITION: Golden ratio layouts with perfect balance
 - ADVANCED COLOR THEORY: Perfect contrast ratios (7:1 minimum) with vibrant, accurate colors
-- SQUARE FORMAT: 1:1 aspect ratio optimized for Instagram, Facebook, Twitter, LinkedIn mobile`;
+- SQUARE FORMAT: 1:1 aspect ratio optimized for Instagram, Facebook, Twitter, LinkedIn mobile
+
+🚨 **ULTRA-CRITICAL BACKGROUND RESTRICTIONS (ZERO TOLERANCE):**
+❌ **ABSOLUTELY NO CIRCULAR PATTERNS:**
+   • NO concentric circles (radar style, target style, HUD style)
+   • NO segmented circles (pie chart style, circular tech overlays)
+   • NO circular tech patterns (futuristic circles, circular gradients with segments)
+   • NO circular geometric patterns of ANY kind
+
+❌ **ABSOLUTELY NO LINE PATTERNS:**
+   • NO diagonal lines (circuit boards, geometric patterns)
+   • NO curved lines (digital circuits, wavy patterns)
+   • NO straight lines (grids, borders, dividers)
+   • NO connection lines (networks, nodes, tech visualizations)
+   • NO decorative lines (overlays, patterns, tech aesthetic)
+
+❌ **ABSOLUTELY NO TECH AESTHETIC:**
+   • NO circuit board patterns (lines with nodes, connection points)
+   • NO holographic UI elements (floating dashboards, digital overlays)
+   • NO tech visualizations (data patterns, network diagrams)
+   • NO futuristic overlays (HUD displays, tech interfaces)
+
+✅ **ONLY ALLOWED BACKGROUNDS:**
+   • SOLID colors (white, neutral colors, or simple 2-color gradients)
+   • CLEAN, FLAT backgrounds with NO patterns
+   • SIMPLE gradients (2 colors maximum, no segments)
+   • REAL PHOTOS of actual locations/scenes (if contextually appropriate)`;
 
             if (input.outputType === 'image' && imageText) {
                 creativePrompt += `
