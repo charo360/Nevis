@@ -759,8 +759,9 @@ async function generateWithRetry(request: GenerateRequest, logoDataUrl?: string,
             // Use direct Vertex AI instead of proxy
             if (logoDataUrl && request.model?.includes('image')) {
 
-                // Extract text prompt from request
+                // Extract text prompt and uploaded image from request
                 let textPrompt = '';
+                let uploadedImageDataUrl: string | undefined = undefined;
 
                 if (Array.isArray(request.prompt)) {
                     for (const part of request.prompt) {
@@ -768,6 +769,15 @@ async function generateWithRetry(request: GenerateRequest, logoDataUrl?: string,
                             textPrompt += part;
                         } else if (part.text) {
                             textPrompt += part.text;
+                        } else if (part.media) {
+                            // Extract uploaded image (first media part)
+                            if (!uploadedImageDataUrl) {
+                                uploadedImageDataUrl = part.media.url;
+                                console.log('📸 [generateWithRetry] Extracted uploaded image from promptParts (logo case):', {
+                                    uploadedImageLength: uploadedImageDataUrl.length,
+                                    contentType: part.media.contentType
+                                });
+                            }
                         }
                     }
                 } else if (typeof request.prompt === 'string') {
@@ -790,9 +800,16 @@ The client specifically requested their brand logo to be included. FAILURE TO IN
                 // Use direct Vertex AI with correct model name
                 const modelName = 'gemini-2.5-flash-image'; // Use correct Vertex AI model name
 
+                console.log('🚀 [generateWithRetry] Calling Vertex AI with logo:', {
+                    hasTextPrompt: !!textPrompt,
+                    hasUploadedImage: !!uploadedImageDataUrl,
+                    hasLogo: !!logoDataUrl
+                });
+
                 const result = await getVertexAIClient().generateImage(finalPrompt, modelName, {
                     temperature: 0.7,
                     maxOutputTokens: 8192,
+                    uploadedImage: uploadedImageDataUrl,
                     logoImage: logoDataUrl
                 });
 
@@ -804,19 +821,48 @@ The client specifically requested their brand logo to be included. FAILURE TO IN
                 } as any;
             } else {
                 // For non-logo cases, also use direct Vertex AI
+                // Extract text prompt and uploaded image from request
 
                 let textPrompt = '';
+                let uploadedImageDataUrl: string | undefined = undefined;
+
                 if (Array.isArray(request.prompt)) {
-                    textPrompt = request.prompt.map(p => typeof p === 'string' ? p : (p.text || '')).join(' ');
+                    // Extract text parts
+                    textPrompt = request.prompt
+                        .filter(p => typeof p === 'string' || (typeof p === 'object' && 'text' in p))
+                        .map(p => typeof p === 'string' ? p : (p.text || ''))
+                        .join(' ');
+
+                    // Extract uploaded image (first media part that's not a logo)
+                    const mediaParts = request.prompt.filter(p =>
+                        typeof p === 'object' && 'media' in p
+                    ) as Array<{ media: { url: string; contentType?: string } }>;
+
+                    if (mediaParts.length > 0) {
+                        // First media part is the uploaded image
+                        uploadedImageDataUrl = mediaParts[0].media.url;
+                        console.log('📸 [generateWithRetry] Extracted uploaded image from promptParts:', {
+                            uploadedImageLength: uploadedImageDataUrl.length,
+                            contentType: mediaParts[0].media.contentType
+                        });
+                    }
                 } else if (typeof request.prompt === 'string') {
                     textPrompt = request.prompt;
                 }
 
                 const modelName = 'gemini-2.5-flash-image';
 
+                console.log('🚀 [generateWithRetry] Calling Vertex AI with:', {
+                    hasTextPrompt: !!textPrompt,
+                    hasUploadedImage: !!uploadedImageDataUrl,
+                    hasLogo: !!logoDataUrl
+                });
+
                 const result = await getVertexAIClient().generateImage(textPrompt, modelName, {
                     temperature: 0.7,
-                    maxOutputTokens: 8192
+                    maxOutputTokens: 8192,
+                    uploadedImage: uploadedImageDataUrl,
+                    logoImage: logoDataUrl
                 });
 
                 return {
