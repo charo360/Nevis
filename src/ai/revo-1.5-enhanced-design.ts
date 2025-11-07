@@ -3164,7 +3164,7 @@ CRITICAL INSTRUCTION: The image MUST visually represent and include the text con
     if (address) contacts.push(`📍 ${address}`);
 
     if (contacts.length > 0) {
-      contactInstruction = `\n\n📞 CONTACT INFORMATION (MANDATORY FOOTER PLACEMENT):\n${contacts.join('\n')}\n- MUST display available contact info in footer strip at BOTTOM of image\n- MANDATORY: Use contrasting background (dark footer with light text OR light footer with dark text)\n- MANDATORY: Contact footer must span full width of image\n- MANDATORY: Text size minimum 14px equivalent for readability\n- MANDATORY: Format as horizontal strip: "${contacts.join(' | ')}"\n- MANDATORY: Footer placement is NON-NEGOTIABLE - always at bottom\n- NOTE: Only show available contacts (phone, email, website) - not all are required\n- Use professional styling that complements the brand colors`;
+      contactInstruction = `\n\n📞 CONTACT INFORMATION (MANDATORY FOOTER PLACEMENT):\n${contacts.join('\n')}\n- MUST display available contact info in footer strip at BOTTOM of image\n- MANDATORY: Footer background MUST use BRAND COLORS (primary, accent, or background color from brand profile)\n- MANDATORY: If brand color is dark, use WHITE or LIGHT text; if brand color is light, use DARK text\n- MANDATORY: DO NOT use black (#000000) unless it's explicitly a brand color\n- MANDATORY: Contact footer must span full width of image\n- MANDATORY: Text size minimum 14px equivalent for readability\n- MANDATORY: Format as horizontal strip: "${contacts.join(' | ')}"\n- MANDATORY: Footer placement is NON-NEGOTIABLE - always at bottom\n- NOTE: Only show available contacts (phone, email, website) - not all are required\n- Use professional styling that complements and matches the brand colors`;
     }
   }
 

@@ -1540,7 +1540,7 @@ export function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: a
     if (address) contacts.push(`📍 ${address}`);
 
     if (contacts.length > 0) {
-      contactInstruction = `\n\n📞 MANDATORY CONTACT FOOTER:\n${contacts.join('\n')}\n- ALWAYS place contact information at the BOTTOM FOOTER of the design\n- Create a clean contact strip/bar at the bottom edge\n- Use contrasting background (dark bar with light text OR light bar with dark text)\n- Ensure contact details are large enough to read (minimum 14px equivalent)\n- Format: ${contacts.join(' | ')}\n- NEVER place contacts anywhere except the footer area`;
+      contactInstruction = `\n\n📞 MANDATORY CONTACT FOOTER:\n${contacts.join('\n')}\n- ALWAYS place contact information at the BOTTOM FOOTER of the design\n- Create a clean contact strip/bar at the bottom edge\n- MANDATORY: Footer background MUST use BRAND COLORS (${primaryColor}, ${accentColor}, or ${backgroundColor})\n- MANDATORY: If brand color is dark, use WHITE or LIGHT text; if brand color is light, use DARK text\n- MANDATORY: DO NOT use black (#000000) unless it's explicitly a brand color\n- Ensure contact details are large enough to read (minimum 14px equivalent)\n- Format: ${contacts.join(' | ')}\n- NEVER place contacts anywhere except the footer area\n- Use professional styling that complements and matches the brand colors`;
     }
 
   }

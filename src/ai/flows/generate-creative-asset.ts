@@ -793,11 +793,13 @@ ${contacts.map(c => `- ${c}`).join('\n')}
 🚨 **FOOTER DISPLAY REQUIREMENTS:**
 - MANDATORY: Display contacts in a HORIZONTAL INLINE strip at the BOTTOM of the image
 - MANDATORY: Format as single line: "${contacts.join(' | ')}"
-- MANDATORY: Use contrasting background (dark footer with light text OR light footer with dark text)
+- MANDATORY: Footer background MUST use BRAND COLORS (primary, accent, or background color from brand profile)
+- MANDATORY: If brand color is dark, use WHITE or LIGHT text; if brand color is light, use DARK text
+- MANDATORY: DO NOT use black (#000000) unless it's explicitly a brand color
 - MANDATORY: Footer must span full width of image
 - MANDATORY: Text size minimum 14px equivalent for readability
 - MANDATORY: Footer placement is NON-NEGOTIABLE - always at bottom
-- Use professional styling that complements the brand colors
+- Use professional styling that complements and matches the brand colors
 - Ensure high contrast for readability (minimum 4.5:1 ratio)`;
                     }
                     return '';
