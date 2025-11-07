@@ -774,6 +774,35 @@ ${bp.contactInfo?.phone ? `- Phone: ${bp.contactInfo.phone}` : ''}
 ${bp.contactInfo?.email ? `- Email: ${bp.contactInfo.email}` : ''}
 ${servicesText ? `- Services: ${servicesText}` : ''}
 
+${(() => {
+                    const contacts: string[] = [];
+                    if (bp.contactInfo?.phone) contacts.push(`📞 ${bp.contactInfo.phone}`);
+                    if (bp.contactInfo?.email) contacts.push(`📧 ${bp.contactInfo.email}`);
+                    if (bp.websiteUrl) {
+                        let cleanWebsite = bp.websiteUrl.replace(/^https?:\/\//, '');
+                        if (!cleanWebsite.startsWith('www.')) {
+                            cleanWebsite = `www.${cleanWebsite}`;
+                        }
+                        contacts.push(`🌐 ${cleanWebsite}`);
+                    }
+
+                    if (contacts.length > 0) {
+                        return `📞 **CONTACT INFORMATION (MANDATORY INLINE FOOTER):**
+${contacts.map(c => `- ${c}`).join('\n')}
+
+🚨 **FOOTER DISPLAY REQUIREMENTS:**
+- MANDATORY: Display contacts in a HORIZONTAL INLINE strip at the BOTTOM of the image
+- MANDATORY: Format as single line: "${contacts.join(' | ')}"
+- MANDATORY: Use contrasting background (dark footer with light text OR light footer with dark text)
+- MANDATORY: Footer must span full width of image
+- MANDATORY: Text size minimum 14px equivalent for readability
+- MANDATORY: Footer placement is NON-NEGOTIABLE - always at bottom
+- Use professional styling that complements the brand colors
+- Ensure high contrast for readability (minimum 4.5:1 ratio)`;
+                    }
+                    return '';
+                })()}
+
 🎯 **DESIGN TYPE:** Complete marketing design with layout, imagery, text, and visual elements - NOT a standalone logo
 🎨 **VISUAL APPROACH:** Full-scale marketing composition with backgrounds, imagery, text overlays, and complete design elements
 
