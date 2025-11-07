@@ -975,8 +975,15 @@ Recreate the content within the black-masked region based on this instruction, e
             promptParts.push({ media: { url: input.referenceAssetUrl, contentType: getMimeTypeFromDataURI(input.referenceAssetUrl) } });
             promptParts.push({ media: { url: input.maskDataUrl, contentType: getMimeTypeFromDataURI(input.maskDataUrl) } });
 
+        } else if (input.useBrandProfile && input.brandProfile) {
+            // PRIORITY PATH: Brand Profile (with or without uploaded image)
+            // This path handles brand profile generation, which may include an uploaded image
+            // This takes precedence over image-only path to ensure brand consistency
+            // The brand profile block below will handle the uploaded image if present
+            // Skip to brand profile generation block (line 1114+)
+
         } else if (input.referenceAssetUrl) {
-            // This is a generation prompt with an uploaded image that should be integrated into the design
+            // This is a generation prompt with an uploaded image WITHOUT brand profile
             // 🔍 DEBUG: Log image-only generation path
             console.log('🖼️ [Generate Creative Asset] Image-Only Generation Path (No Brand Profile):', {
                 hasReferenceAssetUrl: !!input.referenceAssetUrl,
