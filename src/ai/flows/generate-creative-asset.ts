@@ -763,26 +763,49 @@ async function generateWithRetry(request: GenerateRequest, logoDataUrl?: string,
                 let textPrompt = '';
                 let uploadedImageDataUrl: string | undefined = undefined;
 
+                console.log('🔍 [generateWithRetry] Processing request.prompt (logo case):', {
+                    isArray: Array.isArray(request.prompt),
+                    promptType: typeof request.prompt,
+                    promptLength: Array.isArray(request.prompt) ? request.prompt.length : 'N/A'
+                });
+
                 if (Array.isArray(request.prompt)) {
-                    for (const part of request.prompt) {
+                    for (let i = 0; i < request.prompt.length; i++) {
+                        const part = request.prompt[i];
+                        console.log(`🔍 [generateWithRetry] Part ${i}:`, {
+                            type: typeof part,
+                            hasText: typeof part === 'object' && part !== null && 'text' in part,
+                            hasMedia: typeof part === 'object' && part !== null && 'media' in part,
+                            keys: typeof part === 'object' && part !== null ? Object.keys(part) : []
+                        });
+
                         if (typeof part === 'string') {
                             textPrompt += part;
-                        } else if (part.text) {
-                            textPrompt += part.text;
-                        } else if (part.media) {
-                            // Extract uploaded image (first media part)
-                            if (!uploadedImageDataUrl) {
-                                uploadedImageDataUrl = part.media.url;
-                                console.log('📸 [generateWithRetry] Extracted uploaded image from promptParts (logo case):', {
-                                    uploadedImageLength: uploadedImageDataUrl.length,
-                                    contentType: part.media.contentType
-                                });
+                        } else if (typeof part === 'object' && part !== null) {
+                            if ('text' in part) {
+                                textPrompt += part.text;
+                            } else if ('media' in part) {
+                                // Extract uploaded image (first media part)
+                                if (!uploadedImageDataUrl) {
+                                    uploadedImageDataUrl = (part as any).media.url;
+                                    console.log('📸 [generateWithRetry] Extracted uploaded image from promptParts (logo case):', {
+                                        uploadedImageLength: uploadedImageDataUrl.length,
+                                        contentType: (part as any).media.contentType
+                                    });
+                                }
                             }
                         }
                     }
                 } else if (typeof request.prompt === 'string') {
                     textPrompt = request.prompt;
                 }
+
+                console.log('✅ [generateWithRetry] Extraction complete (logo case):', {
+                    hasTextPrompt: !!textPrompt,
+                    textPromptLength: textPrompt.length,
+                    hasUploadedImage: !!uploadedImageDataUrl,
+                    hasLogo: !!logoDataUrl
+                });
 
                 // Add logo integration prompt
                 const logoPrompt = `\n\n🎯 CRITICAL LOGO REQUIREMENT - THIS IS MANDATORY:
@@ -826,22 +849,32 @@ The client specifically requested their brand logo to be included. FAILURE TO IN
                 let textPrompt = '';
                 let uploadedImageDataUrl: string | undefined = undefined;
 
+                console.log('🔍 [generateWithRetry] Processing request.prompt (non-logo case):', {
+                    isArray: Array.isArray(request.prompt),
+                    promptType: typeof request.prompt,
+                    promptLength: Array.isArray(request.prompt) ? request.prompt.length : 'N/A'
+                });
+
                 if (Array.isArray(request.prompt)) {
                     // Extract text parts
                     textPrompt = request.prompt
-                        .filter(p => typeof p === 'string' || (typeof p === 'object' && 'text' in p))
-                        .map(p => typeof p === 'string' ? p : (p.text || ''))
+                        .filter(p => typeof p === 'string' || (typeof p === 'object' && p !== null && 'text' in p))
+                        .map(p => typeof p === 'string' ? p : ((p as any).text || ''))
                         .join(' ');
 
                     // Extract uploaded image (first media part that's not a logo)
                     const mediaParts = request.prompt.filter(p =>
-                        typeof p === 'object' && 'media' in p
+                        typeof p === 'object' && p !== null && 'media' in p
                     ) as Array<{ media: { url: string; contentType?: string } }>;
+
+                    console.log('🔍 [generateWithRetry] Found media parts:', {
+                        count: mediaParts.length
+                    });
 
                     if (mediaParts.length > 0) {
                         // First media part is the uploaded image
                         uploadedImageDataUrl = mediaParts[0].media.url;
-                        console.log('📸 [generateWithRetry] Extracted uploaded image from promptParts:', {
+                        console.log('📸 [generateWithRetry] Extracted uploaded image from promptParts (non-logo case):', {
                             uploadedImageLength: uploadedImageDataUrl.length,
                             contentType: mediaParts[0].media.contentType
                         });
@@ -849,6 +882,13 @@ The client specifically requested their brand logo to be included. FAILURE TO IN
                 } else if (typeof request.prompt === 'string') {
                     textPrompt = request.prompt;
                 }
+
+                console.log('✅ [generateWithRetry] Extraction complete (non-logo case):', {
+                    hasTextPrompt: !!textPrompt,
+                    textPromptLength: textPrompt.length,
+                    hasUploadedImage: !!uploadedImageDataUrl,
+                    hasLogo: !!logoDataUrl
+                });
 
                 const modelName = 'gemini-2.5-flash-image';
 
