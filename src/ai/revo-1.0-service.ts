@@ -7019,7 +7019,16 @@ function generateBusinessTypeDesignGuidance(businessType: string, brandProfile: 
 - PROFESSIONAL COLORS: Use trustworthy colors (blues, grays, subtle greens)
 - CLEAN LAYOUTS: Structured, organized design that suggests financial competence
 - PEOPLE FOCUS: Show satisfied customers, financial success, peace of mind
-- AUTHORITY: Design should convey expertise and financial leadership`;
+- AUTHORITY: Design should convey expertise and financial leadership
+
+🚨 FINTECH DESIGN OVERRIDE (ABSOLUTELY CRITICAL):
+- ZERO TECH AESTHETIC: Despite being fintech, use CLEAN, SIMPLE designs
+- NO CIRCULAR PATTERNS: No concentric circles, segmented circles, or circular tech overlays
+- NO CIRCUIT PATTERNS: No circuit board lines, connection nodes, or tech visualizations
+- NO FUTURISTIC ELEMENTS: No holographic displays, floating UI, or digital overlays
+- SOLID BACKGROUNDS ONLY: White or brand colors - NO patterns, NO lines, NO circles
+- HUMAN-FOCUSED: Show people using services naturally, not tech visualizations
+- TRUST THROUGH SIMPLICITY: Clean, minimal design builds more trust than tech patterns`;
 
   } else if (businessLower.includes('beauty') || businessLower.includes('salon')) {
     guidance += `
@@ -7126,7 +7135,16 @@ function generateIndustrySpecificDesignGuidance(businessType: string, brandProfi
 - PEOPLE: Diverse customers using financial services, business owners, families planning
 - COLORS: Trustworthy blues, professional grays, gold accents, stable tones
 - MOOD: Trustworthy, secure, empowering, growth-oriented
-- AVOID: Complex trading floors, intimidating corporate imagery, generic banking clichés`;
+- AVOID: Complex trading floors, intimidating corporate imagery, generic banking clichés
+
+🚨 FINTECH BACKGROUND RESTRICTIONS (ZERO TOLERANCE):
+- ABSOLUTELY NO circular tech patterns (concentric circles, segmented circles, radar style)
+- ABSOLUTELY NO circuit board patterns (lines with nodes, connection points)
+- ABSOLUTELY NO tech overlays (holographic UI, floating dashboards, digital visualizations)
+- ABSOLUTELY NO line patterns of any kind (diagonal, curved, straight, grid)
+- ONLY SOLID BACKGROUNDS: White, brand colors, or simple 2-color gradients
+- TRUST THROUGH SIMPLICITY: Clean backgrounds build more trust than tech patterns
+- HUMAN-FOCUSED: Show people naturally, not surrounded by tech visualizations`;
 
   } else if (businessLower.includes('retail') || businessLower.includes('shop')) {
     guidance += `
@@ -8068,6 +8086,15 @@ ${generateIndustrySpecificDesignGuidance(businessType, brandProfile)}
    • NO line patterns of ANY kind on the background
    • ZERO LINES ALLOWED - background must be COMPLETELY CLEAN
 
+❌ ABSOLUTELY NO CIRCULAR PATTERNS (CRITICAL):
+   • NO concentric circles (radar style, target style)
+   • NO segmented circles (pie chart style, circular tech overlays)
+   • NO circular tech patterns (HUD style, futuristic circles)
+   • NO circular gradients with segments or divisions
+   • NO circular overlays of any kind
+   • NO circular geometric patterns
+   • ZERO CIRCULAR PATTERNS - background must be flat and solid
+
 ❌ ABSOLUTELY NO TECH ELEMENTS:
    • NO floating UI elements (dashboards, panels, screens)
    • NO holographic displays or transparent interfaces
@@ -8301,6 +8328,15 @@ ${contactInstruction}
    ❌ NO geometric line overlays
    ❌ NO tech line patterns
    ❌ ABSOLUTELY NO LINES ON THE BACKGROUND
+
+🚫 NO CIRCULAR PATTERNS (ULTRA-CRITICAL):
+   ❌ NO concentric circles (like the image you just generated - BANNED!)
+   ❌ NO segmented circles (pie chart style, radar style)
+   ❌ NO circular tech overlays (HUD style, futuristic circles)
+   ❌ NO circular gradients with segments
+   ❌ NO target-style circular patterns
+   ❌ NO circular geometric patterns of ANY kind
+   ❌ ABSOLUTELY NO CIRCULAR TECH PATTERNS
 
 🚫 NO TECH ELEMENTS:
    ❌ NO floating UI elements
