@@ -8054,17 +8054,24 @@ ${generateIndustrySpecificDesignGuidance(businessType, brandProfile)}
 4. EMOTIONAL HEADLINE: Human tone, not corporate speak
 5. OPTIONAL IDENTITY ELEMENT: Small icon or motif for brand consistency
 
-🚫 CRITICAL: ABSOLUTELY NO BUSY BACKGROUNDS OR LINES:
+🚫 CRITICAL: ABSOLUTELY NO BUSY BACKGROUNDS, LINES, OR TECH ELEMENTS:
 - NO curved digital circuit lines or wavy white/light lines across background
+- NO straight diagonal lines forming circuit board patterns
+- NO angular geometric line patterns or tech-style line overlays
 - NO dots, grids, or geometric patterns overlaying the design
 - NO tech nodes connected by lines or network visualizations
 - NO decorative overlays, patterns, or "tech" aesthetic elements
 - NO connection lines, network lines, or flowing curved lines
-- NO abstract line patterns or geometric line overlays
+- NO abstract line patterns or geometric line overlays of ANY kind
+- NO holographic floating UI elements, dashboards, or transparent screens
+- NO floating charts, graphs, or data visualization overlays
+- NO transparent/glass-effect tables, panels, or interface elements
+- NO futuristic tech overlays or digital interface mockups
 - ONLY use clean, SOLID flat backgrounds or simple gradients
 - KEEP backgrounds sleek, minimal, and professional
 - FOCUS on content and people, not decorative background elements
 - BACKGROUNDS MUST BE: Solid white, solid brand color, or simple 2-color gradient ONLY
+- NO TECH AESTHETIC - keep it clean, modern, and simple
 
 🌟 NATURAL, AUTHENTIC IMAGERY REQUIREMENTS:
 - Show REAL people using technology naturally (no artificial tech effects)
@@ -8215,13 +8222,22 @@ REVO 1.0 ENHANCED FEATURES:
 ❌ AI-generated abstract patterns
 ❌ Futuristic tech interfaces
 ❌ Holographic or digital overlays
+❌ FLOATING TRANSPARENT UI ELEMENTS (dashboards, charts, graphs, tables)
+❌ HOLOGRAPHIC SCREENS or transparent glass-effect interface panels
+❌ FLOATING DATA VISUALIZATIONS or chart overlays in the air
+❌ TRANSPARENT DASHBOARD MOCKUPS showing analytics or metrics
+❌ GLASS-EFFECT PANELS with financial data or statistics
+❌ ANY floating/hovering digital interface elements
 ❌ ELECTRICAL/DIGITAL CONNECTION LINES from phones or devices
 ❌ Network visualization lines, nodes, or connection patterns
 ❌ Digital current/electricity effects around electronics
-❌ Tech circuit patterns or digital network overlays
+❌ Tech circuit patterns or digital network overlays (STRAIGHT OR CURVED)
+❌ DIAGONAL LINE PATTERNS forming circuit board aesthetics
+❌ GEOMETRIC LINE OVERLAYS creating tech-style backgrounds
 ❌ Artificial connection lines between person and device
 ❌ Glowing digital pathways or data streams
 ❌ Electronic signal visualizations or tech auras
+❌ ANY LINES OR PATTERNS on the background (curved, straight, diagonal, geometric)
 
 CRITICAL REQUIREMENTS:
 - Resolution: 992x1056px (1:1 square format)

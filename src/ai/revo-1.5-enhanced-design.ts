@@ -3971,17 +3971,24 @@ ${useLocalLanguage ? `- Local Authenticity: Include subtle design elements that 
 5. FOCAL POINT should be immediately obvious
 6. SUPPORTING elements should enhance, not compete
 
-🚫 CRITICAL: CLEAN BACKGROUNDS ONLY (NO BUSY PATTERNS OR LINES):
+🚫 CRITICAL: CLEAN BACKGROUNDS ONLY (NO BUSY PATTERNS, LINES, OR TECH ELEMENTS):
 - NO curved digital circuit lines or wavy tech lines across background
+- NO straight diagonal lines forming circuit board patterns
+- NO angular geometric line patterns or tech-style line overlays
 - NO dots, grids, or geometric patterns overlaying the design
 - NO tech nodes connected by lines or network visualizations
 - NO busy decorative overlays or "tech" patterns
 - NO connection lines, network lines, or flowing curved lines
-- NO abstract line patterns or geometric line overlays
+- NO abstract line patterns or geometric line overlays of ANY kind
+- NO holographic floating UI elements, dashboards, or transparent screens
+- NO floating charts, graphs, or data visualization overlays
+- NO transparent/glass-effect tables, panels, or interface elements
+- NO futuristic tech overlays or digital interface mockups
 - USE clean, SOLID flat backgrounds or simple gradients ONLY
 - KEEP backgrounds sleek, minimal, and professional
 - FOCUS on content, not decorative background elements
 - BACKGROUNDS MUST BE: Solid white, solid brand color, or simple 2-color gradient ONLY
+- NO TECH AESTHETIC - keep it clean, modern, and simple
 
 🚫 FORBIDDEN BACKGROUND COLORS (CRITICAL):
 - NO black (#000000) backgrounds unless it's a brand color

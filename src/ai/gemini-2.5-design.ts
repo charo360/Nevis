@@ -789,17 +789,24 @@ STYLE DETAILS:
 - High contrast for mobile viewing
 - Sophisticated color harmony with dynamic elements
 
-🚫 CRITICAL: AVOID BUSY BACKGROUNDS AND LINES:
+🚫 CRITICAL: AVOID BUSY BACKGROUNDS, LINES, AND TECH ELEMENTS:
 - NO curved digital circuit lines or wavy tech lines
+- NO straight diagonal lines forming circuit board patterns
+- NO angular geometric line patterns or tech-style line overlays
 - NO dots, grids, or geometric patterns in background
 - NO tech nodes connected by lines
 - NO network visualization patterns
 - NO busy decorative overlays
 - NO connection lines, network lines, or flowing curved lines
-- NO abstract line patterns or geometric line overlays
+- NO abstract line patterns or geometric line overlays of ANY kind
+- NO holographic floating UI elements, dashboards, or transparent screens
+- NO floating charts, graphs, or data visualization overlays
+- NO transparent/glass-effect tables, panels, or interface elements
+- NO futuristic tech overlays or digital interface mockups
 - USE clean, SOLID flat backgrounds or simple gradients only
 - KEEP backgrounds minimal and professional
 - BACKGROUNDS MUST BE: Solid white, solid brand color, or simple 2-color gradient ONLY
+- NO TECH AESTHETIC - keep it clean, modern, and simple
 
 🚫 FORBIDDEN BACKGROUND COLORS (CRITICAL):
 - NO black (#000000) backgrounds unless it's a brand color
@@ -807,7 +814,7 @@ STYLE DETAILS:
 - ONLY use: White or the exact brand colors provided
 - If brand colors are dark, use WHITE background instead
 
-Create a beautiful, professional design with CLEAN, SLEEK, SOLID backgrounds that represents ${brandProfile.businessName || businessType} perfectly.`;
+Create a beautiful, professional design with CLEAN, SLEEK, SOLID backgrounds (NO LINES, NO FLOATING UI ELEMENTS) that represents ${brandProfile.businessName || businessType} perfectly.`;
 
   return prompt;
 }
