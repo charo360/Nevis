@@ -1558,14 +1558,24 @@ CREATIVE CONCEPT: ${concept.concept}
 4. EMOTIONAL HEADLINE: Human tone, not corporate speak
 5. OPTIONAL IDENTITY ELEMENT: Small icon or motif for brand consistency
 
-🚫 CRITICAL: ABSOLUTELY NO BUSY BACKGROUNDS:
-- NO curved digital circuit lines or wavy white lines across background
+🚫 CRITICAL: ABSOLUTELY NO BUSY BACKGROUNDS OR LINES:
+- NO curved digital circuit lines or wavy white/light lines across background
 - NO dots, grids, or geometric patterns overlaying the design
 - NO tech nodes connected by lines or network visualizations
 - NO decorative overlays, patterns, or "tech" aesthetic elements
-- ONLY use clean, flat backgrounds or simple gradients
+- NO connection lines, network lines, or flowing curved lines
+- NO abstract line patterns or geometric line overlays
+- ONLY use clean, SOLID flat backgrounds or simple gradients
 - KEEP backgrounds sleek, minimal, and professional
 - FOCUS on content and people, not decorative background elements
+- BACKGROUNDS MUST BE: Solid white, solid brand color, or simple 2-color gradient ONLY
+
+🚫 FORBIDDEN BACKGROUND COLORS (CRITICAL):
+- NO black (#000000) backgrounds unless it's a brand color
+- NO dark gray (#333333, #444444, #555555) backgrounds unless brand colors
+- NO charcoal or dark neutral backgrounds unless specified in brand colors
+- ONLY use: White, brand colors (${primaryColor}, ${accentColor}, ${backgroundColor}), or light gradients
+- If brand colors are dark, use WHITE background with dark text instead
 
 🌟 NATURAL, AUTHENTIC IMAGERY REQUIREMENTS:
 - Show REAL people using technology naturally (no artificial tech effects)
