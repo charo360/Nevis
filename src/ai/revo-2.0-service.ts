@@ -3333,7 +3333,27 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
     const businessType = detectBusinessType(enhancedOptions.brandProfile);
     console.log(`🏢 [Revo 2.0] Detected business type: ${businessType.primaryType}`);
 
-    // Step 2: Generate creative concept with visual direction
+    // Step 2: Gather business intelligence for enhanced context
+    const { businessIntelligenceGatherer } = await import('./intelligence/business-intelligence-gatherer');
+    
+    let businessIntelligence;
+    try {
+      businessIntelligence = await Promise.race([
+        businessIntelligenceGatherer.gatherBusinessIntelligence({
+          brandProfile: enhancedOptions.brandProfile,
+          businessType: businessType.primaryType,
+          platform: enhancedOptions.platform,
+          location: enhancedOptions.brandProfile.location
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Business intelligence timeout')), 45000))
+      ]);
+      console.log(`🧠 [Revo 2.0] Business intelligence gathered: ${businessIntelligence.competitive.mainCompetitors.length} competitors, ${businessIntelligence.customer.painPoints.length} pain points`);
+    } catch (biError) {
+      console.warn(`⚠️ [Revo 2.0] Business intelligence failed, using basic context:`, biError);
+      businessIntelligence = null;
+    }
+
+    // Step 3: Generate creative concept with visual direction
     const concept = await Promise.race([
       generateCreativeConcept(enhancedOptions),
       new Promise((_, reject) => setTimeout(() => reject(new Error('Creative concept generation timeout')), 60000))
@@ -3359,7 +3379,8 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
             imagePrompt: '', // Will be generated from design specs
             platform: enhancedOptions.platform,
             marketingAngle: marketingAngle,
-            useLocalLanguage: enhancedOptions.useLocalLanguage
+            useLocalLanguage: enhancedOptions.useLocalLanguage,
+            businessIntelligence: businessIntelligence // Pass BI data to assistant
           }),
           new Promise((_, reject) => setTimeout(() => reject(new Error('Assistant generation timeout')), 90000))
         ]);

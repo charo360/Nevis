@@ -30,6 +30,7 @@ export interface AssistantContentRequest {
   platform: string;
   marketingAngle?: any;
   useLocalLanguage?: boolean;
+  businessIntelligence?: any; // Business intelligence data for enhanced context
 }
 
 /**
@@ -444,6 +445,43 @@ export class AssistantManager {
 
       message += `**IMPORTANT:** Use ONLY the data provided above from business documents. Do not invent or hallucinate any pricing, features, or product/service details not explicitly mentioned.\n\n`;
       message += `**NOTE:** The full business documents have been uploaded and are available for you to search and analyze using the file_search tool. You can reference specific details, pricing, and information directly from these documents.\n\n`;
+    }
+
+    // Business Intelligence Context
+    if (request.businessIntelligence) {
+      const bi = request.businessIntelligence;
+      message += `**BUSINESS INTELLIGENCE CONTEXT:**\n`;
+      
+      if (bi.competitive) {
+        message += `**Competitive Landscape:**\n`;
+        message += `- Main Competitors: ${bi.competitive.mainCompetitors.slice(0, 3).join(', ')}\n`;
+        message += `- Market Position: ${bi.competitive.marketPosition}\n`;
+        message += `- Key Advantages: ${bi.competitive.competitiveAdvantages.slice(0, 3).join(', ')}\n`;
+        message += `- Market Opportunities: ${bi.competitive.differentiationOpportunities.slice(0, 2).join(', ')}\n`;
+      }
+      
+      if (bi.customer) {
+        message += `**Customer Insights:**\n`;
+        message += `- Primary Audience: ${bi.customer.primaryAudience}\n`;
+        message += `- Key Pain Points: ${bi.customer.painPoints.slice(0, 3).join(', ')}\n`;
+        message += `- Main Motivations: ${bi.customer.motivations.slice(0, 3).join(', ')}\n`;
+        message += `- Preferred Channels: ${bi.customer.preferredChannels.slice(0, 2).join(', ')}\n`;
+      }
+      
+      if (bi.content) {
+        message += `**Content Strategy:**\n`;
+        message += `- Key Messages: ${bi.content.keyMessages.slice(0, 3).join(', ')}\n`;
+        message += `- Value Propositions: ${bi.content.valuePropositions.slice(0, 3).join(', ')}\n`;
+        message += `- Recommended Tone: ${bi.content.toneOfVoice}\n`;
+      }
+      
+      if (bi.recommendations) {
+        message += `**Strategic Recommendations:**\n`;
+        message += `- Immediate Focus: ${bi.recommendations.immediate.slice(0, 2).join(', ')}\n`;
+        message += `- Content Focus: ${bi.recommendations.content.slice(0, 2).join(', ')}\n`;
+      }
+      
+      message += `\n**IMPORTANT:** Use this business intelligence to create highly targeted, competitive, and strategic content that addresses specific customer needs and market opportunities.\n\n`;
     }
 
     // Content-Design Alignment Requirements
