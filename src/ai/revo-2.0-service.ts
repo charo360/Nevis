@@ -1438,21 +1438,79 @@ export function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: a
   if (businessTypeStrategy) {
     businessTypeVisualGuidance = `\n\n🎯 INDUSTRY-SPECIFIC VISUAL GUIDANCE FOR ${businessType.toUpperCase()}:\n${businessTypeStrategy.visualGuidance}\n\n📸 VISUAL FOCUS:\n${businessTypeStrategy.contentFocus}`;
 
-    // Add product-specific visual guidance for retail/e-commerce
+    // Add product-specific visual guidance for retail/e-commerce with rotation
     const productCatalog = (brandProfile as any).productCatalog;
+    const isRetailBusiness = businessType.toLowerCase().includes('retail') ||
+      businessType.toLowerCase().includes('e-commerce') ||
+      businessType.toLowerCase().includes('ecommerce') ||
+      businessType.toLowerCase().includes('shop') ||
+      businessType.toLowerCase().includes('store') ||
+      businessType.toLowerCase().includes('electronics') ||
+      businessType.toLowerCase().includes('fashion') ||
+      businessType.toLowerCase().includes('clothing') ||
+      businessType.toLowerCase().includes('boutique') ||
+      businessType.toLowerCase().includes('marketplace');
+
     if (businessTypeStrategy.productDataUsage && productCatalog && Array.isArray(productCatalog) && productCatalog.length > 0) {
-      const randomProduct = productCatalog[Math.floor(Math.random() * Math.min(5, productCatalog.length))];
-      businessTypeVisualGuidance += `\n\n🛍️ PRODUCT-FOCUSED VISUAL (Use this specific product):\n- Product: ${randomProduct.name}`;
-      if (randomProduct.features && randomProduct.features.length > 0) {
-        businessTypeVisualGuidance += `\n- Key Features to Show: ${randomProduct.features.slice(0, 2).join(', ')}`;
+      // Use timestamp-based rotation to ensure different products are showcased
+      const brandKey = getBrandKey(brandProfile, platform);
+      const rotationIndex = Math.floor(Date.now() / 1000) % productCatalog.length;
+      const selectedProduct = productCatalog[rotationIndex];
+
+      businessTypeVisualGuidance += `\n\n🚨 CRITICAL RETAIL VISUAL REQUIREMENTS 🚨\n\n🛍️ PRODUCT MUST BE THE STAR (60-80% of image):\n- Product Name: ${selectedProduct.name}`;
+
+      if (selectedProduct.brand) {
+        businessTypeVisualGuidance += `\n- Brand: ${selectedProduct.brand}`;
       }
-      if (randomProduct.price) {
-        businessTypeVisualGuidance += `\n- Price to Display: ${randomProduct.price}`;
+
+      if (selectedProduct.features && selectedProduct.features.length > 0) {
+        businessTypeVisualGuidance += `\n- Key Features to Show: ${selectedProduct.features.slice(0, 3).join(', ')}`;
       }
-      if (randomProduct.discount) {
-        businessTypeVisualGuidance += `\n- Discount Badge: ${randomProduct.discount}`;
+
+      if (selectedProduct.price) {
+        businessTypeVisualGuidance += `\n- Price to Display: ${selectedProduct.price}`;
+        if (selectedProduct.originalPrice) {
+          businessTypeVisualGuidance += ` (was ${selectedProduct.originalPrice} - show discount!)`;
+        }
       }
-      businessTypeVisualGuidance += `\n- Visual Style: Show this product in use or lifestyle context, not just product shot`;
+
+      if (selectedProduct.discount) {
+        businessTypeVisualGuidance += `\n- Discount Badge: ${selectedProduct.discount} OFF`;
+      }
+
+      if (selectedProduct.benefits && selectedProduct.benefits.length > 0) {
+        businessTypeVisualGuidance += `\n- Customer Benefits: ${selectedProduct.benefits.slice(0, 2).join(', ')}`;
+      }
+
+      if (selectedProduct.stockStatus) {
+        businessTypeVisualGuidance += `\n- Stock Status: ${selectedProduct.stockStatus}`;
+      }
+
+      businessTypeVisualGuidance += `\n\n📸 CRITICAL PRODUCT VISUAL REQUIREMENTS FOR RETAIL:
+🚨 PRODUCT MUST DOMINATE THE IMAGE (60-80% of visual space)
+- Show the ACTUAL product clearly and prominently
+- Product should be immediately identifiable (brand, model visible)
+- Use professional product photography style
+- Include price overlay or price tag in the design
+- Add feature callouts if space allows (e.g., "4K", "Wireless", "Voice Control")
+- Product should be the HERO, not background element
+- If showing people, they should be USING the product (product still prominent)
+- NO lifestyle scenes where product is barely visible
+- Think: "Would a customer know exactly what product this is just by looking?"
+
+❌ FORBIDDEN FOR RETAIL VISUALS:
+- Products barely visible in background
+- Lifestyle scenes without clear product focus
+- Abstract emotional imagery without product
+- People as main focus with product as prop
+- Vague "smart home" imagery without specific devices
+
+✅ REQUIRED FOR RETAIL VISUALS:
+- Large, clear product image
+- Product takes up majority of frame
+- Price visible somewhere in design
+- Brand/model identifiable
+- Professional product showcase style`;
     }
   }
 
@@ -1548,6 +1606,37 @@ export function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: a
   return `🎨 Create a ${visualStyle} social media design for ${brandProfile.businessName} (${businessType}) for ${platform}.
 
 CREATIVE CONCEPT: ${concept.concept}
+
+🚨 MAXIMUM VISUAL VARIETY REQUIREMENT (CRITICAL):
+Each design MUST be visually unique and avoid repetition:
+- NEVER repeat the same composition, layout, or visual style from previous designs
+- Use COMPLETELY DIFFERENT creative concepts each time (even for the same product/service)
+- Vary the visual approach: lifestyle shots, product focus, people-centric, abstract concepts, etc.
+- Change the mood and atmosphere: energetic, calm, professional, playful, luxurious, etc.
+- Different color treatments: bold colors, pastels, monochrome, gradients, brand colors, etc.
+- NO VISUAL FORMULAS - every design should feel fresh and distinct
+- Think: "If I designed for this business 10 times, each should look completely different"
+
+🎨 VISUAL DIVERSITY STRATEGIES (Use different ones each time):
+1. Lifestyle photography - show product/service in real-life context
+2. Product hero shot - make the product the star with dramatic lighting
+3. People-first - focus on human emotions and connections
+4. Minimalist design - clean, simple, lots of white space
+5. Bold typography - let text be the main visual element
+6. Collage/mixed media - combine multiple visual elements creatively
+7. Illustration-based - use custom illustrations or graphics
+8. Environmental context - show the setting/location prominently
+9. Close-up details - zoom in on specific features or textures
+10. Action/motion - capture movement and energy
+
+🔄 STYLE VARIATION FOR THIS DESIGN:
+- Visual Style: ${chosenStyle}
+- Layout: ${chosenLayout}
+- Typography: ${chosenType}
+- Effect: ${chosenEffect}
+- Previous Style to AVOID: ${lastStyle || 'None'}
+
+⚠️ CRITICAL: Make this design visually distinct from any previous designs!
 
 🎯 VISUAL CONTEXT REQUIREMENT: ${visualContext}${serviceVisualContext}${businessTypeVisualGuidance}
 
@@ -2146,6 +2235,18 @@ ${getLocationSpecificLanguageInstructions(brandProfile.location)}
     // Get business-type specific strategy
     const businessTypeInstructions = generateBusinessTypePromptInstructions(businessType, brandProfile);
 
+    // Detect if this is a retail/e-commerce business
+    const isRetail = businessType.toLowerCase().includes('retail') ||
+      businessType.toLowerCase().includes('e-commerce') ||
+      businessType.toLowerCase().includes('ecommerce') ||
+      businessType.toLowerCase().includes('shop') ||
+      businessType.toLowerCase().includes('store') ||
+      businessType.toLowerCase().includes('electronics') ||
+      businessType.toLowerCase().includes('fashion') ||
+      businessType.toLowerCase().includes('clothing') ||
+      businessType.toLowerCase().includes('boutique') ||
+      businessType.toLowerCase().includes('marketplace');
+
     const contentPrompt = `Create engaging social media content for ${brandProfile.businessName} (${businessType}) on ${platform}.
 
 🎯 BUSINESS CONTEXT:
@@ -2153,8 +2254,97 @@ ${getLocationSpecificLanguageInstructions(brandProfile.location)}
 - Industry: ${businessType}
 - Location: ${brandProfile.location || 'Global'}
 - Platform: ${platform}
-- Content Approach: ${selectedApproach} (use this strategic angle)${localLanguageInstructions}
+- Content Approach: ${selectedApproach} (use this strategic angle)
+- Unique ID: ${uniqueId} (ensure this generation is completely different from previous ones)${localLanguageInstructions}
 ${businessTypeInstructions}
+
+${isRetail ? `
+🚨🚨🚨 CRITICAL RETAIL REQUIREMENTS (MANDATORY) 🚨🚨🚨
+
+THIS IS A RETAIL BUSINESS. You MUST follow these rules:
+
+❌ ABSOLUTELY FORBIDDEN FOR RETAIL:
+- NO abstract emotional headlines like "Unlock Your Dreams", "Love Story", "Inner Mogul"
+- NO lifestyle scenes where products are barely visible
+- NO vague language like "range of smart home devices" or "collection of products"
+- NO emotional storytelling without product focus
+- NO generic promises without specific product details
+
+✅ MANDATORY FOR RETAIL:
+1. HEADLINE: Must include product name/brand AND price OR category AND starting price
+   - Format: "[Product Name/Brand] - [Price]" OR "[Category] From KES [Price]"
+   - Examples: "Samsung 55" 4K TV - KES 89,999", "Smart Speakers From KES 3,500"
+
+2. VISUAL: Product must be the STAR (60-80% of image)
+   - Show the actual product clearly
+   - Include price overlays or feature callouts
+   - Product should be identifiable and prominent
+
+3. CAPTION: Must include ALL of these:
+   - Specific product name and model (e.g., "Samsung Galaxy S24 Ultra 256GB")
+   - 2-3 key features (e.g., "200MP camera, S Pen, 5000mAh battery")
+   - Exact price (e.g., "KES 89,999")
+   - Availability (e.g., "In stock now", "Only 5 left")
+   - Where to buy (e.g., "Order online or visit showroom")
+
+4. DIFFERENT PRODUCTS: Each ad should feature a DIFFERENT specific product
+   - Ad 1: Feature Product A with its details
+   - Ad 2: Feature Product B with its details
+   - Ad 3: Feature Product C with its details
+   - NEVER use same vague "smart home devices" across multiple ads
+
+⚠️ RETAIL VALIDATION CHECKLIST:
+Before generating, ask yourself:
+- Can I name the specific product being advertised? (YES required)
+- Is the price clearly stated? (YES required)
+- Are 2-3 features listed? (YES required)
+- Is the product the visual focus? (YES required)
+- Would a customer know exactly what to buy and for how much? (YES required)
+
+If ANY answer is NO, you have FAILED the retail requirements.
+` : ''}
+
+🚨 MAXIMUM VARIETY REQUIREMENT (CRITICAL):
+This is generation #${creativityBoost} for this business. Each generation MUST be completely unique:
+- NEVER repeat phrases, patterns, or structures from previous generations
+- Use COMPLETELY DIFFERENT marketing angles each time (even for the same product/service)
+${isRetail ? '- For RETAIL: Feature DIFFERENT specific products in each ad with their unique details' : '- Vary the storytelling approach: emotional appeal, feature focus, benefit focus, social proof, urgency, problem-solution, etc.'}
+- Change the tone and style: conversational, professional, playful, urgent, aspirational, etc.
+- NO TEMPLATES OR FORMULAS - every piece of content should feel fresh and original
+- Think: "If I generated content for this business 10 times, each should be from a totally different creative direction"
+
+🎨 CREATIVE DIVERSITY STRATEGIES ${isRetail ? '(For RETAIL: Always product-focused)' : '(Use different ones each time)'}:
+${isRetail ? `
+1. Single product hero - Feature ONE product with all its details and benefits
+2. Product comparison - Compare 2-3 products in same category with prices
+3. Bundle deal - Show complete kit/package with itemized pricing
+4. Brand showcase - Feature products from specific brand (e.g., "Google Nest Collection")
+5. Category range - Show multiple products in category with starting prices
+6. New arrival - Announce specific new product with launch details
+7. Sale/discount - Feature discounted product with before/after pricing
+8. Feature spotlight - Highlight one key feature across product line
+9. Use case - Show specific product solving specific problem
+10. Stock alert - Feature limited stock product with urgency
+` : `
+1. Emotional storytelling - connect through feelings and experiences
+2. Feature showcase - highlight specific product/service capabilities
+3. Benefit-driven - focus on outcomes and results for customers
+4. Social proof - leverage testimonials, reviews, popularity
+5. Problem-solution - identify pain points and present solutions
+6. Aspirational - paint a picture of the ideal future state
+7. Educational - teach something valuable while promoting
+8. Behind-the-scenes - show the process, people, or craftsmanship
+9. Comparison - show before/after or us vs. competitors
+10. Urgency/scarcity - create FOMO with limited offers or timing
+`}
+
+🔄 ANTI-REPETITION CHECKLIST:
+Recent content to AVOID repeating:
+${recentData.headlines.length > 0 ? `- Recent Headlines: ${recentData.headlines.slice(0, 3).join(' | ')}` : ''}
+${recentData.captions.length > 0 ? `- Recent Caption Themes: ${recentData.captions.slice(0, 2).map((c: string) => c.substring(0, 50)).join(' | ')}` : ''}
+${recentData.concepts.length > 0 ? `- Recent Concepts: ${recentData.concepts.slice(0, 2).join(' | ')}` : ''}
+
+⚠️ CRITICAL: If you notice any similarity to recent content above, COMPLETELY CHANGE YOUR APPROACH!
 
 ${assignedAngle ? `
 🎯 UNIVERSAL MULTI-ANGLE MARKETING FRAMEWORK - ASSIGNED ANGLE:
@@ -2170,7 +2360,7 @@ ${assignedAngle.promptInstructions}
 📄 CAPTION GUIDANCE: ${assignedAngle.captionGuidance}
 🎨 VISUAL GUIDANCE: ${assignedAngle.visualGuidance}
 
-💡 ANGLE EXAMPLE:
+💡 ANGLE EXAMPLE (Use as inspiration, NOT as template):
 - Headline: "${assignedAngle.examples.headline}"
 - Subheadline: "${assignedAngle.examples.subheadline}"
 - Caption: "${assignedAngle.examples.caption}"
@@ -2673,12 +2863,11 @@ Format as JSON:
     }
 
     // All retries failed, use fallback
-    console.warn(`🚨 [Revo 2.0 FALLBACK CAPTION ISSUE] Using template captions instead of AI-generated captions!`);
-    console.warn(`🔧 [Revo 2.0 FALLBACK CAPTION ISSUE] This will cause caption-headline story mismatch!`);
+    console.warn(`🚨 [Revo 2.0 FALLBACK CAPTION ISSUE] Using AI-powered fallback (not templates)!`);
     console.warn(`❌ [Revo 2.0] All ${maxRetries} AI attempts failed. Using fallback content.`);
     console.warn(`Last error: ${lastError?.message || 'Unknown error'}`);
 
-    const fallbackContent = generateUniqueFallbackContent(brandProfile, businessType, platform, hashtagCount, creativityBoost, concept);
+    const fallbackContent = await generateUniqueFallbackContent(brandProfile, businessType, platform, hashtagCount, creativityBoost, concept);
 
     // Mark this as fallback content for debugging
     console.warn(`🚨 [Revo 2.0 FALLBACK CONTENT] Generated fallback content:`);
@@ -2690,69 +2879,103 @@ Format as JSON:
 
   } catch (error) {
     console.warn('⚠️ Revo 2.0: Content generation failed, generating unique fallback');
-    return generateUniqueFallbackContent(brandProfile, businessType, platform, hashtagCount, Date.now() % 10, concept);
+    return await generateUniqueFallbackContent(brandProfile, businessType, platform, hashtagCount, Date.now() % 10, concept);
   }
 }
 
 /**
  * Generate contextually relevant fallback content based on visual and business context
+ * Now uses AI generation instead of hardcoded templates
  */
-export function generateUniqueFallbackContent(brandProfile: any, businessType: string, platform: string, hashtagCount: number, creativityLevel: number, concept?: any) {
+export async function generateUniqueFallbackContent(
+  brandProfile: any,
+  businessType: string,
+  platform: string,
+  hashtagCount: number,
+  creativityLevel: number,
+  concept?: any
+): Promise<{
+  caption: string;
+  hashtags: string[];
+  headline?: string;
+  subheadline?: string;
+  cta?: string;
+  captionVariations?: string[];
+}> {
   // Check if we have today's featured service
   const todayService = concept?.featuredServices?.[0];
 
-  // Get visual context for better alignment
-  const visualContext = getVisualContextForBusiness(businessType, concept?.concept || '');
+  // Get product info for retail businesses
+  const productCatalog = (brandProfile as any).productCatalog;
+  let productInfo: any = null;
+  if (productCatalog && Array.isArray(productCatalog) && productCatalog.length > 0) {
+    // Rotate through products based on creativity level
+    productInfo = productCatalog[creativityLevel % productCatalog.length];
+  }
 
   // Choose a theme deterministically from creativityLevel for variety
   const themes = ['innovation-focused', 'results-driven', 'customer-centric', 'quality-emphasis', 'expertise-showcase'];
   const selectedTheme = themes[creativityLevel % themes.length];
 
-  const base = `${brandProfile.businessName}`;
-  const svc = todayService?.serviceName || businessType;
-  const loc = brandProfile.location || 'your area';
+  try {
+    // Generate AI-powered fallback content
+    const [headline, subheadline, fallbackCTA] = await Promise.all([
+      generateUniqueHeadline(brandProfile, businessType, selectedTheme, productInfo),
+      generateUniqueSubheadline(brandProfile, businessType, selectedTheme, todayService, productInfo),
+      generateUniqueCTA(selectedTheme, businessType, productInfo)
+    ]);
 
-  const uniqueCaptions = todayService ? [
-    `${svc} that actually works. Your ${loc} supplier gets paid in 3 minutes, not 3 days.`,
-    `KES 50,000 sent at 9 AM, confirmed by 9:03 AM. Your inventory arrives tomorrow, not next week.`,
-    `Your Friday payroll runs automatically while you're in client meetings. No more payment delays.`,
-    `Mombasa Road supplier paid before lunch. Your team sees deposits by Friday morning.`,
-    `98% faster payments mean you stop being the bottleneck. Focus on growing, not admin chaos.`,
-    `Student needs lunch money at 1 PM. Parent sends KES 500, student buying food by 1:03 PM.`,
-    `Emergency medicine money sent instantly. Baby gets treatment, family sends grateful messages.`,
-    `Business cash flow that actually flows. Payments in minutes, not days or weeks.`
-  ] : [
-    `Your ${loc} business runs smoother when payments work instantly. No more waiting days for confirmations.`,
-    `KES 25,000 supplier payment sent at 2 PM, confirmed by 2:02 PM. Your ${loc} operations never skip a beat.`,
-    `While competitors take 3-5 business days, ${base} processes payments in under 3 minutes.`,
-    `Friday payroll for your ${loc} team runs automatically. You focus on business, we handle the money flow.`,
-    `Emergency funds sent instantly to your ${loc} branch. Crisis handled, business continues.`,
-    `Your ${loc} customers pay instantly, you receive money immediately. Cash flow that actually flows.`,
-    `98% faster than traditional banking means your ${loc} suppliers get paid before lunch, not next week.`,
-    `Student in ${loc} needs transport money. Parent sends KES 200, student catches the next matatu.`
-  ];
+    // Generate caption using AI
+    const strategy = getBusinessTypeStrategy(businessType);
+    let captionPrompt = `Generate a compelling social media caption for ${brandProfile.businessName} (${businessType}).
 
-  const selectedCaption = uniqueCaptions[creativityLevel % uniqueCaptions.length];
-  const hashtags = generateFallbackHashtags(brandProfile, businessType, platform, hashtagCount, todayService);
+🎯 REQUIREMENTS:
+- Conversational and engaging
+- Focus on specific benefits
+- NO generic corporate language
+- Maximum 2-3 sentences
+${strategy ? `\n📋 INDUSTRY GUIDANCE:\n${strategy.captionGuidance}` : ''}
+${productInfo ? `\n🛍️ PRODUCT FOCUS:\n- Product: ${productInfo.name}\n- Price: ${productInfo.price || 'N/A'}\n- Benefits: ${productInfo.benefits?.join(', ') || 'Quality product'}` : ''}
+${todayService ? `\n🎯 SERVICE FOCUS:\n- Service: ${todayService.serviceName}\n- Description: ${todayService.description || ''}` : ''}
 
-  const headline = generateUniqueHeadline(brandProfile, businessType, selectedTheme);
-  const subheadline = generateUniqueSubheadline(brandProfile, businessType, selectedTheme, todayService);
+Business: ${brandProfile.businessName}
+Location: ${brandProfile.location || 'Global'}
 
-  // Anti-repetition memory
-  const fallbackKey = getBrandKey(brandProfile, platform);
-  rememberOutput(fallbackKey, { headline, caption: selectedCaption });
+Return ONLY the caption text, nothing else.`;
 
-  // Generate business-type specific CTA
-  const fallbackCTA = generateUniqueCTA(selectedTheme, businessType);
+    const result = await generateContentWithProxy(captionPrompt, REVO_2_0_MODEL, false);
+    const response = await result.response;
+    const caption = response.text().trim().replace(/^["']|["']$/g, '');
 
-  return {
-    caption: sanitizeGeneratedCopy(selectedCaption, brandProfile, businessType) as string,
-    hashtags,
-    headline: sanitizeGeneratedCopy(headline, brandProfile, businessType),
-    subheadline: sanitizeGeneratedCopy(subheadline, brandProfile, businessType),
-    cta: sanitizeGeneratedCopy(fallbackCTA, brandProfile, businessType),
-    captionVariations: [sanitizeGeneratedCopy(selectedCaption, brandProfile, businessType) as string]
-  };
+    const hashtags = generateFallbackHashtags(brandProfile, businessType, platform, hashtagCount, todayService);
+
+    // Anti-repetition memory
+    const fallbackKey = getBrandKey(brandProfile, platform);
+    rememberOutput(fallbackKey, { headline, caption });
+
+    return {
+      caption: sanitizeGeneratedCopy(caption, brandProfile, businessType) as string,
+      hashtags,
+      headline: sanitizeGeneratedCopy(headline, brandProfile, businessType),
+      subheadline: sanitizeGeneratedCopy(subheadline, brandProfile, businessType),
+      cta: sanitizeGeneratedCopy(fallbackCTA, brandProfile, businessType),
+      captionVariations: [sanitizeGeneratedCopy(caption, brandProfile, businessType) as string]
+    };
+  } catch (error) {
+    console.warn('⚠️ AI fallback generation failed, using ultra-simple fallback');
+
+    // Ultra-simple fallback if AI fails
+    const hashtags = generateFallbackHashtags(brandProfile, businessType, platform, hashtagCount, todayService);
+
+    return {
+      caption: `Discover quality ${businessType} services at ${brandProfile.businessName}. ${brandProfile.location ? `Serving ${brandProfile.location}` : 'Serving you'} with excellence.`,
+      hashtags,
+      headline: `${brandProfile.businessName}`,
+      subheadline: `Quality ${businessType} services`,
+      cta: 'Learn More',
+      captionVariations: []
+    };
+  }
 }
 
 /**
@@ -3228,92 +3451,106 @@ export async function testRevo20Availability(): Promise<boolean> {
 }
 
 /**
- * Generate unique headlines based on theme
+ * Generate unique headlines using AI (no templates)
  */
-function generateUniqueHeadline(brandProfile: any, businessType: string, theme: string): string {
-  const svc = (businessType || '').toLowerCase();
-  const brand = (brandProfile?.businessName || '').trim();
+async function generateUniqueHeadline(brandProfile: any, businessType: string, theme: string, productInfo?: any): Promise<string> {
+  try {
+    // Get business-type specific strategy for context
+    const strategy = getBusinessTypeStrategy(businessType);
 
-  const verbs = ['Build', 'Shape', 'Refine', 'Launch', 'Elevate', 'Design', 'Create', 'Focus', 'Deliver', 'Unlock'];
-  const adjectives = ['Real', 'Bold', 'Smart', 'Clean', 'Modern', 'Authentic', 'Fresh', 'Precise', 'Human', 'Premium'];
-  const nouns = ['Impact', 'Value', 'Clarity', 'Momentum', 'Results', 'Quality', 'Growth', 'Presence', 'Performance', 'Standards'];
-  const svcNouns = [svc, `${svc} Results`, `${svc} Quality`, `${svc} Excellence`].filter(Boolean);
-
-  // Theme modifiers to bias word choice subtly
-  const themeBias: Record<string, { adj?: string[]; noun?: string[]; verb?: string[] }> = {
-    'innovation-focused': { adj: ['Modern', 'Bold', 'Fresh'], noun: ['Momentum', 'Next'], verb: ['Launch', 'Unlock'] },
-    'results-driven': { adj: ['Real', 'Precise'], noun: ['Results', 'Impact', 'Performance'], verb: ['Deliver', 'Drive'] },
-    'customer-centric': { adj: ['Human', 'Authentic'], noun: ['Value', 'Experience'], verb: ['Create', 'Design'] },
-    'quality-emphasis': { adj: ['Premium', 'Clean'], noun: ['Quality', 'Standards', 'Clarity'], verb: ['Refine'] },
-    'expertise-showcase': { adj: ['Smart'], noun: ['Excellence'], verb: ['Elevate', 'Shape'] }
-  };
-
-  const bias = themeBias[theme] || {};
-  function pick<T>(arr: T[], extra?: T[]): T { const pool = extra ? [...arr, ...extra] : arr; return pool[Math.floor(Math.random() * pool.length)]; }
-
-  let attempts = 0;
-  while (attempts < 5) {
-    attempts++;
-    const pattern = Math.floor(Math.random() * 4);
-    let candidate = '';
-    if (pattern === 0) candidate = `${pick(verbs, bias.verb)} ${pick(nouns, bias.noun)}`;
-    else if (pattern === 1) candidate = `${pick(adjectives, bias.adj)} ${pick(nouns, bias.noun)}`;
-    else if (pattern === 2) candidate = `${pick(adjectives, bias.adj)} ${pick(svcNouns)}`;
-    else candidate = `${pick(verbs, bias.verb)} ${pick(svcNouns)}`;
-
-    // Enforce max 6 words and strip overused terms
-    candidate = stripOverusedWords(candidate).trim();
-    const words = candidate.split(/\s+/);
-    if (candidate && words.length <= 6 && !/\b(journey|everyday)\b/i.test(candidate) && !/^[A-Z]+:\s/.test(candidate)) {
-      return candidate;
+    let productContext = '';
+    if (productInfo) {
+      productContext = `\n\n🛍️ PRODUCT FOCUS:\n- Product: ${productInfo.name}`;
+      if (productInfo.price) productContext += `\n- Price: ${productInfo.price}`;
+      if (productInfo.features) productContext += `\n- Key Feature: ${productInfo.features[0]}`;
     }
+
+    const headlinePrompt = `Generate a compelling headline (max 6 words) for ${brandProfile.businessName} (${businessType}).
+
+🎯 REQUIREMENTS:
+- Maximum 6 words
+- ${theme} approach
+- NO generic corporate phrases like "Transform Your Business", "Unlock Potential"
+- NO company name with colon format (e.g., "COMPANY:")
+- NO words like "journey", "everyday"
+- Specific and action-oriented
+${strategy ? `\n📋 INDUSTRY GUIDANCE:\n${strategy.headlineApproach}` : ''}
+${productContext}
+
+Business: ${brandProfile.businessName}
+Location: ${brandProfile.location || 'Global'}
+
+Return ONLY the headline text, nothing else.`;
+
+    const result = await generateContentWithProxy(headlinePrompt, REVO_2_0_MODEL, false);
+    const response = await result.response;
+    const headline = response.text().trim().replace(/^["']|["']$/g, '');
+
+    // Validate and clean
+    const words = headline.split(/\s+/);
+    if (words.length <= 6 && !/\b(journey|everyday)\b/i.test(headline) && !/^[A-Z]+:\s/.test(headline)) {
+      return stripOverusedWords(headline);
+    }
+
+    // If validation fails, return a simple fallback
+    return `${brandProfile.businessName} - ${businessType}`;
+  } catch (error) {
+    console.warn('⚠️ AI headline generation failed, using simple fallback');
+    return `${brandProfile.businessName} - ${businessType}`;
   }
-
-  // Fallback simple unique line
-  return stripOverusedWords(`${pick(adjectives)} ${pick(nouns)}`);
 }
 
 /**
- * Generate unique subheadlines based on theme and service
+ * Generate unique subheadlines using AI (no templates)
  */
-function generateUniqueSubheadline(brandProfile: any, businessType: string, theme: string, todayService?: any): string {
-  const location = brandProfile.location || 'your area';
-  const business = brandProfile.businessName;
-  const service = todayService?.serviceName || businessType;
+async function generateUniqueSubheadline(brandProfile: any, businessType: string, theme: string, todayService?: any, productInfo?: any): Promise<string> {
+  try {
+    const strategy = getBusinessTypeStrategy(businessType);
+    const service = todayService?.serviceName || businessType;
 
-  const subheadlines = {
-    'innovation-focused': [
-      `${business} brings cutting-edge ${service} to ${location}`,
-      `Revolutionary ${service} solutions from ${business}`,
-      `Advanced ${service} technology meets local expertise`,
-      `${business} pioneers the future of ${service}`,
-      `Next-generation ${service} available in ${location}`
-    ],
-    'results-driven': [
-      `${business} delivers measurable ${service} outcomes`,
-      `Proven ${service} results from ${business}`,
-      `${business} guarantees ${service} success in ${location}`,
-      `Track record of ${service} excellence at ${business}`,
-      `${business} turns ${service} goals into reality`
-    ],
-    'customer-centric': [
-      `${business} puts your ${service} needs first`,
-      `Personalized ${service} solutions from ${business}`,
-      `${business} listens, understands, delivers ${service}`,
-      `Your ${service} success is our priority at ${business}`,
-      `${business} creates ${service} experiences just for you`
-    ]
-  };
+    let productContext = '';
+    if (productInfo) {
+      productContext = `\n\n🛍️ PRODUCT FOCUS:\n- Product: ${productInfo.name}`;
+      if (productInfo.benefits) productContext += `\n- Benefit: ${productInfo.benefits[0]}`;
+    }
 
-  const themeSubheadlines = subheadlines[theme as keyof typeof subheadlines] || subheadlines['innovation-focused'];
-  const randomIndex = Math.floor(Math.random() * themeSubheadlines.length);
-  return themeSubheadlines[randomIndex];
+    const subheadlinePrompt = `Generate a compelling subheadline (max 25 words) for ${brandProfile.businessName}.
+
+🎯 REQUIREMENTS:
+- Maximum 25 words
+- ${theme} approach
+- Supports the main message
+- Specific and benefit-focused
+- NO generic corporate language
+${strategy ? `\n📋 INDUSTRY GUIDANCE:\n${strategy.captionGuidance}` : ''}
+${productContext}
+
+Business: ${brandProfile.businessName}
+Service/Product: ${service}
+Location: ${brandProfile.location || 'Global'}
+
+Return ONLY the subheadline text, nothing else.`;
+
+    const result = await generateContentWithProxy(subheadlinePrompt, REVO_2_0_MODEL, false);
+    const response = await result.response;
+    const subheadline = response.text().trim().replace(/^["']|["']$/g, '');
+
+    const words = subheadline.split(/\s+/);
+    if (words.length <= 25) {
+      return stripOverusedWords(subheadline);
+    }
+
+    return `${service} from ${brandProfile.businessName}`;
+  } catch (error) {
+    console.warn('⚠️ AI subheadline generation failed, using simple fallback');
+    return `${todayService?.serviceName || businessType} from ${brandProfile.businessName}`;
+  }
 }
 
 /**
- * Generate unique CTAs based on theme and business type
+ * Generate unique CTAs using AI with business-type awareness (no templates)
  */
-function generateUniqueCTA(theme: string, businessType?: string): string {
+async function generateUniqueCTA(theme: string, businessType?: string, productInfo?: any): Promise<string> {
   // Check for business-type specific CTA first
   if (businessType) {
     const strategy = getBusinessTypeStrategy(businessType);
@@ -3328,18 +3565,38 @@ function generateUniqueCTA(theme: string, businessType?: string): string {
     }
   }
 
-  // Fallback to theme-based CTAs
-  const ctas = {
-    'innovation-focused': ['Explore Now', 'Discover More', 'See Innovation', 'Try Today'],
-    'results-driven': ['Get Results', 'Start Now', 'Achieve More', 'See Proof'],
-    'customer-centric': ['Connect Today', 'Let\'s Talk', 'Your Solution', 'Get Personal'],
-    'quality-emphasis': ['Experience Quality', 'See Excellence', 'Choose Best', 'Premium Access'],
-    'expertise-showcase': ['Meet Experts', 'Get Professional', 'Expert Help', 'Skilled Service']
-  };
+  // If no business-type strategy, use AI to generate contextual CTA
+  try {
+    let productContext = '';
+    if (productInfo) {
+      productContext = `\nProduct: ${productInfo.name}`;
+    }
 
-  const themeCTAs = ctas[theme as keyof typeof ctas] || ctas['innovation-focused'];
-  const randomIndex = Math.floor(Math.random() * themeCTAs.length);
-  return themeCTAs[randomIndex];
+    const ctaPrompt = `Generate a compelling call-to-action (2-3 words) for a ${businessType || 'business'}.
+
+🎯 REQUIREMENTS:
+- Maximum 3 words
+- ${theme} approach
+- Action-oriented
+- Natural and contextual
+${productContext}
+
+Return ONLY the CTA text, nothing else.`;
+
+    const result = await generateContentWithProxy(ctaPrompt, REVO_2_0_MODEL, false);
+    const response = await result.response;
+    const cta = response.text().trim().replace(/^["']|["']$/g, '');
+
+    const words = cta.split(/\s+/);
+    if (words.length <= 3) {
+      return cta;
+    }
+
+    return 'Learn More';
+  } catch (error) {
+    console.warn('⚠️ AI CTA generation failed, using simple fallback');
+    return 'Learn More';
+  }
 }
 
 /**
