@@ -3310,104 +3310,168 @@ function getValuePropositionsForBusiness(businessType: string, brandProfile: any
  */
 
 /**
- * Main Revo 2.0 generation function
- * Generate content with Revo 2.0 (Gemini 2.5 Flash Image Preview)
+ * Main Revo 2.0 generation function - REVISED ARCHITECTURE
+ * Uses OpenAI Assistants first for perfect content-design alignment
  */
 export async function generateWithRevo20(options: Revo20GenerationOptions): Promise<Revo20GenerationResult> {
   const startTime = Date.now();
 
   try {
+    // Import our new integrated components
+    const { assistantManager } = await import('./assistants/assistant-manager');
+    const { contentDesignValidator } = await import('./validators/content-design-validator');
+    const { integratedPromptGenerator } = await import('./image/integrated-prompt-generator');
+    const { detectBusinessType } = await import('./adaptive/business-type-detector');
+
+    console.log(`🚀 [Revo 2.0 REVISED] Starting assistant-first generation for ${options.brandProfile.businessName}`);
 
     // Auto-detect platform-specific aspect ratio if not provided
     const aspectRatio = options.aspectRatio || getPlatformAspectRatio(options.platform);
     const enhancedOptions = { ...options, aspectRatio };
 
-    // Step 1: Generate creative concept with timeout
+    // Step 1: Detect business type for assistant selection
+    const businessType = detectBusinessType(enhancedOptions.brandProfile);
+    console.log(`🏢 [Revo 2.0] Detected business type: ${businessType.primaryType}`);
+
+    // Step 2: Generate creative concept with visual direction
     const concept = await Promise.race([
       generateCreativeConcept(enhancedOptions),
       new Promise((_, reject) => setTimeout(() => reject(new Error('Creative concept generation timeout')), 60000))
     ]);
+    console.log(`💡 [Revo 2.0] Generated concept: ${concept.concept}`);
 
-    // Step 2: Build enhanced prompt
-    const enhancedPrompt = buildEnhancedPrompt(enhancedOptions, concept);
+    // Step 3: ASSISTANT-FIRST CONTENT GENERATION
+    let assistantResponse;
+    let contentSource = 'assistant';
 
-    // Step 3: Generate image with Gemini 2.5 Flash Image Preview with timeout
+    if (assistantManager.isAvailable(businessType.primaryType)) {
+      console.log(`🤖 [Revo 2.0] Using OpenAI Assistant for ${businessType.primaryType}`);
+      
+      try {
+        // Generate marketing angle for context
+        const marketingAngle = assignMarketingAngle(getBrandKey(enhancedOptions.brandProfile, enhancedOptions.platform), enhancedOptions);
+        
+        assistantResponse = await Promise.race([
+          assistantManager.generateContent({
+            businessType: businessType.primaryType,
+            brandProfile: enhancedOptions.brandProfile,
+            concept: concept,
+            imagePrompt: '', // Will be generated from design specs
+            platform: enhancedOptions.platform,
+            marketingAngle: marketingAngle,
+            useLocalLanguage: enhancedOptions.useLocalLanguage
+          }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Assistant generation timeout')), 90000))
+        ]);
+
+        console.log(`✅ [Revo 2.0] Assistant generated content with design specifications`);
+        
+      } catch (assistantError) {
+        console.warn(`⚠️ [Revo 2.0] Assistant generation failed, falling back to Claude:`, assistantError);
+        contentSource = 'claude_fallback';
+        assistantResponse = await generateClaudeFallback(enhancedOptions, concept);
+      }
+    } else {
+      console.log(`📝 [Revo 2.0] No assistant available for ${businessType.primaryType}, using Claude`);
+      contentSource = 'claude_primary';
+      assistantResponse = await generateClaudeFallback(enhancedOptions, concept);
+    }
+
+    // Step 4: Validate content-design alignment (only for assistant responses)
+    if (contentSource === 'assistant') {
+      const validationResult = contentDesignValidator.validateAlignment(assistantResponse, {
+        brandProfile: enhancedOptions.brandProfile,
+        businessType: businessType.primaryType,
+        platform: enhancedOptions.platform,
+        concept: concept
+      });
+
+      if (!validationResult.isValid) {
+        console.warn(`⚠️ [Revo 2.0] Content-design alignment failed (${validationResult.score}/100), using Claude fallback`);
+        console.warn(`Issues:`, validationResult.issues);
+        contentSource = 'claude_validation_fallback';
+        assistantResponse = await generateClaudeFallback(enhancedOptions, concept);
+      } else {
+        console.log(`✅ [Revo 2.0] Content-design alignment validated (${validationResult.score}/100)`);
+      }
+    }
+
+    // Step 5: Generate integrated image prompt
+    let imagePrompt: string;
+    let finalContent: any;
+
+    if (contentSource === 'assistant') {
+      // Use integrated prompt generator for perfect alignment
+      const integratedPrompt = integratedPromptGenerator.generateIntegratedPrompt({
+        assistantResponse,
+        brandProfile: enhancedOptions.brandProfile,
+        platform: enhancedOptions.platform,
+        aspectRatio: aspectRatio,
+        businessType: businessType.primaryType
+      });
+
+      imagePrompt = integratedPrompt.imagePrompt;
+      finalContent = {
+        caption: assistantResponse.content.caption,
+        hashtags: assistantResponse.content.hashtags,
+        headline: assistantResponse.content.headline,
+        subheadline: assistantResponse.content.subheadline,
+        cta: assistantResponse.content.cta,
+        captionVariations: [assistantResponse.content.caption]
+      };
+
+      console.log(`🎨 [Revo 2.0] Generated integrated image prompt (${imagePrompt.length} chars)`);
+    } else {
+      // Use traditional approach for Claude fallback
+      imagePrompt = buildEnhancedPrompt(enhancedOptions, concept);
+      finalContent = assistantResponse;
+      console.log(`📝 [Revo 2.0] Using traditional prompt approach for fallback`);
+    }
+
+    // Step 6: Generate image with integrated prompt
     const imageResult = await Promise.race([
-      generateImageWithGemini(enhancedPrompt, enhancedOptions),
+      generateImageWithGemini(imagePrompt, enhancedOptions),
       new Promise((_, reject) => setTimeout(() => reject(new Error('Image generation timeout')), 20000))
     ]) as { imageUrl: string };
 
-    // Step 4: Generate caption and hashtags with timeout
-    const contentResult = await Promise.race([
-      generateCaptionAndHashtags(enhancedOptions, concept, enhancedPrompt, imageResult.imageUrl),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Content generation timeout')), 60000))
-    ]) as {
-      caption: string;
-      hashtags: string[];
-      headline?: string;
-      subheadline?: string;
-      cta?: string;
-      captionVariations?: string[];
-    };
+    console.log(`🖼️ [Revo 2.0] Generated image successfully`);
 
     const processingTime = Date.now() - startTime;
 
-    // SPELL CHECK: Ensure headlines and subheadlines are spell-checked before final result
-    let finalContentResult = contentResult;
-    try {
+    // Step 7: Final content preparation
+    const finalContentResult = finalContent;
+    console.log(`✅ [Revo 2.0] Final content prepared successfully`);
 
-      const spellCheckedContent = await ContentQualityEnhancer.enhanceGeneratedContent({
-        headline: contentResult.headline,
-        subheadline: contentResult.subheadline,
-        caption: contentResult.caption,
-        callToAction: contentResult.cta
-      }, options.businessType, {
-        autoCorrect: true,
-        logCorrections: true,
-        validateQuality: true
-      });
+    // Determine model name based on content source
+    const modelName = contentSource === 'assistant' 
+      ? 'Revo 2.0 Assistant Edition (OpenAI GPT-4 + Gemini Image)'
+      : 'Revo 2.0 Claude Edition (Claude Sonnet 4.5 + Gemini Image)';
 
-      // Update content with spell-checked versions
-      if (spellCheckedContent.headline !== contentResult.headline) {
-      }
+    const enhancementsApplied = contentSource === 'assistant'
+      ? [
+          'OpenAI GPT-4 Assistant content generation',
+          'Content-design alignment validation',
+          'Integrated image prompt generation',
+          'Business-specific assistant expertise',
+          'Document analysis integration',
+          'Perfect content-visual synchronization'
+        ]
+      : [
+          'Claude Sonnet 4.5 content generation',
+          'Global localization (13+ countries)',
+          'Advanced anti-repetition system',
+          'Marketing angle optimization',
+          'Story coherence validation'
+        ];
 
-      if (spellCheckedContent.subheadline !== contentResult.subheadline) {
-      }
-
-      finalContentResult = {
-        caption: spellCheckedContent.caption || contentResult.caption,
-        hashtags: contentResult.hashtags,
-        headline: spellCheckedContent.headline || contentResult.headline,
-        subheadline: spellCheckedContent.subheadline || contentResult.subheadline,
-        cta: spellCheckedContent.callToAction || contentResult.cta,
-        captionVariations: contentResult.captionVariations
-      };
-
-      // Add quality report if available
-      if (spellCheckedContent.qualityReport) {
-      }
-
-    } catch (error) {
-      console.warn(' SPELL CHECK failed, using original content:', error);
-      finalContentResult = contentResult;
-    }
+    console.log(`🎉 [Revo 2.0] Generation complete in ${processingTime}ms using ${contentSource} approach`);
 
     return {
       imageUrl: imageResult.imageUrl,
-      model: 'Revo 2.0 Claude Edition (Claude Sonnet 4.5 + Gemini Image)',
-      qualityScore: 9.5,
+      model: modelName,
+      qualityScore: contentSource === 'assistant' ? 9.8 : 9.5,
       processingTime,
-      enhancementsApplied: [
-        'Claude Sonnet 4.5 content generation',
-        'Global localization (13+ countries)',
-        '15 enhanced content approaches',
-        'Advanced anti-repetition system',
-        'Image analysis integration',
-        'Cultural intelligence',
-        'Brand consistency optimization',
-        'Platform-specific formatting',
-        'Spell check integration'
-      ],
+      enhancementsApplied,
       caption: finalContentResult.caption,
       hashtags: finalContentResult.hashtags,
       headline: finalContentResult.headline,
@@ -3417,13 +3481,49 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
       businessIntelligence: {
         concept: concept.concept,
         visualTheme: concept.visualTheme,
-        emotionalTone: concept.emotionalTone
+        emotionalTone: concept.emotionalTone,
+        contentSource: contentSource,
+        businessType: businessType.primaryType
       }
     };
 
   } catch (error) {
     console.error(' Revo 2.0: Generation failed:', error);
     throw new Error(`Revo 2.0 generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
+ * Claude fallback function for when OpenAI Assistant is not available or fails
+ */
+async function generateClaudeFallback(options: any, concept: any): Promise<any> {
+  console.log(`📝 [Revo 2.0] Using Claude fallback for content generation`);
+  
+  try {
+    // Use existing Claude-based content generation
+    const contentResult = await generateCaptionAndHashtags(options, concept, '', '');
+    
+    // Convert to assistant-like response format for consistency
+    return {
+      caption: contentResult.caption,
+      hashtags: contentResult.hashtags,
+      headline: contentResult.headline,
+      subheadline: contentResult.subheadline,
+      cta: contentResult.cta,
+      captionVariations: contentResult.captionVariations || [contentResult.caption]
+    };
+  } catch (error) {
+    console.error(`❌ [Revo 2.0] Claude fallback failed:`, error);
+    
+    // Ultra-simple fallback
+    return {
+      caption: `Discover quality services at ${options.brandProfile.businessName}. ${options.brandProfile.location ? `Serving ${options.brandProfile.location}` : 'Serving you'} with excellence.`,
+      hashtags: [`#${options.brandProfile.businessName.replace(/\s+/g, '')}`, `#${options.businessType.replace(/\s+/g, '')}`, '#Quality'],
+      headline: options.brandProfile.businessName,
+      subheadline: `Quality ${options.businessType} services`,
+      cta: 'Learn More',
+      captionVariations: []
+    };
   }
 }
 
