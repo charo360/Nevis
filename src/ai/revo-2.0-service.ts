@@ -3387,10 +3387,40 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
       });
 
       if (!validationResult.isValid) {
-        console.warn(`⚠️ [Revo 2.0] Content-design alignment failed (${validationResult.score}/100), using Claude fallback`);
-        console.warn(`Issues:`, validationResult.issues);
-        contentSource = 'claude_validation_fallback';
-        assistantResponse = await generateClaudeFallback(enhancedOptions, concept);
+        console.warn(`⚠️ [Revo 2.0] Content-design alignment failed (${validationResult.score}/100), trying synchronization...`);
+        
+        // Try content-visual synchronization before falling back to Claude
+        const { contentVisualSynchronizer } = await import('./synchronization/content-visual-sync');
+        
+        try {
+          const syncResult = await contentVisualSynchronizer.synchronizeContentAndVisuals({
+            content: assistantResponse.content,
+            designSpecs: assistantResponse.design_specifications,
+            brandProfile: enhancedOptions.brandProfile,
+            businessType: businessType.primaryType,
+            platform: enhancedOptions.platform,
+            concept: concept
+          });
+
+          if (syncResult.isSync) {
+            console.log(`✅ [Revo 2.0] Content-visual synchronization successful (${syncResult.syncScore}/100)`);
+            
+            // Update assistant response with synchronized content and design
+            assistantResponse = {
+              content: syncResult.synchronizedContent,
+              design_specifications: syncResult.synchronizedDesign,
+              alignment_validation: `Synchronized content-visual alignment achieved with score ${syncResult.syncScore}/100`
+            };
+          } else {
+            console.warn(`⚠️ [Revo 2.0] Synchronization failed (${syncResult.syncScore}/100), using Claude fallback`);
+            contentSource = 'claude_validation_fallback';
+            assistantResponse = await generateClaudeFallback(enhancedOptions, concept);
+          }
+        } catch (syncError) {
+          console.warn(`⚠️ [Revo 2.0] Synchronization error, using Claude fallback:`, syncError);
+          contentSource = 'claude_validation_fallback';
+          assistantResponse = await generateClaudeFallback(enhancedOptions, concept);
+        }
       } else {
         console.log(`✅ [Revo 2.0] Content-design alignment validated (${validationResult.score}/100)`);
       }
