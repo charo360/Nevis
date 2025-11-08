@@ -1595,17 +1595,36 @@ ${designDNA}`;
   - Should feel like part of a designed composition, not a background
   - Add design treatments: borders, shadows, overlays (subtle), color grading
 
+  **SEAMLESS INTEGRATION & BLENDING (CRITICAL):**
+  - Extract colors FROM the uploaded image and use them in design elements
+  - Match the color palette of design elements to the uploaded image's colors
+  - Use gradients that transition from image colors to brand colors
+  - Blend edges where design elements meet the uploaded image (no harsh lines)
+  - Apply subtle color overlays to harmonize the uploaded image with brand colors
+  - Use shapes that overlap or intersect with the image for cohesion
+  - Create visual flow between the uploaded image and design elements
+  - Make it feel like ONE cohesive design, not image + separate elements
+
+  **COLOR HARMONY:**
+  - Sample dominant colors from the uploaded image
+  - Use those colors in geometric shapes, text backgrounds, or accents
+  - Create color transitions that connect the image to brand colors
+  - Apply subtle color grading to unify the entire composition
+  - Ensure design elements complement (not clash with) the image colors
+
   **LOGO TREATMENT:**
   - Clearly visible and well-positioned (10%+ of design area)
   - Integrated naturally into the design composition
   - Can be on a color block, shape, or clean area for visibility
+  - Logo placement should feel natural within the overall composition
 
   **DESIGN ELEMENTS TO ADD:**
-  - Geometric shapes (rectangles, circles, triangles) in brand colors
-  - Color blocks or panels for text and logo placement
-  - Gradients or color overlays (subtle, not overpowering)
+  - Geometric shapes (rectangles, circles, triangles) using colors from the image + brand colors
+  - Color blocks or panels that blend with the image's color palette
+  - Gradients that transition between image colors and brand colors
   - Professional typography with hierarchy
   - Visual balance and composition
+  - Overlapping elements that create depth and integration
 
   **WHAT THIS IS:**
   ✅ Professional marketing design that FEATURES the uploaded image
@@ -1636,12 +1655,30 @@ ${designDNA}`;
   - Should feel like part of a designed composition, not a background
   - Add design treatments: borders, shadows, overlays (subtle), color grading
 
+  **SEAMLESS INTEGRATION & BLENDING (CRITICAL):**
+  - Extract colors FROM the uploaded image and use them in design elements
+  - Match the color palette of design elements to the uploaded image's colors
+  - Use gradients that transition from image colors to brand colors
+  - Blend edges where design elements meet the uploaded image (no harsh lines)
+  - Apply subtle color overlays to harmonize the uploaded image with brand colors
+  - Use shapes that overlap or intersect with the image for cohesion
+  - Create visual flow between the uploaded image and design elements
+  - Make it feel like ONE cohesive design, not image + separate elements
+
+  **COLOR HARMONY:**
+  - Sample dominant colors from the uploaded image
+  - Use those colors in geometric shapes, text backgrounds, or accents
+  - Create color transitions that connect the image to brand colors
+  - Apply subtle color grading to unify the entire composition
+  - Ensure design elements complement (not clash with) the image colors
+
   **DESIGN ELEMENTS TO ADD:**
-  - Geometric shapes (rectangles, circles, triangles) in brand colors
-  - Color blocks or panels for text placement
-  - Gradients or color overlays (subtle)
+  - Geometric shapes (rectangles, circles, triangles) using colors from the image + brand colors
+  - Color blocks or panels that blend with the image's color palette
+  - Gradients that transition between image colors and brand colors
   - Professional typography with hierarchy
   - Visual balance and composition
+  - Overlapping elements that create depth and integration
 
   **WHAT THIS IS:**
   ✅ Professional marketing design that FEATURES the uploaded image
