@@ -33,14 +33,29 @@ export interface AssistantContentRequest {
 }
 
 /**
- * Response structure from assistant
+ * Design specifications from assistant
+ */
+export interface DesignSpecifications {
+  hero_element: string;
+  scene_description: string;
+  text_placement: string;
+  color_scheme: string;
+  mood_direction: string;
+}
+
+/**
+ * Enhanced response structure from assistant with design specifications
  */
 export interface AssistantContentResponse {
-  headline: string;
-  subheadline?: string;
-  caption: string;
-  cta: string;
-  hashtags: string[];
+  content: {
+    headline: string;
+    subheadline?: string;
+    caption: string;
+    cta: string;
+    hashtags: string[];
+  };
+  design_specifications: DesignSpecifications;
+  alignment_validation: string;
 }
 
 /**
@@ -194,7 +209,8 @@ export class AssistantManager {
 
       const duration = Date.now() - startTime;
       console.log(`✅ [Assistant Manager] Generation successful in ${duration}ms`);
-      console.log(`📊 [Assistant Manager] Headline: "${response.headline}"`);
+      console.log(`📊 [Assistant Manager] Headline: "${response.content.headline}"`);
+      console.log(`🎨 [Assistant Manager] Design Hero: "${response.design_specifications.hero_element}"`);
 
       return response;
 
@@ -219,8 +235,8 @@ export class AssistantManager {
   }
 
   /**
-   * Build message content for assistant
-   * This is generic - works for all business types
+   * Build enhanced message content for assistant with design specifications
+   * This creates unified content-design generation for perfect alignment
    */
   private buildMessageContent(request: AssistantContentRequest): string {
     const {
@@ -232,7 +248,7 @@ export class AssistantManager {
       useLocalLanguage,
     } = request;
 
-    let message = `Generate social media content for the following business:\n\n`;
+    let message = `Generate perfectly aligned social media content with visual design specifications for optimal content-design integration:\n\n`;
 
     // Business Information
     message += `**Business Information:**\n`;
@@ -275,8 +291,34 @@ export class AssistantManager {
       message += `**Target Audience:** ${brandProfile.targetAudience}\n\n`;
     }
 
+    // Visual Brand Identity
+    message += `**Visual Brand Identity:**\n`;
+    if (brandProfile.brandColors) {
+      if (brandProfile.brandColors.primary) {
+        message += `- Primary Color: ${brandProfile.brandColors.primary}\n`;
+      }
+      if (brandProfile.brandColors.secondary) {
+        message += `- Secondary Color: ${brandProfile.brandColors.secondary}\n`;
+      }
+    }
+    if (brandProfile.designStyle) {
+      message += `- Design Style: ${brandProfile.designStyle}\n`;
+    }
+    if (brandProfile.brandPersonality) {
+      message += `- Brand Personality: ${brandProfile.brandPersonality}\n`;
+    }
+    message += `\n`;
+
     // Visual Concept
-    message += `**Visual Concept:** ${concept.concept}\n\n`;
+    message += `**Creative Concept:**\n`;
+    message += `- Concept: ${concept.concept}\n`;
+    if (concept.visualTheme) {
+      message += `- Visual Theme: ${concept.visualTheme}\n`;
+    }
+    if (concept.emotionalTone) {
+      message += `- Emotional Tone: ${concept.emotionalTone}\n`;
+    }
+    message += `\n`;
 
     if (imagePrompt) {
       message += `**Image Elements:** ${imagePrompt}\n\n`;
@@ -404,21 +446,46 @@ export class AssistantManager {
       message += `**NOTE:** The full business documents have been uploaded and are available for you to search and analyze using the file_search tool. You can reference specific details, pricing, and information directly from these documents.\n\n`;
     }
 
-    // Content Requirements
-    message += `Please generate:\n`;
-    message += `1. Headline (4-6 words)\n`;
-    message += `2. Subheadline (15-25 words)\n`;
-    message += `3. Caption (50-100 words)\n`;
-    message += `4. Call-to-Action (2-4 words)\n`;
-    message += `5. Hashtags (${platform.toLowerCase() === 'instagram' ? '5' : '3'} tags)\n\n`;
+    // Content-Design Alignment Requirements
+    message += `**CONTENT-DESIGN ALIGNMENT REQUIREMENTS:**\n`;
+    message += `1. Headline must introduce the main story theme and match the hero visual element\n`;
+    message += `2. Subheadline must expand on the headline's promise and describe the visual scene\n`;
+    message += `3. Caption must tell the complete story that the visual elements demonstrate\n`;
+    message += `4. CTA must be the natural next step from the caption and match the action shown in the image\n`;
+    message += `5. All elements must work together as ONE unified narrative\n`;
+    message += `6. Visual specifications must support and enhance the text content\n\n`;
 
-    message += `Return as JSON:\n`;
+    message += `**VISUAL SPECIFICATIONS FOR DESIGN:**\n`;
+    message += `- Text Hierarchy: Headline (largest) > Subheadline > Caption > CTA\n`;
+    message += `- Color Usage: Primary (60%), Secondary (30%), Background (10%)\n`;
+    message += `- Layout: Clear focal point with balanced composition\n`;
+    message += `- Brand Consistency: Use specified colors and style\n`;
+    message += `- Platform Optimization: ${platform} format with proper aspect ratio\n\n`;
+
+    message += `**CONTENT REQUIREMENTS:**\n`;
+    message += `1. Headline (4-6 words that match the main visual element)\n`;
+    message += `2. Subheadline (15-25 words that describe what's happening in the scene)\n`;
+    message += `3. Caption (50-100 words story that the visual demonstrates)\n`;
+    message += `4. Call-to-Action (2-4 words matching the action in the image)\n`;
+    message += `5. Hashtags (${platform.toLowerCase() === 'instagram' ? '5' : '3'} relevant tags)\n\n`;
+
+    message += `Return as JSON with both content and design specifications:\n`;
     message += `{\n`;
-    message += `  "headline": "...",\n`;
-    message += `  "subheadline": "...",\n`;
-    message += `  "caption": "...",\n`;
-    message += `  "cta": "...",\n`;
-    message += `  "hashtags": ["...", "...", "..."]\n`;
+    message += `  "content": {\n`;
+    message += `    "headline": "4-6 words that match the main visual element",\n`;
+    message += `    "subheadline": "15-25 words that describe what's happening in the scene",\n`;
+    message += `    "caption": "50-100 words story that the visual demonstrates",\n`;
+    message += `    "cta": "2-4 words matching the action in the image",\n`;
+    message += `    "hashtags": ["relevant", "tags"]\n`;
+    message += `  },\n`;
+    message += `  "design_specifications": {\n`;
+    message += `    "hero_element": "Main focal point of the image",\n`;
+    message += `    "scene_description": "Detailed visual scene that supports the content",\n`;
+    message += `    "text_placement": "Where each text element should be positioned",\n`;
+    message += `    "color_scheme": "How brand colors should be applied",\n`;
+    message += `    "mood_direction": "Specific visual mood and atmosphere"\n`;
+    message += `  },\n`;
+    message += `  "alignment_validation": "Explain how content and visuals work together as one unified story"\n`;
     message += `}`;
 
     return message;
@@ -480,18 +547,33 @@ export class AssistantManager {
 
       const parsed = JSON.parse(jsonMatch[0]);
 
-      // Validate required fields
-      if (!parsed.headline || !parsed.caption || !parsed.cta) {
-        console.error('❌ [Assistant Manager] Missing required fields:', parsed);
-        throw new Error('Missing required fields in response');
+      // Validate required fields in new nested structure
+      if (!parsed.content || !parsed.content.headline || !parsed.content.caption || !parsed.content.cta) {
+        console.error('❌ [Assistant Manager] Missing required content fields:', parsed);
+        throw new Error('Missing required content fields in response');
+      }
+
+      if (!parsed.design_specifications) {
+        console.error('❌ [Assistant Manager] Missing design specifications:', parsed);
+        throw new Error('Missing design specifications in response');
       }
 
       return {
-        headline: parsed.headline || '',
-        subheadline: parsed.subheadline || '',
-        caption: parsed.caption || '',
-        cta: parsed.cta || '',
-        hashtags: Array.isArray(parsed.hashtags) ? parsed.hashtags : [],
+        content: {
+          headline: parsed.content.headline || '',
+          subheadline: parsed.content.subheadline || '',
+          caption: parsed.content.caption || '',
+          cta: parsed.content.cta || '',
+          hashtags: Array.isArray(parsed.content.hashtags) ? parsed.content.hashtags : [],
+        },
+        design_specifications: {
+          hero_element: parsed.design_specifications.hero_element || '',
+          scene_description: parsed.design_specifications.scene_description || '',
+          text_placement: parsed.design_specifications.text_placement || '',
+          color_scheme: parsed.design_specifications.color_scheme || '',
+          mood_direction: parsed.design_specifications.mood_direction || '',
+        },
+        alignment_validation: parsed.alignment_validation || '',
       };
     } catch (error) {
       console.error('❌ [Assistant Manager] Failed to parse response:', error);
