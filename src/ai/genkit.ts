@@ -139,7 +139,7 @@ export interface MediaPart {
 }
 
 export interface GenerateRequest {
-  prompt?: string;
+  prompt?: string | any[]; // Can be string or array of prompt parts (text + media)
   input?: string;
   model?: string;
   config?: any;

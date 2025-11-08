@@ -221,10 +221,29 @@ class VertexAIClient {
     options: {
       temperature?: number;
       maxOutputTokens?: number;
-      logoImage?: string; // Base64 data URL
+      uploadedImage?: string; // Base64 data URL for user-uploaded image
+      logoImage?: string; // Base64 data URL for brand logo
     } = {}
   ): Promise<{ imageData: string; mimeType: string; finishReason: string }> {
     const parts: any[] = [{ text: prompt }];
+
+    // Add uploaded image if provided (should be added BEFORE logo for proper hierarchy)
+    if (options.uploadedImage && options.uploadedImage.startsWith('data:image/')) {
+      const [mimeInfo, base64Data] = options.uploadedImage.split(',');
+      const mimeType = mimeInfo.split(':')[1].split(';')[0];
+
+      parts.push({
+        inlineData: {
+          mimeType,
+          data: base64Data
+        }
+      });
+
+      console.log('✅ [Vertex AI Client] Added uploaded image to parts:', {
+        mimeType,
+        dataLength: base64Data.length
+      });
+    }
 
     // Add logo image if provided
     if (options.logoImage && options.logoImage.startsWith('data:image/')) {
@@ -236,6 +255,11 @@ class VertexAIClient {
           mimeType,
           data: base64Data
         }
+      });
+
+      console.log('✅ [Vertex AI Client] Added logo image to parts:', {
+        mimeType,
+        dataLength: base64Data.length
       });
     }
 

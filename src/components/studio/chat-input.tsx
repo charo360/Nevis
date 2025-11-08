@@ -127,7 +127,9 @@ export function ChatInput({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Describe the image or video you want to create..."
+            placeholder={imagePreview
+              ? "Describe how to use the uploaded image (e.g., 'enhance this', 'use as template', 'create similar design')..."
+              : "Describe the design you want to create, or upload an image to enhance/reference..."}
             className="pr-20 resize-none min-h-[4rem] max-h-40"
             rows={1}
             disabled={isLoading}
@@ -141,7 +143,18 @@ export function ChatInput({
                     <span className="sr-only">Attach image</span>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Upload image to integrate into design</TooltipContent>
+                <TooltipContent>
+                  <div className="text-xs max-w-xs">
+                    <p className="font-semibold mb-1">Upload Image</p>
+                    <p>Upload an image to:</p>
+                    <ul className="list-disc list-inside mt-1 space-y-0.5">
+                      <li>Enhance and improve it</li>
+                      <li>Use as style reference</li>
+                      <li>Use as layout template</li>
+                      <li>Integrate into new design</li>
+                    </ul>
+                  </div>
+                </TooltipContent>
               </Tooltip>
             </TooltipProvider>
             <input

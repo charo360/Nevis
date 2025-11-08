@@ -102,6 +102,53 @@ interface ParsedInstructions {
     remainingPrompt: string;
 }
 
+/**
+ * Enhanced context understanding for user requests
+ */
+interface NegativeInstructions {
+    noPeople: boolean;
+    noText: boolean;
+    noPatterns: boolean;
+    noBackgroundImages: boolean;
+    noSpecificColors: string[];
+    noSpecificElements: string[];
+    customRestrictions: string[];
+}
+
+interface SpecificRequirements {
+    requiredColors: string[];
+    requiredLayout: string | null;
+    requiredStyle: string | null;
+    requiredObjects: string[];
+    requiredText: string[];
+    requiredComposition: string | null;
+}
+
+interface ContextUnderstanding {
+    hasUploadedImage: boolean;
+    imageIntent: 'enhance' | 'reference' | 'template' | 'none';
+    businessContext: string;
+    designPurpose: string;
+    targetAudience: string;
+    referencePreviousDesign: boolean;
+}
+
+interface EnhancedUserIntent {
+    // Original intent fields
+    isLiteralTextRequest: boolean;
+    isDesignDirectionRequest: boolean;
+    textInstructions: string[];
+    designDirection: string;
+    humanIntent: string;
+
+    // Enhanced fields
+    negativeInstructions: NegativeInstructions;
+    specificRequirements: SpecificRequirements;
+    contextUnderstanding: ContextUnderstanding;
+    priorityLevel: 'explicit' | 'implicit' | 'default';
+    contradictions: string[];
+}
+
 const parseInstructions = (prompt: string): ParsedInstructions => {
     let workingPrompt = prompt;
     const result: ParsedInstructions = {
@@ -249,6 +296,449 @@ const analyzeUserIntent = (prompt: string, parsedInstructions: ParsedInstruction
 };
 
 /**
+ * Detect negative instructions (what NOT to include)
+ */
+const detectNegativeInstructions = (prompt: string): NegativeInstructions => {
+    const lowerPrompt = prompt.toLowerCase();
+
+    // Detect "no people" variations
+    const noPeoplePatterns = [
+        /\bno\s+people\b/i,
+        /\bwithout\s+(?:any\s+)?people\b/i,
+        /\bdon'?t\s+(?:include|add|show|use)\s+(?:any\s+)?people\b/i,
+        /\bno\s+(?:human|person|face|figure)s?\b/i,
+        /\bwithout\s+(?:human|person|face|figure)s?\b/i,
+        /\bpeople\s+exclusion\b/i,
+        /\bexclude\s+people\b/i,
+        /\bremove\s+people\b/i
+    ];
+
+    // Detect "no text" variations
+    const noTextPatterns = [
+        /\bno\s+text\b/i,
+        /\bwithout\s+(?:any\s+)?text\b/i,
+        /\bdon'?t\s+(?:include|add|show|use)\s+(?:any\s+)?text\b/i,
+        /\bno\s+(?:words?|writing|letters?)\b/i,
+        /\btext\s+free\b/i,
+        /\bexclude\s+text\b/i
+    ];
+
+    // Detect "no patterns" variations
+    const noPatternPatterns = [
+        /\bno\s+patterns?\b/i,
+        /\bwithout\s+(?:any\s+)?patterns?\b/i,
+        /\bdon'?t\s+(?:include|add|show|use)\s+(?:any\s+)?patterns?\b/i,
+        /\bno\s+(?:background\s+)?patterns?\b/i,
+        /\bclean\s+background\b/i,
+        /\bsolid\s+background\b/i,
+        /\bno\s+(?:lines?|circles?|shapes?)\b/i
+    ];
+
+    // Detect "no background images"
+    const noBackgroundImagePatterns = [
+        /\bno\s+background\s+(?:image|photo)s?\b/i,
+        /\bwithout\s+background\s+(?:image|photo)s?\b/i,
+        /\bdon'?t\s+(?:include|add|show|use)\s+background\s+(?:image|photo)s?\b/i,
+        /\bsolid\s+background\s+only\b/i
+    ];
+
+    // Detect specific color exclusions
+    const noColorMatches = prompt.match(/\bno\s+(\w+)\s+color\b/gi) || [];
+    const noSpecificColors = noColorMatches.map(match => {
+        const colorMatch = match.match(/\bno\s+(\w+)\s+color\b/i);
+        return colorMatch ? colorMatch[1].toLowerCase() : '';
+    }).filter(Boolean);
+
+    // Detect specific element exclusions
+    const noElementMatches = prompt.match(/\bno\s+(\w+(?:\s+\w+)?)\b(?!\s+color)/gi) || [];
+    const noSpecificElements = noElementMatches
+        .map(match => {
+            const elementMatch = match.match(/\bno\s+([\w\s]+)/i);
+            return elementMatch ? elementMatch[1].trim().toLowerCase() : '';
+        })
+        .filter(el =>
+            el &&
+            !['people', 'text', 'pattern', 'patterns', 'background'].includes(el) &&
+            el.length > 2
+        );
+
+    // Collect all custom restrictions
+    const customRestrictions: string[] = [];
+    const restrictionPatterns = [
+        /\bavoid\s+([^.,!?]+)/gi,
+        /\bdon'?t\s+(?:include|add|show|use)\s+([^.,!?]+)/gi,
+        /\bexclude\s+([^.,!?]+)/gi,
+        /\bremove\s+([^.,!?]+)/gi,
+        /\bwithout\s+([^.,!?]+)/gi
+    ];
+
+    restrictionPatterns.forEach(pattern => {
+        let match;
+        const regex = new RegExp(pattern);
+        while ((match = regex.exec(prompt)) !== null) {
+            const restriction = match[1].trim();
+            if (restriction.length > 3 && restriction.length < 100) {
+                customRestrictions.push(restriction);
+            }
+        }
+    });
+
+    return {
+        noPeople: noPeoplePatterns.some(pattern => pattern.test(prompt)),
+        noText: noTextPatterns.some(pattern => pattern.test(prompt)),
+        noPatterns: noPatternPatterns.some(pattern => pattern.test(prompt)),
+        noBackgroundImages: noBackgroundImagePatterns.some(pattern => pattern.test(prompt)),
+        noSpecificColors,
+        noSpecificElements,
+        customRestrictions
+    };
+};
+
+/**
+ * Detect specific requirements (what MUST be included)
+ */
+const detectSpecificRequirements = (prompt: string): SpecificRequirements => {
+    // Detect required colors
+    const colorPatterns = [
+        /\buse\s+(\w+)\s+color\b/gi,
+        /\b(\w+)\s+color\s+(?:scheme|palette)\b/gi,
+        /\bmake\s+it\s+(\w+)\b/gi,
+        /\bin\s+(\w+)\s+(?:and\s+(\w+))?\b/gi
+    ];
+
+    const requiredColors: string[] = [];
+    colorPatterns.forEach(pattern => {
+        let match;
+        const regex = new RegExp(pattern);
+        while ((match = regex.exec(prompt)) !== null) {
+            if (match[1]) requiredColors.push(match[1].toLowerCase());
+            if (match[2]) requiredColors.push(match[2].toLowerCase());
+        }
+    });
+
+    // Detect required layout
+    const layoutMatch = prompt.match(/\b(?:layout|composition|arrangement):\s*([^\n.!?]+)/i) ||
+        prompt.match(/\b(?:use|create|make)\s+(?:a\s+)?(\w+)\s+layout\b/i);
+    const requiredLayout = layoutMatch ? layoutMatch[1].trim() : null;
+
+    // Detect required style
+    const styleMatch = prompt.match(/\b(?:style|aesthetic|look|vibe):\s*([^\n.!?]+)/i) ||
+        prompt.match(/\b(?:make\s+it|create\s+a)\s+(\w+(?:\s+\w+)?)\s+(?:style|look|aesthetic)\b/i);
+    const requiredStyle = styleMatch ? styleMatch[1].trim() : null;
+
+    // Detect required objects
+    const objectPatterns = [
+        /\binclude\s+(?:a\s+|an\s+|the\s+)?([^\n.,!?]+)/gi,
+        /\bshow\s+(?:a\s+|an\s+|the\s+)?([^\n.,!?]+)/gi,
+        /\bwith\s+(?:a\s+|an\s+|the\s+)?([^\n.,!?]+)/gi,
+        /\badd\s+(?:a\s+|an\s+|the\s+)?([^\n.,!?]+)/gi,
+        /\bmust\s+have\s+(?:a\s+|an\s+|the\s+)?([^\n.,!?]+)/gi
+    ];
+
+    const requiredObjects: string[] = [];
+    objectPatterns.forEach(pattern => {
+        let match;
+        const regex = new RegExp(pattern);
+        while ((match = regex.exec(prompt)) !== null) {
+            const obj = match[1].trim();
+            if (obj.length > 2 && obj.length < 50) {
+                requiredObjects.push(obj);
+            }
+        }
+    });
+
+    // Detect required text (from quotes)
+    const quotedTextMatches = prompt.match(/"([^"]+)"/g) || [];
+    const requiredText = quotedTextMatches.map(match => match.replace(/"/g, ''));
+
+    // Detect required composition
+    const compositionMatch = prompt.match(/\b(?:composition|framing|perspective):\s*([^\n.!?]+)/i);
+    const requiredComposition = compositionMatch ? compositionMatch[1].trim() : null;
+
+    return {
+        requiredColors: [...new Set(requiredColors)],
+        requiredLayout,
+        requiredStyle,
+        requiredObjects: [...new Set(requiredObjects)].slice(0, 10), // Limit to 10
+        requiredText,
+        requiredComposition
+    };
+};
+
+/**
+ * Understand context from uploaded images and business information
+ */
+const understandContext = (
+    prompt: string,
+    hasUploadedImage: boolean,
+    brandProfile: BrandProfile | null
+): ContextUnderstanding => {
+    const lowerPrompt = prompt.toLowerCase();
+
+    // Determine image intent
+    let imageIntent: 'enhance' | 'reference' | 'template' | 'none' = 'none';
+    if (hasUploadedImage) {
+        if (/\b(?:enhance|improve|edit|modify|update)\b/i.test(prompt)) {
+            imageIntent = 'enhance';
+        } else if (/\b(?:like|similar|inspired|based\s+on)\b/i.test(prompt)) {
+            imageIntent = 'reference';
+        } else if (/\b(?:use|template|exact|same)\b/i.test(prompt)) {
+            imageIntent = 'template';
+        } else {
+            imageIntent = 'reference'; // Default for uploaded images
+        }
+    }
+
+    // Extract business context
+    const businessContext = brandProfile
+        ? `${brandProfile.businessType} business in ${brandProfile.location}`
+        : 'general business';
+
+    // Determine design purpose
+    let designPurpose = 'general marketing';
+    if (/\b(?:promote|promotion|promotional)\b/i.test(prompt)) {
+        designPurpose = 'promotion';
+    } else if (/\b(?:announce|announcement|launch)\b/i.test(prompt)) {
+        designPurpose = 'announcement';
+    } else if (/\b(?:sale|discount|offer|deal)\b/i.test(prompt)) {
+        designPurpose = 'sales';
+    } else if (/\b(?:event|celebration|party)\b/i.test(prompt)) {
+        designPurpose = 'event';
+    } else if (/\b(?:brand|branding|identity)\b/i.test(prompt)) {
+        designPurpose = 'branding';
+    } else if (/\b(?:social\s+media|instagram|facebook|twitter)\b/i.test(prompt)) {
+        designPurpose = 'social media';
+    }
+
+    // Extract target audience
+    const targetAudience = brandProfile?.targetAudience || 'general audience';
+
+    // Check for references to previous designs
+    const referencePreviousDesign = /\b(?:previous|last|earlier|before|similar\s+to\s+(?:the\s+)?(?:last|previous))\b/i.test(prompt);
+
+    return {
+        hasUploadedImage,
+        imageIntent,
+        businessContext,
+        designPurpose,
+        targetAudience,
+        referencePreviousDesign
+    };
+};
+
+/**
+ * Detect contradictions between user request and brand profile
+ */
+const detectContradictions = (
+    prompt: string,
+    brandProfile: BrandProfile | null,
+    negativeInstructions: NegativeInstructions,
+    specificRequirements: SpecificRequirements
+): string[] => {
+    const contradictions: string[] = [];
+
+    // Check color contradictions
+    if (brandProfile) {
+        specificRequirements.requiredColors.forEach(color => {
+            if (negativeInstructions.noSpecificColors.includes(color)) {
+                contradictions.push(`User requested "${color}" color but also said "no ${color}"`);
+            }
+        });
+    }
+
+    // Check text contradictions
+    if (negativeInstructions.noText && specificRequirements.requiredText.length > 0) {
+        contradictions.push('User requested "no text" but also provided specific text to include');
+    }
+
+    // Check people contradictions
+    if (negativeInstructions.noPeople && /\b(?:people|person|customer|user|face)\b/i.test(prompt)) {
+        const hasExplicitPeopleRequest = /\b(?:show|include|add|with)\s+(?:people|person|customer|user)\b/i.test(prompt);
+        if (hasExplicitPeopleRequest) {
+            contradictions.push('User requested "no people" but also asked to include people');
+        }
+    }
+
+    return contradictions;
+};
+
+/**
+ * Enhanced user intent analysis combining all detection methods
+ */
+const analyzeEnhancedUserIntent = (
+    prompt: string,
+    parsedInstructions: ParsedInstructions,
+    hasUploadedImage: boolean,
+    brandProfile: BrandProfile | null
+): EnhancedUserIntent => {
+    // Get basic intent analysis
+    const basicIntent = analyzeUserIntent(prompt, parsedInstructions);
+
+    // Get enhanced detections
+    const negativeInstructions = detectNegativeInstructions(prompt);
+    const specificRequirements = detectSpecificRequirements(prompt);
+    const contextUnderstanding = understandContext(prompt, hasUploadedImage, brandProfile);
+
+    // Detect contradictions
+    const contradictions = detectContradictions(
+        prompt,
+        brandProfile,
+        negativeInstructions,
+        specificRequirements
+    );
+
+    // Determine priority level
+    let priorityLevel: 'explicit' | 'implicit' | 'default' = 'default';
+    if (
+        specificRequirements.requiredText.length > 0 ||
+        specificRequirements.requiredColors.length > 0 ||
+        specificRequirements.requiredLayout ||
+        specificRequirements.requiredStyle ||
+        negativeInstructions.noPeople ||
+        negativeInstructions.noText ||
+        negativeInstructions.noPatterns
+    ) {
+        priorityLevel = 'explicit';
+    } else if (
+        parsedInstructions.headline ||
+        parsedInstructions.subheadline ||
+        parsedInstructions.cta ||
+        parsedInstructions.designBrief
+    ) {
+        priorityLevel = 'implicit';
+    }
+
+    return {
+        ...basicIntent,
+        negativeInstructions,
+        specificRequirements,
+        contextUnderstanding,
+        priorityLevel,
+        contradictions
+    };
+};
+
+/**
+ * Build instruction enforcement section for AI prompt
+ */
+const buildInstructionEnforcement = (enhancedIntent: EnhancedUserIntent): string => {
+    let enforcement = '\n\n🎯 **USER INSTRUCTION ENFORCEMENT (HIGHEST PRIORITY):**\n';
+
+    // Priority level indicator
+    enforcement += `**Priority Level:** ${enhancedIntent.priorityLevel.toUpperCase()}\n`;
+    enforcement += `**Context:** ${enhancedIntent.contextUnderstanding.designPurpose} for ${enhancedIntent.contextUnderstanding.businessContext}\n\n`;
+
+    // Negative instructions (what NOT to do)
+    if (
+        enhancedIntent.negativeInstructions.noPeople ||
+        enhancedIntent.negativeInstructions.noText ||
+        enhancedIntent.negativeInstructions.noPatterns ||
+        enhancedIntent.negativeInstructions.noBackgroundImages ||
+        enhancedIntent.negativeInstructions.noSpecificColors.length > 0 ||
+        enhancedIntent.negativeInstructions.noSpecificElements.length > 0 ||
+        enhancedIntent.negativeInstructions.customRestrictions.length > 0
+    ) {
+        enforcement += '❌ **NEGATIVE INSTRUCTIONS (MUST RESPECT - ZERO TOLERANCE):**\n';
+
+        if (enhancedIntent.negativeInstructions.noPeople) {
+            enforcement += '- 🚫 **NO PEOPLE**: Do NOT include people, faces, human figures, silhouettes, or any human-like shapes\n';
+        }
+        if (enhancedIntent.negativeInstructions.noText) {
+            enforcement += '- 🚫 **NO TEXT**: Do NOT include any text, words, letters, or writing of any kind\n';
+        }
+        if (enhancedIntent.negativeInstructions.noPatterns) {
+            enforcement += '- 🚫 **NO PATTERNS**: Use solid backgrounds only - no patterns, lines, circles, or geometric shapes\n';
+        }
+        if (enhancedIntent.negativeInstructions.noBackgroundImages) {
+            enforcement += '- 🚫 **NO BACKGROUND IMAGES**: Use solid color backgrounds only - no photos or images in background\n';
+        }
+        if (enhancedIntent.negativeInstructions.noSpecificColors.length > 0) {
+            enforcement += `- 🚫 **NO SPECIFIC COLORS**: Do NOT use these colors: ${enhancedIntent.negativeInstructions.noSpecificColors.join(', ')}\n`;
+        }
+        if (enhancedIntent.negativeInstructions.noSpecificElements.length > 0) {
+            enforcement += `- 🚫 **NO SPECIFIC ELEMENTS**: Do NOT include: ${enhancedIntent.negativeInstructions.noSpecificElements.join(', ')}\n`;
+        }
+        if (enhancedIntent.negativeInstructions.customRestrictions.length > 0) {
+            enforcement += '- 🚫 **CUSTOM RESTRICTIONS**:\n';
+            enhancedIntent.negativeInstructions.customRestrictions.forEach(restriction => {
+                enforcement += `  • Avoid: ${restriction}\n`;
+            });
+        }
+
+        enforcement += '\n';
+    }
+
+    // Positive instructions (what MUST be included)
+    if (
+        enhancedIntent.specificRequirements.requiredText.length > 0 ||
+        enhancedIntent.specificRequirements.requiredColors.length > 0 ||
+        enhancedIntent.specificRequirements.requiredLayout ||
+        enhancedIntent.specificRequirements.requiredStyle ||
+        enhancedIntent.specificRequirements.requiredObjects.length > 0 ||
+        enhancedIntent.specificRequirements.requiredComposition
+    ) {
+        enforcement += '✅ **POSITIVE INSTRUCTIONS (MUST INCLUDE - MANDATORY):**\n';
+
+        if (enhancedIntent.specificRequirements.requiredText.length > 0) {
+            enforcement += '- ✔️ **REQUIRED TEXT (EXACT)**: Include these exact words:\n';
+            enhancedIntent.specificRequirements.requiredText.forEach(text => {
+                enforcement += `  • "${text}"\n`;
+            });
+        }
+        if (enhancedIntent.specificRequirements.requiredColors.length > 0) {
+            enforcement += `- ✔️ **REQUIRED COLORS**: Use these colors: ${enhancedIntent.specificRequirements.requiredColors.join(', ')}\n`;
+        }
+        if (enhancedIntent.specificRequirements.requiredLayout) {
+            enforcement += `- ✔️ **REQUIRED LAYOUT**: ${enhancedIntent.specificRequirements.requiredLayout}\n`;
+        }
+        if (enhancedIntent.specificRequirements.requiredStyle) {
+            enforcement += `- ✔️ **REQUIRED STYLE**: ${enhancedIntent.specificRequirements.requiredStyle}\n`;
+        }
+        if (enhancedIntent.specificRequirements.requiredObjects.length > 0) {
+            enforcement += `- ✔️ **REQUIRED ELEMENTS**: Include these elements: ${enhancedIntent.specificRequirements.requiredObjects.slice(0, 5).join(', ')}\n`;
+        }
+        if (enhancedIntent.specificRequirements.requiredComposition) {
+            enforcement += `- ✔️ **REQUIRED COMPOSITION**: ${enhancedIntent.specificRequirements.requiredComposition}\n`;
+        }
+
+        enforcement += '\n';
+    }
+
+    // Contradictions warning
+    if (enhancedIntent.contradictions.length > 0) {
+        enforcement += '⚠️ **DETECTED CONTRADICTIONS (RESOLVE BY PRIORITIZING EXPLICIT INSTRUCTIONS):**\n';
+        enhancedIntent.contradictions.forEach(contradiction => {
+            enforcement += `- ${contradiction}\n`;
+        });
+        enforcement += '**Resolution:** When contradictions exist, prioritize the MOST EXPLICIT instruction\n\n';
+    }
+
+    // Context-specific guidance
+    if (enhancedIntent.contextUnderstanding.hasUploadedImage) {
+        enforcement += `📸 **UPLOADED IMAGE CONTEXT:**\n`;
+        enforcement += `- Intent: ${enhancedIntent.contextUnderstanding.imageIntent.toUpperCase()}\n`;
+        if (enhancedIntent.contextUnderstanding.imageIntent === 'enhance') {
+            enforcement += '- Action: Enhance and improve the uploaded image while keeping its core elements\n';
+        } else if (enhancedIntent.contextUnderstanding.imageIntent === 'reference') {
+            enforcement += '- Action: Use the uploaded image as inspiration for style and composition\n';
+        } else if (enhancedIntent.contextUnderstanding.imageIntent === 'template') {
+            enforcement += '- Action: Use the uploaded image as an exact template - match its layout and structure\n';
+        }
+        enforcement += '\n';
+    }
+
+    // Final enforcement reminder
+    enforcement += '🚨 **CRITICAL REMINDER:**\n';
+    enforcement += '- User instructions OVERRIDE all default behaviors and brand profile settings\n';
+    enforcement += '- Negative instructions (what NOT to do) are AS IMPORTANT as positive instructions\n';
+    enforcement += '- When in doubt, follow the user\'s explicit request EXACTLY\n';
+    enforcement += '- Do NOT add elements the user did not request\n';
+    enforcement += '- Do NOT ignore restrictions the user specified\n';
+
+    return enforcement;
+};
+
+/**
  * Legacy function for backward compatibility
  */
 const extractQuotedText = (prompt: string): { imageText: string | null; remainingPrompt: string } => {
@@ -269,20 +759,53 @@ async function generateWithRetry(request: GenerateRequest, logoDataUrl?: string,
             // Use direct Vertex AI instead of proxy
             if (logoDataUrl && request.model?.includes('image')) {
 
-                // Extract text prompt from request
+                // Extract text prompt and uploaded image from request
                 let textPrompt = '';
+                let uploadedImageDataUrl: string | undefined = undefined;
+
+                console.log('🔍 [generateWithRetry] Processing request.prompt (logo case):', {
+                    isArray: Array.isArray(request.prompt),
+                    promptType: typeof request.prompt,
+                    promptLength: Array.isArray(request.prompt) ? request.prompt.length : 'N/A'
+                });
 
                 if (Array.isArray(request.prompt)) {
-                    for (const part of request.prompt) {
+                    for (let i = 0; i < request.prompt.length; i++) {
+                        const part = request.prompt[i];
+                        console.log(`🔍 [generateWithRetry] Part ${i}:`, {
+                            type: typeof part,
+                            hasText: typeof part === 'object' && part !== null && 'text' in part,
+                            hasMedia: typeof part === 'object' && part !== null && 'media' in part,
+                            keys: typeof part === 'object' && part !== null ? Object.keys(part) : []
+                        });
+
                         if (typeof part === 'string') {
                             textPrompt += part;
-                        } else if (part.text) {
-                            textPrompt += part.text;
+                        } else if (typeof part === 'object' && part !== null) {
+                            if ('text' in part) {
+                                textPrompt += part.text;
+                            } else if ('media' in part) {
+                                // Extract uploaded image (first media part)
+                                if (!uploadedImageDataUrl) {
+                                    uploadedImageDataUrl = (part as any).media.url;
+                                    console.log('📸 [generateWithRetry] Extracted uploaded image from promptParts (logo case):', {
+                                        uploadedImageLength: uploadedImageDataUrl.length,
+                                        contentType: (part as any).media.contentType
+                                    });
+                                }
+                            }
                         }
                     }
                 } else if (typeof request.prompt === 'string') {
                     textPrompt = request.prompt;
                 }
+
+                console.log('✅ [generateWithRetry] Extraction complete (logo case):', {
+                    hasTextPrompt: !!textPrompt,
+                    textPromptLength: textPrompt.length,
+                    hasUploadedImage: !!uploadedImageDataUrl,
+                    hasLogo: !!logoDataUrl
+                });
 
                 // Add logo integration prompt
                 const logoPrompt = `\n\n🎯 CRITICAL LOGO REQUIREMENT - THIS IS MANDATORY:
@@ -300,9 +823,16 @@ The client specifically requested their brand logo to be included. FAILURE TO IN
                 // Use direct Vertex AI with correct model name
                 const modelName = 'gemini-2.5-flash-image'; // Use correct Vertex AI model name
 
+                console.log('🚀 [generateWithRetry] Calling Vertex AI with logo:', {
+                    hasTextPrompt: !!textPrompt,
+                    hasUploadedImage: !!uploadedImageDataUrl,
+                    hasLogo: !!logoDataUrl
+                });
+
                 const result = await getVertexAIClient().generateImage(finalPrompt, modelName, {
                     temperature: 0.7,
                     maxOutputTokens: 8192,
+                    uploadedImage: uploadedImageDataUrl,
                     logoImage: logoDataUrl
                 });
 
@@ -314,19 +844,65 @@ The client specifically requested their brand logo to be included. FAILURE TO IN
                 } as any;
             } else {
                 // For non-logo cases, also use direct Vertex AI
+                // Extract text prompt and uploaded image from request
 
                 let textPrompt = '';
+                let uploadedImageDataUrl: string | undefined = undefined;
+
+                console.log('🔍 [generateWithRetry] Processing request.prompt (non-logo case):', {
+                    isArray: Array.isArray(request.prompt),
+                    promptType: typeof request.prompt,
+                    promptLength: Array.isArray(request.prompt) ? request.prompt.length : 'N/A'
+                });
+
                 if (Array.isArray(request.prompt)) {
-                    textPrompt = request.prompt.map(p => typeof p === 'string' ? p : (p.text || '')).join(' ');
+                    // Extract text parts
+                    textPrompt = request.prompt
+                        .filter(p => typeof p === 'string' || (typeof p === 'object' && p !== null && 'text' in p))
+                        .map(p => typeof p === 'string' ? p : ((p as any).text || ''))
+                        .join(' ');
+
+                    // Extract uploaded image (first media part that's not a logo)
+                    const mediaParts = request.prompt.filter(p =>
+                        typeof p === 'object' && p !== null && 'media' in p
+                    ) as Array<{ media: { url: string; contentType?: string } }>;
+
+                    console.log('🔍 [generateWithRetry] Found media parts:', {
+                        count: mediaParts.length
+                    });
+
+                    if (mediaParts.length > 0) {
+                        // First media part is the uploaded image
+                        uploadedImageDataUrl = mediaParts[0].media.url;
+                        console.log('📸 [generateWithRetry] Extracted uploaded image from promptParts (non-logo case):', {
+                            uploadedImageLength: uploadedImageDataUrl.length,
+                            contentType: mediaParts[0].media.contentType
+                        });
+                    }
                 } else if (typeof request.prompt === 'string') {
                     textPrompt = request.prompt;
                 }
 
+                console.log('✅ [generateWithRetry] Extraction complete (non-logo case):', {
+                    hasTextPrompt: !!textPrompt,
+                    textPromptLength: textPrompt.length,
+                    hasUploadedImage: !!uploadedImageDataUrl,
+                    hasLogo: !!logoDataUrl
+                });
+
                 const modelName = 'gemini-2.5-flash-image';
+
+                console.log('🚀 [generateWithRetry] Calling Vertex AI with:', {
+                    hasTextPrompt: !!textPrompt,
+                    hasUploadedImage: !!uploadedImageDataUrl,
+                    hasLogo: !!logoDataUrl
+                });
 
                 const result = await getVertexAIClient().generateImage(textPrompt, modelName, {
                     temperature: 0.7,
-                    maxOutputTokens: 8192
+                    maxOutputTokens: 8192,
+                    uploadedImage: uploadedImageDataUrl,
+                    logoImage: logoDataUrl
                 });
 
                 return {
@@ -427,11 +1003,44 @@ const generateCreativeAssetFlow = ai.defineFlow(
         const promptParts: (string | { text: string } | { media: { url: string; contentType?: string } })[] = [];
         let textPrompt = '';
 
+        // 🔍 DEBUG: Log input parameters
+        console.log('🎨 [Generate Creative Asset] Flow Started:', {
+            hasReferenceAssetUrl: !!input.referenceAssetUrl,
+            referenceAssetUrlLength: input.referenceAssetUrl?.length || 0,
+            referenceAssetUrlPreview: input.referenceAssetUrl?.substring(0, 50) || 'none',
+            useBrandProfile: input.useBrandProfile,
+            hasBrandProfile: !!input.brandProfile,
+            brandProfileId: input.brandProfile?.id,
+            outputType: input.outputType,
+            preferredModel: input.preferredModel,
+            promptPreview: input.prompt.substring(0, 100)
+        });
+
         // Enhanced instruction parsing with intelligent intent analysis
         const parsedInstructions = parseInstructions(input.prompt);
         const userIntent = analyzeUserIntent(input.prompt, parsedInstructions);
-        // Detect explicit no-people requirement coming from upstream prompts (e.g., Revo 2.0)
-        const noPeopleRequirement = /PEOPLE EXCLUSION REQUIREMENT|WITHOUT any people|NO PEOPLE/i.test(input.prompt);
+
+        // NEW: Enhanced context understanding and intent detection
+        const enhancedIntent = analyzeEnhancedUserIntent(
+            input.prompt,
+            parsedInstructions,
+            !!input.referenceAssetUrl,
+            input.useBrandProfile ? input.brandProfile : null
+        );
+
+        // 🔍 DEBUG: Log enhanced intent analysis
+        console.log('🧠 [Generate Creative Asset] Enhanced Intent Analysis:', {
+            hasUploadedImage: enhancedIntent.contextUnderstanding.hasUploadedImage,
+            imageIntent: enhancedIntent.contextUnderstanding.imageIntent,
+            isLiteralTextRequest: enhancedIntent.isLiteralTextRequest,
+            priorityLevel: enhancedIntent.priorityLevel,
+            noPeople: enhancedIntent.negativeInstructions.noPeople,
+            noText: enhancedIntent.negativeInstructions.noText
+        });
+
+        // Detect explicit no-people requirement (enhanced detection)
+        const noPeopleRequirement = enhancedIntent.negativeInstructions.noPeople ||
+            /PEOPLE EXCLUSION REQUIREMENT|WITHOUT any people|NO PEOPLE/i.test(input.prompt);
         const { imageText, remainingPrompt } = extractQuotedText(input.prompt); // Keep for backward compatibility
 
         // Debug logging for user intent analysis
@@ -452,8 +1061,15 @@ Recreate the content within the black-masked region based on this instruction, e
             promptParts.push({ media: { url: input.referenceAssetUrl, contentType: getMimeTypeFromDataURI(input.referenceAssetUrl) } });
             promptParts.push({ media: { url: input.maskDataUrl, contentType: getMimeTypeFromDataURI(input.maskDataUrl) } });
 
-        } else if (input.referenceAssetUrl) {
-            // This is a generation prompt with an uploaded image that should be integrated into the design
+        } else if (input.referenceAssetUrl && !input.useBrandProfile) {
+            // This is a generation prompt with an uploaded image WITHOUT brand profile
+            // 🔍 DEBUG: Log image-only generation path
+            console.log('🖼️ [Generate Creative Asset] Image-Only Generation Path (No Brand Profile):', {
+                hasReferenceAssetUrl: !!input.referenceAssetUrl,
+                referenceAssetUrlLength: input.referenceAssetUrl.length,
+                useBrandProfile: input.useBrandProfile
+            });
+
             let referencePrompt = `You are an expert creative director and AI design specialist with advanced image analysis capabilities. You will be given an uploaded image and a text prompt with instructions.
 
 🚫 **CRITICAL: DO NOT CREATE LOGOS** 🚫
@@ -586,6 +1202,15 @@ Transform the uploaded image into a professional marketing design by enhancing i
             // May also include an uploaded image for integration
             const bp = input.brandProfile;
             const hasUploadedImage = !!input.referenceAssetUrl;
+
+            // 🔍 DEBUG: Log brand profile generation path
+            console.log('🎨 [Generate Creative Asset] Brand Profile Generation Path:', {
+                hasUploadedImage: hasUploadedImage,
+                referenceAssetUrlLength: input.referenceAssetUrl?.length || 0,
+                brandProfileId: bp.id,
+                businessName: bp.businessName,
+                businessType: bp.businessType
+            });
 
             // Extract services from brand profile for DNA selection
             const servicesText = typeof bp.services === 'string'
@@ -868,7 +1493,9 @@ REQUIREMENTS:
    • Despite being fintech/finance, use CLEAN, SIMPLE designs
    • TRUST THROUGH SIMPLICITY: Clean backgrounds build more trust than tech patterns
    • HUMAN-FOCUSED: Show people naturally, not surrounded by tech visualizations
-   • NO EXCEPTIONS: Even for tech companies, backgrounds must be SOLID and CLEAN`;
+   • NO EXCEPTIONS: Even for tech companies, backgrounds must be SOLID and CLEAN
+
+${buildInstructionEnforcement(enhancedIntent)}`;
 
             // Intelligent design examples processing
             let designDNA = '';
@@ -927,35 +1554,174 @@ ${designDNA}`;
                   * Ensure text is the primary focal point of the design` : 'No text should be added to the asset.'}`;
                 // Handle uploaded image integration with AI intelligence
                 if (hasUploadedImage) {
-                    onBrandPrompt += `\n- **🎯 UPLOADED IMAGE FOCUSED DESIGN:** A user has uploaded an image that must be the PRIMARY visual element. DO NOT generate any additional images.`;
-                    onBrandPrompt += `\n  * **AI Analysis Required:** First analyze the uploaded image to understand its content, style, quality, and best enhancement approach`;
-                    onBrandPrompt += `\n  * **Enhancement Strategy:** Based on your analysis, choose the optimal enhancement method:`;
-                    onBrandPrompt += `\n    - If it's a product/object: Make it the hero element with professional styling and text overlays`;
-                    onBrandPrompt += `\n    - If it's a scene/background: Use as backdrop with professional text treatments and overlays`;
-                    onBrandPrompt += `\n    - If it's a person/lifestyle: Add dynamic text layouts and professional treatments`;
-                    onBrandPrompt += `\n    - If it's a logo/graphic: Enhance with complementary text and design treatments`;
-                    onBrandPrompt += `\n  * **Professional Execution:** Use ONLY the uploaded image - enhance with text, color treatments, and styling`;
-                    onBrandPrompt += `\n  * **Brand Synergy:** Coordinate text and design treatments with brand colors and aesthetic`;
-                    onBrandPrompt += `\n  * **Creative Excellence:** The uploaded image should be the main visual element enhanced with professional text and design treatments`;
+                    // 🔍 DEBUG: Log uploaded image integration
+                    console.log('📸 [Generate Creative Asset] Adding Uploaded Image to Prompt:', {
+                        referenceAssetUrlLength: input.referenceAssetUrl!.length,
+                        contentType: getMimeTypeFromDataURI(input.referenceAssetUrl!),
+                        promptPartsLengthBefore: promptParts.length
+                    });
+
+                    // Add uploaded image to promptParts (will be referenced in instructions below)
                     promptParts.push({ media: { url: input.referenceAssetUrl!, contentType: getMimeTypeFromDataURI(input.referenceAssetUrl!) } });
+
+                    // 🔍 DEBUG: Confirm image added
+                    console.log('✅ [Generate Creative Asset] Uploaded Image Added to Prompt Parts:', {
+                        promptPartsLengthAfter: promptParts.length
+                    });
                 }
 
-                onBrandPrompt += `\n- **UPLOADED IMAGE FOCUSED DESIGN:** ${hasUploadedImage ? 'Create a professional marketing design using ONLY the uploaded image as the visual foundation. Enhance it with text overlays, color treatments, and design elements. DO NOT generate any additional images.' : 'Create a complete, professional marketing design with full layout composition. This should be a comprehensive social media post design, NOT just a logo. Include backgrounds, graphics, text elements, and visual hierarchy.'}`;
+                // Instructions for design generation with uploaded image and/or logo
+                if (hasUploadedImage && bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
+                    // Both uploaded image AND logo present - treat both as reference images to incorporate
+                    onBrandPrompt += `\n- **🎯 DUAL IMAGE INTEGRATION - PROFESSIONAL MARKETING DESIGN:**
+
+  **CRITICAL: This is a MARKETING DESIGN, NOT a raw photo with text overlay!**
+
+  You have been provided with TWO reference images:
+  1. **User's Uploaded Image** (provided below) - Use as PRIMARY visual element
+  2. **Brand Logo** (provided below) - Must be prominently featured
+
+  **DESIGN APPROACH (MANDATORY):**
+  - Create a PROFESSIONAL MARKETING COMPOSITION with design elements
+  - DO NOT just overlay text on the raw uploaded photo
+  - ADD design elements: frames, shapes, color blocks, gradients, geometric elements
+  - Use the uploaded image as the HERO VISUAL but within a professional design layout
+  - Incorporate brand colors through design elements (not just text)
+  - Add visual interest through composition, not just the raw photo
+
+  **UPLOADED IMAGE TREATMENT:**
+  - Feature prominently as the main visual (60%+ of visual weight)
+  - Can be: framed, masked, integrated into shapes, part of a split layout
+  - Should feel like part of a designed composition, not a background
+  - Add design treatments: borders, shadows, overlays (subtle), color grading
+
+  **SEAMLESS INTEGRATION & BLENDING (CRITICAL):**
+  - Extract colors FROM the uploaded image and use them in design elements
+  - Match the color palette of design elements to the uploaded image's colors
+  - Use gradients that transition from image colors to brand colors
+  - Blend edges where design elements meet the uploaded image (no harsh lines)
+  - Apply subtle color overlays to harmonize the uploaded image with brand colors
+  - Use shapes that overlap or intersect with the image for cohesion
+  - Create visual flow between the uploaded image and design elements
+  - Make it feel like ONE cohesive design, not image + separate elements
+
+  **COLOR HARMONY:**
+  - Sample dominant colors from the uploaded image
+  - Use those colors in geometric shapes, text backgrounds, or accents
+  - Create color transitions that connect the image to brand colors
+  - Apply subtle color grading to unify the entire composition
+  - Ensure design elements complement (not clash with) the image colors
+
+  **LOGO TREATMENT:**
+  - Clearly visible and well-positioned (10%+ of design area)
+  - Integrated naturally into the design composition
+  - Can be on a color block, shape, or clean area for visibility
+  - Logo placement should feel natural within the overall composition
+
+  **DESIGN ELEMENTS TO ADD:**
+  - Geometric shapes (rectangles, circles, triangles) using colors from the image + brand colors
+  - Color blocks or panels that blend with the image's color palette
+  - Gradients that transition between image colors and brand colors
+  - Professional typography with hierarchy
+  - Visual balance and composition
+  - Overlapping elements that create depth and integration
+
+  **WHAT THIS IS:**
+  ✅ Professional marketing design that FEATURES the uploaded image
+  ✅ Cohesive composition with design elements + uploaded image + logo
+  ✅ Social media ready marketing asset
+
+  **WHAT THIS IS NOT:**
+  ❌ Raw photo with text slapped on top
+  ❌ Unedited uploaded image with minimal changes
+  ❌ Simple text overlay without design elements`;
+                } else if (hasUploadedImage) {
+                    // Only uploaded image, no logo
+                    onBrandPrompt += `\n- **🎯 UPLOADED IMAGE INTEGRATION - PROFESSIONAL MARKETING DESIGN:**
+
+  **CRITICAL: This is a MARKETING DESIGN, NOT a raw photo with text overlay!**
+
+  **DESIGN APPROACH (MANDATORY):**
+  - Create a PROFESSIONAL MARKETING COMPOSITION with design elements
+  - DO NOT just overlay text on the raw uploaded photo
+  - ADD design elements: frames, shapes, color blocks, gradients, geometric elements
+  - Use the uploaded image as the HERO VISUAL but within a professional design layout
+  - Incorporate brand colors through design elements
+  - Add visual interest through composition
+
+  **UPLOADED IMAGE TREATMENT:**
+  - Feature prominently as the main visual element
+  - Can be: framed, masked, integrated into shapes, part of a split layout
+  - Should feel like part of a designed composition, not a background
+  - Add design treatments: borders, shadows, overlays (subtle), color grading
+
+  **SEAMLESS INTEGRATION & BLENDING (CRITICAL):**
+  - Extract colors FROM the uploaded image and use them in design elements
+  - Match the color palette of design elements to the uploaded image's colors
+  - Use gradients that transition from image colors to brand colors
+  - Blend edges where design elements meet the uploaded image (no harsh lines)
+  - Apply subtle color overlays to harmonize the uploaded image with brand colors
+  - Use shapes that overlap or intersect with the image for cohesion
+  - Create visual flow between the uploaded image and design elements
+  - Make it feel like ONE cohesive design, not image + separate elements
+
+  **COLOR HARMONY:**
+  - Sample dominant colors from the uploaded image
+  - Use those colors in geometric shapes, text backgrounds, or accents
+  - Create color transitions that connect the image to brand colors
+  - Apply subtle color grading to unify the entire composition
+  - Ensure design elements complement (not clash with) the image colors
+
+  **DESIGN ELEMENTS TO ADD:**
+  - Geometric shapes (rectangles, circles, triangles) using colors from the image + brand colors
+  - Color blocks or panels that blend with the image's color palette
+  - Gradients that transition between image colors and brand colors
+  - Professional typography with hierarchy
+  - Visual balance and composition
+  - Overlapping elements that create depth and integration
+
+  **WHAT THIS IS:**
+  ✅ Professional marketing design that FEATURES the uploaded image
+  ✅ Cohesive composition with design elements + uploaded image
+  ✅ Social media ready marketing asset
+
+  **WHAT THIS IS NOT:**
+  ❌ Raw photo with text slapped on top
+  ❌ Unedited uploaded image with minimal changes`;
+                } else if (bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
+                    // Only logo, no uploaded image
+                    onBrandPrompt += `\n- **🎯 BRAND LOGO INTEGRATION:** The brand logo (provided below) MUST be prominently featured in your design
+- **Logo Treatment:** Logo should be clearly visible, well-positioned, and properly sized (minimum 10% of design area)
+- **Design Approach:** Create a complete, professional marketing design with full layout composition that prominently features the brand logo`;
+                } else {
+                    // No uploaded image, no logo
+                    onBrandPrompt += `\n- **Design Approach:** Create a complete, professional marketing design with full layout composition. This should be a comprehensive social media post design, NOT just a logo. Include backgrounds, graphics, text elements, and visual hierarchy.`;
+                }
+
                 if (noPeopleRequirement) {
                     onBrandPrompt += `\n- **PEOPLE EXCLUSION (MANDATORY):** Do NOT include people, faces, silhouettes, or human-like figures in any part of the design.`;
                 }
-                onBrandPrompt += `\n- **🚨 MANDATORY BRAND LOGO INTEGRATION:** ${bp.logoDataUrl ? 'You MUST prominently include the provided brand logo in your design. The logo should be clearly visible, well-positioned, and properly sized (minimum 10% of design area). This is a critical requirement - the logo must be unmistakably present in the final design.' : 'Create a design that represents the brand identity while focusing on the uploaded image'}.`;
-                onBrandPrompt += `\n- **Design Completeness:** ${hasUploadedImage ? 'Enhance the uploaded image with professional text layouts, color treatments, and design elements - use ONLY the uploaded image as the visual foundation' : 'Generate a full marketing design with backgrounds, graphics, text layouts, and visual elements - NOT just a logo or simple graphic.'}`;
+
                 onBrandPrompt += `\n- **Critical Language Rule:** ALL text must be in clear, readable ENGLISH only. Never use foreign languages, corrupted text, or unreadable symbols.`;
 
+                // Add reference images to promptParts with clear instructions
                 if (bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
-                    // Add logo with strong integration instructions
-                    onBrandPrompt += `\n\n🎯 **CRITICAL LOGO REQUIREMENT:**
+                    onBrandPrompt += `\n\n🎯 **CRITICAL REFERENCE IMAGE REQUIREMENTS:**`;
+                    if (hasUploadedImage) {
+                        onBrandPrompt += `
+- The uploaded image provided below MUST be the PRIMARY visual element in your design (hero/focal point)
+- The brand logo image provided below MUST also be prominently featured and clearly visible
+- Both images are mandatory - incorporate them into a cohesive, professional design
+- Visual hierarchy: Uploaded image (primary/dominant) + Brand logo (secondary/prominent)
+- This is a critical requirement - BOTH images MUST appear in the final design`;
+                    } else {
+                        onBrandPrompt += `
 - The brand logo image provided below MUST be prominently featured in your design
 - Logo should be clearly visible and well-integrated into the composition
 - Minimum logo size: 10% of total design area
 - Logo placement should be natural but unmistakable
 - This is a mandatory requirement - the logo MUST appear in the final design`;
+                    }
                     promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
                 }
                 textPrompt = onBrandPrompt;
@@ -1084,7 +1850,9 @@ ${designDNA}`;
    • SOLID colors (white, neutral colors, or simple 2-color gradients)
    • CLEAN, FLAT backgrounds with NO patterns
    • SIMPLE gradients (2 colors maximum, no segments)
-   • REAL PHOTOS of actual locations/scenes (if contextually appropriate)`;
+   • REAL PHOTOS of actual locations/scenes (if contextually appropriate)
+
+${buildInstructionEnforcement(enhancedIntent)}`;
 
             if (input.outputType === 'image' && imageText) {
                 creativePrompt += `
@@ -1184,6 +1952,28 @@ Ensure the text is readable and well-composed.`
                         const logoDataUrl = input.useBrandProfile && input.brandProfile?.logoDataUrl
                             ? input.brandProfile.logoDataUrl
                             : undefined;
+
+                        // 🔍 DEBUG: Log promptParts before sending to AI
+                        // 🔍 DEBUG: Extract full prompt text for analysis
+                        const textPart = promptParts.find(part => typeof part === 'object' && 'text' in part);
+                        const fullPromptText = textPart && 'text' in textPart ? textPart.text : '';
+
+                        console.log('🤖 [Generate Creative Asset] Sending to AI Model:', {
+                            modelToUse: modelToUse,
+                            promptPartsCount: promptParts.length,
+                            promptPartsTypes: promptParts.map(part => {
+                                if (typeof part === 'string') return 'string';
+                                if ('text' in part) return 'text';
+                                if ('media' in part) return `media(${part.media.contentType})`;
+                                return 'unknown';
+                            }),
+                            hasLogoDataUrl: !!logoDataUrl,
+                            hasUploadedImage: !!input.referenceAssetUrl
+                        });
+
+                        console.log('📝 [Generate Creative Asset] FULL PROMPT TEXT:');
+                        console.log(fullPromptText);
+                        console.log('📝 [Generate Creative Asset] PROMPT LENGTH:', fullPromptText.length);
 
                         const { media } = await generateWithRetry({
                             model: modelToUse,

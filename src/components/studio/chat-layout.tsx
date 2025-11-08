@@ -137,13 +137,51 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
 
         const currentInput = input;
 
-        // Intelligent reference image detection
-        // Only use existing image as reference if user explicitly requests modification/editing
-        // For new design requests, start fresh without reference
-        const isModificationRequest = /\b(modify|edit|change|adjust|update|improve|enhance|fix|alter)\b/i.test(currentInput);
-        const isNewDesignRequest = /\b(new|different|another|fresh|create|generate|make)\s+(design|concept|idea|image|visual)\b/i.test(currentInput);
+        // Enhanced image handling - always pass uploaded images to AI
+        // The enhanced intent detection system in generate-creative-asset.ts will determine how to use it
+        // Possible intents: enhance, reference, template, or general context
+        const currentImageDataUrl = imageDataUrl;
 
-        const currentImageDataUrl = (isModificationRequest && !isNewDesignRequest) ? imageDataUrl : null;
+        // 🔍 DEBUG: Log image upload state
+        console.log('🖼️ [Creative Studio] Image Upload Debug:', {
+            hasImageDataUrl: !!imageDataUrl,
+            imageDataUrlLength: imageDataUrl?.length || 0,
+            imageDataUrlPreview: imageDataUrl?.substring(0, 50) || 'none',
+            currentInput: currentInput,
+            selectedRevoModel: selectedRevoModel,
+            outputType: outputType,
+            hasBrandProfile: !!brandProfile,
+            useBrandProfile: useBrandProfile
+        });
+
+        // Build enhanced prompt with image context if image is uploaded
+        let enhancedPrompt = currentInput;
+        if (imageDataUrl && currentInput) {
+            // Detect user's intent for the uploaded image
+            const hasEnhanceIntent = /\b(enhance|improve|fix|better|upgrade|refine)\b/i.test(currentInput);
+            const hasReferenceIntent = /\b(like|similar|style|inspired|based on|reference)\b/i.test(currentInput);
+            const hasTemplateIntent = /\b(template|layout|structure|format|same|exact)\b/i.test(currentInput);
+
+            // Add context to prompt to help AI understand image intent
+            if (hasEnhanceIntent) {
+                enhancedPrompt = `[IMAGE UPLOADED - INTENT: ENHANCE] ${currentInput}\n\nIMPORTANT: The user uploaded an image and wants to ENHANCE it. Keep the core elements of the uploaded image while improving quality, composition, and visual appeal based on the user's instructions.`;
+            } else if (hasTemplateIntent) {
+                enhancedPrompt = `[IMAGE UPLOADED - INTENT: TEMPLATE] ${currentInput}\n\nIMPORTANT: The user uploaded an image as a TEMPLATE. Match the exact layout, structure, and composition of the uploaded image while applying the user's specific instructions.`;
+            } else if (hasReferenceIntent) {
+                enhancedPrompt = `[IMAGE UPLOADED - INTENT: REFERENCE] ${currentInput}\n\nIMPORTANT: The user uploaded an image as a REFERENCE. Use the uploaded image as inspiration for style, composition, and visual direction while creating a new design based on the user's instructions.`;
+            } else {
+                // Default: treat as reference/context
+                enhancedPrompt = `[IMAGE UPLOADED - INTENT: CONTEXT] ${currentInput}\n\nIMPORTANT: The user uploaded an image for context. Analyze the image and integrate it naturally into the design based on the user's instructions. Use it as visual context to inform the design direction.`;
+            }
+
+            // 🔍 DEBUG: Log enhanced prompt construction
+            console.log('📝 [Creative Studio] Enhanced Prompt Built:', {
+                hasEnhanceIntent,
+                hasReferenceIntent,
+                hasTemplateIntent,
+                enhancedPromptPreview: enhancedPrompt.substring(0, 100)
+            });
+        }
 
         setInput('');
         setImagePreview(null);
@@ -160,9 +198,9 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 // character consistency, and intelligent editing capabilities
                 // Get access token as fallback if cookies don't work
                 const accessToken = await getAccessToken().catch(() => null);
-                
+
                 result = await generateCreativeAssetAction(
-                    currentInput,
+                    enhancedPrompt, // Use enhanced prompt with image context
                     outputType,
                     currentImageDataUrl,
                     useBrandProfile,
@@ -187,9 +225,9 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 // character consistency, and intelligent editing capabilities
                 // Get access token as fallback if cookies don't work
                 const accessToken = await getAccessToken().catch(() => null);
-                
+
                 result = await generateCreativeAssetAction(
-                    currentInput,
+                    enhancedPrompt, // Use enhanced prompt with image context
                     outputType,
                     currentImageDataUrl,
                     useBrandProfile,
@@ -214,9 +252,20 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 // character consistency, and intelligent editing capabilities
                 // Get access token as fallback if cookies don't work
                 const accessToken = await getAccessToken().catch(() => null);
-                
+
+                // 🔍 DEBUG: Log Revo 1.0 generation parameters
+                console.log('🎯 [Creative Studio] Revo 1.0 Generation Starting:', {
+                    enhancedPromptPreview: enhancedPrompt.substring(0, 100),
+                    hasCurrentImageDataUrl: !!currentImageDataUrl,
+                    currentImageDataUrlLength: currentImageDataUrl?.length || 0,
+                    useBrandProfile: useBrandProfile,
+                    brandProfileId: brandProfile?.id,
+                    outputType: outputType,
+                    preferredModel: 'revo-1.0-gemini-2.5-flash-image-preview'
+                });
+
                 result = await generateCreativeAssetAction(
-                    currentInput,
+                    enhancedPrompt, // Use enhanced prompt with image context
                     outputType,
                     currentImageDataUrl,
                     useBrandProfile,
@@ -228,6 +277,13 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     accessToken || undefined // Pass access token as fallback
                 );
 
+                // 🔍 DEBUG: Log generation result
+                console.log('✅ [Creative Studio] Revo 1.0 Generation Complete:', {
+                    hasImageUrl: !!result.imageUrl,
+                    hasVideoUrl: !!result.videoUrl,
+                    aiExplanation: result.aiExplanation
+                });
+
                 aiResponse = {
                     id: (Date.now() + 1).toString(),
                     role: 'assistant',
@@ -236,12 +292,19 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     videoUrl: result.videoUrl,
                 };
             } else {
+                // 🔍 DEBUG: Log fallback generation
+                console.log('⚠️ [Creative Studio] Using Fallback Generation:', {
+                    selectedRevoModel: selectedRevoModel,
+                    outputType: outputType,
+                    hasBrandProfile: !!brandProfile,
+                    reason: !brandProfile ? 'No brand profile' : 'Other condition not met'
+                });
                 // Use standard creative asset generation for fallback
                 // Get access token as fallback if cookies don't work
                 const accessToken = await getAccessToken().catch(() => null);
-                
+
                 result = await generateCreativeAssetAction(
-                    currentInput,
+                    enhancedPrompt, // Use enhanced prompt with image context
                     outputType,
                     currentImageDataUrl,
                     useBrandProfile,
@@ -267,10 +330,10 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
         } catch (error) {
             const { getUserFriendlyErrorMessage, extractCreditInfo, isCreditError } = await import('@/lib/error-messages');
             const errorMessage = (error as Error).message;
-            
+
             // Extract credit information if available
             const creditInfo = extractCreditInfo(errorMessage);
-            
+
             // Get user-friendly error message
             const friendlyMessage = getUserFriendlyErrorMessage(errorMessage, {
                 feature: 'creative_studio',
@@ -278,24 +341,24 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 creditsRequired: creditInfo?.creditsRequired,
                 creditsAvailable: creditInfo?.creditsAvailable,
             });
-            
+
             // Split multi-line messages for chat display
-            const chatMessage = friendlyMessage.includes('\n\n') 
-                ? friendlyMessage.split('\n\n').join('\n') 
+            const chatMessage = friendlyMessage.includes('\n\n')
+                ? friendlyMessage.split('\n\n').join('\n')
                 : friendlyMessage;
-            
+
             // Extract title and description for toast
             const parts = friendlyMessage.split('\n\n');
             const title = parts[0] || 'Generation Issue';
             const description = parts.slice(1).join('\n\n') || friendlyMessage;
-            
+
             const errorResponse: Message = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
                 content: chatMessage,
             };
             setMessages(prevMessages => [...prevMessages, errorResponse]);
-            
+
             // Use appropriate toast variant based on error type
             toast({
                 variant: isCreditError(errorMessage) ? 'destructive' : 'destructive',
