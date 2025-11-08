@@ -1573,19 +1573,84 @@ ${designDNA}`;
                 // Instructions for design generation with uploaded image and/or logo
                 if (hasUploadedImage && bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
                     // Both uploaded image AND logo present - treat both as reference images to incorporate
-                    onBrandPrompt += `\n- **🎯 DUAL IMAGE INTEGRATION:** You have been provided with TWO reference images that MUST both be incorporated into your design:
-  1. **User's Uploaded Image** (provided below) - This MUST be the PRIMARY visual element and hero of the design
-  2. **Brand Logo** (provided below) - This MUST also be prominently featured and clearly visible
-- **Design Approach:** Create a professional marketing design that prominently features the uploaded image as the main visual element while also incorporating the brand logo in a natural, well-integrated way
-- **Uploaded Image Treatment:** The uploaded image should be the focal point and dominant visual element (minimum 60% of visual weight)
-- **Logo Treatment:** The brand logo should be clearly visible and well-positioned (minimum 10% of design area) but complementary to the uploaded image
-- **Integration:** Both images should work together cohesively in a unified, professional design composition`;
+                    onBrandPrompt += `\n- **🎯 DUAL IMAGE INTEGRATION - PROFESSIONAL MARKETING DESIGN:**
+
+  **CRITICAL: This is a MARKETING DESIGN, NOT a raw photo with text overlay!**
+
+  You have been provided with TWO reference images:
+  1. **User's Uploaded Image** (provided below) - Use as PRIMARY visual element
+  2. **Brand Logo** (provided below) - Must be prominently featured
+
+  **DESIGN APPROACH (MANDATORY):**
+  - Create a PROFESSIONAL MARKETING COMPOSITION with design elements
+  - DO NOT just overlay text on the raw uploaded photo
+  - ADD design elements: frames, shapes, color blocks, gradients, geometric elements
+  - Use the uploaded image as the HERO VISUAL but within a professional design layout
+  - Incorporate brand colors through design elements (not just text)
+  - Add visual interest through composition, not just the raw photo
+
+  **UPLOADED IMAGE TREATMENT:**
+  - Feature prominently as the main visual (60%+ of visual weight)
+  - Can be: framed, masked, integrated into shapes, part of a split layout
+  - Should feel like part of a designed composition, not a background
+  - Add design treatments: borders, shadows, overlays (subtle), color grading
+
+  **LOGO TREATMENT:**
+  - Clearly visible and well-positioned (10%+ of design area)
+  - Integrated naturally into the design composition
+  - Can be on a color block, shape, or clean area for visibility
+
+  **DESIGN ELEMENTS TO ADD:**
+  - Geometric shapes (rectangles, circles, triangles) in brand colors
+  - Color blocks or panels for text and logo placement
+  - Gradients or color overlays (subtle, not overpowering)
+  - Professional typography with hierarchy
+  - Visual balance and composition
+
+  **WHAT THIS IS:**
+  ✅ Professional marketing design that FEATURES the uploaded image
+  ✅ Cohesive composition with design elements + uploaded image + logo
+  ✅ Social media ready marketing asset
+
+  **WHAT THIS IS NOT:**
+  ❌ Raw photo with text slapped on top
+  ❌ Unedited uploaded image with minimal changes
+  ❌ Simple text overlay without design elements`;
                 } else if (hasUploadedImage) {
                     // Only uploaded image, no logo
-                    onBrandPrompt += `\n- **🎯 UPLOADED IMAGE INTEGRATION:** A user has uploaded an image (provided below) that MUST be prominently featured in your design
-- **Design Approach:** Create a professional marketing design that prominently features the uploaded image as the main visual element
-- **Image Treatment:** The uploaded image should be the focal point and hero of the design
-- **Enhancement:** Add professional text overlays, color treatments, and design elements that complement the uploaded image`;
+                    onBrandPrompt += `\n- **🎯 UPLOADED IMAGE INTEGRATION - PROFESSIONAL MARKETING DESIGN:**
+
+  **CRITICAL: This is a MARKETING DESIGN, NOT a raw photo with text overlay!**
+
+  **DESIGN APPROACH (MANDATORY):**
+  - Create a PROFESSIONAL MARKETING COMPOSITION with design elements
+  - DO NOT just overlay text on the raw uploaded photo
+  - ADD design elements: frames, shapes, color blocks, gradients, geometric elements
+  - Use the uploaded image as the HERO VISUAL but within a professional design layout
+  - Incorporate brand colors through design elements
+  - Add visual interest through composition
+
+  **UPLOADED IMAGE TREATMENT:**
+  - Feature prominently as the main visual element
+  - Can be: framed, masked, integrated into shapes, part of a split layout
+  - Should feel like part of a designed composition, not a background
+  - Add design treatments: borders, shadows, overlays (subtle), color grading
+
+  **DESIGN ELEMENTS TO ADD:**
+  - Geometric shapes (rectangles, circles, triangles) in brand colors
+  - Color blocks or panels for text placement
+  - Gradients or color overlays (subtle)
+  - Professional typography with hierarchy
+  - Visual balance and composition
+
+  **WHAT THIS IS:**
+  ✅ Professional marketing design that FEATURES the uploaded image
+  ✅ Cohesive composition with design elements + uploaded image
+  ✅ Social media ready marketing asset
+
+  **WHAT THIS IS NOT:**
+  ❌ Raw photo with text slapped on top
+  ❌ Unedited uploaded image with minimal changes`;
                 } else if (bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
                     // Only logo, no uploaded image
                     onBrandPrompt += `\n- **🎯 BRAND LOGO INTEGRATION:** The brand logo (provided below) MUST be prominently featured in your design
