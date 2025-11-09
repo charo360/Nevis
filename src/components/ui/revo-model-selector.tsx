@@ -126,13 +126,14 @@ export function RevoModelSelector({
               disabled={!isAvailable}
               className={cn(
                 "flex flex-col items-start gap-2 p-4 cursor-pointer",
+                "hover:text-foreground focus:text-foreground",
                 !isAvailable && "opacity-50 cursor-not-allowed"
               )}
             >
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
-                  <IconComponent className="h-4 w-4" />
-                  <span className="font-medium">{model.name}</span>
+                  <IconComponent className="h-4 w-4 text-foreground" />
+                  <span className="font-medium text-foreground">{model.name}</span>
                   {model.badge && (
                     <Badge variant={model.badgeVariant} className="text-xs">
                       {model.badge}
