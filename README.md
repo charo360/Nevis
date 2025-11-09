@@ -1,6 +1,6 @@
-# Nevis - AI-Powered Social Media Content Generator
+# Crevo - AI-Powered Social Media Content Generator
 
-Nevis is an advanced AI-powered platform for generating high-quality social media content with mongodb backend integration.
+Crevo is an advanced AI-powered platform for generating high-quality social media content with mongodb backend integration.
 
 ## 🚀 Quick Start for Developers
 
