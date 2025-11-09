@@ -31,6 +31,7 @@ export interface AssistantContentRequest {
   marketingAngle?: any;
   useLocalLanguage?: boolean;
   businessIntelligence?: any;
+  deepBusinessUnderstanding?: any; // Deep business understanding from business-understanding system
   avoidListText?: string;
 }
 
@@ -259,6 +260,34 @@ export class AssistantManager {
     message += `- Think: "What's a way I HAVEN'T tried yet?"\n\n`;
 
     message += `Generate perfectly aligned social media content with visual design specifications for optimal content-design integration:\n\n`;
+
+    // DEEP BUSINESS UNDERSTANDING (if available)
+    if (request.deepBusinessUnderstanding) {
+      const dbu = request.deepBusinessUnderstanding;
+      message += `🧠 **DEEP BUSINESS UNDERSTANDING** (USE THIS TO GUIDE ALL CONTENT):\n\n`;
+      
+      if (dbu.promptGuidelines) {
+        message += dbu.promptGuidelines;
+        message += `\n\n`;
+      } else {
+        // Fallback: construct from insights
+        const insight = dbu.businessInsight;
+        if (insight) {
+          message += `**Business Model:** ${insight.businessModel.type}\n`;
+          message += `**Core Innovation:** ${insight.innovation.uniqueApproach}\n`;
+          message += `**Key Differentiator:** ${insight.innovation.keyDifferentiator}\n`;
+          message += `**Target Audience:** ${insight.targetAudience.primary.segment}\n`;
+          message += `**Decision Maker:** ${insight.targetAudience.decisionMaker}\n`;
+          message += `**End User:** ${insight.targetAudience.endUser}\n`;
+          message += `**Core Value:** ${insight.valueProposition.coreValue}\n`;
+          message += `**Mission:** ${insight.mission.corePurpose}\n`;
+          if (insight.mission.socialImpact) {
+            message += `**⚠️ SOCIAL IMPACT BUSINESS** - Emphasize mission and impact!\n`;
+          }
+          message += `\n`;
+        }
+      }
+    }
 
     // Business Information
     message += `**Business Information:**\n`;
