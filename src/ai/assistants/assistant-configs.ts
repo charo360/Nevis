@@ -43,7 +43,7 @@ export interface AssistantConfig {
 const RETAIL_CONFIG: AssistantConfig = {
   type: 'retail',
   name: 'Revo 2.0 - Retail Marketing Specialist',
-  model: 'gpt-4-turbo-preview',
+  model: 'gpt-4o-mini',
   implemented: true,
   envVar: 'OPENAI_ASSISTANT_RETAIL',
   tools: [{ type: 'code_interpreter' }],
@@ -131,7 +131,7 @@ Return ONLY valid JSON in this exact format:
 const FINANCE_CONFIG: AssistantConfig = {
   type: 'finance',
   name: 'Revo 2.0 - Financial Services Specialist',
-  model: 'gpt-4-turbo-preview',
+  model: 'gpt-4o-mini',
   implemented: true,
   envVar: 'OPENAI_ASSISTANT_FINANCE',
   instructions: `You are a specialized marketing content generator for financial services businesses.
@@ -474,7 +474,7 @@ Return ONLY valid JSON in this exact format:
 const SERVICE_CONFIG: AssistantConfig = {
   type: 'service',
   name: 'Revo 2.0 - Service Business Specialist',
-  model: 'gpt-4-turbo-preview',
+  model: 'gpt-4o-mini',
   implemented: true,
   envVar: 'OPENAI_ASSISTANT_SERVICE',
   instructions: `You are a specialized marketing content generator for service-based businesses.
@@ -562,7 +562,7 @@ Return ONLY valid JSON in this exact format:
 const SAAS_CONFIG: AssistantConfig = {
   type: 'saas',
   name: 'Revo 2.0 - SaaS Marketing Specialist',
-  model: 'gpt-4-turbo-preview',
+  model: 'gpt-4o-mini',
   implemented: true,
   envVar: 'OPENAI_ASSISTANT_SAAS',
   instructions: `You are a specialized marketing content generator for SaaS and digital products.
@@ -650,7 +650,7 @@ Return ONLY valid JSON in this exact format:
 const FOOD_CONFIG: AssistantConfig = {
   type: 'food',
   name: 'Revo 2.0 - Food & Beverage Specialist',
-  model: 'gpt-4-turbo-preview',
+  model: 'gpt-4o-mini',
   implemented: true,
   envVar: 'OPENAI_ASSISTANT_FOOD',
   instructions: `You are a specialized marketing content generator for food and beverage businesses.

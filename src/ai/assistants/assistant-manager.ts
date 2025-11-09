@@ -30,7 +30,8 @@ export interface AssistantContentRequest {
   platform: string;
   marketingAngle?: any;
   useLocalLanguage?: boolean;
-  businessIntelligence?: any; // Business intelligence data for enhanced context
+  businessIntelligence?: any;
+  avoidListText?: string;
 }
 
 /**
@@ -167,6 +168,7 @@ export class AssistantManager {
       // Run assistant with file_search tool if documents are available
       const runOptions: any = {
         assistant_id: assistantId,
+        temperature: 1.0, // High temperature for maximum creativity and variety
       };
 
       // Enable file_search tool if we have documents
@@ -249,7 +251,14 @@ export class AssistantManager {
       useLocalLanguage,
     } = request;
 
-    let message = `Generate perfectly aligned social media content with visual design specifications for optimal content-design integration:\n\n`;
+    let message = `🎨 **CRITICAL: MAXIMUM VARIETY REQUIRED**\n`;
+    message += `This is request #${Date.now() % 1000} - you MUST create completely UNIQUE content.\n`;
+    message += `- Use a DIFFERENT selling angle than your last 10 generations\n`;
+    message += `- Use a DIFFERENT caption opening structure\n`;
+    message += `- Use a DIFFERENT emotional tone\n`;
+    message += `- Think: "What's a way I HAVEN'T tried yet?"\n\n`;
+
+    message += `Generate perfectly aligned social media content with visual design specifications for optimal content-design integration:\n\n`;
 
     // Business Information
     message += `**Business Information:**\n`;
@@ -329,6 +338,11 @@ export class AssistantManager {
     if (marketingAngle) {
       message += `**Marketing Angle:** ${marketingAngle.name}\n`;
       message += `${marketingAngle.description}\n\n`;
+    }
+
+    if (request.avoidListText) {
+      message += `**ANTI-REPETITION GUIDANCE:**\n`;
+      message += `${request.avoidListText}\n\n`;
     }
 
     // Local Language
@@ -493,18 +507,476 @@ export class AssistantManager {
     message += `5. All elements must work together as ONE unified narrative\n`;
     message += `6. Visual specifications must support and enhance the text content\n\n`;
 
+    // CRITICAL: Story Coherence Requirements from Revo 1.0
+    message += `**🔗 ENHANCED STORY COHERENCE REQUIREMENTS (CRITICAL - FIXES CAPTION-HEADLINE MISMATCH):**\n\n`;
+    
+    message += `**🚨 STORY UNITY PRINCIPLE:**\n`;
+    message += `Headline + Caption must tell ONE unified story, not two separate messages.\n`;
+    message += `The caption should feel like the natural next sentence after reading the headline.\n\n`;
+    
+    message += `**✅ STORY COHERENCE CHECKLIST (MANDATORY):**\n`;
+    message += `1. **Theme Consistency**: If headline focuses on SPEED, caption must also focus on SPEED (not security/quality/etc.)\n`;
+    message += `2. **Tone Matching**: If headline is URGENT, caption must be URGENT (not calm/professional)\n`;
+    message += `3. **Audience Alignment**: If headline targets STUDENTS, caption must speak to STUDENTS (not business owners)\n`;
+    message += `4. **Benefit Delivery**: If headline promises INSTANT PAYMENTS, caption must explain HOW to get instant payments\n`;
+    message += `5. **Narrative Flow**: Caption must answer the question or complete the thought started by headline\n\n`;
+    
+    message += `**🚫 STORY MISMATCH PATTERNS TO AVOID:**\n`;
+    message += `- Headline: "Pay in 3 Seconds" → Caption talks about security features ❌\n`;
+    message += `- Headline: "Student Budget Tight?" → Caption speaks to business owners ❌\n`;
+    message += `- Headline: "Tired of Bank Queues?" → Caption discusses app features (not queue solution) ❌\n`;
+    message += `- Headline: Urgent tone → Caption: Professional/calm tone ❌\n\n`;
+    
+    message += `**✅ CORRECT STORY COHERENCE EXAMPLES (ACTION-ORIENTED):**\n`;
+    message += `- Headline: "Pay in 3 Seconds" → Caption: "No more waiting. Our instant transfer system processes your payment in just 3 seconds. Open app, select amount, confirm. Done. Your supplier gets paid while you're still drinking your coffee..." ✅\n`;
+    message += `- Headline: "Student Budget Tight?" → Caption: "It's week 3. Professor just assigned 5 textbooks at KES 400 each. Your account says KES 500. With Paya, get every book today, pay over time. Stay in class, not behind..." ✅\n`;
+    message += `- Headline: "Tired of Bank Queues?" → Caption: "It's Monday morning. You need to pay rent. Traditional banks mean 2-hour queues. With Paya, three taps on your phone. Payment sent. Confirmation received. You're back to work in 30 seconds..." ✅\n`;
+    message += `- Notice: Captions are ACTION and BENEFIT focused, NOT describing the picture\n\n`;
+    
+    message += `**🎯 STORY COMPLETION REQUIREMENTS:**\n`;
+    message += `- If headline asks a question → Caption must answer it\n`;
+    message += `- If headline makes a promise → Caption must explain how to achieve it\n`;
+    message += `- If headline identifies a problem → Caption must provide the solution\n`;
+    message += `- If headline uses urgent tone → Caption must maintain urgency and provide immediate action\n\n`;
+    
+    message += `**🔗 STORY COHERENCE VALIDATION (NON-NEGOTIABLE):**\n`;
+    message += `- HEADLINE and CAPTION must share common keywords or themes\n`;
+    message += `- If headline mentions "PAYMENTS" → caption MUST mention money transfers/transactions/payments\n`;
+    message += `- If headline mentions "SECURE" → caption MUST mention security/protection/safety\n`;
+    message += `- If headline mentions "DAILY" → caption MUST mention everyday/routine activities\n`;
+    message += `- If headline mentions "BUSINESS" → caption MUST mention business operations/growth/management\n`;
+    message += `- If headline mentions "MOBILE" → caption MUST mention phone/app/mobile banking\n`;
+    message += `- NEVER write generic captions that could work with any headline\n`;
+    message += `- Caption must SPECIFICALLY relate to and expand on the headline message\n\n`;
+
+    message += `**🎨 DESIGN UNIQUENESS & CREATIVITY (CRITICAL):**\n`;
+    message += `Each design should look like it came from a DIFFERENT creative team with a unique vision.\n`;
+    message += `Think like a world-class design agency: Apple, Nike, Airbnb, Spotify - they never repeat themselves.\n\n`;
+    
+    message += `**DESIGN VARIETY DIMENSIONS:**\n`;
+    message += `1. **Visual Approach**: Vary between minimalist, bold, illustrative, photographic, abstract, metaphorical\n`;
+    message += `2. **Layout Style**: Vary composition - centered, asymmetric, grid-based, flowing, layered\n`;
+    message += `3. **Color Treatment**: Vary mood - vibrant, muted, high-contrast, monochromatic, gradient\n`;
+    message += `4. **Typography Style**: Vary text treatment - bold statements, elegant subtlety, dynamic angles\n`;
+    message += `5. **Visual Metaphor**: Find unique ways to represent the benefit visually\n`;
+    message += `6. **Emotional Mood**: Match design emotion to content - urgent, calm, exciting, trustworthy\n\n`;
+    
     message += `**VISUAL SPECIFICATIONS FOR DESIGN:**\n`;
     message += `- Text Hierarchy: Headline (largest) > Subheadline > Caption > CTA\n`;
     message += `- Color Usage: Primary (60%), Secondary (30%), Background (10%)\n`;
     message += `- Layout: Clear focal point with balanced composition\n`;
-    message += `- Brand Consistency: Use specified colors and style\n`;
-    message += `- Platform Optimization: ${platform} format with proper aspect ratio\n\n`;
+    message += `- Brand Consistency: Use specified colors and style while varying execution\n`;
+    message += `- Platform Optimization: ${platform} format with proper aspect ratio\n`;
+    message += `- Creative Excellence: Each design should be portfolio-worthy\n\n`;
+    
+    message += `**🚫 PHYSICAL REALISM RULES (CRITICAL FOR PRODUCT VISUALS):**\n`;
+    message += `When showing phones, tablets, laptops, or any electronic devices:\n`;
+    message += `- ❌ NEVER show screens on BOTH sides (back of device glowing like a screen)\n`;
+    message += `- ❌ NEVER show the back of a tablet/phone lit up as if it's a screen\n`;
+    message += `- ✅ Screens ONLY on the front face of devices\n`;
+    message += `- ✅ Back of devices should be solid (logo, camera, normal back panel)\n`;
+    message += `- ✅ If showing multiple devices, ensure each has screen on ONE side only\n`;
+    message += `- ✅ Maintain physical accuracy - devices work like real products\n\n`;
+    
+    message += `**REALISTIC DEVICE DISPLAY EXAMPLES:**\n`;
+    message += `- ✅ Tablet held by person, screen facing viewer, back is solid\n`;
+    message += `- ✅ Phone on table, screen visible, back against surface\n`;
+    message += `- ✅ Multiple devices arranged, all screens facing same direction\n`;
+    message += `- ❌ Tablet floating with glowing back like it has two screens\n`;
+    message += `- ❌ Phone with light emanating from both front and back\n`;
+    message += `- ❌ Device that looks like it has screens on all sides\n\n`;
 
+    message += `**🚫 BANNED CORPORATE PHRASES (NEVER USE):**\n`;
+    message += `- "authentic, high-impact", "BNPL is today's focus", "puts Buy Now Pay Later (BNPL) front and center today"\n`;
+    message += `- "makes it practical, useful, and...", "timing is everything", "We've all been there"\n`;
+    message += `- "brings a human, professional touch", "See how [Business] makes it..."\n`;
+    message += `- "Professional services that...", "Solutions that actually work"\n`;
+    message += `- "Serving the community with...", "Quality service you can trust"\n`;
+    message += `- "Experience the excellence of...", "Committed to providing..."\n`;
+    message += `- Generic filler that could work for ANY business\n\n`;
+    
+    message += `**🎨 CREATIVE FREEDOM & VARIETY (CRITICAL):**\n`;
+    message += `You are a WORLD-CLASS creative marketing team, not a template-following robot.\n`;
+    message += `Each ad should feel like it was crafted by a different creative director with a unique vision.\n\n`;
+    
+    message += `**🚫 BANNED: Repetitive Patterns**\n`;
+    message += `- NEVER start multiple captions the same way ("Imagine a world where...", "Picture this...", "What if...")\n`;
+    message += `- NEVER use the same opening structure twice in a row\n`;
+    message += `- NEVER fall into predictable formulas or templates\n`;
+    message += `- Each caption should surprise and engage in a DIFFERENT way\n\n`;
+    
+    message += `**✅ HIGH-LEVEL MARKETING PRINCIPLES:**\n`;
+    message += `1. **Match the Visual**: Caption should flow naturally from what's shown in the image\n`;
+    message += `2. **Authentic Voice**: Write like a human having a real conversation, not a corporate announcement\n`;
+    message += `3. **Emotional Connection**: Make readers FEEL something - urgency, relief, excitement, hope\n`;
+    message += `4. **Specific Details**: Use real numbers, real scenarios, real pain points from the business context\n`;
+    message += `5. **Unique Angle**: Find a fresh perspective on the benefit - what would a creative agency pitch?\n`;
+    message += `6. **Story Arc**: Beginning (hook) → Middle (context) → End (resolution/CTA)\n`;
+    message += `7. **Conversational Flow**: Read it aloud - does it sound natural or corporate?\n\n`;
+    
+    message += `**🎯 CREATIVE VARIETY TECHNIQUES:**\n`;
+    message += `- Vary sentence length: Mix short punchy sentences with longer flowing ones\n`;
+    message += `- Vary tone: Urgent vs calm, playful vs serious, aspirational vs practical\n`;
+    message += `- Vary perspective: First person, second person, third person, or no character\n`;
+    message += `- Vary structure: Question, statement, dialogue, timeline, before/after\n`;
+    message += `- Vary focus: Problem, solution, transformation, social proof, innovation\n`;
+    message += `- Think: "If Apple/Nike/Airbnb marketed this, how would they make it unique?"\n\n`;
+    
+    message += `**💡 ENGAGEMENT QUALITY TEST:**\n`;
+    message += `Before finalizing, ask yourself:\n`;
+    message += `- Would I stop scrolling to read this?\n`;
+    message += `- Does this sound different from the last 10 ads I wrote?\n`;
+    message += `- Would a professional creative agency be proud of this?\n`;
+    message += `- Does it connect emotionally or just inform?\n`;
+    message += `- Is it memorable or forgettable?\n\n`;
+    
+    message += `**✅ COMPLETE CAPTIONS (NO TRAILING OFF):**\n`;
+    message += `- BANNED: Captions ending with "..." (incomplete thoughts)\n`;
+    message += `- BANNED: "makes it practical, useful, and..." ← FINISH THE SENTENCE!\n`;
+    message += `- REQUIRED: Complete thoughts with strong endings\n`;
+    message += `- Each caption UNIQUE and SPECIFIC to its headline theme\n`;
+    message += `- Write like a friend, not a corporation\n\n`;
+
+    message += `**🚨 CRITICAL: CAPTION PURPOSE - DIRECT SELLING, NOT STORYTELLING:**\n`;
+    message += `Captions are SALES COPY, not creative writing. Your job is to SELL, not entertain.\n\n`;
+    
+    message += `**❌ BANNED: Narrative/Storytelling Openings (NEVER USE):**\n`;
+    message += `- "In the dynamic world of..." ❌ (Scene-setting)\n`;
+    message += `- "Picture this: Exams are looming..." ❌ (Dramatic scenario)\n`;
+    message += `- "Tired of the weight of..." ❌ (Creative writing intro)\n`;
+    message += `- "Witness the transformation as..." ❌ (Flowery language)\n`;
+    message += `- "Imagine a beautiful scene where..." ❌ (Describing visuals)\n`;
+    message += `- "See the modern office where..." ❌ (Describing picture)\n`;
+    message += `- Any scene-setting, dramatic buildup, or creative writing opening\n\n`;
+    
+    message += `**❌ WRONG CAPTION STRUCTURE (Storytelling/Narrative):**\n`;
+    message += `Scene-setting intro (15-20 words) → Product mention → Benefits (maybe) → [Truncated]\n`;
+    message += `This BURIES THE LEAD and wastes reader attention.\n\n`;
+    
+    message += `**✅ CORRECT CAPTION STRUCTURE (Direct Retail Selling):**\n`;
+    message += `Product + Price (if applicable) → Key Features/Benefits → Target Customer → CTA\n`;
+    message += `Lead with what matters. No buildup. No drama. Just clear value.\n\n`;
+    
+    message += `**✅ DIRECT SELLING CAPTION PRINCIPLES:**\n`;
+    message += `1. **Lead with Value**: Product name/price first, not scene-setting\n`;
+    message += `2. **List Benefits Directly**: No buildup, just features that matter\n`;
+    message += `3. **Identify Audience**: Who is this for? Say it clearly\n`;
+    message += `4. **Clear CTA**: What should they do next?\n`;
+    message += `5. **Length**: 30-50 words maximum for retail, 50-100 for services\n`;
+    message += `6. **Tone**: Direct salesperson, not creative novelist\n\n`;
+    
+    message += `**RETAIL vs SERVICE CAPTION APPROACH:**\n`;
+    message += `- **RETAIL** (Products): Lead with product + price, list features, identify buyer, CTA\n`;
+    message += `- **SERVICE** (Finance/SaaS): Lead with benefit, show how it works, address pain point, CTA\n`;
+    message += `- **BOTH**: NO scene-setting, NO storytelling intros, NO dramatic buildup\n\n`;
+    
+    message += `**🛒 RETAIL FINANCING & BNPL SELLING ANGLE (CRITICAL):**\n`;
+    message += `For RETAIL businesses, check if they offer Buy Now Pay Later (BNPL) or financing options.\n`;
+    message += `If YES, use this as a POWERFUL selling point in SOME ads (not all - vary your approach).\n\n`;
+    
+    message += `**HOW TO CHECK FOR FINANCING:**\n`;
+    message += `- Look in business documents for: "Buy Now Pay Later", "BNPL", "Financing", "Installments", "Pay in installments"\n`;
+    message += `- Check services/features for payment plans or financing options\n`;
+    message += `- If found, this is a MAJOR selling point - removes price barrier\n`;
+    message += `- ONLY mention if explicitly confirmed in business data - DO NOT INVENT\n\n`;
+    
+    message += `**FINANCING SELLING EXAMPLES (If Available):**\n`;
+    message += `✅ "Zentech tablets from KES 12,999. Or pay KES 2,000/month for 6 months. No interest. Get yours today, pay over time."\n`;
+    message += `✅ "Can't pay upfront? No problem. Buy now, pay later. Zentech tablets with flexible payment plans. Start learning today."\n`;
+    message += `✅ "KES 12,999 too much at once? Split it. Pay in 3 installments. Zero interest. Your tablet, your timeline."\n\n`;
+    
+    message += `**VARIETY IN SELLING THE SAME PRODUCT (CRITICAL):**\n`;
+    message += `Create DIFFERENT selling angles for the same product across multiple ads.\n`;
+    message += `Use ACTUAL business data - these are just EXAMPLE ANGLES (not hardcoded content):\n\n`;
+    
+    message += `1. **Price-Focused Angle**: Lead with actual product price and value proposition\n`;
+    message += `   - Example concept: "From [ACTUAL PRICE]. Best value [PRODUCT TYPE] in [LOCATION]."\n`;
+    message += `   - Use REAL pricing from business documents\n\n`;
+    
+    message += `2. **Financing-Focused Angle**: If BNPL/financing available, lead with payment plan\n`;
+    message += `   - Example concept: "Pay [ACTUAL MONTHLY AMOUNT]/month. Own in [ACTUAL TERM]."\n`;
+    message += `   - Use REAL financing terms from business documents\n`;
+    message += `   - ONLY if financing is confirmed in business data\n\n`;
+    
+    message += `3. **Feature-Focused Angle**: Lead with actual product specifications\n`;
+    message += `   - Example concept: "[ACTUAL FEATURE 1]. [ACTUAL FEATURE 2]. [ACTUAL FEATURE 3]."\n`;
+    message += `   - Use REAL features from product documents\n\n`;
+    
+    message += `4. **Benefit-Focused Angle**: Lead with actual customer benefits\n`;
+    message += `   - Example concept: "[BENEFIT 1]. [BENEFIT 2]. [BENEFIT 3]."\n`;
+    message += `   - Use REAL benefits from business value propositions\n\n`;
+    
+    message += `5. **Audience-Focused Angle**: Lead with actual target customer\n`;
+    message += `   - Example concept: "Perfect for [ACTUAL TARGET AUDIENCE]. Built for [ACTUAL USE CASE]."\n`;
+    message += `   - Use REAL target audience from business profile\n\n`;
+    
+    message += `6. **Problem-Solution Angle**: Lead with actual problem the product solves\n`;
+    message += `   - Example concept: "[ACTUAL PROBLEM]? [ACTUAL SOLUTION]."\n`;
+    message += `   - Use REAL pain points from business intelligence\n\n`;
+    
+    message += `**SELLING VARIETY RULES:**\n`;
+    message += `- NEVER use the same selling angle twice in a row\n`;
+    message += `- Rotate between price, financing, features, benefits, audience, problem-solution\n`;
+    message += `- Each ad should highlight a DIFFERENT aspect of the same product\n`;
+    message += `- Use ACTUAL business data for all content - DO NOT use example text\n`;
+    message += `- Make the product SELLABLE from multiple angles using REAL information\n`;
+    message += `- Confirm all information from business data - DO NOT INVENT\n\n`;
+    
+    message += `**🎨 MAXIMUM CREATIVE VARIETY (CRITICAL):**\n`;
+    message += `Your goal: Find AS MANY DIFFERENT WAYS AS POSSIBLE to present the same thing.\n`;
+    message += `Think like 10 different creative directors, each with a unique approach.\n\n`;
+    
+    message += `**UNLIMITED VARIETY DIMENSIONS:**\n`;
+    message += `For the SAME product/service, you can vary:\n`;
+    message += `1. **Selling Angle**: Price, financing, features, benefits, audience, problem-solution, social proof, urgency, exclusivity, transformation\n`;
+    message += `2. **Emotional Tone**: Urgent, calm, exciting, reassuring, aspirational, practical, playful, serious, confident, empowering\n`;
+    message += `3. **Customer Persona**: Students, professionals, parents, entrepreneurs, families, seniors, youth, businesses, individuals\n`;
+    message += `4. **Use Case**: Work, study, entertainment, family time, business growth, personal development, social connection, creativity\n`;
+    message += `5. **Time Context**: Morning routine, workday, evening, weekend, special occasions, daily life, future planning\n`;
+    message += `6. **Pain Point Focus**: Cost, time, complexity, quality, accessibility, reliability, convenience, status\n`;
+    message += `7. **Benefit Emphasis**: Speed, savings, quality, ease, security, growth, freedom, connection, innovation\n`;
+    message += `8. **Visual Style**: Minimalist, bold, lifestyle, product-focused, metaphorical, abstract, photographic, illustrative\n`;
+    message += `9. **Headline Structure**: Question, statement, command, benefit, problem, solution, comparison, testimonial\n`;
+    message += `10. **Caption Approach**: Direct sell, story, comparison, list, problem-solution, social proof, urgency, education\n\n`;
+    
+    message += `**CREATIVE MULTIPLICATION PRINCIPLE:**\n`;
+    message += `If you have 10 selling angles × 10 emotional tones × 9 customer personas = 900+ possible combinations.\n`;
+    message += `Your job: NEVER repeat the same combination. Always find a NEW way.\n\n`;
+    
+    message += `**EXAMPLES - SAME PRODUCT, INFINITE WAYS:**\n`;
+    message += `Product: Tablet at KES 12,999\n\n`;
+    message += `Way 1: Price + Students + Urgent → "KES 12,999. Semester starts Monday. Get yours now."\n`;
+    message += `Way 2: Features + Professionals + Confident → "8-hour battery. 64GB storage. Built for your workday."\n`;
+    message += `Way 3: Problem + Parents + Reassuring → "Heavy backpacks hurting your child? Switch to digital learning."\n`;
+    message += `Way 4: Benefit + Entrepreneurs + Aspirational → "Work from anywhere. Your mobile office in one device."\n`;
+    message += `Way 5: Financing + Families + Practical → "Pay KES 2,000/month. Everyone gets their own tablet."\n`;
+    message += `Way 6: Social Proof + Youth + Exciting → "10,000+ students already switched. Join the digital revolution."\n`;
+    message += `Way 7: Comparison + Seniors + Simple → "Easier than a computer. Lighter than a book. Perfect for you."\n`;
+    message += `Way 8: Transformation + Creatives + Empowering → "Sketch. Design. Create. Your ideas, unlimited."\n`;
+    message += `Way 9: Urgency + Shoppers + FOMO → "Limited stock. 50 left. Don't miss out."\n`;
+    message += `Way 10: Quality + Professionals + Trustworthy → "Premium build. 2-year warranty. Investment that lasts."\n\n`;
+    
+    message += `**VARIETY CHALLENGE:**\n`;
+    message += `Before creating an ad, ask yourself:\n`;
+    message += `- What's a way I HAVEN'T tried yet?\n`;
+    message += `- Can I combine different dimensions for a unique angle?\n`;
+    message += `- Would this feel fresh to someone who saw my last 10 ads?\n`;
+    message += `- Am I exploring the full range of possibilities or staying safe?\n\n`;
+    
+    message += `**FREEDOM TO EXPERIMENT:**\n`;
+    message += `You have PERMISSION to:\n`;
+    message += `- Try unconventional combinations\n`;
+    message += `- Mix emotional tones within reason\n`;
+    message += `- Target unexpected customer personas\n`;
+    message += `- Highlight overlooked benefits\n`;
+    message += `- Create surprising visual concepts\n`;
+    message += `- Find fresh angles on familiar features\n`;
+    message += `As long as: Information is accurate, tone is professional, and message is clear.\n\n`;
+    
+    message += `**🎯 TARGET BUYER vs TARGET USER (CRITICAL):**\n`;
+    message += `Know the difference between who USES the product and who BUYS the product.\n`;
+    message += `Your message must address the BUYER (decision maker), not just the user.\n\n`;
+    
+    message += `**BUYER-USER DISTINCTION:**\n\n`;
+    
+    message += `**Kids Products (Tablets, Toys, Educational Items):**\n`;
+    message += `- TARGET USER: Children\n`;
+    message += `- TARGET BUYER: Parents\n`;
+    message += `- MESSAGE FOR: Parents (they make the purchase decision)\n`;
+    message += `- BENEFITS FOCUS: What parents care about (safety, education, value, durability)\n`;
+    message += `- VISUAL: Show kids using it (appeals to parents' desire to see their child happy/learning)\n`;
+    message += `- TONE: Speak to parents, not children\n\n`;
+    
+    message += `**Example - Kids Tablet:**\n`;
+    message += `❌ WRONG (Speaking to kids): "Hey kids! Want a cool tablet? It's super fun and has games!"\n`;
+    message += `✅ RIGHT (Speaking to parents): "Kids tablets from KES 12,999. Educational apps, parental controls, and durable design. Keep your child learning and safe. Built for active hands."\n`;
+    message += `- Visual shows: Child happily learning\n`;
+    message += `- Message addresses: Parent concerns (education, safety, durability, value)\n\n`;
+    
+    message += `**B2B Products (Business Software, Equipment):**\n`;
+    message += `- TARGET USER: Employees/staff\n`;
+    message += `- TARGET BUYER: Business owners/managers/procurement\n`;
+    message += `- MESSAGE FOR: Decision makers (ROI, efficiency, cost savings)\n`;
+    message += `- BENEFITS FOCUS: Business outcomes (productivity, savings, growth, competitive advantage)\n`;
+    message += `- VISUAL: Show business context and results\n`;
+    message += `- TONE: Professional, ROI-focused\n\n`;
+    
+    message += `**Example - Business Payment System:**\n`;
+    message += `❌ WRONG (Speaking to employees): "Make your job easier with our payment system!"\n`;
+    message += `✅ RIGHT (Speaking to business owner): "Accept payments instantly. Reduce transaction costs by 40%. Grow your business with real-time sales tracking. For merchants who want to scale."\n`;
+    message += `- Visual shows: Business owner checking sales dashboard\n`;
+    message += `- Message addresses: Owner concerns (cost, growth, efficiency)\n\n`;
+    
+    message += `**Gifts (Jewelry, Watches, Luxury Items):**\n`;
+    message += `- TARGET USER: Gift recipient\n`;
+    message += `- TARGET BUYER: Gift giver\n`;
+    message += `- MESSAGE FOR: Gift giver (they make the purchase)\n`;
+    message += `- BENEFITS FOCUS: Emotional impact, impression, meaning, quality\n`;
+    message += `- VISUAL: Show recipient's joy or the gift's elegance\n`;
+    message += `- TONE: Emotional, aspirational\n\n`;
+    
+    message += `**Family Products (Cars, Homes, Appliances):**\n`;
+    message += `- TARGET USER: Entire family\n`;
+    message += `- TARGET BUYER: Primary decision maker (often parent/head of household)\n`;
+    message += `- MESSAGE FOR: Decision maker with family benefits\n`;
+    message += `- BENEFITS FOCUS: Family safety, comfort, value, practicality\n`;
+    message += `- VISUAL: Show family enjoying together\n`;
+    message += `- TONE: Reassuring, practical, family-focused\n\n`;
+    
+    message += `**BUYER IDENTIFICATION CHECKLIST:**\n`;
+    message += `Before creating content, ask:\n`;
+    message += `1. Who will actually PAY for this product?\n`;
+    message += `2. Who makes the PURCHASE DECISION?\n`;
+    message += `3. What are the BUYER'S concerns (not just user's wants)?\n`;
+    message += `4. What benefits matter to the DECISION MAKER?\n`;
+    message += `5. Am I addressing the right person in my message?\n\n`;
+    
+    message += `**COMMON BUYER-USER SCENARIOS:**\n`;
+    message += `- Kids products → Sell to parents (safety, education, value)\n`;
+    message += `- B2B products → Sell to business owners (ROI, efficiency, growth)\n`;
+    message += `- Gifts → Sell to gift givers (emotional impact, quality, meaning)\n`;
+    message += `- Family products → Sell to primary decision maker (family benefits)\n`;
+    message += `- Student products → Sell to parents OR students (depends on price point)\n`;
+    message += `- Enterprise software → Sell to IT managers/executives (security, scalability, support)\n`;
+    message += `- Medical products → Sell to patients OR doctors (depends on product type)\n\n`;
+    
+    message += `**KEY PRINCIPLE:**\n`;
+    message += `Show the USER enjoying the product (visual appeal).\n`;
+    message += `Speak to the BUYER about their concerns (message content).\n`;
+    message += `Example: Kids tablet ad shows child learning happily (visual) but caption addresses parent concerns about education and safety (message).\n\n`;
+    
+    message += `**🔥 CREATE DESIRE & URGENCY (CRITICAL):**\n`;
+    message += `Your job is not just to INFORM - it's to make people WANT to buy.\n`;
+    message += `Create emotional desire, urgency, and compelling reasons to act NOW.\n\n`;
+    
+    message += `**DESIRE-BUILDING TECHNIQUES:**\n\n`;
+    
+    message += `**1. Paint the Transformation (Before → After):**\n`;
+    message += `Show the emotional journey from problem to solution.\n`;
+    message += `❌ WEAK: "Our tablets have 8-hour battery."\n`;
+    message += `✅ STRONG: "Stop worrying about dead batteries mid-class. 8 hours means full school day covered."\n`;
+    message += `- Focus on the FEELING of the transformation, not just the feature\n\n`;
+    
+    message += `**2. Create FOMO (Fear of Missing Out):**\n`;
+    message += `Make them feel they'll lose out if they don't act.\n`;
+    message += `- "Limited stock. 50 left this week."\n`;
+    message += `- "10,000+ already switched. Don't get left behind."\n`;
+    message += `- "Offer ends Sunday. Last chance for this price."\n`;
+    message += `- "While competitors wait, you'll be ahead."\n\n`;
+    
+    message += `**3. Use Social Proof:**\n`;
+    message += `Show others are already benefiting.\n`;
+    message += `- "Join 10,000+ students who already upgraded."\n`;
+    message += `- "Trusted by 500+ Kenyan businesses."\n`;
+    message += `- "Rated 4.8/5 by parents nationwide."\n`;
+    message += `- "The choice of leading professionals."\n\n`;
+    
+    message += `**4. Highlight What They'll Lose (Loss Aversion):**\n`;
+    message += `People fear loss more than they desire gain.\n`;
+    message += `❌ WEAK: "Save time with instant payments."\n`;
+    message += `✅ STRONG: "Stop losing customers to slow checkout. Every minute of delay costs you sales."\n`;
+    message += `- Emphasize what they're LOSING by not having your product\n\n`;
+    
+    message += `**5. Make It Personal & Relatable:**\n`;
+    message += `Use scenarios they recognize from their own life.\n`;
+    message += `- "It's Monday morning. Your supplier needs payment NOW. But the bank opens at 9am..."\n`;
+    message += `- "Week 3 of semester. Professor assigns 5 textbooks. Your account shows KES 500..."\n`;
+    message += `- "Your child's backpack weighs 8kg. They're 7 years old..."\n\n`;
+    
+    message += `**6. Create Aspirational Vision:**\n`;
+    message += `Show the better version of their life.\n`;
+    message += `- "Work from anywhere. Your office is wherever you are."\n`;
+    message += `- "Watch your business grow while you sleep. Real-time tracking, 24/7."\n`;
+    message += `- "Your child learning, creating, exploring. All in one device."\n\n`;
+    
+    message += `**7. Remove Barriers (Make It Easy):**\n`;
+    message += `Address objections before they think of them.\n`;
+    message += `- "Can't pay upfront? Pay KES 2,000/month."\n`;
+    message += `- "No technical skills needed. Set up in 5 minutes."\n`;
+    message += `- "Free delivery. Free setup. Zero hassle."\n`;
+    message += `- "Try risk-free. 30-day money-back guarantee."\n\n`;
+    
+    message += `**8. Use Power Words:**\n`;
+    message += `Words that trigger emotional response:\n`;
+    message += `- Urgency: NOW, TODAY, LIMITED, LAST CHANCE, ENDING SOON\n`;
+    message += `- Exclusivity: EXCLUSIVE, PREMIUM, SELECT, ELITE, MEMBERS ONLY\n`;
+    message += `- Benefit: FREE, GUARANTEED, PROVEN, INSTANT, EASY\n`;
+    message += `- Transformation: NEW, REVOLUTIONARY, BREAKTHROUGH, GAME-CHANGING\n`;
+    message += `- Security: SAFE, PROTECTED, SECURE, TRUSTED, CERTIFIED\n\n`;
+    
+    message += `**9. Create Urgency (Time-Sensitive):**\n`;
+    message += `Give them a reason to act NOW, not later.\n`;
+    message += `- "Semester starts Monday. Order today for delivery Friday."\n`;
+    message += `- "Price increases next week. Lock in KES 12,999 now."\n`;
+    message += `- "Only 3 days left at this price."\n`;
+    message += `- "First 100 customers get free accessories."\n\n`;
+    
+    message += `**10. Show Immediate Gratification:**\n`;
+    message += `Emphasize how quickly they get the benefit.\n`;
+    message += `- "Order now. Learning starts tomorrow."\n`;
+    message += `- "Instant setup. Accept payments in 5 minutes."\n`;
+    message += `- "Download today. Start creating tonight."\n`;
+    message += `- "Same-day delivery available."\n\n`;
+    
+    message += `**DESIRE-BUILDING FORMULA:**\n`;
+    message += `1. **Hook**: Relatable problem or aspiration\n`;
+    message += `2. **Agitate**: Make them FEEL the pain/desire\n`;
+    message += `3. **Solution**: Your product as the answer\n`;
+    message += `4. **Proof**: Social proof or guarantee\n`;
+    message += `5. **Urgency**: Reason to act NOW\n`;
+    message += `6. **CTA**: Clear next step\n\n`;
+    
+    message += `**EXAMPLE - DESIRE-DRIVEN CAPTION:**\n`;
+    message += `❌ INFORMATIVE (Weak): "Tablets with 8-hour battery, 64GB storage, and educational apps. KES 12,999."\n\n`;
+    message += `✅ DESIRE-DRIVEN (Strong): "Your child's backpack weighs 8kg. They're struggling. Switch to digital learning - all textbooks, all apps, one lightweight tablet. 8-hour battery means full school day covered. 10,000+ parents already made the switch. KES 12,999 or pay KES 2,000/month. Limited stock - 50 left this week. Give your child the advantage."\n\n`;
+    
+    message += `**PERSUASION CHECKLIST:**\n`;
+    message += `Before finalizing, ask:\n`;
+    message += `- Does this make them FEEL something (not just know something)?\n`;
+    message += `- Is there urgency (reason to act NOW, not later)?\n`;
+    message += `- Did I show transformation (before → after)?\n`;
+    message += `- Is there social proof (others already benefiting)?\n`;
+    message += `- Did I address objections (price, complexity, risk)?\n`;
+    message += `- Is there a clear, compelling CTA?\n`;
+    message += `- Would I personally feel compelled to buy after reading this?\n\n`;
+    
+    message += `**EMOTIONAL TRIGGERS TO USE:**\n`;
+    message += `- Fear of missing out (FOMO)\n`;
+    message += `- Fear of loss (losing money, time, opportunities)\n`;
+    message += `- Desire for status (be ahead, be first, be elite)\n`;
+    message += `- Desire for ease (remove friction, save time)\n`;
+    message += `- Desire for security (safety, protection, guarantee)\n`;
+    message += `- Desire for belonging (join others, be part of community)\n`;
+    message += `- Desire for transformation (better life, better results)\n`;
+    message += `- Parental love (for kids products - safety, success, happiness)\n\n`;
+    
+    message += `**EXAMPLES - RETAIL (Direct Selling):**\n`;
+    message += `❌ WRONG: "In the dynamic world of Nairobi, time and efficiency are the currencies of success. Our Zentech..."\n`;
+    message += `✅ RIGHT: "Zentech tablets from KES 12,999. Perfect for urban professionals on the go. Stay connected, stream entertainment, manage work anywhere. Kids-friendly content included. Shop now."\n\n`;
+    
+    message += `❌ WRONG: "Picture this: Exams are looming, and the pressure's mounting. Then, a Zentech tablet appears..."\n`;
+    message += `✅ RIGHT: "Study together, succeed together. Zentech tablets from KES 12,999 make group learning easy. Share notes, access educational content, collaborate on projects. Available now."\n\n`;
+    
+    message += `**EXAMPLES - SERVICE (Direct Benefit):**\n`;
+    message += `❌ WRONG: "Imagine a world where financial barriers don't dictate your choices..."\n`;
+    message += `✅ RIGHT: "Your supplier needs payment NOW. Open app. Three taps. Done. No bank queues, no delays. Instant payments that keep your business moving."\n\n`;
+    
+    message += `❌ WRONG: "In the fast-paced world of modern business, timing is everything..."\n`;
+    message += `✅ RIGHT: "Payroll is due Friday. With Paya, payments clear instantly. Your team gets paid on time, every time. Zero delays, zero excuses."\n\n`;
+    
+    message += `**CAPTION QUALITY TEST:**\n`;
+    message += `Before finalizing, ask:\n`;
+    message += `- Did I lead with product/benefit or scene-setting? (Must be product/benefit)\n`;
+    message += `- Is this under 50 words? (Retail should be 30-40, service can be 50-100)\n`;
+    message += `- Would a salesperson say this or a novelist? (Must be salesperson)\n`;
+    message += `- Are benefits listed directly or buried after intro? (Must be direct)\n`;
+    message += `- Does it sound like advertising copy or creative writing? (Must be advertising)\n\n`;
+    
     message += `**CONTENT REQUIREMENTS:**\n`;
     message += `1. Headline (4-6 words that match the main visual element)\n`;
-    message += `2. Subheadline (15-25 words that describe what's happening in the scene)\n`;
-    message += `3. Caption (50-100 words story that the visual demonstrates)\n`;
-    message += `4. Call-to-Action (2-4 words matching the action in the image)\n`;
+    message += `2. Subheadline (15-25 words that expand on the headline's promise)\n`;
+    message += `3. Caption (50-100 words ACTION-ORIENTED story from headline/subheadline - NOT picture description)\n`;
+    message += `4. Call-to-Action (2-4 words matching the benefit)\n`;
     message += `5. Hashtags (${platform.toLowerCase() === 'instagram' ? '5' : '3'} relevant tags)\n\n`;
 
     message += `Return as JSON with both content and design specifications:\n`;
