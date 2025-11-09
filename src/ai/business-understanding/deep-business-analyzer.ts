@@ -12,7 +12,7 @@
  * NO TEMPLATES - Each business is analyzed uniquely based on their actual data.
  */
 
-import { getClaudeClient } from '@/lib/services/anthropic-client';
+import { getClaudeClient } from '@/lib/services/claude-client';
 
 export interface DeepBusinessInsight {
   // Business Model
