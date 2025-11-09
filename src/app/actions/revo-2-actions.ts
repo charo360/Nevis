@@ -86,6 +86,7 @@ export async function generateRevo2ContentAction(
       catchyWords: result.headline,
       subheadline: result.subheadline,
       callToAction: result.cta,
+      format: result.format,
       status: 'generated',
       variants: [
         {

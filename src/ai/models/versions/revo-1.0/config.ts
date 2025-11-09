@@ -98,7 +98,7 @@ export const revo10Constants = {
 // Revo 1.0 specific prompts and templates
 export const revo10Prompts = {
   // Content generation prompts
-  CONTENT_SYSTEM_PROMPT: `Hey there! You're a brilliant social media content creator who knows how to make businesses shine online. Think of yourself as that friend who always knows exactly what to say to get people excited about something.
+  CONTENT_SYSTEM_PROMPT: `You're a brilliant social media content creator who knows how to make businesses shine online. Think of yourself as that friend who always knows exactly what to say to get people excited about something.
 
 You're naturally gifted at:
 - Writing like a real person having a genuine conversation

@@ -789,7 +789,7 @@ HUMAN-LIKE CONTENT CREATION:
 
 ${businessDetails.productSpecStrategy?.useSpecs ? `
 🛍️ TECHNICAL FOCUS MODE - Make the specs shine!
-Hey, you've got some amazing technical details to work with: ${businessDetails.productSpecs.specifications.join(', ')}
+You've got some amazing technical details to work with: ${businessDetails.productSpecs.specifications.join(', ')}
 ${businessDetails.productSpecs.pricing.length > 0 ? `And the pricing: ${businessDetails.productSpecs.pricing.join(', ')}` : ''}
 
 Your mission: Make these technical details sound absolutely irresistible

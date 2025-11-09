@@ -34,7 +34,7 @@ export function ModelRecommendation() {
           <span className="text-white text-xs">✨</span>
         </div>
         <div>
-          <h4 className="font-medium text-green-900 mb-1">Hey there! 👋</h4>
+          <h4 className="font-medium text-green-900 mb-1">Welcome! 👋</h4>
           <p className="text-green-700 text-sm mb-2">
             Some of our AI models are taking a quick coffee break ☕ (it happens to the best of us!).
           </p>

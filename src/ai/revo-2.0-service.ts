@@ -18,6 +18,7 @@ import {
 import { generateBusinessTypePromptInstructions, getBusinessTypeStrategy } from './prompts/business-type-strategies';
 import { assistantManager } from './assistants';
 import { detectBusinessType } from './adaptive/business-type-detector';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
 type VertexGenerationOptions = {
   temperature?: number;
@@ -58,7 +59,6 @@ export async function generateContentDirect(
   if (!process.env.VERTEX_AI_ENABLED || process.env.VERTEX_AI_ENABLED !== 'true') {
     throw new Error('🚫 Vertex AI is not enabled. Please set VERTEX_AI_ENABLED=true in your environment variables.');
   }
-
   // Prepare prompt
   let prompt: string;
   let logoImage: string | undefined;
@@ -206,9 +206,9 @@ const MARKETING_ANGLES: MarketingAngle[] = [
     captionGuidance: 'Address the specific challenges and needs of this audience segment only.',
     visualGuidance: 'Show people from this demographic in their typical environment',
     examples: {
-      headline: 'Student Budget Tight?',
-      subheadline: 'Banking with zero monthly fees',
-      caption: 'University fees, textbooks, accommodation - being a student is expensive enough. Why pay monthly banking fees on top of that? Our student account gives you all the banking features you need with zero monthly charges. Send money to friends, pay for meals, manage your allowance - all without worrying about hidden fees eating into your budget.'
+      headline: 'Small Business Owner?',
+      subheadline: 'Banking that grows with you',
+      caption: 'Running a business means juggling expenses, managing cash flow, and planning for growth. Our business account gives you the tools you need with transparent pricing. Accept payments, manage payroll, track expenses - all without worrying about hidden fees eating into your profits.'
     }
   },
   {
@@ -381,6 +381,106 @@ function selectOptimalAngle(availableAngles: MarketingAngle[], options: any): Ma
   const fallbackAngle = availableAngles[0];
   console.log(`🎯 [Revo 2.0] Using fallback angle: ${fallbackAngle.name}`);
   return fallbackAngle;
+}
+
+ 
+
+type RecentDbOutput = { headline?: string | null; subheadline?: string | null; caption?: string | null; cta?: string | null };
+
+function normalizeTokens(text: string): string[] {
+  const stop = new Set(['the','a','an','and','or','to','for','of','in','on','with','at','by','from','your','you','our','their','is','are','be','this','that','it','as']);
+  return (text || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w && !stop.has(w));
+}
+
+function jaccardSim(a: string, b: string): number {
+  const A = new Set(normalizeTokens(a));
+  const B = new Set(normalizeTokens(b));
+  if (A.size === 0 && B.size === 0) return 0;
+  let inter = 0;
+  for (const w of A) if (B.has(w)) inter++;
+  const union = A.size + B.size - inter;
+  return union === 0 ? 0 : inter / union;
+}
+
+const CORPORATE_BUZZWORDS = [
+  'seamless','reimagined','unleashed','cutting-edge','innovative solutions','empower','world-class','redefine','experience the future','next-gen','best-in-class','synergy','holistic','reimagine','revolutionize','frictionless'
+];
+
+function containsBuzz(text: string): string[] {
+  const lower = (text || '').toLowerCase();
+  return CORPORATE_BUZZWORDS.filter(b => lower.includes(b));
+}
+
+async function fetchRecentDbPosts(brandProfileId: string, platform?: string, limit: number = 5): Promise<RecentDbOutput[]> {
+  try {
+    const supabase = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    let query = supabase
+      .from('generated_posts')
+      .select('catchy_words, subheadline, content, call_to_action')
+      .eq('brand_profile_id', brandProfileId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (platform) {
+      query = query.eq('platform', platform.toLowerCase());
+    }
+
+    const { data, error } = await query;
+    if (error || !data) return [];
+    return data.map((r: any) => ({
+      headline: r.catchy_words ?? null,
+      subheadline: r.subheadline ?? null,
+      caption: typeof r.content === 'string' ? r.content : (r.content?.text || ''),
+      cta: r.call_to_action ?? null,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function buildAvoidListTextFromRecent(recent: RecentDbOutput[]): string {
+  if (!recent || recent.length === 0) return '';
+  const lines: string[] = [];
+  lines.push('DO NOT REPEAT OR PARAPHRASE any of the following recent outputs (avoid their vocabulary, structure, and phrasing):');
+  recent.slice(0, 3).forEach((o, i) => {
+    if (o.headline) lines.push(`- Prev#${i + 1} Headline: "${o.headline}"`);
+    if (o.subheadline) lines.push(`- Prev#${i + 1} Sub: "${o.subheadline}"`);
+    if (o.cta) lines.push(`- Prev#${i + 1} CTA: "${o.cta}"`);
+    if (o.caption) {
+      const snippet = o.caption.split(/\s+/).slice(0, 16).join(' ');
+      lines.push(`- Prev#${i + 1} Caption: "${snippet}..."`);
+    }
+  });
+  lines.push('VARY sentence structure and vocabulary completely. NO corporate jargon or mission-statement language.');
+  return lines.join('\n');
+}
+
+function isTooSimilarToRecent(out: { headline?: string; subheadline?: string; caption?: string }, recent: RecentDbOutput[]): { similar: boolean; reasons: string[] } {
+  const reasons: string[] = [];
+  for (const p of recent) {
+    const hSim = jaccardSim(out.headline || '', p.headline || '');
+    const sSim = jaccardSim(out.subheadline || '', p.subheadline || '');
+    const cSim = jaccardSim(out.caption || '', p.caption || '');
+    if (hSim > 0.55) reasons.push(`Headline too similar (${(hSim * 100).toFixed(0)}%) to "${p.headline}"`);
+    if (sSim > 0.5) reasons.push(`Subheadline too similar (${(sSim * 100).toFixed(0)}%)`);
+    if (cSim > 0.4) reasons.push(`Caption too similar (${(cSim * 100).toFixed(0)}%)`);
+    if (reasons.length) break;
+  }
+  const buzz = [
+    ...containsBuzz(out.headline || ''),
+    ...containsBuzz(out.subheadline || ''),
+    ...containsBuzz(out.caption || ''),
+  ];
+  if (buzz.length) reasons.push(`Contains corporate buzzwords: ${Array.from(new Set(buzz)).join(', ')}`);
+  return { similar: reasons.length > 0, reasons };
 }
 
 // ============================================================================
@@ -683,7 +783,7 @@ function extractTargetAudience(text: string): string | null {
   const lowerText = text.toLowerCase();
 
   const audienceKeywords = {
-    'students': ['student', 'university', 'college', 'campus', 'tuition', 'textbook'],
+    'students': ['student', 'university', 'college', 'campus', 'tuition', 'education'],
     'professionals': ['professional', 'career', 'office', 'business', 'corporate', 'executive'],
     'families': ['family', 'parent', 'children', 'kids', 'home', 'household'],
     'seniors': ['senior', 'retirement', 'pension', 'elderly', 'mature', 'golden years'],
@@ -1175,6 +1275,7 @@ export interface Revo20GenerationResult {
   cta?: string;
   captionVariations?: string[];
   businessIntelligence?: any;
+  format?: string;
 }
 
 /**
@@ -1744,7 +1845,7 @@ Each design MUST be visually unique and avoid repetition:
 
 💬 AUTHENTIC HUMAN VOICE REQUIREMENTS (MANDATORY):
 - Write like a REAL PERSON talking to a friend, not a corporate press release
-- Use conversational, warm tone: "Hey" instead of "We are pleased to announce"
+- Use conversational, warm tone: "Welcome" instead of "We are pleased to announce"
 - Include personality and character - sound distinctly like Paya, not generic fintech
 - Use specific, concrete language instead of vague corporate buzzwords
 - Sound like someone who actually understands Kenyan life and challenges
@@ -1763,15 +1864,24 @@ Each design MUST be visually unique and avoid repetition:
 - NEVER sound like a PowerPoint presentation or press release
 - NEVER use generic filler text that could apply to any product
 - WRITE LIKE: A friend explaining a solution they discovered
-- USE REAL SCENARIOS: "It's week 3. Professor just assigned 5 new textbooks at $80 each. Your account says $47."
+- USE REAL SCENARIOS: "It's month-end. Supplier payment is due and your cash flow is tight. Your account shows exactly what you need."
 
-🎭 REAL HUMAN STORYTELLING (MANDATORY):
-- START with a REAL SCENARIO: "Three weeks into semester and your laptop died. Again."
-- CREATE A SCENE: Paint a picture people can see and feel
-- USE REAL EMOTIONS: stress, relief, hope, frustration, excitement
-- SHOW, DON'T TELL: "Mom's birthday is coming up" vs "family obligations"
-- ADD PERSONALITY: "Here's the thing:", "Plot twist:", "Real talk:"
-- END WITH EMPATHY: "We get it", "You're not alone", "Been there"
+🎭 RETAIL ADVERTISING RULES (MANDATORY FOR PRODUCT SALES):
+- LEAD WITH BENEFIT: Start with what customer gets, not poetic scene-setting
+- INCLUDE PRICING: Every retail ad MUST show price, price range, or value claim
+- BE DIRECT: "Kids Tablets from KES 12,999" beats "Imagine a world of creativity..."
+- ADD CLEAR CTA: "Shop Now", "Visit Showroom", "Order Online", "Compare Models"
+- SPECS MATTER: Include key product details (screen size, storage, battery life)
+- NO POETRY: Cut flowery language - customers want facts, benefits, and prices
+- EXAMPLE GOOD: "10-inch HD tablets. 64GB storage. All-day battery. From KES 24,999. Shop online or visit our showroom."
+- EXAMPLE BAD: "In the golden hues of the afternoon, imagine yourself with a tablet that unlocks worlds..."
+
+🎭 CAPTION STRUCTURE FOR RETAIL (MANDATORY):
+1. BENEFIT STATEMENT (1 sentence): What problem does this solve?
+2. KEY FEATURES (1-2 sentences): Specs, capabilities, what's included
+3. PRICING INFO (1 phrase): Price, range, payment options, or savings
+4. CLEAR CTA (1 sentence): Exactly what action to take next
+TOTAL LENGTH: 3-4 sentences maximum, NO poetic storytelling
 
 🚫 TEMPLATE VIOLATIONS TO AVOID:
 - NO busy or complex backgrounds
@@ -1850,14 +1960,25 @@ ${shouldFollowBrandColors ? `- MANDATORY: Use the specified brand colors (${prim
 📝 STRONG TYPOGRAPHY HIERARCHY (MANDATORY):
 - HEADLINE: Bold, heavy font weight - 2X larger than other text elements
 - SUBHEADLINE: Medium weight - 50% smaller than headline, supports main message
+- PRICING/SPECS TEXT: MUST be large enough to read easily (minimum 16px equivalent)
 - STRONG CONTRAST: White text on dark backgrounds OR dark text on light backgrounds
 - NO thin or light font weights that blend into backgrounds
+- NO tiny text for important information (prices, specs, features)
 - LOGO PLACEMENT: Isolated in consistent corner with proper spacing for brand memory
 - Clear visual separation between headline, subheadline, and body text
 - NEVER use text like "COMPANY:", "PAYA:", or "BusinessName:" in the design
 - NEVER include "journey", "everyday", or repetitive corporate language in design text
 - Headlines must be engaging phrases, not company announcements
 - Ensure maximum readability across all text elements
+
+💰 PRICING & SPECS DISPLAY (RETAIL MANDATORY):
+- PRICING must be PROMINENT and READABLE (never tiny or hard to see)
+- SPECS must be CLEAR and LEGIBLE (screen size, storage, battery, etc.)
+- Use BOLD or HIGHLIGHTED text for prices to draw attention
+- Format prices clearly: "KES 24,999" or "From KES 12,999"
+- Group related specs together for easy scanning
+- NEVER make pricing or specs smaller than 16px equivalent
+- Pricing should be one of the MOST VISIBLE elements in retail ads
 
 🎯 TEXT-CAPTION ALIGNMENT STRATEGY:
 - The text in the image should be the "hook" that grabs attention
@@ -1890,6 +2011,38 @@ ${shouldFollowBrandColors ? `- MANDATORY: Use the specified brand colors (${prim
 - **CREDIBILITY**: Spelling errors destroy professional credibility - avoid at all costs
 
 Create a visually stunning design that stops scrolling and drives engagement while maintaining perfect brand consistency.${contactInstruction}${peopleInstructions}${culturalInstructions}`;
+}
+
+async function hydrateAnglesFromDb(brandKey: string, brandProfileId?: string, platform?: string): Promise<void> {
+  if (!brandProfileId) return;
+  try {
+    const supabase = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    let query = supabase
+      .from('generated_posts')
+      .select('generation_settings')
+      .eq('brand_profile_id', brandProfileId)
+      .order('created_at', { ascending: false })
+      .limit(12);
+    if (platform) query = query.eq('platform', String(platform).toLowerCase());
+    const { data, error } = await query;
+    if (error || !data) return;
+    const tracker = campaignAngleTracker.get(brandKey) || {
+      usedAngles: [],
+      lastUsed: Date.now(),
+      currentCampaignId: generateCampaignId(brandKey)
+    };
+    for (const row of data) {
+      const gs = row?.generation_settings;
+      const angle = typeof gs?.format === 'string' ? gs.format : undefined;
+      if (angle && MARKETING_ANGLES.some(a => a.id === angle) && !tracker.usedAngles.includes(angle)) {
+        tracker.usedAngles.push(angle);
+      }
+    }
+    campaignAngleTracker.set(brandKey, tracker);
+  } catch {}
 }
 
 /**
@@ -2063,12 +2216,17 @@ export async function generateCaptionAndHashtags(
     console.log(`🔧 [Revo 2.0] Fallback to adaptive framework: ${fallbackEnabled ? 'ENABLED' : 'DISABLED'}`);
 
     try {
-      // Get marketing angle for assistant
+      // Get marketing angle for assistant (hydrate from DB first)
       const brandKey = getBrandKey(brandProfile, platform);
-      const assignedAngle = assignMarketingAngle(brandKey, options);
+      await hydrateAnglesFromDb(brandKey, (brandProfile as any)?.id, platform as any);
+  const assignedAngle = assignMarketingAngle(brandKey, options);
 
-      // Generate content using specialized assistant
-      const assistantResponse = await assistantManager.generateContent({
+      // Build DB-backed avoid list from recent posts
+      const brandProfileId = (brandProfile as any)?.id as string | undefined;
+      const recentDb = brandProfileId ? await fetchRecentDbPosts(brandProfileId, platform as any, 7) : [];
+      let avoidListText = buildAvoidListTextFromRecent(recentDb);
+
+      let assistantResponse = await assistantManager.generateContent({
         businessType: detectedType,
         brandProfile: brandProfile,
         concept: concept,
@@ -2076,6 +2234,7 @@ export async function generateCaptionAndHashtags(
         platform: platform,
         marketingAngle: assignedAngle,
         useLocalLanguage: options.useLocalLanguage,
+        avoidListText,
       });
 
       console.log(`✅ [Revo 2.0] Assistant generation successful`);
@@ -2084,10 +2243,33 @@ export async function generateCaptionAndHashtags(
       // STORY COHERENCE VALIDATION FOR ASSISTANT-GENERATED CONTENT
       // ============================================================================
 
+      const firstOut = {
+        headline: assistantResponse.content.headline,
+        subheadline: assistantResponse.content.subheadline || '',
+        caption: assistantResponse.content.caption,
+      };
+      const simCheck = isTooSimilarToRecent(firstOut, recentDb);
+      if (simCheck.similar) {
+        console.warn(`⚠️ [Revo 2.0 Assistant] Similar to recent posts, retrying once. Reasons: ${simCheck.reasons.join(' | ')}`);
+        const secondAvoid = `${avoidListText}\nAdditionally avoid these patterns/themes:\n- ${simCheck.reasons.join('\n- ')}`;
+        // Try another angle to diversify
+        const secondAngle = assignMarketingAngle(brandKey, options);
+        assistantResponse = await assistantManager.generateContent({
+          businessType: detectedType,
+          brandProfile: brandProfile,
+          concept: concept,
+          imagePrompt: imagePrompt,
+          platform: platform,
+          marketingAngle: secondAngle,
+          useLocalLanguage: options.useLocalLanguage,
+          avoidListText: secondAvoid,
+        });
+      }
+
       // Validate story coherence between headline and caption
       const coherenceValidation = validateStoryCoherence(
-        assistantResponse.headline,
-        assistantResponse.caption,
+        assistantResponse.content.headline,
+        assistantResponse.content.caption,
         detectedType
       );
 
@@ -2107,11 +2289,11 @@ export async function generateCaptionAndHashtags(
       console.log(`📊 [Revo 2.0 Assistant] Coherence Score: ${coherenceValidation.coherenceScore}/100`);
 
       return {
-        headline: assistantResponse.headline,
-        subheadline: assistantResponse.subheadline,
-        caption: assistantResponse.caption,
-        cta: assistantResponse.cta,
-        hashtags: assistantResponse.hashtags,
+        headline: assistantResponse.content.headline,
+        subheadline: assistantResponse.content.subheadline,
+        caption: assistantResponse.content.caption,
+        cta: assistantResponse.content.cta,
+        hashtags: assistantResponse.content.hashtags,
       };
 
     } catch (error) {
@@ -2404,6 +2586,9 @@ ${concept.featuredServices && concept.featuredServices.length > 0 ? `- Highlight
 📝 CONTENT REQUIREMENTS - MUST WORK TOGETHER AS ONE STORY:
 1. HEADLINE (max 6 words): This will appear as text IN the image design - make it compelling
 2. SUBHEADLINE (max 25 words): This will also appear IN the image - should support the headline
+3. CAPTION (50-100 words): Should continue the story started by the headline/subheadline in the image
+4. CALL-TO-ACTION (2-4 words): Action-oriented and contextually appropriate
+5. HASHTAGS (EXACTLY ${hashtagCount}): ${normalizedPlatform === 'instagram' ? '5 hashtags for Instagram' : '3 hashtags for other platforms'}
 
 ✏️ GRAMMAR & LANGUAGE RULES (CRITICAL):
 - CORRECT: "Payments that fit your day" (plural subject = plural verb)
@@ -2412,9 +2597,43 @@ ${concept.featuredServices && concept.featuredServices.length > 0 ? `- Highlight
 - CHECK subject-verb agreement in ALL content
 - USE proper English grammar throughout
 - AVOID grammatical errors that make content look unprofessional
-3. CAPTION (50-100 words): Should continue the story started by the headline/subheadline in the image
-4. CALL-TO-ACTION (2-4 words): Action-oriented and contextually appropriate
-5. HASHTAGS (EXACTLY ${hashtagCount}): ${normalizedPlatform === 'instagram' ? '5 hashtags for Instagram' : '3 hashtags for other platforms'}
+
+🚨🚨🚨 CAPTION WRITING RULES - ABSOLUTELY CRITICAL 🚨🚨🚨
+FOR RETAIL/PRODUCT BUSINESSES - USE THIS EXACT STRUCTURE:
+
+SENTENCE 1: Lead with value (price/benefit/offer)
+SENTENCE 2: State key features (what you get)
+SENTENCE 3: Add use case (who it's for / what you can do)
+SENTENCE 4: Clear CTA (what to do next)
+
+TOTAL: 3-4 sentences MAXIMUM. NO creative writing. NO scene-setting. NO storytelling.
+
+❌ ABSOLUTELY BANNED CAPTION OPENINGS (NEVER USE THESE):
+- "From the first light of dawn to the serene twilight..."
+- "Picture this: the day's fading light gently embraces..."
+- "In the heart of [location], surrounded by..."
+- "Imagine yourself in the serene landscapes..."
+- "Follow the journey of..."
+- ANY time-of-day imagery or scene descriptions
+- ANY narrative storytelling or creative writing
+- ANY "picture this" or "imagine" language
+
+✅ CORRECT RETAIL CAPTION OPENINGS (ALWAYS USE THESE):
+- "[Product name] from KES [price]."
+- "Perfect for [target audience]."
+- "[Benefit statement]. [Feature statement]."
+- "Get [product] with [key feature]."
+- "[Product category] built for [specific use]."
+
+EXAMPLE TRANSFORMATIONS:
+❌ BAD: "From the first light of dawn to the serene twilight, follow the journey of a digital entrepreneur equipped wi..."
+✅ GOOD: "Student tablets from KES 12,999. Perfect for learning, entertainment, and staying connected. Includes educational apps, parental controls, and all-day battery. Shop online or visit our showroom today."
+
+❌ BAD: "Picture this: the day's fading light gently embraces a tastefully decorated home office,..."
+✅ GOOD: "Work-from-anywhere tablet: KES 24,999. Includes keyboard attachment, 10" display, and productivity software. Video calls, documents, presentations - all on one device. Free delivery in Nairobi."
+
+❌ BAD: "In the heart of Nairobi's vibrant market, a young entrepreneur demonstrates the power of technology,..."
+✅ GOOD: "Business tablets built for Kenyan entrepreneurs. Use as mobile POS, inventory tracker, or customer management system. Rugged design, long battery life, affordable pricing. Visit our demo center today."
 
 🔗 CONTENT COHESION REQUIREMENTS:
 - The headline and subheadline will be embedded as text elements in the visual design
@@ -2439,16 +2658,16 @@ ALL ELEMENTS MUST TELL ONE COHERENT STORY - NO DISCONNECTED PIECES!
 
 🚨 BUSINESS RELEVANCE VALIDATION (CRITICAL):
 - NEVER create content about industries/services the business doesn't offer
-- If business is FINTECH → NO textbooks, education, semester themes unless specifically relevant
+- If business is FINTECH → Focus on payments, banking, transfers, business finance, mobile money
 - If business is HEALTHCARE → NO banking, payments, technology themes unless relevant  
 - If business is EDUCATION → NO banking, medical, retail themes unless relevant
 - ALWAYS check: Does this headline relate to the actual business services?
-- BANNED for Paya Finance: Textbook themes, education scenarios, semester content (unless specifically about education financing)
+- FOCUS for Paya Finance: Mobile banking, instant payments, business growth, cash flow solutions
 - REQUIRED: Headlines must connect to actual business services and target audience
 
 🔗 STORY COHERENCE VALIDATION (NON-NEGOTIABLE):
 - HEADLINE and CAPTION must share common keywords or themes
-- If headline mentions "TEXTBOOK" → caption MUST mention textbooks/education/studying
+- If headline mentions "BUSINESS" → caption MUST mention business operations/growth/management
 - If headline mentions "POCKET" → caption MUST mention phone/mobile/payment in pocket
 - If headline mentions "SECURE" → caption MUST mention security/protection/safety
 - If headline mentions "DAILY" → caption MUST mention everyday/routine activities
@@ -2472,7 +2691,7 @@ ${getValuePropositionsForBusiness(businessType, brandProfile)}
 - Target REAL audiences: Small business owners, entrepreneurs, unbanked Kenyans, mobile money users
 - Address REAL pain points: Bank queues, credit requirements, high fees, slow transfers
 - Use REAL benefits: No credit checks, instant account opening, transparent fees, mobile convenience
-- AVOID: Generic education themes, textbook scenarios, semester content (unless specifically about education financing)
+- CREATE: Authentic fintech scenarios that Paya customers actually experience
 - CREATE: Authentic fintech scenarios that Paya customers actually experience
 
 🚫 ANTI-AI VISUAL RULES (CRITICAL):
@@ -2530,9 +2749,11 @@ ${getCompetitiveMessagingRules(brandProfile)}
 
 📢 COMPELLING CALL-TO-ACTION (NO TRAILING OFF):
 - NEVER end captions with "..." or weak conclusions
-- Use action-driving CTAs: "Download now", "Join 1M+ Kenyans", "Start saving today"
-- Create urgency: "Limited time", "This month only", "Don't wait"
-- Make it specific: "Get your account in 5 minutes", "Save KES 200 this week"
+- RETAIL CTAs: "Shop Now", "Visit Showroom", "Order Online", "Compare Models", "Call to Order"
+- SERVICE CTAs: "Download now", "Join 1M+ Kenyans", "Start saving today", "Get Started"
+- Create urgency: "Limited time", "This month only", "Don't wait", "While stocks last"
+- Make it specific: "Shop online or visit our showroom", "Available in store now", "Free delivery this week"
+- ALWAYS include a clear action for customers to take next
 
 🎭 CONTENT STRUCTURE VARIETY (BREAK REPETITIVE PATTERNS):
 - REAL SCENARIO: "Three weeks into semester and your laptop died. Again. But next month's rent is due..."
@@ -2547,9 +2768,18 @@ ${getCompetitiveMessagingRules(brandProfile)}
 🚫 ELIMINATE GENERIC HEADLINES (CRITICAL):
 - NEVER use: "Family Fun, On Your Terms" (could be Netflix, Airbnb, anything)
 - NEVER use: "Shop. Travel. Live. Easy." (zero personality)
+- NEVER use: "Share Your World", "Unlock Creativity", "Unlock Bigger Worlds" (too vague)
 - AVOID: Headlines that could apply to ANY product or service
-- CREATE: Headlines that could ONLY be about Paya's specific solution
-- MAKE IT: Memorable, shareable, and distinctly Paya
+- CREATE: Headlines that could ONLY be about this specific product/service
+- MAKE IT: Memorable, specific, and commercial
+
+💰 RETAIL HEADLINE FORMULAS (USE THESE FOR PRODUCT SALES):
+- PRICE-LED: "Family Tablets from KES 24,999"
+- FEATURE-LED: "Kids Tablets: Educational Games + Parental Controls"
+- BENEFIT-LED: "Productivity Tablets: Work Anywhere, Anytime"
+- SPEC-LED: "10-Inch HD Tablets - All-Day Battery"
+- VALUE-LED: "Premium Tablets - Affordable Prices"
+- NEVER use poetic or abstract headlines for retail products
 
 🚫 ELIMINATE CAPTION PROBLEMS (CRITICAL):
 - NEVER trail off with "..." (incomplete thoughts) - COMPLETE THE STORY
@@ -2558,11 +2788,11 @@ ${getCompetitiveMessagingRules(brandProfile)}
 - NEVER end abruptly - always complete the thought with strong CTA
 - BANNED INCOMPLETE PHRASES: "makes it practical, useful, and..." ← FINISH THE SENTENCE!
 
-✅ CORRECT CAPTION EXAMPLES BY HEADLINE:
-- "TEXTBOOK STRESS?" → "It's week 3. Professor just assigned 5 new textbooks at $80 each. Your account says $47. Paya Finance lets you get every book today, pay over time. Stay in class, not behind."
-- "DREAM IT, GET IT." → "That vision board isn't decoration—it's a to-do list. The laptop upgrade, the desk setup, the tools that turn ideas into income. Paya Finance funds your hustle now, you pay as you profit."
-- "OWN YOUR EDUCATION. PAY LATER" → "Tuition. Books. Lab fees. Accommodation. The list is long, the bank account isn't. Paya Finance breaks down the barriers between you and your degree. Learn now, pay as you earn."
-- Each caption tells a COMPLETE, SPECIFIC story that matches its headline
+✅ CORRECT RETAIL CAPTION EXAMPLES:
+- "Family Tablets from KES 24,999" → "Connect with family anywhere. Share photos, video call, and stream together. 10" HD display, 64GB storage, all-day battery. From KES 24,999. Shop online or visit our showroom."
+- "Kids Tablets: Educational Games + Parental Controls" → "Safe learning for your children. Pre-loaded educational apps, robust parental controls, durable design. 7" HD screen perfect for small hands. KES 12,999. Available in store now."
+- "Productivity Tablets: Work Anywhere, Anytime" → "Turn any space into your office. 10.4" 2K display, keyboard compatible, 12-hour battery life. Perfect for professionals on the go. From KES 34,999. Compare models online."
+- Each caption: BENEFIT + FEATURES + PRICE + CTA (no poetry, no storytelling)
 
 🚫 ELIMINATE JARGON OVERUSE (CRITICAL):
 - NEVER overuse "BNPL" acronym or "(BNPL)" in parentheses
@@ -2724,6 +2954,30 @@ Format as JSON:
           // Pattern validation
           const headlineHasBannedPatterns = hasBannedPattern(headline) || /\b(journey|everyday)\b/i.test(headline) || /^[A-Z]+:\s/.test(headline);
           const captionHasBannedPatterns = hasBannedPattern(caption) || /\b(journey|everyday)\b/i.test(caption);
+          
+          // ANTI-POETRY VALIDATION FOR RETAIL (Critical)
+          const poeticCaptionPatterns = [
+            /from the first light of dawn/i,
+            /to the serene twilight/i,
+            /picture this:/i,
+            /imagine yourself/i,
+            /follow the journey/i,
+            /in the heart of [a-z]+,/i,
+            /surrounded by vibrant/i,
+            /gently embraces/i,
+            /fading light/i,
+            /tastefully decorated/i,
+            /demonstrates the power of/i,
+            /equipped with dreams/i,
+            /bathed in [a-z]+ light/i
+          ];
+          
+          const captionIsPoetic = poeticCaptionPatterns.some(pattern => pattern.test(caption));
+          
+          if (captionIsPoetic) {
+            console.log('🚨 [Revo 2.0 POETRY DETECTED] Caption uses banned poetic language - REJECTING');
+            console.log('   Caption:', caption.substring(0, 100) + '...');
+          }
 
           // Similarity validation
           const headlineTooSimilar = tooSimilar(headline, recentData.headlines, 0.55);
@@ -2767,7 +3021,7 @@ Format as JSON:
           // Basic validation (must pass)
           const basicValidation = headlineValid && subheadlineValid && captionValid && hashtagsValid &&
             !headlineHasBannedPatterns && !captionHasBannedPatterns &&
-            !headlineDuplicate && !headlineIsBrandName;
+            !headlineDuplicate && !headlineIsBrandName && !captionIsPoetic;
 
           // Quality validation (more lenient)
           const qualityValidation = !headlineTooSimilar && !captionTooSimilar &&
@@ -2807,7 +3061,12 @@ Format as JSON:
 
           if (!passesValidation) {
             const reasons: string[] = [];
-            if (!basicValidation) reasons.push('basic validation failed');
+            if (!basicValidation) {
+              reasons.push('basic validation failed');
+              if (captionIsPoetic) reasons.push('POETIC CAPTION DETECTED');
+              if (headlineHasBannedPatterns) reasons.push('headline has banned patterns');
+              if (captionHasBannedPatterns) reasons.push('caption has banned patterns');
+            }
             if (!qualityValidation) reasons.push('quality validation failed');
             if (!coherenceValidation_passes && !coherenceValidation_acceptable) reasons.push('coherence validation failed');
 
@@ -3206,7 +3465,7 @@ function getAuthenticStoryScenarios(brandProfile: any, businessType: string): st
 
 🎓 STUDENT LIFE STORIES:
 - Student runs out of lunch money, parent sends money instantly, student buys meal within minutes
-- Student needs textbook money urgently, parent transfers funds, student purchases book same day
+- Business owner needs inventory money urgently, partner transfers funds, stock purchased same day
 - Student's phone credit runs out during exam period, parent sends money for airtime top-up
 - Student needs transport money to get home, parent sends fare money instantly
 
@@ -3371,6 +3630,10 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
         // Generate marketing angle for context
         const marketingAngle = assignMarketingAngle(getBrandKey(enhancedOptions.brandProfile, enhancedOptions.platform), enhancedOptions);
         
+        const bpId = (enhancedOptions.brandProfile as any)?.id as string | undefined;
+        const recentDb = bpId ? await fetchRecentDbPosts(bpId, enhancedOptions.platform as any, 7) : [];
+        let avoidListText = buildAvoidListTextFromRecent(recentDb);
+
         assistantResponse = await Promise.race([
           assistantManager.generateContent({
             businessType: businessType.primaryType,
@@ -3380,10 +3643,33 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
             platform: enhancedOptions.platform,
             marketingAngle: marketingAngle,
             useLocalLanguage: enhancedOptions.useLocalLanguage,
-            businessIntelligence: businessIntelligence // Pass BI data to assistant
+            businessIntelligence: businessIntelligence, // Pass BI data to assistant
+            avoidListText
           }),
           new Promise((_, reject) => setTimeout(() => reject(new Error('Assistant generation timeout')), 90000))
         ]);
+
+        const firstOut = {
+          headline: assistantResponse.content.headline,
+          subheadline: assistantResponse.content.subheadline || '',
+          caption: assistantResponse.content.caption,
+        };
+        const simCheck = isTooSimilarToRecent(firstOut, recentDb);
+        if (simCheck.similar) {
+          const secondAvoid = `${avoidListText}\nAdditionally avoid these patterns/themes:\n- ${simCheck.reasons.join('\n- ')}`;
+          const secondAngle = assignMarketingAngle(getBrandKey(enhancedOptions.brandProfile, enhancedOptions.platform), enhancedOptions);
+          assistantResponse = await assistantManager.generateContent({
+            businessType: businessType.primaryType,
+            brandProfile: enhancedOptions.brandProfile,
+            concept: concept,
+            imagePrompt: '',
+            platform: enhancedOptions.platform,
+            marketingAngle: secondAngle,
+            useLocalLanguage: enhancedOptions.useLocalLanguage,
+            businessIntelligence: businessIntelligence,
+            avoidListText: secondAvoid
+          });
+        }
 
         console.log(`✅ [Revo 2.0] Assistant generated content with design specifications`);
         

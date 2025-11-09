@@ -195,7 +195,7 @@ export function BrandDetailsStep({
 
   const trainProductImages = async () => {
     if (!brandProfile.productImages || brandProfile.productImages.length === 0) {
-      alert('📸 Hey there! Please upload some product images first before I can train the AI.\n\nJust drag and drop your product photos above, then I\'ll teach the AI all about them! 🍪✨');
+      alert('📸 Please upload some product images first before I can train the AI.\n\nJust drag and drop your product photos above, then I\'ll teach the AI all about them! 🍪✨');
       return;
     }
 

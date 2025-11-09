@@ -2726,7 +2726,7 @@ const MARKETING_ANGLES: MarketingAngle[] = [
     examples: {
       headline: 'Student Budget Tight?',
       subheadline: 'Banking with zero monthly fees',
-      caption: 'University fees, textbooks, accommodation - being a student is expensive enough. Why pay monthly banking fees on top of that? Our student account gives you all the banking features you need with zero monthly charges. Send money to friends, pay for meals, manage your allowance - all without worrying about hidden fees eating into your budget.'
+      caption: 'Running a business means juggling expenses, managing cash flow, and planning for growth. Our business account gives you the tools you need with transparent pricing. Accept payments, manage payroll, track expenses - all without worrying about hidden fees eating into your profits.'
     }
   },
   {
@@ -4498,7 +4498,7 @@ Could this caption work for ANY competitor? If YES, rewrite to be business-speci
 - If business is HEALTHCARE → Focus ONLY on medical services, patient care, health solutions
 - If business is EDUCATION → Focus ONLY on learning, courses, academic services
 - ALWAYS check: Does this headline relate to the actual business services?
-- BANNED for Paya Finance: Education themes, academic scenarios, student content, textbook references
+- FOCUS for Paya Finance: Mobile banking, instant payments, business growth, cash flow solutions
 - REQUIRED: Headlines must connect to actual business services and target audience
 
 🔗 STORY COHERENCE VALIDATION (NON-NEGOTIABLE):
@@ -5925,7 +5925,7 @@ function generateEnhancedBrandVoiceInstructions(brandProfile: any, businessType:
   // Base voice requirements
   let instructions = [
     '- Write like a REAL PERSON talking to a friend, not a corporate press release',
-    '- Use conversational, warm tone: "Hey" instead of "We are pleased to announce"',
+    '- Use conversational, warm tone: "Welcome" instead of "We are pleased to announce"',
     `- Include personality and character - sound distinctly like ${businessName}, not generic ${businessType}`,
     '- Use specific, concrete language instead of vague corporate buzzwords',
     `- Sound like someone who actually understands ${location} life and challenges`
@@ -7503,11 +7503,9 @@ function hasBannedPattern(text: string): boolean {
     /best-in-class/i,
     /world-class/i,
     /industry-leading/i,
-    // TEXTBOOK AND EDUCATION BANS FOR FINTECH
-    /textbook/i,
+    // GENERIC EDUCATION TERMS FOR FINTECH
     /semester/i,
     /professor/i,
-    /student/i,
     /academic/i,
     /school/i,
     /university/i,
