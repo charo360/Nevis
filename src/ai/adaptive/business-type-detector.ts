@@ -77,9 +77,12 @@ const DETECTION_PATTERNS: DetectionKeywords[] = [
       'restaurant', 'cafe', 'coffee', 'bistro', 'eatery', 'dining',
       'food', 'menu', 'cuisine', 'chef', 'kitchen', 'bakery',
       'bar', 'pub', 'grill', 'pizzeria', 'deli', 'catering',
-      'delivery', 'takeout', 'dine-in', 'reservation', 'table'
+      'delivery', 'takeout', 'dine-in', 'reservation', 'table',
+      'cookies', 'pastry', 'pastries', 'bread', 'baked goods',
+      'dessert', 'desserts', 'cake', 'cakes', 'snack', 'snacks',
+      'beverage', 'beverages', 'drink', 'drinks', 'meal', 'meals'
     ],
-    weight: 1.0
+    weight: 1.5  // Higher weight to prioritize food over retail
   },
 
   // FINANCIAL SERVICES
