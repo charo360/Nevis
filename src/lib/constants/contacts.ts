@@ -6,8 +6,7 @@
 export const CREVO_CONTACTS = {
   // General Contact Information
   email: 'support@crevo.app',
-  phone: '+254 700 000 000',
-  address: 'Nairobi, Kenya',
+  phone: '+1 (202) 699-5029',
   
   // Social Media Links
   social: {

@@ -49,10 +49,6 @@ export function Footer() {
                 <Phone className="w-4 h-4" />
                 <span className="text-sm">{CREVO_CONTACTS.phone}</span>
               </a>
-              <div className="flex items-center gap-2 text-gray-400">
-                <MapPin className="w-4 h-4" />
-                <span className="text-sm">{CREVO_CONTACTS.address}</span>
-              </div>
             </div>
           </div>
 
