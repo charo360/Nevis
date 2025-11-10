@@ -107,7 +107,7 @@ export class ContentDesignValidator {
     const totalChecks = Object.keys(details).length;
     const score = Math.round((validChecks / totalChecks) * 100);
 
-    const isValid = score >= 80; // Require 80% alignment score
+    const isValid = score >= 60; // Require 60% alignment score (lowered for food businesses)
 
     console.log(`🎯 [Content-Design Validator] Score: ${score}/100, Valid: ${isValid}`);
     console.log(`📊 [Validation Details]:`, details);

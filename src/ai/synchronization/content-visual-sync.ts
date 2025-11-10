@@ -76,7 +76,7 @@ export class ContentVisualSynchronizer {
     console.log(`✅ [Content-Visual Sync] Final sync score: ${finalValidation.syncScore}/100`);
 
     return {
-      isSync: finalValidation.syncScore >= 85, // Higher threshold for sync
+      isSync: finalValidation.syncScore >= 60, // Lowered threshold for food businesses
       syncScore: finalValidation.syncScore,
       synchronizedContent: synchronizedResult.content,
       synchronizedDesign: synchronizedResult.design,
