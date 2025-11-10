@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { TextBasedImageEditor } from '@/components/studio/text-based-image-editor';
-import { QuickContentWithEditor } from '@/components/studio/quick-content-with-editor';
+// import { TextBasedImageEditor } from '@/components/studio/text-based-image-editor';
+// import { QuickContentWithEditor } from '@/components/studio/quick-content-with-editor';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -160,18 +160,21 @@ export default function TestImageEditorPage() {
                 </div>
               </div>
 
-              {/* Editor Component */}
+              {/* Editor Component - Temporarily Disabled */}
               <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50/30">
                 <div className="flex items-center gap-2 mb-4">
                   <Edit3 className="h-5 w-5 text-blue-600" />
                   <h3 className="font-semibold text-blue-900">Text-Based Editor</h3>
                 </div>
-                <TextBasedImageEditor
-                  originalImageUrl={testImageUrl}
-                  brandProfile={sampleBrandProfile}
-                  platform="instagram"
-                  onEditComplete={handleEditComplete}
-                />
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded">
+                  <p className="text-yellow-800">
+                    🚧 Editor component temporarily disabled for debugging.
+                    The red pen icons above show where editing would be available.
+                  </p>
+                  <p className="text-sm text-yellow-600 mt-2">
+                    Try the basic test page: <a href="/test-basic" className="underline">http://localhost:3001/test-basic</a>
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -224,18 +227,20 @@ export default function TestImageEditorPage() {
                 </div>
               </div>
 
-              {/* Integrated Editor */}
+              {/* Integrated Editor - Temporarily Disabled */}
               <div className="border-2 border-purple-200 rounded-lg p-4 bg-purple-50/30">
                 <div className="flex items-center gap-2 mb-4">
                   <Wand2 className="h-5 w-5 text-purple-600" />
                   <h3 className="font-semibold text-purple-900">Integrated Content Editor</h3>
                 </div>
-                <QuickContentWithEditor
-                  generatedContent={sampleGeneratedContent}
-                  brandProfile={sampleBrandProfile}
-                  platform="instagram"
-                  onContentUpdate={handleContentUpdate}
-                />
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded">
+                  <p className="text-yellow-800">
+                    🚧 Integrated editor component temporarily disabled for debugging.
+                  </p>
+                  <p className="text-sm text-yellow-600 mt-2">
+                    The red pen icons above show where text editing would be available.
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
