@@ -68,9 +68,10 @@ class VertexAIClient {
         this.credentials = JSON.parse(envCreds);
         this.projectId = process.env.VERTEX_AI_PROJECT_ID || this.credentials.project_id;
         this.location = process.env.VERTEX_AI_LOCATION || 'us-central1';
+        console.log('✅ [Vertex AI] Credentials loaded from environment variable');
         return;
       } catch (error) {
-        throw new Error('Failed to parse VERTEX_AI_CREDENTIALS env variable: ' + error);
+        throw new Error('🔑 Vertex AI credentials invalid. Please check VERTEX_AI_CREDENTIALS in .env.local');
       }
     }
 
@@ -82,8 +83,9 @@ class VertexAIClient {
       this.credentials = JSON.parse(credentialsData);
       this.projectId = process.env.VERTEX_AI_PROJECT_ID || this.credentials.project_id;
       this.location = process.env.VERTEX_AI_LOCATION || 'us-central1';
+      console.log('✅ [Vertex AI] Credentials loaded from file');
     } catch (error) {
-      throw new Error(`Failed to load Vertex AI credentials from ${fullPath}: ${error}`);
+      throw new Error(`🔑 Revo 1.5 requires Vertex AI credentials. Please add VERTEX_AI_CREDENTIALS to .env.local or use Revo 2.0 instead. Error: ${error}`);
     }
   }
 

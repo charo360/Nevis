@@ -280,41 +280,41 @@ Format as JSON:
 
     if (businessType.includes('finance') || businessType.includes('bank') || businessType.includes('payment')) {
       return {
-        primaryOutcome: 'Financial Security',
-        customerPain: 'Managing money and financial planning challenges',
+        problem: 'Managing money and financial planning challenges',
         solution: 'Simplified financial tools and secure money management',
-        emotionalBenefit: 'Peace of mind and financial confidence',
-        practicalBenefit: 'Easy money management and secure transactions'
+        result: 'Financial security and peace of mind',
+        proof: 'Trusted by thousands for secure transactions',
+        urgency: 'Start managing your money better today'
       };
     }
 
     if (businessType.includes('tech') || businessType.includes('software') || businessType.includes('app')) {
       return {
-        primaryOutcome: 'Digital Efficiency',
-        customerPain: 'Complex technology and inefficient processes',
+        problem: 'Complex technology and inefficient processes',
         solution: 'User-friendly technology solutions',
-        emotionalBenefit: 'Confidence in using technology',
-        practicalBenefit: 'Streamlined processes and better productivity'
+        result: 'Streamlined processes and better productivity',
+        proof: 'Proven to increase efficiency',
+        urgency: 'Upgrade your workflow today'
       };
     }
 
     if (businessType.includes('health') || businessType.includes('medical') || businessType.includes('wellness')) {
       return {
-        primaryOutcome: 'Better Health',
-        customerPain: 'Health concerns and wellness challenges',
+        problem: 'Health concerns and wellness challenges',
         solution: 'Professional healthcare and wellness services',
-        emotionalBenefit: 'Peace of mind about health',
-        practicalBenefit: 'Improved health and wellbeing'
+        result: 'Improved health and wellbeing',
+        proof: 'Trusted healthcare professionals',
+        urgency: 'Take control of your health now'
       };
     }
 
     // Generic business fallback
     return {
-      primaryOutcome: 'Business Success',
-      customerPain: 'Challenges in achieving business goals',
+      problem: 'Challenges in achieving business goals',
       solution: 'Professional services and expert support',
-      emotionalBenefit: 'Confidence in business decisions',
-      practicalBenefit: 'Better results and business growth'
+      result: 'Better results and business growth',
+      proof: 'Proven track record of success',
+      urgency: 'Start growing your business today'
     };
   }
 
@@ -364,13 +364,13 @@ CONTENT STRATEGY BASED ON 6D CONCEPT:
 
 CRITICAL: Your content must integrate ALL 6 dimensions cohesively to create a unified ad concept.
 ` : `
-CONTENT APPROACH: ${businessOutcome.approach || 'Story'} style
-${businessOutcome.approach === 'Story' ? 'Tell a specific customer journey - show the before/after transformation.' : ''}
-${businessOutcome.approach === 'Education' ? 'Teach customers something valuable they didn\'t know about their problem.' : ''}
-${businessOutcome.approach === 'Promo' ? 'Present a specific offer or promotion with clear value and urgency.' : ''}
-${businessOutcome.approach === 'Testimonial' ? 'Feature a specific customer success story with real results.' : ''}
+CONTENT APPROACH: Randomly select from ['Story', 'Education', 'Promo', 'Testimonial', 'Lifestyle'] and apply:
+- Story: Tell a specific customer journey - show the before/after transformation.
+- Education: Teach customers something valuable they didn't know about their problem.
+- Promo: Present a specific offer or promotion with clear value and urgency.
+- Testimonial: Feature a specific customer success story with real results.
+- Lifestyle: Show how this business improves daily life with specific scenarios.
 `}
-${businessOutcome.approach === 'Lifestyle' ? 'Show how this business improves daily life with specific scenarios.' : ''}
 
 CRITICAL MISSION: Address a SPECIFIC customer problem with MEASURABLE outcomes using BEFORE/AFTER contrast.
 
@@ -553,7 +553,7 @@ CTA INSTRUCTIONS:
 Create a specific, actionable CTA that matches:
 - The business type (${businessType})
 - The urgency factor (${businessOutcome.urgency})
-- The content approach (${businessOutcome.approach || 'Story'})
+- The content approach (Story/Education/Promo/Testimonial/Lifestyle)
 Examples: "Apply Today", "Book Free Consultation", "Start 7-Day Trial", "Get Instant Quote"
 
 QUALITY CHECKLIST - Your response MUST pass these tests:

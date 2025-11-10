@@ -285,7 +285,9 @@ export async function POST(request: NextRequest) {
         );
       }
     } catch (generationError) {
-      console.error(`❌ ${revoModel} generation failed:`, generationError);
+      console.error(` [QuickContent] ${revoModel} generation failed:`, generationError);
+      console.error(` [QuickContent] ${revoModel} error stack:`, generationError instanceof Error ? generationError.stack : 'No stack');
+      console.error(` [QuickContent] ${revoModel} error details:`, JSON.stringify(generationError, null, 2));
 
       const errorMessage = generationError instanceof Error
         ? generationError.message
@@ -294,7 +296,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: errorMessage,
-          details: generationError,
+          details: generationError instanceof Error ? {
+            message: generationError.message,
+            stack: generationError.stack,
+            name: generationError.name
+          } : generationError,
           message: `${revoModel} generation failed`,
         },
         { status: 500 }
@@ -332,6 +338,24 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('❌ Quick Content API Error:', error);
+    console.error('❌ Quick Content Error Details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack trace',
+      name: error instanceof Error ? error.name : 'Unknown'
+    });
+    
+    // DEVELOPMENT MODE: Show actual error
+    if (process.env.NODE_ENV === 'development') {
+      return NextResponse.json(
+        { 
+          error: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : 'No stack trace',
+          details: error
+        },
+        { status: 500 }
+      );
+    }
+    
     // Provide user-friendly error messages without re-reading the request body
     let errorMessage = 'Content generation failed';
     if (error instanceof Error) {

@@ -1,9 +1,10 @@
 /**
  * Assistant Manager - Core Orchestration System
- * 
+ *
  * This class manages all OpenAI Assistants for Revo 2.0.
  * It's designed to be completely generic - no business-type specific logic here.
  * All business logic is in assistant-configs.ts.
+ * Fixed: Added safety check for undefined platform parameter
  */
 
 import OpenAI from 'openai';
@@ -104,6 +105,12 @@ export class AssistantManager {
    */
   async generateContent(request: AssistantContentRequest): Promise<AssistantContentResponse> {
     const startTime = Date.now();
+
+    // Validate platform parameter
+    if (!request.platform) {
+      console.warn(`⚠️ [Assistant Manager] Platform not provided, defaulting to 'instagram'`);
+      request.platform = 'instagram';
+    }
 
     // Validate assistant is available
     if (!this.isAvailable(request.businessType)) {
@@ -251,6 +258,9 @@ export class AssistantManager {
       marketingAngle,
       useLocalLanguage,
     } = request;
+
+    // Safety check for platform
+    const safePlatform = platform || 'instagram';
 
     let message = `🎨 **CRITICAL: MAXIMUM VARIETY REQUIRED**\n`;
     message += `This is request #${Date.now() % 1000} - you MUST create completely UNIQUE content.\n`;
@@ -1006,7 +1016,7 @@ export class AssistantManager {
     message += `2. Subheadline (15-25 words that expand on the headline's promise)\n`;
     message += `3. Caption (50-100 words ACTION-ORIENTED story from headline/subheadline - NOT picture description)\n`;
     message += `4. Call-to-Action (2-4 words matching the benefit)\n`;
-    message += `5. Hashtags (${platform.toLowerCase() === 'instagram' ? '5' : '3'} relevant tags)\n\n`;
+    message += `5. Hashtags (${safePlatform.toLowerCase() === 'instagram' ? '5' : '3'} relevant tags)\n\n`;
 
     message += `Return as JSON with both content and design specifications:\n`;
     message += `{\n`;

@@ -3592,41 +3592,41 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
     const businessType = detectBusinessType(enhancedOptions.brandProfile);
     console.log(`🏢 [Revo 2.0] Detected business type: ${businessType.primaryType}`);
 
-    // Step 2: DEEP BUSINESS UNDERSTANDING (New!)
-    const { analyzeBusinessAndGetGuidelines } = await import('./business-understanding');
+    // Step 2: DEEP BUSINESS UNDERSTANDING (New!) - TEMPORARILY DISABLED FOR TESTING
+    // const { analyzeBusinessAndGetGuidelines } = await import('./business-understanding');
     
-    let deepBusinessUnderstanding;
-    try {
-      console.log(`🧠 [Revo 2.0] Performing deep business analysis...`);
-      const bp = enhancedOptions.brandProfile as any; // Type cast to access extended properties
-      deepBusinessUnderstanding = await Promise.race([
-        analyzeBusinessAndGetGuidelines({
-          businessName: bp.businessName,
-          website: bp.website,
-          description: bp.description,
-          industry: bp.industry,
-          documents: bp.documents,
-          products: bp.products,
-          services: typeof bp.services === 'string' ? undefined : bp.services,
-          pricing: bp.pricing,
-          about: bp.about,
-          mission: bp.mission,
-          values: bp.values
-        }, {
-          contentType: 'social_post',
-          platform: enhancedOptions.platform,
-          objective: 'Generate engaging content that reflects the business\'s unique value'
-        }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Deep business analysis timeout')), 60000))
-      ]);
-      console.log(`✅ [Revo 2.0] Deep business understanding complete`);
-      console.log(`   - Business Model: ${deepBusinessUnderstanding.businessInsight.businessModel.type}`);
-      console.log(`   - Target: ${deepBusinessUnderstanding.businessInsight.targetAudience.primary.segment}`);
-      console.log(`   - Innovation: ${deepBusinessUnderstanding.businessInsight.innovation.keyDifferentiator}`);
-    } catch (dbuError) {
-      console.warn(`⚠️ [Revo 2.0] Deep business understanding failed, continuing without it:`, dbuError);
-      deepBusinessUnderstanding = null;
-    }
+    let deepBusinessUnderstanding = null; // Temporarily disabled
+    // try {
+    //   console.log(`🧠 [Revo 2.0] Performing deep business analysis...`);
+    //   const bp = enhancedOptions.brandProfile as any; // Type cast to access extended properties
+    //   deepBusinessUnderstanding = await Promise.race([
+    //     analyzeBusinessAndGetGuidelines({
+    //       businessName: bp.businessName,
+    //       website: bp.website,
+    //       description: bp.description,
+    //       industry: bp.industry,
+    //       documents: bp.documents,
+    //       products: bp.products,
+    //       services: typeof bp.services === 'string' ? undefined : bp.services,
+    //       pricing: bp.pricing,
+    //       about: bp.about,
+    //       mission: bp.mission,
+    //       values: bp.values
+    //     }, {
+    //       contentType: 'social_post',
+    //       platform: enhancedOptions.platform,
+    //       objective: 'Generate engaging content that reflects the business\'s unique value'
+    //     }),
+    //     new Promise((_, reject) => setTimeout(() => reject(new Error('Deep business analysis timeout')), 60000))
+    //   ]);
+    //   console.log(`✅ [Revo 2.0] Deep business understanding complete`);
+    //   console.log(`   - Business Model: ${deepBusinessUnderstanding.businessInsight.businessModel.type}`);
+    //   console.log(`   - Target: ${deepBusinessUnderstanding.businessInsight.targetAudience.primary.segment}`);
+    //   console.log(`   - Innovation: ${deepBusinessUnderstanding.businessInsight.innovation.keyDifferentiator}`);
+    // } catch (dbuError) {
+    //   console.warn(`⚠️ [Revo 2.0] Deep business understanding failed, continuing without it:`, dbuError);
+    //   deepBusinessUnderstanding = null;
+    // }
 
     // Step 3: Gather business intelligence for enhanced context
     const { businessIntelligenceGatherer } = await import('./intelligence/business-intelligence-gatherer');

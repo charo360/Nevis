@@ -2451,8 +2451,8 @@ export async function generateRevo10Content(input: {
 
         // Validate story coherence between headline and caption
         const coherenceValidation = validateStoryCoherence(
-          assistantResponse.headline,
-          assistantResponse.caption,
+          assistantResponse.content.headline,
+          assistantResponse.content.caption,
           detectedType
         );
 
@@ -2486,14 +2486,14 @@ export async function generateRevo10Content(input: {
           // Return assistant-generated content
           const processingTime = Date.now() - startTime;
           return {
-            content: assistantResponse.caption,
-            headline: assistantResponse.headline,
-            subheadline: assistantResponse.subheadline || '',
-            callToAction: assistantResponse.cta,
-            hashtags: Array.isArray(assistantResponse.hashtags)
-              ? assistantResponse.hashtags.join(' ')
-              : assistantResponse.hashtags,
-            catchyWords: assistantResponse.headline,
+            content: assistantResponse.content.caption,
+            headline: assistantResponse.content.headline,
+            subheadline: assistantResponse.content.subheadline || '',
+            callToAction: assistantResponse.content.cta,
+            hashtags: Array.isArray(assistantResponse.content.hashtags)
+              ? assistantResponse.content.hashtags.join(' ')
+              : assistantResponse.content.hashtags,
+            catchyWords: assistantResponse.content.headline,
             contentStrategy: 'assistant-generated',
             businessStrengths: ['Specialized content'],
             marketOpportunities: ['AI-optimized'],

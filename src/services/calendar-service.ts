@@ -46,11 +46,20 @@ export class CalendarService {
    */
   static async getTodaysScheduledServices(brandId: string): Promise<ScheduledService[]> {
     try {
+      // Validate brandId before making API call
+      if (!brandId || brandId === 'undefined' || brandId === 'null') {
+        console.warn('⚠️ [Calendar Service] Invalid brandId provided:', brandId);
+        return [];
+      }
+
       const now = new Date();
       const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-      const response = await fetch(`/api/calendar?brandId=${brandId}&date=${today}`);
-      if (!response.ok) throw new Error('Failed to fetch calendar data');
+      const response = await fetch(`/api/calendar?brandId=${encodeURIComponent(brandId)}&date=${today}`);
+      if (!response.ok) {
+        console.warn('⚠️ [Calendar Service] API returned error:', response.status, response.statusText);
+        return [];
+      }
       
       const allScheduledContent = await response.json();
 
@@ -58,7 +67,7 @@ export class CalendarService {
 
       return transformedServices;
     } catch (error) {
-      console.error('Error fetching today\'s scheduled services:', error);
+      console.error('❌ [Calendar Service] Error fetching today\'s scheduled services:', error);
       // Database-only mode - never fallback to localStorage
       return [];
     }
@@ -69,8 +78,17 @@ export class CalendarService {
    */
   static async getUpcomingScheduledServices(brandId: string, days: number = 7): Promise<ScheduledService[]> {
     try {
-      const response = await fetch(`/api/calendar?brandId=${brandId}`);
-      if (!response.ok) throw new Error('Failed to fetch calendar data');
+      // Validate brandId before making API call
+      if (!brandId || brandId === 'undefined' || brandId === 'null') {
+        console.warn('⚠️ [Calendar Service] Invalid brandId provided:', brandId);
+        return [];
+      }
+
+      const response = await fetch(`/api/calendar?brandId=${encodeURIComponent(brandId)}`);
+      if (!response.ok) {
+        console.warn('⚠️ [Calendar Service] API returned error:', response.status, response.statusText);
+        return [];
+      }
       
       const allScheduledContent = await response.json();
       const today = new Date();
@@ -83,7 +101,7 @@ export class CalendarService {
 
       return this.transformDatabaseToScheduledServices(upcomingContent, false, true);
     } catch (error) {
-      console.error('Error fetching upcoming scheduled services:', error);
+      console.error('❌ [Calendar Service] Error fetching upcoming scheduled services:', error);
       return [];
     }
   }
@@ -93,6 +111,20 @@ export class CalendarService {
    */
   static async getCalendarContext(brandId: string): Promise<CalendarContext> {
     try {
+      // Validate brandId before making API calls
+      if (!brandId || brandId === 'undefined' || brandId === 'null') {
+        console.warn('⚠️ [Calendar Service] Invalid brandId provided to getCalendarContext:', brandId);
+        return {
+          todaysServices: [],
+          upcomingServices: [],
+          totalScheduledItems: 0,
+          priorityServices: [],
+          platformDistribution: {},
+          serviceTypes: [],
+          hasScheduledContent: false
+        };
+      }
+
       const [todaysServices, upcomingServices] = await Promise.all([
         this.getTodaysScheduledServices(brandId),
         this.getUpcomingScheduledServices(brandId)
@@ -139,13 +171,22 @@ export class CalendarService {
    */
   static async getScheduledServicesForDate(brandId: string, date: string): Promise<ScheduledService[]> {
     try {
-      const response = await fetch(`/api/calendar?brandId=${brandId}&date=${date}`);
-      if (!response.ok) throw new Error('Failed to fetch calendar data');
+      // Validate brandId before making API call
+      if (!brandId || brandId === 'undefined' || brandId === 'null') {
+        console.warn('⚠️ [Calendar Service] Invalid brandId provided:', brandId);
+        return [];
+      }
+
+      const response = await fetch(`/api/calendar?brandId=${encodeURIComponent(brandId)}&date=${date}`);
+      if (!response.ok) {
+        console.warn('⚠️ [Calendar Service] API returned error:', response.status, response.statusText);
+        return [];
+      }
       
       const dateContent = await response.json();
       return this.transformDatabaseToScheduledServices(dateContent);
     } catch (error) {
-      console.error('Error fetching scheduled services for date:', error);
+      console.error('❌ [Calendar Service] Error fetching scheduled services for date:', error);
       return [];
     }
   }

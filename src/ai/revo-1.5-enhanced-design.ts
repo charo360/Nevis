@@ -347,8 +347,14 @@ function validateStoryCoherence15(
 }
 
 function extractStoryTheme15(text: string, businessType: string): { primary: string; secondary?: string } {
+  // Safety check for undefined/null text
+  if (!text || typeof text !== 'string') {
+    console.warn(`⚠️ [extractStoryTheme15] Invalid text parameter:`, text);
+    return { primary: 'general' };
+  }
+
   const textLower = text.toLowerCase();
-  const businessLower = businessType.toLowerCase();
+  const businessLower = businessType?.toLowerCase() || '';
 
   // Theme categories with keywords
   const themes = {
@@ -4379,11 +4385,17 @@ export async function generateRevo15EnhancedDesign(
         });
 
         console.log(`✅ [Revo 1.5] Assistant generation successful`);
+        console.log(`🔍 [Revo 1.5] Assistant response structure:`, {
+          hasContent: !!assistantResponse.content,
+          headline: assistantResponse.content?.headline,
+          caption: assistantResponse.content?.caption,
+          fullResponse: JSON.stringify(assistantResponse).substring(0, 200)
+        });
 
         // Validate story coherence between headline and caption
         const coherenceValidation = validateStoryCoherence15(
-          assistantResponse.headline,
-          assistantResponse.caption,
+          assistantResponse.content.headline,
+          assistantResponse.content.caption,
           detectedType
         );
 
@@ -4419,11 +4431,11 @@ export async function generateRevo15EnhancedDesign(
           const adConcept = generate6DimensionalAdConcept();
 
           const contentResult = {
-            caption: assistantResponse.caption,
-            hashtags: assistantResponse.hashtags,
-            headline: assistantResponse.headline,
-            subheadline: assistantResponse.subheadline || '',
-            callToAction: assistantResponse.cta
+            caption: assistantResponse.content.caption,
+            hashtags: assistantResponse.content.hashtags,
+            headline: assistantResponse.content.headline,
+            subheadline: assistantResponse.content.subheadline || '',
+            callToAction: assistantResponse.content.cta
           };
 
           const imageUrl = await generateFinalImage(enhancedInput, designPlan, contentResult, adConcept);
@@ -4565,6 +4577,12 @@ export async function generateRevo15EnhancedDesign(
 
     // Extract user-friendly message if it exists
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    // DEVELOPMENT MODE: Show actual error for debugging
+    if (process.env.NODE_ENV === 'development' || process.env.REVO_DEBUG === 'true') {
+      console.error('🔧 [Revo 1.5 DEBUG MODE] Throwing actual error for debugging');
+      throw error; // Throw the original error in development
+    }
 
     // If it's already a user-friendly message, use it directly
     if (errorMessage.includes('😅') || errorMessage.includes('🤖') || errorMessage.includes('😔')) {
