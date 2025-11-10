@@ -500,11 +500,27 @@ export class AssistantManager {
       message += `**NOTE:** The full business documents have been uploaded and are available for you to search and analyze using the file_search tool. You can reference specific details, pricing, and information directly from these documents.\n\n`;
     }
 
+    // 🎯 CORE BUSINESS UNDERSTANDING (MOST IMPORTANT - USE THIS FIRST!)
+    if (request.businessIntelligence && request.businessIntelligence.coreBusinessUnderstanding) {
+      const core = request.businessIntelligence.coreBusinessUnderstanding;
+      message += `🎯 **CORE BUSINESS UNDERSTANDING** (USE THIS TO GUIDE ALL CONTENT):\n\n`;
+      message += `📍 **What They Do:** ${core.whatTheyDo}\n`;
+      message += `👥 **Who It's For:** ${core.whoItsFor}\n`;
+      message += `🔧 **How They Do It:** ${core.howTheyDoIt}\n`;
+      message += `💡 **Why It Matters:** ${core.whyItMatters}\n`;
+      message += `🌍 **Context:** ${core.localContext}\n\n`;
+      message += `**🚨 CRITICAL:** Base ALL content on this understanding. This is WHO they are and WHAT they offer.\n`;
+      message += `- Headlines should reflect WHAT THEY DO and WHY IT MATTERS\n`;
+      message += `- Captions should speak to WHO IT'S FOR and address their needs\n`;
+      message += `- Avoid generic corporate language that could apply to any business\n`;
+      message += `- Be specific about their actual offerings and value\n\n`;
+    }
+
     // Business Intelligence Context
     if (request.businessIntelligence) {
       const bi = request.businessIntelligence;
       message += `**BUSINESS INTELLIGENCE CONTEXT:**\n`;
-      
+
       if (bi.competitive) {
         message += `**Competitive Landscape:**\n`;
         message += `- Main Competitors: ${bi.competitive.mainCompetitors.slice(0, 3).join(', ')}\n`;
@@ -512,7 +528,7 @@ export class AssistantManager {
         message += `- Key Advantages: ${bi.competitive.competitiveAdvantages.slice(0, 3).join(', ')}\n`;
         message += `- Market Opportunities: ${bi.competitive.differentiationOpportunities.slice(0, 2).join(', ')}\n`;
       }
-      
+
       if (bi.customer) {
         message += `**Customer Insights:**\n`;
         message += `- Primary Audience: ${bi.customer.primaryAudience}\n`;
@@ -520,20 +536,21 @@ export class AssistantManager {
         message += `- Main Motivations: ${bi.customer.motivations.slice(0, 3).join(', ')}\n`;
         message += `- Preferred Channels: ${bi.customer.preferredChannels.slice(0, 2).join(', ')}\n`;
       }
-      
+
       if (bi.content) {
         message += `**Content Strategy:**\n`;
         message += `- Key Messages: ${bi.content.keyMessages.slice(0, 3).join(', ')}\n`;
         message += `- Value Propositions: ${bi.content.valuePropositions.slice(0, 3).join(', ')}\n`;
         message += `- Recommended Tone: ${bi.content.toneOfVoice}\n`;
       }
-      
-      if (bi.recommendations) {
-        message += `**Strategic Recommendations:**\n`;
-        message += `- Immediate Focus: ${bi.recommendations.immediate.slice(0, 2).join(', ')}\n`;
-        message += `- Content Focus: ${bi.recommendations.content.slice(0, 2).join(', ')}\n`;
+
+      if (bi.recommendations && bi.recommendations.content) {
+        message += `**Content Guidelines:**\n`;
+        bi.recommendations.content.forEach((rec: string) => {
+          message += `- ${rec}\n`;
+        });
       }
-      
+
       message += `\n**IMPORTANT:** Use this business intelligence to create highly targeted, competitive, and strategic content that addresses specific customer needs and market opportunities.\n\n`;
     }
 

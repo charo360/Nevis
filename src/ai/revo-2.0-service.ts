@@ -3628,13 +3628,13 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
     //   deepBusinessUnderstanding = null;
     // }
 
-    // Step 3: Gather business intelligence for enhanced context
-    const { businessIntelligenceGatherer } = await import('./intelligence/business-intelligence-gatherer');
-    
+    // Step 3: Gather ENHANCED business intelligence for deep business understanding
+    const { enhancedBusinessIntelligenceGatherer } = await import('./intelligence/enhanced-bi-gatherer');
+
     let businessIntelligence;
     try {
       businessIntelligence = await Promise.race([
-        businessIntelligenceGatherer.gatherBusinessIntelligence({
+        enhancedBusinessIntelligenceGatherer.gatherBusinessIntelligence({
           brandProfile: enhancedOptions.brandProfile,
           businessType: businessType.primaryType,
           platform: enhancedOptions.platform,
@@ -3642,9 +3642,12 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
         }),
         new Promise((_, reject) => setTimeout(() => reject(new Error('Business intelligence timeout')), 45000))
       ]);
-      console.log(`🧠 [Revo 2.0] Business intelligence gathered: ${businessIntelligence.competitive.mainCompetitors.length} competitors, ${businessIntelligence.customer.painPoints.length} pain points`);
+      console.log(`🧠 [Revo 2.0] Enhanced BI gathered:`);
+      console.log(`   📍 What they do: ${businessIntelligence.coreBusinessUnderstanding.whatTheyDo}`);
+      console.log(`   👥 Who it's for: ${businessIntelligence.coreBusinessUnderstanding.whoItsFor}`);
+      console.log(`   💡 Why it matters: ${businessIntelligence.coreBusinessUnderstanding.whyItMatters}`);
     } catch (biError) {
-      console.warn(`⚠️ [Revo 2.0] Business intelligence failed, using basic context:`, biError);
+      console.warn(`⚠️ [Revo 2.0] Enhanced business intelligence failed, using basic context:`, biError);
       businessIntelligence = null;
     }
 
