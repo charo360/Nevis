@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Wand2, TestTube, Image as ImageIcon } from 'lucide-react';
+import { Wand2, TestTube, Image as ImageIcon, Edit3, Pen } from 'lucide-react';
 import { BrandProfile } from '@/lib/types';
 
 // Sample brand profile for testing
@@ -100,6 +100,31 @@ export default function TestImageEditorPage() {
         </CardContent>
       </Card>
 
+      {/* Quick Start Guide */}
+      <Card className="border-2 border-green-200 bg-green-50/50">
+        <CardContent className="pt-6">
+          <div className="text-center space-y-4">
+            <div className="flex items-center justify-center gap-2">
+              <div className="bg-red-500 text-white p-2 rounded-full">
+                <Pen className="h-5 w-5" />
+              </div>
+              <h2 className="text-xl font-semibold">Look for the Red Pen Icons!</h2>
+            </div>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              The red pen icons (🖊️) indicate editable elements. Scroll down to the "Standalone Editor" tab
+              to see the text-based editing interface where you can type commands like "Change 'Special Offer' to 'Limited Deal'".
+            </p>
+            <Button
+              onClick={() => setActiveTab('standalone')}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Edit3 className="h-4 w-4 mr-2" />
+              Go to Text Editor
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Test Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
@@ -111,18 +136,43 @@ export default function TestImageEditorPage() {
         <TabsContent value="standalone" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Standalone Text-Based Image Editor</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Edit3 className="h-5 w-5 text-blue-500" />
+                Standalone Text-Based Image Editor
+              </CardTitle>
               <p className="text-sm text-muted-foreground">
-                Test the editor component independently with a sample image.
+                Test the editor component independently with a sample image. The red pen icon indicates editable areas.
               </p>
             </CardHeader>
-            <CardContent>
-              <TextBasedImageEditor
-                originalImageUrl={testImageUrl}
-                brandProfile={sampleBrandProfile}
-                platform="instagram"
-                onEditComplete={handleEditComplete}
-              />
+            <CardContent className="space-y-6">
+              {/* Image Preview with Edit Icon */}
+              <div className="relative inline-block">
+                <img
+                  src={testImageUrl}
+                  alt="Test Image"
+                  className="max-w-md border rounded-lg shadow-sm"
+                />
+                <div className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full shadow-lg">
+                  <Pen className="h-4 w-4" />
+                </div>
+                <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
+                  Click pen to edit with text commands
+                </div>
+              </div>
+
+              {/* Editor Component */}
+              <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50/30">
+                <div className="flex items-center gap-2 mb-4">
+                  <Edit3 className="h-5 w-5 text-blue-600" />
+                  <h3 className="font-semibold text-blue-900">Text-Based Editor</h3>
+                </div>
+                <TextBasedImageEditor
+                  originalImageUrl={testImageUrl}
+                  brandProfile={sampleBrandProfile}
+                  platform="instagram"
+                  onEditComplete={handleEditComplete}
+                />
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -131,18 +181,62 @@ export default function TestImageEditorPage() {
         <TabsContent value="integrated" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Integrated Quick Content with Editor</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Wand2 className="h-5 w-5 text-purple-500" />
+                Integrated Quick Content with Editor
+              </CardTitle>
               <p className="text-sm text-muted-foreground">
                 Test the full integrated experience with content preview, editing, and history.
               </p>
             </CardHeader>
-            <CardContent>
-              <QuickContentWithEditor
-                generatedContent={sampleGeneratedContent}
-                brandProfile={sampleBrandProfile}
-                platform="instagram"
-                onContentUpdate={handleContentUpdate}
-              />
+            <CardContent className="space-y-6">
+              {/* Content Preview with Edit Icons */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="relative">
+                  <img
+                    src={sampleGeneratedContent.imageUrl}
+                    alt="Generated Content"
+                    className="w-full border rounded-lg shadow-sm"
+                  />
+                  <div className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full shadow-lg">
+                    <Pen className="h-4 w-4" />
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="relative p-3 border rounded bg-gray-50">
+                    <div className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full">
+                      <Pen className="h-3 w-3" />
+                    </div>
+                    <h3 className="font-semibold">{sampleGeneratedContent.headline}</h3>
+                  </div>
+                  <div className="relative p-3 border rounded bg-gray-50">
+                    <div className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full">
+                      <Pen className="h-3 w-3" />
+                    </div>
+                    <p className="text-sm">{sampleGeneratedContent.subheadline}</p>
+                  </div>
+                  <div className="relative p-3 border rounded bg-gray-50">
+                    <div className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full">
+                      <Pen className="h-3 w-3" />
+                    </div>
+                    <p className="text-xs text-muted-foreground">{sampleGeneratedContent.caption}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Integrated Editor */}
+              <div className="border-2 border-purple-200 rounded-lg p-4 bg-purple-50/30">
+                <div className="flex items-center gap-2 mb-4">
+                  <Wand2 className="h-5 w-5 text-purple-600" />
+                  <h3 className="font-semibold text-purple-900">Integrated Content Editor</h3>
+                </div>
+                <QuickContentWithEditor
+                  generatedContent={sampleGeneratedContent}
+                  brandProfile={sampleBrandProfile}
+                  platform="instagram"
+                  onContentUpdate={handleContentUpdate}
+                />
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
