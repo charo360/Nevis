@@ -110,8 +110,11 @@ export class IntegratedPromptGenerator {
     if (content.subheadline) {
       prompt += `- Subheadline: "${content.subheadline}" (medium size, supports headline)\n`;
     }
-    prompt += `- Caption: "${this.truncateForImage(content.caption, 80)}" (smaller text, readable)\n`;
     prompt += `- CTA: "${content.cta}" (prominent button or call-out)\n\n`;
+
+    // Caption is for context only, NOT to be displayed on image
+    prompt += `**CAPTION CONTEXT (DO NOT DISPLAY ON IMAGE):**\n`;
+    prompt += `- Caption Story: "${this.truncateForImage(content.caption, 100)}" (for visual inspiration only, NOT text on image)\n\n`;
 
     // VISUAL SCENE (from design specifications)
     prompt += `**VISUAL SCENE:**\n`;
@@ -128,11 +131,20 @@ export class IntegratedPromptGenerator {
 
     // BRAND INTEGRATION
     prompt += `**BRAND INTEGRATION:**\n`;
-    if (brandProfile.brandColors?.primary) {
-      prompt += `- Primary Color: ${brandProfile.brandColors.primary} (60% usage)\n`;
+
+    // Check both brandColors.primary and primaryColor for compatibility
+    const primaryColor = brandProfile.brandColors?.primary || brandProfile.primaryColor;
+    const secondaryColor = brandProfile.brandColors?.secondary || brandProfile.accentColor;
+    const backgroundColor = brandProfile.brandColors?.background || brandProfile.backgroundColor;
+
+    if (primaryColor) {
+      prompt += `- Primary Color: ${primaryColor} (60% usage - main brand color)\n`;
     }
-    if (brandProfile.brandColors?.secondary) {
-      prompt += `- Secondary Color: ${brandProfile.brandColors.secondary} (30% usage)\n`;
+    if (secondaryColor) {
+      prompt += `- Secondary Color: ${secondaryColor} (30% usage - accent color)\n`;
+    }
+    if (backgroundColor) {
+      prompt += `- Background Color: ${backgroundColor} (10% usage - background/neutral)\n`;
     }
     if (brandProfile.designStyle) {
       prompt += `- Brand Style: ${brandProfile.designStyle}\n`;
@@ -197,8 +209,9 @@ export class IntegratedPromptGenerator {
     notes.push(`Mood "${designSpecs.mood_direction}" aligns with content tone`);
 
     // Brand alignment
-    if (brandProfile.brandColors?.primary) {
-      notes.push(`Primary color ${brandProfile.brandColors.primary} used prominently`);
+    const primaryColor = brandProfile.brandColors?.primary || brandProfile.primaryColor;
+    if (primaryColor) {
+      notes.push(`Primary color ${primaryColor} used prominently`);
     }
     if (brandProfile.designStyle) {
       notes.push(`Design style matches brand personality: ${brandProfile.designStyle}`);
@@ -235,6 +248,14 @@ export class IntegratedPromptGenerator {
   }
 
   /**
+   * Clean website URL by removing protocol prefix
+   */
+  private cleanWebsiteUrl(url: string): string {
+    if (!url) return '';
+    return url.replace(/^https?:\/\//, '');
+  }
+
+  /**
    * Build contact information section
    */
   private buildContactSection(brandProfile: any): string {
@@ -244,7 +265,8 @@ export class IntegratedPromptGenerator {
     // Extract contact info from multiple possible sources
     const phone = brandProfile.contactInfo?.phone || brandProfile.contact?.phone || '';
     const email = brandProfile.contactInfo?.email || brandProfile.contact?.email || '';
-    const website = brandProfile.website || brandProfile.contactInfo?.website || brandProfile.contact?.website || '';
+    const rawWebsite = brandProfile.websiteUrl || brandProfile.contactInfo?.website || brandProfile.contact?.website || brandProfile.website || '';
+    const website = this.cleanWebsiteUrl(rawWebsite);
 
     if (phone) {
       contactSection += `- Phone: 📞 ${phone}\n`;
@@ -271,10 +293,11 @@ export class IntegratedPromptGenerator {
   private buildContactInstructions(brandProfile: any): string {
     const phone = brandProfile.contactInfo?.phone || brandProfile.contact?.phone || '';
     const email = brandProfile.contactInfo?.email || brandProfile.contact?.email || '';
-    const website = brandProfile.website || brandProfile.contactInfo?.website || brandProfile.contact?.website || '';
+    const rawWebsite = brandProfile.websiteUrl || brandProfile.contactInfo?.website || brandProfile.contact?.website || brandProfile.website || '';
+    const website = this.cleanWebsiteUrl(rawWebsite);
 
     const contacts = [phone, email, website].filter(Boolean);
-    
+
     if (contacts.length === 0) {
       return 'Include business name prominently';
     }

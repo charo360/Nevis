@@ -668,26 +668,42 @@ When you receive "CORE BUSINESS UNDERSTANDING" in the prompt:
 - Be SPECIFIC to their business, not generic to all food businesses
 
 📋 CORE REQUIREMENTS:
-1. Use sensory, appetite-appealing language (taste, aroma, texture, visual)
-2. Highlight signature dishes, specials, and unique offerings
-3. Use ordering CTAs: "Order Now", "Reserve Table", "View Menu", "Delivery Available"
-4. Include pricing for specials and promotions
-5. Mention dining options: dine-in, takeout, delivery, catering
-6. Create urgency with limited-time offers and daily specials
+1. HEADLINES: Write conversationally using "you/your" - like advice from a friend, NOT corporate announcements
+2. Use sensory, appetite-appealing language (taste, aroma, texture, visual)
+3. Highlight signature dishes, specials, and unique offerings
+4. Use ordering CTAs: "Order Now", "Reserve Table", "View Menu", "Delivery Available"
+5. Include pricing for specials and promotions
+6. Mention dining options: dine-in, takeout, delivery, catering
+7. Create urgency with limited-time offers and daily specials
 
 📝 CONTENT STRUCTURE:
-- Headline (4-6 words): Dish-focused or experience-driven
+- Headline (4-6 words): CONVERSATIONAL, personal, using "you/your" - like advice from a friend
 - Subheadline (15-25 words): Sensory description with appeal
 - Caption (50-100 words): Includes menu items, experience, location, and ordering options
 - CTA (2-4 words): Ordering or reservation-oriented
 - Hashtags: Food type and location-specific
 
+🗣️ CONVERSATIONAL HEADLINE EXAMPLES:
+✅ GOOD (Personal & Direct):
+- "Your Kids Will Actually Ask for These"
+- "Finally, Snacks You Love AND Approve"
+- "Keep Your Brain Sharp While You Study"
+- "Stay Energized, Wherever Life Takes You"
+- "Make Your Kids Love Eating Healthy"
+- "Give Your Brain the Fuel It Needs"
+
+❌ AVOID (Too Formal/Corporate):
+- "Transform Malnutrition with Cookies"
+- "Fuel Learning with Samaki Cookies"
+- "Premium Quality Fish-Based Nutrition"
+- "Innovative Healthy Snack Solutions"
+
 🎪 MARKETING ANGLES FOR FOOD:
-1. Signature dish: "Famous Nyama Choma - Grilled to Perfection" (highlight specialty)
-2. Daily special: "Tuesday Special: Half-Price Pizza" (create urgency)
-3. New menu: "New: Authentic Italian Pasta - Chef's Recipe" (announce additions)
-4. Experience: "Rooftop Dining - Sunset Views & Fine Wine" (sell atmosphere)
-5. Convenience: "Hot Delivery in 30 Minutes - Order Now" (emphasize speed)
+1. Personal benefit: "Your Kids Will Actually Ask for These" (speak directly to parent)
+2. Problem solving: "Finally, Healthy Snacking Made Easy" (address frustration)
+3. Direct advice: "Give Your Brain the Fuel It Needs" (like friend's recommendation)
+4. Relatable moment: "Stay Energized on Your Busy Day" (understand their life)
+5. Personal promise: "You'll Love How These Taste" (direct commitment)
 6. Value: "Lunch Combo KES 500 - Meal + Drink" (show deals)
 
 💡 FOOD-SPECIFIC TACTICS:
@@ -740,7 +756,7 @@ When you receive "CORE BUSINESS UNDERSTANDING" in the prompt:
 📊 OUTPUT FORMAT:
 Return ONLY valid JSON in this exact format:
 {
-  "headline": "Signature Dish - Sensory Appeal",
+  "headline": "Your Kids Will Actually Ask for These",
   "subheadline": "Appetite-appealing description with unique element",
   "caption": "Detailed menu description with sensory language, dining options, and location",
   "cta": "Order Now",

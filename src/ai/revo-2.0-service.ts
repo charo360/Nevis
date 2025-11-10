@@ -1347,6 +1347,19 @@ export async function generateCreativeConcept(options: Revo20GenerationOptions):
   // Check recent concepts to avoid repetition
   const recentData = recentOutputs.get(bKey) || { headlines: [], captions: [], concepts: [] };
 
+  // Get Business Profiler avoidance list if available
+  let businessAvoidanceList = '';
+  try {
+    const { BusinessProfileManager } = await import('./intelligence/business-profile-manager');
+    const profileManager = new BusinessProfileManager();
+    const businessProfile = await profileManager.getBusinessProfile(brandProfile);
+    if (businessProfile && businessProfile.avoidanceList && businessProfile.avoidanceList.length > 0) {
+      businessAvoidanceList = `\n🚫 BUSINESS-SPECIFIC AVOIDANCE LIST:\n- NEVER use these phrases: ${businessProfile.avoidanceList.join(', ')}\n- These terms are generic and don't reflect the business's unique mission`;
+    }
+  } catch (error) {
+    console.warn('⚠️ [Concept Generation] Could not load Business Profiler avoidance list:', error);
+  }
+
   try {
     // Build service-aware concept prompt with variety dimensions
     let serviceContext = '';
@@ -1372,7 +1385,7 @@ export async function generateCreativeConcept(options: Revo20GenerationOptions):
     - NEVER repeat these recent concepts: ${recentData.concepts.slice(0, 3).join(', ')}
     - AVOID generic phrases like "Finance Your Ambitions", "Transform Your Business"
     - CREATE completely different messaging and visual approach
-    - USE specific, unique value propositions
+    - USE specific, unique value propositions${businessAvoidanceList}
 
     🎯 HUMAN-CENTERED MESSAGING (MANDATORY):
     - Use HUMAN, conversational tone (not corporate speak)
@@ -3628,27 +3641,79 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
     //   deepBusinessUnderstanding = null;
     // }
 
-    // Step 3: Gather ENHANCED business intelligence for deep business understanding
-    const { enhancedBusinessIntelligenceGatherer } = await import('./intelligence/enhanced-bi-gatherer');
+    // Step 3: Generate COMPREHENSIVE business profile for deep understanding
+    const { BusinessProfileManager } = await import('./intelligence/business-profile-manager');
+    const profileManager = new BusinessProfileManager();
 
+    let businessProfile;
     let businessIntelligence;
     try {
-      businessIntelligence = await Promise.race([
-        enhancedBusinessIntelligenceGatherer.gatherBusinessIntelligence({
-          brandProfile: enhancedOptions.brandProfile,
-          businessType: businessType.primaryType,
-          platform: enhancedOptions.platform,
-          location: enhancedOptions.brandProfile.location
-        }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Business intelligence timeout')), 45000))
+      // Get comprehensive business profile
+      businessProfile = await Promise.race([
+        profileManager.getBusinessProfile(enhancedOptions.brandProfile),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Business profile timeout')), 10000)
+        )
       ]);
-      console.log(`🧠 [Revo 2.0] Enhanced BI gathered:`);
-      console.log(`   📍 What they do: ${businessIntelligence.coreBusinessUnderstanding.whatTheyDo}`);
-      console.log(`   👥 Who it's for: ${businessIntelligence.coreBusinessUnderstanding.whoItsFor}`);
-      console.log(`   💡 Why it matters: ${businessIntelligence.coreBusinessUnderstanding.whyItMatters}`);
-    } catch (biError) {
-      console.warn(`⚠️ [Revo 2.0] Enhanced business intelligence failed, using basic context:`, biError);
-      businessIntelligence = null;
+
+      // Generate tailored marketing insights
+      const marketingInsights = profileManager.generateMarketingInsights(
+        businessProfile,
+        enhancedOptions.targetAudience
+      );
+
+      console.log('✅ [Revo 2.0] Comprehensive business profile generated');
+      console.log('🎯 [Revo 2.0] Business essence:', marketingInsights.businessEssence.substring(0, 100) + '...');
+
+      // Convert to enhanced business intelligence format
+      businessIntelligence = {
+        coreBusinessUnderstanding: {
+          whatTheyDo: businessProfile.offerings[0]?.description || businessProfile.mission,
+          whoItsFor: marketingInsights.primaryAudienceProfile,
+          whyItMatters: businessProfile.mission
+        },
+        targetAudienceInsights: {
+          primaryMotivations: marketingInsights.audienceMotivations,
+          painPoints: marketingInsights.audiencePainPoints,
+          emotionalTriggers: marketingInsights.emotionalTriggers
+        },
+        marketingRecommendations: {
+          primaryAngles: marketingInsights.recommendedAngles,
+          messagingTone: marketingInsights.toneOfVoice,
+          contentThemes: marketingInsights.contentThemes
+        },
+        businessProfileInsights: profileManager.generatePromptInsights(businessProfile, enhancedOptions.targetAudience)
+      };
+
+      console.log(`🧠 [Revo 2.0] Business Profile Intelligence:`);
+      console.log(`   📍 What they do: ${businessIntelligence.coreBusinessUnderstanding.whatTheyDo.substring(0, 80)}...`);
+      console.log(`   👥 Who it's for: ${businessIntelligence.coreBusinessUnderstanding.whoItsFor.substring(0, 80)}...`);
+      console.log(`   💡 Why it matters: ${businessIntelligence.coreBusinessUnderstanding.whyItMatters.substring(0, 80)}...`);
+
+    } catch (profileError) {
+      console.warn(`⚠️ [Revo 2.0] Business profile generation failed, using enhanced BI fallback:`, profileError);
+
+      // Fallback to enhanced business intelligence
+      const { enhancedBusinessIntelligenceGatherer } = await import('./intelligence/enhanced-bi-gatherer');
+
+      try {
+        businessIntelligence = await Promise.race([
+          enhancedBusinessIntelligenceGatherer.gatherBusinessIntelligence({
+            brandProfile: enhancedOptions.brandProfile,
+            businessType: businessType.primaryType,
+            platform: enhancedOptions.platform,
+            location: enhancedOptions.brandProfile.location
+          }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Business intelligence timeout')), 45000))
+        ]);
+        console.log(`🧠 [Revo 2.0] Enhanced BI gathered (fallback):`);
+        console.log(`   📍 What they do: ${businessIntelligence.coreBusinessUnderstanding.whatTheyDo}`);
+        console.log(`   👥 Who it's for: ${businessIntelligence.coreBusinessUnderstanding.whoItsFor}`);
+        console.log(`   💡 Why it matters: ${businessIntelligence.coreBusinessUnderstanding.whyItMatters}`);
+      } catch (biError) {
+        console.warn(`⚠️ [Revo 2.0] Enhanced business intelligence failed, using basic context:`, biError);
+        businessIntelligence = null;
+      }
     }
 
     // Step 3: Generate creative concept with visual direction
@@ -3736,38 +3801,44 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
 
       if (!validationResult.isValid) {
         console.warn(`⚠️ [Revo 2.0] Content-design alignment failed (${validationResult.score}/100), trying synchronization...`);
-        
-        // Try content-visual synchronization before falling back to Claude
-        const { contentVisualSynchronizer } = await import('./synchronization/content-visual-sync');
-        
-        try {
-          const syncResult = await contentVisualSynchronizer.synchronizeContentAndVisuals({
-            content: assistantResponse.content,
-            designSpecs: assistantResponse.design_specifications,
-            brandProfile: enhancedOptions.brandProfile,
-            businessType: businessType.primaryType,
-            platform: enhancedOptions.platform,
-            concept: concept
-          });
 
-          if (syncResult.isSync) {
-            console.log(`✅ [Revo 2.0] Content-visual synchronization successful (${syncResult.syncScore}/100)`);
-            
-            // Update assistant response with synchronized content and design
-            assistantResponse = {
-              content: syncResult.synchronizedContent,
-              design_specifications: syncResult.synchronizedDesign,
-              alignment_validation: `Synchronized content-visual alignment achieved with score ${syncResult.syncScore}/100`
-            };
-          } else {
-            console.warn(`⚠️ [Revo 2.0] Synchronization failed (${syncResult.syncScore}/100), using Claude fallback`);
+        // SPECIAL CASE: For food business, skip validation fallback to preserve Business Profiler integration
+        if (businessType.primaryType === 'food') {
+          console.log(`🍕 [Revo 2.0] Food business detected - skipping validation fallback to preserve Business Profiler`);
+          console.log(`✅ [Revo 2.0] Using Food Assistant content despite validation score`);
+        } else {
+          // Try content-visual synchronization before falling back to Claude
+          const { contentVisualSynchronizer } = await import('./synchronization/content-visual-sync');
+
+          try {
+            const syncResult = await contentVisualSynchronizer.synchronizeContentAndVisuals({
+              content: assistantResponse.content,
+              designSpecs: assistantResponse.design_specifications,
+              brandProfile: enhancedOptions.brandProfile,
+              businessType: businessType.primaryType,
+              platform: enhancedOptions.platform,
+              concept: concept
+            });
+
+            if (syncResult.isSync) {
+              console.log(`✅ [Revo 2.0] Content-visual synchronization successful (${syncResult.syncScore}/100)`);
+
+              // Update assistant response with synchronized content and design
+              assistantResponse = {
+                content: syncResult.synchronizedContent,
+                design_specifications: syncResult.synchronizedDesign,
+                alignment_validation: `Synchronized content-visual alignment achieved with score ${syncResult.syncScore}/100`
+              };
+            } else {
+              console.warn(`⚠️ [Revo 2.0] Synchronization failed (${syncResult.syncScore}/100), using Claude fallback`);
+              contentSource = 'claude_validation_fallback';
+              assistantResponse = await generateClaudeFallback(enhancedOptions, concept);
+            }
+          } catch (syncError) {
+            console.warn(`⚠️ [Revo 2.0] Synchronization error, using Claude fallback:`, syncError);
             contentSource = 'claude_validation_fallback';
             assistantResponse = await generateClaudeFallback(enhancedOptions, concept);
           }
-        } catch (syncError) {
-          console.warn(`⚠️ [Revo 2.0] Synchronization error, using Claude fallback:`, syncError);
-          contentSource = 'claude_validation_fallback';
-          assistantResponse = await generateClaudeFallback(enhancedOptions, concept);
         }
       } else {
         console.log(`✅ [Revo 2.0] Content-design alignment validated (${validationResult.score}/100)`);
