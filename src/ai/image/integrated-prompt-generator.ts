@@ -71,7 +71,8 @@ export class IntegratedPromptGenerator {
     const designInstructions = this.buildDesignInstructions(
       design_specifications,
       brandProfile,
-      platform
+      platform,
+      businessType
     );
 
     // Generate alignment notes
@@ -183,10 +184,11 @@ export class IntegratedPromptGenerator {
   private buildDesignInstructions(
     designSpecs: DesignSpecifications,
     brandProfile: any,
-    platform: string
+    platform: string,
+    businessType: string
   ): IntegratedPromptResult['designInstructions'] {
     return {
-      layout: `${designSpecs.text_placement} with ${this.getLayoutStyle(platform, brandProfile.businessType)}`,
+      layout: `${designSpecs.text_placement} with ${this.getLayoutStyle(platform, businessType)}`,
       colors: designSpecs.color_scheme,
       typography: `Headline (largest) > Subheadline > Caption > CTA hierarchy`,
       contact: this.buildContactInstructions(brandProfile),
@@ -260,7 +262,8 @@ export class IntegratedPromptGenerator {
    */
   private buildContactSection(brandProfile: any): string {
     let contactSection = `**CONTACT INFORMATION (MANDATORY):**\n`;
-    contactSection += `🚨 MUST INCLUDE ALL AVAILABLE CONTACT INFO 🚨\n`;
+    contactSection += `🚨 MUST INCLUDE ALL AVAILABLE CONTACT INFO EXACTLY AS PROVIDED 🚨\n`;
+    contactSection += `⚠️ DO NOT MODIFY, CHANGE, OR REFORMAT THE CONTACT INFORMATION ⚠️\n`;
 
     // Extract contact info from multiple possible sources
     const phone = brandProfile.contactInfo?.phone || brandProfile.contact?.phone || '';
@@ -269,20 +272,32 @@ export class IntegratedPromptGenerator {
     const website = this.cleanWebsiteUrl(rawWebsite);
 
     if (phone) {
-      contactSection += `- Phone: 📞 ${phone}\n`;
+      contactSection += `- Phone: 📞 ${phone} (USE EXACTLY AS SHOWN - DO NOT CHANGE ANY DIGITS)\n`;
     }
     if (email) {
-      contactSection += `- Email: 📧 ${email}\n`;
+      contactSection += `- Email: 📧 ${email} (USE EXACTLY AS SHOWN)\n`;
     }
     if (website) {
-      contactSection += `- Website: 🌐 ${website}\n`;
+      contactSection += `- Website: 🌐 ${website} (USE EXACTLY AS SHOWN)\n`;
     }
 
     contactSection += `\n**CONTACT DISPLAY REQUIREMENTS:**\n`;
     contactSection += `- Place in contrasting footer/strip at bottom of image\n`;
     contactSection += `- Use dark background with light text OR light background with dark text\n`;
     contactSection += `- Large enough to read (minimum 14px equivalent)\n`;
-    contactSection += `- Format: "📞 ${phone} | 📧 ${email} | 🌐 ${website}"\n\n`;
+    contactSection += `- CRITICAL: Use the EXACT contact information provided above - DO NOT modify phone numbers, emails, or websites\n`;
+
+    // Build the exact format string with actual values
+    const contactParts: string[] = [];
+    if (phone) contactParts.push(`📞 ${phone}`);
+    if (email) contactParts.push(`📧 ${email}`);
+    if (website) contactParts.push(`🌐 ${website}`);
+
+    if (contactParts.length > 0) {
+      contactSection += `- Exact Format Required: "${contactParts.join(' | ')}"\n`;
+    }
+
+    contactSection += `\n`;
 
     return contactSection;
   }
@@ -296,13 +311,17 @@ export class IntegratedPromptGenerator {
     const rawWebsite = brandProfile.websiteUrl || brandProfile.contactInfo?.website || brandProfile.contact?.website || brandProfile.website || '';
     const website = this.cleanWebsiteUrl(rawWebsite);
 
-    const contacts = [phone, email, website].filter(Boolean);
+    // Build contact parts with explicit formatting
+    const contactParts: string[] = [];
+    if (phone) contactParts.push(`📞 ${phone}`);
+    if (email) contactParts.push(`📧 ${email}`);
+    if (website) contactParts.push(`🌐 ${website}`);
 
-    if (contacts.length === 0) {
+    if (contactParts.length === 0) {
       return 'Include business name prominently';
     }
 
-    return `Footer with: ${contacts.join(' | ')}`;
+    return `Footer with EXACT contact info: ${contactParts.join(' | ')} (DO NOT MODIFY THESE NUMBERS/ADDRESSES)`;
   }
 
   /**

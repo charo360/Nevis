@@ -83,14 +83,11 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('❌ Revo 2.0 API Error:', error);
 
-    // Provide user-friendly error messages
+    // Show actual error for debugging
     let errorMessage = 'Revo 2.0 Enhanced generation failed';
     if (error instanceof Error) {
-      if (error.message.includes('🚀') || error.message.includes('🔧') || error.message.includes('😴')) {
-        errorMessage = error.message;
-      } else {
-        errorMessage = '🚀 Revo 2.0 is being enhanced with new features! Please try again in a moment.';
-      }
+      errorMessage = `Debug Error: ${error.message}`;
+      console.error('❌ Full error stack:', error.stack);
     }
 
     return NextResponse.json({
