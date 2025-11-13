@@ -58,9 +58,11 @@ export function PromptBuilder({ brandProfile, onPromptGenerated }: PromptBuilder
   });
 
   const [generatedPrompt, setGeneratedPrompt] = useState('');
+  const [editablePrompt, setEditablePrompt] = useState('');
+  const [isEditingPrompt, setIsEditingPrompt] = useState(false);
+  const [isNewPrompt, setIsNewPrompt] = useState(false);
   const [savedTemplates, setSavedTemplates] = useState<PromptData[]>([]);
   const [promptHistory, setPromptHistory] = useState<string[]>([]);
-  const [isNewPrompt, setIsNewPrompt] = useState(true);
   const [isAiFilling, setIsAiFilling] = useState(false);
   const { toast } = useToast();
 
@@ -286,51 +288,92 @@ export function PromptBuilder({ brandProfile, onPromptGenerated }: PromptBuilder
       if (promptData.website) prompt += `- Website: ${promptData.website}\n`;
     }
 
-    // Design requirements
+    // Enhanced Design Requirements
     prompt += "\nDESIGN REQUIREMENTS:\n";
-    prompt += "- Use a modern, professional layout\n";
-    prompt += "- Ensure all text is clearly readable with high contrast\n";
-    prompt += "- Make the headline prominent and eye-catching\n";
-    prompt += "- Use appropriate typography hierarchy\n";
-
+    
+    // Typography & Hierarchy
+    prompt += "\nTYPOGRAPHY & HIERARCHY:\n";
+    prompt += "- HEADLINE: Must be 2.5x larger than other text, bold, most prominent element\n";
+    prompt += "- SUBHEADLINE: 50% smaller than headline, supports main message\n";
+    prompt += "- CTA BUTTON: Large, prominent button with clear action text\n";
+    prompt += "- Ensure perfect readability with high contrast (minimum 4.5:1 ratio)\n";
+    prompt += "- Use maximum 2 font families for consistency\n";
+    
+    // Layout & Composition
+    prompt += "\nLAYOUT & COMPOSITION:\n";
+    prompt += "- Maintain 60% white space minimum for clean, uncluttered design\n";
+    prompt += "- Use grid-based layout for professional appearance\n";
+    prompt += "- Create single focal point that's immediately obvious\n";
+    prompt += "- Ensure balanced composition - not cramped or cluttered\n";
+    prompt += "- Apply consistent margins and padding throughout\n";
+    
+    // Content Density Controls
+    prompt += "\nCONTENT DENSITY:\n";
+    prompt += "- HEADLINE: Maximum 6 words - punchy and memorable\n";
+    prompt += "- SUBHEADLINE: Maximum 12 words - supports headline\n";
+    prompt += "- Avoid information overload - one clear message per design\n";
+    prompt += "- Every element must serve a purpose - eliminate fluff\n";
+    
+    // Visual Elements
     if (promptData.includeImage) {
-      prompt += "- Incorporate the uploaded image as a design element\n";
-      prompt += "- Blend the image naturally with the text and layout\n";
+      prompt += "\nIMAGE INTEGRATION:\n";
+      prompt += "- Incorporate uploaded image as hero element or supporting visual\n";
+      prompt += "- Blend image naturally with text - avoid covering important content\n";
+      prompt += "- Ensure image complements and enhances the message\n";
+      prompt += "- Maintain proper image-text balance and hierarchy\n";
     } else {
-      prompt += "- Create an engaging background design\n";
-      prompt += "- Use colors and visual elements that complement the content\n";
+      prompt += "\nVISUAL DESIGN:\n";
+      prompt += "- Create engaging background that supports content without distraction\n";
+      prompt += "- Use colors strategically to guide attention and create hierarchy\n";
+      prompt += "- Include relevant visual elements that enhance the message\n";
+      prompt += "- Avoid generic stock photo aesthetics - be authentic and purposeful\n";
     }
-
-    // Brand-specific instructions
+    
+    // Color & Branding
+    prompt += "\nCOLOR & BRANDING:\n";
     if (brandProfile) {
-      prompt += `- Use brand colors and style for ${brandProfile.businessName}\n`;
+      prompt += `- Use brand colors and visual identity for ${brandProfile.businessName}\n`;
+      prompt += "- Primary color: 60%, Secondary: 30%, Accent: 10% distribution\n";
       if (brandProfile.businessType) {
-        prompt += `- Design should reflect ${brandProfile.businessType} industry standards\n`;
+        prompt += `- Design must reflect ${brandProfile.businessType} industry standards and expectations\n`;
       }
       if (brandProfile.targetAudience) {
-        prompt += `- Target audience: ${brandProfile.targetAudience}\n`;
+        prompt += `- Tailor visual style for target audience: ${brandProfile.targetAudience}\n`;
       }
+    } else {
+      prompt += "- Use cohesive color palette (3-4 colors maximum)\n";
+      prompt += "- Ensure brand consistency if multiple designs are created\n";
     }
-
-    prompt += "- Maintain professional quality and visual appeal\n";
-    prompt += "- Ensure the design is suitable for social media and marketing use";
-
+    
+    // Quality Standards
+    prompt += "\nQUALITY STANDARDS:\n";
+    prompt += "- Professional, premium quality suitable for business use\n";
+    prompt += "- Mobile-responsive design principles (readable on all devices)\n";
+    prompt += "- Avoid design mistakes: competing focal points, cramped layouts, tiny text\n";
+    prompt += "- Create designs that stand out in social media feeds\n";
+    prompt += "- Ensure accessibility with proper contrast and readable fonts\n";
+    
     return prompt;
   };
 
+  // Update generated prompt when form data changes
   useEffect(() => {
     const prompt = generatePrompt();
     setGeneratedPrompt(prompt);
-    // Don't automatically call onPromptGenerated - let user decide when to use the prompt
-  }, [promptData, brandProfile]);
+    // Update editable prompt only if not currently editing
+    if (!isEditingPrompt) {
+      setEditablePrompt(prompt);
+    }
+  }, [promptData, brandProfile, isEditingPrompt]);
 
   const copyPrompt = async () => {
+    const promptToCopy = isEditingPrompt ? editablePrompt : generatedPrompt;
     try {
-      await navigator.clipboard.writeText(generatedPrompt);
+      await navigator.clipboard.writeText(promptToCopy);
       
       // Add to prompt history
-      if (isNewPrompt && generatedPrompt) {
-        const newHistory = [generatedPrompt, ...promptHistory.slice(0, 9)]; // Keep last 10 prompts
+      if (isNewPrompt && promptToCopy) {
+        const newHistory = [promptToCopy, ...promptHistory.slice(0, 9)]; // Keep last 10 prompts
         setPromptHistory(newHistory);
         localStorage.setItem('promptBuilderHistory', JSON.stringify(newHistory));
         setIsNewPrompt(false);
@@ -339,12 +382,14 @@ export function PromptBuilder({ brandProfile, onPromptGenerated }: PromptBuilder
       toast({
         title: 'Prompt Copied!',
         description: 'The generated prompt has been copied to your clipboard. Paste it in the chat to generate your design.',
+        duration: 3000,
       });
     } catch (error) {
       toast({
         variant: 'destructive',
         title: 'Copy Failed',
         description: 'Failed to copy prompt to clipboard. Please select and copy manually.',
+        duration: 4000,
       });
     }
   };
@@ -366,6 +411,7 @@ export function PromptBuilder({ brandProfile, onPromptGenerated }: PromptBuilder
     toast({
       title: 'Form Cleared',
       description: 'Ready to create a new design brief from scratch.',
+      duration: 2000,
     });
   };
 
@@ -376,6 +422,7 @@ export function PromptBuilder({ brandProfile, onPromptGenerated }: PromptBuilder
         variant: 'destructive',
         title: 'Cannot Save Template',
         description: 'Please add a headline before saving as template.',
+        duration: 4000,
       });
       return;
     }
@@ -388,6 +435,7 @@ export function PromptBuilder({ brandProfile, onPromptGenerated }: PromptBuilder
     toast({
       title: 'Template Saved',
       description: 'Your design brief has been saved as a reusable template.',
+      duration: 3000,
     });
   };
 
@@ -396,6 +444,7 @@ export function PromptBuilder({ brandProfile, onPromptGenerated }: PromptBuilder
     toast({
       title: 'Template Loaded',
       description: 'Template has been loaded into the form.',
+      duration: 2000,
     });
   };
 
@@ -407,6 +456,7 @@ export function PromptBuilder({ brandProfile, onPromptGenerated }: PromptBuilder
       toast({
         title: 'Template Loaded',
         description: `${template.name} template has been loaded into the form.`,
+        duration: 2000,
       });
     }
   };
@@ -438,6 +488,7 @@ export function PromptBuilder({ brandProfile, onPromptGenerated }: PromptBuilder
         variant: 'destructive',
         title: 'No Business Profile',
         description: 'Please set up your business profile first to use AI suggestions.',
+        duration: 4000,
       });
       return;
     }
@@ -449,6 +500,7 @@ export function PromptBuilder({ brandProfile, onPromptGenerated }: PromptBuilder
       toast({
         title: 'AI is analyzing...',
         description: 'Fetching trending data, local events, and market insights for contextual suggestions.',
+        duration: 3000,
       });
 
       // Fetch contextual data from all sources
@@ -488,6 +540,7 @@ export function PromptBuilder({ brandProfile, onPromptGenerated }: PromptBuilder
       toast({
         title: 'AI Suggestions Generated!',
         description: `Form filled with contextual content. ${contextualInfo}. Edit any field to customize.`,
+        duration: 4000,
       });
     } catch (error) {
       console.error('AI Fill error:', error);
@@ -501,12 +554,14 @@ export function PromptBuilder({ brandProfile, onPromptGenerated }: PromptBuilder
         toast({
           title: 'AI Suggestions Generated (Basic)',
           description: 'Form filled with basic AI suggestions. Some data sources were unavailable.',
+          duration: 4000,
         });
       } catch (fallbackError) {
         toast({
           variant: 'destructive',
           title: 'AI Fill Failed',
           description: 'Failed to generate AI suggestions. Please try again or fill the form manually.',
+          duration: 5000,
         });
       }
     } finally {
@@ -522,6 +577,7 @@ export function PromptBuilder({ brandProfile, onPromptGenerated }: PromptBuilder
     toast({
       title: 'Template Deleted',
       description: 'Template has been removed.',
+      duration: 2000,
     });
   };
 
@@ -683,49 +739,185 @@ export function PromptBuilder({ brandProfile, onPromptGenerated }: PromptBuilder
             </div>
           </div>
 
-          {/* Contact Information */}
+          {/* Enhanced Contact Information Editor */}
           <div className="border-t pt-4">
-            <h4 className="font-medium mb-3">Contact Information (Optional)</h4>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-medium flex items-center gap-2">
+                <Phone className="h-4 w-4" />
+                Contact Information Editor
+              </h4>
+              {brandProfile && (
+                <Button
+                  onClick={() => {
+                    // Enhanced auto-fill with multiple fallback paths (works for ANY business)
+                    const email = brandProfile.contactInfo?.email || 
+                                  (brandProfile as any).contactEmail || 
+                                  (brandProfile as any).email || '';
+                    
+                    const phone = brandProfile.contactInfo?.phone || 
+                                  (brandProfile as any).contactPhone || 
+                                  (brandProfile as any).phone || '';
+                    
+                    const website = brandProfile.websiteUrl || 
+                                   (brandProfile as any).website || 
+                                   (brandProfile as any).websiteUrl || '';
+
+                    // Debug log to see what's available
+                    console.log('🔍 [Contact Editor] Business Profile Debug:', {
+                      businessName: brandProfile.businessName,
+                      contactInfo: brandProfile.contactInfo,
+                      websiteUrl: brandProfile.websiteUrl,
+                      extractedEmail: email,
+                      extractedPhone: phone,
+                      extractedWebsite: website,
+                      fullProfile: brandProfile
+                    });
+
+                    updateField('email', email);
+                    updateField('phone', phone);
+                    updateField('website', website);
+
+                    const loadedCount = [email, phone, website].filter(Boolean).length;
+                    
+                    toast({
+                      title: loadedCount > 0 ? 'Contact Info Loaded' : 'No Contact Info Found',
+                      description: loadedCount > 0 
+                        ? `Loaded ${loadedCount} contact detail(s) from your business profile.`
+                        : 'No contact information found in business profile. Please enter manually.',
+                      duration: 3000,
+                    });
+                  }}
+                  variant="outline"
+                  size="sm"
+                >
+                  Load from Profile
+                </Button>
+              )}
+            </div>
+            
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+              <p className="text-sm text-blue-800">
+                <strong>💡 Contact Editor:</strong> Edit contact information here to ensure it appears correctly in your designs. 
+                These details will be displayed exactly as entered in the footer of generated images.
+              </p>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="email" className="flex items-center gap-2">
                   <Mail className="h-4 w-4" />
-                  Email
+                  Email Address
+                  {promptData.email && <span className="text-xs text-green-600">✓</span>}
                 </Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="contact@example.com"
+                  placeholder="support@yourcompany.com"
                   value={promptData.email}
                   onChange={(e) => updateField('email', e.target.value)}
+                  className={promptData.email ? 'border-green-300' : ''}
                 />
+                {promptData.email && (
+                  <p className="text-xs text-muted-foreground">
+                    Will appear as: 📧 {promptData.email}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="phone" className="flex items-center gap-2">
                   <Phone className="h-4 w-4" />
-                  Phone
+                  Phone Number
+                  {promptData.phone && <span className="text-xs text-green-600">✓</span>}
                 </Label>
                 <Input
                   id="phone"
-                  placeholder="+1 (555) 123-4567"
+                  placeholder="+254 700 000 000"
                   value={promptData.phone}
                   onChange={(e) => updateField('phone', e.target.value)}
+                  className={promptData.phone ? 'border-green-300' : ''}
                 />
+                {promptData.phone && (
+                  <p className="text-xs text-muted-foreground">
+                    Will appear as: 📞 {promptData.phone}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="website" className="flex items-center gap-2">
                   <Globe className="h-4 w-4" />
-                  Website
+                  Website URL
+                  {promptData.website && <span className="text-xs text-green-600">✓</span>}
                 </Label>
                 <Input
                   id="website"
-                  placeholder="www.example.com"
+                  placeholder="https://yourcompany.com"
                   value={promptData.website}
                   onChange={(e) => updateField('website', e.target.value)}
+                  className={promptData.website ? 'border-green-300' : ''}
                 />
+                {promptData.website && (
+                  <p className="text-xs text-muted-foreground">
+                    Will appear as: 🌐 {promptData.website}
+                  </p>
+                )}
               </div>
+            </div>
+
+            {/* Contact Preview */}
+            {(promptData.email || promptData.phone || promptData.website) && (
+              <div className="mt-4 p-3 bg-gray-50 rounded-lg border">
+                <p className="text-sm font-medium mb-2">Footer Preview:</p>
+                <div className="text-sm text-gray-700 font-mono bg-white p-2 rounded border">
+                  {[
+                    promptData.phone && `📞 ${promptData.phone}`,
+                    promptData.email && `📧 ${promptData.email}`,
+                    promptData.website && `🌐 ${promptData.website}`
+                  ].filter(Boolean).join(' | ')}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  This is exactly how your contact info will appear in the design footer.
+                </p>
+              </div>
+            )}
+
+            {/* Quick Actions */}
+            <div className="flex gap-2 mt-3">
+              <Button
+                onClick={() => {
+                  updateField('email', '');
+                  updateField('phone', '');
+                  updateField('website', '');
+                  toast({
+                    title: 'Contact Info Cleared',
+                    description: 'All contact information has been cleared.',
+                    duration: 2000,
+                  });
+                }}
+                variant="outline"
+                size="sm"
+              >
+                Clear All
+              </Button>
+              {!promptData.email && !promptData.phone && !promptData.website && (
+                <Button
+                  onClick={() => {
+                    updateField('email', 'info@company.com');
+                    updateField('phone', '+1 (555) 123-4567');
+                    updateField('website', 'https://company.com');
+                    toast({
+                      title: 'Sample Contact Added',
+                      description: 'Sample contact information added. Please edit with your real details.',
+                      duration: 3000,
+                    });
+                  }}
+                  variant="outline"
+                  size="sm"
+                >
+                  Add Sample Contact
+                </Button>
+              )}
             </div>
           </div>
 
@@ -766,6 +958,7 @@ export function PromptBuilder({ brandProfile, onPromptGenerated }: PromptBuilder
                         toast({
                           title: 'Prompt Loaded',
                           description: 'Previous prompt loaded into chat input.',
+                          duration: 2000,
                         });
                       }}
                       variant="ghost"
@@ -884,28 +1077,90 @@ export function PromptBuilder({ brandProfile, onPromptGenerated }: PromptBuilder
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
             Generated Prompt
+            {isEditingPrompt && (
+              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                Editing
+              </span>
+            )}
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Copy this prompt and paste it into the chat, or click "Use in Chat" to automatically add it to the chat input.
+            {isEditingPrompt 
+              ? 'Edit the prompt below to customize it further. Click Save to apply changes.'
+              : 'Copy this prompt and paste it into the chat, or click "Edit" to customize it further.'
+            }
           </p>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            <div className="bg-muted p-4 rounded-lg">
-              <pre className="text-sm whitespace-pre-wrap font-mono">
-                {generatedPrompt || 'Fill in the form above to generate your prompt...'}
-              </pre>
-            </div>
+            {isEditingPrompt ? (
+              <div className="space-y-3">
+                <Textarea
+                  value={editablePrompt}
+                  onChange={(e) => setEditablePrompt(e.target.value)}
+                  placeholder="Edit your prompt here..."
+                  className="min-h-[300px] font-mono text-sm"
+                />
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={() => {
+                      setIsEditingPrompt(false);
+                      toast({
+                        title: 'Changes Saved',
+                        description: 'Your prompt edits have been saved.',
+                        duration: 2000,
+                      });
+                    }}
+                    className="flex-1"
+                  >
+                    Save Changes
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      setEditablePrompt(generatedPrompt);
+                      setIsEditingPrompt(false);
+                      toast({
+                        title: 'Changes Discarded',
+                        description: 'Prompt has been reset to the generated version.',
+                        duration: 2000,
+                      });
+                    }}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-muted p-4 rounded-lg">
+                <pre className="text-sm whitespace-pre-wrap font-mono">
+                  {generatedPrompt || 'Fill in the form above to generate your prompt...'}
+                </pre>
+              </div>
+            )}
 
             {generatedPrompt && (
               <div className="flex gap-2">
+                {!isEditingPrompt && (
+                  <Button 
+                    onClick={() => {
+                      setEditablePrompt(generatedPrompt);
+                      setIsEditingPrompt(true);
+                    }}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    <Type className="h-4 w-4 mr-2" />
+                    Edit Prompt
+                  </Button>
+                )}
                 <Button onClick={copyPrompt} className="flex-1">
                   <Copy className="h-4 w-4 mr-2" />
                   Copy to Clipboard
                 </Button>
                 {onPromptGenerated && (
                   <Button
-                    onClick={() => onPromptGenerated(generatedPrompt)}
+                    onClick={() => onPromptGenerated(isEditingPrompt ? editablePrompt : generatedPrompt)}
                     variant="outline"
                     className="flex-1"
                   >

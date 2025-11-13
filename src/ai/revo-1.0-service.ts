@@ -8045,21 +8045,17 @@ function buildRevo10ImagePrompt(options: any, concept: any): string {
       (brandProfile as any)?.contactAddress ||
       (brandProfile as any)?.address;
 
-    if (phone) contacts.push(`📞 ${phone}`);
-    if (email) contacts.push(`📧 ${email}`);
-    // Only include website if it actually exists in brand profile - NEVER generate fake URLs
+    // Use EXACT contact information without any modifications
+    if (phone && phone.trim()) contacts.push(`📞 ${phone.trim()}`);
+    if (email && email.trim()) contacts.push(`📧 ${email.trim()}`);
+    // Use EXACT website URL without formatting changes - NEVER generate fake URLs
     if (website && website.trim() && !website.includes('example.com') && !website.includes('placeholder')) {
-      // Clean website format: remove https:// and http://, ensure www. prefix
-      let cleanWebsite = website.replace(/^https?:\/\//, '');
-      if (!cleanWebsite.startsWith('www.')) {
-        cleanWebsite = `www.${cleanWebsite}`;
-      }
-      contacts.push(`🌐 ${cleanWebsite}`);
+      contacts.push(`🌐 ${website.trim()}`);
     }
-    if (address) contacts.push(`📍 ${address}`);
+    if (address && address.trim()) contacts.push(`📍 ${address.trim()}`);
 
     if (contacts.length > 0) {
-      contactInstruction = `\n\n📞 MANDATORY CONTACT FOOTER:\n${contacts.join('\n')}\n- ALWAYS place contact information at the BOTTOM FOOTER of the design\n- Create a clean contact strip/bar at the bottom edge\n- Use contrasting background (dark bar with light text OR light bar with dark text)\n- Ensure contact details are large enough to read (minimum 14px equivalent)\n- Format: ${contacts.join(' | ')}\n- NEVER place contacts anywhere except the footer area`;
+      contactInstruction = `\n\n📞 MANDATORY CONTACT FOOTER:\n${contacts.join('\n')}\n🚨 CRITICAL: Use the EXACT contact information provided above - DO NOT modify, change, or reformat any phone numbers, emails, or websites\n🚨 CRITICAL: Copy the contact details EXACTLY as shown - no typos, no missing letters, no changes\n- ALWAYS place contact information at the BOTTOM FOOTER of the design\n- Create a clean contact strip/bar at the bottom edge\n- Use contrasting background (dark bar with light text OR light bar with dark text)\n- Ensure contact details are large enough to read (minimum 14px equivalent)\n- Format: ${contacts.join(' | ')}\n- NEVER place contacts anywhere except the footer area`;
     }
   }
 
