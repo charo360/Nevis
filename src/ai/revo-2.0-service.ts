@@ -1679,7 +1679,7 @@ export function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: a
     
     if (exactInstructions && exactInstructions.trim()) {
       // Use the exact contact instructions from smart formatter
-      contactInstruction = `\n\n${exactInstructions}\n\n🚨 ABSOLUTELY CRITICAL - NO SPELLING MISTAKES ALLOWED:\n- Email domain MUST be "zentechelectronics" (NOT zentechectronics, NOT zentehctronics, NOT zentectlectronics)\n- Website domain MUST be "zentechelectronics" (NOT zentechectronics, NOT zentehctronics, NOT zentectlectronics)\n- PROOFREAD every letter of contact information before finalizing\n- ZERO TOLERANCE for contact spelling errors\n\n**CRITICAL FOR DESIGN**: Copy contact information character-for-character from above. Display in SINGLE HORIZONTAL LINE at bottom footer, separated by | symbols.`;
+      contactInstruction = `\n\n${exactInstructions}\n\n🚨 DOMAIN SPELLING ENFORCEMENT (CRITICAL):\n- The word is: Z-E-N-T-E-C-H-E-L-E-C-T-R-O-N-I-C-S (spell it out letter by letter)\n- Email: info@Z-E-N-T-E-C-H-E-L-E-C-T-R-O-N-I-C-S.co.ke\n- Website: https://Z-E-N-T-E-C-H-E-L-E-C-T-R-O-N-I-C-S.com/\n- NEVER write: zentechctronics, zentechectronics, zentehctronics, zentectronics\n- ALWAYS write: zentechelectronics (with E-L-E between zentech and ctronics)\n- SPELL CHECK: zen-tech-ELEC-tronics (ELEC is the key part that gets missed)\n\n**CRITICAL FOR DESIGN**: Copy contact information character-for-character from above. Display in SINGLE HORIZONTAL LINE at bottom footer, separated by | symbols.`;
     } else {
       // Fallback to original contact detection if smart formatter not available
       const contacts: string[] = [];

@@ -283,10 +283,14 @@ export function getExactContactInstructions(contactInfo: ContactInfo): string {
   // Create specific spelling instructions based on what's selected
   let spellingInstructions = '';
   if (selectedContacts.some(c => c.type === 'email')) {
-    spellingInstructions += `\n- Email MUST be: info@zentechelectronics.co.ke (NOT zentechectronics, NOT zentehctronics)`;
+    spellingInstructions += `\n- Email MUST be: info@Z-E-N-T-E-C-H-E-L-E-C-T-R-O-N-I-C-S.co.ke (spell out: zentechelectronics)`;
   }
   if (selectedContacts.some(c => c.type === 'website')) {
-    spellingInstructions += `\n- Website MUST be: https://zentechelectronics.com/ (NOT zentectlectronics, NOT zentehctronics)`;
+    spellingInstructions += `\n- Website MUST be: https://Z-E-N-T-E-C-H-E-L-E-C-T-R-O-N-I-C-S.com/ (spell out: zentechelectronics)`;
+  }
+  if (selectedContacts.some(c => c.type === 'email') || selectedContacts.some(c => c.type === 'website')) {
+    spellingInstructions += `\n- CRITICAL: The domain is zen-tech-ELEC-tronics (ELEC is the part that gets missed)`;
+    spellingInstructions += `\n- NEVER write: zentechctronics, zentechectronics, zentehctronics, zentectronics`;
   }
   
   return instructions.length > 0 
@@ -346,10 +350,14 @@ export function getExactContactInstructionsWebsiteFirst(contactInfo: ContactInfo
   // Create specific spelling instructions based on what's selected
   let spellingInstructions = '';
   if (selectedContacts.some(c => c.type === 'email')) {
-    spellingInstructions += `\n- Email MUST be: info@zentechelectronics.co.ke (NOT zentechectronics, NOT zentehctronics)`;
+    spellingInstructions += `\n- Email MUST be: info@Z-E-N-T-E-C-H-E-L-E-C-T-R-O-N-I-C-S.co.ke (spell out: zentechelectronics)`;
   }
   if (selectedContacts.some(c => c.type === 'website')) {
-    spellingInstructions += `\n- Website MUST be: https://zentechelectronics.com/ (NOT zentectlectronics, NOT zentehctronics)`;
+    spellingInstructions += `\n- Website MUST be: https://Z-E-N-T-E-C-H-E-L-E-C-T-R-O-N-I-C-S.com/ (spell out: zentechelectronics)`;
+  }
+  if (selectedContacts.some(c => c.type === 'email') || selectedContacts.some(c => c.type === 'website')) {
+    spellingInstructions += `\n- CRITICAL: The domain is zen-tech-ELEC-tronics (ELEC is the part that gets missed)`;
+    spellingInstructions += `\n- NEVER write: zentechctronics, zentechectronics, zentehctronics, zentectronics`;
   }
   
   return instructions.length > 0 
