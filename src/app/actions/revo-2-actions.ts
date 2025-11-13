@@ -9,6 +9,7 @@ import { generateWithRevo20, testRevo20Availability, type Revo20GenerationOption
 import type { BrandProfile, Platform, BrandConsistencyPreferences, GeneratedPost } from '@/lib/types';
 import type { ScheduledService } from '@/services/calendar-service';
 import { brandProfileSupabaseService } from '@/lib/supabase/services/brand-profile-service';
+import { formatContactForAI, getPriorityContacts } from '@/lib/utils/smart-contact-formatter';
 
 /**
  * Generate content with Revo 2.0 (Gemini 2.5 Flash Image Preview)
@@ -54,7 +55,34 @@ export async function generateRevo2ContentAction(
       console.log('⚠️ [Revo 2.0] No brand profile ID provided, using frontend data');
     }
 
-    // Log scheduled services integration
+    // Smart contact formatting for AI generation
+    const contactInfo = freshBrandProfile.contactInfo || {
+      phone: (freshBrandProfile as any).contactPhone || '',
+      email: (freshBrandProfile as any).contactEmail || '',
+      address: (freshBrandProfile as any).contactAddress || '',
+      website: freshBrandProfile.websiteUrl || ''
+    };
+    
+    const priorityContacts = getPriorityContacts(contactInfo, 3);
+    const formattedContactForAI = formatContactForAI(contactInfo, 150);
+    
+    console.log('📞 [Revo 2.0] Smart Contact Formatting:', {
+      originalContacts: contactInfo,
+      priorityContacts: priorityContacts.map(c => ({ type: c.type, value: c.displayValue })),
+      formattedForAI: formattedContactForAI,
+      includeContacts: brandConsistency?.includeContacts
+    });
+
+    // Create enhanced brand profile with smart contact formatting
+    const enhancedBrandProfile = {
+      ...freshBrandProfile,
+      contactInfo: brandConsistency?.includeContacts 
+        ? Object.fromEntries(
+            priorityContacts.map(contact => [contact.type, contact.displayValue])
+          )
+        : {},
+      formattedContacts: brandConsistency?.includeContacts ? formattedContactForAI : ''
+    };
 
     // Prepare Revo 2.0 generation options
     const revo2Options: Revo20GenerationOptions = {
@@ -62,7 +90,7 @@ export async function generateRevo2ContentAction(
       platform,
       visualStyle: options?.visualStyle || 'modern',
       imageText: prompt || '',
-      brandProfile: freshBrandProfile, // Use fresh data from database
+      brandProfile: enhancedBrandProfile, // Use enhanced data with smart contact formatting
       aspectRatio: options?.aspectRatio || '1:1',
       includePeopleInDesigns: options?.includePeopleInDesigns || false,
       useLocalLanguage: options?.useLocalLanguage || false,

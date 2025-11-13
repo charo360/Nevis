@@ -15,6 +15,7 @@ import { supabaseService } from "@/lib/services/supabase-service";
 import { createClient } from '@/lib/supabase-server';
 import type { ScheduledService } from "@/services/calendar-service";
 import { MODEL_COSTS } from '@/lib/credit-integration';
+import { formatContactForAI, getPriorityContacts } from '@/lib/utils/smart-contact-formatter';
 
 // Helper function to convert logo URL to base64 data URL for AI models
 async function convertLogoToDataUrl(logoUrl?: string): Promise<string | undefined> {
@@ -322,7 +323,8 @@ export async function generateContentAction(
       contactInfo: profile.contactInfo || {
         phone: (profile as any).contactPhone || '',
         email: (profile as any).contactEmail || '',
-        address: (profile as any).contactAddress || ''
+        address: (profile as any).contactAddress || '',
+        website: profile.websiteUrl || ''
       },
       socialMedia: profile.socialMedia || {},
     };
@@ -376,6 +378,18 @@ export async function generateContentAction(
       ).join('\n')
       : profile.services || '';
 
+    // Smart contact formatting for AI generation
+    const smartContactInfo = enhancedProfile.contactInfo || {};
+    const priorityContacts = getPriorityContacts(smartContactInfo, 3);
+    const formattedContactForAI = formatContactForAI(smartContactInfo, 150);
+    
+    console.log('📞 [Actions] Smart Contact Formatting:', {
+      originalContacts: smartContactInfo,
+      priorityContacts: priorityContacts.map(c => ({ type: c.type, value: c.displayValue })),
+      formattedForAI: formattedContactForAI,
+      includeContacts: brandConsistency?.includeContacts
+    });
+
     // Ensure model registry is initialized
     if (!modelRegistry.isInitialized()) {
       await modelRegistry.initialize();
@@ -408,10 +422,16 @@ export async function generateContentAction(
       designExamples: effectiveDesignExamples,
       dayOfWeek: dayOfWeek,
       currentDate: currentDate,
-      // Contact information for brand consistency
+      // Contact information for brand consistency (using smart formatting)
       includeContacts: brandConsistency?.includeContacts || false,
-      contactInfo: enhancedProfile.contactInfo || {},
-      websiteUrl: enhancedProfile.websiteUrl,
+      contactInfo: brandConsistency?.includeContacts 
+        ? Object.fromEntries(
+            priorityContacts.map(contact => [contact.type, contact.displayValue])
+          )
+        : {},
+      websiteUrl: priorityContacts.find(c => c.type === 'website')?.value || enhancedProfile.websiteUrl,
+      // Add formatted contact string for AI prompts
+      formattedContacts: brandConsistency?.includeContacts ? formattedContactForAI : '',
       // Brand colors toggle
       followBrandColors: brandConsistency?.followBrandColors !== false, // Default to true
       // Local language control
