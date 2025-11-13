@@ -12,6 +12,7 @@ import type { BusinessTypeCategory } from '../adaptive/business-type-detector';
 import { getAssistantConfig, isAssistantImplemented } from './assistant-configs';
 import { openAIFileService } from '@/lib/services/openai-file-service';
 import type { BrandDocument } from '@/types/documents';
+import { withRetry, openAIRetryManagers } from '@/lib/utils/openai-retry-manager';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -161,17 +162,25 @@ export class AssistantManager {
         };
       }
 
-      const thread = await openai.beta.threads.create(threadOptions);
+      const thread = await withRetry(
+        () => openai.beta.threads.create(threadOptions),
+        'Create Thread',
+        'threadOperations'
+      );
       console.log(`📝 [Assistant Manager] Created thread: ${thread.id}`);
 
       // Build message content
       const messageContent = this.buildMessageContent(request);
 
       // Add message to thread
-      await openai.beta.threads.messages.create(thread.id, {
-        role: 'user',
-        content: messageContent,
-      });
+      await withRetry(
+        () => openai.beta.threads.messages.create(thread.id, {
+          role: 'user',
+          content: messageContent,
+        }),
+        'Add Message to Thread',
+        'threadOperations'
+      );
 
       // Run assistant with file_search tool if documents are available
       const runOptions: any = {
@@ -187,7 +196,11 @@ export class AssistantManager {
         console.log(`🔍 [Assistant Manager] Enabled file_search tool for document analysis`);
       }
 
-      const run = await openai.beta.threads.runs.create(thread.id, runOptions);
+      const run = await withRetry(
+        () => openai.beta.threads.runs.create(thread.id, runOptions),
+        'Start Assistant Run',
+        'contentGeneration'
+      );
       console.log(`🏃 [Assistant Manager] Started run: ${run.id}`);
 
       // Wait for completion
@@ -196,20 +209,32 @@ export class AssistantManager {
       // Parse response
       const response = this.parseResponse(result);
 
-      // Clean up resources
+      // Clean up resources with retry logic
       try {
-        await openai.beta.threads.delete(thread.id);
+        await withRetry(
+          () => openai.beta.threads.delete(thread.id),
+          'Delete Thread',
+          'quickOperations'
+        );
         console.log(`🗑️  [Assistant Manager] Deleted thread: ${thread.id}`);
 
         // Clean up vector store if created
         if (vectorStoreId) {
-          await openAIFileService.deleteVectorStore(vectorStoreId);
+          await withRetry(
+            () => openAIFileService.deleteVectorStore(vectorStoreId!),
+            'Delete Vector Store',
+            'fileOperations'
+          );
           console.log(`🗑️  [Assistant Manager] Deleted vector store: ${vectorStoreId}`);
         }
 
         // Clean up uploaded files
         for (const fileId of uploadedFileIds) {
-          await openAIFileService.deleteFile(fileId);
+          await withRetry(
+            () => openAIFileService.deleteFile(fileId),
+            `Delete File ${fileId}`,
+            'fileOperations'
+          );
         }
         if (uploadedFileIds.length > 0) {
           console.log(`🗑️  [Assistant Manager] Deleted ${uploadedFileIds.length} uploaded files`);
@@ -229,7 +254,7 @@ export class AssistantManager {
       const duration = Date.now() - startTime;
       console.error(`❌ [Assistant Manager] Generation failed after ${duration}ms:`, error);
 
-      // Clean up resources on error
+      // Clean up resources on error (best effort, no retry to avoid further delays)
       try {
         if (vectorStoreId) {
           await openAIFileService.deleteVectorStore(vectorStoreId);
@@ -1058,44 +1083,83 @@ export class AssistantManager {
   }
 
   /**
-   * Wait for assistant run to complete
+   * Wait for assistant run to complete with enhanced retry logic
    */
-  private async waitForCompletion(threadId: string, runId: string, maxWaitTime = 60000): Promise<string> {
+  private async waitForCompletion(threadId: string, runId: string, maxWaitTime = 180000): Promise<string> {
     const startTime = Date.now();
     let lastStatus = '';
+    let consecutiveErrors = 0;
+    const maxConsecutiveErrors = 3;
 
     console.log(`⏳ [Assistant Manager] Waiting for completion - Thread: ${threadId}, Run: ${runId}`);
 
     while (Date.now() - startTime < maxWaitTime) {
-      const run = await openai.beta.threads.runs.retrieve(runId, { thread_id: threadId });
+      try {
+        // Use retry logic for status checks
+        const run = await withRetry(
+          () => openai.beta.threads.runs.retrieve(runId, { thread_id: threadId }),
+          'Check Run Status',
+          'quickOperations'
+        );
 
-      // Log status changes
-      if (run.status !== lastStatus) {
-        console.log(`🔄 [Assistant Manager] Run status: ${run.status}`);
-        lastStatus = run.status;
-      }
+        // Reset error counter on successful status check
+        consecutiveErrors = 0;
 
-      if (run.status === 'completed') {
-        // Get messages
-        const messages = await openai.beta.threads.messages.list(threadId);
-        const lastMessage = messages.data[0];
-
-        if (lastMessage.role === 'assistant' && lastMessage.content[0].type === 'text') {
-          return lastMessage.content[0].text.value;
+        // Log status changes
+        if (run.status !== lastStatus) {
+          console.log(`🔄 [Assistant Manager] Run status: ${run.status}`);
+          lastStatus = run.status;
         }
 
-        throw new Error('No text response from assistant');
-      }
+        if (run.status === 'completed') {
+          // Get messages with retry
+          const messages = await withRetry(
+            () => openai.beta.threads.messages.list(threadId),
+            'Get Thread Messages',
+            'quickOperations'
+          );
+          const lastMessage = messages.data[0];
 
-      if (run.status === 'failed' || run.status === 'cancelled' || run.status === 'expired') {
-        throw new Error(`Assistant run ${run.status}: ${run.last_error?.message || 'Unknown error'}`);
-      }
+          if (lastMessage.role === 'assistant' && lastMessage.content[0].type === 'text') {
+            const duration = Date.now() - startTime;
+            console.log(`✅ [Assistant Manager] Run completed successfully in ${duration}ms`);
+            return lastMessage.content[0].text.value;
+          }
 
-      // Wait before polling again
-      await new Promise(resolve => setTimeout(resolve, 1000));
+          throw new Error('No text response from assistant');
+        }
+
+        if (run.status === 'failed' || run.status === 'cancelled' || run.status === 'expired') {
+          throw new Error(`Assistant run ${run.status}: ${run.last_error?.message || 'Unknown error'}`);
+        }
+
+        // Adaptive polling interval based on run status
+        let pollInterval = 1000; // Default 1 second
+        if (run.status === 'in_progress') {
+          pollInterval = 2000; // Slower polling when actively processing
+        } else if (run.status === 'queued') {
+          pollInterval = 3000; // Even slower when queued
+        }
+
+        // Wait before polling again
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
+
+      } catch (error) {
+        consecutiveErrors++;
+        console.warn(`⚠️ [Assistant Manager] Status check error ${consecutiveErrors}/${maxConsecutiveErrors}:`, error);
+
+        // If too many consecutive errors, fail fast
+        if (consecutiveErrors >= maxConsecutiveErrors) {
+          throw new Error(`Too many consecutive status check failures: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+
+        // Wait longer before retrying after error
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      }
     }
 
-    throw new Error('Assistant run timed out after 60 seconds');
+    const duration = Date.now() - startTime;
+    throw new Error(`Assistant run timed out after ${duration}ms (max: ${maxWaitTime}ms)`);
   }
 
   /**
