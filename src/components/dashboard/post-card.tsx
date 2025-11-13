@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import Image from "next/image";
-import { Facebook, Instagram, Linkedin, MoreVertical, Pen, RefreshCw, Twitter, CalendarIcon, Download, Loader2, Video, ChevronLeft, ChevronRight, ImageOff, Copy, Eye, Send, Clock, Share2, CheckCircle, XCircle } from "lucide-react";
+import { Facebook, Instagram, Linkedin, MoreVertical, Pen, RefreshCw, Twitter, CalendarIcon, Download, Loader2, Video, ChevronLeft, ChevronRight, ImageOff, Copy, Eye, Send, Clock, Share2, CheckCircle, XCircle, Palette } from "lucide-react";
 import { toPng } from 'html-to-image';
 import { PerformanceBadgeCompact } from '@/components/ui/performance-badge';
 import { PerformancePredictionService } from '@/services/performance-prediction-service';
@@ -43,6 +43,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from '@/lib/utils';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '../ui/carousel';
 import { createClient } from '@supabase/supabase-js';
+import { ImageEditor } from '@/components/studio/image-editor';
 
 // Supabase client
 const supabase = createClient(
@@ -128,6 +129,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   const [showVideoDialog, setShowVideoDialog] = React.useState(false);
   const [showImagePreview, setShowImagePreview] = React.useState(false);
   const [previewImageUrl, setPreviewImageUrl] = React.useState<string>('');
+  const [showImageEditor, setShowImageEditor] = React.useState(false);
   
   // Posting state
   const [isPosting, setIsPosting] = React.useState(false);
@@ -590,6 +592,16 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
                   Edit Text
                 </button>
                 <button 
+                  className="flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-gray-100"
+                  onClick={() => {
+                    setDropdownOpen(false);
+                    setShowImageEditor(true);
+                  }}
+                >
+                  <Palette className="h-4 w-4" />
+                  Edit Image
+                </button>
+                <button 
                   className={`flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-gray-100 ${isRegenerating ? 'opacity-50 pointer-events-none' : ''}`}
                   onClick={() => {
                     if (!isRegenerating) {
@@ -890,6 +902,50 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
             <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
             <Button onClick={handleSaveChanges}>Save Changes</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Editor Dialog */}
+      <Dialog open={showImageEditor} onOpenChange={setShowImageEditor}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Image</DialogTitle>
+            <DialogDescription>
+              Use AI to edit and enhance your image with text prompts
+            </DialogDescription>
+          </DialogHeader>
+          {showImageEditor && activeVariant?.imageUrl && (
+            <ImageEditor
+              imageUrl={activeVariant.imageUrl}
+              onClose={() => setShowImageEditor(false)}
+              brandProfile={brandProfile}
+              onImageUpdated={(newImageUrl) => {
+                // Update the post with the new image URL
+                const updatedPost = {
+                  ...post,
+                  imageUrl: newImageUrl,
+                  status: 'edited' as const
+                };
+                
+                // If it's a multi-variant post, update the active variant
+                if (post.variants && post.variants.length > 0) {
+                  updatedPost.variants = post.variants.map(variant => 
+                    variant.platform === activeTab 
+                      ? { ...variant, imageUrl: newImageUrl }
+                      : variant
+                  );
+                }
+                
+                onPostUpdated(updatedPost);
+                setShowImageEditor(false);
+                
+                toast({
+                  title: "Image Updated!",
+                  description: "Your image has been successfully edited.",
+                });
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
 
