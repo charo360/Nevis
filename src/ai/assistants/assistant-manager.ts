@@ -74,6 +74,12 @@ export class AssistantManager {
     // Load assistant IDs from environment variables
     this.assistantIds = new Map();
 
+    console.log('🔧 [Assistant Manager] Initializing assistant manager...');
+    console.log('🔧 [Assistant Manager] Environment check:', {
+      hasOpenAIKey: !!process.env.OPENAI_API_KEY,
+      nodeEnv: process.env.NODE_ENV
+    });
+
     // Dynamically load all assistant IDs from environment
     const businessTypes: BusinessTypeCategory[] = [
       'retail', 'finance', 'service', 'saas', 'food',
@@ -86,12 +92,17 @@ export class AssistantManager {
         const assistantId = process.env[config.envVar];
         if (assistantId) {
           this.assistantIds.set(type, assistantId);
-          console.log(`✅ Loaded assistant for ${type}: ${assistantId}`);
+          console.log(`✅ [Assistant Manager] Loaded assistant for ${type}: ${assistantId}`);
         } else {
-          console.warn(`⚠️  No assistant ID found for ${type} (${config.envVar})`);
+          console.warn(`⚠️  [Assistant Manager] No assistant ID found for ${type} (${config.envVar})`);
+          console.warn(`    Looking for: process.env.${config.envVar}`);
         }
+      } else {
+        console.log(`⏭️  [Assistant Manager] Skipping ${type} (not implemented or no config)`);
       }
     }
+
+    console.log(`📊 [Assistant Manager] Total assistants loaded: ${this.assistantIds.size}/10`);
   }
 
   /**

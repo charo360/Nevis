@@ -272,7 +272,7 @@ export function getExactContactInstructions(contactInfo: ContactInfo): string {
       case 'email':
         return `📧 ${contact.value}`;
       case 'website':
-        return `🌐 ${contact.value}`;
+        return `🌐 ${contact.displayValue}`;
       case 'address':
         return `📍 ${contact.value}`;
       default:
@@ -285,8 +285,9 @@ export function getExactContactInstructions(contactInfo: ContactInfo): string {
   if (selectedContacts.some(c => c.type === 'email')) {
     spellingInstructions += `\n- Email EXACT: info@zentechelectronics.co.ke (MUST end with .co.ke NOT .com)`;
   }
-  if (selectedContacts.some(c => c.type === 'website')) {
-    spellingInstructions += `\n- Website EXACT: https://zentechelectronics.com/ (MUST end with .com NOT .co.ke)`;
+  const websiteContact = selectedContacts.find(c => c.type === 'website');
+  if (websiteContact) {
+    spellingInstructions += `\n- Website EXACT: ${websiteContact.displayValue} (MUST end with .com NOT .co.ke)`;
   }
   if (selectedContacts.some(c => c.type === 'email') || selectedContacts.some(c => c.type === 'website')) {
     spellingInstructions += `\n- CRITICAL: The domain is zen-tech-ELEC-tronics (ELEC is the part that gets missed)`;
@@ -339,7 +340,7 @@ export function getExactContactInstructionsWebsiteFirst(contactInfo: ContactInfo
       case 'email':
         return `📧 ${contact.value}`;
       case 'website':
-        return `🌐 ${contact.value}`;
+        return `🌐 ${contact.displayValue}`;
       case 'address':
         return `📍 ${contact.value}`;
       default:
@@ -352,8 +353,9 @@ export function getExactContactInstructionsWebsiteFirst(contactInfo: ContactInfo
   if (selectedContacts.some(c => c.type === 'email')) {
     spellingInstructions += `\n- Email EXACT: info@zentechelectronics.co.ke (MUST end with .co.ke NOT .com)`;
   }
-  if (selectedContacts.some(c => c.type === 'website')) {
-    spellingInstructions += `\n- Website EXACT: https://zentechelectronics.com/ (MUST end with .com NOT .co.ke)`;
+  const websiteContact = selectedContacts.find(c => c.type === 'website');
+  if (websiteContact) {
+    spellingInstructions += `\n- Website EXACT: ${websiteContact.displayValue} (MUST end with .com NOT .co.ke)`;
   }
   if (selectedContacts.some(c => c.type === 'email') || selectedContacts.some(c => c.type === 'website')) {
     spellingInstructions += `\n- CRITICAL: The domain is zen-tech-ELEC-tronics (ELEC is the part that gets missed)`;

@@ -104,11 +104,27 @@ export async function generateRevo2ContentAction(
 
     // Generate with Revo 2.0
     const result = await generateWithRevo20(revo2Options);
+    
+    // Log content source for debugging
+    const contentSource = result.businessIntelligence?.contentSource || 'unknown';
+    console.log(`🤖 [Revo 2.0 Action] Content generated using: ${contentSource}`);
+    console.log(`   - Business Type: ${result.businessIntelligence?.businessType || 'unknown'}`);
+    console.log(`   - Processing Time: ${result.processingTime}ms`);
+    console.log(`   - Quality Score: ${result.qualityScore}`);
+    
+    // Alert user if fallback was used
+    if (contentSource === 'claude_fallback') {
+      console.warn(`⚠️ [Revo 2.0 Action] ASSISTANT FAILED - Using Claude fallback`);
+      console.warn(`   This means the OpenAI Assistant encountered an error during generation.`);
+      console.warn(`   Check server logs for detailed error information.`);
+    } else if (contentSource === 'assistant') {
+      console.log(`✅ [Revo 2.0 Action] SUCCESS - OpenAI Assistant generated content!`);
+    }
 
     // Convert to GeneratedPost format (UNIFIED across all Revo versions)
     const generatedPost: GeneratedPost = {
       id: `revo2-${Date.now()}`,
-      date: new Date().toISOString(),
+      brandProfileId: brandProfile.id || '',
       platform: platform.toLowerCase(),
       postType: 'post',
       imageUrl: result.imageUrl,
@@ -129,7 +145,8 @@ export async function generateRevo2ContentAction(
         model: result.model,
         qualityScore: result.qualityScore,
         processingTime: result.processingTime,
-        enhancementsApplied: result.enhancementsApplied
+        enhancementsApplied: result.enhancementsApplied,
+        contentSource: contentSource // Add content source to metadata
       }
     };
 

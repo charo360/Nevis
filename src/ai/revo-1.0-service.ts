@@ -8048,9 +8048,10 @@ function buildRevo10ImagePrompt(options: any, concept: any): string {
     // Use EXACT contact information without any modifications
     if (phone && phone.trim()) contacts.push(`📞 ${phone.trim()}`);
     if (email && email.trim()) contacts.push(`📧 ${email.trim()}`);
-    // Use EXACT website URL without formatting changes - NEVER generate fake URLs
+    // Clean website URL: remove https:// and http:// for cleaner display - NEVER generate fake URLs
     if (website && website.trim() && !website.includes('example.com') && !website.includes('placeholder')) {
-      contacts.push(`🌐 ${website.trim()}`);
+      const cleanWebsite = website.trim().replace(/^https?:\/\//, '');
+      contacts.push(`🌐 ${cleanWebsite}`);
     }
     if (address && address.trim()) contacts.push(`📍 ${address.trim()}`);
 

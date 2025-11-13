@@ -63,6 +63,9 @@ export async function POST(request: NextRequest) {
       throw new Error(`Revo 2.0 Debug Error: ${errorMessage}`);
     }
 
+    // Extract content source for client-side logging
+    const contentSource = result.businessIntelligence?.contentSource || 'unknown';
+
     return NextResponse.json({
       success: true,
       imageUrl: result.imageUrl,
@@ -77,7 +80,8 @@ export async function POST(request: NextRequest) {
       cta: result.cta,
       hashtags: result.hashtags,
       businessIntelligence: result.businessIntelligence,
-      message: 'Revo 2.0 Enhanced content generated successfully'
+      contentSource: contentSource, // Add to top level for easy access
+      message: `Revo 2.0 content generated using ${contentSource}`
     });
 
   } catch (error) {

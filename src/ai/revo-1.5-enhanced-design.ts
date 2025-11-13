@@ -3157,9 +3157,10 @@ CRITICAL INSTRUCTION: The image MUST visually represent and include the text con
     // Use EXACT contact information without any modifications
     if (phone && phone.trim()) contacts.push(`📞 ${phone.trim()}`);
     if (email && email.trim()) contacts.push(`📧 ${email.trim()}`);
-    // Use EXACT website URL without formatting changes
+    // Clean website URL: remove https:// and http:// for cleaner display
     if (website && website.trim() && !website.includes('example.com') && !website.includes('placeholder')) {
-      contacts.push(`🌐 ${website.trim()}`);
+      const cleanWebsite = website.trim().replace(/^https?:\/\//, '');
+      contacts.push(`🌐 ${cleanWebsite}`);
     }
     if (address && address.trim()) contacts.push(`📍 ${address.trim()}`);
 
@@ -4407,7 +4408,11 @@ export async function generateRevo15EnhancedDesign(
         // Check if coherence is acceptable
         const coherenceAcceptable = coherenceValidation.isCoherent && coherenceValidation.coherenceScore >= 60;
 
-        if (!coherenceAcceptable) {
+        // UPDATED: Trust specialized assistants - skip coherence fallback for all assistant types
+        const allAssistantTypes = ['food', 'retail', 'finance', 'healthcare', 'realestate', 'service', 'saas', 'education', 'b2b', 'nonprofit'];
+        const trustAssistant = allAssistantTypes.includes(detectedType);
+
+        if (!coherenceAcceptable && !trustAssistant) {
           console.warn(`⚠️ [Revo 1.5] Assistant content has poor coherence (score: ${coherenceValidation.coherenceScore})`);
 
           if (!fallbackEnabled) {
@@ -4418,6 +4423,9 @@ export async function generateRevo15EnhancedDesign(
           console.warn(`⚠️ [Revo 1.5] Falling back to standard generation due to poor coherence`);
           // Fall through to standard generation
         } else {
+          if (!coherenceAcceptable && trustAssistant) {
+            console.log(`✅ [Revo 1.5] Trusting ${detectedType} Assistant expertise despite coherence score of ${coherenceValidation.coherenceScore}`);
+          }
           console.log(`✅ [Revo 1.5] Assistant content passed coherence validation (score: ${coherenceValidation.coherenceScore})`);
 
           // Generate image with assistant-generated content

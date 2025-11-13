@@ -1707,9 +1707,10 @@ export function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: a
       // Use EXACT contact information without any modifications
       if (phone && phone.trim()) contacts.push(`📞 ${phone.trim()}`);
       if (email && email.trim()) contacts.push(`📧 ${email.trim()}`);
-      // Use EXACT website URL without formatting changes - NEVER generate fake URLs
+      // Clean website URL: remove https:// and http:// for cleaner display - NEVER generate fake URLs
       if (website && website.trim() && !website.includes('example.com') && !website.includes('placeholder')) {
-        contacts.push(`🌐 ${website.trim()}`);
+        const cleanWebsite = website.trim().replace(/^https?:\/\//, '');
+        contacts.push(`🌐 ${cleanWebsite}`);
       }
       if (address && address.trim()) contacts.push(`📍 ${address.trim()}`);
 
@@ -2212,29 +2213,40 @@ export async function generateCaptionAndHashtags(
 }> {
   const { businessType, brandProfile, platform } = options;
 
-  // ============================================================================
-  // MULTI-ASSISTANT ARCHITECTURE - FEATURE FLAG SYSTEM
-  // ============================================================================
-
   // Detect business type for assistant selection
   const detection = detectBusinessType(brandProfile);
   const detectedType = detection.primaryType;
 
+  console.log(`🔍 [Revo 2.0] Business type detection:`, {
+    businessName: brandProfile.businessName,
+    businessType: brandProfile.businessType,
+    detectedType: detectedType,
+    confidence: detection.confidence
+  });
+
   // Check if we should use assistant for this business type
   const useAssistant = shouldUseAssistant(detectedType);
+  const isAssistantAvailable = assistantManager.isAvailable(detectedType);
+
+  console.log(`🤖 [Revo 2.0] Assistant availability check:`, {
+    detectedType,
+    shouldUseAssistant: useAssistant,
+    isAssistantAvailable: isAssistantAvailable,
+    willUseAssistant: useAssistant && isAssistantAvailable
+  });
 
   // Check if fallback is enabled
   const fallbackEnabled = process.env.ENABLE_ASSISTANT_FALLBACK !== 'false';
 
-  if (useAssistant && assistantManager.isAvailable(detectedType)) {
-    console.log(`🤖 [Revo 2.0] Using Multi-Assistant Architecture for ${detectedType}`);
+  if (useAssistant && isAssistantAvailable) {
+    console.log(`🤖 [Revo 2.0] ✅ Using Multi-Assistant Architecture for ${detectedType}`);
     console.log(`🔧 [Revo 2.0] Fallback to adaptive framework: ${fallbackEnabled ? 'ENABLED' : 'DISABLED'}`);
 
     try {
       // Get marketing angle for assistant (hydrate from DB first)
       const brandKey = getBrandKey(brandProfile, platform);
       await hydrateAnglesFromDb(brandKey, (brandProfile as any)?.id, platform as any);
-  const assignedAngle = assignMarketingAngle(brandKey, options);
+      const assignedAngle = assignMarketingAngle(brandKey, options);
 
       // Build DB-backed avoid list from recent posts
       const brandProfileId = (brandProfile as any)?.id as string | undefined;
@@ -3782,10 +3794,13 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
       if (!validationResult.isValid) {
         console.warn(`⚠️ [Revo 2.0] Content-design alignment failed (${validationResult.score}/100), trying synchronization...`);
 
-        // SPECIAL CASE: For food business, skip validation fallback to preserve Business Profiler integration
-        if (businessType.primaryType === 'food') {
-          console.log(`🍕 [Revo 2.0] Food business detected - skipping validation fallback to preserve Business Profiler`);
-          console.log(`✅ [Revo 2.0] Using Food Assistant content despite validation score`);
+        // SPECIAL CASE: Skip validation fallback for ALL assistants to preserve their specialized expertise
+        const allAssistantTypes = ['food', 'retail', 'finance', 'healthcare', 'realestate', 'service', 'saas', 'education', 'b2b', 'nonprofit'];
+        const skipValidationFallback = allAssistantTypes.includes(businessType.primaryType);
+        
+        if (skipValidationFallback) {
+          console.log(`✅ [Revo 2.0] ${businessType.primaryType} Assistant detected - skipping validation fallback to preserve specialized expertise`);
+          console.log(`✅ [Revo 2.0] Using ${businessType.primaryType} Assistant content despite validation score of ${validationResult.score}/100`);
         } else {
           // Try content-visual synchronization before falling back to Claude
           const { contentVisualSynchronizer } = await import('./synchronization/content-visual-sync');

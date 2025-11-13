@@ -233,6 +233,21 @@ export function ContentCalendar({
 
         revo20Result = await response.json();
 
+        // Log content source for debugging
+        const contentSource = revo20Result.contentSource || revo20Result.businessIntelligence?.contentSource || 'unknown';
+        console.log(`🤖 [Content Calendar] Revo 2.0 Generation Complete!`);
+        console.log(`   📊 Content Source: ${contentSource}`);
+        console.log(`   ⏱️  Processing Time: ${revo20Result.processingTime}ms`);
+        console.log(`   ⭐ Quality Score: ${revo20Result.qualityScore}`);
+        
+        if (contentSource === 'assistant') {
+          console.log(`   ✅ SUCCESS: OpenAI Assistant generated the content!`);
+        } else if (contentSource === 'claude_fallback') {
+          console.warn(`   ⚠️  FALLBACK: OpenAI Assistant failed, used Claude instead`);
+        } else if (contentSource === 'claude_primary') {
+          console.warn(`   ℹ️  INFO: No assistant available, used Claude`);
+        }
+
         // Combine AI-generated hashtags with trending hashtags
         const combinedHashtags = [
           ...(revo20Result.hashtags || ['#NextGen', '#AI', '#Innovation']),

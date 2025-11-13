@@ -142,6 +142,13 @@ export async function generateRevo15ContentAction(
       scheduledServices: scheduledServices || []
     });
 
+    // Log assistant usage for debugging
+    const usedAssistant = result.model?.includes('OpenAI Assistant');
+    console.log(`🤖 [Revo 1.5 Action] Generation Complete!`);
+    console.log(`   📊 Used Assistant: ${usedAssistant ? 'YES ✅' : 'NO (Standard Generation)'}`);
+    console.log(`   ⏱️  Processing Time: ${result.processingTime}ms`);
+    console.log(`   🎨 Model: ${result.model}`);
+
     // NO FALLBACKS - All content must come from Pure AI
     if (!result.caption || !result.headline || !result.subheadline || !result.callToAction || !result.hashtags) {
       throw new Error('🚫 [Revo 1.5 Actions] Pure AI response incomplete - missing required fields. No fallbacks allowed!');
