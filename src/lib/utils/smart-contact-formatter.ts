@@ -231,15 +231,41 @@ export function getSmartContactSummary(contactInfo: ContactInfo): {
   };
 }
 
-// Generate exact contact preservation instructions for AI
+// Generate exact contact preservation instructions for AI with smart selection
 export function getExactContactInstructions(contactInfo: ContactInfo): string {
-  const validContacts = getPriorityContacts(contactInfo, 3);
+  const validContacts = getPriorityContacts(contactInfo, 4);
   
   if (validContacts.length === 0) {
     return '';
   }
   
-  const instructions = validContacts.map(contact => {
+  // Smart contact selection for footer space - prioritize shorter, more important contacts
+  let selectedContacts: any[] = [];
+  
+  // Always include phone if available (shortest, most important)
+  const phone = validContacts.find(c => c.type === 'phone');
+  if (phone) selectedContacts.push(phone);
+  
+  // Choose between email OR website (not both) to avoid length issues
+  const email = validContacts.find(c => c.type === 'email');
+  const website = validContacts.find(c => c.type === 'website');
+  
+  if (email && website) {
+    // If both exist, choose email (more direct contact method)
+    selectedContacts.push(email);
+  } else if (email) {
+    selectedContacts.push(email);
+  } else if (website) {
+    selectedContacts.push(website);
+  }
+  
+  // Add address only if we have space (max 3 total contacts)
+  const address = validContacts.find(c => c.type === 'address');
+  if (address && selectedContacts.length < 3) {
+    selectedContacts.push(address);
+  }
+  
+  const instructions = selectedContacts.map(contact => {
     switch (contact.type) {
       case 'phone':
         return `📞 ${contact.value}`;
@@ -254,7 +280,79 @@ export function getExactContactInstructions(contactInfo: ContactInfo): string {
     }
   }).filter(Boolean);
   
+  // Create specific spelling instructions based on what's selected
+  let spellingInstructions = '';
+  if (selectedContacts.some(c => c.type === 'email')) {
+    spellingInstructions += `\n- Email MUST be: info@zentechelectronics.co.ke (NOT zentechectronics, NOT zentehctronics)`;
+  }
+  if (selectedContacts.some(c => c.type === 'website')) {
+    spellingInstructions += `\n- Website MUST be: https://zentechelectronics.com/ (NOT zentectlectronics, NOT zentehctronics)`;
+  }
+  
   return instructions.length > 0 
-    ? `\n\n🚨 MANDATORY CONTACT INFORMATION (COPY EXACTLY):\n${instructions.join(' | ')}\n\n🚨 CRITICAL SPELLING REQUIREMENT:\n- Email MUST be: info@zentechelectronics.co.ke (NOT zentechectronics, NOT zentehctronics)\n- Website MUST be: https://zentechelectronics.com/ (NOT zentectlectronics, NOT zentehctronics)\n- Phone MUST be: ${contactInfo.phone || 'as provided'}\n- ZERO TOLERANCE for spelling mistakes in contact information\n- Copy contact info character-by-character from above\n- Display in SINGLE HORIZONTAL LINE in footer with | separators`
+    ? `\n\n🚨 MANDATORY CONTACT INFORMATION (COPY EXACTLY):\n${instructions.join(' | ')}\n\n🚨 CRITICAL SPELLING REQUIREMENT:${spellingInstructions}\n- ZERO TOLERANCE for spelling mistakes in contact information\n- Copy contact info character-by-character from above\n- Display in SINGLE HORIZONTAL LINE in footer with | separators\n- SPACE CONSTRAINT: Only include the contacts shown above (do not add extra contacts)\n- LENGTH LIMIT: If footer space is tight, prioritize phone + email OR phone + website (not all three)`
+    : '';
+}
+
+// Alternative version that prioritizes website over email
+export function getExactContactInstructionsWebsiteFirst(contactInfo: ContactInfo): string {
+  const validContacts = getPriorityContacts(contactInfo, 4);
+  
+  if (validContacts.length === 0) {
+    return '';
+  }
+  
+  // Smart contact selection for footer space - prioritize website over email
+  let selectedContacts: any[] = [];
+  
+  // Always include phone if available (shortest, most important)
+  const phone = validContacts.find(c => c.type === 'phone');
+  if (phone) selectedContacts.push(phone);
+  
+  // Choose between website OR email (prioritize website this time)
+  const email = validContacts.find(c => c.type === 'email');
+  const website = validContacts.find(c => c.type === 'website');
+  
+  if (email && website) {
+    // If both exist, choose website (for business visibility)
+    selectedContacts.push(website);
+  } else if (website) {
+    selectedContacts.push(website);
+  } else if (email) {
+    selectedContacts.push(email);
+  }
+  
+  // Add address only if we have space (max 3 total contacts)
+  const address = validContacts.find(c => c.type === 'address');
+  if (address && selectedContacts.length < 3) {
+    selectedContacts.push(address);
+  }
+  
+  const instructions = selectedContacts.map(contact => {
+    switch (contact.type) {
+      case 'phone':
+        return `📞 ${contact.value}`;
+      case 'email':
+        return `📧 ${contact.value}`;
+      case 'website':
+        return `🌐 ${contact.value}`;
+      case 'address':
+        return `📍 ${contact.value}`;
+      default:
+        return '';
+    }
+  }).filter(Boolean);
+  
+  // Create specific spelling instructions based on what's selected
+  let spellingInstructions = '';
+  if (selectedContacts.some(c => c.type === 'email')) {
+    spellingInstructions += `\n- Email MUST be: info@zentechelectronics.co.ke (NOT zentechectronics, NOT zentehctronics)`;
+  }
+  if (selectedContacts.some(c => c.type === 'website')) {
+    spellingInstructions += `\n- Website MUST be: https://zentechelectronics.com/ (NOT zentectlectronics, NOT zentehctronics)`;
+  }
+  
+  return instructions.length > 0 
+    ? `\n\n🚨 MANDATORY CONTACT INFORMATION (COPY EXACTLY):\n${instructions.join(' | ')}\n\n🚨 CRITICAL SPELLING REQUIREMENT:${spellingInstructions}\n- ZERO TOLERANCE for spelling mistakes in contact information\n- Copy contact info character-by-character from above\n- Display in SINGLE HORIZONTAL LINE in footer with | separators\n- SPACE CONSTRAINT: Only include the contacts shown above (do not add extra contacts)`
     : '';
 }
