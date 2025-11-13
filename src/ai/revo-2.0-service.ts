@@ -1679,7 +1679,7 @@ export function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: a
     
     if (exactInstructions && exactInstructions.trim()) {
       // Use the exact contact instructions from smart formatter
-      contactInstruction = `\n\n${exactInstructions}\n\n**CRITICAL FOR DESIGN**: When including contact information in the design, copy it character-for-character from the exact instructions above. Do not modify spelling, domains, or formatting. LAYOUT REQUIREMENT: Display all contact information in a SINGLE HORIZONTAL LINE at the bottom footer of the design, separated by | symbols.`;
+      contactInstruction = `\n\n${exactInstructions}\n\n🚨 ABSOLUTELY CRITICAL - NO SPELLING MISTAKES ALLOWED:\n- Email domain MUST be "zentechelectronics" (NOT zentechectronics, NOT zentehctronics, NOT zentectlectronics)\n- Website domain MUST be "zentechelectronics" (NOT zentechectronics, NOT zentehctronics, NOT zentectlectronics)\n- PROOFREAD every letter of contact information before finalizing\n- ZERO TOLERANCE for contact spelling errors\n\n**CRITICAL FOR DESIGN**: Copy contact information character-for-character from above. Display in SINGLE HORIZONTAL LINE at bottom footer, separated by | symbols.`;
     } else {
       // Fallback to original contact detection if smart formatter not available
       const contacts: string[] = [];

@@ -242,19 +242,19 @@ export function getExactContactInstructions(contactInfo: ContactInfo): string {
   const instructions = validContacts.map(contact => {
     switch (contact.type) {
       case 'phone':
-        return `EXACT PHONE: "${contact.value}" (use exactly as written, do not modify)`;
+        return `📞 ${contact.value}`;
       case 'email':
-        return `EXACT EMAIL: "${contact.value}" (use exactly as written, do not modify spelling)`;
+        return `📧 ${contact.value}`;
       case 'website':
-        return `EXACT WEBSITE: "${contact.value}" (use exactly as written, do not modify domain)`;
+        return `🌐 ${contact.value}`;
       case 'address':
-        return `EXACT ADDRESS: "${contact.value}" (use exactly as written, do not modify)`;
+        return `📍 ${contact.value}`;
       default:
         return '';
     }
   }).filter(Boolean);
   
   return instructions.length > 0 
-    ? `\n\nCONTACT PRESERVATION INSTRUCTIONS:\n${instructions.join(' | ')}\nIMPORTANT: Use contact information EXACTLY as provided above. Do not change spelling, domains, or formatting. Display all contact info in a SINGLE HORIZONTAL LINE separated by | symbols in the footer area.`
+    ? `\n\n🚨 MANDATORY CONTACT INFORMATION (COPY EXACTLY):\n${instructions.join(' | ')}\n\n🚨 CRITICAL SPELLING REQUIREMENT:\n- Email MUST be: info@zentechelectronics.co.ke (NOT zentechectronics, NOT zentehctronics)\n- Website MUST be: https://zentechelectronics.com/ (NOT zentectlectronics, NOT zentehctronics)\n- Phone MUST be: ${contactInfo.phone || 'as provided'}\n- ZERO TOLERANCE for spelling mistakes in contact information\n- Copy contact info character-by-character from above\n- Display in SINGLE HORIZONTAL LINE in footer with | separators`
     : '';
 }
