@@ -1671,44 +1671,52 @@ export function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: a
   const chosenType = pickNonRepeating(typographySet);
   const chosenEffect = pickNonRepeating(effects);
 
-  // Lightweight contact integration - only add if contacts toggle is enabled
+  // Smart contact integration with exact preservation - only add if contacts toggle is enabled
   let contactInstruction = '';
   if (options.includeContacts === true) {
-    const contacts: string[] = [];
+    // Check if exact contact instructions are provided from smart formatter
+    const exactInstructions = (brandProfile as any)?.exactContactInstructions;
+    
+    if (exactInstructions && exactInstructions.trim()) {
+      // Use the exact contact instructions from smart formatter
+      contactInstruction = `\n\n${exactInstructions}\n\n**CRITICAL FOR DESIGN**: When including contact information in the design, copy it character-for-character from the exact instructions above. Do not modify spelling, domains, or formatting.`;
+    } else {
+      // Fallback to original contact detection if smart formatter not available
+      const contacts: string[] = [];
 
-    // Simple contact detection (multiple data structure support)
-    const phone = brandProfile?.contactInfo?.phone ||
-      (brandProfile as any)?.contact?.phone ||
-      (brandProfile as any)?.contactPhone ||
-      (brandProfile as any)?.phone;
+      // Simple contact detection (multiple data structure support)
+      const phone = brandProfile?.contactInfo?.phone ||
+        (brandProfile as any)?.contact?.phone ||
+        (brandProfile as any)?.contactPhone ||
+        (brandProfile as any)?.phone;
 
-    const email = brandProfile?.contactInfo?.email ||
-      (brandProfile as any)?.contact?.email ||
-      (brandProfile as any)?.contactEmail ||
-      (brandProfile as any)?.email;
+      const email = brandProfile?.contactInfo?.email ||
+        (brandProfile as any)?.contact?.email ||
+        (brandProfile as any)?.contactEmail ||
+        (brandProfile as any)?.email;
 
-    const website = brandProfile?.websiteUrl ||
-      (brandProfile as any)?.contact?.website ||
-      (brandProfile as any)?.website;
+      const website = brandProfile?.websiteUrl ||
+        (brandProfile as any)?.contact?.website ||
+        (brandProfile as any)?.website;
 
-    const address = brandProfile?.contactInfo?.address ||
-      (brandProfile as any)?.contact?.address ||
-      (brandProfile as any)?.contactAddress ||
-      (brandProfile as any)?.address;
+      const address = brandProfile?.contactInfo?.address ||
+        (brandProfile as any)?.contact?.address ||
+        (brandProfile as any)?.contactAddress ||
+        (brandProfile as any)?.address;
 
-    // Use EXACT contact information without any modifications
-    if (phone && phone.trim()) contacts.push(`📞 ${phone.trim()}`);
-    if (email && email.trim()) contacts.push(`📧 ${email.trim()}`);
-    // Use EXACT website URL without formatting changes - NEVER generate fake URLs
-    if (website && website.trim() && !website.includes('example.com') && !website.includes('placeholder')) {
-      contacts.push(`🌐 ${website.trim()}`);
+      // Use EXACT contact information without any modifications
+      if (phone && phone.trim()) contacts.push(`📞 ${phone.trim()}`);
+      if (email && email.trim()) contacts.push(`📧 ${email.trim()}`);
+      // Use EXACT website URL without formatting changes - NEVER generate fake URLs
+      if (website && website.trim() && !website.includes('example.com') && !website.includes('placeholder')) {
+        contacts.push(`🌐 ${website.trim()}`);
+      }
+      if (address && address.trim()) contacts.push(`📍 ${address.trim()}`);
+
+      if (contacts.length > 0) {
+        contactInstruction = `\n\n🔗 **CONTACT INFORMATION TO INCLUDE (USE EXACTLY AS SHOWN):**\n${contacts.join('\n')}\n\n**CRITICAL**: Use contact information EXACTLY as provided above. Do not modify spelling, domains, or formatting. If including contact info in the design, copy it character-for-character from above.`;
+      }
     }
-    if (address && address.trim()) contacts.push(`📍 ${address.trim()}`);
-
-    if (contacts.length > 0) {
-      contactInstruction = `\n\n📞 MANDATORY CONTACT FOOTER:\n${contacts.join('\n')}\n🚨 CRITICAL: Use the EXACT contact information provided above - DO NOT modify, change, or reformat any phone numbers, emails, or websites\n🚨 CRITICAL: Copy the contact details EXACTLY as shown - no typos, no missing letters, no changes\n- ALWAYS place contact information at the BOTTOM FOOTER of the design\n- Create a clean contact strip/bar at the bottom edge\n- MANDATORY: Footer background MUST use BRAND COLORS (${primaryColor}, ${accentColor}, or ${backgroundColor})\n- MANDATORY: If brand color is dark, use WHITE or LIGHT text; if brand color is light, use DARK text\n- MANDATORY: DO NOT use black (#000000) unless it's explicitly a brand color\n- Ensure contact details are large enough to read (minimum 14px equivalent)\n- Format: ${contacts.join(' | ')}\n- NEVER place contacts anywhere except the footer area\n- Use professional styling that complements and matches the brand colors`;
-    }
-
   }
 
   return `🎨 Create a ${visualStyle} social media design for ${brandProfile.businessName} (${businessType}) for ${platform}.
