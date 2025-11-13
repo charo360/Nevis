@@ -113,9 +113,9 @@ export async function POST(request: NextRequest) {
 
     // Define model costs based on Revo versions
     const MODEL_COSTS = {
-      'revo-1.0': 2,
-      'revo-1.5': 3,
-      'revo-2.0': 4,
+      'revo-1.0': 3,
+      'revo-1.5': 4,
+      'revo-2.0': 5,
     };
 
     const creditsToDeduct = MODEL_COSTS[model_version as keyof typeof MODEL_COSTS];

@@ -9,6 +9,7 @@ import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { useCredits } from '@/hooks/use-credits';
 // Removed generateCreativeAssetAction - now using /api/image-edit endpoint directly
 import type { BrandProfile } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -25,6 +26,7 @@ interface ImageEditorProps {
 export function ImageEditor({ imageUrl, onClose, brandProfile, onImageUpdated }: ImageEditorProps) {
     const imageCanvasRef = useRef<HTMLCanvasElement>(null);
     const drawingCanvasRef = useRef<HTMLCanvasElement>(null);
+    const { useCreditsForImageEdit } = useCredits();
 
     const [isDrawing, setIsDrawing] = useState(false);
     const [brushSize, setBrushSize] = useState(40);
@@ -257,16 +259,34 @@ export function ImageEditor({ imageUrl, onClose, brandProfile, onImageUpdated }:
             toast({ variant: 'destructive', title: "Prompt is required", description: "Please describe what you want to change." });
             return;
         }
+
         setIsLoading(true);
 
-        const maskDataUrl = getMaskDataUrl();
-        if (!maskDataUrl) {
-            toast({ variant: 'destructive', title: "Mask Error", description: "Could not generate the mask data." });
-            setIsLoading(false);
-            return;
-        }
-
         try {
+            // Deduct 1 credit for image editing
+            const creditResult = await useCreditsForImageEdit({
+                feature: 'image_editing',
+                editType: 'ai_inpainting',
+                prompt: prompt.substring(0, 100) // Log first 100 chars of prompt
+            });
+            if (!creditResult.success) {
+                toast({
+                    variant: "destructive",
+                    title: "Insufficient Credits",
+                    description: "You need 1 credit to edit this image. Please purchase more credits.",
+                    duration: 6000,
+                });
+                setIsLoading(false);
+                return;
+            }
+
+            const maskDataUrl = getMaskDataUrl();
+            if (!maskDataUrl) {
+                toast({ variant: 'destructive', title: "Mask Error", description: "Could not generate the mask data." });
+                setIsLoading(false);
+                return;
+            }
+
             // Convert current image to base64 for the API
             const imageCanvas = imageCanvasRef.current;
             if (!imageCanvas) {

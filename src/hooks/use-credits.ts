@@ -21,9 +21,9 @@ export interface UseCreditResult {
 
 // Model cost configuration - Revo versions
 export const MODEL_COSTS = {
-  'revo-1.0': 2,
-  'revo-1.5': 3,
-  'revo-2.0': 4,
+  'revo-1.0': 3,
+  'revo-1.5': 4,
+  'revo-2.0': 5,
 } as const;
 
 export type ModelVersion = keyof typeof MODEL_COSTS;
@@ -259,6 +259,55 @@ export function useCredits() {
     return MODEL_COSTS[modelVersion];
   }, []);
 
+  // Use credits for image editing (1 credit)
+  const useCreditsForImageEdit = useCallback(async (
+    metadata?: Record<string, any>
+  ): Promise<UseCreditResult> => {
+    if (!user) {
+      return { success: false, error: 'User not authenticated' };
+    }
+
+    setLoading(true);
+
+    try {
+      // Import the credit integration function dynamically to avoid SSR issues
+      const { deductCreditsForImageEdit } = await import('@/lib/credit-integration');
+      
+      const result = await deductCreditsForImageEdit(user.userId, metadata);
+
+      if (result.success) {
+        // Update local credit balance
+        setCreditBalance(prev => prev ? {
+          ...prev,
+          remaining_credits: result.remainingCredits || 0,
+          used_credits: (prev.used_credits || 0) + (result.costDeducted || 0),
+        } : null);
+
+        return {
+          success: true,
+          credits_used: result.costDeducted,
+          model_version: 'image-edit',
+          remaining_credits: result.remainingCredits,
+          used_credits: (creditBalance?.used_credits || 0) + (result.costDeducted || 0),
+        };
+      } else {
+        return { 
+          success: false, 
+          error: result.message 
+        };
+      }
+    } catch (error) {
+      console.error('Error deducting credits for image edit:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to deduct credits' 
+      };
+    } finally {
+      setLoading(false);
+    }
+  }, [user, creditBalance]);
+
+
   // Check if user can afford a specific model
   const canAffordModel = useCallback(async (modelVersion: ModelVersion): Promise<boolean> => {
     return await hasEnoughCreditsForModel(modelVersion);
@@ -307,6 +356,7 @@ export function useCredits() {
     // New model-specific functions
     hasEnoughCreditsForModel,
     useCreditsForModel,
+    useCreditsForImageEdit,
     getCostForModel,
     canAffordModel,
     getGenerationsAvailable,

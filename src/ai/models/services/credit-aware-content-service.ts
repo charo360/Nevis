@@ -266,9 +266,9 @@ export class CreditAwareContentGenerationService {
     if (!modelVersion) return 0;
     
     const costs = {
-      'revo-1.0': 2,
-      'revo-1.5': 3,
-      'revo-2.0': 4
+      'revo-1.0': 3,
+      'revo-1.5': 4,
+      'revo-2.0': 5
     };
     
     return costs[modelVersion];

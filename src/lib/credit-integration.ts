@@ -9,9 +9,9 @@ import { createClient } from '@/lib/supabase-client';
 
 // Model cost configuration matching the pricing structure
 export const MODEL_COSTS = {
-  'revo-1.0': 2,
-  'revo-1.5': 3, 
-  'revo-2.0': 4,
+  'revo-1.0': 3,
+  'revo-1.5': 4, 
+  'revo-2.0': 5,
 } as const;
 
 export type ModelVersion = keyof typeof MODEL_COSTS;
@@ -297,4 +297,96 @@ export function getCostForModel(modelVersion: ModelVersion): number {
  */
 export function isValidModelVersion(version: string): version is ModelVersion {
   return version in MODEL_COSTS;
+}
+
+/**
+ * Deduct credits for image editing (fixed 1 credit cost)
+ * Used when users edit images in the Quick Content card menu
+ */
+export async function deductCreditsForImageEdit(
+  userId: string,
+  metadata?: Record<string, any>
+): Promise<CreditUsageResult> {
+  const EDIT_CREDIT_COST = 1;
+  
+  try {
+    const supabase = createClient();
+
+    // Check if user has enough credits
+    const { data: userData, error: fetchError } = await supabase
+      .from('user_credits')
+      .select('remaining_credits')
+      .eq('user_id', userId)
+      .single();
+
+    if (fetchError) {
+      console.error('❌ Error fetching user credits:', fetchError);
+      return {
+        success: false,
+        message: 'Failed to fetch user credits',
+      };
+    }
+
+    if (!userData || userData.remaining_credits < EDIT_CREDIT_COST) {
+      return {
+        success: false,
+        message: `Insufficient credits. Need ${EDIT_CREDIT_COST} credit for image editing.`,
+        remainingCredits: userData?.remaining_credits || 0,
+      };
+    }
+
+    // Deduct credits
+    const { data: updateData, error: updateError } = await supabase
+      .from('user_credits')
+      .update({
+        remaining_credits: userData.remaining_credits - EDIT_CREDIT_COST,
+        used_credits: supabase.raw(`used_credits + ${EDIT_CREDIT_COST}`),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error('❌ Error updating credits:', updateError);
+      return {
+        success: false,
+        message: 'Failed to deduct credits',
+      };
+    }
+
+    // Record usage in credit_usage table
+    const { data: usageData, error: usageError } = await supabase
+      .from('credit_usage')
+      .insert({
+        user_id: userId,
+        credits_used: EDIT_CREDIT_COST,
+        feature: 'image_editing',
+        model_version: 'image-edit', // Special identifier for image edits
+        generation_type: 'image_edit',
+        metadata: metadata || {},
+        created_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (usageError) {
+      console.warn('⚠️ Failed to record credit usage:', usageError);
+      // Don't fail the whole operation if just logging fails
+    }
+
+    return {
+      success: true,
+      message: `Successfully deducted ${EDIT_CREDIT_COST} credit for image editing`,
+      remainingCredits: updateData.remaining_credits,
+      usageId: usageData?.id,
+      costDeducted: EDIT_CREDIT_COST,
+    };
+  } catch (error) {
+    console.error('❌ Error in deductCreditsForImageEdit:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error occurred',
+    };
+  }
 }

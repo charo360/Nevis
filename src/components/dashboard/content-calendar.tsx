@@ -135,7 +135,7 @@ export function ContentCalendar({
     if (!hasCredits) {
       toast({
         title: "Insufficient Credits",
-        description: `You need ${selectedRevoModel === 'revo-1.0' ? '2' : selectedRevoModel === 'revo-1.5' ? '3' : '4'} credits to use ${selectedRevoModel}. Please purchase more credits.`,
+        description: `You need ${selectedRevoModel === 'revo-1.0' ? '3' : selectedRevoModel === 'revo-1.5' ? '4' : '5'} credits to use ${selectedRevoModel}. Please purchase more credits.`,
         variant: "destructive",
       });
       return;
@@ -543,9 +543,9 @@ export function ContentCalendar({
                     onChange={(e) => setSelectedRevoModel(e.target.value as RevoModel)}
                     className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-400 transition-colors cursor-pointer min-w-[160px]"
                   >
-                    <option value="revo-1.0">Revo 1.0 (2 credits)</option>
-                    <option value="revo-1.5">Revo 1.5 (3 credits)</option>
-                    <option value="revo-2.0">Revo 2.0 (4 credits)</option>
+                    <option value="revo-1.0">Revo 1.0 (3 credits)</option>
+                    <option value="revo-1.5">Revo 1.5 (4 credits)</option>
+                    <option value="revo-2.0">Revo 2.0 (5 credits)</option>
                   </select>
                 </div>
               </div>
