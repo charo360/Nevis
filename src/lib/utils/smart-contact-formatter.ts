@@ -44,7 +44,7 @@ export const isValidAddress = (address: string): boolean => {
   return address.length >= 10 && address.length <= 100;
 };
 
-// Smart formatting for AI prompts
+// Smart formatting for AI prompts with exact preservation
 export function formatContactForAI(contactInfo: ContactInfo, maxLength: number = 200): string {
   const validContacts: FormattedContact[] = [];
   
@@ -229,4 +229,32 @@ export function getSmartContactSummary(contactInfo: ContactInfo): {
     contactCount: validContacts.length,
     isOptimal: !isContactInfoTooLong(contactInfo)
   };
+}
+
+// Generate exact contact preservation instructions for AI
+export function getExactContactInstructions(contactInfo: ContactInfo): string {
+  const validContacts = getPriorityContacts(contactInfo, 3);
+  
+  if (validContacts.length === 0) {
+    return '';
+  }
+  
+  const instructions = validContacts.map(contact => {
+    switch (contact.type) {
+      case 'phone':
+        return `EXACT PHONE: "${contact.value}" (use exactly as written, do not modify)`;
+      case 'email':
+        return `EXACT EMAIL: "${contact.value}" (use exactly as written, do not modify spelling)`;
+      case 'website':
+        return `EXACT WEBSITE: "${contact.value}" (use exactly as written, do not modify domain)`;
+      case 'address':
+        return `EXACT ADDRESS: "${contact.value}" (use exactly as written, do not modify)`;
+      default:
+        return '';
+    }
+  }).filter(Boolean);
+  
+  return instructions.length > 0 
+    ? `\n\nCONTACT PRESERVATION INSTRUCTIONS:\n${instructions.join('\n')}\nIMPORTANT: Use contact information EXACTLY as provided above. Do not change spelling, domains, or formatting.`
+    : '';
 }

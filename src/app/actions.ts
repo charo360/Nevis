@@ -15,7 +15,7 @@ import { supabaseService } from "@/lib/services/supabase-service";
 import { createClient } from '@/lib/supabase-server';
 import type { ScheduledService } from "@/services/calendar-service";
 import { MODEL_COSTS } from '@/lib/credit-integration';
-import { formatContactForAI, getPriorityContacts } from '@/lib/utils/smart-contact-formatter';
+import { formatContactForAI, getPriorityContacts, getExactContactInstructions } from '@/lib/utils/smart-contact-formatter';
 
 // Helper function to convert logo URL to base64 data URL for AI models
 async function convertLogoToDataUrl(logoUrl?: string): Promise<string | undefined> {
@@ -382,11 +382,13 @@ export async function generateContentAction(
     const smartContactInfo = enhancedProfile.contactInfo || {};
     const priorityContacts = getPriorityContacts(smartContactInfo, 3);
     const formattedContactForAI = formatContactForAI(smartContactInfo, 150);
+    const exactContactInstructions = getExactContactInstructions(smartContactInfo);
     
     console.log('📞 [Actions] Smart Contact Formatting:', {
       originalContacts: smartContactInfo,
       priorityContacts: priorityContacts.map(c => ({ type: c.type, value: c.displayValue })),
       formattedForAI: formattedContactForAI,
+      exactInstructions: exactContactInstructions,
       includeContacts: brandConsistency?.includeContacts
     });
 
@@ -432,6 +434,8 @@ export async function generateContentAction(
       websiteUrl: priorityContacts.find(c => c.type === 'website')?.value || enhancedProfile.websiteUrl,
       // Add formatted contact string for AI prompts
       formattedContacts: brandConsistency?.includeContacts ? formattedContactForAI : '',
+      // Add exact contact preservation instructions
+      exactContactInstructions: brandConsistency?.includeContacts ? exactContactInstructions : '',
       // Brand colors toggle
       followBrandColors: brandConsistency?.followBrandColors !== false, // Default to true
       // Local language control
