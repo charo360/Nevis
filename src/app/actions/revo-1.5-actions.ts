@@ -1,5 +1,4 @@
 'use server';
-
 /**
  * Revo 1.5 Server Actions
  * Enhanced content creation with advanced features and logo support
@@ -9,6 +8,7 @@ import { generateRevo15EnhancedDesign } from '@/ai/revo-1.5-enhanced-design';
 import type { BrandProfile, Platform, BrandConsistencyPreferences, GeneratedPost } from '@/lib/types';
 import type { ScheduledService } from '@/services/calendar-service';
 import { brandProfileSupabaseService } from '@/lib/supabase/services/brand-profile-service';
+import { formatContactForAI, getPriorityContacts, getExactContactInstructions } from '@/lib/utils/smart-contact-formatter';
 
 // Helper function to convert logo URL to base64 data URL for AI models (matching Revo 1.0)
 async function convertLogoToDataUrl(logoUrl?: string): Promise<string | undefined> {
@@ -88,7 +88,25 @@ export async function generateRevo15ContentAction(
       console.log('⚠️ [Revo 1.5] No brand profile ID provided, using frontend data');
     }
 
-    // NEW: Log scheduled services integration
+    // Smart contact formatting for AI generation
+    const contactInfo = freshBrandProfile.contactInfo || {
+      phone: (freshBrandProfile as any).contactPhone || '',
+      email: (freshBrandProfile as any).contactEmail || '',
+      address: (freshBrandProfile as any).contactAddress || '',
+      website: freshBrandProfile.websiteUrl || ''
+    };
+    
+    const priorityContacts = getPriorityContacts(contactInfo, 3);
+    const formattedContactForAI = formatContactForAI(contactInfo, 150);
+    const exactContactInstructions = getExactContactInstructions(contactInfo);
+    
+    console.log('📞 [Revo 1.5] Smart Contact Formatting:', {
+      originalContacts: contactInfo,
+      priorityContacts: priorityContacts.map(c => ({ type: c.type, value: c.displayValue })),
+      formattedForAI: formattedContactForAI,
+      exactInstructions: exactContactInstructions,
+      includeContacts: brandConsistency?.includeContacts
+    });
 
     // Convert logo URL to base64 data URL (matching Revo 1.0 approach) - using fresh profile
     const convertedLogoDataUrl = await convertLogoToDataUrl(freshBrandProfile.logoUrl || freshBrandProfile.logoDataUrl);
@@ -101,7 +119,15 @@ export async function generateRevo15ContentAction(
       imageText: prompt || '',
       brandProfile: {
         ...freshBrandProfile, // Use fresh data from database
-        logoDataUrl: convertedLogoDataUrl || freshBrandProfile.logoDataUrl
+        logoDataUrl: convertedLogoDataUrl || freshBrandProfile.logoDataUrl,
+        // Smart contact formatting
+        contactInfo: brandConsistency?.includeContacts 
+          ? Object.fromEntries(
+              priorityContacts.map(contact => [contact.type, contact.displayValue])
+            )
+          : {},
+        formattedContacts: brandConsistency?.includeContacts ? formattedContactForAI : '',
+        exactContactInstructions: brandConsistency?.includeContacts ? exactContactInstructions : ''
       },
       brandConsistency: {
         ...brandConsistency,
