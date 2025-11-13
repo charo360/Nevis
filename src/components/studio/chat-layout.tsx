@@ -272,7 +272,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     brandProfile,
                     null, // maskDataUrl - Creative Studio can handle inpainting
                     outputType === 'video' ? aspectRatio : undefined,
-                    'revo-1.0-gemini-2.5-flash-image-preview', // Use Revo 1.0 model specifically (2 credits)
+                    'revo-1.0-gemini-2.5-flash-image-preview', // Use Revo 1.0 model specifically (3 credits)
                     undefined, // designColors
                     accessToken || undefined // Pass access token as fallback
                 );
