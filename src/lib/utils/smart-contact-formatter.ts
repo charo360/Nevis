@@ -294,7 +294,7 @@ export function getExactContactInstructions(contactInfo: ContactInfo): string {
   }
   
   return instructions.length > 0 
-    ? `\n\n🚨 MANDATORY CONTACT INFORMATION (COPY EXACTLY):\n${instructions.join(' | ')}\n\n🚨 CRITICAL SPELLING REQUIREMENT:${spellingInstructions}\n- ZERO TOLERANCE for spelling mistakes in contact information\n- Copy contact info character-by-character from above\n- Display in SINGLE HORIZONTAL LINE in footer with | separators\n- SPACE CONSTRAINT: Only include the contacts shown above (do not add extra contacts)\n- LENGTH LIMIT: If footer space is tight, prioritize phone + email OR phone + website (not all three)`
+    ? `\n\n🚨 MANDATORY CONTACT INFORMATION (COPY EXACTLY):\n${instructions.join(' | ')}\n\n🚨 CRITICAL SPELLING REQUIREMENT:${spellingInstructions}\n- ZERO TOLERANCE for spelling mistakes in contact information\n- Copy contact info character-by-character from above\n- Display in SINGLE HORIZONTAL LINE in footer with | separators\n- SPACE CONSTRAINT: Only include the contacts shown above (do not add extra contacts)\n- EXCLUSION RULE: If footer space is tight, EXCLUDE contacts rather than misspell them\n- BETTER TO SHOW: Phone + Email only, than to misspell website\n- BETTER TO SHOW: Phone + Website only, than to misspell email`
     : '';
 }
 
