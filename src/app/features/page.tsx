@@ -259,7 +259,7 @@ export default function FeaturesPage() {
                 </div>
                 <h3 className="text-2xl font-bold mb-4">Basic AI</h3>
                 <p className="text-gray-600 mb-6">Fast, efficient generation for quick content needs</p>
-                <div className="text-3xl font-bold text-blue-600 mb-2">2 credits</div>
+                <div className="text-3xl font-bold text-blue-600 mb-2">3 credits</div>
                 <div className="text-sm text-gray-500">per generation</div>
                 <ul className="text-sm text-left space-y-2 mt-6">
                   <li className="flex items-center">
@@ -288,7 +288,7 @@ export default function FeaturesPage() {
                 </div>
                 <h3 className="text-2xl font-bold mb-4">Enhanced AI</h3>
                 <p className="text-gray-600 mb-6">Higher quality with advanced features and artifacts</p>
-                <div className="text-3xl font-bold text-purple-600 mb-2">3 credits</div>
+                <div className="text-3xl font-bold text-purple-600 mb-2">4 credits</div>
                 <div className="text-sm text-gray-500">per generation</div>
                 <ul className="text-sm text-left space-y-2 mt-6">
                   <li className="flex items-center">
@@ -316,7 +316,7 @@ export default function FeaturesPage() {
                 </div>
                 <h3 className="text-2xl font-bold mb-4">Premium AI</h3>
                 <p className="text-gray-600 mb-6">Best quality with maximum creativity and detail</p>
-                <div className="text-3xl font-bold text-indigo-600 mb-2">3.5 credits</div>
+                <div className="text-3xl font-bold text-indigo-600 mb-2">5 credits</div>
                 <div className="text-sm text-gray-500">per generation</div>
                 <ul className="text-sm text-left space-y-2 mt-6">
                   <li className="flex items-center">
