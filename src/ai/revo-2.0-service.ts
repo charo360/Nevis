@@ -1679,7 +1679,7 @@ export function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: a
     
     if (exactInstructions && exactInstructions.trim()) {
       // Use the exact contact instructions from smart formatter
-      contactInstruction = `\n\n${exactInstructions}\n\n**CRITICAL FOR DESIGN**: When including contact information in the design, copy it character-for-character from the exact instructions above. Do not modify spelling, domains, or formatting.`;
+      contactInstruction = `\n\n${exactInstructions}\n\n**CRITICAL FOR DESIGN**: When including contact information in the design, copy it character-for-character from the exact instructions above. Do not modify spelling, domains, or formatting. LAYOUT REQUIREMENT: Display all contact information in a SINGLE HORIZONTAL LINE at the bottom footer of the design, separated by | symbols.`;
     } else {
       // Fallback to original contact detection if smart formatter not available
       const contacts: string[] = [];
@@ -1714,7 +1714,7 @@ export function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: a
       if (address && address.trim()) contacts.push(`📍 ${address.trim()}`);
 
       if (contacts.length > 0) {
-        contactInstruction = `\n\n🔗 **CONTACT INFORMATION TO INCLUDE (USE EXACTLY AS SHOWN):**\n${contacts.join('\n')}\n\n**CRITICAL**: Use contact information EXACTLY as provided above. Do not modify spelling, domains, or formatting. If including contact info in the design, copy it character-for-character from above.`;
+        contactInstruction = `\n\n🔗 **CONTACT INFORMATION TO INCLUDE (USE EXACTLY AS SHOWN):**\n${contacts.join(' | ')}\n\n**CRITICAL**: Use contact information EXACTLY as provided above. Do not modify spelling, domains, or formatting. Display all contact info in a SINGLE HORIZONTAL LINE separated by | symbols. Place in footer area of design.`;
       }
     }
   }

@@ -255,6 +255,6 @@ export function getExactContactInstructions(contactInfo: ContactInfo): string {
   }).filter(Boolean);
   
   return instructions.length > 0 
-    ? `\n\nCONTACT PRESERVATION INSTRUCTIONS:\n${instructions.join('\n')}\nIMPORTANT: Use contact information EXACTLY as provided above. Do not change spelling, domains, or formatting.`
+    ? `\n\nCONTACT PRESERVATION INSTRUCTIONS:\n${instructions.join(' | ')}\nIMPORTANT: Use contact information EXACTLY as provided above. Do not change spelling, domains, or formatting. Display all contact info in a SINGLE HORIZONTAL LINE separated by | symbols in the footer area.`
     : '';
 }
