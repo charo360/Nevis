@@ -312,7 +312,7 @@ async function scrapeWebsiteContent(url: string): Promise<{
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ url }),
+      body: JSON.stringify({ url, enhanced: true }), // 🚀 Enable enhanced scraping for brand creation
     });
 
     const result = await response.json();

@@ -1,5 +1,6 @@
 // src/app/api/scrape-website/route.ts
 import { NextRequest, NextResponse } from 'next/server';
+import { EnhancedBrandScraper } from '@/ai/website-analyzer/enhanced-brand-scraper';
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,7 +24,49 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { url } = parsedBody;
+    const { url, enhanced = false } = parsedBody;
+
+    // 🚀 ENHANCED BRAND SCRAPING for Brand Creation
+    if (enhanced) {
+      console.log('🔍 Using Enhanced Brand Scraper for comprehensive analysis...');
+      
+      try {
+        const enhancedScraper = new EnhancedBrandScraper();
+        const result = await enhancedScraper.scrapeForBrandCreation(url);
+        
+        console.log(`✅ Enhanced scraping complete - ${result.dataCompleteness}% completeness, ${result.pagesAnalyzed} pages analyzed`);
+        
+        // Map enhanced result to expected format for brand creation
+        return NextResponse.json({
+          success: true,
+          data: {
+            content: `${result.title}\n\n${result.aboutSection}\n\n${result.servicesSection}\n\n${result.detailedServicesContent}`,
+            title: result.title,
+            metaDescription: result.metaDescription,
+            businessType: result.businessType,
+            phoneNumbers: result.phoneNumbers,
+            emailAddresses: result.emailAddresses,
+            competitiveAdvantages: result.competitiveAdvantages,
+            contentThemes: result.contentThemes,
+            targetAudience: result.targetAudience,
+            socialMediaLinks: result.socialMediaLinks,
+            addresses: result.addresses,
+            // Enhanced data for better brand creation
+            enhancedData: {
+              keyPages: result.keyPages,
+              aggregatedServices: result.aggregatedServices,
+              dataCompleteness: result.dataCompleteness,
+              pagesAnalyzed: result.pagesAnalyzed,
+              businessClassification: result.businessType
+            }
+          }
+        });
+        
+      } catch (enhancedError) {
+        console.warn('⚠️ Enhanced scraping failed, falling back to standard scraping:', enhancedError);
+        // Fall through to standard scraping
+      }
+    }
 
     if (!url) {
       return NextResponse.json(

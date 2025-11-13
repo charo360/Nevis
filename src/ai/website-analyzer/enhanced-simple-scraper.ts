@@ -111,6 +111,31 @@ export interface AnalysisMetadata {
 }
 
 // Supporting interfaces
+export interface KeyPageInfo {
+  url: string;
+  type: PageType;
+  priority: number;
+  title: string;
+}
+
+export interface MultiPageData {
+  services: ServiceDetail[];
+  contactInfo: ContactMethod[];
+  contentThemes: string[];
+  competitiveAdvantages: string[];
+  testimonials: Testimonial[];
+  teamMembers: TeamMember[];
+  pricingInfo: PricingModel[];
+}
+
+export interface ContactMethod {
+  type: 'phone' | 'email' | 'address' | 'social';
+  value: string;
+}
+
+export type PageType = 'homepage' | 'about' | 'services' | 'contact' | 'team' | 'pricing' | 'testimonials' | 'blog';
+
+// Supporting interfaces
 export interface ServiceDetail {
   name: string;
   description: string;
@@ -167,17 +192,30 @@ export interface BusinessLocation {
 
 export class EnhancedSimpleScraper {
   private userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+  private maxPages = 5; // Limit crawling to prevent excessive requests
+  private crawlDelay = 1000; // 1 second delay between requests
+  private visitedUrls = new Set<string>();
 
   async analyzeWebsiteComprehensively(url: string): Promise<EnhancedWebsiteAnalysis> {
     const startTime = Date.now();
-    console.log(`🔍 Starting enhanced simple analysis of: ${url}`);
+    console.log(`🔍 Starting enhanced multi-page analysis of: ${url}`);
+    this.visitedUrls.clear(); // Reset for each analysis
 
     try {
-      // Fetch the main page
+      // Step 1: Analyze main page
       const html = await this.fetchPage(url);
       const $ = cheerio.load(html);
+      this.visitedUrls.add(url);
 
-      // Extract all data sections
+      // Step 2: Discover key pages for comprehensive analysis
+      console.log(`🔍 Discovering key pages for comprehensive analysis...`);
+      const keyPages = await this.discoverKeyPages($, url);
+      console.log(`📄 Found ${keyPages.length} key pages to analyze`);
+
+      // Step 3: Perform multi-page analysis
+      const multiPageData = await this.analyzeMultiplePages(keyPages);
+
+      // Step 4: Extract comprehensive data from all pages
       const [
         basicInfo,
         businessIntelligence,
@@ -187,11 +225,11 @@ export class EnhancedSimpleScraper {
         contactInformation
       ] = await Promise.all([
         this.extractBasicInfo($, url),
-        this.extractBusinessIntelligence($),
+        this.extractEnhancedBusinessIntelligence($, multiPageData),
         this.extractVisualBrand($),
-        this.extractContentStrategy($),
+        this.extractEnhancedContentStrategy($, multiPageData),
         this.extractTechnicalSEO($),
-        this.extractContactInformation($)
+        this.extractEnhancedContactInformation($, multiPageData)
       ]);
 
       const processingTime = Date.now() - startTime;
@@ -325,119 +363,240 @@ export class EnhancedSimpleScraper {
     const title = $('title').text().toLowerCase();
     const metaDescription = $('meta[name="description"]').attr('content')?.toLowerCase() || '';
     const headings = $('h1, h2, h3').text().toLowerCase();
-    const combinedText = `${title} ${metaDescription} ${headings} ${text}`;
+    const navigation = $('nav, .nav, .navbar, .menu').text().toLowerCase();
+    
+    // Combine all text with weighted importance
+    const combinedText = `${title} ${title} ${metaDescription} ${metaDescription} ${headings} ${navigation} ${text}`;
 
-    // Enhanced business type detection with weighted scoring
+    console.log(`🔍 [Business Type] Analyzing: ${title.substring(0, 100)}...`);
+
+    // Enhanced business type detection with comprehensive patterns
     const businessTypes = {
       'saas': {
-        keywords: ['saas', 'software as a service', 'cloud platform', 'api', 'dashboard', 'automation', 'workflow', 'integration', 'subscription', 'enterprise software'],
-        strongIndicators: ['pricing plans', 'free trial', 'api documentation', 'integrations', 'enterprise', 'scalable'],
-        domains: ['mailchimp', 'slack', 'hubspot', 'salesforce', 'stripe', 'zoom', 'asana', 'trello'],
-        weight: 3
-      },
-      'technology': {
-        keywords: ['software', 'app', 'tech', 'digital', 'platform', 'development', 'programming', 'coding', 'ai', 'machine learning'],
-        strongIndicators: ['developers', 'github', 'open source', 'documentation', 'sdk'],
-        domains: ['github', 'stackoverflow', 'microsoft', 'google', 'apple'],
-        weight: 2
+        keywords: [
+          'saas', 'software as a service', 'cloud platform', 'api', 'dashboard', 'automation', 
+          'workflow', 'integration', 'subscription', 'enterprise software', 'email marketing',
+          'marketing automation', 'crm', 'customer relationship', 'team collaboration',
+          'project management', 'productivity', 'business intelligence', 'analytics platform'
+        ],
+        strongIndicators: [
+          'pricing plans', 'free trial', 'api documentation', 'integrations', 'enterprise plan',
+          'scalable', 'monthly subscription', 'annual billing', 'user management', 'admin dashboard',
+          'webhook', 'rest api', 'oauth', 'single sign-on', 'sso'
+        ],
+        domains: ['mailchimp', 'slack', 'hubspot', 'salesforce', 'stripe', 'zoom', 'asana', 'trello', 'notion'],
+        exclusions: ['restaurant', 'food', 'menu', 'dining', 'recipe', 'cooking'],
+        weight: 4
       },
       'ecommerce': {
-        keywords: ['shop', 'store', 'buy', 'cart', 'checkout', 'payment', 'shipping', 'orders', 'inventory'],
-        strongIndicators: ['add to cart', 'free shipping', 'return policy', 'customer reviews'],
-        domains: ['shopify', 'amazon', 'etsy', 'ebay'],
-        weight: 3
+        keywords: [
+          'shop', 'store', 'buy', 'cart', 'checkout', 'payment', 'shipping', 'orders', 'inventory',
+          'ecommerce', 'e-commerce', 'online store', 'marketplace', 'retail', 'products', 'catalog'
+        ],
+        strongIndicators: [
+          'add to cart', 'free shipping', 'return policy', 'customer reviews', 'product pages',
+          'shopping cart', 'wishlist', 'compare products', 'size guide', 'in stock'
+        ],
+        domains: ['shopify', 'amazon', 'etsy', 'ebay', 'woocommerce'],
+        exclusions: ['saas', 'software', 'api', 'dashboard'],
+        weight: 4
       },
       'finance': {
-        keywords: ['finance', 'banking', 'investment', 'loan', 'credit', 'payment', 'financial', 'money', 'trading'],
-        strongIndicators: ['interest rate', 'apr', 'fdic insured', 'securities'],
-        domains: ['paypal', 'stripe', 'square', 'mint'],
+        keywords: [
+          'finance', 'banking', 'investment', 'loan', 'credit', 'payment', 'financial', 'money', 
+          'trading', 'fintech', 'cryptocurrency', 'blockchain', 'wallet', 'transfer'
+        ],
+        strongIndicators: [
+          'interest rate', 'apr', 'fdic insured', 'securities', 'bank account', 'credit score',
+          'financial advisor', 'portfolio', 'investment', 'mortgage'
+        ],
+        domains: ['paypal', 'stripe', 'square', 'mint', 'robinhood', 'coinbase'],
+        exclusions: ['restaurant', 'food', 'menu'],
+        weight: 4
+      },
+      'technology': {
+        keywords: [
+          'software', 'app', 'tech', 'digital', 'platform', 'development', 'programming', 'coding', 
+          'ai', 'machine learning', 'artificial intelligence', 'data science', 'cloud computing'
+        ],
+        strongIndicators: [
+          'developers', 'github', 'open source', 'documentation', 'sdk', 'framework', 'library',
+          'programming language', 'code repository', 'technical documentation'
+        ],
+        domains: ['github', 'stackoverflow', 'microsoft', 'google', 'apple', 'aws'],
+        exclusions: ['restaurant', 'food', 'menu', 'dining'],
         weight: 3
       },
       'healthcare': {
-        keywords: ['health', 'medical', 'doctor', 'clinic', 'hospital', 'patient', 'treatment', 'therapy'],
-        strongIndicators: ['appointment', 'insurance', 'hipaa', 'medical records'],
-        domains: ['webmd', 'mayoclinic'],
-        weight: 3
+        keywords: [
+          'health', 'medical', 'doctor', 'clinic', 'hospital', 'patient', 'treatment', 'therapy',
+          'healthcare', 'wellness', 'medicine', 'pharmaceutical', 'telemedicine'
+        ],
+        strongIndicators: [
+          'appointment', 'insurance', 'hipaa', 'medical records', 'prescription', 'diagnosis',
+          'patient portal', 'telehealth', 'medical professional'
+        ],
+        domains: ['webmd', 'mayoclinic', 'healthline'],
+        exclusions: ['restaurant', 'food', 'menu'],
+        weight: 4
       },
       'education': {
-        keywords: ['education', 'school', 'course', 'training', 'learn', 'student', 'teacher', 'university'],
-        strongIndicators: ['enroll', 'curriculum', 'degree', 'certification'],
-        domains: ['coursera', 'udemy', 'khan academy'],
-        weight: 2
+        keywords: [
+          'education', 'school', 'course', 'training', 'learn', 'student', 'teacher', 'university',
+          'online learning', 'e-learning', 'certification', 'curriculum', 'academic'
+        ],
+        strongIndicators: [
+          'enroll', 'curriculum', 'degree', 'certification', 'online course', 'learning management',
+          'student portal', 'academic calendar', 'tuition'
+        ],
+        domains: ['coursera', 'udemy', 'khan academy', 'edx'],
+        exclusions: ['restaurant', 'food', 'menu'],
+        weight: 3
       },
       'restaurant': {
-        keywords: ['restaurant', 'cafe', 'food', 'menu', 'dining', 'cuisine', 'chef', 'reservation'],
-        strongIndicators: ['book table', 'delivery', 'takeout', 'hours'],
-        domains: ['opentable', 'grubhub'],
-        weight: 2
+        keywords: [
+          'restaurant', 'cafe', 'food', 'menu', 'dining', 'cuisine', 'chef', 'reservation',
+          'bistro', 'eatery', 'diner', 'bar', 'grill', 'pizzeria', 'bakery'
+        ],
+        strongIndicators: [
+          'book table', 'delivery', 'takeout', 'hours', 'reservations', 'dine in', 'food delivery',
+          'catering', 'happy hour', 'wine list'
+        ],
+        domains: ['opentable', 'grubhub', 'doordash', 'ubereats'],
+        exclusions: ['saas', 'software', 'api', 'dashboard', 'platform'],
+        weight: 4
       },
       'retail': {
-        keywords: ['retail', 'store', 'product', 'sale', 'brand', 'fashion', 'clothing'],
-        strongIndicators: ['size guide', 'in stock', 'sale price'],
-        domains: ['target', 'walmart'],
+        keywords: [
+          'retail', 'store', 'product', 'sale', 'brand', 'fashion', 'clothing', 'apparel',
+          'merchandise', 'boutique', 'outlet'
+        ],
+        strongIndicators: [
+          'size guide', 'in stock', 'sale price', 'clearance', 'new arrivals', 'collection',
+          'seasonal sale', 'loyalty program'
+        ],
+        domains: ['target', 'walmart', 'macys', 'nordstrom'],
+        exclusions: ['saas', 'software', 'api'],
+        weight: 3
+      },
+      'consulting': {
+        keywords: [
+          'consulting', 'consultant', 'advisory', 'professional services', 'expertise', 'strategy',
+          'business consulting', 'management consulting', 'expert advice'
+        ],
+        strongIndicators: [
+          'consultation', 'portfolio', 'case studies', 'client testimonials', 'expertise',
+          'professional experience', 'industry knowledge'
+        ],
+        domains: [],
+        exclusions: ['restaurant', 'food', 'menu'],
         weight: 2
       },
-      'service': {
-        keywords: ['service', 'consulting', 'professional', 'expert', 'agency', 'solutions'],
-        strongIndicators: ['contact us', 'consultation', 'portfolio'],
+      'agency': {
+        keywords: [
+          'agency', 'marketing agency', 'digital agency', 'creative agency', 'advertising',
+          'branding', 'design agency', 'media agency'
+        ],
+        strongIndicators: [
+          'portfolio', 'case studies', 'client work', 'creative services', 'brand identity',
+          'campaign', 'client testimonials'
+        ],
         domains: [],
-        weight: 1
+        exclusions: ['restaurant', 'food', 'menu'],
+        weight: 2
       }
     };
 
-    // Check domain for strong indicators
-    const url = $('link[rel="canonical"]').attr('href') || window?.location?.href || '';
-    const domain = url.toLowerCase();
-
     let scores: Record<string, number> = {};
+    let debugInfo: Record<string, any> = {};
+
+    // Initialize scores
+    Object.keys(businessTypes).forEach(type => {
+      scores[type] = 0;
+      debugInfo[type] = { keywords: 0, strongIndicators: 0, domain: 0, exclusions: 0 };
+    });
+
+    // Get current URL for domain analysis
+    const currentUrl = $('link[rel="canonical"]').attr('href') || 
+                      $('meta[property="og:url"]').attr('content') || '';
+    const domain = currentUrl.toLowerCase();
 
     for (const [type, config] of Object.entries(businessTypes)) {
       let score = 0;
+      const debug = debugInfo[type];
 
-      // Domain matching (highest weight)
-      if (config.domains.some(d => domain.includes(d))) {
-        score += 10;
+      // 1. Domain matching (highest weight - 15 points)
+      const domainMatches = config.domains.filter(d => domain.includes(d) || title.includes(d));
+      if (domainMatches.length > 0) {
+        score += 15;
+        debug.domain = domainMatches.length;
+        console.log(`🎯 [${type}] Domain match: ${domainMatches.join(', ')} (+15)`);
       }
 
-      // Special domain-specific adjustments
-      if (domain.includes('stripe') || domain.includes('paypal') || domain.includes('square')) {
-        if (type === 'finance') score += 8; // Boost finance for payment companies
-        if (type === 'saas') score -= 3; // Reduce SaaS score for payment companies
-      }
-
-      // Strong indicators (high weight)
+      // 2. Strong indicators (high weight - 5 points each)
       const strongMatches = config.strongIndicators.filter(indicator =>
         combinedText.includes(indicator)
-      ).length;
-      score += strongMatches * 3;
+      );
+      score += strongMatches.length * 5;
+      debug.strongIndicators = strongMatches.length;
+      if (strongMatches.length > 0) {
+        console.log(`💪 [${type}] Strong indicators: ${strongMatches.slice(0, 3).join(', ')} (+${strongMatches.length * 5})`);
+      }
 
-      // Regular keywords (medium weight)
+      // 3. Regular keywords (medium weight - variable by type)
       const keywordMatches = config.keywords.filter(keyword =>
         combinedText.includes(keyword)
-      ).length;
-      score += keywordMatches * config.weight;
+      );
+      score += keywordMatches.length * config.weight;
+      debug.keywords = keywordMatches.length;
+      if (keywordMatches.length > 0) {
+        console.log(`🔑 [${type}] Keywords: ${keywordMatches.slice(0, 5).join(', ')} (+${keywordMatches.length * config.weight})`);
+      }
 
-      // Title and meta description get extra weight
-      const titleMatches = config.keywords.filter(keyword =>
-        title.includes(keyword)
-      ).length;
-      score += titleMatches * 2;
+      // 4. Title and meta boost (extra weight for important content)
+      const titleKeywords = config.keywords.filter(keyword =>
+        title.includes(keyword) || metaDescription.includes(keyword)
+      );
+      score += titleKeywords.length * 3;
 
-      const metaMatches = config.keywords.filter(keyword =>
-        metaDescription.includes(keyword)
-      ).length;
-      score += metaMatches * 2;
+      // 5. Navigation boost (services mentioned in navigation)
+      const navKeywords = config.keywords.filter(keyword =>
+        navigation.includes(keyword)
+      );
+      score += navKeywords.length * 2;
 
-      scores[type] = score;
+      // 6. Exclusion penalties (reduce score for conflicting indicators)
+      const exclusionMatches = config.exclusions?.filter(exclusion =>
+        combinedText.includes(exclusion)
+      ) || [];
+      const exclusionPenalty = exclusionMatches.length * 3;
+      score -= exclusionPenalty;
+      debug.exclusions = exclusionMatches.length;
+      if (exclusionMatches.length > 0) {
+        console.log(`❌ [${type}] Exclusions: ${exclusionMatches.slice(0, 3).join(', ')} (-${exclusionPenalty})`);
+      }
+
+      scores[type] = Math.max(0, score); // Ensure no negative scores
     }
 
-    // Find the type with the highest score
-    const bestMatch = Object.entries(scores).reduce((a, b) =>
-      scores[a[0]] > scores[b[0]] ? a : b
+    // Find the highest scoring type
+    const sortedTypes = Object.entries(scores)
+      .sort(([,a], [,b]) => b - a)
+      .filter(([,score]) => score > 0);
+
+    console.log(`📊 [Business Type] Final scores:`, 
+      sortedTypes.slice(0, 3).map(([type, score]) => `${type}: ${score}`).join(', ')
     );
 
-    // Only return a specific type if the score is above threshold
-    return bestMatch[1] > 2 ? bestMatch[0] : 'business';
+    // Return the highest scoring type, or 'general business' if no clear winner
+    if (sortedTypes.length > 0 && sortedTypes[0][1] >= 5) {
+      const winner = sortedTypes[0][0];
+      console.log(`🏆 [Business Type] Classified as: ${winner} (score: ${sortedTypes[0][1]})`);
+      return winner;
+    }
+
+    console.log(`🤷 [Business Type] No clear classification, defaulting to 'general business'`);
+    return 'general business';
   }
 
   private inferIndustry($: cheerio.CheerioAPI): string {
@@ -1314,6 +1473,483 @@ export class EnhancedSimpleScraper {
     const confidence = Math.min(completeness + 10, 95); // Confidence is slightly higher than completeness, max 95%
 
     return { completeness, confidence };
+  }
+
+  // ============================================================================
+  // MULTI-PAGE DISCOVERY AND ANALYSIS METHODS
+  // ============================================================================
+
+  /**
+   * Discover key pages for comprehensive analysis
+   */
+  private async discoverKeyPages($: cheerio.CheerioAPI, baseUrl: string): Promise<KeyPageInfo[]> {
+    const keyPages: KeyPageInfo[] = [];
+    const domain = new URL(baseUrl).hostname;
+
+    // Always include homepage
+    keyPages.push({
+      url: baseUrl,
+      type: 'homepage',
+      priority: 1,
+      title: $('title').text().trim()
+    });
+
+    // Discover pages through navigation and common patterns
+    const discoveredUrls = this.extractNavigationUrls($, baseUrl, domain);
+
+    // Categorize and prioritize discovered URLs
+    for (const urlInfo of discoveredUrls) {
+      const pageType = this.categorizePageType(urlInfo.url, urlInfo.text);
+      if (pageType && !keyPages.find(p => p.url === urlInfo.url)) {
+        keyPages.push({
+          url: urlInfo.url,
+          type: pageType,
+          priority: this.getPagePriority(pageType),
+          title: urlInfo.text
+        });
+      }
+    }
+
+    // Sort by priority and limit to maxPages
+    keyPages.sort((a, b) => a.priority - b.priority);
+    const limitedPages = keyPages.slice(0, this.maxPages);
+
+    console.log(`🔍 Discovered page types: ${limitedPages.map(p => p.type).join(', ')}`);
+    return limitedPages;
+  }
+
+  /**
+   * Extract navigation URLs from the page
+   */
+  private extractNavigationUrls($: cheerio.CheerioAPI, baseUrl: string, domain: string): Array<{ url: string; text: string }> {
+    const urls: Array<{ url: string; text: string }> = [];
+
+    // Primary navigation selectors
+    const navSelectors = [
+      'nav a',
+      '.nav a', 
+      '.navbar a',
+      '.navigation a',
+      '.menu a',
+      '.main-menu a',
+      'header a',
+      '.header a',
+      '[role="navigation"] a'
+    ];
+
+    navSelectors.forEach(selector => {
+      $(selector).each((_, el) => {
+        const href = $(el).attr('href');
+        const text = $(el).text().trim().toLowerCase();
+        
+        if (href && text.length > 2 && text.length < 50) {
+          try {
+            const fullUrl = new URL(href, baseUrl);
+            if (fullUrl.hostname === domain) {
+              urls.push({ url: fullUrl.href, text });
+            }
+          } catch (e) {
+            // Invalid URL, skip
+          }
+        }
+      });
+    });
+
+    return urls;
+  }
+
+  /**
+   * Categorize page type based on URL and link text
+   */
+  private categorizePageType(url: string, linkText: string): PageType | null {
+    const text = linkText.toLowerCase();
+    const urlPath = new URL(url).pathname.toLowerCase();
+
+    // Page type patterns
+    const patterns: Record<PageType, string[]> = {
+      'about': ['about', 'who we are', 'our story', 'our company', 'company', 'history'],
+      'services': ['services', 'what we do', 'solutions', 'offerings', 'products', 'capabilities'],
+      'contact': ['contact', 'get in touch', 'reach us', 'contact us'],
+      'team': ['team', 'our team', 'staff', 'people', 'leadership', 'founders'],
+      'pricing': ['pricing', 'plans', 'packages', 'cost', 'rates'],
+      'testimonials': ['testimonials', 'reviews', 'clients', 'case studies', 'success stories'],
+      'blog': ['blog', 'news', 'articles', 'insights', 'resources']
+    };
+
+    // Check text patterns
+    for (const [type, keywords] of Object.entries(patterns)) {
+      if (keywords.some(keyword => text.includes(keyword) || urlPath.includes(keyword))) {
+        return type as PageType;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Get priority for page type (lower number = higher priority)
+   */
+  private getPagePriority(pageType: PageType): number {
+    const priorities: Record<PageType, number> = {
+      'homepage': 1,
+      'about': 2,
+      'services': 3,
+      'contact': 4,
+      'pricing': 5,
+      'team': 6,
+      'testimonials': 7,
+      'blog': 8
+    };
+    return priorities[pageType] || 9;
+  }
+
+  /**
+   * Analyze multiple pages and aggregate data
+   */
+  private async analyzeMultiplePages(keyPages: KeyPageInfo[]): Promise<MultiPageData> {
+    const multiPageData: MultiPageData = {
+      services: [],
+      contactInfo: [],
+      contentThemes: [],
+      competitiveAdvantages: [],
+      testimonials: [],
+      teamMembers: [],
+      pricingInfo: []
+    };
+
+    console.log(`🔍 Analyzing ${keyPages.length} pages for comprehensive data...`);
+
+    for (const page of keyPages) {
+      if (this.visitedUrls.has(page.url)) continue; // Skip already visited
+      
+      try {
+        console.log(`📄 Analyzing ${page.type} page: ${page.url}`);
+        
+        // Add delay between requests
+        if (this.visitedUrls.size > 1) {
+          await new Promise(resolve => setTimeout(resolve, this.crawlDelay));
+        }
+
+        const html = await this.fetchPage(page.url);
+        const $ = cheerio.load(html);
+        this.visitedUrls.add(page.url);
+
+        // Extract page-specific data
+        const pageData = await this.extractPageSpecificData($, page.type);
+        this.mergePageData(multiPageData, pageData);
+
+      } catch (error) {
+        console.warn(`⚠️ Failed to analyze ${page.type} page: ${error.message}`);
+        continue;
+      }
+    }
+
+    console.log(`✅ Multi-page analysis complete. Extracted:`);
+    console.log(`   - Services: ${multiPageData.services.length}`);
+    console.log(`   - Contact methods: ${multiPageData.contactInfo.length}`);
+    console.log(`   - Content themes: ${multiPageData.contentThemes.length}`);
+    console.log(`   - Competitive advantages: ${multiPageData.competitiveAdvantages.length}`);
+
+    return multiPageData;
+  }
+
+  /**
+   * Extract data specific to page type
+   */
+  private async extractPageSpecificData($: cheerio.CheerioAPI, pageType: PageType): Promise<Partial<MultiPageData>> {
+    const data: Partial<MultiPageData> = {};
+
+    switch (pageType) {
+      case 'services':
+        data.services = this.extractDetailedServices($);
+        break;
+      case 'about':
+        data.competitiveAdvantages = this.extractCompetitiveAdvantages($);
+        data.contentThemes = this.extractContentThemes($);
+        break;
+      case 'contact':
+        data.contactInfo = this.extractAllContactMethods($);
+        break;
+      case 'team':
+        data.teamMembers = this.extractTeamInfo($);
+        break;
+      case 'pricing':
+        data.pricingInfo = this.extractPricing($);
+        break;
+      case 'testimonials':
+        data.testimonials = this.extractTestimonials($);
+        break;
+      default:
+        // Extract general data from any page
+        data.services = this.extractDetailedServices($);
+        data.contactInfo = this.extractAllContactMethods($);
+        break;
+    }
+
+    return data;
+  }
+
+  /**
+   * Merge page data into multi-page data structure
+   */
+  private mergePageData(target: MultiPageData, source: Partial<MultiPageData>): void {
+    // Merge services with deduplication
+    if (source.services) {
+      const existingServiceNames = target.services.map(s => s.name.toLowerCase());
+      const newServices = source.services.filter(s => 
+        !existingServiceNames.includes(s.name.toLowerCase())
+      );
+      target.services.push(...newServices);
+    }
+
+    // Merge other arrays with deduplication
+    if (source.contactInfo) {
+      target.contactInfo.push(...source.contactInfo.filter(c => 
+        !target.contactInfo.some(existing => existing.type === c.type && existing.value === c.value)
+      ));
+    }
+
+    if (source.contentThemes) {
+      const newThemes = source.contentThemes.filter(t => !target.contentThemes.includes(t));
+      target.contentThemes.push(...newThemes);
+    }
+
+    if (source.competitiveAdvantages) {
+      const newAdvantages = source.competitiveAdvantages.filter(a => !target.competitiveAdvantages.includes(a));
+      target.competitiveAdvantages.push(...newAdvantages);
+    }
+
+    if (source.testimonials) {
+      target.testimonials.push(...source.testimonials);
+    }
+
+    if (source.teamMembers) {
+      target.teamMembers.push(...source.teamMembers);
+    }
+
+    if (source.pricingInfo) {
+      target.pricingInfo.push(...source.pricingInfo);
+    }
+  }
+
+  /**
+   * Extract detailed services with enhanced patterns
+   */
+  private extractDetailedServices($: cheerio.CheerioAPI): ServiceDetail[] {
+    const services: ServiceDetail[] = [];
+
+    // Enhanced service detection patterns for service pages
+    const serviceSelectors = [
+      '.service, [class*="service"]',
+      '.feature, [class*="feature"]',
+      '.solution, [class*="solution"]',
+      '.offering, [class*="offering"]',
+      '.capability, [class*="capability"]',
+      '.product, [class*="product"]',
+      '[data-service], [data-feature]',
+      '.card, [class*="card"]',
+      '.item, [class*="item"]',
+      'section, .section',
+      '.row, .col, .column'
+    ];
+
+    // Look for service sections
+    serviceSelectors.forEach(selector => {
+      $(selector).each((_, el) => {
+        const $el = $(el);
+        const text = $el.text().trim();
+        
+        // Skip if too small or likely not a service
+        if (text.length < 30) return;
+
+        const name = this.extractServiceName($el);
+        const description = this.extractServiceDescription($el);
+
+        if (name && name.length > 3 && name.length < 150) {
+          // Check for duplicates
+          const isDuplicate = services.some(s => 
+            s.name.toLowerCase() === name.toLowerCase() ||
+            this.calculateSimilarity(s.name, name) > 0.8
+          );
+
+          if (!isDuplicate) {
+            services.push({
+              name,
+              description: description || `${name} - comprehensive service offering`,
+              features: this.extractServiceFeatures($, $el),
+              category: this.categorizeService(name)
+            });
+          }
+        }
+      });
+    });
+
+    // Look for services in headings with detailed descriptions
+    $('h1, h2, h3, h4').each((_, el) => {
+      const $heading = $(el);
+      const headingText = $heading.text().trim();
+
+      if (headingText.length > 5 && headingText.length < 100) {
+        // Get following content for description
+        const $content = $heading.nextUntil('h1, h2, h3, h4').filter('p, div, ul, ol');
+        const description = $content.text().trim();
+
+        if (description.length > 50) {
+          const isDuplicate = services.some(s => 
+            this.calculateSimilarity(s.name, headingText) > 0.7
+          );
+
+          if (!isDuplicate) {
+            services.push({
+              name: headingText,
+              description: description.substring(0, 500),
+              features: this.extractFeaturesFromContent($content),
+              category: this.categorizeService(headingText)
+            });
+          }
+        }
+      }
+    });
+
+    return this.deduplicateServices(services).slice(0, 20); // Increased limit
+  }
+
+  /**
+   * Extract features from content elements
+   */
+  private extractFeaturesFromContent($content: cheerio.Cheerio<cheerio.Element>): string[] {
+    const features: string[] = [];
+    
+    $content.find('li').each((_, li) => {
+      const feature = $(li).text().trim();
+      if (feature.length > 10 && feature.length < 200) {
+        features.push(feature);
+      }
+    });
+
+    return features.slice(0, 8);
+  }
+
+  /**
+   * Extract all contact methods from a page
+   */
+  private extractAllContactMethods($: cheerio.CheerioAPI): ContactMethod[] {
+    const contacts: ContactMethod[] = [];
+
+    // Phone numbers
+    const phoneRegex = /(\+?[1-9]\d{0,3}[-\.\s]?)?\(?([0-9]{2,4})\)?[-\.\s]?([0-9]{3,4})[-\.\s]?([0-9]{3,4})/g;
+    const allText = $('body').text();
+    const phoneMatches = allText.match(phoneRegex) || [];
+    phoneMatches.forEach(phone => {
+      if (phone.length > 7) {
+        contacts.push({ type: 'phone', value: phone.trim() });
+      }
+    });
+
+    // Email addresses
+    const emailRegex = /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g;
+    const emailMatches = allText.match(emailRegex) || [];
+    emailMatches.forEach(email => {
+      contacts.push({ type: 'email', value: email.trim() });
+    });
+
+    // Addresses
+    const addressElements = $('[class*="address"], [id*="address"]');
+    addressElements.each((_, el) => {
+      const address = $(el).text().trim();
+      if (address.length > 20 && address.length < 200) {
+        contacts.push({ type: 'address', value: address });
+      }
+    });
+
+    return contacts;
+  }
+
+  // ============================================================================
+  // ENHANCED EXTRACTION METHODS
+  // ============================================================================
+
+  /**
+   * Enhanced business intelligence extraction using multi-page data
+   */
+  private extractEnhancedBusinessIntelligence($: cheerio.CheerioAPI, multiPageData: MultiPageData): BusinessIntelligence {
+    const baseIntelligence = this.extractBusinessIntelligence($);
+    
+    // Enhance with multi-page data
+    return {
+      ...baseIntelligence,
+      services: multiPageData.services.length > 0 ? multiPageData.services : baseIntelligence.services,
+      competitiveAdvantages: [
+        ...baseIntelligence.competitiveAdvantages,
+        ...multiPageData.competitiveAdvantages
+      ].slice(0, 10),
+      testimonials: [
+        ...baseIntelligence.testimonials,
+        ...multiPageData.testimonials
+      ].slice(0, 10),
+      teamInfo: [
+        ...baseIntelligence.teamInfo,
+        ...multiPageData.teamMembers
+      ].slice(0, 15),
+      pricing: [
+        ...baseIntelligence.pricing,
+        ...multiPageData.pricingInfo
+      ].slice(0, 10)
+    };
+  }
+
+  /**
+   * Enhanced content strategy analysis using multi-page data
+   */
+  private extractEnhancedContentStrategy($: cheerio.CheerioAPI, multiPageData: MultiPageData): ContentStrategyAnalysis {
+    const baseStrategy = this.extractContentStrategy($);
+    
+    return {
+      ...baseStrategy,
+      contentThemes: [
+        ...baseStrategy.contentThemes,
+        ...multiPageData.contentThemes
+      ].slice(0, 15)
+    };
+  }
+
+  /**
+   * Enhanced contact information extraction using multi-page data
+   */
+  private extractEnhancedContactInformation($: cheerio.CheerioAPI, multiPageData: MultiPageData): ContactInformation {
+    const baseContact = this.extractContactInformation($);
+    
+    // Aggregate contact info from all pages
+    const allPhones = [...baseContact.phone];
+    const allEmails = [...baseContact.email];
+    const allAddresses = [...baseContact.address];
+
+    multiPageData.contactInfo.forEach(contact => {
+      switch (contact.type) {
+        case 'phone':
+          if (!allPhones.includes(contact.value)) {
+            allPhones.push(contact.value);
+          }
+          break;
+        case 'email':
+          if (!allEmails.includes(contact.value)) {
+            allEmails.push(contact.value);
+          }
+          break;
+        case 'address':
+          if (!allAddresses.includes(contact.value)) {
+            allAddresses.push(contact.value);
+          }
+          break;
+      }
+    });
+
+    return {
+      ...baseContact,
+      phone: allPhones.slice(0, 5),
+      email: allEmails.slice(0, 3),
+      address: allAddresses.slice(0, 3)
+    };
   }
 }
 
