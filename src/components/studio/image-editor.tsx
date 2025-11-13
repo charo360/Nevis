@@ -2,25 +2,27 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from 'react';
-import { X, Wand, Brush, Eraser, Undo, Redo, Loader2, RectangleHorizontal } from 'lucide-react';
+import { X, Wand, Brush, Eraser, Undo, Redo, Loader2, RectangleHorizontal, Lightbulb } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { generateCreativeAssetAction } from '@/app/actions';
+// Removed generateCreativeAssetAction - now using /api/image-edit endpoint directly
 import type { BrandProfile } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { SmartEditSuggestions } from './smart-edit-suggestions';
 
 
 interface ImageEditorProps {
     imageUrl: string;
     onClose: () => void;
     brandProfile: BrandProfile | null;
+    onImageUpdated?: (newImageUrl: string) => void;
 }
 
-export function ImageEditor({ imageUrl, onClose, brandProfile }: ImageEditorProps) {
+export function ImageEditor({ imageUrl, onClose, brandProfile, onImageUpdated }: ImageEditorProps) {
     const imageCanvasRef = useRef<HTMLCanvasElement>(null);
     const drawingCanvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -41,6 +43,7 @@ export function ImageEditor({ imageUrl, onClose, brandProfile }: ImageEditorProp
     const { toast } = useToast();
     
     const [rectStart, setRectStart] = useState<{x: number, y: number} | null>(null);
+    const [showSuggestions, setShowSuggestions] = useState(false);
 
     const currentImageUrl = imageHistory[imageHistoryIndex];
 
@@ -58,12 +61,29 @@ export function ImageEditor({ imageUrl, onClose, brandProfile }: ImageEditorProp
         image.crossOrigin = "anonymous";
         image.src = url;
         image.onload = () => {
-            imageCanvas.width = image.naturalWidth;
-            imageCanvas.height = image.naturalHeight;
-            drawingCanvas.width = image.naturalWidth;
-            drawingCanvas.height = image.naturalHeight;
+            // Calculate scaled dimensions to fit within 70vw x 70vh
+            const maxWidth = window.innerWidth * 0.7;
+            const maxHeight = window.innerHeight * 0.7;
+            
+            let { width, height } = image;
+            const aspectRatio = width / height;
+            
+            // Scale down if image is too large
+            if (width > maxWidth) {
+                width = maxWidth;
+                height = width / aspectRatio;
+            }
+            if (height > maxHeight) {
+                height = maxHeight;
+                width = height * aspectRatio;
+            }
+            
+            imageCanvas.width = width;
+            imageCanvas.height = height;
+            drawingCanvas.width = width;
+            drawingCanvas.height = height;
 
-            imageCtx.drawImage(image, 0, 0);
+            imageCtx.drawImage(image, 0, 0, width, height);
 
             // Clear drawing canvas and reset its history
             drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
@@ -247,23 +267,55 @@ export function ImageEditor({ imageUrl, onClose, brandProfile }: ImageEditorProp
         }
 
         try {
-            const result = await generateCreativeAssetAction(
-                prompt,
-                'image',
-                currentImageUrl,
-                !!brandProfile,
-                brandProfile,
-                maskDataUrl
-            );
+            // Convert current image to base64 for the API
+            const imageCanvas = imageCanvasRef.current;
+            if (!imageCanvas) {
+                toast({ variant: 'destructive', title: "Canvas Error", description: "Image canvas not found." });
+                setIsLoading(false);
+                return;
+            }
 
-            if (result.imageUrl) {
+            const originalImage = {
+                id: `img_${Date.now()}`,
+                url: currentImageUrl,
+                base64: imageCanvas.toDataURL('image/png').split(',')[1],
+                mimeType: 'image/png',
+            };
+
+            const mask = maskDataUrl ? {
+                id: `mask_${Date.now()}`,
+                url: maskDataUrl,
+                base64: maskDataUrl.split(',')[1],
+                mimeType: 'image/png',
+            } : null;
+
+            const response = await fetch('/api/image-edit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    originalImage,
+                    prompt,
+                    mask,
+                    editType: 'ai',
+                }),
+            });
+
+            const result = await response.json();
+
+            if (result.success && result.editedImage) {
                 const newHistory = imageHistory.slice(0, imageHistoryIndex + 1);
-                newHistory.push(result.imageUrl);
+                newHistory.push(result.editedImage.url);
                 setImageHistory(newHistory);
                 setImageHistoryIndex(newHistory.length - 1);
-                 toast({ title: "Image Updated!", description: result.aiExplanation });
+                
+                // Call the callback to update the parent component
+                if (onImageUpdated) {
+                    onImageUpdated(result.editedImage.url);
+                }
+                
+                toast({ title: "Image Updated!", description: "Edit applied successfully" });
             } else {
-                 toast({ variant: 'destructive', title: "Generation Failed", description: "The AI did not return an image." });
+                toast({ variant: 'destructive', title: "Edit Failed", description: result.error || 'The AI did not return an image.' });
             }
         } catch (error) {
             toast({ variant: 'destructive', title: "Generation Failed", description: (error as Error).message });
@@ -273,6 +325,11 @@ export function ImageEditor({ imageUrl, onClose, brandProfile }: ImageEditorProp
         }
     };
 
+    const handleSuggestionClick = (suggestion: string) => {
+        setPrompt(suggestion);
+        setShowSuggestions(false);
+        toast({ title: "Suggestion Applied", description: "Edit prompt has been filled. Click Generate to apply the edit." });
+    };
 
     return (
         <div className="flex h-full w-full bg-background">
@@ -304,37 +361,67 @@ export function ImageEditor({ imageUrl, onClose, brandProfile }: ImageEditorProp
                 </div>
 
                 <div className="space-y-4">
-                    <Label htmlFor="brush-size">Brush Size: {brushSize}px</Label>
-                    <Slider id="brush-size" min={5} max={100} value={[brushSize]} onValueChange={(v) => setBrushSize(v[0])} />
+                    <Label>Brush Size</Label>
+                    <Slider
+                        value={[brushSize]}
+                        onValueChange={(value) => setBrushSize(value[0])}
+                        max={100}
+                        min={5}
+                        step={5}
+                    />
+                    <div className="text-sm text-muted-foreground">{brushSize}px</div>
                 </div>
+
                 <Separator />
-                <div className="space-y-2 flex-1 flex flex-col">
-                    <Label htmlFor="inpaint-prompt">Edit Prompt</Label>
+
+                <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                        <Label htmlFor="inpaint-prompt">Edit Prompt</Label>
+                        <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => setShowSuggestions(!showSuggestions)}
+                            className="h-6 px-2"
+                        >
+                            <Lightbulb className="w-3 h-3 mr-1" />
+                            Tips
+                        </Button>
+                    </div>
                     <Input 
                         id="inpaint-prompt" 
-                        placeholder="e.g., 'add sunglasses'" 
+                        placeholder="e.g., 'Change headline to Welcome' or 'Add a Buy Now button'" 
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                         disabled={isLoading}
                     />
+                    <Button onClick={handleGenerate} disabled={isLoading || !prompt} className="w-full">
+                        {isLoading ? <Loader2 className="mr-2 animate-spin"/> : <Wand className="mr-2" />}
+                        Generate
+                    </Button>
                 </div>
-                <Button onClick={handleGenerate} disabled={isLoading || !prompt}>
-                    {isLoading ? <Loader2 className="mr-2 animate-spin"/> : <Wand className="mr-2" />}
-                    Generate
-                </Button>
+                
+                {/* Smart Edit Suggestions Panel */}
+                {showSuggestions && (
+                    <div className="mt-4">
+                        <SmartEditSuggestions onSuggestionClick={handleSuggestionClick} />
+                    </div>
+                )}
             </div>
+            
             {/* Canvas Area */}
-            <div className="flex-1 flex items-center justify-center p-4 overflow-hidden bg-muted/20">
-                <div className="relative">
+            <div className="flex-1 flex items-center justify-center p-2 overflow-hidden bg-muted/20">
+                <div className="relative max-w-[70vw] max-h-[70vh]">
                     <canvas
                         ref={imageCanvasRef}
                         className="max-w-full max-h-full object-contain rounded-md shadow-lg"
+                        style={{ maxWidth: '70vw', maxHeight: '70vh' }}
                     />
                     <canvas
                         ref={drawingCanvasRef}
                         className={cn(
                             "absolute top-0 left-0 max-w-full max-h-full object-contain cursor-crosshair"
                         )}
+                        style={{ maxWidth: '70vw', maxHeight: '70vh' }}
                         onMouseDown={startDrawing}
                         onMouseMove={draw}
                         onMouseUp={stopDrawing}
