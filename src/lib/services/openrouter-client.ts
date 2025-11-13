@@ -3,6 +3,7 @@
  * Implements multi-model fallback: claude-3-haiku → gpt-4o-mini → gpt-3.5-turbo
  * No proxy dependencies - direct API calls
  */
+import { formatContactForAI, isContactInfoTooLong } from '@/lib/utils/smart-contact-formatter';
 
 interface OpenRouterRequest {
   model: string;
@@ -182,10 +183,17 @@ CRITICAL INSTRUCTIONS:
 5. MANDATORY: You MUST include competitive advantages in the competitiveAdvantages field - look for unique selling points, awards, certifications, "why choose us" content, guarantees, or any differentiating factors
 6. MANDATORY: You MUST include content themes in the contentThemes field - identify key themes like "innovation", "quality", "service", "community", "sustainability", etc.
 7. MANDATORY: You MUST include phone numbers in the contactInfo.phone field if any are found in the content
-8. Return ONLY valid JSON - no markdown, no explanations, no text before or after
-9. Ensure all strings are properly escaped (no unescaped quotes, newlines, or control characters)
-10. If a field has no information, use empty string "" or empty array []
-11. DO NOT leave competitiveAdvantages, contentThemes, or contactInfo.phone empty unless absolutely no relevant information exists
+8. CONTACT INFO VALIDATION: Only include VALID contact information:
+   - Phone: Must be a real phone number (7-15 digits), not truncated or shortened
+   - Email: Must be a complete, valid email address with @ and domain
+   - Website: Must be a complete URL, not truncated or shortened
+   - Address: Must be a complete address, not truncated
+   - If contact info is too long to fit properly, prioritize phone and email over website and address
+   - DO NOT include partial, truncated, or invalid contact information
+9. Return ONLY valid JSON - no markdown, no explanations, no text before or after
+10. Ensure all strings are properly escaped (no unescaped quotes, newlines, or control characters)
+11. If a field has no information, use empty string "" or empty array []
+12. DO NOT leave competitiveAdvantages, contentThemes, or contactInfo.phone empty unless absolutely no relevant information exists
 
 Respond with ONLY valid JSON in this exact format:
 

@@ -1,20 +1,24 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SmartContactDisplay } from "@/components/ui/smart-contact-display";
 import { 
-  Loader2, 
+  CheckCircle, 
   Globe, 
+  Mail, 
+  MapPin, 
+  Phone, 
+  TrendingUp, 
+  Users, 
+  Zap,
+  Loader2, 
   Sparkles, 
   ShoppingCart, 
   Target, 
-  TrendingUp,
-  Phone,
-  Mail,
-  MapPin,
   Camera,
   Star,
   Lightbulb,
@@ -400,32 +404,12 @@ export function EnhancedAnalysisDisplay({ websiteUrl = '' }: EnhancedAnalysisDis
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {analysisResult.data.contactInfo.phone && (
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <span>{analysisResult.data.contactInfo.phone}</span>
-                    </div>
-                  )}
-                  {analysisResult.data.contactInfo.email && (
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span>{analysisResult.data.contactInfo.email}</span>
-                    </div>
-                  )}
-                  {analysisResult.data.contactInfo.address && (
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span>{analysisResult.data.contactInfo.address}</span>
-                    </div>
-                  )}
-                  {analysisResult.data.contactInfo.website && (
-                    <div className="flex items-center gap-2">
-                      <Globe className="h-4 w-4 text-muted-foreground" />
-                      <span>{analysisResult.data.contactInfo.website}</span>
-                    </div>
-                  )}
-                </div>
+                <SmartContactDisplay 
+                  contactInfo={analysisResult.data.contactInfo}
+                  maxItems={3}
+                  layout="grid"
+                  className="mb-4"
+                />
 
                 {analysisResult.data.contactInfo.socialMedia.length > 0 && (
                   <div>
