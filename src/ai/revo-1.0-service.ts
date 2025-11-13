@@ -2429,6 +2429,7 @@ export async function generateRevo10Content(input: {
     console.log(`🔍 [Revo 1.0] Detected business type: ${detectedType}`);
 
     const useAssistant = shouldUseAssistant(detectedType);
+    // Enable fallback by default for production stability - only disable for debugging
     const fallbackEnabled = process.env.ENABLE_ASSISTANT_FALLBACK !== 'false';
 
     if (useAssistant && assistantManager.isAvailable(detectedType)) {
@@ -2467,15 +2468,33 @@ export async function generateRevo10Content(input: {
           console.log(`✅ [Revo 1.0 COHERENCE SUCCESS] No coherence issues found`);
         }
 
-        // Check if coherence is acceptable
-        const coherenceAcceptable = coherenceValidation.isCoherent && coherenceValidation.coherenceScore >= 60;
+        // Check if coherence is acceptable - More lenient for retail businesses
+        const isRetailBusiness = options.businessType?.toLowerCase().includes('retail') || 
+                                 options.businessType?.toLowerCase().includes('shop') ||
+                                 options.businessType?.toLowerCase().includes('store') ||
+                                 options.businessType?.toLowerCase().includes('ecommerce') ||
+                                 options.businessType?.toLowerCase().includes('e-commerce');
+        
+        // Use same logic as Revo 2.0 for consistency
+        const minCoherenceScore = isRetailBusiness ? 35 : 45; // Very lenient for retail
+        const hasMajorStoryMismatch = coherenceValidation.issues.some(issue => 
+          issue.includes('STORY MISMATCH') || issue.includes('Headline asks question but caption')
+        );
+        
+        const coherenceAcceptable = coherenceValidation.isCoherent || 
+                                   coherenceValidation.coherenceScore >= 60 ||
+                                   (coherenceValidation.coherenceScore >= minCoherenceScore && 
+                                    !hasMajorStoryMismatch && 
+                                    coherenceValidation.issues.length <= 2);
+
+        console.log(`🔍 [Revo 1.0 COHERENCE DECISION] Business: ${options.businessType}, IsRetail: ${isRetailBusiness}, Score: ${coherenceValidation.coherenceScore}, MinRequired: ${minCoherenceScore}, MajorMismatch: ${hasMajorStoryMismatch}, Issues: ${coherenceValidation.issues.length}, Acceptable: ${coherenceAcceptable}`);
 
         if (!coherenceAcceptable) {
-          console.warn(`⚠️ [Revo 1.0] Assistant content has poor coherence (score: ${coherenceValidation.coherenceScore})`);
+          console.warn(`⚠️ [Revo 1.0] Assistant content has poor coherence (score: ${coherenceValidation.coherenceScore}, min required: ${minCoherenceScore})`);
 
           if (!fallbackEnabled) {
             console.error(`🚫 [Revo 1.0] Fallback is DISABLED - throwing error for debugging`);
-            throw new Error(`Assistant content failed coherence validation (score: ${coherenceValidation.coherenceScore})`);
+            throw new Error(`Assistant content failed coherence validation (score: ${coherenceValidation.coherenceScore}, min required: ${minCoherenceScore})`);
           }
 
           console.warn(`⚠️ [Revo 1.0] Falling back to standard Gemini generation due to poor coherence`);

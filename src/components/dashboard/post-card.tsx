@@ -171,9 +171,14 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   }, [post.date]);
   const { toast } = useToast();
 
-  // Load performance prediction on mount
+  // Load performance prediction only once on mount (static analysis)
   React.useEffect(() => {
     let mounted = true;
+
+    // Only run if we don't already have a prediction and we're not currently loading
+    if (performancePrediction !== null) {
+      return;
+    }
 
     const loadPrediction = async () => {
       try {
@@ -194,12 +199,15 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
       }
     };
 
-    loadPrediction();
+    // Only load if we haven't loaded yet
+    if (isPredictionLoading && performancePrediction === null) {
+      loadPrediction();
+    }
 
     return () => {
       mounted = false;
     };
-  }, [post, brandProfile]);
+  }, [post.id]); // Only depend on post.id, run once per unique post
 
   // Platform-specific dimensions - ALL PLATFORMS USE 992x1056px FOR HIGHEST QUALITY
   const getPlatformDimensions = React.useCallback((platform: Platform) => {

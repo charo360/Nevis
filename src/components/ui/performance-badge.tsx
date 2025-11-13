@@ -26,21 +26,28 @@ interface PerformanceBadgeProps {
 }
 
 export function PerformanceBadge({ prediction, loading = false, compact = false }: PerformanceBadgeProps) {
+  // Fixed height container to prevent layout shifts
+  const badgeContainer = "h-6 flex items-center";
+  
   if (loading) {
     return (
-      <Badge variant="secondary" className="gap-1">
-        <Loader2 className="h-3 w-3 animate-spin" />
-        Analyzing...
-      </Badge>
+      <div className={badgeContainer}>
+        <Badge variant="secondary" className="gap-1">
+          <Loader2 className="h-3 w-3 animate-spin" />
+          Analyzing...
+        </Badge>
+      </div>
     );
   }
 
   if (!prediction) {
     return (
-      <Badge variant="outline" className="gap-1">
-        <BarChart3 className="h-3 w-3" />
-        No prediction
-      </Badge>
+      <div className={badgeContainer}>
+        <Badge variant="outline" className="gap-1">
+          <BarChart3 className="h-3 w-3" />
+          No prediction
+        </Badge>
+      </div>
     );
   }
 
@@ -62,22 +69,24 @@ export function PerformanceBadge({ prediction, loading = false, compact = false 
 
   if (compact) {
     return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Badge className={`gap-1 ${reachColorClass}`}>
-              {reachIcon}
-              {prediction.reachScore}% Reach
-            </Badge>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Predicted reach score based on AI analysis</p>
-            <p className="text-xs text-muted-foreground">
-              {prediction.predictedMetrics.estimatedReach} estimated reach
-            </p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <div className={badgeContainer}>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge className={`gap-1 ${reachColorClass}`}>
+                {reachIcon}
+                {prediction.reachScore}% Reach
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Predicted reach score based on AI analysis</p>
+              <p className="text-xs text-muted-foreground">
+                {prediction.predictedMetrics.estimatedReach} estimated reach
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
     );
   }
 
