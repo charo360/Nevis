@@ -440,7 +440,19 @@ export class AssistantManager {
     // Financial Services (for finance)
     if (request.businessType === 'finance' && brandProfile.services) {
       message += `**Financial Services:**\n`;
-      brandProfile.services.slice(0, 5).forEach((service: any) => {
+      
+      // Handle both string and array formats
+      let servicesArray: any[] = [];
+      if (typeof brandProfile.services === 'string') {
+        // Convert string to array (split by newlines)
+        servicesArray = brandProfile.services.split('\n')
+          .filter(s => s.trim())
+          .map(s => s.trim());
+      } else if (Array.isArray(brandProfile.services)) {
+        servicesArray = brandProfile.services;
+      }
+      
+      servicesArray.slice(0, 5).forEach((service: any) => {
         if (typeof service === 'string') {
           message += `- ${service}\n`;
         } else if (service.serviceName) {
