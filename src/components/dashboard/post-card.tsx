@@ -35,6 +35,7 @@ import type { BrandProfile, GeneratedPost, Platform, PostVariant } from "@/lib/t
 import { format } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth-supabase";
+import { useCredits } from "@/hooks/use-credits";
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Input } from '../ui/input';
@@ -120,6 +121,7 @@ type PostCardProps = {
 
 export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   const { user, getAccessToken } = useAuth();
+  const { useCreditsForModel, useCreditsForImageEdit } = useCredits();
   const [isEditing, setIsEditing] = React.useState(false);
   const [isRegenerating, setIsRegenerating] = React.useState(false);
   const [isGeneratingVideo, setIsGeneratingVideo] = React.useState(false);
@@ -500,6 +502,25 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   const handleRegenerate = async () => {
     setIsRegenerating(true);
     try {
+      // Determine which model was used for this post (default to revo-1.0 if not specified)
+      const modelUsed = (post.aiModel?.includes('revo-2.0') || post.id?.includes('revo-2.0'))
+        ? 'revo-2.0'
+        : (post.aiModel?.includes('revo-1.5') || post.id?.includes('revo-1.5'))
+        ? 'revo-1.5'
+        : 'revo-1.0';
+
+      // Deduct credits before regeneration
+      const creditResult = await useCreditsForModel(modelUsed, 'image_generation', 'regeneration');
+      if (!creditResult.success) {
+        toast({
+          variant: "destructive",
+          title: "Insufficient Credits",
+          description: creditResult.error || `You need ${modelUsed === 'revo-1.0' ? '3' : modelUsed === 'revo-1.5' ? '4' : '5'} credits to regenerate with ${modelUsed}. Please purchase more credits.`,
+          duration: 6000,
+        });
+        return;
+      }
+
       const platform = safeVariants[0].platform;
       // TODO: Pass useLocalLanguage parameter from parent component
       // Currently defaults to false - regenerated posts will be in English only

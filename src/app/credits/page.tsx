@@ -62,9 +62,9 @@ interface ModelUsageStats {
 
 // Model cost configuration
 const MODEL_COSTS = {
-  'revo-1.0': 2,
-  'revo-1.5': 3,
-  'revo-2.0': 4,
+  'revo-1.0': 3,
+  'revo-1.5': 4,
+  'revo-2.0': 5,
 } as const;
 
 // Utility function to get model display name

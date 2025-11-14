@@ -165,7 +165,7 @@ export default function PricingPage() {
                   <Zap className="w-6 h-6 text-blue-500" />
                 </div>
                 <div className="text-lg font-medium mb-2">Basic</div>
-                <div className="text-3xl font-bold text-blue-600 mb-2">2 credits</div>
+                <div className="text-3xl font-bold text-blue-600 mb-2">3 credits</div>
                 <div className="text-sm text-gray-500">Fast & Efficient</div>
               </div>
               <div className="p-6 border rounded-2xl bg-white shadow-lg hover:shadow-xl transition-all duration-300">
@@ -173,7 +173,7 @@ export default function PricingPage() {
                   <Sparkles className="w-6 h-6 text-purple-500" />
                 </div>
                 <div className="text-lg font-medium mb-2">Enhanced</div>
-                <div className="text-3xl font-bold text-purple-600 mb-2">3 credits</div>
+                <div className="text-3xl font-bold text-purple-600 mb-2">4 credits</div>
                 <div className="text-sm text-gray-500">Higher Quality</div>
               </div>
               <div className="p-6 border rounded-2xl bg-white shadow-lg hover:shadow-xl transition-all duration-300">
@@ -181,7 +181,7 @@ export default function PricingPage() {
                   <Brain className="w-6 h-6 text-indigo-500" />
                 </div>
                 <div className="text-lg font-medium mb-2">Premium</div>
-                <div className="text-3xl font-bold text-indigo-600 mb-2">3.5 credits</div>
+                <div className="text-3xl font-bold text-indigo-600 mb-2">5 credits</div>
                 <div className="text-sm text-gray-500">Best Quality</div>
               </div>
             </div>
@@ -439,7 +439,7 @@ export default function PricingPage() {
               </div>
               <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6">
                 <h4 className="font-semibold mb-3 text-gray-900">What do credits do?</h4>
-                <p className="text-gray-600 text-sm">Credits power content generation with different quality tiers: Basic = 2 credits, Enhanced = 3 credits, Premium = 3.5 credits per post.</p>
+                <p className="text-gray-600 text-sm">Credits power content generation with different quality tiers: Basic = 3 credits, Enhanced = 4 credits, Premium = 5 credits per post.</p>
               </div>
               <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6">
                 <h4 className="font-semibold mb-3 text-gray-900">Do credits expire?</h4>
