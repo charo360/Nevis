@@ -1141,6 +1141,13 @@ export class AssistantManager {
         }
 
         if (run.status === 'failed' || run.status === 'cancelled' || run.status === 'expired') {
+          const errorDetails = {
+            status: run.status,
+            error: run.last_error,
+            runId: run.id,
+            threadId: threadId
+          };
+          console.error(`❌ [Assistant Manager] Run ${run.status}:`, JSON.stringify(errorDetails, null, 2));
           throw new Error(`Assistant run ${run.status}: ${run.last_error?.message || 'Unknown error'}`);
         }
 

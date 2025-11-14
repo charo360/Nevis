@@ -3772,7 +3772,12 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
         console.log(`✅ [Revo 2.0] Assistant generated content with design specifications`);
         
       } catch (assistantError) {
-        console.warn(`⚠️ [Revo 2.0] Assistant generation failed, falling back to Claude:`, assistantError);
+        console.error(`❌ [Revo 2.0] Assistant generation FAILED for ${businessType.primaryType}:`);
+        console.error(`   Error Type: ${assistantError instanceof Error ? assistantError.constructor.name : typeof assistantError}`);
+        console.error(`   Error Message: ${assistantError instanceof Error ? assistantError.message : String(assistantError)}`);
+        console.error(`   Full Error:`, assistantError);
+        
+        console.warn(`⚠️ [Revo 2.0] Falling back to Claude due to assistant failure`);
         contentSource = 'claude_fallback';
         assistantResponse = await generateClaudeFallback(enhancedOptions, concept);
       }
