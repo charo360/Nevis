@@ -1,7 +1,7 @@
 // src/app/actions.ts
 "use server";
 
-import { analyzeBrand as analyzeBrandFlow, BrandAnalysisResult } from "@/ai/flows/analyze-brand";
+import { BrandAnalysisResult } from "@/ai/flows/analyze-brand"; // Keep type import for compatibility
 import { modelRegistry } from "@/ai/models/registry/model-registry";
 import { generateVideoPost as generateVideoPostFlow } from "@/ai/flows/generate-video-post";
 import { generateCreativeAsset as generateCreativeAssetFlow } from "@/ai/flows/generate-creative-asset";
@@ -119,12 +119,33 @@ export async function analyzeBrandAction(
     console.log('🚀 Running AI-powered comprehensive analysis...');
 
     try {
-      // Use AI analysis as PRIMARY method (OpenRouter with Claude/GPT)
-      const { analyzeBrand } = await import('@/ai/flows/analyze-brand');
-      const aiResult = await analyzeBrand({
-        websiteUrl: normalizedUrl,
-        designImageUris: designImageUris || []
+      // Use Claude analysis as PRIMARY method (Enhanced with actual product extraction)
+      console.log('🤖 Using Claude-enhanced website analysis...');
+      
+      const analysisResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3001'}/api/analyze-brand-claude`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          websiteUrl: normalizedUrl,
+          businessType: 'auto-detect',
+          includeCompetitorAnalysis: false
+        })
       });
+
+      if (!analysisResponse.ok) {
+        const errorData = await analysisResponse.json();
+        throw new Error(errorData.error || 'Claude analysis failed');
+      }
+
+      const claudeResult = await analysisResponse.json();
+      
+      if (!claudeResult.success) {
+        throw new Error(claudeResult.error || 'Claude analysis failed');
+      }
+
+      const aiResult = claudeResult.data;
 
       console.log('✅ AI analysis complete!');
       console.log(`🏢 Business name: ${aiResult.businessName}`);

@@ -51,16 +51,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Step 2: Analyze with proper data mapping
+    // Step 2: Analyze with Claude (Enhanced analyzer)
     try {
-      const { analyzeBrand } = await import('@/ai/flows/analyze-brand');
-
-      const analysisResult = await analyzeBrand({
-        websiteUrl,
-        designImageUris
+      console.log('🤖 Using Claude-enhanced website analysis...');
+      
+      const analysisResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3001'}/api/analyze-brand-claude`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          websiteUrl,
+          businessType: 'auto-detect',
+          includeCompetitorAnalysis: false
+        })
       });
 
-      console.log('✅ Website analysis completed successfully');
+      if (!analysisResponse.ok) {
+        const errorData = await analysisResponse.json();
+        throw new Error(errorData.error || 'Claude analysis failed');
+      }
+
+      const claudeResult = await analysisResponse.json();
+      
+      if (!claudeResult.success) {
+        throw new Error(claudeResult.error || 'Claude analysis failed');
+      }
+
+      const analysisResult = claudeResult.data;
+
+      console.log('✅ Claude website analysis completed successfully');
 
       return NextResponse.json({
         success: true,
