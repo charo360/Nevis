@@ -315,7 +315,7 @@ export async function deductCreditsForImageEdit(
     // Check if user has enough credits
     const { data: userData, error: fetchError } = await supabase
       .from('user_credits')
-      .select('remaining_credits')
+      .select('remaining_credits, used_credits')
       .eq('user_id', userId)
       .single();
 
@@ -335,12 +335,17 @@ export async function deductCreditsForImageEdit(
       };
     }
 
-    // Deduct credits
+    // Deduct credits - calculate new values
+    const newRemainingCredits = userData.remaining_credits - EDIT_CREDIT_COST;
+    
+    // First, get current used_credits
+    const currentUsedCredits = userData.used_credits || 0;
+    
     const { data: updateData, error: updateError } = await supabase
       .from('user_credits')
       .update({
-        remaining_credits: userData.remaining_credits - EDIT_CREDIT_COST,
-        used_credits: supabase.raw(`used_credits + ${EDIT_CREDIT_COST}`),
+        remaining_credits: newRemainingCredits,
+        used_credits: currentUsedCredits + EDIT_CREDIT_COST,
         updated_at: new Date().toISOString(),
       })
       .eq('user_id', userId)
