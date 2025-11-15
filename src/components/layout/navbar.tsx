@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import { 
   Sparkles, 
@@ -17,6 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth-supabase';
 import { AppRoutesPaths } from '@/lib/routes';
+import logoImage from '@/assets/logo.jpg';
 
 interface NavbarProps {
   currentPage?: 'home' | 'features' | 'pricing' | 'about';
@@ -77,13 +79,16 @@ export function Navbar({ currentPage }: NavbarProps) {
     <>
       <nav className="relative z-50 px-6 py-4 bg-white/80 backdrop-blur-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href={AppRoutesPaths.home} className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-              <Sparkles className="w-6 h-6 text-white" />
+          <Link href={AppRoutesPaths.home} className="flex items-center">
+            <div className="relative w-16 h-16 rounded-xl overflow-hidden hover:opacity-90 transition-opacity">
+              <Image
+                src={logoImage}
+                alt="Crevo Logo"
+                fill
+                className="object-cover"
+                priority
+              />
             </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Crevo
-            </span>
           </Link>
 
           {/* Desktop Menu */}
@@ -155,13 +160,13 @@ export function Navbar({ currentPage }: NavbarProps) {
           <div className="fixed right-0 top-0 h-full w-[280px] bg-white shadow-2xl transform transition-transform duration-300 ease-out">
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Crevo
-                </span>
+              <div className="relative w-12 h-12 rounded-lg overflow-hidden">
+                <Image
+                  src={logoImage}
+                  alt="Crevo Logo"
+                  fill
+                  className="object-cover"
+                />
               </div>
               <button
                 onClick={() => setIsMenuOpen(false)}
