@@ -37,59 +37,94 @@ function convertMongoIdToUuid(mongoUserId: string): string {
   return userIdMap[mongoUserId] || '58b4d78d-cb90-49ef-9524-7238aea00168'; // Default to your UUID
 }
 
-// Helper function to upload data URL to Supabase Storage
-async function uploadDataUrlToSupabase(dataUrl: string, userId: string, fileName: string): Promise<{ success: boolean; url?: string; error?: string }> {
-  try {
+// Helper function to upload data URL to Supabase Storage with retry logic
+async function uploadDataUrlToSupabase(
+  dataUrl: string, 
+  userId: string, 
+  fileName: string,
+  maxRetries: number = 3
+): Promise<{ success: boolean; url?: string; error?: string }> {
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`📤 [Upload] Attempt ${attempt}/${maxRetries} for ${fileName}`);
 
-    // Convert data URL to buffer
-    const base64Data = dataUrl.split(',')[1];
-    if (!base64Data) {
-      return { success: false, error: 'Invalid data URL format' };
-    }
-
-    const buffer = Buffer.from(base64Data, 'base64');
-
-    // Upload to Supabase Storage using service role (bypasses RLS)
-    // Using public folder to match existing storage policies
-    const uploadPath = `public/${fileName}`;
-
-    const { data, error } = await supabase.storage
-      .from('nevis-storage')
-      .upload(uploadPath, buffer, {
-        contentType: 'image/png',
-        upsert: true,
-        // Explicitly bypass RLS with service role
-        duplex: 'half'
-      });
-
-    if (error) {
-      console.error('❌ Supabase Storage upload error:', {
-        message: error.message,
-        name: error.name,
-        cause: error.cause
-      });
-
-      // Provide more specific error information
-      if (error.message?.includes('row-level security policy')) {
-        return {
-          success: false,
-          error: 'Storage permission error - RLS policy blocking upload. Please check Supabase storage policies or disable RLS for development.'
-        };
+      // Convert data URL to buffer
+      const base64Data = dataUrl.split(',')[1];
+      if (!base64Data) {
+        return { success: false, error: 'Invalid data URL format' };
       }
 
-      return { success: false, error: error.message };
+      const buffer = Buffer.from(base64Data, 'base64');
+      console.log(`📤 [Upload] Buffer size: ${buffer.length} bytes`);
+
+      // Upload to Supabase Storage using service role (bypasses RLS)
+      // Using public folder to match existing storage policies
+      const uploadPath = `public/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from('nevis-storage')
+        .upload(uploadPath, buffer, {
+          contentType: 'image/png',
+          upsert: true,
+          // Explicitly bypass RLS with service role
+          duplex: 'half'
+        });
+
+      if (error) {
+        console.error(`❌ [Upload] Attempt ${attempt} failed:`, {
+          message: error.message,
+          name: error.name,
+          cause: error.cause
+        });
+
+        // Provide more specific error information
+        if (error.message?.includes('row-level security policy')) {
+          return {
+            success: false,
+            error: 'Storage permission error - RLS policy blocking upload. Please check Supabase storage policies or disable RLS for development.'
+          };
+        }
+
+        // If this is not the last attempt, wait before retrying
+        if (attempt < maxRetries) {
+          const waitTime = attempt * 1000; // Exponential backoff: 1s, 2s, 3s
+          console.log(`⏳ [Upload] Waiting ${waitTime}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          continue; // Try again
+        }
+
+        return { success: false, error: error.message };
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('nevis-storage')
+        .getPublicUrl(uploadPath);
+
+      console.log(`✅ [Upload] Success on attempt ${attempt}: ${publicUrl}`);
+      return { success: true, url: publicUrl };
+      
+    } catch (error) {
+      console.error(`❌ [Upload] Exception on attempt ${attempt}:`, error);
+      
+      // If this is not the last attempt, wait before retrying
+      if (attempt < maxRetries) {
+        const waitTime = attempt * 1000;
+        console.log(`⏳ [Upload] Waiting ${waitTime}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        continue;
+      }
+      
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      };
     }
-
-    // Get public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from('nevis-storage')
-      .getPublicUrl(uploadPath);
-
-    return { success: true, url: publicUrl };
-  } catch (error) {
-    console.error('❌ Supabase Storage upload error:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
+  
+  // Should never reach here, but TypeScript requires it
+  return { success: false, error: 'Max retries exceeded' };
 }
 
 // GET /api/generated-posts - Load user's generated posts
@@ -356,7 +391,10 @@ export async function POST(request: NextRequest) {
 
     // Process images with Supabase Storage if they exist
     let processedPost = { ...post };
+    
+    // ⚠️ CRITICAL: Validate and force upload of data URLs - NEVER save data URLs to database
     if (post.imageUrl && typeof post.imageUrl === 'string' && post.imageUrl.startsWith('data:')) {
+      console.log('🔄 [Generated Posts] Converting data URL to Supabase Storage...');
       const imageResult = await uploadDataUrlToSupabase(
         post.imageUrl,
         userId,
@@ -364,14 +402,25 @@ export async function POST(request: NextRequest) {
       );
 
       if (imageResult.success && imageResult.url) {
+        console.log('✅ [Generated Posts] Main image uploaded successfully');
         processedPost.imageUrl = imageResult.url;
       } else {
-        console.error('❌ Failed to upload main image:', imageResult.error);
+        console.error('❌ [Generated Posts] Failed to upload main image:', imageResult.error);
+        // CRITICAL: Block save if image upload fails - prevent data URL from being saved
+        return NextResponse.json(
+          { 
+            error: 'Image upload failed - cannot save post with data URL',
+            details: imageResult.error,
+            retryable: true
+          },
+          { status: 500 }
+        );
       }
     }
 
     // Process content image if it exists
     if (post.content?.imageUrl && typeof post.content.imageUrl === 'string' && post.content.imageUrl.startsWith('data:')) {
+      console.log('🔄 [Generated Posts] Converting content data URL to Supabase Storage...');
       const contentImageResult = await uploadDataUrlToSupabase(
         post.content.imageUrl,
         userId,
@@ -379,38 +428,76 @@ export async function POST(request: NextRequest) {
       );
 
       if (contentImageResult.success && contentImageResult.url) {
+        console.log('✅ [Generated Posts] Content image uploaded successfully');
         processedPost.content = {
           ...processedPost.content,
           imageUrl: contentImageResult.url
         };
       } else {
-        console.error('❌ Failed to upload content image:', contentImageResult.error);
+        console.error('❌ [Generated Posts] Failed to upload content image:', contentImageResult.error);
+        // Allow fallback to main image if content image upload fails
+        console.warn('⚠️ [Generated Posts] Proceeding without content image');
       }
     }
+    
     // Upload variant images (handles Revo 1.0 which sets images only in variants)
     if (Array.isArray(post.variants) && post.variants.length > 0) {
       const updatedVariants: any[] = [];
+      let variantUploadFailed = false;
+      
       for (let i = 0; i < post.variants.length; i++) {
         const v: any = post.variants[i] || {};
         if (v.imageUrl && typeof v.imageUrl === 'string' && v.imageUrl.startsWith('data:')) {
+          console.log(`🔄 [Generated Posts] Converting variant ${i} data URL to Supabase Storage...`);
           const variantResult = await uploadDataUrlToSupabase(
             v.imageUrl,
             userId,
             `post-${post.id || Date.now()}-variant-${i}-${(v.platform || 'instagram').toLowerCase()}.png`
           );
+          
           if (variantResult.success && variantResult.url) {
+            console.log(`✅ [Generated Posts] Variant ${i} uploaded successfully`);
             updatedVariants.push({ ...v, imageUrl: variantResult.url });
             // If no main imageUrl set yet, use the first variant URL as primary
             if (!processedPost.imageUrl) processedPost.imageUrl = variantResult.url;
           } else {
-            console.error('❌ Failed to upload variant image:', variantResult.error);
-            updatedVariants.push(v);
+            console.error(`❌ [Generated Posts] Failed to upload variant ${i}:`, variantResult.error);
+            variantUploadFailed = true;
+            // CRITICAL: If this is the only image, block the save
+            if (!processedPost.imageUrl && i === 0) {
+              return NextResponse.json(
+                { 
+                  error: 'Primary image upload failed - cannot save post',
+                  details: variantResult.error,
+                  retryable: true
+                },
+                { status: 500 }
+              );
+            }
+            // Otherwise, keep the variant without image
+            updatedVariants.push({ ...v, imageUrl: undefined });
           }
         } else {
           updatedVariants.push(v);
         }
       }
       processedPost.variants = updatedVariants;
+      
+      if (variantUploadFailed) {
+        console.warn('⚠️ [Generated Posts] Some variant uploads failed, proceeding with available images');
+      }
+    }
+    
+    // Final validation: Ensure we have at least one image URL that's not a data URL
+    if (!processedPost.imageUrl || processedPost.imageUrl.startsWith('data:')) {
+      console.error('❌ [Generated Posts] No valid image URL after upload attempts');
+      return NextResponse.json(
+        { 
+          error: 'No valid image could be uploaded - cannot save post',
+          retryable: true
+        },
+        { status: 500 }
+      );
     }
 
     const platform = processedPost.platform || 'instagram';

@@ -480,15 +480,13 @@ export default function CreditManagementPage() {
                   return (
                     <div className="overflow-x-auto">
                       <div className="max-h-96 overflow-y-auto">
-                      <table className="min-w-[900px] w-full text-sm">
+                      <table className="min-w-full w-full text-sm">
                         <thead>
                           <tr className="text-left text-muted-foreground border-b">
                             <th className="py-2 pr-4">Date</th>
                             <th className="py-2 pr-4">Type</th>
                             <th className="py-2 pr-4">Details</th>
-                            <th className="py-2 pr-4">Credits</th>
-                            <th className="py-2 pr-4">Amount</th>
-                            <th className="py-2 pr-0">Status</th>
+                            <th className="py-2 pr-0">Credits</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -501,9 +499,7 @@ export default function CreditManagementPage() {
                                 </Badge>
                               </td>
                               <td className="py-2 pr-4">{r.details}</td>
-                              <td className={`py-2 pr-4 ${r.credits >= 0 ? 'text-green-600' : 'text-red-600'}`}>{r.credits > 0 ? `+${r.credits}` : r.credits}</td>
-                              <td className="py-2 pr-4">{typeof r.amount === 'number' ? `$${r.amount}` : '—'}</td>
-                              <td className="py-2 pr-0">{r.status ? <Badge variant={r.status === 'completed' ? 'default' : 'secondary'} className={r.status === 'completed' ? 'bg-green-600' : ''}>{r.status}</Badge> : '—'}</td>
+                              <td className={`py-2 pr-0 ${r.credits >= 0 ? 'text-green-600' : 'text-red-600'}`}>{r.credits > 0 ? `+${r.credits}` : r.credits}</td>
                             </tr>
                           ))}
                         </tbody>

@@ -55,16 +55,22 @@ export default function DashboardPage() {
   let currentBrand = null;
   let brands: any[] = [];
   let brandContextError = null;
+  let brandLoading = false;
 
   try {
     const brandContext = useUnifiedBrand();
     currentBrand = brandContext.currentBrand as any;
     brands = brandContext.brands as any[];
+    brandLoading = brandContext.loading;
   } catch (error: any) {
     console.warn('Brand context error:', error?.message || error);
     brandContextError = error?.message || String(error);
   }
-  const brandLabel = currentBrand?.businessName ?? (currentBrand as unknown as { name?: string })?.name ?? 'Unnamed Brand';
+  
+  // Show "Loading..." while fetching brand data, then actual brand name or fallback
+  const brandLabel = brandLoading 
+    ? 'Loading...' 
+    : (currentBrand?.businessName ?? (currentBrand as unknown as { name?: string })?.name ?? 'Unnamed Brand');
   const hasBrands = brands.length > 0;
   const brandCount = brands.length;
   // Safe stable key for React list/key usage: prefer explicit id if available, otherwise use brandLabel
@@ -410,16 +416,28 @@ export default function DashboardPage() {
                 <div>
                   <h3 className="font-semibold text-gray-900">{brandLabel}</h3>
                   <p className="text-sm text-gray-600">{currentBrand.businessType || 'General Business'}</p>
-                  {currentBrand.location && (
-                    <p className="text-xs text-gray-500">
-                      {typeof currentBrand.location === 'string'
-                        ? currentBrand.location
-                        : currentBrand.location
-                          ? `${currentBrand.location.city || ''}, ${currentBrand.location.country || ''}`.replace(/^,\s*/, '').replace(/,\s*$/, '')
-                          : ''
+                  {currentBrand.location && (() => {
+                    const location = currentBrand.location;
+                    let locationText = '';
+                    
+                    if (typeof location === 'string') {
+                      locationText = location;
+                    } else if (typeof location === 'object') {
+                      // Handle object location with city, country, or address
+                      const parts = [];
+                      if (location.city) parts.push(location.city);
+                      if (location.country) parts.push(location.country);
+                      if (parts.length === 0 && location.address) {
+                        locationText = location.address;
+                      } else {
+                        locationText = parts.join(', ');
                       }
-                    </p>
-                  )}
+                    }
+                    
+                    return locationText ? (
+                      <p className="text-xs text-gray-500">{locationText}</p>
+                    ) : null;
+                  })()}
                 </div>
               </div>
               <div className="flex gap-3">

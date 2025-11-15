@@ -1,16 +1,23 @@
 import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+
+// Load environment variables from .env.local
+dotenv.config({ path: '.env.local' });
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_SERVICE_KEY) {
+  console.error('❌ Missing Supabase credentials in .env.local');
+  process.exit(1);
+}
 
 // Use ANON key (like the client does)
-const supabaseClient = createClient(
-  'https://nrfceylvtiwpqsoxurrv.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5yZmNleWx2dGl3cHFzb3h1cnJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcyOTg2NzMsImV4cCI6MjA3Mjg3NDY3M30.pnUnU4WI6ALRyTmasYVqzjl3JDjhXsGBJFVwPWzsKfk'
-);
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Use SERVICE key (like the server does)
-const supabaseService = createClient(
-  'https://nrfceylvtiwpqsoxurrv.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5yZmNleWx2dGl3cHFzb3h1cnJ2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NzI5ODY3MywiZXhwIjoyMDcyODc0NjczfQ.R6x0E0YbYxOyDRCBzpHjzYxj-JuPdvuuv8JfHJhYMhM'
-);
+const supabaseService = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
 const targetEmail = 'sm1761a@american.edu';
 const userId = 'dd9f93dc-08c2-4086-9359-687fa6c5897d';
@@ -71,8 +78,8 @@ if (authToken) {
   console.log('\n4️⃣ Testing with ANON key WITH authentication token:');
   
   const authenticatedClient = createClient(
-    'https://nrfceylvtiwpqsoxurrv.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5yZmNleWx2dGl3cHFzb3h1cnJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcyOTg2NzMsImV4cCI6MjA3Mjg3NDY3M30.pnUnU4WI6ALRyTmasYVqzjl3JDjhXsGBJFVwPWzsKfk',
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY,
     {
       global: {
         headers: {

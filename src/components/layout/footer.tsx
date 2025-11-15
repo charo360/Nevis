@@ -25,12 +25,13 @@ export function Footer() {
           {/* Brand */}
           <div className="md:col-span-2">
             <div className="flex items-center mb-6">
-              <div className="relative w-32 h-16 rounded-xl overflow-hidden">
+              <div className="relative w-48 h-12 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
                 <Image
                   src={logoImage}
                   alt="Crevo Logo"
                   fill
                   className="object-cover"
+                  priority
                 />
               </div>
             </div>

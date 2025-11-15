@@ -3,11 +3,29 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
 
-// Server-side Supabase client for reading posts
+// Server-side Supabase client for reading posts with timeout configuration
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    db: {
+      schema: 'public',
+    },
+    global: {
+      headers: { 
+        'x-client-timeout': '10000' // 10 second timeout for larger queries
+      }
+    }
+  }
 );
+
+// Query timeout wrapper
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number = 10000): Promise<T> {
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    setTimeout(() => reject(new Error('Query timeout')), timeoutMs);
+  });
+  return Promise.race([promise, timeoutPromise]);
+}
 
 // GET /api/generated-posts/brand/[brandId] - Get posts for specific brand
 export async function GET(
@@ -28,8 +46,11 @@ export async function GET(
     let userId: string;
 
     try {
-      // Verify the Supabase access token
-      const { data: { user }, error } = await supabase.auth.getUser(token);
+      // Verify the Supabase access token with timeout
+      const { data: { user }, error } = await withTimeout(
+        supabase.auth.getUser(token),
+        3000 // 3 second timeout for auth
+      );
       
       if (error || !user) {
         console.error('❌ Supabase token verification failed:', error);
@@ -49,11 +70,13 @@ export async function GET(
     }
 
     const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get('limit') || '10');
+    const limit = parseInt(searchParams.get('limit') || '50'); // Reduced from unlimited
     const { brandId } = await params;
 
-    // Query posts from Supabase database for specific brand
-    const { data: posts, error } = await supabase
+    console.log(`📊 Fetching posts for brand ${brandId}, user ${userId}, limit ${limit}`);
+
+    // Query posts from Supabase database for specific brand with timeout
+    const query = supabase
       .from('generated_posts')
       .select(`
         id,
@@ -84,7 +107,9 @@ export async function GET(
       .eq('user_id', userId)
       .eq('brand_profile_id', brandId)
       .order('created_at', { ascending: false })
-      .limit(limit);
+      .limit(Math.min(limit, 100)); // Cap at 100 posts max
+
+    const { data: posts, error } = await withTimeout(query, 10000); // 10 second timeout
 
     if (error) {
       console.error('❌ Supabase query error:', error);
@@ -125,6 +150,15 @@ export async function GET(
     return NextResponse.json(transformedPosts);
   } catch (error) {
     console.error('Error loading brand posts:', error);
+    
+    // More specific error messages
+    if (error instanceof Error && error.message === 'Query timeout') {
+      return NextResponse.json(
+        { error: 'Request timed out. Please try again with fewer posts.' },
+        { status: 504 }
+      );
+    }
+    
     return NextResponse.json(
       { error: 'Failed to load brand posts' },
       { status: 500 }
