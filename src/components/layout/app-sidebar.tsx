@@ -3,6 +3,7 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Bot,
   CalendarDays,
@@ -39,6 +40,7 @@ import {
   SidebarMenuButton,
   useSidebar,
 } from "@/components/ui/sidebar";
+import logoImage from '@/assets/logo.jpg';
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -60,13 +62,26 @@ export function AppSidebar() {
       <SidebarHeader>
         <div className="flex items-center justify-between w-full">
           <Link href="/" className="flex items-center gap-2 flex-1 min-w-0">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            {!isCollapsed && (
-              <h1 className="text-xl font-bold text-primary-foreground font-headline truncate">
-                Crevo
-              </h1>
+            {!isCollapsed ? (
+              <div className="relative w-32 h-12 rounded-xl overflow-hidden hover:opacity-90 transition-opacity shadow-sm">
+                <Image
+                  src={logoImage}
+                  alt="Crevo Logo"
+                  fill
+                  className="object-cover"
+                  priority
+                />
+              </div>
+            ) : (
+              <div className="relative w-16 h-6 rounded-lg overflow-hidden hover:opacity-90 transition-opacity shadow-sm">
+                <Image
+                  src={logoImage}
+                  alt="Crevo Logo"
+                  fill
+                  className="object-cover"
+                  priority
+                />
+              </div>
             )}
           </Link>
           

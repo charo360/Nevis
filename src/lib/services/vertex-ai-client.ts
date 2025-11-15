@@ -158,23 +158,40 @@ class VertexAIClient {
     // Construct Vertex AI endpoint
     const endpoint = `https://${this.location}-aiplatform.googleapis.com/v1/projects/${this.projectId}/locations/${this.location}/publishers/google/models/${cleanModel}:generateContent`;
 
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(request)
-    });
+    // Create abort controller for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 second timeout
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Vertex AI API error: ${response.status} - ${errorText}`);
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Vertex AI API error: ${response.status} - ${errorText}`);
+      }
+
+      const result = await response.json();
+
+      return result;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Vertex AI request timed out after 90 seconds');
+      }
+      
+      throw error;
     }
-
-    const result = await response.json();
-
-    return result;
   }
 
   /**

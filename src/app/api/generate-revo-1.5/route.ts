@@ -47,8 +47,42 @@ export async function POST(request: NextRequest) {
   let body: any = {};
 
   try {
-    // Get user ID from headers (would be set by middleware in production)
-    const userId = 'test-user-id'; // TODO: Get from authentication
+    // Get user authentication from Supabase session
+    let userId: string | undefined;
+    
+    try {
+      const { cookies } = await import('next/headers');
+      const { createServerClient } = await import('@supabase/ssr');
+
+      const cookieStore = await cookies();
+
+      const supabaseServer = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            getAll() {
+              return cookieStore.getAll();
+            },
+            setAll() {
+              // API routes can't modify cookies
+            },
+          },
+        }
+      );
+
+      const { data: { session } } = await supabaseServer.auth.getSession();
+      userId = session?.user?.id;
+    } catch (authError) {
+      console.warn('⚠️ [Revo 1.5 API] Authentication failed:', authError);
+    }
+
+    if (!userId) {
+      return NextResponse.json({
+        success: false,
+        error: 'Authentication required'
+      }, { status: 401 });
+    }
 
     body = await request.json();
     const {
@@ -70,7 +104,19 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Skip credits check for testing
+    // Deduct credits BEFORE generation
+    const creditResult = await deductCreditsForRevo(userId, 'revo-1.5', 1);
+    
+    if (!creditResult.success) {
+      return NextResponse.json({
+        success: false,
+        error: 'Insufficient credits',
+        remainingCredits: creditResult.remainingCredits,
+        creditsCost: creditResult.creditsCost
+      }, { status: 402 }); // 402 Payment Required
+    }
+
+    console.log(`✅ [Revo 1.5 API] Credits deducted: ${creditResult.creditsCost}, Remaining: ${creditResult.remainingCredits}`);
 
     // Convert logo URL to base64 data URL (matching Revo 1.0 approach)
     const convertedLogoDataUrl = await convertLogoToDataUrl(brandProfile.logoUrl || brandProfile.logoDataUrl);

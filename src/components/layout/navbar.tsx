@@ -80,7 +80,7 @@ export function Navbar({ currentPage }: NavbarProps) {
       <nav className="relative z-50 px-6 py-4 bg-white/80 backdrop-blur-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link href={AppRoutesPaths.home} className="flex items-center">
-            <div className="relative w-16 h-16 rounded-xl overflow-hidden hover:opacity-90 transition-opacity">
+            <div className="relative w-32 h-12 rounded-xl overflow-hidden hover:opacity-90 transition-opacity shadow-sm">
               <Image
                 src={logoImage}
                 alt="Crevo Logo"

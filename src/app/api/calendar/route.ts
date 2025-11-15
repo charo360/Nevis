@@ -3,8 +3,26 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    db: {
+      schema: 'public',
+    },
+    global: {
+      headers: { 
+        'x-client-timeout': '5000' // 5 second timeout
+      }
+    }
+  }
 );
+
+// Query timeout wrapper
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number = 5000): Promise<T> {
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    setTimeout(() => reject(new Error('Query timeout')), timeoutMs);
+  });
+  return Promise.race([promise, timeoutPromise]);
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,19 +38,33 @@ export async function GET(request: NextRequest) {
       .from('scheduled_content')
       .select('*')
       .eq('brand_id', brandId)
-      .eq('status', 'scheduled');
+      .eq('status', 'scheduled')
+      .limit(100); // Limit results to prevent huge datasets
 
     if (date) {
       query = query.eq('date', date);
     }
 
-    const { data, error } = await query.order('date', { ascending: true });
+    // Add timeout protection
+    const { data, error } = await withTimeout(
+      query.order('date', { ascending: true }),
+      5000 // 5 second timeout
+    );
 
     if (error) throw error;
 
     return NextResponse.json(data || []);
   } catch (error) {
     console.error('Calendar API error:', error);
+    
+    // More specific error messages
+    if (error instanceof Error && error.message === 'Query timeout') {
+      return NextResponse.json(
+        { error: 'Request timed out. Please try again.' },
+        { status: 504 }
+      );
+    }
+    
     return NextResponse.json({ error: 'Failed to fetch calendar data' }, { status: 500 });
   }
 }

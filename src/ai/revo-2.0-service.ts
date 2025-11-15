@@ -3708,12 +3708,40 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
       }
     }
 
-    // Step 3: Generate creative concept with visual direction
-    const concept = await Promise.race([
-      generateCreativeConcept(enhancedOptions),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Creative concept generation timeout')), 60000))
-    ]);
-    console.log(`💡 [Revo 2.0] Generated concept: ${concept.concept}`);
+    // Step 3: Generate creative concept with visual direction (increased timeout + retry)
+    let concept: any;
+    const maxConceptRetries = 2;
+    let lastConceptError: Error | null = null;
+    
+    for (let attempt = 1; attempt <= maxConceptRetries; attempt++) {
+      try {
+        console.log(`🎨 [Revo 2.0] Creative concept attempt ${attempt}/${maxConceptRetries}`);
+        
+        // Increased timeout to 90 seconds (from 60s)
+        concept = await Promise.race([
+          generateCreativeConcept(enhancedOptions),
+          new Promise<never>((_, reject) => 
+            setTimeout(() => reject(new Error('Creative concept generation timeout')), 90000)
+          )
+        ]);
+        
+        console.log(`💡 [Revo 2.0] Generated concept on attempt ${attempt}: ${concept.concept}`);
+        break; // Success, exit retry loop
+        
+      } catch (error) {
+        lastConceptError = error as Error;
+        console.warn(`⚠️ [Revo 2.0] Concept generation attempt ${attempt} failed:`, error instanceof Error ? error.message : error);
+        
+        if (attempt < maxConceptRetries) {
+          console.log(`🔄 [Revo 2.0] Retrying concept generation (${attempt + 1}/${maxConceptRetries})...`);
+          await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2s before retry
+        } else {
+          throw lastConceptError; // All retries exhausted
+        }
+      }
+    }
+    
+    console.log(`💡 [Revo 2.0] Creative concept generation completed`);
 
     // Step 3: ASSISTANT-FIRST CONTENT GENERATION
     let assistantResponse: any;
@@ -3877,13 +3905,41 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
       console.log(`📝 [Revo 2.0] Using traditional prompt approach for fallback`);
     }
 
-    // Step 6: Generate image with integrated prompt
-    const imageResult = await Promise.race([
-      generateImageWithGemini(imagePrompt, enhancedOptions),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Image generation timeout')), 20000))
-    ]) as { imageUrl: string };
+    // Step 6: Generate image with integrated prompt (increased timeout + retry logic)
+    let imageResult: { imageUrl: string };
+    const maxRetries = 2;
+    let lastError: Error | null = null;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`🎨 [Revo 2.0] Image generation attempt ${attempt}/${maxRetries}`);
+        
+        // Increased timeout to 60 seconds (from 20s) to handle Gemini image generation
+        imageResult = await Promise.race([
+          generateImageWithGemini(imagePrompt, enhancedOptions),
+          new Promise<never>((_, reject) => 
+            setTimeout(() => reject(new Error('Image generation timeout')), 60000)
+          )
+        ]) as { imageUrl: string };
+        
+        console.log(`🖼️ [Revo 2.0] Generated image successfully on attempt ${attempt}`);
+        break; // Success, exit retry loop
+        
+      } catch (error) {
+        lastError = error as Error;
+        console.warn(`⚠️ [Revo 2.0] Image generation attempt ${attempt} failed:`, error instanceof Error ? error.message : error);
+        
+        if (attempt < maxRetries) {
+          console.log(`🔄 [Revo 2.0] Retrying image generation (${attempt + 1}/${maxRetries})...`);
+          await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2s before retry
+        } else {
+          throw lastError; // All retries exhausted
+        }
+      }
+    }
 
-    console.log(`🖼️ [Revo 2.0] Generated image successfully`);
+    console.log(`🖼️ [Revo 2.0] Image generation completed`);
+
 
     const processingTime = Date.now() - startTime;
 
