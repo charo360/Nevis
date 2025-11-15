@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   Sparkles,
   Mail,
@@ -14,6 +15,7 @@ import {
 } from 'lucide-react';
 import { AppRoutesPaths } from '@/lib/routes';
 import { CREVO_CONTACTS } from '@/lib/constants/contacts';
+import logoImage from '@/assets/logo.jpg';
 
 export function Footer() {
   return (
@@ -22,11 +24,15 @@ export function Footer() {
         <div className="grid md:grid-cols-5 gap-8 mb-12">
           {/* Brand */}
           <div className="md:col-span-2">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-white" />
+            <div className="flex items-center mb-6">
+              <div className="relative w-32 h-16 rounded-xl overflow-hidden">
+                <Image
+                  src={logoImage}
+                  alt="Crevo Logo"
+                  fill
+                  className="object-cover"
+                />
               </div>
-              <span className="text-2xl font-bold">Crevo</span>
             </div>
             <p className="text-gray-400 leading-relaxed mb-6">
               AI-powered content creation platform that helps businesses and creators generate stunning social media content in seconds.
@@ -58,7 +64,7 @@ export function Footer() {
             <ul className="space-y-2 text-gray-400">
               <li><Link href={AppRoutesPaths.features} className="hover:text-white transition-colors">Features</Link></li>
               <li><Link href={AppRoutesPaths.pricing} className="hover:text-white transition-colors">Pricing</Link></li>
-              <li><Link href={AppRoutesPaths.dashboard} className="hover:text-white transition-colors">Dashboard</Link></li>
+              <li><Link href={AppRoutesPaths.dashboard.root} className="hover:text-white transition-colors">Dashboard</Link></li>
             </ul>
           </div>
 

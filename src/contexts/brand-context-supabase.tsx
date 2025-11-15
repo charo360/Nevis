@@ -30,7 +30,7 @@ export function BrandProvider({ children }: BrandProviderProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load brands from Supabase
+  // Load brands from Supabase via API
   const loadBrands = useCallback(async () => {
     if (!user?.userId) return;
 
@@ -38,8 +38,32 @@ export function BrandProvider({ children }: BrandProviderProps) {
     setError(null);
 
     try {
-      const userBrands = await supabaseService.getBrandProfiles(user.userId);
+      // Get auth token from Supabase
+      const { createClient } = await import('@/lib/supabase-client');
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
       
+      if (!session?.access_token) {
+        console.error('❌ No auth session found');
+        setError('Authentication required');
+        setBrands([]);
+        return;
+      }
+
+      // Fetch brands from API endpoint
+      const response = await fetch('/api/brand-profiles', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to load brands: ${response.statusText}`);
+      }
+
+      const userBrands: SupabaseBrandProfile[] = await response.json();
+      
+      console.log('✅ Loaded brands:', userBrands.length);
       setBrands(userBrands);
 
       // Auto-select the first brand if none is selected
@@ -51,10 +75,11 @@ export function BrandProvider({ children }: BrandProviderProps) {
     } catch (err) {
       console.error('❌ Error loading brands:', err);
       setError(err instanceof Error ? err.message : 'Failed to load brands');
+      setBrands([]);
     } finally {
       setLoading(false);
     }
-  }, [user?.userId, selectedBrand]);
+  }, [user?.userId]);
 
   // Load brands when user changes
   useEffect(() => {

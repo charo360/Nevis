@@ -995,7 +995,7 @@ export default function HomePage() {
                 <div className="mb-4">
                   <div className="text-2xl font-semibold text-blue-600">40</div>
                   <div className="text-sm text-gray-500">credits</div>
-                  <div className="text-xs text-gray-400 mt-1">$0.25 per credit</div>
+                
                 </div>
 
                 <ul className="text-sm text-left space-y-2 mb-6">
@@ -1050,7 +1050,7 @@ export default function HomePage() {
                 <div className="mb-4">
                   <div className="text-2xl font-semibold text-blue-600">100</div>
                   <div className="text-sm text-gray-500">credits</div>
-                  <div className="text-xs text-gray-400 mt-1">$0.25 per credit</div>
+                
                 </div>
 
                 <div className="mb-4 p-3 bg-blue-50 rounded-lg">
@@ -1101,7 +1101,7 @@ export default function HomePage() {
                 <div className="mb-4">
                   <div className="text-2xl font-semibold text-blue-600">250</div>
                   <div className="text-sm text-gray-500">credits</div>
-                  <div className="text-xs text-gray-400 mt-1">$0.24 per credit</div>
+               
                 </div>
 
                 <div className="mb-4 p-3 bg-purple-50 rounded-lg">
@@ -1153,7 +1153,7 @@ export default function HomePage() {
                 <div className="mb-4">
                   <div className="text-2xl font-semibold text-blue-600">1000</div>
                   <div className="text-sm text-gray-500">credits</div>
-                  <div className="text-xs text-gray-400 mt-1">$0.20 per credit</div>
+                
                 </div>
 
                 <div className="mb-4 p-3 bg-indigo-50 rounded-lg">

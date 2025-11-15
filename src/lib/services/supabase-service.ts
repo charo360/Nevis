@@ -360,5 +360,5 @@ export class SupabaseService {
 // Export singleton instance
 export const supabaseService = new SupabaseService();
 
-// Initialize storage on import
-supabaseService.initializeStorage().catch(console.error);
+// Note: Storage initialization is now done lazily when needed
+// instead of on module import to avoid "cookies outside request scope" error
