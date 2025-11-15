@@ -1,3 +1,5 @@
+'use server';
+
 // src/app/actions.ts
 "use server";
 

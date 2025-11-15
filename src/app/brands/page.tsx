@@ -268,17 +268,48 @@ export default function BrandsPage() {
 
                   <CardContent className="space-y-3">
                     <div className="space-y-2 text-sm">
-                      {brand.location && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <MapPin className="h-3 w-3" />
-                          <span className="truncate">
-                            {typeof brand.location === 'string'
-                              ? brand.location
-                              : `${brand.location.city || ''}, ${brand.location.country || ''}`.replace(/^,\s*/, '').replace(/,\s*$/, '')
+                      {brand.location && (() => {
+                        let locationText = '';
+                        const location = brand.location;
+                        
+                        if (typeof location === 'string') {
+                          // Check if it's a JSON string and parse it
+                          if (location.startsWith('{') || location.startsWith('[')) {
+                            try {
+                              const parsed: any = JSON.parse(location);
+                              const parts: string[] = [];
+                              if (parsed.city) parts.push(parsed.city);
+                              if (parsed.country) parts.push(parsed.country);
+                              if (parts.length === 0 && parsed.address) {
+                                locationText = parsed.address;
+                              } else {
+                                locationText = parts.join(', ');
+                              }
+                            } catch (e) {
+                              locationText = location;
                             }
-                          </span>
-                        </div>
-                      )}
+                          } else {
+                            locationText = location;
+                          }
+                        } else if (typeof location === 'object' && location !== null) {
+                          const parts: string[] = [];
+                          const loc: any = location;
+                          if (loc.city) parts.push(loc.city);
+                          if (loc.country) parts.push(loc.country);
+                          if (parts.length === 0 && loc.address) {
+                            locationText = loc.address;
+                          } else {
+                            locationText = parts.join(', ');
+                          }
+                        }
+                        
+                        return locationText ? (
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <MapPin className="h-3 w-3" />
+                            <span className="truncate">{locationText}</span>
+                          </div>
+                        ) : null;
+                      })()}
                       {brand.websiteUrl && (
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Globe className="h-3 w-3" />

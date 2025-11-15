@@ -416,26 +416,51 @@ export default function DashboardPage() {
                 <div>
                   <h3 className="font-semibold text-gray-900">{brandLabel}</h3>
                   <p className="text-sm text-gray-600">{currentBrand.businessType || 'General Business'}</p>
-                  {currentBrand.location && (() => {
+                  {(() => {
+                    if (!currentBrand.location) return null;
+                    
                     const location = currentBrand.location;
                     let locationText = '';
                     
-                    if (typeof location === 'string') {
-                      locationText = location;
-                    } else if (typeof location === 'object') {
-                      // Handle object location with city, country, or address
-                      const parts = [];
-                      if (location.city) parts.push(location.city);
-                      if (location.country) parts.push(location.country);
-                      if (parts.length === 0 && location.address) {
-                        locationText = location.address;
-                      } else {
-                        locationText = parts.join(', ');
+                    try {
+                      // Handle string location
+                      if (typeof location === 'string') {
+                        // Check if it's a JSON string and parse it
+                        if (location.trim().startsWith('{') || location.trim().startsWith('[')) {
+                          const parsed: any = JSON.parse(location);
+                          const parts: string[] = [];
+                          if (parsed.city && parsed.city.trim()) parts.push(parsed.city.trim());
+                          if (parsed.country && parsed.country.trim()) parts.push(parsed.country.trim());
+                          if (parts.length === 0 && parsed.address && parsed.address.trim()) {
+                            locationText = parsed.address.trim();
+                          } else if (parts.length > 0) {
+                            locationText = parts.join(', ');
+                          }
+                        } else if (location.trim()) {
+                          locationText = location.trim();
+                        }
+                      } else if (typeof location === 'object' && location !== null) {
+                        // Handle object location
+                        const parts: string[] = [];
+                        const loc: any = location;
+                        if (loc.city && loc.city.trim()) parts.push(loc.city.trim());
+                        if (loc.country && loc.country.trim()) parts.push(loc.country.trim());
+                        if (parts.length === 0 && loc.address && loc.address.trim()) {
+                          locationText = loc.address.trim();
+                        } else if (parts.length > 0) {
+                          locationText = parts.join(', ');
+                        }
+                      }
+                    } catch (error) {
+                      console.error('Error parsing location:', error);
+                      // Fallback: try to display location as string
+                      if (typeof location === 'string' && location.trim()) {
+                        locationText = location.trim();
                       }
                     }
                     
                     return locationText ? (
-                      <p className="text-xs text-gray-500">{locationText}</p>
+                      <p className="text-xs text-gray-500 mt-1">{locationText}</p>
                     ) : null;
                   })()}
                 </div>
