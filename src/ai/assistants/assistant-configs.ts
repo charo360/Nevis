@@ -822,7 +822,7 @@ Return ONLY valid JSON in this exact format:
 const HEALTHCARE_CONFIG: AssistantConfig = {
   type: 'healthcare',
   name: 'Revo 2.0 - Healthcare Marketing Specialist',
-  model: 'gpt-4-turbo-preview',
+  model: 'gpt-4o-mini',
   implemented: true,
   envVar: 'OPENAI_ASSISTANT_HEALTHCARE',
   instructions: `You are a specialized marketing content generator for healthcare and medical services.
@@ -911,7 +911,7 @@ Return ONLY valid JSON in this exact format:
 const REALESTATE_CONFIG: AssistantConfig = {
   type: 'realestate',
   name: 'Revo 2.0 - Real Estate Specialist',
-  model: 'gpt-4-turbo-preview',
+  model: 'gpt-4o-mini',
   implemented: true,
   envVar: 'OPENAI_ASSISTANT_REALESTATE',
   instructions: `You are a specialized marketing content generator for real estate businesses.
@@ -999,7 +999,7 @@ Return ONLY valid JSON in this exact format:
 const EDUCATION_CONFIG: AssistantConfig = {
   type: 'education',
   name: 'Revo 2.0 - Education Marketing Specialist',
-  model: 'gpt-4-turbo-preview',
+  model: 'gpt-4o-mini',
   implemented: true,
   envVar: 'OPENAI_ASSISTANT_EDUCATION',
   instructions: `You are a specialized marketing content generator for education and training businesses.
@@ -1087,7 +1087,7 @@ Return ONLY valid JSON in this exact format:
 const B2B_CONFIG: AssistantConfig = {
   type: 'b2b',
   name: 'Revo 2.0 - B2B Marketing Specialist',
-  model: 'gpt-4-turbo-preview',
+  model: 'gpt-4o-mini',
   implemented: true,
   envVar: 'OPENAI_ASSISTANT_B2B',
   instructions: `You are a specialized marketing content generator for B2B and enterprise businesses.
@@ -1175,7 +1175,7 @@ Return ONLY valid JSON in this exact format:
 const NONPROFIT_CONFIG: AssistantConfig = {
   type: 'nonprofit',
   name: 'Revo 2.0 - Nonprofit Marketing Specialist',
-  model: 'gpt-4-turbo-preview',
+  model: 'gpt-4o-mini',
   implemented: true,
   envVar: 'OPENAI_ASSISTANT_NONPROFIT',
   instructions: `You are a specialized marketing content generator for nonprofit and social impact organizations.
