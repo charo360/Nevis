@@ -481,8 +481,7 @@ export function ContentCalendar({
                 <span className="font-medium text-sm">Brand Consistency</span>
               </div>
               <div className="flex items-center gap-6 flex-wrap">
-                <div className="flex items-center gap-3 min-w-[110px] cursor-pointer p-1 rounded hover:bg-gray-50"
-                  onClick={() => setBrandConsistency(prev => ({ ...prev, strictConsistency: !prev.strictConsistency }))}>
+                <div className="flex items-center gap-3 min-w-[110px] p-2 rounded hover:bg-gray-100">
                   <Palette className="h-4 w-4 text-gray-500" />
                   <span className="text-sm text-gray-700 select-none">Strict</span>
                   <Switch
@@ -493,8 +492,7 @@ export function ContentCalendar({
                     className="ml-auto"
                   />
                 </div>
-                <div className="flex items-center gap-3 min-w-[110px] cursor-pointer p-1 rounded hover:bg-gray-50"
-                  onClick={() => setBrandConsistency(prev => ({ ...prev, followBrandColors: !prev.followBrandColors }))}>
+                <div className="flex items-center gap-3 min-w-[110px] p-2 rounded hover:bg-gray-100">
                   <Sparkles className="h-4 w-4 text-gray-500" />
                   <span className="text-sm text-gray-700 select-none">Colors</span>
                   <Switch
@@ -505,8 +503,7 @@ export function ContentCalendar({
                     className="ml-auto"
                   />
                 </div>
-                <div className="flex items-center gap-3 min-w-[110px] cursor-pointer p-1 rounded hover:bg-gray-50"
-                  onClick={() => setBrandConsistency(prev => ({ ...prev, includeContacts: !prev.includeContacts }))}>
+                <div className="flex items-center gap-3 min-w-[110px] p-2 rounded hover:bg-gray-100">
                   <Phone className="h-4 w-4 text-gray-500" />
                   <span className="text-sm text-gray-700 select-none">Contacts</span>
                   <Switch
@@ -517,8 +514,7 @@ export function ContentCalendar({
                     className="ml-auto"
                   />
                 </div>
-                <div className="flex items-center gap-3 min-w-[110px] cursor-pointer p-1 rounded hover:bg-gray-50"
-                  onClick={() => setIncludePeopleInDesigns(!includePeopleInDesigns)}>
+                <div className="flex items-center gap-3 min-w-[110px] p-2 rounded hover:bg-gray-100">
                   <span className="text-sm text-gray-700 select-none">👥 People</span>
                   <Switch
                     checked={includePeopleInDesigns}
@@ -526,8 +522,7 @@ export function ContentCalendar({
                     className="ml-auto"
                   />
                 </div>
-                <div className="flex items-center gap-3 min-w-[110px] cursor-pointer p-1 rounded hover:bg-gray-50"
-                  onClick={() => setUseLocalLanguage(!useLocalLanguage)}>
+                <div className="flex items-center gap-3 min-w-[110px] p-2 rounded hover:bg-gray-100">
                   <span className="text-sm text-gray-700 select-none">🌍 Local</span>
                   <Switch
                     checked={useLocalLanguage}
