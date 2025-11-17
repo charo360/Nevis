@@ -475,12 +475,11 @@ export function ContentCalendar({
         <div className="w-full max-w-full box-border space-y-6">
           {/* Compact Brand Consistency Controls */}
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Settings className="h-4 w-4 text-blue-600" />
-                <span className="font-medium text-sm">Brand Consistency</span>
-              </div>
-              <div className="flex items-center gap-6 flex-wrap">
+            <div className="flex items-center gap-2 mb-3">
+              <Settings className="h-4 w-4 text-blue-600" />
+              <span className="font-medium text-sm">Brand Consistency</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 md:flex md:items-center md:gap-4 md:flex-wrap">
                 <div className="flex items-center gap-3 min-w-[110px] p-2 rounded hover:bg-gray-100">
                   <Palette className="h-4 w-4 text-gray-500" />
                   <span className="text-sm text-gray-700 select-none">Strict</span>
