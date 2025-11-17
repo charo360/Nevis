@@ -6,9 +6,11 @@ let supabaseInstance: any = null;
 export function createClient() {
   // Return existing instance if available
   if (supabaseInstance) {
+    console.log('🔄 [Supabase Client] Reusing existing instance to prevent multiple GoTrueClient instances');
     return supabaseInstance;
   }
 
+  console.log('🆕 [Supabase Client] Creating new browser client instance');
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 

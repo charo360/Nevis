@@ -554,12 +554,16 @@ export async function generateCreativeAssetAction(
   try {
     // Enforce credit deduction for creative studio generations
     let userId: string | null = null;
+    let user: any = null;
 
-    // Try to get user from cookies (preferred method)
+    console.log('🔍 [Creative Studio] Starting authentication process...');
+
+    // Try to get user from cookies (preferred method) with better error handling
     try {
       const { cookies } = await import('next/headers');
       const { createServerClient } = await import('@supabase/ssr');
 
+      console.log('🔍 [Creative Studio] Attempting cookie authentication...');
       const cookieStore = await cookies();
 
       // Create Supabase client with SSR support for server actions
@@ -578,43 +582,49 @@ export async function generateCreativeAssetAction(
         }
       );
 
-      const { data: { user }, error: authError } = await supabaseServer.auth.getUser();
+      const { data: { user: cookieUser }, error: authError } = await supabaseServer.auth.getUser();
 
-      if (!authError && user?.id) {
-        userId = user.id;
+      if (!authError && cookieUser?.id) {
+        userId = cookieUser.id;
+        user = cookieUser;
+        console.log('✅ [Creative Studio] Cookie authentication successful:', userId);
       } else {
-        console.warn('⚠️ [Creative Studio] Cookie auth failed, trying access token fallback');
+        console.warn('⚠️ [Creative Studio] Cookie auth failed:', authError?.message || 'No user found');
       }
     } catch (cookieError) {
-      console.warn('⚠️ [Creative Studio] Cookie access error:', cookieError);
+      console.warn('⚠️ [Creative Studio] Cookie access error:', cookieError instanceof Error ? cookieError.message : 'Unknown cookie error');
     }
 
     // Fallback: Use access token if provided and cookie auth failed
     if (!userId && accessToken) {
       try {
+        console.log('🔍 [Creative Studio] Attempting access token authentication...');
         const { createClient: createAdminClient } = await import('@supabase/supabase-js');
         const supabaseAdmin = createAdminClient(
           process.env.NEXT_PUBLIC_SUPABASE_URL!,
           process.env.SUPABASE_SERVICE_ROLE_KEY!
         );
 
-        const { data: { user }, error: tokenError } = await supabaseAdmin.auth.getUser(accessToken);
+        const { data: { user: tokenUser }, error: tokenError } = await supabaseAdmin.auth.getUser(accessToken);
 
-        if (!tokenError && user?.id) {
-          userId = user.id;
-          console.log('✅ [Creative Studio] Authenticated via access token');
+        if (!tokenError && tokenUser?.id) {
+          userId = tokenUser.id;
+          user = tokenUser;
+          console.log('✅ [Creative Studio] Access token authentication successful:', userId);
+        } else {
+          console.warn('⚠️ [Creative Studio] Token auth failed:', tokenError?.message || 'No user found');
         }
       } catch (tokenError) {
-        console.warn('⚠️ [Creative Studio] Token auth failed:', tokenError);
+        console.warn('⚠️ [Creative Studio] Token auth error:', tokenError instanceof Error ? tokenError.message : 'Unknown token error');
       }
     }
 
-    if (!userId) {
+    if (!userId || !user) {
       console.error('❌ [Creative Studio] All authentication methods failed');
-      throw new Error('Unauthorized - Please log in to use Creative Studio');
+      throw new Error('🔐 Please log in to use Creative Studio. If you\'re already logged in, try refreshing the page.');
     }
 
-    const user = { id: userId };
+    console.log('✅ [Creative Studio] Authentication successful, proceeding with generation...');
 
     const { withCreditTracking } = await import('@/lib/credit-integration');
 
@@ -761,8 +771,38 @@ export async function generateCreativeAssetAction(
 
     return result;
   } catch (error) {
-    // Always pass the specific error message from the flow to the client.
-    throw new Error((error as Error).message);
+    console.error('❌ [Creative Studio Action] Error occurred:', error);
+
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+
+    // Handle specific error types with user-friendly messages
+    if (errorMessage.includes('Unauthorized') || errorMessage.includes('log in')) {
+      throw new Error('🔐 Please log in to use Creative Studio. If you\'re already logged in, try refreshing the page.');
+    }
+
+    if (errorMessage.includes('cookies') || errorMessage.includes('request scope')) {
+      throw new Error('🔄 Creative Studio had a temporary hiccup. Please try again in a moment.');
+    }
+
+    if (errorMessage.includes('429') || errorMessage.includes('quota') || errorMessage.includes('Too Many Requests')) {
+      throw new Error('😅 Creative Studio is experiencing high demand right now! Please try again in a few minutes.');
+    }
+
+    if (errorMessage.includes('500') || errorMessage.includes('Internal Server Error')) {
+      throw new Error('🔧 Creative Studio is experiencing technical difficulties. Please try again in a moment.');
+    }
+
+    if (errorMessage.includes('network') || errorMessage.includes('timeout') || errorMessage.includes('ECONNRESET')) {
+      throw new Error('🌐 Connection hiccup! Please try again in a moment.');
+    }
+
+    // If it's already a user-friendly message, pass it through
+    if (errorMessage.includes('😅') || errorMessage.includes('🔧') || errorMessage.includes('🌐') || errorMessage.includes('🔐') || errorMessage.includes('🔄')) {
+      throw new Error(errorMessage);
+    }
+
+    // Default fallback for unknown errors
+    throw new Error('🎨 Creative Studio encountered an unexpected issue. Please try again or contact support if the problem persists.');
   }
 }
 
