@@ -479,56 +479,73 @@ export function ContentCalendar({
               <Settings className="h-4 w-4 text-blue-600" />
               <span className="font-medium text-sm">Brand Consistency</span>
             </div>
-            <div className="grid grid-cols-2 gap-3 md:flex md:items-center md:gap-4 md:flex-wrap">
-                <div className="flex items-center justify-between gap-2 p-2 rounded hover:bg-gray-100">
-                  <div className="flex items-center gap-2">
-                    <Palette className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                    <span className="text-sm text-gray-700 select-none whitespace-nowrap">Strict</span>
+            <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-center justify-between gap-2 p-2 rounded hover:bg-gray-100">
+                    <div className="flex items-center gap-1.5">
+                      <Palette className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                      <span className="text-sm text-gray-700 select-none">Strict</span>
+                    </div>
+                    <Switch
+                      checked={brandConsistency.strictConsistency}
+                      onCheckedChange={(checked) =>
+                        setBrandConsistency(prev => ({ ...prev, strictConsistency: checked }))
+                      }
+                    />
                   </div>
-                  <Switch
-                    checked={brandConsistency.strictConsistency}
-                    onCheckedChange={(checked) =>
-                      setBrandConsistency(prev => ({ ...prev, strictConsistency: checked }))
-                    }
-                  />
-                </div>
-                <div className="flex items-center justify-between gap-2 p-2 rounded hover:bg-gray-100">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                    <span className="text-sm text-gray-700 select-none whitespace-nowrap">Colors</span>
+                  <div className="flex items-center justify-between gap-2 p-2 rounded hover:bg-gray-100">
+                    <div className="flex items-center gap-1.5">
+                      <Sparkles className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                      <span className="text-sm text-gray-700 select-none">Colors</span>
+                    </div>
+                    <Switch
+                      checked={brandConsistency.followBrandColors}
+                      onCheckedChange={(checked) =>
+                        setBrandConsistency(prev => ({ ...prev, followBrandColors: checked }))
+                      }
+                    />
                   </div>
-                  <Switch
-                    checked={brandConsistency.followBrandColors}
-                    onCheckedChange={(checked) =>
-                      setBrandConsistency(prev => ({ ...prev, followBrandColors: checked }))
-                    }
-                  />
                 </div>
-                <div className="flex items-center justify-between gap-2 p-2 rounded hover:bg-gray-100">
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                    <span className="text-sm text-gray-700 select-none whitespace-nowrap">Contacts</span>
+                
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-center justify-between gap-2 p-2 rounded hover:bg-gray-100">
+                    <div className="flex items-center gap-1.5">
+                      <Phone className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                      <span className="text-sm text-gray-700 select-none">Contacts</span>
+                    </div>
+                    <Switch
+                      checked={brandConsistency.includeContacts}
+                      onCheckedChange={(checked) =>
+                        setBrandConsistency(prev => ({ ...prev, includeContacts: checked }))
+                      }
+                    />
                   </div>
-                  <Switch
-                    checked={brandConsistency.includeContacts}
-                    onCheckedChange={(checked) =>
-                      setBrandConsistency(prev => ({ ...prev, includeContacts: checked }))
-                    }
-                  />
+                  <div className="flex items-center justify-between gap-2 p-2 rounded hover:bg-gray-100">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm text-gray-700 select-none">👥</span>
+                      <span className="text-sm text-gray-700 select-none">People</span>
+                    </div>
+                    <Switch
+                      checked={includePeopleInDesigns}
+                      onCheckedChange={setIncludePeopleInDesigns}
+                    />
+                  </div>
                 </div>
-                <div className="flex items-center justify-between gap-2 p-2 rounded hover:bg-gray-100">
-                  <span className="text-sm text-gray-700 select-none whitespace-nowrap">👥 People</span>
-                  <Switch
-                    checked={includePeopleInDesigns}
-                    onCheckedChange={setIncludePeopleInDesigns}
-                  />
-                </div>
-                <div className="flex items-center justify-between gap-2 p-2 rounded hover:bg-gray-100">
-                  <span className="text-sm text-gray-700 select-none whitespace-nowrap">🌍 Local</span>
-                  <Switch
-                    checked={useLocalLanguage}
-                    onCheckedChange={setUseLocalLanguage}
-                  />
+                
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-center justify-between gap-2 p-2 rounded hover:bg-gray-100">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm text-gray-700 select-none">🌍</span>
+                      <span className="text-sm text-gray-700 select-none">Local</span>
+                    </div>
+                    <Switch
+                      checked={useLocalLanguage}
+                      onCheckedChange={setUseLocalLanguage}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-2 p-2 rounded hover:bg-gray-100 invisible">
+                    {/* Empty placeholder for alignment */}
+                  </div>
                 </div>
               </div>
               
