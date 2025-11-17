@@ -543,7 +543,6 @@ export function ContentCalendar({
                   </select>
                 </div>
               </div>
-            </div>
             <div className="mt-2 flex items-center justify-between">
               <p className="text-xs text-gray-500">
                 {selectedRevoModel === 'revo-2.0'
