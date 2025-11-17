@@ -37,8 +37,8 @@ export async function POST(request: NextRequest) {
     console.log(`🔍 Starting Claude brand analysis for: ${websiteUrl}`);
     console.log(`🏢 Business type: ${businessType || 'auto-detect'}`);
 
-    // Use the simple, working Claude analysis approach
-    const analysisResponse = await fetch('http://localhost:3001/api/analyze-website-claude', {
+    // Use the simple, working Claude analysis approach with environment-aware URL
+    const analysisResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3001'}/api/analyze-website-claude`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
