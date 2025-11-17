@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     try {
       console.log('🤖 Using Claude-enhanced website analysis...');
       
-      const analysisResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3001'}/api/analyze-brand-claude`, {
+      const analysisResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3001'}/api/analyze-brand-claude`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

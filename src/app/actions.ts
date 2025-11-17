@@ -122,7 +122,7 @@ export async function analyzeBrandAction(
       // Use Claude analysis as PRIMARY method (Enhanced with actual product extraction)
       console.log('🤖 Using Claude-enhanced website analysis...');
       
-      const analysisResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3001'}/api/analyze-brand-claude`, {
+      const analysisResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3001'}/api/analyze-brand-claude`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
