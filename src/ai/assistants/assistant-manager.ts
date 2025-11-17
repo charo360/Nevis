@@ -13,13 +13,7 @@ import { getAssistantConfig, isAssistantImplemented } from './assistant-configs'
 import { openAIFileService } from '@/lib/services/openai-file-service';
 import type { BrandDocument } from '@/types/documents';
 import { withRetry, openAIRetryManagers } from '@/lib/utils/openai-retry-manager';
-
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || '',
-  timeout: 60000,
-  maxRetries: 3,
-});
+import { EnhancedOpenAIClient } from '@/lib/services/openai-client-enhanced';
 
 /**
  * Request structure for content generation
@@ -173,17 +167,14 @@ export class AssistantManager {
         };
       }
 
-      const thread = await withRetry(
-        () => openai.beta.threads.create(threadOptions),
-        'Create Thread',
-        'threadOperations'
-      );
+      const thread = await EnhancedOpenAIClient.createThread(threadOptions);
       console.log(`📝 [Assistant Manager] Created thread: ${thread.id}`);
 
       // Build message content
       const messageContent = this.buildMessageContent(request);
 
       // Add message to thread
+      const openai = EnhancedOpenAIClient.getDirectClient();
       await withRetry(
         () => openai.beta.threads.messages.create(thread.id, {
           role: 'user',
@@ -207,11 +198,7 @@ export class AssistantManager {
         console.log(`🔍 [Assistant Manager] Enabled file_search tool for document analysis`);
       }
 
-      const run = await withRetry(
-        () => openai.beta.threads.runs.create(thread.id, runOptions),
-        'Start Assistant Run',
-        'contentGeneration'
-      );
+      const run = await EnhancedOpenAIClient.runAssistant(thread.id, runOptions);
       console.log(`🏃 [Assistant Manager] Started run: ${run.id}`);
 
       // Wait for completion

@@ -1,5 +1,5 @@
-import OpenAI from 'openai';
 import { BrandProfile } from '@/lib/types';
+import { EnhancedOpenAIClient } from '@/lib/services/openai-client-enhanced';
 import {
   MODERN_DESIGN_TRENDS_2024_2025,
   MODERN_COLOR_PSYCHOLOGY_2024,
@@ -8,17 +8,6 @@ import {
   PLATFORM_MODERN_OPTIMIZATIONS,
   BUSINESS_TYPE_MODERN_DNA
 } from './prompts/modern-design-prompts';
-
-// Initialize OpenAI client with latest configuration
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || '',
-  // Use latest API version for optimal performance
-  defaultHeaders: {
-    'OpenAI-Beta': 'assistants=v2', // Enable latest features
-  },
-  timeout: 60000, // 60 second timeout for image generation
-  maxRetries: 3, // Retry failed requests up to 3 times
-});
 
 export interface OpenAIEnhancedDesignInput {
   businessType: string;
@@ -68,17 +57,14 @@ export async function generateOpenAIEnhancedDesign(
     // Generate image with GPT-Image 1 (Latest OpenAI Image Model - 2025)
     // GPT-Image 1 replaced DALL-E 3 as the most advanced OpenAI image model
     // Enhanced for MAXIMUM QUALITY and PERFECT FACE RENDERING
-    const response = await openai.images.generate({
+    const response = await EnhancedOpenAIClient.generateImage(enhancedPrompt, {
       model: 'gpt-image-1', // Latest OpenAI image model (successor to DALL-E 3)
-      prompt: enhancedPrompt,
       size: getPlatformSize(input.platform), // Using highest available resolution
       quality: 'hd', // MAXIMUM quality setting - highest available
       style: getGPTImageStyle(input.visualStyle), // Optimized style for quality
-      n: 1, // GPT-Image 1 supports single high-quality generation
-      response_format: 'url', // Explicitly request URL format
     });
 
-    const imageUrl = response.data[0]?.url;
+    const imageUrl = response.url;
     if (!imageUrl) {
       throw new Error('No image URL returned from OpenAI');
     }

@@ -24,6 +24,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import { CrevoLogo } from "@/components/ui/crevo-logo";
 import { UnifiedBrandSelector } from '@/components/brand/unified-brand-selector';
 import { usePathname } from "next/navigation";
 import { CreditsIndicator } from "@/components/pricing/CreditsDisplay";
@@ -58,15 +59,18 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader>
-        <div className="flex items-center justify-between w-full">
-          <Link href="/" className="flex items-center gap-2 flex-1 min-w-0">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            {!isCollapsed && (
-              <h1 className="text-xl font-bold text-primary-foreground font-headline truncate">
-                Crevo
-              </h1>
+        <div className="flex items-center justify-center w-full">
+          <Link href="/" className="flex items-center justify-center w-full">
+            {!isCollapsed ? (
+              <img
+                src="https://i.imgur.com/ExFP5l5.png"
+                alt="Crevo Logo"
+                className="h-10 w-auto flex-shrink-0"
+              />
+            ) : (
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-5 h-5 text-white" />
+              </div>
             )}
           </Link>
           

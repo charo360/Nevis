@@ -7,13 +7,7 @@
 
 import OpenAI from 'openai';
 import type { BrandDocument } from '@/types/documents';
-
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || '',
-  timeout: 60000,
-  maxRetries: 3,
-});
+import { EnhancedOpenAIClient } from './openai-client-enhanced';
 
 /**
  * Supported file types for OpenAI file_search
@@ -96,7 +90,8 @@ export class OpenAIFileService {
       // Create a File object from buffer
       const file = new File([buffer], filename, { type: mimeType });
 
-      // Upload to OpenAI
+      // Upload to OpenAI using enhanced client
+      const openai = EnhancedOpenAIClient.getDirectClient();
       const uploadedFile = await openai.files.create({
         file: file,
         purpose: 'assistants',
@@ -157,6 +152,7 @@ export class OpenAIFileService {
     try {
       console.log(`📚 [OpenAI File Service] Creating vector store with ${fileIds.length} files`);
 
+      const openai = EnhancedOpenAIClient.getDirectClient();
       const vectorStore = await openai.beta.vectorStores.create({
         name: name,
         file_ids: fileIds,
@@ -184,6 +180,7 @@ export class OpenAIFileService {
   async deleteFile(fileId: string): Promise<void> {
     try {
       console.log(`🗑️  [OpenAI File Service] Deleting file: ${fileId}`);
+      const openai = EnhancedOpenAIClient.getDirectClient();
       await openai.files.del(fileId);
       console.log(`✅ [OpenAI File Service] File deleted successfully`);
     } catch (error) {
@@ -198,6 +195,7 @@ export class OpenAIFileService {
   async deleteVectorStore(vectorStoreId: string): Promise<void> {
     try {
       console.log(`🗑️  [OpenAI File Service] Deleting vector store: ${vectorStoreId}`);
+      const openai = EnhancedOpenAIClient.getDirectClient();
       await openai.beta.vectorStores.del(vectorStoreId);
       console.log(`✅ [OpenAI File Service] Vector store deleted successfully`);
     } catch (error) {
