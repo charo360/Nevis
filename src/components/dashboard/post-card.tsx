@@ -39,6 +39,7 @@ import { useCredits } from "@/hooks/use-credits";
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Input } from '../ui/input';
+import { Checkbox } from '../ui/checkbox';
 import { generateContentAction, generateVideoContentAction } from '@/app/actions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from '@/lib/utils';
@@ -1027,7 +1028,6 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
               Choose platforms and posting mode for your content.
             </DialogDescription>
           </DialogHeader>
-          
           <div className="space-y-4">
             {/* Platform Selection */}
             <div className="space-y-2">
@@ -1035,20 +1035,18 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
               <div className="grid grid-cols-2 gap-2">
                 {['twitter', 'facebook', 'instagram', 'linkedin'].map((platform) => (
                   <div key={platform} className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       id={platform}
                       checked={selectedPlatforms.includes(platform)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
+                      onCheckedChange={(checked) => {
+                        if (checked) {
                           setSelectedPlatforms([...selectedPlatforms, platform]);
                         } else {
                           setSelectedPlatforms(selectedPlatforms.filter(p => p !== platform));
                         }
                       }}
-                      className="rounded"
                     />
-                    <Label htmlFor={platform} className="capitalize flex items-center gap-2">
+                    <Label htmlFor={platform} className="capitalize flex items-center gap-2 cursor-pointer">
                       {platformIcons[platform as Platform]}
                       {platform}
                     </Label>
