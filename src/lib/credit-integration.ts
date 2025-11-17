@@ -93,10 +93,15 @@ export async function deductCreditsForGeneration(
     const creditCheck = await hasEnoughCreditsForModel(userId, modelVersion);
     
     if (!creditCheck.hasCredits) {
+      const { remainingCredits, requiredCredits } = creditCheck;
+      const shortfall = requiredCredits - remainingCredits;
+
       return {
         success: false,
-        message: `Insufficient credits. Need ${creditCheck.requiredCredits} credits, but only have ${creditCheck.remainingCredits}.`,
-        remainingCredits: creditCheck.remainingCredits,
+        message: remainingCredits === 0
+          ? `🚀 Ready to create amazing content? You need ${requiredCredits} credits to use this feature. Let's get you topped up! 💳`
+          : `🎨 So close! You have ${remainingCredits} credits but need ${requiredCredits} for this generation. Just ${shortfall} more credits needed! 💳`,
+        remainingCredits: remainingCredits,
         costDeducted: 0
       };
     }
@@ -230,14 +235,20 @@ export async function withCreditTracking<T>(
     const creditCheck = await hasEnoughCreditsForModel(params.userId, params.modelVersion);
     
     if (!creditCheck.hasCredits) {
-      const errorMessage = `Insufficient credits. Need ${creditCheck.requiredCredits} credits, but only have ${creditCheck.remainingCredits} credits.`;
+      const { remainingCredits, requiredCredits } = creditCheck;
+      const shortfall = requiredCredits - remainingCredits;
+
+      const errorMessage = remainingCredits === 0
+        ? `🚀 Ready to create amazing content? You need ${requiredCredits} credits to use this feature. Let's get you topped up! 💳`
+        : `🎨 So close! You have ${remainingCredits} credits but need ${requiredCredits} for this generation. Just ${shortfall} more credits needed! 💳`;
+
       return {
         success: false,
         error: errorMessage,
         creditInfo: {
           success: false,
           message: errorMessage,
-          remainingCredits: creditCheck.remainingCredits,
+          remainingCredits: remainingCredits,
           costDeducted: 0
         }
       };
@@ -328,19 +339,42 @@ export async function deductCreditsForImageEdit(
     }
 
     if (!userData || userData.remaining_credits < EDIT_CREDIT_COST) {
+      const remainingCredits = userData?.remaining_credits || 0;
       return {
         success: false,
-        message: `Insufficient credits. Need ${EDIT_CREDIT_COST} credit for image editing.`,
-        remainingCredits: userData?.remaining_credits || 0,
+        message: remainingCredits === 0
+          ? `🎨 Oops! You're out of credits. You need ${EDIT_CREDIT_COST} credit to edit images. Time to top up your account! 💳`
+          : `🎨 Almost there! You have ${remainingCredits} credits but need ${EDIT_CREDIT_COST} credit for image editing. Just need ${EDIT_CREDIT_COST - remainingCredits} more! 💳`,
+        remainingCredits: remainingCredits,
       };
     }
+
+    // Calculate new values
+    const newRemainingCredits = userData.remaining_credits - EDIT_CREDIT_COST;
+
+    // Get current used_credits to calculate new value
+    const { data: currentData, error: currentError } = await supabase
+      .from('user_credits')
+      .select('used_credits')
+      .eq('user_id', userId)
+      .single();
+
+    if (currentError) {
+      console.error('❌ Error fetching current used credits:', currentError);
+      return {
+        success: false,
+        message: 'Failed to fetch current credit usage',
+      };
+    }
+
+    const newUsedCredits = (currentData.used_credits || 0) + EDIT_CREDIT_COST;
 
     // Deduct credits
     const { data: updateData, error: updateError } = await supabase
       .from('user_credits')
       .update({
-        remaining_credits: userData.remaining_credits - EDIT_CREDIT_COST,
-        used_credits: supabase.raw(`used_credits + ${EDIT_CREDIT_COST}`),
+        remaining_credits: newRemainingCredits,
+        used_credits: newUsedCredits,
         updated_at: new Date().toISOString(),
       })
       .eq('user_id', userId)

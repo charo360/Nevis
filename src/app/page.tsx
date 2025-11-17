@@ -312,19 +312,16 @@ export default function HomePage() {
             </div>
 
             <h1 className="text-6xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">
-              Meet the First
-              <br />
+              Your{' '}
               <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent inline-block min-w-[420px] h-[1.2em] text-left leading-tight">
                 {displayText}
-              </span>
+              </span>That Actually
+              <br />
+              Understands Your Industry
             </h1>
 
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-4 leading-relaxed">
-              <strong>Train Once. Create Forever.</strong>
-            </p>
-
             <p className="text-lg text-gray-600 max-w-3xl mx-auto mb-12 leading-relaxed">
-              Say goodbye to templates. Your personal AI designer learns your brand DNA and creates professional social media content in seconds—more consistent than human designers, faster than any team, and always ready to post.
+              Forget generic templates. We trained specialized AI designers for fintech, e-commerce, restaurants, SaaS, and more. Each creates on-brand content in 30 seconds.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
@@ -333,20 +330,19 @@ export default function HomePage() {
                 size="lg"
                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-8 py-4 h-auto cursor-pointer z-10 relative"
               >
-                Start Free – No Credit Card Required
+                Start Free - No Credit Card
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
 
-              <Link href={AppRoutesPaths.features}>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="text-lg px-8 py-4 h-auto border-gray-300 hover:bg-gray-50 text-black hover:text-black"
-                >
-                  <span className="text-black">Explore Features</span>
-                  <ArrowRight className="ml-2 w-5 h-5 text-black" />
-                </Button>
-              </Link>
+              <Button
+                variant="outline"
+                size="lg"
+                className="text-lg px-8 py-4 h-auto border-gray-300 hover:bg-gray-50 text-black hover:text-black"
+                onClick={handleWatchDemo}
+              >
+                <Play className="mr-2 w-5 h-5 text-black" />
+                <span className="text-black">Watch Demo</span>
+              </Button>
             </div>
 
             {/* Social Proof */}
@@ -367,6 +363,360 @@ export default function HomePage() {
                 <span className="ml-2">4.9/5 on G2</span>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* See The Difference Section */}
+      <section className="relative px-6 py-20 bg-white/50 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+              See The Difference
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-4">
+              Same company. All generated in 30 seconds. No templates. No editing.
+            </p>
+          </div>
+
+          {/* Design Examples Carousel */}
+          <div className="relative max-w-6xl mx-auto mb-8">
+            <div className="overflow-hidden rounded-2xl">
+              <div className="flex animate-scroll-horizontal">
+                {/* Design 1 */}
+                <div className="flex-shrink-0 w-80 mx-4">
+                  <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/90 backdrop-blur-sm">
+                    <CardContent className="p-6">
+                      <div className="aspect-square rounded-lg mb-4 overflow-hidden">
+                        <img
+                          src="https://i.imgur.com/m6Ulath.png"
+                          alt="AI Generated Design Example 1"
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                      <h3 className="font-semibold text-gray-900 mb-2">AI Generated Design - Example 1</h3>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Design 2 */}
+                <div className="flex-shrink-0 w-80 mx-4">
+                  <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/90 backdrop-blur-sm">
+                    <CardContent className="p-6">
+                      <div className="aspect-square rounded-lg mb-4 overflow-hidden">
+                        <img
+                          src="https://i.imgur.com/7TMAUw8.png"
+                          alt="AI Generated Design Example 2"
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                      <h3 className="font-semibold text-gray-900 mb-2">AI Generated Design - Example 2</h3>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Design 3 */}
+                <div className="flex-shrink-0 w-80 mx-4">
+                  <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/90 backdrop-blur-sm">
+                    <CardContent className="p-6">
+                      <div className="aspect-square rounded-lg mb-4 overflow-hidden">
+                        <img
+                          src="https://i.imgur.com/9W64hh7.png"
+                          alt="AI Generated Design Example 3"
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                      <h3 className="font-semibold text-gray-900 mb-2">AI Generated Design - Example 3</h3>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Design 4 */}
+                <div className="flex-shrink-0 w-80 mx-4">
+                  <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/90 backdrop-blur-sm">
+                    <CardContent className="p-6">
+                      <div className="aspect-square rounded-lg mb-4 overflow-hidden">
+                        <img
+                          src="https://i.imgur.com/Zmpk8rE.png"
+                          alt="AI Generated Design Example 4"
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                      <h3 className="font-semibold text-gray-900 mb-2">AI Generated Design - Example 4</h3>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Design 5 */}
+                <div className="flex-shrink-0 w-80 mx-4">
+                  <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/90 backdrop-blur-sm">
+                    <CardContent className="p-6">
+                      <div className="aspect-square rounded-lg mb-4 overflow-hidden">
+                        <img
+                          src="https://i.imgur.com/doDFYOi.png"
+                          alt="AI Generated Design Example 5"
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                      <h3 className="font-semibold text-gray-900 mb-2">AI Generated Design - Example 5</h3>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Design 6 */}
+                <div className="flex-shrink-0 w-80 mx-4">
+                  <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/90 backdrop-blur-sm">
+                    <CardContent className="p-6">
+                      <div className="aspect-square rounded-lg mb-4 overflow-hidden">
+                        <img
+                          src="https://i.imgur.com/VUemSuI.png"
+                          alt="AI Generated Design Example 6"
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                      <h3 className="font-semibold text-gray-900 mb-2">AI Generated Design - Example 6</h3>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Design 7 */}
+                <div className="flex-shrink-0 w-80 mx-4">
+                  <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/90 backdrop-blur-sm">
+                    <CardContent className="p-6">
+                      <div className="aspect-square rounded-lg mb-4 overflow-hidden">
+                        <img
+                          src="https://i.imgur.com/Yh09PQk.png"
+                          alt="AI Generated Design Example 7"
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                      <h3 className="font-semibold text-gray-900 mb-2">AI Generated Design - Example 7</h3>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Design 8 */}
+                <div className="flex-shrink-0 w-80 mx-4">
+                  <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/90 backdrop-blur-sm">
+                    <CardContent className="p-6">
+                      <div className="aspect-square rounded-lg mb-4 overflow-hidden">
+                        <img
+                          src="https://i.imgur.com/Lo9bQHD.png"
+                          alt="AI Generated Design Example 8"
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            e.currentTarget.src = "https://via.placeholder.com/400x400/f3f4f6/6b7280?text=Design+8";
+                          }}
+                        />
+                      </div>
+                      <h3 className="font-semibold text-gray-900 mb-2">AI Generated Design - Example 8</h3>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Design 9 */}
+                <div className="flex-shrink-0 w-80 mx-4">
+                  <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/90 backdrop-blur-sm">
+                    <CardContent className="p-6">
+                      <div className="aspect-square rounded-lg mb-4 overflow-hidden">
+                        <img
+                          src="https://i.imgur.com/TRMefbn.png"
+                          alt="AI Generated Design Example 9"
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            e.currentTarget.src = "https://via.placeholder.com/400x400/f3f4f6/6b7280?text=Design+9";
+                          }}
+                        />
+                      </div>
+                      <h3 className="font-semibold text-gray-900 mb-2">AI Generated Design - Example 9</h3>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Design 10 */}
+                <div className="flex-shrink-0 w-80 mx-4">
+                  <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/90 backdrop-blur-sm">
+                    <CardContent className="p-6">
+                      <div className="aspect-square rounded-lg mb-4 overflow-hidden">
+                        <img
+                          src="https://i.imgur.com/TtpQOWa.png"
+                          alt="AI Generated Design Example 10"
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            e.currentTarget.src = "https://via.placeholder.com/400x400/f3f4f6/6b7280?text=Design+10";
+                          }}
+                        />
+                      </div>
+                      <h3 className="font-semibold text-gray-900 mb-2">AI Generated Design - Example 10</h3>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Duplicate first few for seamless loop */}
+                <div className="flex-shrink-0 w-80 mx-4">
+                  <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/90 backdrop-blur-sm">
+                    <CardContent className="p-6">
+                      <div className="aspect-square rounded-lg mb-4 overflow-hidden">
+                        <img
+                          src="https://i.imgur.com/m6Ulath.png"
+                          alt="AI Generated Design Example 1"
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                      <h3 className="font-semibold text-gray-900 mb-2">AI Generated Design - Example 1</h3>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="flex-shrink-0 w-80 mx-4">
+                  <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/90 backdrop-blur-sm">
+                    <CardContent className="p-6">
+                      <div className="aspect-square rounded-lg mb-4 overflow-hidden">
+                        <img
+                          src="https://i.imgur.com/7TMAUw8.png"
+                          alt="AI Generated Design Example 2"
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                      <h3 className="font-semibold text-gray-900 mb-2">AI Generated Design - Example 2</h3>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="flex-shrink-0 w-80 mx-4">
+                  <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/90 backdrop-blur-sm">
+                    <CardContent className="p-6">
+                      <div className="aspect-square rounded-lg mb-4 overflow-hidden">
+                        <img
+                          src="https://i.imgur.com/9W64hh7.png"
+                          alt="AI Generated Design Example 3"
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                      <h3 className="font-semibold text-gray-900 mb-2">AI Generated Design - Example 3</h3>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-center">
+            <p className="text-sm text-gray-600">
+              All generated in under 30 seconds. No templates. No editing.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 10 Specialized AI Designers Section */}
+      <section className="relative px-6 py-20 bg-gradient-to-br from-gray-50 to-blue-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+              10 Specialized AI Designers
+            </h2>
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto mb-8">
+              Each trained on thousands of professional designs from their industry
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
+            {/* Fintech */}
+            <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm text-center">
+              <CardContent className="p-6">
+                <div className="text-4xl mb-4">💳</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Fintech</h3>
+                <p className="text-sm text-gray-600">Payment platforms, mobile money, banking</p>
+              </CardContent>
+            </Card>
+
+            {/* E-commerce */}
+            <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm text-center">
+              <CardContent className="p-6">
+                <div className="text-4xl mb-4">🛍️</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">E-commerce</h3>
+                <p className="text-sm text-gray-600">Online stores, marketplaces, retail</p>
+              </CardContent>
+            </Card>
+
+            {/* Restaurants */}
+            <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm text-center">
+              <CardContent className="p-6">
+                <div className="text-4xl mb-4">🍽️</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Restaurants</h3>
+                <p className="text-sm text-gray-600">Cafes, food delivery, catering</p>
+              </CardContent>
+            </Card>
+
+            {/* SaaS */}
+            <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm text-center">
+              <CardContent className="p-6">
+                <div className="text-4xl mb-4">💻</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">SaaS</h3>
+                <p className="text-sm text-gray-600">Software products, B2B tools, apps</p>
+              </CardContent>
+            </Card>
+
+            {/* Real Estate */}
+            <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm text-center">
+              <CardContent className="p-6">
+                <div className="text-4xl mb-4">🏠</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Real Estate</h3>
+                <p className="text-sm text-gray-600">Property listings, agencies, rentals</p>
+              </CardContent>
+            </Card>
+
+            {/* Fitness */}
+            <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm text-center">
+              <CardContent className="p-6">
+                <div className="text-4xl mb-4">🏋️</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Fitness</h3>
+                <p className="text-sm text-gray-600">Gyms, trainers, wellness</p>
+              </CardContent>
+            </Card>
+
+            {/* Education */}
+            <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm text-center">
+              <CardContent className="p-6">
+                <div className="text-4xl mb-4">📚</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Education</h3>
+                <p className="text-sm text-gray-600">Online courses, schools, tutoring</p>
+              </CardContent>
+            </Card>
+
+            {/* Travel */}
+            <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm text-center">
+              <CardContent className="p-6">
+                <div className="text-4xl mb-4">✈️</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Travel</h3>
+                <p className="text-sm text-gray-600">Tours, hotels, booking platforms</p>
+              </CardContent>
+            </Card>
+
+            {/* Healthcare */}
+            <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm text-center">
+              <CardContent className="p-6">
+                <div className="text-4xl mb-4">🏥</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Healthcare</h3>
+                <p className="text-sm text-gray-600">Clinics, telemedicine, wellness</p>
+              </CardContent>
+            </Card>
+
+            {/* Creative */}
+            <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm text-center">
+              <CardContent className="p-6">
+                <div className="text-4xl mb-4">🎨</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Creative</h3>
+                <p className="text-sm text-gray-600">Agencies, studios, freelancers</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="text-center">
+            <p className="text-lg text-gray-600 max-w-4xl mx-auto">
+              Each AI understands industry-specific design patterns, color psychology, and messaging that resonates with your audience.
+            </p>
           </div>
         </div>
       </section>

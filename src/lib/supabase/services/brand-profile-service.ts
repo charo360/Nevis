@@ -31,6 +31,22 @@ export interface BrandProfileRow {
 }
 
 class BrandProfileSupabaseService {
+  /**
+   * Safely parse JSON string, return null if invalid
+   */
+  private safeJsonParse(jsonString: string): any {
+    try {
+      // Handle common invalid cases
+      if (!jsonString || jsonString === 'Not specified' || jsonString === 'null' || jsonString === 'undefined') {
+        return null;
+      }
+      return JSON.parse(jsonString);
+    } catch (error) {
+      console.warn('🔧 [BrandProfileSupabaseService] Invalid JSON:', jsonString);
+      return null;
+    }
+  }
+
   // Convert database row to CompleteBrandProfile
   public rowToProfile(row: BrandProfileRow): CompleteBrandProfile {
 
@@ -41,15 +57,15 @@ class BrandProfileSupabaseService {
       businessType: row.business_type,
       description: row.description,
 
-      // Extract location fields - handle both object and string formats
+      // Extract location fields - handle both object and string formats with safe JSON parsing
       location: typeof row.location === 'string' ?
-        (JSON.parse(row.location)?.country || '') :
+        (this.safeJsonParse(row.location)?.country || '') :
         (row.location?.country || ''),
       city: typeof row.location === 'string' ?
-        (JSON.parse(row.location)?.city || '') :
+        (this.safeJsonParse(row.location)?.city || '') :
         (row.location?.city || ''),
       contactAddress: typeof row.location === 'string' ?
-        (JSON.parse(row.location)?.address || '') :
+        (this.safeJsonParse(row.location)?.address || '') :
         (row.location?.address || ''),
 
       // Extract contact fields

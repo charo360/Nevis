@@ -145,7 +145,7 @@ Focus on:
 - Real market gaps and opportunities
 - Actionable differentiation strategies`;
 
-      const result = await generateContentDirect(competitivePrompt, 'claude-3-5-sonnet-20241022', false);
+      const result = await generateContentDirect(competitivePrompt, 'gemini-2.5-flash', false);
       const response = await result.response;
       const analysisText = response.text();
 
@@ -191,7 +191,7 @@ Focus on:
 - Actual communication channels customers use
 - Realistic demographic and behavioral insights`;
 
-      const result = await generateContentDirect(customerPrompt, 'claude-3-5-sonnet-20241022', false);
+      const result = await generateContentDirect(customerPrompt, 'gemini-2.5-flash', false);
       const response = await result.response;
       const analysisText = response.text();
 
@@ -238,7 +238,7 @@ Focus on:
 - Effective pricing and distribution strategies
 - Relevant regulatory considerations`;
 
-      const result = await generateContentDirect(marketPrompt, 'claude-3-5-sonnet-20241022', false);
+      const result = await generateContentDirect(marketPrompt, 'gemini-2.5-flash', false);
       const response = await result.response;
       const analysisText = response.text();
 
@@ -295,7 +295,7 @@ Focus on:
 - Tone that resonates with target audience
 - Content types that work well on ${request.platform}`;
 
-      const result = await generateContentDirect(strategyPrompt, 'claude-3-5-sonnet-20241022', false);
+      const result = await generateContentDirect(strategyPrompt, 'gemini-2.5-flash', false);
       const response = await result.response;
       const strategyText = response.text();
 

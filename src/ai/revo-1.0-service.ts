@@ -4243,6 +4243,71 @@ async function generateRevo10ContentWithGemini(options: any, concept: any): Prom
   return fallbackContent;
 }
 /**
+ * Get currency instructions based on location
+ */
+function getCurrencyInstructions(location: string): string {
+  const locationKey = location.toLowerCase();
+
+  // Currency mapping by country/region
+  const currencyMap: { [key: string]: { currency: string; symbol: string; example: string } } = {
+    kenya: { currency: 'Kenyan Shilling', symbol: 'KES', example: 'KES 1,000' },
+    uganda: { currency: 'Ugandan Shilling', symbol: 'UGX', example: 'UGX 10,000' },
+    tanzania: { currency: 'Tanzanian Shilling', symbol: 'TZS', example: 'TZS 5,000' },
+    nigeria: { currency: 'Nigerian Naira', symbol: '₦', example: '₦2,500' },
+    ghana: { currency: 'Ghanaian Cedi', symbol: 'GHS', example: 'GHS 150' },
+    'south africa': { currency: 'South African Rand', symbol: 'R', example: 'R500' },
+    egypt: { currency: 'Egyptian Pound', symbol: 'EGP', example: 'EGP 300' },
+    morocco: { currency: 'Moroccan Dirham', symbol: 'MAD', example: 'MAD 200' },
+    india: { currency: 'Indian Rupee', symbol: '₹', example: '₹1,500' },
+    singapore: { currency: 'Singapore Dollar', symbol: 'S$', example: 'S$50' },
+    malaysia: { currency: 'Malaysian Ringgit', symbol: 'RM', example: 'RM100' },
+    thailand: { currency: 'Thai Baht', symbol: '฿', example: '฿500' },
+    philippines: { currency: 'Philippine Peso', symbol: '₱', example: '₱1,000' },
+    indonesia: { currency: 'Indonesian Rupiah', symbol: 'Rp', example: 'Rp50,000' },
+    vietnam: { currency: 'Vietnamese Dong', symbol: '₫', example: '₫100,000' },
+    'united kingdom': { currency: 'British Pound', symbol: '£', example: '£25' },
+    uk: { currency: 'British Pound', symbol: '£', example: '£25' },
+    france: { currency: 'Euro', symbol: '€', example: '€30' },
+    germany: { currency: 'Euro', symbol: '€', example: '€30' },
+    spain: { currency: 'Euro', symbol: '€', example: '€30' },
+    italy: { currency: 'Euro', symbol: '€', example: '€30' },
+    netherlands: { currency: 'Euro', symbol: '€', example: '€30' },
+    canada: { currency: 'Canadian Dollar', symbol: 'CAD', example: 'CAD $40' },
+    australia: { currency: 'Australian Dollar', symbol: 'AUD', example: 'AUD $45' },
+    'new zealand': { currency: 'New Zealand Dollar', symbol: 'NZD', example: 'NZD $50' },
+    brazil: { currency: 'Brazilian Real', symbol: 'R$', example: 'R$150' },
+    mexico: { currency: 'Mexican Peso', symbol: 'MX$', example: 'MX$500' },
+    argentina: { currency: 'Argentine Peso', symbol: 'ARS', example: 'ARS $2,000' },
+    chile: { currency: 'Chilean Peso', symbol: 'CLP', example: 'CLP $15,000' },
+    japan: { currency: 'Japanese Yen', symbol: '¥', example: '¥3,000' },
+    'south korea': { currency: 'South Korean Won', symbol: '₩', example: '₩30,000' },
+    china: { currency: 'Chinese Yuan', symbol: '¥', example: '¥200' },
+    russia: { currency: 'Russian Ruble', symbol: '₽', example: '₽1,500' },
+    'united states': { currency: 'US Dollar', symbol: '$', example: '$25' },
+    usa: { currency: 'US Dollar', symbol: '$', example: '$25' },
+    america: { currency: 'US Dollar', symbol: '$', example: '$25' }
+  };
+
+  // Find matching currency
+  for (const [key, currencyInfo] of Object.entries(currencyMap)) {
+    if (locationKey.includes(key)) {
+      return `- CURRENCY: Use ${currencyInfo.currency} (${currencyInfo.symbol}) for all monetary amounts
+- NEVER use USD ($) or dollars - always use local currency
+- Example format: ${currencyInfo.example}
+- Apply to: prices, costs, savings, discounts, offers, financial amounts
+- MANDATORY: All money references must use ${currencyInfo.symbol} symbol or ${currencyInfo.currency}`;
+    }
+  }
+
+  // Default for unrecognized locations
+  return `- CURRENCY: Use local currency appropriate for the region (NOT USD dollars)
+- NEVER use USD ($) unless specifically for US market
+- Research appropriate currency symbol for the location
+- Apply to: prices, costs, savings, discounts, offers, financial amounts
+- MANDATORY: Avoid defaulting to dollars - use regional currency`;
+}
+
+/**
  * Build advanced content prompt for Revo 1.0 (using Revo 2.0 sophisticated system + multi-angle framework)
  */
 function buildRevo10ContentPrompt(options: any, concept: any, assignedAngle?: MarketingAngle): string {
@@ -4606,6 +4671,9 @@ ${getCompetitiveMessagingRules(brandProfile)}
 
 🌍 LOCAL CULTURAL CONNECTION (DYNAMIC):
 ${getLocalCulturalConnectionInstructions(brandProfile.location, businessType)}
+
+💰 CURRENCY REQUIREMENTS (MANDATORY):
+${getCurrencyInstructions(brandProfile.location || 'Global')}
 
 CRITICAL: You MUST return ONLY valid JSON in this exact format. No additional text, no explanations, no markdown formatting:
 

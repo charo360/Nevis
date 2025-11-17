@@ -36,16 +36,12 @@ export function useCredits() {
   // Check if user has enough credits for a specific model
   const hasEnoughCreditsForModel = useCallback(async (modelVersion: ModelVersion): Promise<boolean> => {
     if (!user) return false;
-    
-    // TEMPORARY BYPASS: Always return true for testing Claude integration
-    console.log(`🔧 [CREDITS BYPASS] Allowing ${modelVersion} generation for testing Claude integration`);
-    return true;
-    
+
     try {
       // Import the credit integration function dynamically to avoid SSR issues
       const { hasEnoughCreditsForModel: checkCredits } = await import('@/lib/credit-integration');
       const result = await checkCredits(user.userId, modelVersion);
-      
+
       // Update local state with current balance
       if (result.remainingCredits !== undefined) {
         setCreditBalance(prev => prev ? {
@@ -57,7 +53,7 @@ export function useCredits() {
           used_credits: 0,
         });
       }
-      
+
       return result.hasCredits;
     } catch (error) {
       console.error('Error checking credits:', error);
@@ -68,10 +64,6 @@ export function useCredits() {
   // Legacy function for backward compatibility
   const hasEnoughCredits = useCallback(async (requiredCredits: number): Promise<boolean> => {
     if (!user) return false;
-
-    // TEMPORARY BYPASS: Always return true for testing Claude integration
-    console.log('🔧 [CREDITS BYPASS] Allowing generation for testing Claude integration');
-    return true;
 
     try {
       const response = await fetch(`/api/user/credits?t=${Date.now()}`, {
@@ -106,16 +98,6 @@ export function useCredits() {
     if (!user) {
       return { success: false, error: 'User not authenticated' };
     }
-
-    // TEMPORARY BYPASS: Always return success for testing Claude integration
-    console.log(`🔧 [CREDITS BYPASS] Skipping ${modelVersion} credit deduction for testing Claude integration`);
-    return {
-      success: true,
-      credits_used: 0,
-      model_version: modelVersion,
-      remaining_credits: 999,
-      used_credits: 0,
-    };
 
     setLoading(true);
 
@@ -171,10 +153,6 @@ export function useCredits() {
     if (!user) {
       return { success: false, error: 'User not authenticated' };
     }
-
-    // TEMPORARY BYPASS: Always return success for testing Claude integration
-    console.log('🔧 [CREDITS BYPASS] Skipping credit deduction for testing Claude integration');
-    return { success: true };
 
     setLoading(true);
 

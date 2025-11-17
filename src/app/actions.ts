@@ -619,20 +619,20 @@ export async function generateCreativeAssetAction(
     const { withCreditTracking } = await import('@/lib/credit-integration');
 
     // Map preferredModel to correct ModelVersion based on the selected model
-    // Matches the same credit costs as Quick Content: revo-1.0 (2 credits), revo-1.5 (3 credits), revo-2.0 (4 credits)
+    // Credit costs: revo-1.0 (3 credits), revo-1.5 (4 credits), revo-2.0 (5 credits)
     let modelVersion: 'revo-1.0' | 'revo-1.5' | 'revo-2.0' = 'revo-1.5'; // default to 1.5
 
     if (preferredModel) {
       // Check for explicit model identifiers first (most specific)
       if (preferredModel.includes('revo-2.0')) {
-        modelVersion = 'revo-2.0'; // 4 credits
+        modelVersion = 'revo-2.0'; // 5 credits
       } else if (preferredModel.includes('revo-1.0')) {
-        modelVersion = 'revo-1.0'; // 2 credits
+        modelVersion = 'revo-1.0'; // 3 credits
       } else if (preferredModel.includes('revo-1.5')) {
-        modelVersion = 'revo-1.5'; // 3 credits
+        modelVersion = 'revo-1.5'; // 4 credits
       } else if (preferredModel.includes('2.5') || preferredModel.includes('gemini-2.5')) {
         // Default to revo-2.0 for Gemini 2.5 models (same as Quick Content logic)
-        modelVersion = 'revo-2.0'; // 4 credits
+        modelVersion = 'revo-2.0'; // 5 credits
       }
     }
 

@@ -1041,7 +1041,9 @@ const generateCreativeAssetFlow = ai.defineFlow(
         // Detect explicit no-people requirement (enhanced detection)
         const noPeopleRequirement = enhancedIntent.negativeInstructions.noPeople ||
             /PEOPLE EXCLUSION REQUIREMENT|WITHOUT any people|NO PEOPLE/i.test(input.prompt);
-        const { imageText, remainingPrompt } = extractQuotedText(input.prompt); // Keep for backward compatibility
+        const extracted = extractQuotedText(input.prompt); // Keep for backward compatibility
+        let imageText = extracted.imageText;
+        const remainingPrompt = extracted.remainingPrompt;
 
         // Debug logging for user intent analysis
 
@@ -1812,7 +1814,137 @@ ${designDNA}`;
                 structuredContentInstructions += `- Keep text simple and relevant to the request\n`;
             }
 
-            let creativePrompt = `You are an expert creative director specializing in high-end advertisements. Generate a compelling, high-quality social media advertisement ${input.outputType} based on the following instruction: "${parsedInstructions.remainingPrompt || remainingPrompt}".${structuredContentInstructions}
+            // 🎯 ENHANCED: Generate compelling content using Revo systems when no specific content is provided
+            let creativePrompt = '';
+            let generatedContent = '';
+
+            // Check if we need to generate creative content automatically
+            const needsContentGeneration = !hasExplicitTextRequest && !hasQuotedText && !hasStructuredInstructions && input.useBrandProfile && input.brandProfile;
+
+            if (needsContentGeneration) {
+                try {
+                    console.log('🎨 [Creative Studio] Auto-generating compelling content using Revo systems...');
+
+                    // Import Revo content generation
+                    const { generateWithRevo20 } = await import('@/ai/revo-2.0-service');
+
+                    // Generate compelling content using Revo 2.0
+                    const contentResult = await generateWithRevo20({
+                        brandProfile: input.brandProfile,
+                        businessType: input.brandProfile.businessType || 'business',
+                        platform: 'instagram',
+                        visualStyle: input.brandProfile.visualStyle || 'modern',
+                        prompt: parsedInstructions.remainingPrompt || remainingPrompt || 'Create engaging content',
+                        useLocalLanguage: false
+                    });
+
+                    if (contentResult && contentResult.headline) {
+                        // Use generated content for the image text
+                        const headline = contentResult.headline;
+                        const subheadline = contentResult.subheadline || '';
+                        const cta = contentResult.cta || '';
+
+                        // Combine into compelling image text
+                        generatedContent = [headline, subheadline, cta].filter(Boolean).join(' • ');
+
+                        console.log('✅ [Creative Studio] Generated compelling content:', {
+                            headline,
+                            subheadline,
+                            cta,
+                            combined: generatedContent
+                        });
+
+                        // Override imageText with generated content
+                        imageText = generatedContent;
+                    }
+                } catch (contentError) {
+                    console.warn('⚠️ [Creative Studio] Revo 2.0 failed, trying Revo 1.5...', contentError);
+
+                    // Fallback to Revo 1.5
+                    try {
+                        const { generateRevo15EnhancedDesign } = await import('@/ai/revo-1.5-enhanced-design');
+
+                        const contentResult = await generateRevo15EnhancedDesign({
+                            brandProfile: input.brandProfile,
+                            businessType: input.brandProfile.businessType || 'business',
+                            platform: 'instagram',
+                            visualStyle: input.brandProfile.visualStyle || 'modern',
+                            prompt: parsedInstructions.remainingPrompt || remainingPrompt || 'Create engaging content',
+                            useLocalLanguage: false
+                        });
+
+                        if (contentResult && contentResult.headline) {
+                            const headline = contentResult.headline;
+                            const subheadline = contentResult.subheadline || '';
+                            const cta = contentResult.cta || '';
+
+                            generatedContent = [headline, subheadline, cta].filter(Boolean).join(' • ');
+                            imageText = generatedContent;
+
+                            console.log('✅ [Creative Studio] Generated content with Revo 1.5:', generatedContent);
+                        }
+                    } catch (revo15Error) {
+                        console.warn('⚠️ [Creative Studio] Revo 1.5 failed, trying Revo 1.0...', revo15Error);
+
+                        // Final fallback to Revo 1.0
+                        try {
+                            const { generateRevo10Content } = await import('@/ai/revo-1.0-service');
+
+                            const contentResult = await generateRevo10Content({
+                                businessType: input.brandProfile.businessType || 'business',
+                                businessName: input.brandProfile.businessName || 'Business',
+                                location: input.brandProfile.location || 'Local Area',
+                                platform: 'instagram',
+                                writingTone: 'professional',
+                                brandProfile: input.brandProfile
+                            });
+
+                            if (contentResult && contentResult.headline) {
+                                const headline = contentResult.headline;
+                                const subheadline = contentResult.subheadline || '';
+                                const cta = contentResult.cta || '';
+
+                                generatedContent = [headline, subheadline, cta].filter(Boolean).join(' • ');
+                                imageText = generatedContent;
+
+                                console.log('✅ [Creative Studio] Generated content with Revo 1.0:', generatedContent);
+                            }
+                        } catch (revo10Error) {
+                            console.warn('⚠️ [Creative Studio] All Revo systems failed, using business fallback:', revo10Error);
+
+                            // Final business-specific fallback
+                            if (input.brandProfile) {
+                                const businessName = input.brandProfile.businessName || 'Your Business';
+                                const businessType = input.brandProfile.businessType || 'Professional Services';
+                                generatedContent = `${businessName} • Quality ${businessType} • Contact Us Today`;
+                                imageText = generatedContent;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Enhanced prompt based on whether we generated content
+            if (generatedContent) {
+                creativePrompt += `
+
+🎯 **CREATIVE BRIEF:** Create a stunning, professional social media advertisement that showcases the compelling content we've generated.
+
+📝 **GENERATED CONTENT TO FEATURE:** "${generatedContent}"
+
+🎨 **CREATIVE DIRECTION:**
+- Design a visually striking advertisement that makes the generated content the hero
+- Use modern, professional design principles that align with the brand
+- Create visual hierarchy that draws attention to the key messaging
+- Ensure the design feels premium and engaging, not generic
+- Make it scroll-stopping and memorable
+
+${structuredContentInstructions}`;
+            } else {
+                creativePrompt += `You are an expert creative director specializing in high-end advertisements. Generate a compelling, high-quality social media advertisement ${input.outputType} based on the following instruction: "${parsedInstructions.remainingPrompt || remainingPrompt}".${structuredContentInstructions}`;
+            }
+
+            creativePrompt += `
 
 ⚡ GEMINI 2.5 FLASH IMAGE PREVIEW QUALITY ENHANCEMENTS:
 - MOBILE-OPTIMIZED RESOLUTION: 1080x1080px HD square format for perfect mobile viewing

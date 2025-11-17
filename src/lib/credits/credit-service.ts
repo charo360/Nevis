@@ -128,9 +128,14 @@ export class CreditService {
 
       // Check if user has enough credits
       if (currentBalance.remainingCredits < amount) {
-        return { 
-          success: false, 
-          error: 'Insufficient credits',
+        const shortfall = amount - currentBalance.remainingCredits;
+        const friendlyMessage = currentBalance.remainingCredits === 0
+          ? `🚀 Ready to create amazing content? You need ${amount} credits to use this feature. Let's get you topped up! 💳`
+          : `🎨 So close! You have ${currentBalance.remainingCredits} credits but need ${amount} for this generation. Just ${shortfall} more credits needed! 💳`;
+
+        return {
+          success: false,
+          error: friendlyMessage,
           remainingCredits: currentBalance.remainingCredits
         };
       }

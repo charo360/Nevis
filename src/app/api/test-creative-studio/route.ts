@@ -1,22 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateCreativeAssetAction } from '@/app/actions';
+import { generateCreativeAsset } from '@/ai/flows/generate-creative-asset';
 
 export async function POST(request: NextRequest) {
   try {
-    
+
     const body = await request.json();
-    
-    // Call the actual Creative Studio action
-    const result = await generateCreativeAssetAction(
-      body.prompt,
-      body.outputType,
-      body.referenceAssetUrl,
-      body.useBrandProfile,
-      body.brandProfile,
-      body.maskDataUrl,
-      body.aspectRatio,
-      body.preferredModel
-    );
+
+    // Call the Creative Studio flow directly (bypassing auth for testing)
+    const result = await generateCreativeAsset({
+      prompt: body.prompt,
+      outputType: body.outputType || 'image',
+      referenceAssetUrl: body.referenceAssetUrl,
+      useBrandProfile: body.useBrandProfile || false,
+      brandProfile: body.brandProfile,
+      maskDataUrl: body.maskDataUrl,
+      aspectRatio: body.aspectRatio,
+      preferredModel: body.preferredModel,
+      designColors: body.designColors
+    });
     
     
     return NextResponse.json({

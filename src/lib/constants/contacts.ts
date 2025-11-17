@@ -5,9 +5,10 @@
 
 export const CREVO_CONTACTS = {
   // General Contact Information
-  email: 'support@crevo.app',
+  email: 'sam@crevo.app',
   phone: '+1 (202) 699-5029',
-  
+  whatsapp: '+1 (202) 699-5029',
+
   // Social Media Links
   social: {
     twitter: 'https://twitter.com/crevoapp',
@@ -15,6 +16,7 @@ export const CREVO_CONTACTS = {
     instagram: 'https://instagram.com/crevoapp',
     linkedin: 'https://linkedin.com/company/crevoapp',
     youtube: 'https://youtube.com/@crevoapp',
+    whatsapp: 'https://wa.me/12026995029',
   },
   
   // Support & Help

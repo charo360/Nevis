@@ -6,7 +6,7 @@ const nextConfig = {
   env: {
     VERTEX_AI_ENABLED: process.env.VERTEX_AI_ENABLED || 'true',
     VERTEX_AI_CREDENTIALS: process.env.VERTEX_AI_CREDENTIALS,
-    GOOGLE_PROJECT_ID: process.env.GOOGLE_PROJECT_ID || 'nevis-474518',
+    GOOGLE_PROJECT_ID: process.env.GOOGLE_PROJECT_ID || 'eco-theater-478004-b9',
     GOOGLE_LOCATION: process.env.GOOGLE_LOCATION || 'us-central1',
   },
   typescript: {

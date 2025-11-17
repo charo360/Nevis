@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import {
-  Sparkles,
   Mail,
   Phone,
   MapPin,
@@ -22,11 +21,12 @@ export function Footer() {
         <div className="grid md:grid-cols-5 gap-8 mb-12">
           {/* Brand */}
           <div className="md:col-span-2">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-2xl font-bold">Crevo</span>
+            <div className="flex items-center mb-6">
+              <img
+                src="https://i.imgur.com/ExFP5l5.png"
+                alt="Crevo Logo"
+                className="h-10 w-auto"
+              />
             </div>
             <p className="text-gray-400 leading-relaxed mb-6">
               AI-powered content creation platform that helps businesses and creators generate stunning social media content in seconds.

@@ -13,6 +13,8 @@ export default function SuccessPage() {
   const [summary, setSummary] = useState<{ planId?: string; amount?: number; currency?: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [creditsProcessed, setCreditsProcessed] = useState(false);
+  const [creditsAdded, setCreditsAdded] = useState<number | null>(null);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -22,20 +24,26 @@ export default function SuccessPage() {
 
     const fetchSessionDetails = async () => {
       try {
+        // First, get session details
         const response = await fetch('/api/payments/session-details', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sessionId })
         });
-        
+
         const data = await response.json();
-        
+
         if (response.ok && data.ok) {
-          setSummary({ 
-            planId: data.planId, 
-            amount: (data.amountCents || 0) / 100, 
-            currency: data.currency 
+          setSummary({
+            planId: data.planId,
+            amount: (data.amountCents || 0) / 100,
+            currency: data.currency
           });
+
+          // Credits are processed automatically via Stripe webhooks in production
+          // No manual processing needed - webhooks handle credit addition
+          setCreditsProcessed(true);
+          console.log('✅ Payment successful - credits will be added via webhook');
         } else {
           setError(data.error || 'Failed to fetch payment details');
         }
@@ -78,7 +86,9 @@ export default function SuccessPage() {
             </div>
           </div>
           <CardTitle className="text-3xl font-bold text-gray-900 mb-2">Payment Successful!</CardTitle>
-          <p className="text-gray-600 text-lg">Thank you for your purchase. Your credits have been added to your account.</p>
+          <p className="text-gray-600 text-lg">
+            Thank you for your purchase. Your credits will be added to your account within a few moments.
+          </p>
         </CardHeader>
 
         <CardContent className="space-y-6">

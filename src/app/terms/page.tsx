@@ -36,7 +36,7 @@ export default function TermsPage() {
           <section className="mb-12">
             <h2 className="text-2xl font-semibold text-gray-900 mb-6">2. Description of Service</h2>
             <p className="text-gray-700 mb-4">
-              Crevo is an AI-powered platform that generates social media content from user prompts.
+              Crevo is an AI-powered platform that generates social media content from user prompts using a credit-based system.
               Our service includes:
             </p>
             <ul className="list-disc pl-6 text-gray-700 mb-4">
@@ -44,6 +44,8 @@ export default function TermsPage() {
               <li>Content customization and editing tools</li>
               <li>Social media optimization features</li>
               <li>Analytics and performance tracking</li>
+              <li>Credit-based usage system with transparent pricing</li>
+              <li>Free credits for new users to test the platform</li>
             </ul>
             <p className="text-gray-700 mb-4">
               <strong>Service Availability:</strong> We provide our service "as is" and may modify,
@@ -107,24 +109,44 @@ export default function TermsPage() {
           </section>
 
           <section className="mb-12">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6">5. Payments and Subscriptions</h2>
-            <h3 className="text-xl font-medium text-gray-800 mb-4">Pricing and Billing:</h3>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-6">5. Credit-Based System and Payments</h2>
+
+            <h3 className="text-xl font-medium text-gray-800 mb-4">Credit System:</h3>
             <ul className="list-disc pl-6 text-gray-700 mb-4">
-              <li>Subscription fees are billed in advance on a recurring basis</li>
-              <li>Payment is due at the beginning of each billing cycle</li>
-              <li>All fees are non-refundable except as required by law</li>
+              <li>Crevo operates on a credit-based system where each content generation consumes credits</li>
+              <li>Credits are purchased in packages and do not expire</li>
+              <li>Different content types may consume different amounts of credits</li>
+              <li>You can view your credit balance in your account dashboard</li>
             </ul>
 
-            <h3 className="text-xl font-medium text-gray-800 mb-4">Subscription Management:</h3>
+            <h3 className="text-xl font-medium text-gray-800 mb-4">Free Credits and Trial:</h3>
             <ul className="list-disc pl-6 text-gray-700 mb-4">
-              <li>Subscriptions automatically renew unless cancelled</li>
-              <li>You may cancel your subscription at any time through your account settings</li>
-              <li>Cancellation takes effect at the end of the current billing period</li>
+              <li>New users receive free credits to test and experience our platform</li>
+              <li>Free credits allow you to explore all features before making a purchase</li>
+              <li>Free credits are provided to help you understand the value of our service</li>
+              <li>Additional free credits may be provided through promotions or referrals</li>
+            </ul>
+
+            <h3 className="text-xl font-medium text-gray-800 mb-4">Payment and Refund Policy:</h3>
+            <ul className="list-disc pl-6 text-gray-700 mb-4">
+              <li><strong>All credit purchases are final and non-refundable</strong></li>
+              <li>Since we provide free credits for testing, all paid purchases are considered final</li>
+              <li>Credits are delivered instantly upon successful payment</li>
+              <li>Payment is processed securely through our payment partners</li>
+              <li>We do not offer refunds, exchanges, or credits for unused credits</li>
+            </ul>
+
+            <h3 className="text-xl font-medium text-gray-800 mb-4">Credit Usage:</h3>
+            <ul className="list-disc pl-6 text-gray-700 mb-4">
+              <li>Credits are deducted only when content is successfully generated</li>
+              <li>Failed generations due to system errors will not consume credits</li>
+              <li>Credits are non-transferable between accounts</li>
+              <li>Credit consumption rates are displayed before generation</li>
             </ul>
 
             <p className="text-gray-700">
-              <strong>Price Changes:</strong> We may change subscription prices with 30 days notice.
-              Price changes will not affect your current billing period.
+              <strong>Price Changes:</strong> We may change credit package prices with 30 days notice.
+              Price changes will not affect credits already purchased.
             </p>
           </section>
 
@@ -147,9 +169,17 @@ export default function TermsPage() {
               you paid us in the 12 months preceding the claim.
             </p>
 
-            <p className="text-gray-700">
+            <p className="text-gray-700 mb-4">
               <strong>Third-Party Services:</strong> We are not responsible for third-party services
               integrated with our platform, including payment processors or AI providers.
+            </p>
+
+            <p className="text-gray-700">
+              <strong>No Refund Policy:</strong> Given that we provide free credits for users to test and
+              evaluate our service before purchase, all credit purchases are considered final. We do not
+              provide refunds, exchanges, or credits for any reason after purchase completion. This policy
+              ensures fair usage as users have the opportunity to fully test our platform before committing
+              to a purchase.
             </p>
           </section>
 

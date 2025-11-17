@@ -1633,6 +1633,9 @@ export function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: a
     serviceVisualContext = `\n\n🎯 TODAY'S FEATURED SERVICE INTEGRATION:\n- Service: ${todayService.serviceName}\n- Description: ${todayService.description || 'Premium service offering'}\n- Visual Focus: Create imagery that showcases this specific service in action\n- Service Priority: This should be the PRIMARY visual element in the design`;
   }
 
+  // Build currency instructions based on location
+  const currencyInstructions = getCurrencyInstructions(brandProfile.location || 'Global');
+
   // Build culturally intelligent visual instructions
   let culturalInstructions = '';
   const location = brandProfile.location || 'Global';
@@ -2025,6 +2028,9 @@ ${shouldFollowBrandColors ? `- MANDATORY: Use the specified brand colors (${prim
 - Stick to actual business information only
 - **PROOFREADING**: Review all text content for spelling accuracy before finalizing
 - **CREDIBILITY**: Spelling errors destroy professional credibility - avoid at all costs
+
+💰 CURRENCY REQUIREMENTS (MANDATORY):
+${currencyInstructions}
 
 Create a visually stunning design that stops scrolling and drives engagement while maintaining perfect brand consistency.${contactInstruction}${peopleInstructions}${culturalInstructions}`;
 }
@@ -2906,6 +2912,9 @@ EXAMPLE FLOW:
 - Image shows: "Smart Banking" (headline) + "Technology that works for you" (subheadline)
 - Caption continues: "No more complicated apps or confusing processes. Paya makes banking as simple as sending a text message. Whether you're saving for your family's future or growing your business, our technology adapts to how you actually live and work in Kenya."
 
+💰 CURRENCY REQUIREMENTS (MANDATORY):
+${getCurrencyInstructions(brandProfile.location || 'Global')}
+
 Format as JSON:
 {
   "headline": "...",
@@ -3213,6 +3222,9 @@ export async function generateUniqueFallbackContent(
 
     // Generate caption using AI
     const strategy = getBusinessTypeStrategy(businessType);
+    // Get currency instructions for content generation
+    const captionCurrencyInstructions = getCurrencyInstructions(brandProfile.location || 'Global');
+
     let captionPrompt = `Generate a compelling social media caption for ${brandProfile.businessName} (${businessType}).
 
 🎯 REQUIREMENTS:
@@ -3223,6 +3235,9 @@ export async function generateUniqueFallbackContent(
 ${strategy ? `\n📋 INDUSTRY GUIDANCE:\n${strategy.captionGuidance}` : ''}
 ${productInfo ? `\n🛍️ PRODUCT FOCUS:\n- Product: ${productInfo.name}\n- Price: ${productInfo.price || 'N/A'}\n- Benefits: ${productInfo.benefits?.join(', ') || 'Quality product'}` : ''}
 ${todayService ? `\n🎯 SERVICE FOCUS:\n- Service: ${todayService.serviceName}\n- Description: ${todayService.description || ''}` : ''}
+
+💰 CURRENCY REQUIREMENTS:
+${captionCurrencyInstructions}
 
 Business: ${brandProfile.businessName}
 Location: ${brandProfile.location || 'Global'}
@@ -4094,6 +4109,71 @@ Return ONLY the subheadline text, nothing else.`;
     console.warn('⚠️ AI subheadline generation failed, using simple fallback');
     return `${todayService?.serviceName || businessType} from ${brandProfile.businessName}`;
   }
+}
+
+/**
+ * Get currency instructions based on location
+ */
+function getCurrencyInstructions(location: string): string {
+  const locationKey = location.toLowerCase();
+
+  // Currency mapping by country/region
+  const currencyMap: { [key: string]: { currency: string; symbol: string; example: string } } = {
+    kenya: { currency: 'Kenyan Shilling', symbol: 'KES', example: 'KES 1,000' },
+    uganda: { currency: 'Ugandan Shilling', symbol: 'UGX', example: 'UGX 10,000' },
+    tanzania: { currency: 'Tanzanian Shilling', symbol: 'TZS', example: 'TZS 5,000' },
+    nigeria: { currency: 'Nigerian Naira', symbol: '₦', example: '₦2,500' },
+    ghana: { currency: 'Ghanaian Cedi', symbol: 'GHS', example: 'GHS 150' },
+    'south africa': { currency: 'South African Rand', symbol: 'R', example: 'R500' },
+    egypt: { currency: 'Egyptian Pound', symbol: 'EGP', example: 'EGP 300' },
+    morocco: { currency: 'Moroccan Dirham', symbol: 'MAD', example: 'MAD 200' },
+    india: { currency: 'Indian Rupee', symbol: '₹', example: '₹1,500' },
+    singapore: { currency: 'Singapore Dollar', symbol: 'S$', example: 'S$50' },
+    malaysia: { currency: 'Malaysian Ringgit', symbol: 'RM', example: 'RM100' },
+    thailand: { currency: 'Thai Baht', symbol: '฿', example: '฿500' },
+    philippines: { currency: 'Philippine Peso', symbol: '₱', example: '₱1,000' },
+    indonesia: { currency: 'Indonesian Rupiah', symbol: 'Rp', example: 'Rp50,000' },
+    vietnam: { currency: 'Vietnamese Dong', symbol: '₫', example: '₫100,000' },
+    'united kingdom': { currency: 'British Pound', symbol: '£', example: '£25' },
+    uk: { currency: 'British Pound', symbol: '£', example: '£25' },
+    france: { currency: 'Euro', symbol: '€', example: '€30' },
+    germany: { currency: 'Euro', symbol: '€', example: '€30' },
+    spain: { currency: 'Euro', symbol: '€', example: '€30' },
+    italy: { currency: 'Euro', symbol: '€', example: '€30' },
+    netherlands: { currency: 'Euro', symbol: '€', example: '€30' },
+    canada: { currency: 'Canadian Dollar', symbol: 'CAD', example: 'CAD $40' },
+    australia: { currency: 'Australian Dollar', symbol: 'AUD', example: 'AUD $45' },
+    'new zealand': { currency: 'New Zealand Dollar', symbol: 'NZD', example: 'NZD $50' },
+    brazil: { currency: 'Brazilian Real', symbol: 'R$', example: 'R$150' },
+    mexico: { currency: 'Mexican Peso', symbol: 'MX$', example: 'MX$500' },
+    argentina: { currency: 'Argentine Peso', symbol: 'ARS', example: 'ARS $2,000' },
+    chile: { currency: 'Chilean Peso', symbol: 'CLP', example: 'CLP $15,000' },
+    japan: { currency: 'Japanese Yen', symbol: '¥', example: '¥3,000' },
+    'south korea': { currency: 'South Korean Won', symbol: '₩', example: '₩30,000' },
+    china: { currency: 'Chinese Yuan', symbol: '¥', example: '¥200' },
+    russia: { currency: 'Russian Ruble', symbol: '₽', example: '₽1,500' },
+    'united states': { currency: 'US Dollar', symbol: '$', example: '$25' },
+    usa: { currency: 'US Dollar', symbol: '$', example: '$25' },
+    america: { currency: 'US Dollar', symbol: '$', example: '$25' }
+  };
+
+  // Find matching currency
+  for (const [key, currencyInfo] of Object.entries(currencyMap)) {
+    if (locationKey.includes(key)) {
+      return `- CURRENCY: Use ${currencyInfo.currency} (${currencyInfo.symbol}) for all monetary amounts
+- NEVER use USD ($) or dollars - always use local currency
+- Example format: ${currencyInfo.example}
+- Apply to: prices, costs, savings, discounts, offers, financial amounts
+- MANDATORY: All money references must use ${currencyInfo.symbol} symbol or ${currencyInfo.currency}`;
+    }
+  }
+
+  // Default for unrecognized locations
+  return `- CURRENCY: Use local currency appropriate for the region (NOT USD dollars)
+- NEVER use USD ($) unless specifically for US market
+- Research appropriate currency symbol for the location
+- Apply to: prices, costs, savings, discounts, offers, financial amounts
+- MANDATORY: Avoid defaulting to dollars - use regional currency`;
 }
 
 /**
