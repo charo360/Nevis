@@ -1106,6 +1106,7 @@ export class AssistantManager {
     while (Date.now() - startTime < maxWaitTime) {
       try {
         // Use retry logic for status checks
+        const openai = EnhancedOpenAIClient.getDirectClient();
         const run = await withRetry(
           () => openai.beta.threads.runs.retrieve(runId, { thread_id: threadId }),
           'Check Run Status',

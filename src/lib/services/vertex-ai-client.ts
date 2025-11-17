@@ -60,7 +60,22 @@ class VertexAIClient {
   private accessToken: string | null = null;
   private tokenExpiry: number = 0;
 
+  // Secondary fallback credentials
+  private secondaryCredentials: VertexAICredentials | null = null;
+  private secondaryProjectId: string | null = null;
+  private secondaryLocation: string | null = null;
+  private secondaryAccessToken: string | null = null;
+  private secondaryTokenExpiry: number = 0;
+
   constructor() {
+    // Load primary credentials
+    this.loadPrimaryCredentials();
+
+    // Load secondary credentials if enabled
+    this.loadSecondaryCredentials();
+  }
+
+  private loadPrimaryCredentials() {
     // Prefer loading credentials from environment variable (for Vercel compatibility)
     const envCreds = process.env.VERTEX_AI_CREDENTIALS;
     if (envCreds) {
@@ -68,7 +83,7 @@ class VertexAIClient {
         this.credentials = JSON.parse(envCreds);
         this.projectId = process.env.VERTEX_AI_PROJECT_ID || this.credentials.project_id;
         this.location = process.env.VERTEX_AI_LOCATION || 'us-central1';
-        console.log('✅ [Vertex AI] Credentials loaded from environment variable');
+        console.log('✅ [Vertex AI] Primary credentials loaded from environment variable');
         return;
       } catch (error) {
         throw new Error('🔑 Vertex AI credentials invalid. Please check VERTEX_AI_CREDENTIALS in .env.local');
@@ -83,9 +98,29 @@ class VertexAIClient {
       this.credentials = JSON.parse(credentialsData);
       this.projectId = process.env.VERTEX_AI_PROJECT_ID || this.credentials.project_id;
       this.location = process.env.VERTEX_AI_LOCATION || 'us-central1';
-      console.log('✅ [Vertex AI] Credentials loaded from file');
+      console.log('✅ [Vertex AI] Primary credentials loaded from file');
     } catch (error) {
-      throw new Error(`🔑 Revo 1.5 requires Vertex AI credentials. Please add VERTEX_AI_CREDENTIALS to .env.local or use Revo 2.0 instead. Error: ${error}`);
+      throw new Error(`🔑 Vertex AI requires credentials. Please add VERTEX_AI_CREDENTIALS to .env.local. Error: ${error}`);
+    }
+  }
+
+  private loadSecondaryCredentials() {
+    // Check if secondary fallback is enabled
+    if (process.env.VERTEX_AI_SECONDARY_ENABLED !== 'true') {
+      console.log('ℹ️ [Vertex AI] Secondary fallback disabled');
+      return;
+    }
+
+    try {
+      const secondaryKeyFile = process.env.VERTEX_AI_SECONDARY_KEY_FILE || 'vertex-ai-secondary-credentials.json';
+      const secondaryPath = join(process.cwd(), secondaryKeyFile);
+      const secondaryData = readFileSync(secondaryPath, 'utf8');
+      this.secondaryCredentials = JSON.parse(secondaryData);
+      this.secondaryProjectId = process.env.VERTEX_AI_SECONDARY_PROJECT_ID || this.secondaryCredentials.project_id;
+      this.secondaryLocation = process.env.VERTEX_AI_SECONDARY_LOCATION || 'us-central1';
+      console.log('✅ [Vertex AI] Secondary fallback credentials loaded');
+    } catch (error) {
+      console.warn('⚠️ [Vertex AI] Secondary credentials not available:', error instanceof Error ? error.message : 'Unknown error');
     }
   }
 
@@ -144,19 +179,121 @@ class VertexAIClient {
   }
 
   /**
-   * Generate content using Vertex AI
+   * Get access token for secondary Vertex AI account
+   */
+  private async getSecondaryAccessToken(): Promise<string> {
+    if (!this.secondaryCredentials) {
+      throw new Error('Secondary credentials not available');
+    }
+
+    // Check if we have a valid token
+    if (this.secondaryAccessToken && Date.now() < this.secondaryTokenExpiry) {
+      return this.secondaryAccessToken;
+    }
+
+    // Create JWT for service account authentication
+    const now = Math.floor(Date.now() / 1000);
+    const payload = {
+      iss: this.secondaryCredentials.client_email,
+      scope: 'https://www.googleapis.com/auth/cloud-platform',
+      aud: this.secondaryCredentials.token_uri,
+      exp: now + 3600, // 1 hour
+      iat: now
+    };
+
+    // Create JWT header and payload
+    const header = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).toString('base64url');
+    const payloadStr = Buffer.from(JSON.stringify(payload)).toString('base64url');
+
+    // Sign with private key
+    const crypto = await import('crypto');
+    const sign = crypto.createSign('RSA-SHA256');
+    sign.update(`${header}.${payloadStr}`);
+    const signature = sign.sign(this.secondaryCredentials.private_key, 'base64url');
+
+    const jwt = `${header}.${payloadStr}.${signature}`;
+
+    // Exchange JWT for access token
+    const response = await fetch(this.secondaryCredentials.token_uri, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+        assertion: jwt
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to get secondary access token: ${response.status} ${response.statusText}`);
+    }
+
+    const tokenData = await response.json();
+    this.secondaryAccessToken = tokenData.access_token;
+    this.secondaryTokenExpiry = Date.now() + (tokenData.expires_in * 1000) - 60000; // Refresh 1 minute early
+
+    return this.secondaryAccessToken;
+  }
+
+  /**
+   * Generate content using Vertex AI with fallback support
    */
   async generateContent(
     model: string,
     request: VertexAIRequest
   ): Promise<VertexAIResponse> {
-    const accessToken = await this.getAccessToken();
+    // Try primary Vertex AI first
+    try {
+      return await this.generateContentWithCredentials(
+        model,
+        request,
+        this.credentials,
+        this.projectId,
+        this.location,
+        await this.getAccessToken()
+      );
+    } catch (primaryError) {
+      console.warn('⚠️ [Vertex AI] Primary account failed, trying secondary fallback:', primaryError instanceof Error ? primaryError.message : 'Unknown error');
 
+      // Try secondary Vertex AI if available and fallback is enabled
+      if (this.secondaryCredentials && process.env.VERTEX_FALLBACK_ENABLED === 'true') {
+        try {
+          return await this.generateContentWithCredentials(
+            model,
+            request,
+            this.secondaryCredentials,
+            this.secondaryProjectId!,
+            this.secondaryLocation!,
+            await this.getSecondaryAccessToken()
+          );
+        } catch (secondaryError) {
+          console.error('❌ [Vertex AI] Secondary account also failed:', secondaryError instanceof Error ? secondaryError.message : 'Unknown error');
+          throw new Error(`Both primary and secondary Vertex AI accounts failed. Primary: ${primaryError instanceof Error ? primaryError.message : 'Unknown'}. Secondary: ${secondaryError instanceof Error ? secondaryError.message : 'Unknown'}`);
+        }
+      } else {
+        // No secondary fallback available
+        throw primaryError;
+      }
+    }
+  }
+
+  /**
+   * Generate content with specific credentials
+   */
+  private async generateContentWithCredentials(
+    model: string,
+    request: VertexAIRequest,
+    credentials: VertexAICredentials,
+    projectId: string,
+    location: string,
+    accessToken: string
+  ): Promise<VertexAIResponse> {
     // Clean model name (remove any prefixes)
     const cleanModel = model.replace(/^(googleai\/|anthropic\/|openai\/)/, '');
 
     // Construct Vertex AI endpoint
-    const endpoint = `https://${this.location}-aiplatform.googleapis.com/v1/projects/${this.projectId}/locations/${this.location}/publishers/google/models/${cleanModel}:generateContent`;
+    const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${cleanModel}:generateContent`;
 
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -173,7 +310,6 @@ class VertexAIClient {
     }
 
     const result = await response.json();
-
     return result;
   }
 
