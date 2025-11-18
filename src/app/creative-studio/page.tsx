@@ -14,6 +14,7 @@ import { SidebarInset } from "@/components/ui/sidebar";
 import { MobileSidebarTrigger } from "@/components/layout/mobile-sidebar-trigger";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
 import { ChatLayout } from "@/components/studio/chat-layout";
 import { User, Palette } from "lucide-react";
 import { ImageEditor } from "@/components/studio/image-editor";
@@ -119,27 +120,21 @@ function CreativeStudioPageContent() {
       {/* ✅ Unified Layout Wrapper */}
       <div className="flex min-h-screen flex-col bg-background transition-all duration-200 ease-linear w-full ml-0 flex-1">
         <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100 w-full">
-          <div className="w-full h-full">
-            <div className="flex-1 space-y-6 p-6 w-full px-4">
+          <div className="container mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
+            <div className="space-y-4 sm:space-y-6">
               {/* Header */}
-              <div className="container mx-auto max-w-7xl">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Creative Studio</h1>
-                    <p className="text-muted-foreground">
-                      Chat to create, then refine visuals with the editor
-                    </p>
-                  </div>
-                </div>
+              <div className="space-y-2">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Creative Studio</h1>
+                <p className="text-sm sm:text-base text-gray-600">Chat to create, then refine visuals with the editor</p>
               </div>
 
-              {/* Top Bar */}
-              <header className="flex h-14 items-center justify-between border-b bg-card px-4 lg:h-[60px] lg:px-6">
+              {/* Top Bar - mobile-optimized */}
+              <header className="flex h-14 items-center justify-between border-b bg-card px-4 mobile-container-tight lg:h-[60px] lg:px-6">
                 <div />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="secondary" size="icon" className="rounded-full">
-                      <Avatar>
+                    <Button variant="secondary" size="icon" className="rounded-full touch-target">
+                      <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
                         <AvatarImage
                           src="https://placehold.co/40x40.png"
                           alt="User"
@@ -152,18 +147,18 @@ function CreativeStudioPageContent() {
                       <span className="sr-only">Toggle user menu</span>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </header>
 
-              {/* Main Content */}
+              {/* Main Content - mobile-optimized */}
               <main className="flex-1 overflow-hidden">
                 {editorImage ? (
                   <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-                    <div className="w-full px-4 py-8" style={{ maxWidth: "none" }}>
-                      <div className="container mx-auto max-w-7xl w-full">
+                    <div className="w-full mobile-container-tight py-4 sm:py-8" style={{ maxWidth: "none" }}>
+                      <div className="w-full">
                         <ImageEditor
                           imageUrl={editorImage}
                           onClose={() => setEditorImage(null)}
@@ -174,8 +169,8 @@ function CreativeStudioPageContent() {
                   </div>
                 ) : (
                   <div className="h-full bg-gradient-to-br from-blue-50 to-indigo-100">
-                    <div className="w-full px-4 py-8 h-full" style={{ maxWidth: "none" }}>
-                      <div className="container mx-auto max-w-7xl w-full h-full">
+                    <div className="w-full mobile-container-tight py-4 sm:py-8 h-full" style={{ maxWidth: "none" }}>
+                      <div className="w-full h-full">
                         <ChatLayout brandProfile={brandProfile} onEditImage={setEditorImage} />
                       </div>
                     </div>

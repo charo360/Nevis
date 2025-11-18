@@ -431,23 +431,23 @@ export function WebsiteAnalysisStep({
     <div className="w-full space-y-4">
       {/* Website URL Input */}
       <Card className="w-full">
-        <CardHeader className="px-8 py-6">
-          <CardTitle className="flex items-center gap-2">
-            <Globe className="h-5 w-5" />
+        <CardHeader className="px-4 sm:px-6 md:px-8 py-4 sm:py-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Globe className="h-4 w-4 sm:h-5 sm:w-5" />
             AI Website Analysis
           </CardTitle>
-          <p className="text-gray-600">
+          <p className="text-sm sm:text-base text-gray-600">
             Our AI will analyze your specific website and extract detailed, company-specific information
           </p>
-          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-800">
+          <div className="mt-3 p-2.5 sm:p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-xs sm:text-sm text-blue-800">
               <strong>🎯 Company-Specific Analysis:</strong> The AI will extract your exact service descriptions,
               your specific target audience, your unique competitive advantages, and your actual brand voice -
               not generic industry information.
             </p>
           </div>
         </CardHeader>
-        <CardContent className="px-8 pb-8 space-y-4">
+        <CardContent className="px-4 sm:px-6 md:px-8 pb-6 sm:pb-8 space-y-4">
           <div>
             <Label htmlFor="website-url">Website URL</Label>
             <Input
@@ -482,7 +482,7 @@ export function WebsiteAnalysisStep({
               </p>
             </div>
 
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-400 transition-colors">
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-6 hover:border-blue-400 transition-colors touch-manipulation">
               <input
                 type="file"
                 multiple
@@ -494,11 +494,11 @@ export function WebsiteAnalysisStep({
               />
               <label
                 htmlFor="design-upload"
-                className={`flex flex-col items-center justify-center cursor-pointer ${existingDesignExamples.length + designImages.length >= 5 ? 'opacity-50 cursor-not-allowed' : ''
+                className={`flex flex-col items-center justify-center cursor-pointer min-h-[80px] sm:min-h-[100px] ${existingDesignExamples.length + designImages.length >= 5 ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
               >
-                <Upload className="h-8 w-8 text-gray-400 mb-2" />
-                <span className="text-sm text-gray-600 text-center">
+                <Upload className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 mb-2" />
+                <span className="text-xs sm:text-sm text-gray-600 text-center px-2">
                   {existingDesignExamples.length + designImages.length >= 5
                     ? 'Maximum 5 images reached'
                     : 'Upload social posts, marketing materials, ads (PNG, JPG, SVG)'
@@ -512,9 +512,9 @@ export function WebsiteAnalysisStep({
 
             {/* Design Examples Preview */}
             {(existingDesignExamples.length > 0 || designImages.length > 0) && (
-              <div className="mt-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">
+              <div className="mt-3 sm:mt-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0 mb-2">
+                  <span className="text-xs sm:text-sm font-medium text-gray-700">
                     Design Examples ({existingDesignExamples.length + designImages.length}/5)
                   </span>
                   {existingDesignExamples.length + designImages.length >= 3 && (
@@ -523,23 +523,23 @@ export function WebsiteAnalysisStep({
                     </span>
                   )}
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3">
                   {/* Existing Design Examples */}
                   {existingDesignExamples.map((dataUrl, index) => (
                     <div key={`existing-${index}`} className="relative group">
                       <img
                         src={dataUrl}
                         alt={`Existing Design ${index + 1}`}
-                        className="w-full h-24 object-cover rounded-lg border-2 border-green-200 group-hover:border-green-300 transition-colors"
+                        className="w-full h-20 sm:h-24 object-cover rounded-md sm:rounded-lg border-2 border-green-200 group-hover:border-green-300 transition-colors"
                       />
                       <button
                         onClick={() => removeExistingDesignExample(index)}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-sm"
+                        className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-sm touch-manipulation"
                         title="Remove existing design example"
                       >
                         <X className="h-3 w-3" />
                       </button>
-                      <div className="absolute bottom-1 left-1 bg-green-600 bg-opacity-75 text-white text-xs px-1 rounded">
+                      <div className="absolute bottom-0.5 left-0.5 sm:bottom-1 sm:left-1 bg-green-600 bg-opacity-75 text-white text-[10px] sm:text-xs px-1 rounded">
                         Saved
                       </div>
                     </div>
@@ -550,16 +550,16 @@ export function WebsiteAnalysisStep({
                       <img
                         src={URL.createObjectURL(file)}
                         alt={`New Design ${index + 1}`}
-                        className="w-full h-24 object-cover rounded-lg border-2 border-blue-200 group-hover:border-blue-300 transition-colors"
+                        className="w-full h-20 sm:h-24 object-cover rounded-md sm:rounded-lg border-2 border-blue-200 group-hover:border-blue-300 transition-colors"
                       />
                       <button
                         onClick={() => removeImage(index)}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-sm"
+                        className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-sm touch-manipulation"
                         title="Remove new design example"
                       >
                         <X className="h-3 w-3" />
                       </button>
-                      <div className="absolute bottom-1 left-1 bg-blue-600 bg-opacity-75 text-white text-xs px-1 rounded">
+                      <div className="absolute bottom-0.5 left-0.5 sm:bottom-1 sm:left-1 bg-blue-600 bg-opacity-75 text-white text-[10px] sm:text-xs px-1 rounded">
                         New
                       </div>
                     </div>
@@ -567,7 +567,7 @@ export function WebsiteAnalysisStep({
                 </div>
 
                 {existingDesignExamples.length + designImages.length < 3 && (
-                  <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-700">
+                  <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-[10px] sm:text-xs text-amber-700">
                     💡 <strong>Tip:</strong> Upload at least 3 examples for better AI understanding of your brand style
                   </div>
                 )}
@@ -578,16 +578,16 @@ export function WebsiteAnalysisStep({
           <Button
             onClick={handleAnalyze}
             disabled={isAnalyzing || !websiteUrl.trim()}
-            className="w-full"
+            className="w-full text-sm sm:text-base h-10 sm:h-11"
           >
             {isAnalyzing ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {analysisProgress || 'Analyzing Website...'}
+                <Loader2 className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
+                <span className="truncate">{analysisProgress || 'Analyzing Website...'}</span>
               </>
             ) : (
               <>
-                <Sparkles className="mr-2 h-4 w-4" />
+                <Sparkles className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 Analyze Website with AI
               </>
             )}

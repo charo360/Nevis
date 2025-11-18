@@ -355,18 +355,17 @@ function ContentCalendarPageContent() {
   return (
     <div className="flex min-h-screen flex-col bg-background transition-all duration-200 ease-linear w-full ml-0 flex-1" key={calendarKey}>
       <div className="h-screen overflow-y-auto bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-7xl mx-auto">
+        <div className="container mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
+          <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-6">
+            <div className="flex flex-col gap-3 sm:gap-4">
               <div>
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Content Calendar</h1>
-                <p className="text-xs sm:text-sm text-muted-foreground">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight">Content Calendar</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                   Schedule services for content generation - Click services to edit, use Generate Content to create posts
                 </p>
-               
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {currentBrand && (
                   <CalendarPrefillDialog
                     brandId={currentBrand.id}
@@ -410,9 +409,10 @@ function ContentCalendarPageContent() {
                       window.dispatchEvent(event);
                     }
                   }}
-                  className="text-xs"
+                  className="text-xs sm:text-sm"
                 >
-                  Refresh
+                  <span className="hidden sm:inline">Refresh</span>
+                  <span className="sm:hidden">↻</span>
                 </Button>
                 <Button
                   variant="outline"
@@ -432,9 +432,10 @@ function ContentCalendarPageContent() {
                       description: `Calendar data cleared for ${currentBrandName || 'current brand'}.`,
                     });
                   }}
-                  className="text-xs"
+                  className="text-xs sm:text-sm"
                 >
-                  Clear Current
+                  <span className="hidden sm:inline">Clear Current</span>
+                  <span className="sm:hidden">Clear</span>
                 </Button>
                 <Button
                   variant="destructive"
@@ -459,17 +460,21 @@ function ContentCalendarPageContent() {
                       description: `All calendar data cleared. Staying on ${currentBrandName || 'current brand'}.`,
                     });
                   }}
-                  className="text-xs"
+                  className="text-xs sm:text-sm hidden sm:inline-flex"
                 >
                   Clear All
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => navigateMonth('prev')}>
+              </div>
+
+              {/* Month Navigation - Separate row on mobile */}
+              <div className="flex items-center justify-center gap-2 sm:gap-3">
+                <Button variant="outline" size="sm" onClick={() => navigateMonth('prev')} className="h-8 w-8 p-0 sm:h-9 sm:w-9">
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <h2 className="text-sm sm:text-lg font-semibold min-w-[140px] sm:min-w-[180px] text-center">
+                <h2 className="text-base sm:text-lg font-semibold min-w-[160px] sm:min-w-[180px] text-center">
                   {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
                 </h2>
-                <Button variant="outline" size="sm" onClick={() => navigateMonth('next')}>
+                <Button variant="outline" size="sm" onClick={() => navigateMonth('next')} className="h-8 w-8 p-0 sm:h-9 sm:w-9">
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -477,9 +482,9 @@ function ContentCalendarPageContent() {
 
             {/* Service Overview */}
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  Your Services (Auto-distributed)
+              <CardHeader className="pb-3 px-3 sm:px-6">
+                <CardTitle className="text-base sm:text-lg flex flex-col sm:flex-row sm:items-center gap-2">
+                  <span>Your Services (Auto-distributed)</span>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <div className="w-2 h-2 bg-blue-200 rounded-full"></div>
                     <div className="w-2 h-2 bg-green-200 rounded-full"></div>
@@ -487,30 +492,30 @@ function ContentCalendarPageContent() {
                     <span>Color-coded</span>
                   </div>
                 </CardTitle>
-                <CardDescription className="text-sm">
+                <CardDescription className="text-xs sm:text-sm">
                   Services from your brand profile are automatically distributed across the calendar for content generation. Click to edit or add more.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="pt-0">
+              <CardContent className="pt-0 px-3 sm:px-6">
                 <div className="flex flex-wrap gap-2">
                   {services.map((service, index) => {
                     const serviceColor = SERVICE_COLORS[index % SERVICE_COLORS.length];
                     return (
                       <div
                         key={service.id}
-                        className="cursor-move px-3 py-2 text-xs rounded-md border-2 border-dashed border-gray-300 bg-white transition-all hover:scale-105 hover:shadow-md"
+                        className="cursor-move px-2 sm:px-3 py-1.5 sm:py-2 text-xs rounded-md border-2 border-dashed border-gray-300 bg-white transition-all hover:scale-105 hover:shadow-md touch-manipulation"
                         draggable
                         onDragStart={(e) => {
                           e.dataTransfer.setData('service', JSON.stringify(service));
                         }}
                         title={service.description}
                       >
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: serviceColor.bg }}></div>
-                          <div className="font-medium text-gray-800">{service.name}</div>
+                        <div className="flex items-center gap-1.5 sm:gap-2">
+                          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full flex-shrink-0" style={{ backgroundColor: serviceColor.bg }}></div>
+                          <div className="font-medium text-gray-800 text-xs sm:text-sm">{service.name}</div>
                         </div>
                         {service.description && (
-                          <div className="text-xs text-gray-600 mt-1 truncate max-w-[150px] ml-5">
+                          <div className="text-xs text-gray-600 mt-1 truncate max-w-[120px] sm:max-w-[150px] ml-4 sm:ml-5">
                             {service.description}
                           </div>
                         )}
@@ -528,25 +533,26 @@ function ContentCalendarPageContent() {
 
             {/* Calendar Grid */}
             <Card className="flex-1 mt-4">
-              <CardContent className="p-2 sm:p-3">
+              <CardContent className="p-2 sm:p-4 md:p-6">
                 {/* Day Headers */}
-                <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-1">
+                <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-1 sm:mb-2">
                   {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                    <div key={day} className="p-1 text-center font-medium text-muted-foreground text-xs sm:text-sm">
-                      {day}
+                    <div key={day} className="p-1 text-center font-semibold text-muted-foreground text-[10px] sm:text-xs md:text-sm">
+                      <span className="hidden sm:inline">{day}</span>
+                      <span className="sm:hidden">{day.charAt(0)}</span>
                     </div>
                   ))}
                 </div>
                 {/* Calendar Days */}
-                <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
+                <div className="grid grid-cols-7 gap-0.5 sm:gap-1 md:gap-2">
                   {calendarDays.map((day) => (
                     <div
                       key={day.date}
                       className={`
-                        min-h-[70px] sm:min-h-[85px] p-1 sm:p-2 border rounded-sm sm:rounded-md transition-colors text-xs sm:text-sm
+                        min-h-[60px] sm:min-h-[80px] md:min-h-[100px] p-0.5 sm:p-1.5 md:p-2 border rounded-sm sm:rounded-md transition-colors text-xs sm:text-sm
                         ${day.isCurrentMonth ? 'bg-background' : 'bg-muted/30'}
                         ${day.isToday ? 'ring-1 sm:ring-2 ring-primary' : ''}
-                        hover:bg-muted/50 cursor-pointer
+                        hover:bg-muted/50 cursor-pointer touch-manipulation
                       `}
                       onDrop={(e) => {
                         e.preventDefault();

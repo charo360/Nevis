@@ -25,6 +25,7 @@ import { CreditAnalytics } from '@/components/ui/credit-analytics';
 import { MobileSidebarTrigger } from '@/components/layout/mobile-sidebar-trigger';
 import { DesktopSidebarTrigger } from '@/components/layout/desktop-sidebar-trigger';
 
+
 // Types
 interface UserCredits {
   total_credits: number;
@@ -256,145 +257,145 @@ export default function CreditManagementPage() {
     <>
       <MobileSidebarTrigger />
       <DesktopSidebarTrigger />
-      <div className="container mx-auto p-6 space-y-6 max-w-7xl">
-      {/* Error Banner */}
-      {showError && (
-        <div className="mb-4">
-          <Card className="w-full max-w-md mx-auto border-red-300 bg-red-50">
-            <CardContent className="pt-6">
-              <div className="flex items-center space-x-2 text-red-600">
-                <AlertCircle className="h-5 w-5" />
-                <p>{error}</p>
-              </div>
-              <Button 
-                onClick={() => fetchCreditData(true)} 
-                className="w-full mt-4"
-                variant="outline"
-              >
-                Try Again
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-      {showSignIn && (
-        <div className="mb-4">
-          <Card className="w-full max-w-md mx-auto border-red-300 bg-red-50">
-            <CardContent className="pt-6">
-              <div className="flex items-center space-x-2 text-red-600">
-                <AlertCircle className="h-5 w-5" />
-                <p>Please sign in to view your credit information.</p>
-              </div>
-              <Link href="/auth">
-                <Button className="w-full mt-4">
-                  Sign In
+      <div className="container mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <div className="space-y-4 sm:space-y-6">
+          {/* Error Banner */}
+          {showError && (
+            <Card className="border-red-300 bg-red-50 max-w-md mx-auto">
+              <CardContent className="pt-6">
+                <div className="flex items-center space-x-2 text-red-600 mb-4">
+                  <AlertCircle className="h-5 w-5" />
+                  <p>{error}</p>
+                </div>
+                <Button
+                  onClick={() => fetchCreditData(true)}
+                  className="w-full"
+                  variant="outline"
+                >
+                  Try Again
                 </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-      {/* Subtle background refresh indicator */}
-      {refreshing && (
-        <div className="fixed top-0 right-0 m-4 text-xs text-gray-500 z-50 bg-white/80 px-3 py-1 rounded shadow">
-          Refreshing credits...
-        </div>
-      )}
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Credit Management</h1>
-          <p className="text-muted-foreground">
-            Track your credits, usage, and purchase history
-          </p>
-        </div>
-        <Link href="/pricing">
-          <Button size="lg" className="gap-2">
-            <Plus className="h-4 w-4" />
-            Buy More Credits
-          </Button>
-        </Link>
-      </div>
+              </CardContent>
+            </Card>
+          )}
+          {showSignIn && (
+            <Card className="border-red-300 bg-red-50 max-w-md mx-auto">
+              <CardContent className="pt-6">
+                <div className="flex items-center space-x-2 text-red-600 mb-4">
+                  <AlertCircle className="h-5 w-5" />
+                  <p>Please sign in to view your credit information.</p>
+                </div>
+                <Link href="/auth">
+                  <Button className="w-full">
+                    Sign In
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          )}
+          {/* Subtle background refresh indicator */}
+          {refreshing && (
+            <div className="fixed top-0 right-0 m-4 text-xs text-gray-500 z-50 bg-white/80 px-3 py-1 rounded shadow">
+              Refreshing credits...
+            </div>
+          )}
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+            <div className="space-y-1">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Credit Management</h1>
+              <p className="text-sm sm:text-base text-gray-600">Track your credits, usage, and purchase history</p>
+            </div>
+            <Link href="/pricing">
+              <Button size="lg" className="gap-2 w-full sm:w-auto">
+                <Plus className="h-4 w-4" />
+                Buy More Credits
+              </Button>
+            </Link>
+          </div>
 
-  {/* Credit Overview Cards */}
-  {/* Show skeletons if loading, else show data */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {/* Total Credits */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Credits</CardTitle>
-            <Coins className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {loading ? <span className="bg-gray-200 rounded w-16 h-6 inline-block animate-pulse" /> : (userCredits?.total_credits || 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              All-time purchased credits
-            </p>
-          </CardContent>
-        </Card>
-        {/* Remaining Credits */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Remaining Credits</CardTitle>
-            <Zap className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {loading ? <span className="bg-gray-200 rounded w-16 h-6 inline-block animate-pulse" /> : (userCredits?.remaining_credits || 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Available for use
-            </p>
-          </CardContent>
-        </Card>
-        {/* Used Credits */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Used Credits</CardTitle>
-            <TrendingUp className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {loading ? <span className="bg-gray-200 rounded w-16 h-6 inline-block animate-pulse" /> : (userCredits?.used_credits || 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Credits consumed
-            </p>
-          </CardContent>
-        </Card>
-        {/* Usage */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Usage</CardTitle>
-            <Target className="h-4 w-4 text-orange-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {loading ? <span className="bg-gray-200 rounded w-12 h-6 inline-block animate-pulse" /> : `${usagePercentage}%`}
-            </div>
-            <Progress value={usagePercentage} className="mt-2" />
-          </CardContent>
-        </Card>
-      </div>
+          {/* Credit Overview Cards - mobile-optimized */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Total Credits */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Credits</CardTitle>
+                <Coins className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {loading ? <span className="bg-gray-200 rounded w-16 h-6 inline-block animate-pulse" /> : (userCredits?.total_credits || 0)}
+                </div>
+                <p className="text-xs text-muted-foreground">All-time purchased credits</p>
+              </CardContent>
+            </Card>
+            {/* Remaining Credits */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Remaining Credits</CardTitle>
+                <Zap className="h-4 w-4 text-green-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">
+                  {loading ? <span className="bg-gray-200 rounded w-16 h-6 inline-block animate-pulse" /> : (userCredits?.remaining_credits || 0)}
+                </div>
+                <p className="text-xs text-muted-foreground">Available for use</p>
+              </CardContent>
+            </Card>
+            {/* Used Credits */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Used Credits</CardTitle>
+                <TrendingUp className="h-4 w-4 text-blue-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {loading ? <span className="bg-gray-200 rounded w-16 h-6 inline-block animate-pulse" /> : (userCredits?.used_credits || 0)}
+                </div>
+                <p className="text-xs text-muted-foreground">Credits consumed</p>
+              </CardContent>
+            </Card>
+            {/* Usage */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Usage</CardTitle>
+                <Target className="h-4 w-4 text-orange-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {loading ? <span className="bg-gray-200 rounded w-12 h-6 inline-block animate-pulse" /> : `${usagePercentage}%`}
+                </div>
+                <Progress value={usagePercentage} className="mt-2" />
+              </CardContent>
+            </Card>
+          </div>
 
-      {/* Main Content Tabs */}
-      <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="usage">Usage Analytics</TabsTrigger>
-          <TabsTrigger value="history">Purchase History</TabsTrigger>
-          <TabsTrigger value="plans">Available Plans</TabsTrigger>
+          {/* Main Content Tabs */}
+          <Tabs defaultValue="overview" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1 h-auto p-1">
+          <TabsTrigger value="overview" className="text-xs sm:text-sm py-2">
+            <span className="hidden sm:inline">Overview</span>
+            <span className="sm:hidden">📊</span>
+          </TabsTrigger>
+          <TabsTrigger value="usage" className="text-xs sm:text-sm py-2">
+            <span className="hidden sm:inline">Usage Analytics</span>
+            <span className="sm:hidden">📈</span>
+          </TabsTrigger>
+          <TabsTrigger value="history" className="text-xs sm:text-sm py-2">
+            <span className="hidden sm:inline">Purchase History</span>
+            <span className="sm:hidden">🛒</span>
+          </TabsTrigger>
+          <TabsTrigger value="plans" className="text-xs sm:text-sm py-2">
+            <span className="hidden sm:inline">Available Plans</span>
+            <span className="sm:hidden">💳</span>
+          </TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5" />
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5" />
                   Credit Usage Breakdown
                 </CardTitle>
               </CardHeader>
@@ -642,7 +643,8 @@ export default function CreditManagementPage() {
             ))}
           </div>
         </TabsContent>
-      </Tabs>
+          </Tabs>
+        </div>
       </div>
     </>
   );

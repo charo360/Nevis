@@ -7,6 +7,7 @@ import { useUnifiedBrand } from '@/contexts/unified-brand-context';
 import { SidebarInset } from '@/components/ui/sidebar';
 import { MobileSidebarTrigger } from '@/components/layout/mobile-sidebar-trigger';
 
+
 function BrandProfileContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -49,16 +50,16 @@ function BrandProfileContent() {
     <SidebarInset fullWidth>
       <MobileSidebarTrigger />
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 w-full">
-        <div className="w-full h-full">
-          <div className="w-full h-full px-4 py-8">
+        <div className="container mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
+          <div className="space-y-4 sm:space-y-6">
             {/* Header */}
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            <div className="text-center space-y-2">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                 {isCreateMode && 'Create New Brand Profile'}
                 {isEditMode && 'Edit Brand Profile'}
                 {!isCreateMode && !isEditMode && 'Brand Profile Setup'}
               </h1>
-              <p className="text-gray-600">
+              <p className="text-sm sm:text-base text-gray-600">
                 {isCreateMode ? 'Create a new comprehensive brand profile with AI-powered analysis.' :
                   isEditMode ? 'Update your existing brand profile information.' :
                     'Create a comprehensive brand profile with AI-powered analysis, detailed information sections, and professional customization options.'}

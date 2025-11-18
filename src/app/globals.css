@@ -113,3 +113,138 @@ body {
 .animate-scroll-horizontal:hover {
   animation-play-state: paused;
 }
+
+/* Mobile-Responsive Layout Utilities */
+@layer utilities {
+  /* Mobile-first responsive containers */
+  .mobile-container {
+    @apply w-full px-4 sm:px-6 lg:px-8;
+  }
+
+  .mobile-container-tight {
+    @apply w-full px-3 sm:px-4 lg:px-6;
+  }
+
+  /* Mobile-optimized spacing */
+  .mobile-spacing {
+    @apply space-y-4 sm:space-y-6 lg:space-y-8;
+  }
+
+  .mobile-spacing-tight {
+    @apply space-y-3 sm:space-y-4 lg:space-y-6;
+  }
+
+  /* Touch-friendly interactive elements */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
+  }
+
+  .touch-button {
+    @apply touch-target px-4 py-3 sm:px-6 sm:py-2 text-sm sm:text-base;
+  }
+
+  /* Mobile-responsive text sizing */
+  .mobile-heading-xl {
+    @apply text-2xl sm:text-3xl lg:text-4xl font-bold;
+  }
+
+  .mobile-heading-lg {
+    @apply text-xl sm:text-2xl lg:text-3xl font-bold;
+  }
+
+  .mobile-heading-md {
+    @apply text-lg sm:text-xl lg:text-2xl font-semibold;
+  }
+
+  .mobile-text {
+    @apply text-sm sm:text-base;
+  }
+
+  .mobile-text-small {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Mobile-optimized card layouts */
+  .mobile-card {
+    @apply p-4 sm:p-6 rounded-lg;
+  }
+
+  .mobile-card-compact {
+    @apply p-3 sm:p-4 rounded-lg;
+  }
+
+  /* Mobile-responsive grids */
+  .mobile-grid-1 {
+    @apply grid grid-cols-1;
+  }
+
+  .mobile-grid-2 {
+    @apply grid grid-cols-1 sm:grid-cols-2;
+  }
+
+  .mobile-grid-3 {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
+  }
+
+  .mobile-grid-4 {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+  }
+
+  /* Mobile-responsive flex layouts */
+  .mobile-flex-col {
+    @apply flex flex-col sm:flex-row;
+  }
+
+  .mobile-flex-col-reverse {
+    @apply flex flex-col-reverse sm:flex-row;
+  }
+
+  /* Mobile-optimized gaps */
+  .mobile-gap {
+    @apply gap-3 sm:gap-4 lg:gap-6;
+  }
+
+  .mobile-gap-tight {
+    @apply gap-2 sm:gap-3 lg:gap-4;
+  }
+
+  /* Mobile navigation utilities */
+  .mobile-nav-item {
+    @apply touch-target w-full justify-start px-3 py-2 text-left;
+  }
+
+  /* Mobile-responsive visibility */
+  .mobile-only {
+    @apply block sm:hidden;
+  }
+
+  .desktop-only {
+    @apply hidden sm:block;
+  }
+
+  .tablet-up {
+    @apply hidden md:block;
+  }
+
+  /* Mobile-optimized form elements */
+  .mobile-input {
+    @apply touch-target px-3 py-3 sm:px-4 sm:py-2 text-base sm:text-sm;
+  }
+
+  .mobile-select {
+    @apply touch-target px-3 py-3 sm:px-4 sm:py-2 text-base sm:text-sm;
+  }
+
+  /* Mobile-responsive header layouts */
+  .mobile-header {
+    @apply flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4;
+  }
+
+  .mobile-header-title {
+    @apply mobile-heading-lg;
+  }
+
+  .mobile-header-subtitle {
+    @apply mobile-text text-muted-foreground;
+  }
+}

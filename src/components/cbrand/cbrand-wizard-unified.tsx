@@ -469,28 +469,28 @@ export function CbrandWizardUnified({ mode: modeProp, brandId }: CbrandWizardUni
   return (
     <div className="w-full max-w-none">
       {/* Progress Bar */}
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-gray-700">Progress</span>
-          <span className="text-sm font-medium text-gray-700">{calculateProgress()}%</span>
+          <span className="text-xs sm:text-sm font-medium text-gray-700">Progress</span>
+          <span className="text-xs sm:text-sm font-medium text-gray-700">{calculateProgress()}%</span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
+        <div className="w-full bg-gray-200 rounded-full h-1.5 sm:h-2">
           <div
-            className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-in-out"
+            className="bg-blue-600 h-1.5 sm:h-2 rounded-full transition-all duration-300 ease-in-out"
             style={{ width: `${calculateProgress()}%` }}
           ></div>
         </div>
       </div>
 
       {/* Step Navigation */}
-      <div className="flex items-center justify-center mb-8">
-        <div className="flex items-center space-x-4">
+      <div className="flex items-center justify-center mb-6 sm:mb-8 px-4">
+        <div className="flex items-center space-x-2 sm:space-x-4">
           {[1, 2, 3, 4].map((step) => (
             <div key={step} className="flex items-center">
               <div className={`
-                w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium
+                w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium transition-all
                 ${currentStep === step
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-blue-600 text-white ring-2 ring-blue-300'
                   : currentStep > step
                     ? 'bg-green-600 text-white'
                     : 'bg-gray-300 text-gray-600'
@@ -500,7 +500,7 @@ export function CbrandWizardUnified({ mode: modeProp, brandId }: CbrandWizardUni
               </div>
               {step < 4 && (
                 <div className={`
-                  w-16 h-1 mx-2
+                  w-8 sm:w-12 md:w-16 h-0.5 sm:h-1 mx-1 sm:mx-2 transition-all
                   ${currentStep > step ? 'bg-green-600' : 'bg-gray-300'}
                 `} />
               )}

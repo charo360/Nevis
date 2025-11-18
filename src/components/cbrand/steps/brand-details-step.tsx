@@ -247,40 +247,43 @@ export function BrandDetailsStep({
   return (
     <div className="w-full space-y-4">
       <Card className="w-full max-w-none">
-        <CardHeader className="px-6 py-6">
-          <CardTitle>Complete Brand Details</CardTitle>
-          <p className="text-gray-600">
+        <CardHeader className="px-3 sm:px-4 md:px-6 py-4 sm:py-5 md:py-6">
+          <CardTitle className="text-base sm:text-lg md:text-xl">Complete Brand Details</CardTitle>
+          <p className="text-xs sm:text-sm md:text-base text-gray-600">
             Fill in comprehensive information about your brand across 7 key areas
           </p>
         </CardHeader>
-        <CardContent className="px-6 pb-8 w-full max-w-none">
+        <CardContent className="px-3 sm:px-4 md:px-6 pb-6 sm:pb-8 w-full max-w-none">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-7">
-              {sections.map((section) => {
-                const Icon = section.icon;
-                const hasMissingFields = sectionHasMissingFields(section.id);
-                return (
-                  <TabsTrigger
-                    key={section.id}
-                    value={section.id}
-                    className={`flex flex-col items-center gap-1 p-2 relative ${hasMissingFields ? 'text-red-600 border-red-300' : ''
-                      }`}
-                  >
-                    <Icon className={`h-4 w-4 ${hasMissingFields ? 'text-red-600' : ''}`} />
-                    <span className={`text-xs ${hasMissingFields ? 'text-red-600 font-medium' : ''}`}>
-                      {section.label}
-                    </span>
-                    {hasMissingFields && (
-                      <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></div>
-                    )}
-                  </TabsTrigger>
-                );
-              })}
-            </TabsList>
+            {/* Mobile: Scrollable horizontal tabs */}
+            <div className="w-full overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
+              <TabsList className="inline-flex sm:grid w-auto sm:w-full grid-cols-7 gap-1 sm:gap-0 min-w-max sm:min-w-0">
+                {sections.map((section) => {
+                  const Icon = section.icon;
+                  const hasMissingFields = sectionHasMissingFields(section.id);
+                  return (
+                    <TabsTrigger
+                      key={section.id}
+                      value={section.id}
+                      className={`flex flex-col items-center gap-0.5 sm:gap-1 p-1.5 sm:p-2 relative min-w-[60px] sm:min-w-0 ${hasMissingFields ? 'text-red-600 border-red-300' : ''
+                        }`}
+                    >
+                      <Icon className={`h-3 w-3 sm:h-4 sm:w-4 ${hasMissingFields ? 'text-red-600' : ''}`} />
+                      <span className={`text-[10px] sm:text-xs leading-tight text-center ${hasMissingFields ? 'text-red-600 font-medium' : ''}`}>
+                        {section.label}
+                      </span>
+                      {hasMissingFields && (
+                        <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-red-500 rounded-full"></div>
+                      )}
+                    </TabsTrigger>
+                  );
+                })}
+              </TabsList>
+            </div>
 
             {/* Section 1: Basic Information */}
-            <TabsContent value="basic" className="w-full space-y-4 mt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <TabsContent value="basic" className="w-full space-y-3 sm:space-y-4 mt-4 sm:mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <Label
                     htmlFor="businessName"
