@@ -346,7 +346,7 @@ function QuickContentPage() {
                 </div>
 
                 {/* Header Bar */}
-                <header className="flex h-14 items-center justify-between gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
+                <header className="flex h-14 items-center justify-between gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6 mb-2">
                   <div className="flex items-center gap-2">
                     <Button
                       variant="ghost"
@@ -402,7 +402,7 @@ function QuickContentPage() {
                 {/* Main Content */}
                 <main className="flex-1 overflow-auto">
                   <div className="min-h-full bg-gradient-to-br from-blue-50 to-indigo-100">
-                    <div className="w-full px-4 py-8" style={{ maxWidth: 'none' }}>
+                    <div className="w-full px-4 py-2" style={{ maxWidth: 'none' }}>
                       <div className="w-full space-y-4">
                         {currentBrand && (
                           <>
