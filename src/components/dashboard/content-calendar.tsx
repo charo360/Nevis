@@ -479,7 +479,10 @@ export function ContentCalendar({
               <Settings className="h-4 w-4 text-blue-600" />
               <span className="font-medium text-sm">Brand Consistency</span>
             </div>
-            <div className="space-y-2">
+            {/* Mobile: 2-column grid layout | Desktop: Horizontal flex layout */}
+            <div className="space-y-2 md:space-y-0">
+              {/* Mobile layout - explicit rows */}
+              <div className="md:hidden space-y-2">
                 <div className="grid grid-cols-2 gap-2">
                   <div className="flex items-center justify-between gap-2 p-2 rounded hover:bg-gray-100">
                     <div className="flex items-center gap-1.5">
@@ -543,14 +546,73 @@ export function ContentCalendar({
                       onCheckedChange={setUseLocalLanguage}
                     />
                   </div>
-                  <div className="flex items-center justify-between gap-2 p-2 rounded hover:bg-gray-100 invisible">
-                    {/* Empty placeholder for alignment */}
-                  </div>
+                  <div className="invisible"></div>
+                </div>
+              </div>
+
+              {/* Desktop layout - compact horizontal */}
+              <div className="hidden md:flex md:items-center md:gap-4 md:flex-wrap">
+                <div className="flex items-center gap-2">
+                  <Palette className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm text-gray-700 select-none">Strict</span>
+                  <Switch
+                    checked={brandConsistency.strictConsistency}
+                    onCheckedChange={(checked) =>
+                      setBrandConsistency(prev => ({ ...prev, strictConsistency: checked }))
+                    }
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm text-gray-700 select-none">Colors</span>
+                  <Switch
+                    checked={brandConsistency.followBrandColors}
+                    onCheckedChange={(checked) =>
+                      setBrandConsistency(prev => ({ ...prev, followBrandColors: checked }))
+                    }
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm text-gray-700 select-none">Contacts</span>
+                  <Switch
+                    checked={brandConsistency.includeContacts}
+                    onCheckedChange={(checked) =>
+                      setBrandConsistency(prev => ({ ...prev, includeContacts: checked }))
+                    }
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-700 select-none">👥 People</span>
+                  <Switch
+                    checked={includePeopleInDesigns}
+                    onCheckedChange={setIncludePeopleInDesigns}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-700 select-none">🌍 Local</span>
+                  <Switch
+                    checked={useLocalLanguage}
+                    onCheckedChange={setUseLocalLanguage}
+                  />
+                </div>
+                <Separator orientation="vertical" className="h-4" />
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-700 font-medium">AI Model:</span>
+                  <select
+                    value={selectedRevoModel}
+                    onChange={(e) => setSelectedRevoModel(e.target.value as RevoModel)}
+                    className="bg-white border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-400 transition-colors cursor-pointer"
+                  >
+                    <option value="revo-1.0">Revo 1.0 (3 credits)</option>
+                    <option value="revo-1.5">Revo 1.5 (4 credits)</option>
+                    <option value="revo-2.0">Revo 2.0 (5 credits)</option>
+                  </select>
                 </div>
               </div>
               
-              {/* AI Model Selection - Separate row on mobile */}
-              <div className="mt-3 pt-3 border-t border-gray-200">
+              {/* AI Model Selection - Separate row on mobile only */}
+              <div className="mt-3 pt-3 border-t border-gray-200 md:hidden">
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-sm text-gray-700 font-medium whitespace-nowrap">AI Model:</span>
                   <select
@@ -564,6 +626,7 @@ export function ContentCalendar({
                   </select>
                 </div>
               </div>
+            </div>
             <div className="mt-2 flex items-center justify-between">
               <p className="text-xs text-gray-500">
                 {selectedRevoModel === 'revo-2.0'
