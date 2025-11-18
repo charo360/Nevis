@@ -550,11 +550,11 @@ export function ContentCalendar({
                 </div>
               </div>
 
-              {/* Desktop layout - compact horizontal */}
-              <div className="hidden md:flex md:items-center md:gap-4 md:flex-wrap">
-                <div className="flex items-center gap-2">
-                  <Palette className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm text-gray-700 select-none">Strict</span>
+              {/* Desktop layout - compact horizontal with proper wrapping */}
+              <div className="hidden md:flex md:items-center md:gap-3 lg:gap-4 md:flex-wrap">
+                <div className="flex items-center gap-1.5 lg:gap-2 whitespace-nowrap">
+                  <Palette className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                  <span className="text-xs lg:text-sm text-gray-700 select-none">Strict</span>
                   <Switch
                     checked={brandConsistency.strictConsistency}
                     onCheckedChange={(checked) =>
@@ -562,9 +562,9 @@ export function ContentCalendar({
                     }
                   />
                 </div>
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm text-gray-700 select-none">Colors</span>
+                <div className="flex items-center gap-1.5 lg:gap-2 whitespace-nowrap">
+                  <Sparkles className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                  <span className="text-xs lg:text-sm text-gray-700 select-none">Colors</span>
                   <Switch
                     checked={brandConsistency.followBrandColors}
                     onCheckedChange={(checked) =>
@@ -572,9 +572,9 @@ export function ContentCalendar({
                     }
                   />
                 </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm text-gray-700 select-none">Contacts</span>
+                <div className="flex items-center gap-1.5 lg:gap-2 whitespace-nowrap">
+                  <Phone className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                  <span className="text-xs lg:text-sm text-gray-700 select-none">Contacts</span>
                   <Switch
                     checked={brandConsistency.includeContacts}
                     onCheckedChange={(checked) =>
@@ -582,27 +582,27 @@ export function ContentCalendar({
                     }
                   />
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-700 select-none">👥 People</span>
+                <div className="flex items-center gap-1.5 lg:gap-2 whitespace-nowrap">
+                  <span className="text-xs lg:text-sm text-gray-700 select-none">👥 People</span>
                   <Switch
                     checked={includePeopleInDesigns}
                     onCheckedChange={setIncludePeopleInDesigns}
                   />
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-700 select-none">🌍 Local</span>
+                <div className="flex items-center gap-1.5 lg:gap-2 whitespace-nowrap">
+                  <span className="text-xs lg:text-sm text-gray-700 select-none">🌍 Local</span>
                   <Switch
                     checked={useLocalLanguage}
                     onCheckedChange={setUseLocalLanguage}
                   />
                 </div>
-                <Separator orientation="vertical" className="h-4" />
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-700 font-medium">AI Model:</span>
+                <Separator orientation="vertical" className="h-4 hidden lg:block" />
+                <div className="flex items-center gap-1.5 lg:gap-2 w-full lg:w-auto mt-2 lg:mt-0">
+                  <span className="text-xs lg:text-sm text-gray-700 font-medium whitespace-nowrap">AI Model:</span>
                   <select
                     value={selectedRevoModel}
                     onChange={(e) => setSelectedRevoModel(e.target.value as RevoModel)}
-                    className="bg-white border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-400 transition-colors cursor-pointer"
+                    className="flex-1 lg:flex-initial bg-white border border-gray-300 rounded-md px-2 lg:px-3 py-1.5 text-xs lg:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-400 transition-colors cursor-pointer"
                   >
                     <option value="revo-1.0">Revo 1.0 (3 credits)</option>
                     <option value="revo-1.5">Revo 1.5 (4 credits)</option>
