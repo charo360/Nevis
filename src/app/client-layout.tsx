@@ -7,7 +7,6 @@ import { AuthWrapper } from '@/components/auth/auth-wrapper-supabase';
 import { UnifiedBrandProvider } from '@/contexts/unified-brand-context';
 import { BrandColorProvider } from '@/components/layout/brand-color-provider';
 import { DesignColorProvider } from '@/contexts/design-color-context';
-import { WhatsAppButton } from '@/components/ui/whatsapp-button';
 import React, { Suspense, useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 
@@ -82,7 +81,6 @@ export function ClientLayout({
         </UnifiedBrandProvider>
       </AuthWrapper>
       <Toaster />
-      <WhatsAppButton />
     </>
   );
 }

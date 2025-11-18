@@ -32,6 +32,7 @@ import { Badge } from '@/components/ui/badge';
 import { AppRoutesPaths } from '@/lib/routes';
 import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
+import { WhatsAppButton } from '@/components/ui/whatsapp-button';
 
 export default function HomePage() {
   // Force rebuild - latest changes deployed
@@ -303,62 +304,62 @@ export default function HomePage() {
       <Navbar currentPage="home" />
 
       {/* Hero Section */}
-      <section className="relative px-6 py-20">
+      <section className="relative px-4 sm:px-6 py-12 sm:py-16 md:py-20">
         <div className="max-w-7xl mx-auto">
           <div className={`text-center transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-            <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-full px-4 py-2 mb-8">
-              <Brain className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-medium text-gray-700">🤖 AI Agent Designer</span>
+            <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-full px-3 sm:px-4 py-1.5 sm:py-2 mb-6 sm:mb-8">
+              <Brain className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />
+              <span className="text-xs sm:text-sm font-medium text-gray-700">🤖 AI Agent Designer</span>
             </div>
 
-            <h1 className="text-6xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-4 sm:mb-6 leading-tight px-2">
               Your{' '}
-              <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent inline-block min-w-[420px] h-[1.2em] text-left leading-tight">
+              <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent inline-block min-w-[200px] sm:min-w-[300px] md:min-w-[420px] h-[1.2em] text-left leading-tight">
                 {displayText}
               </span>That Actually
               <br />
               Understands Your Industry
             </h1>
 
-            <p className="text-lg text-gray-600 max-w-3xl mx-auto mb-12 leading-relaxed">
+            <p className="text-base sm:text-lg text-gray-600 max-w-3xl mx-auto mb-8 sm:mb-12 leading-relaxed px-4">
               Forget generic templates. We trained specialized AI designers for fintech, e-commerce, restaurants, SaaS, and more. Each creates on-brand content in 30 seconds.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center mb-10 sm:mb-16 px-4">
               <Button
                 onClick={() => handleGetStarted()}
                 size="lg"
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-8 py-4 h-auto cursor-pointer z-10 relative"
+                className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 h-auto cursor-pointer z-10 relative"
               >
                 Start Free - No Credit Card
-                <ArrowRight className="ml-2 w-5 h-5" />
+                <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5" />
               </Button>
 
               <Button
                 variant="outline"
                 size="lg"
-                className="text-lg px-8 py-4 h-auto border-gray-300 hover:bg-gray-50 text-black hover:text-black"
+                className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 h-auto border-gray-300 hover:bg-gray-50 text-black hover:text-black"
                 onClick={handleWatchDemo}
               >
-                <Play className="mr-2 w-5 h-5 text-black" />
+                <Play className="mr-2 w-4 h-4 sm:w-5 sm:h-5 text-black" />
                 <span className="text-black">Watch Demo</span>
               </Button>
             </div>
 
             {/* Social Proof */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-8 text-sm text-gray-500">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 text-xs sm:text-sm text-gray-500 px-4">
               <div className="flex items-center gap-2">
                 <div className="flex -space-x-2">
                   {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full border-2 border-white" />
+                    <div key={i} className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full border-2 border-white" />
                   ))}
                 </div>
-                <span>Trusted by 10,000+ businesses</span>
+                <span className="text-center">Trusted by 10,000+ businesses</span>
               </div>
 
               <div className="flex items-center gap-1">
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                  <Star key={i} className="w-3 h-3 sm:w-4 sm:h-4 fill-yellow-400 text-yellow-400" />
                 ))}
                 <span className="ml-2">4.9/5 on G2</span>
               </div>
@@ -368,13 +369,13 @@ export default function HomePage() {
       </section>
 
       {/* See The Difference Section */}
-      <section className="relative px-6 py-20 bg-white/50 backdrop-blur-sm">
+      <section className="relative px-4 sm:px-6 py-12 sm:py-16 md:py-20 bg-white/50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+          <div className="text-center mb-10 sm:mb-16 px-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
               See The Difference
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-4">
+            <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto mb-4">
               Same company. All generated in 30 seconds. No templates. No editing.
             </p>
           </div>
@@ -610,105 +611,105 @@ export default function HomePage() {
       </section>
 
       {/* 10 Specialized AI Designers Section */}
-      <section className="relative px-6 py-20 bg-gradient-to-br from-gray-50 to-blue-50">
+      <section className="relative px-4 sm:px-6 py-12 sm:py-16 md:py-20 bg-gradient-to-br from-gray-50 to-blue-50">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+          <div className="text-center mb-10 sm:mb-16 px-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
               10 Specialized AI Designers
             </h2>
-            <p className="text-lg text-gray-600 max-w-3xl mx-auto mb-8">
+            <p className="text-base sm:text-lg text-gray-600 max-w-3xl mx-auto mb-6 sm:mb-8">
               Each trained on thousands of professional designs from their industry
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6 mb-8 sm:mb-12">
             {/* Fintech */}
             <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm text-center">
-              <CardContent className="p-6">
-                <div className="text-4xl mb-4">💳</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Fintech</h3>
-                <p className="text-sm text-gray-600">Payment platforms, mobile money, banking</p>
+              <CardContent className="p-3 sm:p-4 md:p-6">
+                <div className="text-3xl sm:text-4xl mb-2 sm:mb-4">💳</div>
+                <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">Fintech</h3>
+                <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">Payment platforms, mobile money, banking</p>
               </CardContent>
             </Card>
 
             {/* E-commerce */}
             <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm text-center">
-              <CardContent className="p-6">
-                <div className="text-4xl mb-4">🛍️</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">E-commerce</h3>
-                <p className="text-sm text-gray-600">Online stores, marketplaces, retail</p>
+              <CardContent className="p-3 sm:p-4 md:p-6">
+                <div className="text-3xl sm:text-4xl mb-2 sm:mb-4">🛍️</div>
+                <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">E-commerce</h3>
+                <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">Online stores, marketplaces, retail</p>
               </CardContent>
             </Card>
 
             {/* Restaurants */}
             <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm text-center">
-              <CardContent className="p-6">
-                <div className="text-4xl mb-4">🍽️</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Restaurants</h3>
-                <p className="text-sm text-gray-600">Cafes, food delivery, catering</p>
+              <CardContent className="p-3 sm:p-4 md:p-6">
+                <div className="text-3xl sm:text-4xl mb-2 sm:mb-4">🍽️</div>
+                <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">Restaurants</h3>
+                <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">Cafes, food delivery, catering</p>
               </CardContent>
             </Card>
 
             {/* SaaS */}
             <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm text-center">
-              <CardContent className="p-6">
-                <div className="text-4xl mb-4">💻</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">SaaS</h3>
-                <p className="text-sm text-gray-600">Software products, B2B tools, apps</p>
+              <CardContent className="p-3 sm:p-4 md:p-6">
+                <div className="text-3xl sm:text-4xl mb-2 sm:mb-4">💻</div>
+                <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">SaaS</h3>
+                <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">Software products, B2B tools, apps</p>
               </CardContent>
             </Card>
 
             {/* Real Estate */}
             <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm text-center">
-              <CardContent className="p-6">
-                <div className="text-4xl mb-4">🏠</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Real Estate</h3>
-                <p className="text-sm text-gray-600">Property listings, agencies, rentals</p>
+              <CardContent className="p-3 sm:p-4 md:p-6">
+                <div className="text-3xl sm:text-4xl mb-2 sm:mb-4">🏠</div>
+                <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">Real Estate</h3>
+                <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">Property listings, agencies, rentals</p>
               </CardContent>
             </Card>
 
             {/* Fitness */}
             <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm text-center">
-              <CardContent className="p-6">
-                <div className="text-4xl mb-4">🏋️</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Fitness</h3>
-                <p className="text-sm text-gray-600">Gyms, trainers, wellness</p>
+              <CardContent className="p-3 sm:p-4 md:p-6">
+                <div className="text-3xl sm:text-4xl mb-2 sm:mb-4">🏋️</div>
+                <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">Fitness</h3>
+                <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">Gyms, trainers, wellness</p>
               </CardContent>
             </Card>
 
             {/* Education */}
             <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm text-center">
-              <CardContent className="p-6">
-                <div className="text-4xl mb-4">📚</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Education</h3>
-                <p className="text-sm text-gray-600">Online courses, schools, tutoring</p>
+              <CardContent className="p-3 sm:p-4 md:p-6">
+                <div className="text-3xl sm:text-4xl mb-2 sm:mb-4">📚</div>
+                <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">Education</h3>
+                <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">Online courses, schools, tutoring</p>
               </CardContent>
             </Card>
 
             {/* Travel */}
             <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm text-center">
-              <CardContent className="p-6">
-                <div className="text-4xl mb-4">✈️</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Travel</h3>
-                <p className="text-sm text-gray-600">Tours, hotels, booking platforms</p>
+              <CardContent className="p-3 sm:p-4 md:p-6">
+                <div className="text-3xl sm:text-4xl mb-2 sm:mb-4">✈️</div>
+                <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">Travel</h3>
+                <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">Tours, hotels, booking platforms</p>
               </CardContent>
             </Card>
 
             {/* Healthcare */}
             <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm text-center">
-              <CardContent className="p-6">
-                <div className="text-4xl mb-4">🏥</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Healthcare</h3>
-                <p className="text-sm text-gray-600">Clinics, telemedicine, wellness</p>
+              <CardContent className="p-3 sm:p-4 md:p-6">
+                <div className="text-3xl sm:text-4xl mb-2 sm:mb-4">🏥</div>
+                <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">Healthcare</h3>
+                <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">Clinics, telemedicine, wellness</p>
               </CardContent>
             </Card>
 
             {/* Creative */}
             <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm text-center">
-              <CardContent className="p-6">
-                <div className="text-4xl mb-4">🎨</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Creative</h3>
-                <p className="text-sm text-gray-600">Agencies, studios, freelancers</p>
+              <CardContent className="p-3 sm:p-4 md:p-6">
+                <div className="text-3xl sm:text-4xl mb-2 sm:mb-4">🎨</div>
+                <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">Creative</h3>
+                <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">Agencies, studios, freelancers</p>
               </CardContent>
             </Card>
           </div>
@@ -1604,6 +1605,9 @@ export default function HomePage() {
 
       {/* Footer */}
       <Footer />
+
+      {/* WhatsApp Button - Only on Landing Page */}
+      <WhatsAppButton />
     </div>
   );
 }
