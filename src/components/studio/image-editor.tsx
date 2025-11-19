@@ -287,6 +287,7 @@ export function ImageEditor({ imageUrl, onClose, brandProfile, onImageUpdated }:
                 return;
             }
 
+            // Get mask at viewport resolution first
             const maskDataUrl = getMaskDataUrl();
             if (!maskDataUrl) {
                 toast({ variant: 'destructive', title: "Mask Error", description: "Could not generate the mask data." });
@@ -294,7 +295,49 @@ export function ImageEditor({ imageUrl, onClose, brandProfile, onImageUpdated }:
                 return;
             }
 
-            // Convert current image to base64 for the API
+            // Scale mask to full resolution to match the full-res image
+            let fullResMaskDataUrl: string | null = null;
+            try {
+                const maskImg = new window.Image();
+                await new Promise<void>((resolve, reject) => {
+                    maskImg.onload = () => resolve();
+                    maskImg.onerror = () => reject(new Error('Failed to load mask'));
+                    maskImg.src = maskDataUrl;
+                });
+
+                // Get the full resolution dimensions from the original image
+                const fullResImg = new window.Image();
+                fullResImg.crossOrigin = "anonymous";
+                await new Promise<void>((resolve, reject) => {
+                    fullResImg.onload = () => resolve();
+                    fullResImg.onerror = () => reject(new Error('Failed to load image'));
+                    fullResImg.src = currentImageUrl;
+                });
+
+                const fullWidth = fullResImg.naturalWidth || fullResImg.width;
+                const fullHeight = fullResImg.naturalHeight || fullResImg.height;
+
+                // Create full-resolution mask canvas
+                const fullResMaskCanvas = document.createElement('canvas');
+                fullResMaskCanvas.width = fullWidth;
+                fullResMaskCanvas.height = fullHeight;
+
+                const fullResMaskCtx = fullResMaskCanvas.getContext('2d');
+                if (fullResMaskCtx) {
+                    // Scale up the mask to full resolution
+                    fullResMaskCtx.imageSmoothingEnabled = false; // Keep mask sharp (no anti-aliasing)
+                    fullResMaskCtx.drawImage(maskImg, 0, 0, fullWidth, fullHeight);
+                    fullResMaskDataUrl = fullResMaskCanvas.toDataURL('image/png');
+
+                    console.log(`🎭 Scaled mask to full resolution: ${fullWidth}x${fullHeight}px`);
+                }
+            } catch (error) {
+                console.error('Failed to scale mask, using original:', error);
+                fullResMaskDataUrl = maskDataUrl; // Fallback to original mask
+            }
+
+            // Convert current image to base64 for the API at FULL RESOLUTION
+            // CRITICAL: We need to send the full HD image to Gemini, not the scaled canvas
             const imageCanvas = imageCanvasRef.current;
             if (!imageCanvas) {
                 toast({ variant: 'destructive', title: "Canvas Error", description: "Image canvas not found." });
@@ -302,17 +345,56 @@ export function ImageEditor({ imageUrl, onClose, brandProfile, onImageUpdated }:
                 return;
             }
 
+            // Load the current image at full resolution
+            const fullResImage = new window.Image();
+            fullResImage.crossOrigin = "anonymous";
+
+            let fullResBase64: string;
+            try {
+                await new Promise<void>((resolve, reject) => {
+                    fullResImage.onload = () => resolve();
+                    fullResImage.onerror = () => reject(new Error('Failed to load image'));
+                    fullResImage.src = currentImageUrl;
+                });
+
+                // Create a temporary canvas at FULL resolution
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = fullResImage.naturalWidth || fullResImage.width;
+                tempCanvas.height = fullResImage.naturalHeight || fullResImage.height;
+
+                const tempCtx = tempCanvas.getContext('2d');
+                if (!tempCtx) {
+                    throw new Error('Could not create canvas context');
+                }
+
+                // Draw at full resolution with high quality
+                tempCtx.imageSmoothingEnabled = true;
+                tempCtx.imageSmoothingQuality = 'high';
+                tempCtx.drawImage(fullResImage, 0, 0, tempCanvas.width, tempCanvas.height);
+
+                // Get base64 at full resolution
+                fullResBase64 = tempCanvas.toDataURL('image/png', 1.0).split(',')[1];
+
+                console.log(`🎨 Sending to Gemini at full resolution: ${tempCanvas.width}x${tempCanvas.height}px`);
+            } catch (error) {
+                console.error('Failed to load full resolution image, falling back to canvas:', error);
+                // Fallback to canvas if loading fails
+                fullResBase64 = imageCanvas.toDataURL('image/png', 1.0).split(',')[1];
+            }
+
             const originalImage = {
                 id: `img_${Date.now()}`,
                 url: currentImageUrl,
-                base64: imageCanvas.toDataURL('image/png').split(',')[1],
+                base64: fullResBase64,
                 mimeType: 'image/png',
             };
 
-            const mask = maskDataUrl ? {
+            // Use full-resolution mask if available, otherwise use viewport mask
+            const finalMaskDataUrl = fullResMaskDataUrl || maskDataUrl;
+            const mask = finalMaskDataUrl ? {
                 id: `mask_${Date.now()}`,
-                url: maskDataUrl,
-                base64: maskDataUrl.split(',')[1],
+                url: finalMaskDataUrl,
+                base64: finalMaskDataUrl.split(',')[1],
                 mimeType: 'image/png',
             } : null;
 
