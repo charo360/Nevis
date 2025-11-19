@@ -111,6 +111,21 @@ class VertexAIClient {
       return;
     }
 
+    // Prefer loading credentials from environment variable (for Vercel/production)
+    const envSecondaryCredsString = process.env.VERTEX_AI_SECONDARY_CREDENTIALS;
+    if (envSecondaryCredsString) {
+      try {
+        this.secondaryCredentials = JSON.parse(envSecondaryCredsString);
+        this.secondaryProjectId = process.env.VERTEX_AI_SECONDARY_PROJECT_ID || this.secondaryCredentials.project_id;
+        this.secondaryLocation = process.env.VERTEX_AI_SECONDARY_LOCATION || 'us-central1';
+        console.log('✅ [Vertex AI] Secondary credentials loaded from environment variable');
+        return;
+      } catch (error) {
+        console.warn('⚠️ [Vertex AI] Failed to parse VERTEX_AI_SECONDARY_CREDENTIALS:', error instanceof Error ? error.message : 'Unknown error');
+      }
+    }
+
+    // Fallback: load from file (for local/dev)
     try {
       const secondaryKeyFile = process.env.VERTEX_AI_SECONDARY_KEY_FILE || 'vertex-ai-secondary-credentials.json';
       const secondaryPath = join(process.cwd(), secondaryKeyFile);
@@ -118,7 +133,7 @@ class VertexAIClient {
       this.secondaryCredentials = JSON.parse(secondaryData);
       this.secondaryProjectId = process.env.VERTEX_AI_SECONDARY_PROJECT_ID || this.secondaryCredentials.project_id;
       this.secondaryLocation = process.env.VERTEX_AI_SECONDARY_LOCATION || 'us-central1';
-      console.log('✅ [Vertex AI] Secondary fallback credentials loaded');
+      console.log('✅ [Vertex AI] Secondary fallback credentials loaded from file');
     } catch (error) {
       console.warn('⚠️ [Vertex AI] Secondary credentials not available:', error instanceof Error ? error.message : 'Unknown error');
     }
