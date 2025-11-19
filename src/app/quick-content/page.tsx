@@ -308,20 +308,62 @@ function QuickContentPage() {
   };
 
   const handlePostUpdated = async (updatedPost: GeneratedPost) => {
+    // Update local state immediately (optimistic update)
     setGeneratedPosts(prev => {
       const updated = prev.map(p => p.id === updatedPost.id ? { ...p, ...updatedPost } : p);
 
-      // Persist immediately
+      // Persist to localStorage immediately
       if (currentBrand?.id && postsStorage?.setItem) {
         try {
           postsStorage.setItem(updated);
         } catch (err) {
-          console.warn('⚠️ Failed to persist updated post to storage:', err);
+          console.warn('⚠️ Failed to persist updated post to localStorage:', err);
         }
       }
 
       return updated;
     });
+
+    // Save to database in background
+    try {
+      const token = await getAccessToken();
+
+      // Skip database update if no valid token
+      if (!token) {
+        console.warn('⚠️ No auth token, post updated only in localStorage');
+        return;
+      }
+
+      console.log('💾 Saving edited post to database:', updatedPost.id);
+
+      const response = await fetch(`/api/generated-posts/${updatedPost.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(updatedPost)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Post updated in database successfully');
+
+        // Update local state with database response (in case URLs changed)
+        if (result.post) {
+          setGeneratedPosts(prev =>
+            prev.map(p => p.id === updatedPost.id ? { ...p, ...result.post } : p)
+          );
+        }
+      } else {
+        const errorData = await response.json();
+        console.warn('⚠️ Database update failed:', errorData.error);
+        console.warn('⚠️ Post updated only in localStorage');
+      }
+    } catch (error) {
+      console.warn('⚠️ Could not update database:', error);
+      console.warn('⚠️ Post updated only in localStorage');
+    }
   };
 
   return (
