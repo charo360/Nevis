@@ -329,6 +329,38 @@ export class AssistantManager {
     message += `- Location: ${brandProfile.location || 'Global'}\n`;
     message += `- Platform: ${platform}\n\n`;
 
+    // Local Language - MOVE THIS TO THE TOP SO IT'S SEEN FIRST!
+    if (useLocalLanguage && brandProfile.location) {
+      // Extract country from full address for better language targeting
+      const country = this.extractCountryFromLocation(brandProfile.location);
+      console.log(`🌍 [Assistant Manager] BILINGUAL MODE ACTIVE: 70% English, 30% ${country} local language`);
+      console.log(`🌍 [Assistant Manager] Full location: ${brandProfile.location} → Extracted country: ${country}`);
+
+      // SIMPLIFIED: Make it crystal clear with simple, direct instructions
+      message += `\n🌍🌍🌍 ⚠️ MANDATORY LANGUAGE REQUIREMENT ⚠️ 🌍🌍🌍\n`;
+      message += `You MUST include ${country} local language words in your content.\n`;
+      message += `Write mostly in English, but ADD local words for cultural connection.\n\n`;
+
+      if (country.toLowerCase().includes('kenya')) {
+        message += `**USE THESE SWAHILI WORDS (pick 3-5 words to include):**\n`;
+        message += `- Karibu (welcome), Jambo (hello), Pesa (money), Malipo (payments)\n`;
+        message += `- Biashara (business), Haraka (fast), Hakuna matata (no problem)\n`;
+        message += `- Twende (let's go), Sawa (okay)\n\n`;
+        message += `**EXAMPLE:** "Karibu to instant pesa transfers - send malipo in seconds, hakuna matata!"\n\n`;
+      } else if (country.toLowerCase().includes('nigeria')) {
+        message += `**USE THESE PIDGIN WORDS (pick 3-5 phrases to include):**\n`;
+        message += `- No wahala (no problem), Sharp sharp (quickly), Wetin (what)\n`;
+        message += `- E dey work (it works), Make we (let's)\n\n`;
+        message += `**EXAMPLE:** "Send money sharp sharp, no wahala - e dey work well!"\n\n`;
+      }
+
+      message += `🌍 MANDATORY: Include at least 3 local words in your content! 🌍\n\n`;
+
+      console.log(`🌍 [Assistant Manager] Simplified language instructions sent at TOP of message`);
+    } else {
+      console.log(`🌍 [Assistant Manager] English-only mode (local language toggle OFF)`);
+    }
+
     if (brandProfile.description) {
       message += `**Description:** ${brandProfile.description}\n\n`;
     }
@@ -405,11 +437,6 @@ export class AssistantManager {
     if (request.avoidListText) {
       message += `**ANTI-REPETITION GUIDANCE:**\n`;
       message += `${request.avoidListText}\n\n`;
-    }
-
-    // Local Language
-    if (useLocalLanguage && brandProfile.location) {
-      message += `**Language:** Mix English with local ${brandProfile.location} language elements naturally (70% English, 30% local)\n\n`;
     }
 
     // Product Catalog (for retail)
@@ -1068,7 +1095,7 @@ export class AssistantManager {
     message += `2. Subheadline (15-25 words that expand on the headline's promise)\n`;
     message += `3. Caption (50-100 words ACTION-ORIENTED story from headline/subheadline - NOT picture description)\n`;
     message += `4. Call-to-Action (2-4 words matching the benefit)\n`;
-    message += `5. Hashtags (${safePlatform.toLowerCase() === 'instagram' ? '5' : '3'} relevant tags)\n\n`;
+    message += `5. Hashtags (EXACTLY ${safePlatform.toLowerCase() === 'instagram' ? '5' : '3'} hashtags - ${safePlatform.toLowerCase() === 'instagram' ? 'Instagram requires 5' : 'this platform requires 3'}, NO MORE, NO LESS)\n\n`;
 
     message += `Return as JSON with both content and design specifications:\n`;
     message += `{\n`;
@@ -1228,6 +1255,149 @@ export class AssistantManager {
       console.error('Response text:', responseText);
       throw new Error(`Invalid response format from assistant: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+  }
+
+  /**
+   * Extract country from full address/location string
+   */
+  private extractCountryFromLocation(location: string): string {
+    const locationLower = location.toLowerCase();
+
+    // Kenya
+    if (locationLower.includes('kenya') || locationLower.includes('nairobi') || locationLower.includes('mombasa') || locationLower.includes('kisumu')) {
+      return 'Kenya';
+    }
+
+    // Nigeria
+    if (locationLower.includes('nigeria') || locationLower.includes('lagos') || locationLower.includes('abuja') || locationLower.includes('kano')) {
+      return 'Nigeria';
+    }
+
+    // Ghana
+    if (locationLower.includes('ghana') || locationLower.includes('accra') || locationLower.includes('kumasi')) {
+      return 'Ghana';
+    }
+
+    // South Africa
+    if (locationLower.includes('south africa') || locationLower.includes('johannesburg') || locationLower.includes('cape town') || locationLower.includes('durban')) {
+      return 'South Africa';
+    }
+
+    // India
+    if (locationLower.includes('india') || locationLower.includes('mumbai') || locationLower.includes('delhi') || locationLower.includes('bangalore')) {
+      return 'India';
+    }
+
+    // Philippines
+    if (locationLower.includes('philippines') || locationLower.includes('manila') || locationLower.includes('cebu')) {
+      return 'Philippines';
+    }
+
+    // Indonesia
+    if (locationLower.includes('indonesia') || locationLower.includes('jakarta') || locationLower.includes('bali')) {
+      return 'Indonesia';
+    }
+
+    // Thailand
+    if (locationLower.includes('thailand') || locationLower.includes('bangkok') || locationLower.includes('phuket')) {
+      return 'Thailand';
+    }
+
+    // Vietnam
+    if (locationLower.includes('vietnam') || locationLower.includes('hanoi') || locationLower.includes('ho chi minh')) {
+      return 'Vietnam';
+    }
+
+    // Brazil
+    if (locationLower.includes('brazil') || locationLower.includes('brasil') || locationLower.includes('sao paulo') || locationLower.includes('rio')) {
+      return 'Brazil';
+    }
+
+    // Mexico
+    if (locationLower.includes('mexico') || locationLower.includes('méxico') || locationLower.includes('mexico city')) {
+      return 'Mexico';
+    }
+
+    // Spain
+    if (locationLower.includes('spain') || locationLower.includes('españa') || locationLower.includes('madrid') || locationLower.includes('barcelona')) {
+      return 'Spain';
+    }
+
+    // France
+    if (locationLower.includes('france') || locationLower.includes('paris') || locationLower.includes('lyon')) {
+      return 'France';
+    }
+
+    // Germany
+    if (locationLower.includes('germany') || locationLower.includes('deutschland') || locationLower.includes('berlin') || locationLower.includes('munich')) {
+      return 'Germany';
+    }
+
+    // Return original if no match
+    return location;
+  }
+
+  /**
+   * Get specific local language instructions for a country
+   */
+  private getLocalLanguageInstructions(country: string): string {
+    const countryLower = country.toLowerCase();
+
+    if (countryLower.includes('kenya')) {
+      return `**Swahili Elements to Use:**
+- Greetings: "Karibu" (welcome), "Jambo" (hello), "Habari" (how are you)
+- Business: "Biashara" (business), "Huduma" (service), "Pesa" (money)
+- Expressions: "Hakuna matata" (no problem), "Haraka" (fast), "Sawa" (okay)
+- Fintech: "M-Pesa" (mobile money), "Malipo" (payments), "Usalama" (security)
+- Examples: "Karibu to fast payments" | "Malipo ya haraka, zero hassle" | "Twende! Let's start"`;
+    }
+
+    if (countryLower.includes('nigeria')) {
+      return `**Nigerian English/Pidgin Elements to Use:**
+- Greetings: "Wetin dey happen" (what's up), "How far" (how are you)
+- Expressions: "No wahala" (no problem), "Sharp sharp" (quickly), "Correct" (good)
+- Business: "Make we" (let's), "E dey work" (it works), "Na so" (that's it)
+- Examples: "Make your business shine, no wahala" | "Sharp sharp payments" | "E dey work well"`;
+    }
+
+    if (countryLower.includes('mexico') || countryLower.includes('spain')) {
+      return `**Spanish Elements to Use:**
+- Greetings: "¡Bienvenido!" (welcome), "¡Hola!" (hello)
+- Business: "Negocio" (business), "Servicio" (service), "Rápido" (fast)
+- Expressions: "¡Vamos!" (let's go), "Sin problemas" (no problems), "Perfecto" (perfect)
+- Examples: "¡Bienvenido! Welcome to quality service" | "Rápido y seguro" | "¡Vamos! Let's start"`;
+    }
+
+    if (countryLower.includes('brazil')) {
+      return `**Portuguese Elements to Use:**
+- Greetings: "Bem-vindo!" (welcome), "Olá!" (hello)
+- Business: "Negócio" (business), "Serviço" (service), "Rápido" (fast)
+- Expressions: "Vamos lá!" (let's go), "Sem problemas" (no problems), "Perfeito" (perfect)
+- Examples: "Bem-vindo! Welcome to quality service" | "Rápido e seguro" | "Vamos lá! Let's start"`;
+    }
+
+    if (countryLower.includes('france')) {
+      return `**French Elements to Use:**
+- Greetings: "Bienvenue!" (welcome), "Bonjour!" (hello)
+- Business: "Affaires" (business), "Service" (service), "Rapide" (fast)
+- Expressions: "Allons-y!" (let's go), "Pas de problème" (no problem), "Parfait" (perfect)
+- Examples: "Bienvenue! Welcome to quality service" | "Rapide et sécurisé" | "Allons-y! Let's start"`;
+    }
+
+    if (countryLower.includes('india')) {
+      return `**Hindi Elements to Use:**
+- Greetings: "Namaste" (hello), "Shukriya" (thank you)
+- Business: "Vyapar" (business), "Seva" (service), "Tez" (fast)
+- Expressions: "Chalo" (let's go), "Bahut accha" (very good), "Jaldi" (quickly)
+- Examples: "Namaste! Welcome to fast service" | "Bahut accha quality" | "Chalo! Let's start"`;
+    }
+
+    // Generic instructions for other countries
+    return `**Local Language Integration:**
+- Use appropriate greetings and common expressions from ${country}
+- Mix business terms naturally with English
+- Keep it professional and culturally appropriate
+- Examples: Local greeting + English message | English + local expression`;
   }
 }
 

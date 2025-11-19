@@ -115,9 +115,55 @@ export function ContentCalendar({
 
   React.useEffect(() => {
     localStorage.setItem('useLocalLanguage', JSON.stringify(useLocalLanguage));
-  }, [useLocalLanguage]);
+
+    // Log when toggle changes
+    console.log('');
+    console.log('🌍 ========================================');
+    console.log(`🌍 Local Language Toggle Changed: ${useLocalLanguage ? '✅ ON' : '❌ OFF'}`);
+    if (useLocalLanguage && brandProfile.location) {
+      console.log(`🌍 Bilingual mode enabled for ${brandProfile.location}`);
+      console.log(`🌍 Future content will be: 70% English + 30% ${brandProfile.location} local language`);
+    } else if (useLocalLanguage && !brandProfile.location) {
+      console.log('⚠️ Toggle is ON but no location set in brand profile');
+      console.log('⚠️ Please set a location to enable bilingual content');
+    } else {
+      console.log('🌍 English-only mode enabled');
+    }
+    console.log('🌍 ========================================');
+    console.log('');
+  }, [useLocalLanguage, brandProfile.location]);
 
   const handleGenerateClick = async (platform: Platform) => {
+    // ========================================
+    // LOG BILINGUAL MODE STATUS (VISIBLE IN BROWSER CONSOLE)
+    // ========================================
+    console.log('');
+    console.log('🌍 ========================================');
+    console.log('🌍 BILINGUAL MODE STATUS CHECK');
+    console.log('🌍 ========================================');
+    console.log(`🌍 Local Language Toggle: ${useLocalLanguage ? '✅ ON' : '❌ OFF'}`);
+    console.log(`🌍 Brand Location: ${brandProfile.location || '⚠️ Not set'}`);
+    console.log(`🌍 Platform: ${platform}`);
+    console.log(`🌍 AI Model: ${selectedRevoModel}`);
+
+    if (useLocalLanguage && brandProfile.location) {
+      console.log('');
+      console.log('✅ BILINGUAL CONTENT GENERATION ACTIVE!');
+      console.log(`📝 Content will be: 70% English + 30% ${brandProfile.location} local language`);
+      console.log(`🗣️ Expected local language elements for ${brandProfile.location}`);
+    } else if (useLocalLanguage && !brandProfile.location) {
+      console.log('');
+      console.log('⚠️ WARNING: Local language toggle is ON but no location is set!');
+      console.log('⚠️ Content will be generated in English only.');
+      console.log('⚠️ Please set a location in your brand profile to enable bilingual content.');
+    } else {
+      console.log('');
+      console.log('📝 English-only mode (local language toggle is OFF)');
+      console.log('📝 Content will be 100% English');
+    }
+    console.log('🌍 ========================================');
+    console.log('');
+
     // Force refresh calendar data to ensure we have the absolute latest scheduled services
     if (onRefreshCalendar) {
       console.log('🔄 Force refreshing calendar data before content generation...');
@@ -248,14 +294,13 @@ export function ContentCalendar({
           console.warn(`   ℹ️  INFO: No assistant available, used Claude`);
         }
 
-        // Combine AI-generated hashtags with trending hashtags
-        const combinedHashtags = [
-          ...(revo20Result.hashtags || ['#NextGen', '#AI', '#Innovation']),
-          ...platformHashtags // Add platform-optimized trending hashtags
-        ]
-          // Remove duplicates and limit based on platform
-          .filter((tag, index, arr) => arr.indexOf(tag) === index)
-          .slice(0, platform === 'Twitter' ? 5 : platform === 'LinkedIn' ? 8 : 10);
+        // Use AI-generated hashtags directly - they already have platform-specific limits enforced
+        // Instagram: 5 hashtags, Other platforms: 3 hashtags
+        const platformHashtagLimit = platform === 'Instagram' ? 5 : 3;
+        const combinedHashtags = (revo20Result.hashtags || ['#NextGen', '#AI', '#Innovation'])
+          .slice(0, platformHashtagLimit);
+
+        console.log(`#️⃣ [Content Calendar] Using ${combinedHashtags.length} hashtags for ${platform} (limit: ${platformHashtagLimit})`);
 
         newPost = {
           id: `revo-2.0-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,

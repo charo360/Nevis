@@ -1258,6 +1258,7 @@ export interface Revo20GenerationOptions {
   useLocalLanguage?: boolean;
   includeContacts?: boolean;
   followBrandColors?: boolean;
+  strictConsistency?: boolean; // NEW: Enforce EXACT brand colors with NO fallbacks
   scheduledServices?: any[];
   contentApproach?: string;
 }
@@ -1518,12 +1519,30 @@ export function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: a
 
   // Extract brand colors from profile with toggle support
   const shouldFollowBrandColors = options.followBrandColors !== false; // Default to true if not specified
+  const isStrictMode = options.strictConsistency === true; // Explicit strict mode
 
-  const primaryColor = shouldFollowBrandColors ? (brandProfile.primaryColor || '#3B82F6') : '#3B82F6';
-  const accentColor = shouldFollowBrandColors ? (brandProfile.accentColor || '#1E40AF') : '#1E40AF';
-  const backgroundColor = shouldFollowBrandColors ? (brandProfile.backgroundColor || '#FFFFFF') : '#FFFFFF';
+  // STRICT MODE vs NORMAL MODE color handling
+  let primaryColor: string | undefined, accentColor: string | undefined, backgroundColor: string | undefined;
+
+  if (isStrictMode) {
+    // STRICT MODE: Use ONLY provided colors, NO fallbacks (could be undefined)
+    primaryColor = brandProfile.primaryColor;
+    accentColor = brandProfile.accentColor;
+    backgroundColor = brandProfile.backgroundColor;
+  } else if (shouldFollowBrandColors) {
+    // NORMAL MODE: Use provided colors WITH fallbacks
+    primaryColor = brandProfile.primaryColor || '#3B82F6';
+    accentColor = brandProfile.accentColor || '#1E40AF';
+    backgroundColor = brandProfile.backgroundColor || '#FFFFFF';
+  } else {
+    // BRAND COLORS DISABLED: Use default colors
+    primaryColor = '#3B82F6';
+    accentColor = '#1E40AF';
+    backgroundColor = '#FFFFFF';
+  }
 
   console.log('🎨 [Revo 2.0] Brand Colors Debug:', {
+    strictMode: isStrictMode,
     followBrandColors: shouldFollowBrandColors,
     inputPrimaryColor: brandProfile.primaryColor,
     inputAccentColor: brandProfile.accentColor,
@@ -1532,11 +1551,14 @@ export function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: a
     finalAccentColor: accentColor,
     finalBackgroundColor: backgroundColor,
     hasValidColors: !!(brandProfile.primaryColor && brandProfile.accentColor && brandProfile.backgroundColor),
-    usingBrandColors: shouldFollowBrandColors && !!(brandProfile.primaryColor && brandProfile.accentColor && brandProfile.backgroundColor)
+    usingBrandColors: shouldFollowBrandColors && !!(brandProfile.primaryColor && brandProfile.accentColor && brandProfile.backgroundColor),
+    strictModeActive: isStrictMode && !!(brandProfile.primaryColor && brandProfile.accentColor && brandProfile.backgroundColor)
   });
 
-  // Build color scheme instruction
-  const colorScheme = `Primary: ${primaryColor} (60% dominant), Accent: ${accentColor} (30% secondary), Background: ${backgroundColor} (10% highlights)`;
+  // Build color scheme instruction with strict mode enforcement
+  const colorScheme = isStrictMode && primaryColor && accentColor && backgroundColor
+    ? `🚨 STRICT MODE - EXACT COLORS ONLY: Primary: ${primaryColor} (60% dominant), Accent: ${accentColor} (30% secondary), Background: ${backgroundColor} (10% highlights) - USE THESE EXACT HEX CODES, NO VARIATIONS ALLOWED`
+    : `Primary: ${primaryColor || '#3B82F6'} (60% dominant), Accent: ${accentColor || '#1E40AF'} (30% secondary), Background: ${backgroundColor || '#FFFFFF'} (10% highlights)`;
 
   // Brand location info
   const brandInfo = brandProfile.location ? ` based in ${brandProfile.location}` : '';
@@ -1769,6 +1791,30 @@ Each design MUST be visually unique and avoid repetition:
 
 🚫 CRITICAL: ABSOLUTELY NO BUSY BACKGROUNDS, LINES, OR TECH ELEMENTS:
 
+❌ **ABSOLUTELY NO CIRCUIT BOARDS OR ELECTRONIC ELEMENTS:**
+- NO circuit boards, circuit lines, or electronic circuits of ANY kind
+- NO circuit board patterns, traces, or electronic pathways
+- NO microchip imagery, electronic components, or tech hardware
+- NO digital/electronic textures or circuit-inspired patterns
+- ZERO CIRCUIT ELEMENTS ALLOWED
+
+❌ **ABSOLUTELY NO LIGHT BEAMS OR GLOWING EFFECTS:**
+- NO light beams, laser beams, or glowing light rays
+- NO beam projections from phones, devices, or any source
+- NO glowing lines emanating from objects or people
+- NO light trails, light streaks, or luminous paths
+- NO holographic light projections or glowing overlays
+- NO neon light beams or fluorescent light effects
+- ZERO LIGHT BEAM ELEMENTS ALLOWED
+
+❌ **ABSOLUTELY NO FUTURISTIC/ROBOTIC ELEMENTS:**
+- NO digital tunnels, tech corridors, or futuristic hallways
+- NO robotic elements, mechanical parts, or artificial-looking tech
+- NO cyborg imagery, robot parts, or mechanical augmentations
+- NO sci-fi environments, space stations, or futuristic settings
+- NO matrix-style effects, digital rain, or code overlays
+- ZERO ROBOTIC OR SCI-FI ELEMENTS ALLOWED
+
 ❌ **ABSOLUTELY NO CIRCULAR PATTERNS (CRITICAL):**
 - NO concentric circles (radar style, target style, HUD style)
 - NO segmented circles (pie chart style, circular tech overlays)
@@ -1776,7 +1822,7 @@ Each design MUST be visually unique and avoid repetition:
 - NO circular geometric patterns of ANY kind
 - ZERO CIRCULAR PATTERNS ALLOWED
 
-❌ **ABSOLUTELY NO LINE PATTERNS:**
+❌ **ABSOLUTELY NO LINE PATTERNS OR CONNECTION LINES:**
 - NO curved digital circuit lines or wavy white/light lines across background
 - NO straight diagonal lines forming circuit board patterns
 - NO angular geometric line patterns or tech-style line overlays
@@ -1785,12 +1831,19 @@ Each design MUST be visually unique and avoid repetition:
 - NO decorative overlays, patterns, or "tech" aesthetic elements
 - NO connection lines, network lines, or flowing curved lines
 - NO abstract line patterns or geometric line overlays of ANY kind
+- NO lines connecting phones to floating icons or objects
+- NO lines connecting devices to UI elements or graphics
+- NO data transfer lines, connectivity lines, or network visualization lines
+- NO lines showing "connection" between any objects or people
+- ABSOLUTELY ZERO LINES OF ANY KIND - connection, network, or decorative
 
 ❌ **ABSOLUTELY NO TECH AESTHETIC:**
 - NO holographic floating UI elements, dashboards, or transparent screens
 - NO floating charts, graphs, or data visualization overlays
 - NO transparent/glass-effect tables, panels, or interface elements
 - NO futuristic tech overlays or digital interface mockups
+- NO wireframe overlays, geometric light patterns, or neon grids
+- NO binary numbers, data streams, or code visualizations
 
 ✅ **ONLY ALLOWED BACKGROUNDS:**
 - ONLY use clean, SOLID flat backgrounds or simple gradients
@@ -1809,10 +1862,13 @@ Each design MUST be visually unique and avoid repetition:
 🌟 NATURAL, AUTHENTIC IMAGERY REQUIREMENTS:
 - Show REAL people using technology naturally (no artificial tech effects)
 - Use CLEAN, simple backgrounds without digital overlays
-- Display phones/devices as normal objects (no glowing or connection lines)
+- Display phones/devices as normal objects (ABSOLUTELY NO glowing, NO connection lines, NO light beams)
 - Focus on HUMAN moments and authentic interactions
 - Avoid any artificial tech visualizations or digital effects
 - Keep technology integration SUBTLE and realistic
+- 🚨 CRITICAL: NO LINES connecting phones to anything - just show people holding phones naturally
+- 🚨 CRITICAL: NO floating icons with connection lines - if showing icons, they should be on phone screens only
+- 🚨 CRITICAL: NO network visualization, NO connectivity lines, NO data transfer visualization
 
 📱 REALISTIC PHONE POSITIONING (CRITICAL):
 - Phone screens must be visible from the VIEWER'S perspective, not from behind
@@ -1923,15 +1979,25 @@ DESIGN REQUIREMENTS:
 - Visual Theme: ${visualContext}
 ${concept.featuredServices && concept.featuredServices.length > 0 ? `- Featured Service: ${concept.featuredServices[0].serviceName} (TODAY'S FOCUS)` : ''}
 
-🎨 STRICT BRAND COLOR CONSISTENCY (MANDATORY):
+🎨 ${isStrictMode ? '🚨🚨🚨 ULTRA-STRICT BRAND COLOR ENFORCEMENT 🚨🚨🚨' : 'STRICT BRAND COLOR CONSISTENCY (MANDATORY)'}:
 ${colorScheme}
-- Use EXACT brand colors with NO variations or different shades
-- Primary color: ${primaryColor} (60% of color usage) - NO other reds/corals
-- Accent color: ${accentColor} (30% of color usage) - NO other secondary colors  
-- Background: ${backgroundColor} (10% of color usage) - NO other neutrals
+${isStrictMode ? `
+🚨 **STRICT MODE ACTIVE - ABSOLUTE COLOR ENFORCEMENT:**
+- You MUST use ONLY these EXACT hex codes: ${primaryColor}, ${accentColor}, ${backgroundColor}
+- ZERO tolerance for color variations - use the EXACT hex values provided
+- If the background color is ${backgroundColor}, use EXACTLY ${backgroundColor} - NOT #FFFFFF, NOT #F5F5F5, NOT any other shade
+- If the primary color is ${primaryColor}, use EXACTLY ${primaryColor} - NOT similar shades, NOT variations
+- If the accent color is ${accentColor}, use EXACTLY ${accentColor} - NOT close colors, NOT alternatives
+- DO NOT use any other colors - ONLY the 3 exact hex codes provided above
+- This is STRICT MODE - color precision is CRITICAL and will be verified
+- REJECT any design that uses colors other than the exact hex codes specified
+` : `- Use EXACT brand colors with NO variations or different shades
+- Primary color: ${primaryColor || '#3B82F6'} (60% of color usage) - NO other reds/corals
+- Accent color: ${accentColor || '#1E40AF'} (30% of color usage) - NO other secondary colors
+- Background: ${backgroundColor || '#FFFFFF'} (10% of color usage) - NO other neutrals
 - NEVER use similar but different shades (e.g., different reds, browns, beiges)
 - CONSISTENT color temperature across all designs for brand recognition
-- NO color variations that make the feed look uncoordinated
+- NO color variations that make the feed look uncoordinated`}
 
 REVO 2.0 ENHANCED FEATURES:
 🚀 Next-generation AI design with sophisticated visual storytelling
@@ -2033,7 +2099,7 @@ ${shouldFollowBrandColors ? `- MANDATORY: Use the specified brand colors (${prim
 ${currencyInstructions}
 ${options.includeContacts !== true ? '\n\n🚫 **CRITICAL: DO NOT INCLUDE CONTACT INFORMATION:**\n- DO NOT include phone numbers, email addresses, or website URLs in the design\n- DO NOT add contact details in footer or anywhere else\n- Contact toggle is OFF - no contact information should appear\n- Focus on the main message without contact details' : ''}
 
-Create a visually stunning design that stops scrolling and drives engagement while maintaining perfect brand consistency.${contactInstruction}${peopleInstructions}${culturalInstructions}`;
+Create a visually stunning design that stops scrolling and drives engagement while maintaining perfect brand consistency.${options.includeContacts === true ? contactInstruction : ''}${peopleInstructions}${culturalInstructions}`;
 }
 
 async function hydrateAnglesFromDb(brandKey: string, brandProfileId?: string, platform?: string): Promise<void> {
@@ -2322,12 +2388,26 @@ export async function generateCaptionAndHashtags(
       // Log coherence score for monitoring
       console.log(`📊 [Revo 2.0 Assistant] Coherence Score: ${coherenceValidation.coherenceScore}/100`);
 
+      // Enforce platform-specific hashtag limits for assistant response
+      const normalizedPlatform = String(platform).toLowerCase();
+      const maxHashtags = normalizedPlatform === 'instagram' ? 5 : 3;
+      let finalHashtags = assistantResponse.content.hashtags || [];
+
+      if (finalHashtags.length > maxHashtags) {
+        console.log(`📊 [generateCaptionAndHashtags] Trimming hashtags from ${finalHashtags.length} to ${maxHashtags} for ${platform}`);
+        finalHashtags = finalHashtags.slice(0, maxHashtags);
+      } else if (finalHashtags.length < maxHashtags) {
+        console.warn(`⚠️ [generateCaptionAndHashtags] Assistant returned ${finalHashtags.length} hashtags, expected ${maxHashtags} for ${platform}`);
+      }
+
+      console.log(`#️⃣ [generateCaptionAndHashtags] Final hashtag count: ${finalHashtags.length} for ${platform}`);
+
       return {
         headline: assistantResponse.content.headline,
         subheadline: assistantResponse.content.subheadline,
         caption: assistantResponse.content.caption,
         cta: assistantResponse.content.cta,
-        hashtags: assistantResponse.content.hashtags,
+        hashtags: finalHashtags,
       };
 
     } catch (error) {
@@ -2426,6 +2506,7 @@ export async function generateCaptionAndHashtags(
     // Build local language integration if enabled
     let localLanguageInstructions = '';
     if (options.useLocalLanguage && brandProfile.location) {
+      console.log(`🌍 [Revo 2.0 Claude Fallback] BILINGUAL MODE ACTIVE: 70% English, 30% ${brandProfile.location} local language`);
       localLanguageInstructions = `\n\n🌍 CRITICAL LOCAL LANGUAGE INTEGRATION FOR ${brandProfile.location.toUpperCase()}:
 - MANDATORY: Mix English (70%) with local language elements (30%)
 - NATURAL INTEGRATION: Don't force it - only add when it flows naturally
@@ -2446,6 +2527,8 @@ ${getLocationSpecificLanguageInstructions(brandProfile.location)}
 - ADAPTS TO: Kenya, Nigeria, Ghana, South Africa, India, Philippines, Indonesia, Thailand, Vietnam, Brazil, Mexico, Spain, France, Germany, and more
 
 ⚠️ CRITICAL: Local language should enhance, not confuse. Keep it natural and contextual.`;
+    } else {
+      console.log(`🌍 [Revo 2.0 Claude Fallback] English-only mode (local language toggle OFF)`);
     }
 
     // Get business-type specific strategy
@@ -3872,13 +3955,27 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
         brandProfile: enhancedOptions.brandProfile,
         platform: enhancedOptions.platform,
         aspectRatio: aspectRatio,
-        businessType: businessType.primaryType
+        businessType: businessType.primaryType,
+        includeContacts: enhancedOptions.includeContacts,
+        strictConsistency: enhancedOptions.strictConsistency // NEW: Pass strict mode toggle
       });
+
+      // Enforce platform-specific hashtag limits
+      const normalizedPlatform = String(enhancedOptions.platform).toLowerCase();
+      const maxHashtags = normalizedPlatform === 'instagram' ? 5 : 3;
+      let finalHashtags = assistantResponse.content.hashtags || [];
+
+      if (finalHashtags.length > maxHashtags) {
+        console.log(`📊 [Revo 2.0] Trimming hashtags from ${finalHashtags.length} to ${maxHashtags} for ${enhancedOptions.platform}`);
+        finalHashtags = finalHashtags.slice(0, maxHashtags);
+      } else if (finalHashtags.length < maxHashtags) {
+        console.warn(`⚠️ [Revo 2.0] Assistant returned ${finalHashtags.length} hashtags, expected ${maxHashtags} for ${enhancedOptions.platform}`);
+      }
 
       imagePrompt = integratedPrompt.imagePrompt;
       finalContent = {
         caption: assistantResponse.content.caption,
-        hashtags: assistantResponse.content.hashtags,
+        hashtags: finalHashtags,
         headline: assistantResponse.content.headline,
         subheadline: assistantResponse.content.subheadline,
         cta: assistantResponse.content.cta,
@@ -3886,11 +3983,30 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
       };
 
       console.log(`🎨 [Revo 2.0] Generated integrated image prompt (${imagePrompt.length} chars)`);
+      console.log(`#️⃣ [Revo 2.0] Final hashtag count: ${finalHashtags.length} for ${enhancedOptions.platform}`);
     } else {
       // Use traditional approach for Claude fallback
       imagePrompt = buildEnhancedPrompt(enhancedOptions, concept);
-      finalContent = assistantResponse;
+
+      // Enforce platform-specific hashtag limits for Claude fallback as well
+      const normalizedPlatform = String(enhancedOptions.platform).toLowerCase();
+      const maxHashtags = normalizedPlatform === 'instagram' ? 5 : 3;
+      let fallbackHashtags = assistantResponse.hashtags || [];
+
+      if (fallbackHashtags.length > maxHashtags) {
+        console.log(`📊 [Revo 2.0 Claude Fallback] Trimming hashtags from ${fallbackHashtags.length} to ${maxHashtags} for ${enhancedOptions.platform}`);
+        fallbackHashtags = fallbackHashtags.slice(0, maxHashtags);
+      } else if (fallbackHashtags.length < maxHashtags) {
+        console.warn(`⚠️ [Revo 2.0 Claude Fallback] Received ${fallbackHashtags.length} hashtags, expected ${maxHashtags} for ${enhancedOptions.platform}`);
+      }
+
+      finalContent = {
+        ...assistantResponse,
+        hashtags: fallbackHashtags
+      };
+
       console.log(`📝 [Revo 2.0] Using traditional prompt approach for fallback`);
+      console.log(`#️⃣ [Revo 2.0 Claude Fallback] Final hashtag count: ${fallbackHashtags.length} for ${enhancedOptions.platform}`);
     }
 
     // Step 6: Generate image with integrated prompt

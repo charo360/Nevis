@@ -28,6 +28,41 @@ export async function generateRevo2ContentAction(
   scheduledServices?: ScheduledService[] // NEW: Scheduled services parameter
 ): Promise<GeneratedPost> {
   try {
+    // ========================================
+    // BILINGUAL MODE STATUS (VISIBLE IN TERMINAL)
+    // ========================================
+    console.log('');
+    console.log('🌍 ========================================');
+    console.log('🌍 REVO 2.0 SERVER ACTION - BILINGUAL MODE CHECK');
+    console.log('🌍 ========================================');
+    console.log(`🌍 Platform: ${platform}`);
+    console.log(`🌍 Business Type: ${brandProfile.businessType}`);
+    console.log(`🌍 Brand Location: ${brandProfile.location || '⚠️ Not set'}`);
+    console.log(`🌍 Local Language Toggle: ${options?.useLocalLanguage ? '✅ ON' : '❌ OFF'}`);
+    console.log(`🌍 Include People: ${options?.includePeopleInDesigns ? '✅ ON' : '❌ OFF'}`);
+    console.log(`🌍 Include Contacts: ${brandConsistency?.includeContacts ? '✅ ON' : '❌ OFF'}`);
+
+    if (options?.useLocalLanguage && brandProfile.location) {
+      console.log('');
+      console.log('✅ ✅ ✅ BILINGUAL CONTENT GENERATION ACTIVE! ✅ ✅ ✅');
+      console.log(`📝 Content will be: 70% English + 30% ${brandProfile.location} local language`);
+      console.log(`🗣️ Expected local language elements for ${brandProfile.location}`);
+      console.log('');
+    } else if (options?.useLocalLanguage && !brandProfile.location) {
+      console.log('');
+      console.log('⚠️ ⚠️ ⚠️ WARNING: Local language toggle is ON but no location is set! ⚠️ ⚠️ ⚠️');
+      console.log('⚠️ Content will be generated in English only.');
+      console.log('⚠️ Please set a location in your brand profile to enable bilingual content.');
+      console.log('');
+    } else {
+      console.log('');
+      console.log('📝 English-only mode (local language toggle is OFF)');
+      console.log('📝 Content will be 100% English');
+      console.log('');
+    }
+    console.log('🌍 ========================================');
+    console.log('');
+
     // 🔄 FETCH FRESH BRAND PROFILE DATA FROM DATABASE
     // This ensures we always use the latest colors and data, not cached frontend data
     let freshBrandProfile: BrandProfile = brandProfile;
@@ -99,6 +134,7 @@ export async function generateRevo2ContentAction(
       useLocalLanguage: options?.useLocalLanguage || false,
       includeContacts: !!brandConsistency?.includeContacts,
       followBrandColors: brandConsistency?.followBrandColors !== false, // Default to true
+      strictConsistency: !!brandConsistency?.strictConsistency, // NEW: Pass strict mode toggle
       scheduledServices: scheduledServices // NEW: Pass scheduled services to Revo 2.0
     };
 

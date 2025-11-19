@@ -85,15 +85,27 @@ export async function generateWithRevo20Optimized(options: Revo20GenerationOptio
         // Skip complex validation for speed - basic check only
         if (assistantResponse.content.headline && assistantResponse.content.caption) {
           console.log(`✅ [Revo 2.0 OPTIMIZED] Assistant content generated successfully`);
-          
+
+          // Enforce platform-specific hashtag limits
+          const normalizedPlatform = String(enhancedOptions.platform).toLowerCase();
+          const maxHashtags = normalizedPlatform === 'instagram' ? 5 : 3;
+          let finalHashtags = assistantResponse.content.hashtags || [];
+
+          if (finalHashtags.length > maxHashtags) {
+            console.log(`📊 [Revo 2.0 OPTIMIZED] Trimming hashtags from ${finalHashtags.length} to ${maxHashtags} for ${enhancedOptions.platform}`);
+            finalHashtags = finalHashtags.slice(0, maxHashtags);
+          }
+
           finalContent = {
             caption: assistantResponse.content.caption,
-            hashtags: assistantResponse.content.hashtags,
+            hashtags: finalHashtags,
             headline: assistantResponse.content.headline,
             subheadline: assistantResponse.content.subheadline,
             cta: assistantResponse.content.cta,
             captionVariations: [assistantResponse.content.caption]
           };
+
+          console.log(`#️⃣ [Revo 2.0 OPTIMIZED] Final hashtag count: ${finalHashtags.length} for ${enhancedOptions.platform}`);
         } else {
           throw new Error('Invalid assistant response structure');
         }
@@ -121,7 +133,9 @@ export async function generateWithRevo20Optimized(options: Revo20GenerationOptio
         brandProfile: enhancedOptions.brandProfile,
         platform: enhancedOptions.platform,
         aspectRatio: aspectRatio,
-        businessType: businessType.primaryType
+        businessType: businessType.primaryType,
+        includeContacts: enhancedOptions.includeContacts,
+        strictConsistency: enhancedOptions.strictConsistency // NEW: Pass strict mode toggle
       });
       imagePrompt = integratedPrompt.imagePrompt;
     } else {
@@ -262,13 +276,26 @@ async function generateImageWithGeminiOptimized(prompt: string, options: Revo20G
  * Optimized prompt building (much shorter)
  */
 function buildEnhancedPromptOptimized(options: Revo20GenerationOptions, concept: any): string {
-  const { businessType, brandProfile, platform } = options;
-  
-  return `Create a professional ${platform} image for ${brandProfile.businessName}, a ${businessType} business in ${brandProfile.location || 'the market'}. 
+  const { businessType, brandProfile, platform, strictConsistency } = options;
+
+  // Handle strict mode colors
+  const isStrictMode = strictConsistency === true;
+  const primaryColor = brandProfile.primaryColor;
+  const accentColor = brandProfile.accentColor;
+  const backgroundColor = brandProfile.backgroundColor;
+
+  let colorInstructions = '';
+  if (isStrictMode && primaryColor && accentColor && backgroundColor) {
+    colorInstructions = `\n\n🚨 STRICT MODE - EXACT COLOR ENFORCEMENT:\n- Primary: ${primaryColor} (60%) - USE THIS EXACT HEX ONLY\n- Accent: ${accentColor} (30%) - USE THIS EXACT HEX ONLY\n- Background: ${backgroundColor} (10%) - USE THIS EXACT HEX ONLY\n- ZERO tolerance for variations - use ONLY these 3 exact hex codes`;
+  } else if (primaryColor || accentColor || backgroundColor) {
+    colorInstructions = `\n\nBrand Colors:\n- Primary: ${primaryColor || 'default'}\n- Accent: ${accentColor || 'default'}\n- Background: ${backgroundColor || 'default'}`;
+  }
+
+  return `Create a professional ${platform} image for ${brandProfile.businessName}, a ${businessType} business in ${brandProfile.location || 'the market'}.
 
 Visual concept: ${concept.concept}
 Style: ${concept.visualTheme || 'modern and professional'}
-Mood: ${concept.emotionalTone || 'confident and trustworthy'}
+Mood: ${concept.emotionalTone || 'confident and trustworthy'}${colorInstructions}
 
 Requirements:
 - Clean, professional design
@@ -276,6 +303,23 @@ Requirements:
 - Brand-appropriate colors
 - High-quality, realistic imagery
 - Platform-optimized aspect ratio
+
+🚫 FORBIDDEN ELEMENTS (DO NOT INCLUDE):
+- NO circuit boards, circuit lines, or electronic circuits
+- NO light beams, laser beams, or glowing light rays
+- NO connection lines between phones and icons/objects
+- NO lines connecting devices to floating elements
+- NO network lines, data transfer lines, or connectivity visualizations
+- NO lines of any kind connecting objects or people
+- NO digital tunnels, tech corridors, or futuristic hallways
+- NO robotic elements or mechanical parts
+- NO holographic projections or floating digital screens
+- NO matrix-style code, binary numbers, or data streams
+- NO neon grids, wireframe overlays, or geometric light patterns
+- ABSOLUTELY NO LINES - no connection lines, no network lines, no data lines
+
+✅ INSTEAD: Use natural, realistic, human-centered scenes with clean, modern designs.
+✅ INSTEAD: If showing phones, just show people holding phones naturally - NO LINES!
 
 Focus on showcasing the business professionally without overly complex visual effects.`;
 }

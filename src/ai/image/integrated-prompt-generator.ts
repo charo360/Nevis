@@ -13,6 +13,8 @@ export interface IntegratedPromptRequest {
   platform: string;
   aspectRatio: string;
   businessType: string;
+  includeContacts?: boolean; // Whether to include contact information in the design
+  strictConsistency?: boolean; // NEW: Whether to enforce EXACT brand colors with NO fallbacks
 }
 
 export interface IntegratedPromptResult {
@@ -42,12 +44,14 @@ export class IntegratedPromptGenerator {
    * Generate integrated image prompt with content and design specifications
    */
   generateIntegratedPrompt(request: IntegratedPromptRequest): IntegratedPromptResult {
-    const { assistantResponse, brandProfile, platform, aspectRatio, businessType } = request;
+    const { assistantResponse, brandProfile, platform, aspectRatio, businessType, includeContacts = true, strictConsistency = false } = request;
     const { content, design_specifications } = assistantResponse;
 
     console.log(`🎨 [Integrated Prompt Generator] Creating unified prompt for ${brandProfile.businessName}`);
     console.log(`📱 [Platform]: ${platform}, Aspect: ${aspectRatio}`);
     console.log(`🎯 [Hero Element]: ${design_specifications.hero_element}`);
+    console.log(`📞 [Include Contacts]: ${includeContacts}`);
+    console.log(`🚨 [Strict Mode]: ${strictConsistency}`);
 
     // Build the integrated image prompt
     const imagePrompt = this.buildUnifiedImagePrompt(
@@ -56,7 +60,9 @@ export class IntegratedPromptGenerator {
       brandProfile,
       platform,
       aspectRatio,
-      businessType
+      businessType,
+      includeContacts,
+      strictConsistency
     );
 
     // Extract content structure for text overlay
@@ -72,7 +78,8 @@ export class IntegratedPromptGenerator {
       design_specifications,
       brandProfile,
       platform,
-      businessType
+      businessType,
+      includeContacts
     );
 
     // Generate alignment notes
@@ -101,7 +108,9 @@ export class IntegratedPromptGenerator {
     brandProfile: any,
     platform: string,
     aspectRatio: string,
-    businessType: string
+    businessType: string,
+    includeContacts: boolean = true,
+    strictConsistency: boolean = false
   ): string {
     let prompt = `Create a professional ${platform} social media design for ${brandProfile.businessName}:\n\n`;
 
@@ -138,15 +147,29 @@ export class IntegratedPromptGenerator {
     const secondaryColor = brandProfile.brandColors?.secondary || brandProfile.accentColor;
     const backgroundColor = brandProfile.brandColors?.background || brandProfile.backgroundColor;
 
-    if (primaryColor) {
-      prompt += `- Primary Color: ${primaryColor} (60% usage - main brand color)\n`;
+    // STRICT MODE: Enforce exact colors with NO fallbacks
+    if (strictConsistency && primaryColor && secondaryColor && backgroundColor) {
+      prompt += `\n🚨🚨🚨 STRICT MODE - EXACT COLOR ENFORCEMENT 🚨🚨🚨\n`;
+      prompt += `- Primary Color: ${primaryColor} (60% usage) - USE THIS EXACT HEX CODE ONLY\n`;
+      prompt += `- Secondary Color: ${secondaryColor} (30% usage) - USE THIS EXACT HEX CODE ONLY\n`;
+      prompt += `- Background Color: ${backgroundColor} (10% usage) - USE THIS EXACT HEX CODE ONLY\n`;
+      prompt += `- ZERO tolerance for color variations - use ONLY these 3 exact hex codes\n`;
+      prompt += `- DO NOT use similar shades, DO NOT use variations, DO NOT use alternatives\n`;
+      prompt += `- If background is ${backgroundColor}, use EXACTLY ${backgroundColor} - NOT #FFFFFF, NOT #F5F5F5\n`;
+      prompt += `- This is STRICT MODE - color precision is CRITICAL and will be verified\n\n`;
+    } else {
+      // NORMAL MODE: Use colors with fallbacks
+      if (primaryColor) {
+        prompt += `- Primary Color: ${primaryColor} (60% usage - main brand color)\n`;
+      }
+      if (secondaryColor) {
+        prompt += `- Secondary Color: ${secondaryColor} (30% usage - accent color)\n`;
+      }
+      if (backgroundColor) {
+        prompt += `- Background Color: ${backgroundColor} (10% usage - background/neutral)\n`;
+      }
     }
-    if (secondaryColor) {
-      prompt += `- Secondary Color: ${secondaryColor} (30% usage - accent color)\n`;
-    }
-    if (backgroundColor) {
-      prompt += `- Background Color: ${backgroundColor} (10% usage - background/neutral)\n`;
-    }
+
     if (brandProfile.designStyle) {
       prompt += `- Brand Style: ${brandProfile.designStyle}\n`;
     }
@@ -161,16 +184,45 @@ export class IntegratedPromptGenerator {
     prompt += `5. Overall mood must match content tone\n`;
     prompt += `6. All text must be clearly readable and well-contrasted\n\n`;
 
+    // FORBIDDEN VISUAL ELEMENTS
+    prompt += `🚫 **FORBIDDEN VISUAL ELEMENTS - DO NOT INCLUDE:**\n`;
+    prompt += `❌ NO circuit boards, circuit lines, or electronic circuits\n`;
+    prompt += `❌ NO light beams, laser beams, or glowing light rays\n`;
+    prompt += `❌ NO connection lines between phones and icons/objects\n`;
+    prompt += `❌ NO lines connecting devices to floating elements\n`;
+    prompt += `❌ NO network lines, data transfer lines, or connectivity visualizations\n`;
+    prompt += `❌ NO lines of any kind connecting objects or people\n`;
+    prompt += `❌ NO digital tunnels, tech corridors, or futuristic hallways\n`;
+    prompt += `❌ NO holographic projections or floating digital screens\n`;
+    prompt += `❌ NO robotic elements, mechanical parts, or artificial-looking tech\n`;
+    prompt += `❌ NO matrix-style code, binary numbers, or data streams\n`;
+    prompt += `❌ NO neon grids, wireframe overlays, or geometric light patterns\n`;
+    prompt += `❌ NO floating icons with connection lines to devices\n`;
+    prompt += `❌ ABSOLUTELY NO LINES - no connection lines, no network lines, no data lines\n`;
+    prompt += `✅ INSTEAD: Use natural, realistic, human-centered scenes\n`;
+    prompt += `✅ INSTEAD: Show real people in authentic environments\n`;
+    prompt += `✅ INSTEAD: Use clean, modern designs without artificial tech elements\n`;
+    prompt += `✅ INSTEAD: If showing phones, just show people holding phones naturally - NO LINES!\n\n`;
+
     // TECHNICAL REQUIREMENTS
     prompt += `**TECHNICAL REQUIREMENTS:**\n`;
     prompt += `- Platform: ${platform} optimized\n`;
     prompt += `- Text Hierarchy: Clear size differences (Headline > Subheadline > Caption > CTA)\n`;
     prompt += `- Readability: High contrast, legible fonts, minimum 14px equivalent\n`;
     prompt += `- Professional Quality: Clean, modern, trustworthy appearance\n`;
-    prompt += `- Contact Info: Include phone, email, website at bottom in contrasting footer\n\n`;
 
-    // CONTACT INFORMATION
-    prompt += this.buildContactSection(brandProfile);
+    // Only add contact info instruction if contacts toggle is ON
+    if (includeContacts) {
+      prompt += `- Contact Info: Include phone, email, website at bottom in contrasting footer\n\n`;
+      // CONTACT INFORMATION
+      prompt += this.buildContactSection(brandProfile);
+    } else {
+      prompt += `\n🚫 **CRITICAL: DO NOT INCLUDE CONTACT INFORMATION:**\n`;
+      prompt += `- DO NOT include phone numbers, email addresses, or website URLs in the design\n`;
+      prompt += `- DO NOT add contact details in footer or anywhere else\n`;
+      prompt += `- Contact toggle is OFF - no contact information should appear\n`;
+      prompt += `- Focus on the main message without contact details\n\n`;
+    }
 
     // BUSINESS-SPECIFIC GUIDELINES
     prompt += this.getBusinessSpecificGuidelines(businessType, brandProfile);
@@ -185,13 +237,14 @@ export class IntegratedPromptGenerator {
     designSpecs: DesignSpecifications,
     brandProfile: any,
     platform: string,
-    businessType: string
+    businessType: string,
+    includeContacts: boolean = true
   ): IntegratedPromptResult['designInstructions'] {
     return {
       layout: `${designSpecs.text_placement} with ${this.getLayoutStyle(platform, businessType)}`,
       colors: designSpecs.color_scheme,
       typography: `Headline (largest) > Subheadline > Caption > CTA hierarchy`,
-      contact: this.buildContactInstructions(brandProfile),
+      contact: includeContacts ? this.buildContactInstructions(brandProfile) : 'No contact information',
     };
   }
 

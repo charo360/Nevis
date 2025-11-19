@@ -26,6 +26,41 @@ export async function POST(request: NextRequest) {
       scheduledServices // NEW: Extract scheduled services from request
     } = body;
 
+    // ========================================
+    // BILINGUAL MODE STATUS (VISIBLE IN TERMINAL)
+    // ========================================
+    console.log('');
+    console.log('🌍 ========================================');
+    console.log('🌍 REVO 2.0 API - BILINGUAL MODE CHECK');
+    console.log('🌍 ========================================');
+    console.log(`🌍 Platform: ${platform}`);
+    console.log(`🌍 Business Type: ${businessType}`);
+    console.log(`🌍 Brand Location: ${brandProfile.location || '⚠️ Not set'}`);
+    console.log(`🌍 Local Language Toggle: ${useLocalLanguage ? '✅ ON' : '❌ OFF'}`);
+    console.log(`🌍 Include People: ${includePeopleInDesigns ? '✅ ON' : '❌ OFF'}`);
+    console.log(`🌍 Include Contacts: ${includeContacts ? '✅ ON' : '❌ OFF'}`);
+
+    if (useLocalLanguage && brandProfile.location) {
+      console.log('');
+      console.log('✅ ✅ ✅ BILINGUAL CONTENT GENERATION ACTIVE! ✅ ✅ ✅');
+      console.log(`📝 Content will be: 70% English + 30% ${brandProfile.location} local language`);
+      console.log(`🗣️ Expected local language elements for ${brandProfile.location}`);
+      console.log('');
+    } else if (useLocalLanguage && !brandProfile.location) {
+      console.log('');
+      console.log('⚠️ ⚠️ ⚠️ WARNING: Local language toggle is ON but no location is set! ⚠️ ⚠️ ⚠️');
+      console.log('⚠️ Content will be generated in English only.');
+      console.log('⚠️ Please set a location in your brand profile to enable bilingual content.');
+      console.log('');
+    } else {
+      console.log('');
+      console.log('📝 English-only mode (local language toggle is OFF)');
+      console.log('📝 Content will be 100% English');
+      console.log('');
+    }
+    console.log('🌍 ========================================');
+    console.log('');
+
     // Validate required fields
     if (!businessType || !platform || !brandProfile) {
       return NextResponse.json({

@@ -317,15 +317,27 @@ Format as JSON:
       }
 
       const parsed = JSON.parse(cleanContent);
-      
+
       // Quick validation - just check required fields exist
       if (!parsed.headline || !parsed.caption || !parsed.hashtags) {
         throw new Error('Missing required fields');
       }
 
+      // Enforce platform-specific hashtag limits
+      const normalizedPlatform = String(options.platform).toLowerCase();
+      const maxHashtags = normalizedPlatform === 'instagram' ? 5 : 3;
+      let hashtags = Array.isArray(parsed.hashtags) ? parsed.hashtags : [];
+
+      if (hashtags.length > maxHashtags) {
+        console.log(`📊 [Performance Optimizer] Trimming hashtags from ${hashtags.length} to ${maxHashtags} for ${options.platform}`);
+        hashtags = hashtags.slice(0, maxHashtags);
+      }
+
+      console.log(`#️⃣ [Performance Optimizer] Final hashtag count: ${hashtags.length} for ${options.platform}`);
+
       return {
         caption: parsed.caption,
-        hashtags: Array.isArray(parsed.hashtags) ? parsed.hashtags : [],
+        hashtags: hashtags,
         headline: parsed.headline,
         subheadline: parsed.subheadline || '',
         cta: parsed.cta || 'Learn More',
@@ -333,11 +345,15 @@ Format as JSON:
       };
     } catch (error) {
       console.warn(`⚠️ [Performance] Quick parse failed, using fallback`);
-      
-      // Ultra-fast fallback
+
+      // Ultra-fast fallback with platform-specific hashtag limits
+      const normalizedPlatform = String(options.platform).toLowerCase();
+      const maxHashtags = normalizedPlatform === 'instagram' ? 5 : 3;
+      const fallbackHashtags = [`#${options.brandProfile.businessName.replace(/\s+/g, '')}`, `#${options.businessType.replace(/\s+/g, '')}`, '#Quality'];
+
       return {
         caption: `Discover quality services at ${options.brandProfile.businessName}. ${options.brandProfile.location ? `Serving ${options.brandProfile.location}` : 'Serving you'} with excellence.`,
-        hashtags: [`#${options.brandProfile.businessName.replace(/\s+/g, '')}`, `#${options.businessType.replace(/\s+/g, '')}`, '#Quality'],
+        hashtags: fallbackHashtags.slice(0, maxHashtags),
         headline: options.brandProfile.businessName,
         subheadline: `Quality ${options.businessType} services`,
         cta: 'Learn More',
