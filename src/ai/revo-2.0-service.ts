@@ -2031,6 +2031,7 @@ ${shouldFollowBrandColors ? `- MANDATORY: Use the specified brand colors (${prim
 
 💰 CURRENCY REQUIREMENTS (MANDATORY):
 ${currencyInstructions}
+${options.includeContacts !== true ? '\n\n🚫 **CRITICAL: DO NOT INCLUDE CONTACT INFORMATION:**\n- DO NOT include phone numbers, email addresses, or website URLs in the design\n- DO NOT add contact details in footer or anywhere else\n- Contact toggle is OFF - no contact information should appear\n- Focus on the main message without contact details' : ''}
 
 Create a visually stunning design that stops scrolling and drives engagement while maintaining perfect brand consistency.${contactInstruction}${peopleInstructions}${culturalInstructions}`;
 }
