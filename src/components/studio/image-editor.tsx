@@ -358,44 +358,74 @@ export function ImageEditor({ imageUrl, onClose, brandProfile, onImageUpdated }:
         }
     };
 
-    // Download current edited image
+    // Download current edited image in full HD quality
     const handleDownload = async () => {
         try {
             const imageUrl = currentImageUrl;
 
-            // Check if it's a data URL
-            if (imageUrl.startsWith('data:')) {
-                // Direct download for data URLs
-                const link = document.createElement('a');
-                link.href = imageUrl;
-                link.download = `creative-studio-${projectId}-${Date.now()}.png`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+            // Create a temporary canvas to render the image at full resolution
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
 
-                toast({
-                    title: "Image Downloaded!",
-                    description: "Your edited image has been saved.",
-                });
-            } else {
-                // Fetch and download for HTTP URLs
-                const response = await fetch(imageUrl);
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `creative-studio-${projectId}-${Date.now()}.png`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                window.URL.revokeObjectURL(url);
-
-                toast({
-                    title: "Image Downloaded!",
-                    description: "Your edited image has been saved.",
-                });
+            if (!tempCtx) {
+                throw new Error('Could not create canvas context');
             }
+
+            // Load the image at full resolution
+            const img = new window.Image();
+            img.crossOrigin = "anonymous";
+
+            await new Promise<void>((resolve, reject) => {
+                img.onload = () => {
+                    // Set canvas to original image dimensions (full HD)
+                    tempCanvas.width = img.naturalWidth || img.width;
+                    tempCanvas.height = img.naturalHeight || img.height;
+
+                    console.log(`📥 Downloading image at full resolution: ${tempCanvas.width}x${tempCanvas.height}px`);
+
+                    // Draw image at full resolution with high quality
+                    tempCtx.imageSmoothingEnabled = true;
+                    tempCtx.imageSmoothingQuality = 'high';
+                    tempCtx.drawImage(img, 0, 0, tempCanvas.width, tempCanvas.height);
+
+                    resolve();
+                };
+                img.onerror = () => reject(new Error('Failed to load image'));
+                img.src = imageUrl;
+            });
+
+            // Convert to high-quality PNG blob
+            const blob = await new Promise<Blob>((resolve, reject) => {
+                tempCanvas.toBlob(
+                    (blob) => {
+                        if (blob) {
+                            resolve(blob);
+                        } else {
+                            reject(new Error('Failed to create blob'));
+                        }
+                    },
+                    'image/png',
+                    1.0 // Maximum quality
+                );
+            });
+
+            // Download the blob
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `creative-studio-${projectId}-${Date.now()}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
+            // Calculate file size for user feedback
+            const fileSizeMB = (blob.size / (1024 * 1024)).toFixed(2);
+
+            toast({
+                title: "HD Image Downloaded!",
+                description: `Full resolution ${tempCanvas.width}x${tempCanvas.height}px (${fileSizeMB}MB)`,
+            });
         } catch (error) {
             console.error('Download failed:', error);
             toast({
