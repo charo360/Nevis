@@ -371,6 +371,11 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   const handleDownload = React.useCallback(async () => {
     const activeVariant = safeVariants.find(v => v.platform === activeTab);
 
+    console.log('📥 Download initiated for platform:', activeTab);
+    console.log('🔍 Active variant image URL:', activeVariant?.imageUrl?.substring(0, 100) + '...');
+    console.log('📋 Edited image URLs:', Object.keys(editedImageUrls));
+    console.log('🎯 Using edited URL for', activeTab, ':', editedImageUrls[activeTab] ? 'YES' : 'NO');
+
     // First try to download the original HD image directly if URL is valid
     if (activeVariant?.imageUrl && isValidUrl(activeVariant.imageUrl)) {
       try {
@@ -496,7 +501,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
         description: `Could not download the image. Please try again. Error: ${(err as Error).message}`,
       });
     }
-  }, [post.id, activeTab, toast]);
+  }, [post.id, activeTab, toast, safeVariants, editedImageUrls]);
 
 
   const handleSaveChanges = async () => {
@@ -715,6 +720,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
                           }}
                         >
                           <Image
+                            key={variant.imageUrl} // Force re-render when URL changes
                             alt={`Generated post image for ${variant.platform}`}
                             className={cn('h-full w-full object-cover transition-opacity', (isRegenerating || isGeneratingVideo) ? 'opacity-50' : 'opacity-100')}
                             height={dimensions.height}
@@ -791,6 +797,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
                             }}
                           >
                             <Image
+                              key={variant.imageUrl} // Force re-render when URL changes
                               alt={`Generated post image for ${variant.platform}`}
                               className={cn('h-full w-full object-cover transition-opacity', (isRegenerating || isGeneratingVideo) ? 'opacity-50' : 'opacity-100')}
                               height={dimensions.height}
@@ -956,11 +963,18 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
               onClose={() => setShowImageEditor(false)}
               brandProfile={brandProfile}
               onImageUpdated={(newImageUrl) => {
+                console.log('🎨 Image updated for platform:', activeTab);
+                console.log('🖼️ New image URL:', newImageUrl.substring(0, 100) + '...');
+
                 // Update local state immediately for the active platform
-                setEditedImageUrls(prev => ({
-                  ...prev,
-                  [activeTab]: newImageUrl
-                }));
+                setEditedImageUrls(prev => {
+                  const updated = {
+                    ...prev,
+                    [activeTab]: newImageUrl
+                  };
+                  console.log('✅ Updated editedImageUrls:', Object.keys(updated));
+                  return updated;
+                });
 
                 // Update the post with the new image URL
                 const updatedPost = {
