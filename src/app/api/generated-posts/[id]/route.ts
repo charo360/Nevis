@@ -1,11 +1,24 @@
 // API routes for individual generated post management - using Supabase
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
+import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
+
+// Server-side Supabase client using service role for storage operations
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+);
 
 // Helper function to upload data URL to Supabase Storage
 async function uploadDataUrlToSupabase(dataUrl: string, userId: string, fileName: string): Promise<{ success: boolean; url?: string; error?: string }> {
   try {
-    const supabase = await createClient();
 
     // Convert data URL to buffer
     const base64Data = dataUrl.split(',')[1];
@@ -18,7 +31,7 @@ async function uploadDataUrlToSupabase(dataUrl: string, userId: string, fileName
     // Upload to Supabase Storage
     const uploadPath = `public/${fileName}`;
 
-    const { data, error } = await supabase.storage
+    const { data, error } = await supabaseAdmin.storage
       .from('nevis-storage')
       .upload(uploadPath, buffer, {
         contentType: 'image/png',
@@ -32,7 +45,7 @@ async function uploadDataUrlToSupabase(dataUrl: string, userId: string, fileName
     }
 
     // Get public URL
-    const { data: { publicUrl } } = supabase.storage
+    const { data: { publicUrl } } = supabaseAdmin.storage
       .from('nevis-storage')
       .getPublicUrl(uploadPath);
 
@@ -55,8 +68,22 @@ export async function PUT(
 
     console.log('📝 [UpdatePost] Updating post:', id);
 
-    // Get Supabase client
-    const supabase = await createClient();
+    // Get Supabase client with user session
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll();
+          },
+          setAll() {
+            // API routes can't modify cookies
+          },
+        },
+      }
+    );
 
     // Get current user
     const { data: { session } } = await supabase.auth.getSession();
