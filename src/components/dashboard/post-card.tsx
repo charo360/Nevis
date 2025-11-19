@@ -133,7 +133,10 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   const [showImagePreview, setShowImagePreview] = React.useState(false);
   const [previewImageUrl, setPreviewImageUrl] = React.useState<string>('');
   const [showImageEditor, setShowImageEditor] = React.useState(false);
-  
+
+  // Track edited image URLs per platform to ensure downloads use the latest version
+  const [editedImageUrls, setEditedImageUrls] = React.useState<Record<Platform, string>>({});
+
   // Posting state
   const [isPosting, setIsPosting] = React.useState(false);
   const [postingStatus, setPostingStatus] = React.useState<Record<string, 'idle' | 'posting' | 'success' | 'error'>>({});
@@ -141,7 +144,7 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   const [selectedPlatforms, setSelectedPlatforms] = React.useState<string[]>([]);
   const [scheduledTime, setScheduledTime] = React.useState<string>('');
   const [postingMode, setPostingMode] = React.useState<'manual' | 'schedule'>('manual');
-  
+
   // Dropdown state
   const [dropdownOpen, setDropdownOpen] = React.useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
@@ -150,10 +153,16 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
   const [performancePrediction, setPerformancePrediction] = React.useState<PerformancePrediction | null>(null);
   const [isPredictionLoading, setIsPredictionLoading] = React.useState(true);
   // Ensure variants array exists and has at least one item
-  const safeVariants = post.variants && post.variants.length > 0 ? post.variants : [{
+  const baseVariants = post.variants && post.variants.length > 0 ? post.variants : [{
     platform: (post.platform || 'instagram') as Platform,
     imageUrl: post.imageUrl || ''
   }];
+
+  // Merge edited image URLs with base variants to ensure downloads use latest version
+  const safeVariants = baseVariants.map(variant => ({
+    ...variant,
+    imageUrl: editedImageUrls[variant.platform] || variant.imageUrl
+  }));
 
   const [activeTab, setActiveTab] = React.useState<Platform>(safeVariants[0]?.platform || 'instagram');
   const downloadRefs = React.useRef<Record<Platform, HTMLDivElement | null>>({} as Record<Platform, HTMLDivElement | null>);
@@ -175,6 +184,11 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
     }
   }, [post.date]);
   const { toast } = useToast();
+
+  // Reset edited image URLs when post ID changes (new post loaded)
+  React.useEffect(() => {
+    setEditedImageUrls({} as Record<Platform, string>);
+  }, [post.id]);
 
   // Load performance prediction only once on mount (static analysis)
   React.useEffect(() => {
@@ -942,25 +956,31 @@ export function PostCard({ post, brandProfile, onPostUpdated }: PostCardProps) {
               onClose={() => setShowImageEditor(false)}
               brandProfile={brandProfile}
               onImageUpdated={(newImageUrl) => {
+                // Update local state immediately for the active platform
+                setEditedImageUrls(prev => ({
+                  ...prev,
+                  [activeTab]: newImageUrl
+                }));
+
                 // Update the post with the new image URL
                 const updatedPost = {
                   ...post,
                   imageUrl: newImageUrl,
                   status: 'edited' as const
                 };
-                
+
                 // If it's a multi-variant post, update the active variant
                 if (post.variants && post.variants.length > 0) {
-                  updatedPost.variants = post.variants.map(variant => 
-                    variant.platform === activeTab 
+                  updatedPost.variants = post.variants.map(variant =>
+                    variant.platform === activeTab
                       ? { ...variant, imageUrl: newImageUrl }
                       : variant
                   );
                 }
-                
+
                 onPostUpdated(updatedPost);
                 setShowImageEditor(false);
-                
+
                 toast({
                   title: "Image Updated!",
                   description: "Your image has been successfully edited.",
