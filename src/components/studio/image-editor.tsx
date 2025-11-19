@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from 'react';
-import { X, Wand, Brush, Eraser, Undo, Redo, Loader2, RectangleHorizontal, Lightbulb } from 'lucide-react';
+import { X, Wand, Brush, Eraser, Undo, Redo, Loader2, RectangleHorizontal, Lightbulb, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
@@ -14,6 +14,7 @@ import { useCredits } from '@/hooks/use-credits';
 import type { BrandProfile } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { SmartEditSuggestions } from './smart-edit-suggestions';
+import { useCreativeStudioStorage } from '@/hooks/use-feature-storage';
 
 
 interface ImageEditorProps {
@@ -27,13 +28,14 @@ export function ImageEditor({ imageUrl, onClose, brandProfile, onImageUpdated }:
     const imageCanvasRef = useRef<HTMLCanvasElement>(null);
     const drawingCanvasRef = useRef<HTMLCanvasElement>(null);
     const { useCreditsForImageEdit } = useCredits();
+    const creativeStudioStorage = useCreativeStudioStorage();
 
     const [isDrawing, setIsDrawing] = useState(false);
     const [brushSize, setBrushSize] = useState(40);
     const [tool, setTool] = useState<'brush' | 'eraser' | 'rect'>('brush');
     const [prompt, setPrompt] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    
+
     // History for drawing actions (masking)
     const [drawHistory, setDrawHistory] = useState<ImageData[]>([]);
     const [drawHistoryIndex, setDrawHistoryIndex] = useState(-1);
@@ -41,9 +43,14 @@ export function ImageEditor({ imageUrl, onClose, brandProfile, onImageUpdated }:
     // History for generated images
     const [imageHistory, setImageHistory] = useState<string[]>([imageUrl]);
     const [imageHistoryIndex, setImageHistoryIndex] = useState(0);
+    const [editPrompts, setEditPrompts] = useState<string[]>(['']); // Track prompts for each edit
+
+    // Project persistence
+    const [projectId] = useState<string>(() => `project_${Date.now()}`);
+    const [projectCreatedAt] = useState<number>(Date.now());
 
     const { toast } = useToast();
-    
+
     const [rectStart, setRectStart] = useState<{x: number, y: number} | null>(null);
     const [showSuggestions, setShowSuggestions] = useState(false);
 
@@ -325,14 +332,20 @@ export function ImageEditor({ imageUrl, onClose, brandProfile, onImageUpdated }:
             if (result.success && result.editedImage) {
                 const newHistory = imageHistory.slice(0, imageHistoryIndex + 1);
                 newHistory.push(result.editedImage.url);
+
+                // Track the prompt for this edit
+                const newPrompts = editPrompts.slice(0, imageHistoryIndex + 1);
+                newPrompts.push(prompt);
+
                 setImageHistory(newHistory);
                 setImageHistoryIndex(newHistory.length - 1);
-                
+                setEditPrompts(newPrompts);
+
                 // Call the callback to update the parent component
                 if (onImageUpdated) {
                     onImageUpdated(result.editedImage.url);
                 }
-                
+
                 toast({ title: "Image Updated!", description: "Edit applied successfully" });
             } else {
                 toast({ variant: 'destructive', title: "Edit Failed", description: result.error || 'The AI did not return an image.' });
@@ -344,6 +357,140 @@ export function ImageEditor({ imageUrl, onClose, brandProfile, onImageUpdated }:
             setPrompt("");
         }
     };
+
+    // Download current edited image
+    const handleDownload = async () => {
+        try {
+            const imageUrl = currentImageUrl;
+
+            // Check if it's a data URL
+            if (imageUrl.startsWith('data:')) {
+                // Direct download for data URLs
+                const link = document.createElement('a');
+                link.href = imageUrl;
+                link.download = `creative-studio-${projectId}-${Date.now()}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                toast({
+                    title: "Image Downloaded!",
+                    description: "Your edited image has been saved.",
+                });
+            } else {
+                // Fetch and download for HTTP URLs
+                const response = await fetch(imageUrl);
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `creative-studio-${projectId}-${Date.now()}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+
+                toast({
+                    title: "Image Downloaded!",
+                    description: "Your edited image has been saved.",
+                });
+            }
+        } catch (error) {
+            console.error('Download failed:', error);
+            toast({
+                variant: 'destructive',
+                title: "Download Failed",
+                description: "Could not download the image. Please try again.",
+            });
+        }
+    };
+
+    // Save project to localStorage
+    const saveProject = React.useCallback(() => {
+        if (!creativeStudioStorage) return;
+
+        try {
+            const project = {
+                id: projectId,
+                originalImageUrl: imageUrl,
+                editHistory: imageHistory.map((url, index) => ({
+                    imageUrl: url,
+                    prompt: editPrompts[index] || '',
+                    timestamp: Date.now(),
+                    editType: 'ai' as const
+                })),
+                currentIndex: imageHistoryIndex,
+                createdAt: projectCreatedAt,
+                updatedAt: Date.now(),
+                metadata: {
+                    brandId: brandProfile?.businessName || 'default',
+                    projectName: `Project ${new Date(projectCreatedAt).toLocaleDateString()}`
+                }
+            };
+
+            // Save to localStorage using the storage service
+            const loadedProjects = creativeStudioStorage.loadProjects();
+            const projects = Array.isArray(loadedProjects) ? loadedProjects : [];
+            const existingIndex = projects.findIndex((p: any) => p.id === projectId);
+
+            if (existingIndex >= 0) {
+                projects[existingIndex] = project;
+            } else {
+                projects.push(project);
+            }
+
+            creativeStudioStorage.saveProjects(projects);
+            console.log('✅ Project saved:', projectId);
+        } catch (error) {
+            console.error('❌ Failed to save project:', error);
+        }
+    }, [imageHistory, imageHistoryIndex, editPrompts, projectId, projectCreatedAt, imageUrl, brandProfile, creativeStudioStorage]);
+
+    // Auto-save project when edit history changes
+    React.useEffect(() => {
+        // Debounce save to avoid too many writes
+        const timeoutId = setTimeout(() => {
+            saveProject();
+        }, 1000);
+
+        return () => clearTimeout(timeoutId);
+    }, [imageHistory, saveProject]);
+
+    // Load project from localStorage on mount
+    React.useEffect(() => {
+        if (!creativeStudioStorage) return;
+
+        try {
+            const loadedProjects = creativeStudioStorage.loadProjects();
+            const projects = Array.isArray(loadedProjects) ? loadedProjects : [];
+
+            // Find the most recent project with the same original image
+            const existingProject = projects
+                .filter((p: any) => p.originalImageUrl === imageUrl)
+                .sort((a: any, b: any) => b.updatedAt - a.updatedAt)[0];
+
+            if (existingProject && existingProject.editHistory.length > 1) {
+                // Ask user if they want to restore
+                const shouldRestore = window.confirm(
+                    `Found a previous editing session with ${existingProject.editHistory.length - 1} edits. Would you like to restore it?`
+                );
+
+                if (shouldRestore) {
+                    setImageHistory(existingProject.editHistory.map((e: any) => e.imageUrl));
+                    setImageHistoryIndex(existingProject.currentIndex);
+                    setEditPrompts(existingProject.editHistory.map((e: any) => e.prompt));
+
+                    toast({
+                        title: "Project Restored!",
+                        description: `Loaded ${existingProject.editHistory.length - 1} previous edits.`,
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('❌ Failed to load project:', error);
+        }
+    }, [imageUrl, creativeStudioStorage, toast]);
 
     const handleSuggestionClick = (suggestion: string) => {
         setPrompt(suggestion);
@@ -418,8 +565,19 @@ export function ImageEditor({ imageUrl, onClose, brandProfile, onImageUpdated }:
                         {isLoading ? <Loader2 className="mr-2 animate-spin"/> : <Wand className="mr-2" />}
                         Generate
                     </Button>
+
+                    {/* Download Button */}
+                    <Button
+                        onClick={handleDownload}
+                        variant="outline"
+                        className="w-full"
+                        disabled={isLoading}
+                    >
+                        <Download className="mr-2 h-4 w-4" />
+                        Download Current Version
+                    </Button>
                 </div>
-                
+
                 {/* Smart Edit Suggestions Panel */}
                 {showSuggestions && (
                     <div className="mt-4">
