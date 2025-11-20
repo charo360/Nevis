@@ -109,7 +109,7 @@ export class EnhancedWebsiteExtractor {
   private client: Anthropic;
   private model: string;
 
-  constructor(apiKey: string, model: string = 'claude-3-5-sonnet-20241022') {
+  constructor(apiKey: string, model: string = 'claude-haiku-4-5-20251001') {
     this.client = new Anthropic({ apiKey });
     this.model = model;
   }

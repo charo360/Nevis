@@ -122,7 +122,7 @@ interface WebsiteAnalysis {
 
 export class UniversalWebsiteExtractor {
   private apiKey: string;
-  private model = 'claude-3-5-sonnet-20241022';
+  private model = 'claude-haiku-4-5-20251001';
 
   constructor(apiKey: string) {
     this.apiKey = apiKey;
