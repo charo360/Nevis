@@ -9,6 +9,12 @@ const nextConfig = {
     GOOGLE_PROJECT_ID: process.env.GOOGLE_PROJECT_ID || 'eco-theater-478004-b9',
     GOOGLE_LOCATION: process.env.GOOGLE_LOCATION || 'us-central1',
   },
+  // Increase API route body size limit to handle large image uploads
+  api: {
+    bodyParser: {
+      sizeLimit: '50mb', // Increased from default 1mb to 50mb for image uploads
+    },
+  },
   typescript: {
     // Temporarily ignore TypeScript errors during development
     ignoreBuildErrors: true,

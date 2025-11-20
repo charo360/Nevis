@@ -7,6 +7,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI, Part, Modality } from '@google/genai';
 import { BrandProfile } from '@/lib/types';
 
+// Increase body size limit for this route to handle large image uploads
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '50mb',
+    },
+  },
+};
+
 // Image asset interface
 interface ImageAsset {
   id: string;
