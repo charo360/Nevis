@@ -13,24 +13,34 @@ Website analysis using Claude stopped working on both **local** and **live** (pr
 
 ## 🔍 Root Causes Identified
 
-### **Issue #1: Invalid Claude Model Name**
+### **Issue #1: Deprecated Claude Model**
 
 **Location:** `src/app/api/analyze-website-claude/route.ts` (line 303)
 
 **Problem:**
 ```typescript
-model: 'claude-sonnet-4-20250514'  // ❌ INVALID MODEL NAME
+model: 'claude-sonnet-4-20250514'  // ❌ INVALID MODEL NAME (doesn't exist)
+// Later changed to:
+model: 'claude-3-5-sonnet-20241022'  // ❌ DEPRECATED MODEL (returns 404)
 ```
 
 **Why it failed:**
-- This model name doesn't exist in Anthropic's API
-- The correct format is `claude-3-5-sonnet-20241022` (with dashes and correct date)
-- API was returning 404 or model not found errors
+- Original model name `claude-sonnet-4-20250514` doesn't exist in Anthropic's API
+- Updated to `claude-3-5-sonnet-20241022` but this model is **DEPRECATED**
+- Claude 3.5 Sonnet reached end-of-life on October 22, 2025
+- API returns 404 "model not found" errors for deprecated models
 
 **Fix:**
 ```typescript
-model: 'claude-3-5-sonnet-20241022'  // ✅ VALID MODEL NAME
+model: 'claude-haiku-4-5-20251001'  // ✅ LATEST WORKING MODEL (Claude 4.5 Haiku)
 ```
+
+**Why Claude 4.5 Haiku:**
+- Latest Claude 4 model (released October 2025)
+- Fast and efficient
+- Won't be deprecated anytime soon
+- Tested and confirmed working
+- Better performance than Claude 3 models
 
 ---
 
@@ -62,20 +72,23 @@ Added `NEXT_PUBLIC_APP_URL=https://crevo.app` to:
 
 ## ✅ Fixes Applied
 
-### **1. Fixed Claude Model Name**
+### **1. Updated to Claude 4.5 Haiku**
 
 **File:** `src/app/api/analyze-website-claude/route.ts`
 
 **Change:**
 ```diff
-- model: 'claude-sonnet-4-20250514',
-+ model: 'claude-3-5-sonnet-20241022',
+- model: 'claude-sonnet-4-20250514',  // Invalid
+- model: 'claude-3-5-sonnet-20241022',  // Deprecated
++ model: 'claude-haiku-4-5-20251001',  // Latest working model
 ```
 
 **Impact:**
 - Claude API will now accept the model name
 - Website analysis will successfully call Claude
-- No more "model not found" errors
+- No more "model not found" or deprecation errors
+- Faster responses with Claude 4.5 Haiku
+- Future-proof (won't be deprecated soon)
 
 ---
 
