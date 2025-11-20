@@ -61,8 +61,8 @@ Trusted by 10,000+ businesses worldwide. Rated 4.9/5 on G2. Get started free tod
   manifest: '/manifest.json',
   icons: {
     icon: [
-      { url: '/favicon.ico', sizes: 'any' },
-      { url: '/favicon.svg', type: 'image/svg+xml' }
+      { url: 'https://i.imgur.com/ExFP5l5.png', sizes: '32x32', type: 'image/png' },
+      { url: 'https://i.imgur.com/ExFP5l5.png', sizes: '16x16', type: 'image/png' }
     ],
     apple: 'https://i.imgur.com/ExFP5l5.png' // Using Crevo logo from Imgur
   },
