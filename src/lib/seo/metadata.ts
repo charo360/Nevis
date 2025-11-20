@@ -10,7 +10,7 @@ export const siteConfig = {
   title: 'Crevo - AI-Powered Social Media Content Creation Platform',
   description: 'Transform your ideas into professional social media content with AI. Generate stunning posts, designs, and campaigns that engage your audience and grow your brand. Free AI content generator for Instagram, Facebook, LinkedIn, and Twitter.',
   url: process.env.NEXT_PUBLIC_SITE_URL || 'https://crevo.app',
-  ogImage: 'https://i.imgur.com/ExFP5l5.png', // Using Crevo logo from Imgur
+  ogImage: 'https://i.imgur.com/dkMlN6t.png', // Custom 1200x630 OG image
   keywords: [
     'AI content generator',
     'social media content creator',
