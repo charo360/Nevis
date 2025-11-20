@@ -6,11 +6,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
+  console.log('🎯 [analyze-website-claude] POST endpoint called');
+  
   try {
-    const { url, websiteUrl, analysisType = 'products' } = await request.json();
+    const body = await request.json();
+    console.log('📦 [analyze-website-claude] Request body:', body);
+    
+    const { url, websiteUrl, analysisType = 'products' } = body;
     
     const targetUrl = url || websiteUrl;
+    console.log('🌐 [analyze-website-claude] Target URL:', targetUrl);
+    console.log('📊 [analyze-website-claude] Analysis type:', analysisType);
+    
     if (!targetUrl) {
+      console.error('❌ [analyze-website-claude] No URL provided');
       return NextResponse.json(
         { error: 'URL is required' },
         { status: 400 }
@@ -27,8 +36,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
+    // Support multiple Claude API keys for fallback/rotation
+    const apiKeys = [
+      process.env.ANTHROPIC_API_KEY,
+      process.env.ANTHROPIC_API_KEY_2,
+      process.env.ANTHROPIC_API_KEY_3,
+    ].filter(Boolean); // Remove undefined/null keys
+    
+    if (apiKeys.length === 0) {
+      console.error('❌ No ANTHROPIC_API_KEY found in environment variables');
       return NextResponse.json(
         { error: 'Anthropic API key not configured' },
         { status: 500 }
@@ -37,6 +53,7 @@ export async function POST(request: NextRequest) {
 
     console.log(`🔍 Starting Claude analysis for: ${targetUrl}`);
     console.log(`📊 Analysis type: ${analysisType}`);
+    console.log(`🔑 Available API Keys: ${apiKeys.length}`);
 
     // Step 1: Fetch website content
     const websiteResponse = await fetch(targetUrl, {
@@ -291,33 +308,110 @@ EXAMPLE of what to extract:
 
 JSON Response:`;
 
-    // Step 4: Call Claude API
-    const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001', // Claude 4.5 Haiku - Fast, modern, won't be deprecated soon
-        max_tokens: 3000, // Balanced for comprehensive extraction without timeout
-        messages: [
-          {
-            role: 'user',
-            content: prompt
+    // Step 4: Call Claude API with multiple key fallback
+    let claudeResponse;
+    let lastError;
+    
+    // Try each API key
+    for (let keyIndex = 0; keyIndex < apiKeys.length; keyIndex++) {
+      const currentKey = apiKeys[keyIndex] as string; // Type assertion - we filtered out undefined
+      console.log(`🔑 Trying API key ${keyIndex + 1}/${apiKeys.length}...`);
+      
+      // Try with retry logic for overload errors
+      let retryCount = 0;
+      const maxRetries = 2; // 2 retries per key
+      
+      while (retryCount <= maxRetries) {
+        try {
+          claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': currentKey,
+              'anthropic-version': '2023-06-01'
+            },
+            body: JSON.stringify({
+              model: 'claude-haiku-4-5-20251001',
+              max_tokens: 4096, // Increased to handle longer responses
+              temperature: 0.7,
+              messages: [
+                {
+                  role: 'user',
+                  content: prompt
+                }
+              ]
+            })
+          });
+          
+          // If successful, we're done!
+          if (claudeResponse.ok) {
+            console.log(`✅ Success with API key ${keyIndex + 1}`);
+            break;
           }
-        ]
-      })
-    });
+          
+          // If overloaded and retries left, wait and retry with same key
+          if (claudeResponse.status === 529 && retryCount < maxRetries) {
+            const waitTime = Math.pow(2, retryCount) * 500; // 500ms, 1s
+            console.log(`⏳ Key ${keyIndex + 1} overloaded, retrying in ${waitTime}ms (attempt ${retryCount + 1}/${maxRetries})...`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            retryCount++;
+            continue;
+          }
+          
+          // Non-retryable error or max retries reached
+          lastError = { status: claudeResponse.status, response: claudeResponse };
+          console.log(`❌ Key ${keyIndex + 1} failed with status ${claudeResponse.status}`);
+          break; // Try next key
+          
+        } catch (error) {
+          lastError = error;
+          console.log(`❌ Key ${keyIndex + 1} threw error:`, error.message);
+          break; // Try next key
+        }
+      }
+      
+      // If we got a successful response, stop trying other keys
+      if (claudeResponse?.ok) {
+        break;
+      }
+    }
 
-    if (!claudeResponse.ok) {
-      const errorText = await claudeResponse.text();
-      console.error('Claude API Error:', errorText);
-      return NextResponse.json(
-        { error: 'Claude API failed', details: errorText },
-        { status: 500 }
-      );
+    // Check if we got a successful response
+    if (!claudeResponse || !claudeResponse.ok) {
+      console.error('❌ All Claude API keys failed');
+      
+      if (claudeResponse) {
+        const errorText = await claudeResponse.text();
+        console.error('   Status:', claudeResponse.status, claudeResponse.statusText);
+        console.error('   Response:', errorText);
+        
+        let errorDetails = errorText;
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorDetails = errorJson.error?.message || errorJson.message || errorText;
+        } catch {
+          // Keep as text
+        }
+        
+        return NextResponse.json(
+          { 
+            success: false,
+            error: `Claude API failed: ${errorDetails}`,
+            details: errorText,
+            status: claudeResponse.status
+          },
+          { status: 500 }
+        );
+      } else {
+        return NextResponse.json(
+          { 
+            success: false,
+            error: 'All Claude API keys failed or are overloaded',
+            details: lastError
+          },
+          { status: 500 }
+        );
+      }
     }
 
     const claudeResult = await claudeResponse.json();

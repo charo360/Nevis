@@ -32,23 +32,24 @@ interface AIEditRequest {
   editType: 'ai';
 }
 
-// AI edit function using Google Gemini with proper image editing approach
+// AI edit function using Google Gemini with proper image editing approach and fallback support
 const editImageWithAI = async (originalImage: ImageAsset, prompt: string, mask: ImageAsset | null): Promise<ImageAsset> => {
-  // Use dedicated API key for image editing to avoid confusion with other Gemini usage
-  const apiKey = process.env.GEMINI_IMAGE_EDIT_API_KEY || 
-                 process.env.GOOGLE_AI_API_KEY || 
-                 process.env.GOOGLE_API_KEY || 
-                 process.env.GEMINI_API_KEY || 
-                 process.env.GOOGLE_GENAI_API_KEY;
-  
-  // API key loaded successfully
+  // Support multiple Gemini API keys for fallback/rotation
+  const apiKeys = [
+    process.env.GEMINI_IMAGE_EDIT_API_KEY,
+    process.env.GEMINI_IMAGE_EDIT_API_KEY_2,
+    process.env.GEMINI_IMAGE_EDIT_API_KEY_3,
+    process.env.GOOGLE_AI_API_KEY,
+    process.env.GOOGLE_API_KEY,
+    process.env.GEMINI_API_KEY,
+    process.env.GOOGLE_GENAI_API_KEY
+  ].filter(Boolean); // Remove undefined/null keys
 
-  if (!apiKey) {
+  if (apiKeys.length === 0) {
     throw new Error('Gemini image editing API key not configured. Please set GEMINI_IMAGE_EDIT_API_KEY (dedicated) or one of: GOOGLE_AI_API_KEY, GOOGLE_API_KEY, GEMINI_API_KEY, GOOGLE_GENAI_API_KEY');
   }
 
-  // Use the exact same SDK and initialization as your working app
-  const ai = new GoogleGenAI({ apiKey });
+  console.log(`🔑 [Gemini Image Edit] Available API Keys: ${apiKeys.length}`);
 
   console.log('🎨 [Gemini Image Edit] Starting edit with:', {
     prompt: prompt.substring(0, 100),
@@ -57,12 +58,26 @@ const editImageWithAI = async (originalImage: ImageAsset, prompt: string, mask: 
     model: 'gemini-2.5-flash-image'
   });
 
-  // Use the exact format from your working app
-  const parts: Part[] = [
-    { inlineData: { data: originalImage.base64, mimeType: originalImage.mimeType } },
-  ];
-  
-  let finalPrompt = prompt;
+  // Try each API key with retry logic
+  let lastError: any;
+
+  for (let keyIndex = 0; keyIndex < apiKeys.length; keyIndex++) {
+    const currentKey = apiKeys[keyIndex] as string;
+    console.log(`🔑 [Gemini Image Edit] Trying API key ${keyIndex + 1}/${apiKeys.length}...`);
+
+    // Retry logic for rate limits
+    const maxRetries = 2;
+    for (let retryCount = 0; retryCount <= maxRetries; retryCount++) {
+      try {
+        // Initialize Gemini client with current key
+        const ai = new GoogleGenAI({ apiKey: currentKey });
+
+        // Use the exact format from your working app
+        const parts: Part[] = [
+          { inlineData: { data: originalImage.base64, mimeType: originalImage.mimeType } },
+        ];
+
+        let finalPrompt = prompt;
 
   // First, analyze the image content to understand its structure
   const contentAnalysisPrompt = `ANALYZE this image and identify its content structure. Look for:
@@ -276,37 +291,64 @@ Return the edited image with only the requested intelligent modification.`;
     }
   }
   
-  parts.push({ text: finalPrompt });
+        parts.push({ text: finalPrompt });
 
-  console.log('🔧 [Debug] Parts being sent:', parts.map(p => ({
-    type: p.text ? 'text' : 'image',
-    textPreview: p.text?.substring(0, 50),
-    hasImageData: !!p.inlineData
-  })));
+        console.log('🔧 [Debug] Parts being sent:', parts.map(p => ({
+          type: p.text ? 'text' : 'image',
+          textPreview: p.text?.substring(0, 50),
+          hasImageData: !!p.inlineData
+        })));
 
-  // Use the exact API call structure from your working app
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash-image',
-    contents: { parts },
-    config: {
-      responseModalities: [Modality.IMAGE],
-    },
-  });
+        // Use the exact API call structure from your working app
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash-image',
+          contents: { parts },
+          config: {
+            responseModalities: [Modality.IMAGE],
+          },
+        });
 
-  if (response.candidates?.[0]?.content?.parts) {
-    for (const part of response.candidates[0].content.parts) {
-      if (part.inlineData && part.inlineData.mimeType?.startsWith('image/') && part.inlineData.data) {
-        const base64 = part.inlineData.data;
-        const mimeType = part.inlineData.mimeType;
-        const url = `data:${mimeType};base64,${base64}`;
-        return { ...originalImage, base64, url, id: `edit_${originalImage.id}` };
+        if (response.candidates?.[0]?.content?.parts) {
+          for (const part of response.candidates[0].content.parts) {
+            if (part.inlineData && part.inlineData.mimeType?.startsWith('image/') && part.inlineData.data) {
+              const base64 = part.inlineData.data;
+              const mimeType = part.inlineData.mimeType;
+              const url = `data:${mimeType};base64,${base64}`;
+              console.log(`✅ [Gemini Image Edit] Success with API key ${keyIndex + 1}`);
+              return { ...originalImage, base64, url, id: `edit_${originalImage.id}` };
+            }
+          }
+        }
+
+        // If no image was returned, throw error to try next key
+        throw new Error('No image data returned from Gemini');
+
+      } catch (error: any) {
+        lastError = error;
+        const errorMessage = error?.message || String(error);
+
+        // Check if it's a rate limit error (429) or quota error
+        const isRateLimitError = errorMessage.includes('429') ||
+                                 errorMessage.includes('quota') ||
+                                 errorMessage.includes('rate limit');
+
+        if (isRateLimitError && retryCount < maxRetries) {
+          const waitTime = Math.pow(2, retryCount) * 1000; // 1s, 2s
+          console.log(`⏳ [Gemini Image Edit] Key ${keyIndex + 1} rate limited, retrying in ${waitTime}ms (attempt ${retryCount + 1}/${maxRetries})...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          continue; // Retry with same key
+        }
+
+        // Non-retryable error or max retries reached
+        console.log(`❌ [Gemini Image Edit] Key ${keyIndex + 1} failed:`, errorMessage);
+        break; // Try next key
       }
     }
   }
-  
-  // If no image was returned
-  console.warn('⚠️ Gemini 2.5 Flash Image did not return an edited image.');
-  throw new Error('Image editing failed. No image was returned from Gemini 2.5 Flash Image model.');
+
+  // If all keys failed, throw the last error
+  console.error('❌ [Gemini Image Edit] All API keys failed');
+  throw new Error(`Gemini image editing failed after trying ${apiKeys.length} API key(s): ${lastError?.message || 'Unknown error'}`);
 };
 
 export async function POST(request: NextRequest) {
