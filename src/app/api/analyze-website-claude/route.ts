@@ -75,9 +75,34 @@ export async function POST(request: NextRequest) {
     const html = await websiteResponse.text();
     console.log(`📄 Website HTML length: ${html.length}`);
 
-    // Step 2: Extract basic content using simple parsing
+    // Step 2: Extract content with enhanced metadata extraction for SPAs
     const title = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1] || 'No title';
-    const metaDescription = html.match(/<meta[^>]*name="description"[^>]*content="([^"]+)"/i)?.[1] || '';
+    
+    // Extract ALL meta tags (description, og:description, twitter:description, keywords)
+    const metaDescription = 
+      html.match(/<meta[^>]*property="og:description"[^>]*content="([^"]+)"/i)?.[1] ||
+      html.match(/<meta[^>]*name="description"[^>]*content="([^"]+)"/i)?.[1] ||
+      html.match(/<meta[^>]*name="twitter:description"[^>]*content="([^"]+)"/i)?.[1] ||
+      '';
+    
+    const metaKeywords = html.match(/<meta[^>]*name="keywords"[^>]*content="([^"]+)"/i)?.[1] || '';
+    
+    // Extract Open Graph data
+    const ogTitle = html.match(/<meta[^>]*property="og:title"[^>]*content="([^"]+)"/i)?.[1] || '';
+    const ogType = html.match(/<meta[^>]*property="og:type"[^>]*content="([^"]+)"/i)?.[1] || '';
+    
+    // Extract JSON-LD structured data (common in Next.js apps)
+    const jsonLdMatches = html.match(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi) || [];
+    let structuredData = '';
+    jsonLdMatches.forEach(match => {
+      const jsonContent = match.replace(/<script[^>]*type="application\/ld\+json"[^>]*>/, '').replace(/<\/script>/, '');
+      try {
+        const parsed = JSON.parse(jsonContent);
+        structuredData += JSON.stringify(parsed, null, 2) + '\n\n';
+      } catch (e) {
+        // Invalid JSON, skip
+      }
+    });
     
     // Extract navigation items
     const navMatches = html.match(/<nav[^>]*>[\s\S]*?<\/nav>/gi) || [];
@@ -90,9 +115,13 @@ export async function POST(request: NextRequest) {
       .replace(/<[^>]+>/g, ' ')
       .replace(/\s+/g, ' ')
       .trim()
-      .substring(0, 10000); // Increased limit to capture many more products
+      .substring(0, 10000);
 
-    console.log(`📝 Extracted - Title: ${title}, Nav: ${navText.length} chars, Body: ${bodyText.length} chars`);
+    console.log(`📝 Extracted - Title: ${title}`);
+    console.log(`📝 Meta Description: ${metaDescription.substring(0, 200)}...`);
+    console.log(`📝 Keywords: ${metaKeywords.substring(0, 100)}`);
+    console.log(`📝 Structured Data: ${structuredData.length} chars`);
+    console.log(`📝 Nav: ${navText.length} chars, Body: ${bodyText.length} chars`);
 
     // Step 3: Build analysis prompt based on type
     let dataStructure;
@@ -279,8 +308,18 @@ VISUAL STYLE & WRITING TONE (keep brief):
 Website: ${targetUrl}
 Title: ${title}
 Meta Description: ${metaDescription}
+${metaKeywords ? `Keywords: ${metaKeywords}` : ''}
+${ogTitle ? `Open Graph Title: ${ogTitle}` : ''}
+${structuredData ? `Structured Data (JSON-LD):\n${structuredData}` : ''}
 Navigation: ${navText}
 Content: ${bodyText}
+
+IMPORTANT: This website may be a Single Page Application (SPA) with client-side rendering. 
+If the body content is minimal or empty, rely heavily on:
+1. Meta Description - often contains comprehensive business information
+2. Structured Data (JSON-LD) - contains detailed schema.org data
+3. Keywords - indicates business focus areas
+4. Open Graph tags - social media descriptions
 
 ${analysisInstructions}
 
