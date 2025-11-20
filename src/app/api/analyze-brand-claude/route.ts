@@ -5,11 +5,20 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
+// Increase timeout for Claude analysis (60 seconds)
+export const maxDuration = 60; // Maximum execution time in seconds
+
 export async function POST(request: NextRequest) {
+  console.log('🎯 [analyze-brand-claude] POST endpoint called');
+  
   try {
-    const { websiteUrl, businessType, includeCompetitorAnalysis = false } = await request.json();
+    const body = await request.json();
+    console.log('📦 [analyze-brand-claude] Request body:', body);
+    
+    const { websiteUrl, businessType, includeCompetitorAnalysis = false } = body;
 
     if (!websiteUrl) {
+      console.error('❌ [analyze-brand-claude] No websiteUrl provided');
       return NextResponse.json(
         { error: 'Website URL is required' },
         { status: 400 }
@@ -37,8 +46,16 @@ export async function POST(request: NextRequest) {
     console.log(`🔍 Starting Claude brand analysis for: ${websiteUrl}`);
     console.log(`🏢 Business type: ${businessType || 'auto-detect'}`);
 
-    // Use the simple, working Claude analysis approach with environment-aware URL
-    const analysisResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3001'}/api/analyze-website-claude`, {
+    // In development, always use localhost to avoid calling production
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    const baseUrl = isDevelopment 
+      ? 'http://localhost:3001' 
+      : (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3001');
+    
+    const apiUrl = `${baseUrl}/api/analyze-website-claude`;
+    console.log('📡 Calling website analysis API:', apiUrl);
+
+    const analysisResponse = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -50,8 +67,21 @@ export async function POST(request: NextRequest) {
     });
 
     if (!analysisResponse.ok) {
-      const errorData = await analysisResponse.json();
-      throw new Error(errorData.error || 'Analysis failed');
+      const errorText = await analysisResponse.text();
+      console.error('❌ analyze-website-claude failed:', {
+        status: analysisResponse.status,
+        statusText: analysisResponse.statusText,
+        body: errorText
+      });
+      
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch {
+        errorData = { error: errorText };
+      }
+      
+      throw new Error(errorData.error || `Analysis failed with status ${analysisResponse.status}`);
     }
 
     const analysisResult = await analysisResponse.json();
@@ -232,9 +262,11 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Claude brand analysis error:', error);
+    console.error('❌ [analyze-brand-claude] Caught error:', error);
+    console.error('❌ [analyze-brand-claude] Error stack:', error instanceof Error ? error.stack : 'No stack');
     
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('❌ [analyze-brand-claude] Error message:', errorMessage);
     
     // Handle specific error types
     if (errorMessage.includes('Failed to extract')) {

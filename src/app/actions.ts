@@ -122,7 +122,19 @@ export async function analyzeBrandAction(
       // Use Claude analysis as PRIMARY method (Enhanced with actual product extraction)
       console.log('🤖 Using Claude-enhanced website analysis...');
       
-      const analysisResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3001'}/api/analyze-brand-claude`, {
+      // In development, always use localhost to avoid calling production
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      const baseUrl = isDevelopment 
+        ? 'http://localhost:3001' 
+        : (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3001');
+      
+      const apiUrl = `${baseUrl}/api/analyze-brand-claude`;
+      console.log('📡 Calling API:', apiUrl);
+      console.log('📦 Request body:', { websiteUrl: normalizedUrl, businessType: 'auto-detect' });
+
+      // Add timeout for Claude API call (60 seconds to handle complex websites)
+      // This prevents the first analysis from timing out for new users
+      const analysisResponse = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -131,11 +143,23 @@ export async function analyzeBrandAction(
           websiteUrl: normalizedUrl,
           businessType: 'auto-detect',
           includeCompetitorAnalysis: false
-        })
+        }),
+        signal: AbortSignal.timeout(60000) // 60 second timeout for Claude analysis
       });
 
+      console.log('📊 Response status:', analysisResponse.status, analysisResponse.statusText);
+
       if (!analysisResponse.ok) {
-        const errorData = await analysisResponse.json();
+        const errorText = await analysisResponse.text();
+        console.error('❌ API Error Response:', errorText);
+        
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText };
+        }
+        
         throw new Error(errorData.error || 'Claude analysis failed');
       }
 
@@ -167,6 +191,17 @@ export async function analyzeBrandAction(
       };
 
     } catch (aiError) {
+      // Check if it's a timeout error
+      const errorMessage = aiError instanceof Error ? aiError.message : String(aiError);
+      if (errorMessage.includes('aborted') || errorMessage.includes('timeout')) {
+        console.error('⏱️ Analysis timed out after 60 seconds');
+        return {
+          success: false,
+          error: "Website analysis is taking longer than expected. This might be a complex website. Please try again or contact support if the issue persists.",
+          errorType: 'timeout'
+        };
+      }
+
       console.warn('⚠️ AI analysis failed, falling back to simple scraper:', aiError);
 
       // FALLBACK: Use simple scraper only if AI fails

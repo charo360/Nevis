@@ -5,6 +5,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
+// Increase timeout for Claude analysis (60 seconds)
+export const maxDuration = 60; // Maximum execution time in seconds
+
 export async function POST(request: NextRequest) {
   console.log('🎯 [analyze-website-claude] POST endpoint called');
   
