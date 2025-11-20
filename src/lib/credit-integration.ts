@@ -389,9 +389,9 @@ export async function deductCreditsForImageEdit(
       };
     }
 
-    // Record usage in credit_usage table
+    // Record usage in credit_usage_history table
     const { data: usageData, error: usageError } = await supabase
-      .from('credit_usage')
+      .from('credit_usage_history')
       .insert({
         user_id: userId,
         credits_used: EDIT_CREDIT_COST,
