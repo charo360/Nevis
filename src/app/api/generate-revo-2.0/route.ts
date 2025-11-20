@@ -122,17 +122,37 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('❌ Revo 2.0 API Error:', error);
 
-    // Show actual error for debugging
+    // Enhanced error logging for debugging
     let errorMessage = 'Revo 2.0 Enhanced generation failed';
+    let errorDetails = {};
+    
     if (error instanceof Error) {
-      errorMessage = `Debug Error: ${error.message}`;
+      errorMessage = error.message;
+      errorDetails = {
+        name: error.name,
+        message: error.message,
+        stack: error.stack?.split('\n').slice(0, 5).join('\n'), // First 5 lines of stack
+      };
       console.error('❌ Full error stack:', error.stack);
+      console.error('❌ Error name:', error.name);
+      console.error('❌ Error message:', error.message);
+    }
+
+    // Check for specific error types
+    if (errorMessage.includes('Vertex AI')) {
+      console.error('🔴 VERTEX AI ERROR - Check credentials and quota');
+    } else if (errorMessage.includes('Supabase')) {
+      console.error('🔴 SUPABASE ERROR - Check database connection');
+    } else if (errorMessage.includes('timeout')) {
+      console.error('🔴 TIMEOUT ERROR - Request took too long');
     }
 
     return NextResponse.json({
       success: false,
       error: errorMessage,
-      message: 'Revo 2.0 Enhanced generation failed'
+      errorDetails: errorDetails,
+      message: 'Revo 2.0 Enhanced generation failed',
+      timestamp: new Date().toISOString()
     }, { status: 500 });
   }
 }
