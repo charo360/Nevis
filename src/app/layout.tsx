@@ -19,7 +19,7 @@ export const metadata: Metadata = {
       { url: '/favicon.ico', sizes: 'any' },
       { url: '/favicon.svg', type: 'image/svg+xml' }
     ],
-    apple: '/apple-touch-icon.png'
+    apple: 'https://i.imgur.com/ExFP5l5.png' // Using Crevo logo from Imgur
   },
   appleWebApp: {
     capable: true,
