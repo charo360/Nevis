@@ -111,47 +111,38 @@ export async function POST(request: NextRequest) {
         console.log('🌐 [Strategy 2] Trying CORS proxy...');
         const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
         const proxyResponse = await fetch(proxyUrl, {
-          signal: AbortSignal.timeout(10000)
+          signal: AbortSignal.timeout(15000) // Give proxy more time
         });
 
         if (proxyResponse.ok) {
           html = await proxyResponse.text();
-          console.log(`✅ CORS proxy successful (${html.length} bytes)`);
-          fetchSuccess = true;
-          fetchMethod = 'cors-proxy';
+
+          // Validate we got actual HTML, not an error page
+          if (html && html.length > 100 && (html.includes('<html') || html.includes('<!DOCTYPE'))) {
+            console.log(`✅ CORS proxy successful (${html.length} bytes)`);
+            fetchSuccess = true;
+            fetchMethod = 'cors-proxy';
+          } else {
+            console.warn(`⚠️ CORS proxy returned invalid content (${html.length} bytes)`);
+          }
+        } else {
+          console.warn(`⚠️ CORS proxy failed with status: ${proxyResponse.status}`);
         }
       } catch (error) {
-        console.warn('⚠️ CORS proxy failed:', error instanceof Error ? error.message : error);
+        console.warn('⚠️ CORS proxy error:', error instanceof Error ? error.message : error);
       }
     }
 
-    // Strategy 3: Generate intelligent fallback based on URL
+    // Strategy 3: If still no content, return error instead of fake data
     if (!fetchSuccess || !html || html.length < 100) {
-      console.log('🌐 [Strategy 3] Using intelligent URL-based analysis...');
-      fetchMethod = 'url-inference';
-
-      // Extract domain info
-      const urlObj = new URL(targetUrl);
-      const domain = urlObj.hostname.replace(/^www\./, '');
-      const domainParts = domain.split('.');
-      const businessName = domainParts[0].charAt(0).toUpperCase() + domainParts[0].slice(1);
-
-      // Create minimal HTML for analysis
-      html = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>${businessName}</title>
-          <meta name="description" content="${businessName} - Professional business services">
-        </head>
-        <body>
-          <h1>${businessName}</h1>
-          <p>Welcome to ${businessName}</p>
-        </body>
-        </html>
-      `;
-
-      console.log(`⚠️ Using URL-based inference for: ${businessName}`);
+      console.error('❌ All fetch strategies failed - no website content available');
+      return NextResponse.json(
+        {
+          error: 'Unable to access website content. The website may be blocking automated access.',
+          suggestion: 'Try using the E-commerce Analysis mode if this is an online store, or enter business details manually.'
+        },
+        { status: 400 }
+      );
     }
 
     console.log(`📄 Final HTML length: ${html.length} (method: ${fetchMethod})`);

@@ -134,16 +134,24 @@ export class SimplifiedWebsiteScraper {
         console.log('🌐 [Strategy 2] Trying CORS proxy...');
         const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
         const proxyResponse = await fetch(proxyUrl, {
-          signal: AbortSignal.timeout(10000)
+          signal: AbortSignal.timeout(15000) // Give proxy more time
         });
 
         if (proxyResponse.ok) {
           html = await proxyResponse.text();
-          console.log(`✅ CORS proxy successful (${html.length} bytes)`);
-          fetchSuccess = true;
+
+          // Validate we got actual HTML, not an error page
+          if (html && html.length > 100 && (html.includes('<html') || html.includes('<!DOCTYPE'))) {
+            console.log(`✅ CORS proxy successful (${html.length} bytes)`);
+            fetchSuccess = true;
+          } else {
+            console.warn(`⚠️ CORS proxy returned invalid content (${html.length} bytes)`);
+          }
+        } else {
+          console.warn(`⚠️ CORS proxy failed with status: ${proxyResponse.status}`);
         }
       } catch (error) {
-        console.warn('⚠️ CORS proxy failed:', error instanceof Error ? error.message : error);
+        console.warn('⚠️ CORS proxy error:', error instanceof Error ? error.message : error);
       }
     }
 
