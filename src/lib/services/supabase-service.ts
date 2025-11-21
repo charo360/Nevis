@@ -359,6 +359,3 @@ export class SupabaseService {
 
 // Export singleton instance
 export const supabaseService = new SupabaseService();
-
-// Initialize storage on import
-supabaseService.initializeStorage().catch(console.error);

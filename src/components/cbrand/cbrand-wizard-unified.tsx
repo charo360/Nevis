@@ -97,8 +97,15 @@ export function CbrandWizardUnified({ mode: modeProp, brandId }: CbrandWizardUni
   const updateProfileOptimistic = async (profileId: string, updates: Partial<CompleteBrandProfile>) => {
     const token = await getAccessToken();
     if (!token) {
+      console.error('❌ [Optimistic Update] No access token available');
       throw new Error('No access token available');
     }
+
+    console.log('📡 [Optimistic Update] Saving to API:', {
+      profileId,
+      updates: Object.keys(updates),
+      url: `/api/brand-profiles/${profileId}`
+    });
 
     // Save to database without triggering loading states
     const response = await fetch(`/api/brand-profiles/${profileId}`, {
@@ -111,8 +118,16 @@ export function CbrandWizardUnified({ mode: modeProp, brandId }: CbrandWizardUni
     });
 
     if (!response.ok) {
-      throw new Error('Failed to update brand profile optimistically');
+      const errorText = await response.text();
+      console.error('❌ [Optimistic Update] API error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText
+      });
+      throw new Error(`Failed to update brand profile optimistically: ${response.status} ${errorText}`);
     }
+
+    console.log('✅ [Optimistic Update] Successfully saved to database');
 
     // Note: We don't need to update local brands array here because:
     // 1. The UI is already updated optimistically via selectBrand()

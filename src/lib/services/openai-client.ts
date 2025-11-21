@@ -1,7 +1,8 @@
-import { EnhancedOpenAIClient, OpenAITextOptions, OpenAIImageOptions } from './openai-client-enhanced';
+import { EnhancedOpenAIClient } from './openai-client-enhanced';
+import type { OpenAITextOptions, OpenAIImageOptions } from './openai-client-enhanced';
 
-// Re-export the enhanced client for backward compatibility
-export { OpenAITextOptions, OpenAIImageOptions };
+// Re-export the enhanced client option types for backward compatibility (type-only)
+export type { OpenAITextOptions, OpenAIImageOptions };
 
 export class OpenAIClient {
   /**
