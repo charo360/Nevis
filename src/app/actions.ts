@@ -109,13 +109,13 @@ export async function analyzeBrandAction(
         const robotsText = await robotsResponse.text();
         if (robotsText.includes('Disallow: /')) {
           console.warn('⚠️ Website has robots.txt that disallows scraping. Blocking regular analysis.');
-          
+
           // Try to find existing profile to return "idempotent" success and avoid UI error dialog
           try {
             // Use the imported createClient which handles cookies internally
-            const supabase = await createClient(); 
+            const supabase = await createClient();
             const { data: { user } } = await supabase.auth.getUser();
-            
+
             if (user) {
               const profiles = await brandProfileSupabaseService.loadBrandProfiles(user.id);
               // Find matching profile (handling trailing slashes)
@@ -124,7 +124,7 @@ export async function analyzeBrandAction(
                 const nUrl = normalizedUrl.replace(/\/$/, '');
                 return pUrl === nUrl;
               });
-              
+
               if (match) {
                 console.log('✅ Found existing profile for blocked site, returning cached data to prevent overwrite.');
 
@@ -177,9 +177,10 @@ export async function analyzeBrandAction(
                   };
                 }
               }
-            } catch (e) {
-              console.warn('⚠️ Error trying to fetch existing profile:', e);
             }
+          } catch (e) {
+            console.warn('⚠️ Error trying to fetch existing profile:', e);
+          }
 
           // CRITICAL: Stop analysis here if scraping is disallowed
           // This prevents the regular AI analysis from running on e-commerce sites
