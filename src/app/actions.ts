@@ -102,98 +102,19 @@ export async function analyzeBrandAction(
       };
     }
 
-    // Step 2: Check robots.txt (log warning but don't block)
+    // Step 2: Check robots.txt (log only, don't block - let actual fetch determine if blocked)
     try {
       const robotsResponse = await fetch(`${normalizedUrl}/robots.txt`, { signal: AbortSignal.timeout(5000) });
       if (robotsResponse.ok) {
         const robotsText = await robotsResponse.text();
         if (robotsText.includes('Disallow: /')) {
-          console.warn('⚠️ Website has robots.txt that disallows scraping. Blocking regular analysis.');
-
-          // Try to find existing profile to return "idempotent" success and avoid UI error dialog
-          try {
-            // Use the imported createClient which handles cookies internally
-            const supabase = await createClient();
-            const { data: { user } } = await supabase.auth.getUser();
-
-            if (user) {
-              const profiles = await brandProfileSupabaseService.loadBrandProfiles(user.id);
-              // Find matching profile (handling trailing slashes)
-              const match = profiles.find(p => {
-                const pUrl = (p.websiteUrl || '').replace(/\/$/, '');
-                const nUrl = normalizedUrl.replace(/\/$/, '');
-                return pUrl === nUrl;
-              });
-
-              if (match) {
-                console.log('✅ Found existing profile for blocked site, returning cached data to prevent overwrite.');
-
-                // IMPORTANT: Only return cached data if it has keyFeatures and competitiveAdvantages
-                // This prevents overwriting good e-commerce analysis data with empty cached data
-                const hasKeyData = match.keyFeatures && match.competitiveAdvantages;
-
-                if (!hasKeyData) {
-                  console.warn('⚠️ Cached profile has empty keyFeatures/competitiveAdvantages, blocking to prevent overwrite');
-                  // Don't return cached data - let the error flow through
-                  // This will prevent overwriting good e-commerce data
-                } else {
-                  // Map CompleteBrandProfile to BrandAnalysisResult
-                  return {
-                    success: true,
-                    data: {
-                      businessName: match.businessName,
-                      description: match.description || '',
-                      businessType: match.businessType || '',
-                      industry: match.businessType || '',
-                      targetAudience: match.targetAudience || '',
-                      location: match.location || match.city || match.contactAddress || '',
-                      services: Array.isArray(match.services)
-                        ? match.services.map((s: any) => s?.name ? `${s.name}: ${s.description || ''}` : s).join('\n')
-                        : (typeof match.services === 'string' ? match.services : ''),
-                      keyFeatures: match.keyFeatures || '',
-                      competitiveAdvantages: match.competitiveAdvantages || '',
-                      visualStyle: match.visualStyle || '',
-                      writingTone: match.writingTone || '',
-                      contentThemes: Array.isArray(match.contentThemes) ? match.contentThemes.join(', ') : (match.contentThemes || ''),
-                      colorPalette: {
-                        primary: match.primaryColor,
-                        secondary: match.accentColor,
-                        accent: match.accentColor,
-                        description: 'Preserved from existing profile'
-                      },
-                      contactInfo: {
-                        email: match.contactEmail,
-                        phone: match.contactPhone,
-                        address: match.contactAddress,
-                        website: match.websiteUrl
-                      },
-                      socialMedia: {
-                        facebook: match.facebookUrl,
-                        instagram: match.instagramUrl,
-                        twitter: match.twitterUrl,
-                        linkedin: match.linkedinUrl,
-                      }
-                    } as any
-                  };
-                }
-              }
-            }
-          } catch (e) {
-            console.warn('⚠️ Error trying to fetch existing profile:', e);
-          }
-
-          // CRITICAL: Stop analysis here if scraping is disallowed
-          // This prevents the regular AI analysis from running on e-commerce sites
-          // and overwriting the correct e-commerce data.
-          return {
-            success: false,
-            error: "Analysis blocked: Website robots.txt disallows scraping. Please use E-commerce Analysis mode.",
-            errorType: 'blocked'
-          };
+          console.log('ℹ️ Website has robots.txt with Disallow: / - will attempt analysis anyway');
+          // Don't block here - many sites have this but still allow scraping
+          // Let the actual fetch attempt determine if we're blocked
         }
       }
     } catch {
-      // Ignore robots.txt errors, proceed
+      // Ignore robots.txt errors, proceed with analysis
     }
 
     // Step 3: Run AI-powered comprehensive analysis (PRIMARY METHOD)
