@@ -207,35 +207,6 @@ export function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
 
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={isActive("/artifacts-brand-scoped")}
-              tooltip="Artifacts - Coming Soon"
-              disabled
-            >
-              <Link href="/artifacts-brand-scoped">
-                <Archive />
-                <span>Artifacts</span>
-                <span className="ml-auto text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">Coming Soon</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={isActive("/social-connect")}
-              tooltip="Social Media Connect - Coming Soon"
-              disabled
-            >
-              <Link href="/social-connect">
-                <LinkIcon />
-                <span>Social Media Connect</span>
-                <span className="ml-auto text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">Coming Soon</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
 
           <SidebarMenuItem>
             <SidebarMenuButton

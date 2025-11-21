@@ -21,7 +21,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { ArtifactSelector } from "@/components/artifacts/artifact-selector";
 import { CreditDisplay, CreditCostDisplay, ModelSelector } from "@/components/ui/credit-display";
 
 type ContentCalendarProps = {
@@ -68,9 +67,6 @@ export function ContentCalendar({
 
   // Revo model selection
   const [selectedRevoModel, setSelectedRevoModel] = React.useState<RevoModel>('revo-2.0');
-
-  // Artifact selection for content generation
-  const [selectedArtifacts, setSelectedArtifacts] = React.useState<string[]>([]);
 
   // Include people in designs toggle
   const [includePeopleInDesigns, setIncludePeopleInDesigns] = React.useState<boolean>(true);
@@ -239,10 +235,7 @@ export function ContentCalendar({
         platform
       );
 
-      // Check if artifacts are enabled (simple toggle approach)
-      const artifactsEnabled = selectedArtifacts.length > 0;
-
-      const useEnhancedGeneration = artifactsEnabled || String(selectedRevoModel) === 'revo-1.5' || String(selectedRevoModel) === 'revo-2.0';
+      const useEnhancedGeneration = String(selectedRevoModel) === 'revo-1.5' || String(selectedRevoModel) === 'revo-2.0';
 
       // Dynamic model routing based on selected Revo version
       if (selectedRevoModel === 'revo-2.0') {
@@ -468,14 +461,10 @@ export function ContentCalendar({
         description = `${platform} post created with Revo 1.0`;
       }
 
-      // Add hashtag and artifact context
-      if (platformHashtags.length > 0 && selectedArtifacts.length > 0) {
-        title = `Trending Content Generated! 🔥📎`;
-        description += ` • ${platformHashtags.length} trending hashtags • ${selectedArtifacts.length} reference${selectedArtifacts.length !== 1 ? 's' : ''}`;
-      } else if (platformHashtags.length > 0) {
+      // Add hashtag context
+      if (platformHashtags.length > 0) {
+        title = `Trending Content Generated! 🔥`;
         description += ` • ${platformHashtags.length} trending hashtags`;
-      } else if (selectedArtifacts.length > 0) {
-        description += ` • ${selectedArtifacts.length} reference${selectedArtifacts.length !== 1 ? 's' : ''}`;
       }
 
       toast({
@@ -693,51 +682,6 @@ export function ContentCalendar({
 
           {/* Credit Display and Model Selection */}
 
-
-          {/* Simple Artifacts Toggle */}
-          <div className="mb-6">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label className="text-sm font-medium">Use Artifacts</Label>
-                    <p className="text-xs text-muted-foreground">
-
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      checked={selectedArtifacts.length > 0}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          // Enable artifacts - this will use active artifacts from the artifacts page
-                          setSelectedArtifacts(['active']);
-                        } else {
-                          // Disable artifacts
-                          setSelectedArtifacts([]);
-                        }
-                      }}
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open('/artifacts', '_blank')}
-                      className="text-xs"
-                    >
-                      Manage
-                    </Button>
-                  </div>
-                </div>
-                {selectedArtifacts.length > 0 && (
-                  <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-md">
-                    <p className="text-xs text-blue-700">
-                      ✓ Artifacts enabled - Content will use your reference materials and exact-use items from the Artifacts page
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
 
           <div className="flex flex-col items-start gap-4 md:flex-row md:items-center md:justify-between w-full">
             <div className="flex-1">

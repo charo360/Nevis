@@ -122,16 +122,6 @@ export default function DashboardPage() {
       isCore: false
     },
     {
-      id: 'artifacts',
-      title: 'Artifacts',
-      description: 'Manage your brand assets and design elements',
-      icon: Archive,
-      color: 'bg-orange-500',
-      status: 'available',
-      route: '/artifacts',
-      isCore: false
-    },
-    {
       id: 'analytics',
       title: 'Analytics',
       description: 'Track performance and engagement metrics',
@@ -139,16 +129,6 @@ export default function DashboardPage() {
       color: 'bg-indigo-500',
       status: 'available',
       route: '/dashboard/competitor-analysis',
-      isCore: false
-    },
-    {
-      id: 'social-connect',
-      title: 'Social Connect',
-      description: 'Connect and manage your social media accounts',
-      icon: Globe,
-      color: 'bg-teal-500',
-      status: 'available',
-      route: '/social-connect',
       isCore: false
     },
     {

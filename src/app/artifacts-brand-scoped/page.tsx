@@ -1,33 +1,17 @@
-'use client';
+// src/app/artifacts-brand-scoped/page.tsx
+"use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Upload,
-  Search,
-  Image as ImageIcon,
-  FileText,
-  Folder,
-  Clock,
-  Plus,
-  Settings,
-  Bug,
-  Wrench,
-  X,
-  Grid,
-  List
-} from 'lucide-react';
-import { brandScopedArtifactsService } from '@/lib/services/brand-scoped-artifacts-service';
+// NOTE: Original Artifacts implementation has been intentionally disabled
+// and replaced with a professional Coming Soon page as requested.
+
+import React from "react";
+import { Archive, Sparkles, Hourglass, Shield, ArrowLeft, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { SidebarInset } from "@/components/ui/sidebar";
+import { MobileSidebarTrigger } from "@/components/layout/mobile-sidebar-trigger";
+import { DesktopSidebarTrigger } from "@/components/layout/desktop-sidebar-trigger";
+import Link from "next/link";
 import { useUnifiedBrand, useBrandChangeListener } from '@/contexts/unified-brand-context';
 import { UnifiedBrandLayout, BrandContent, BrandSwitchingStatus } from '@/components/layout/unified-brand-layout';
 import { UploadZone } from '@/components/artifacts/upload-zone';
