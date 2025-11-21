@@ -84,12 +84,15 @@ export class SimplifiedWebsiteScraper {
   async analyzeWebsiteComprehensively(url: string): Promise<ComprehensiveAnalysis> {
     console.log(`🔍 Starting simplified analysis of: ${url}`);
 
-    // Try multiple fetch attempts with different strategies
-    const maxRetries = 3;
+    let html = '';
+    let fetchSuccess = false;
 
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    // Strategy 1: Direct fetch with retry
+    const maxRetries = 2;
+
+    for (let attempt = 1; attempt <= maxRetries && !fetchSuccess; attempt++) {
       try {
-        console.log(`🌐 [Simple Scraper - Attempt ${attempt}/${maxRetries}] Fetching: ${url}`);
+        console.log(`🌐 [Strategy 1 - Attempt ${attempt}/${maxRetries}] Direct fetch: ${url}`);
 
         const response = await fetch(url, {
           headers: {
@@ -105,32 +108,54 @@ export class SimplifiedWebsiteScraper {
             'Sec-Fetch-Site': 'none',
             'Cache-Control': 'max-age=0'
           },
-          signal: AbortSignal.timeout(15000) // 15 second timeout
+          signal: AbortSignal.timeout(10000) // 10 second timeout
         });
 
         if (response.ok) {
-          const html = await response.text();
-          const analysis = this.parseHTMLContent(html, url);
-          console.log(`✅ Simplified analysis complete for: ${url}`);
-          return analysis;
+          html = await response.text();
+          console.log(`✅ Direct fetch successful (${html.length} bytes)`);
+          fetchSuccess = true;
+          break;
         } else {
-          console.warn(`⚠️ Attempt ${attempt} failed with status: ${response.status}`);
-          if (attempt < maxRetries) {
-            // Wait before retry (exponential backoff)
-            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-          }
+          console.warn(`⚠️ Direct fetch attempt ${attempt} failed: ${response.status}`);
         }
       } catch (error) {
-        console.warn(`⚠️ Attempt ${attempt} failed:`, error instanceof Error ? error.message : error);
-        if (attempt < maxRetries) {
-          // Wait before retry (exponential backoff)
-          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-        }
+        console.warn(`⚠️ Direct fetch attempt ${attempt} error:`, error instanceof Error ? error.message : error);
+      }
+
+      if (!fetchSuccess && attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
     }
 
-    // All retries failed, return fallback
-    console.warn(`⚠️ All ${maxRetries} attempts failed for ${url}, using fallback analysis`);
+    // Strategy 2: Try CORS proxy
+    if (!fetchSuccess) {
+      try {
+        console.log('🌐 [Strategy 2] Trying CORS proxy...');
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+        const proxyResponse = await fetch(proxyUrl, {
+          signal: AbortSignal.timeout(10000)
+        });
+
+        if (proxyResponse.ok) {
+          html = await proxyResponse.text();
+          console.log(`✅ CORS proxy successful (${html.length} bytes)`);
+          fetchSuccess = true;
+        }
+      } catch (error) {
+        console.warn('⚠️ CORS proxy failed:', error instanceof Error ? error.message : error);
+      }
+    }
+
+    // Strategy 3: Parse HTML if we got any content
+    if (fetchSuccess && html) {
+      const analysis = this.parseHTMLContent(html, url);
+      console.log(`✅ Simplified analysis complete for: ${url}`);
+      return analysis;
+    }
+
+    // All strategies failed, return fallback
+    console.warn(`⚠️ All fetch strategies failed for ${url}, using fallback analysis`);
     return this.createFallbackAnalysis(url);
   }
 
