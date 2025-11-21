@@ -1452,56 +1452,62 @@ export function WebsiteAnalysisStep({
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <Label>Primary Color</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <input
-                      type="color"
+                  <Label className="text-sm font-medium text-gray-700">Primary Color</Label>
+                  <div className="flex items-center gap-3 mt-2">
+                    <div className="relative">
+                      <input
+                        type="color"
+                        value={brandProfile.primaryColor || '#3B82F6'}
+                        onChange={(e) => updateBrandProfile({ primaryColor: e.target.value })}
+                        className="w-16 h-16 rounded-lg border-2 border-gray-300 cursor-pointer hover:border-blue-500 transition-all shadow-sm"
+                        title="Click to change primary color"
+                      />
+                    </div>
+                    <Input
                       value={brandProfile.primaryColor || '#3B82F6'}
                       onChange={(e) => updateBrandProfile({ primaryColor: e.target.value })}
-                      className="w-12 h-10 rounded border border-gray-300 cursor-pointer"
-                      title="Pick primary color"
-                    />
-                    <Input
-                      value={brandProfile.primaryColor}
-                      onChange={(e) => updateBrandProfile({ primaryColor: e.target.value })}
                       placeholder="#3B82F6"
-                      className="flex-1"
+                      className="flex-1 font-mono text-sm"
                     />
                   </div>
                 </div>
                 <div>
-                  <Label>Accent Color</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <input
-                      type="color"
+                  <Label className="text-sm font-medium text-gray-700">Accent Color</Label>
+                  <div className="flex items-center gap-3 mt-2">
+                    <div className="relative">
+                      <input
+                        type="color"
+                        value={brandProfile.accentColor || '#10B981'}
+                        onChange={(e) => updateBrandProfile({ accentColor: e.target.value })}
+                        className="w-16 h-16 rounded-lg border-2 border-gray-300 cursor-pointer hover:border-green-500 transition-all shadow-sm"
+                        title="Click to change accent color"
+                      />
+                    </div>
+                    <Input
                       value={brandProfile.accentColor || '#10B981'}
                       onChange={(e) => updateBrandProfile({ accentColor: e.target.value })}
-                      className="w-12 h-10 rounded border border-gray-300 cursor-pointer"
-                      title="Pick accent color"
-                    />
-                    <Input
-                      value={brandProfile.accentColor}
-                      onChange={(e) => updateBrandProfile({ accentColor: e.target.value })}
                       placeholder="#10B981"
-                      className="flex-1"
+                      className="flex-1 font-mono text-sm"
                     />
                   </div>
                 </div>
                 <div>
-                  <Label>Background Color</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <input
-                      type="color"
+                  <Label className="text-sm font-medium text-gray-700">Background Color</Label>
+                  <div className="flex items-center gap-3 mt-2">
+                    <div className="relative">
+                      <input
+                        type="color"
+                        value={brandProfile.backgroundColor || '#F8FAFC'}
+                        onChange={(e) => updateBrandProfile({ backgroundColor: e.target.value })}
+                        className="w-16 h-16 rounded-lg border-2 border-gray-300 cursor-pointer hover:border-gray-500 transition-all shadow-sm"
+                        title="Click to change background color"
+                      />
+                    </div>
+                    <Input
                       value={brandProfile.backgroundColor || '#F8FAFC'}
                       onChange={(e) => updateBrandProfile({ backgroundColor: e.target.value })}
-                      className="w-12 h-10 rounded border border-gray-300 cursor-pointer"
-                      title="Pick background color"
-                    />
-                    <Input
-                      value={brandProfile.backgroundColor}
-                      onChange={(e) => updateBrandProfile({ backgroundColor: e.target.value })}
                       placeholder="#F8FAFC"
-                      className="flex-1"
+                      className="flex-1 font-mono text-sm"
                     />
                   </div>
                 </div>
