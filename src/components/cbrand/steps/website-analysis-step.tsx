@@ -1454,10 +1454,13 @@ export function WebsiteAnalysisStep({
                 <div>
                   <Label>Primary Color</Label>
                   <div className="flex items-center gap-2 mt-1">
-                    <div
-                      className="w-8 h-8 rounded border border-gray-300"
-                      style={{ backgroundColor: brandProfile.primaryColor }}
-                    ></div>
+                    <input
+                      type="color"
+                      value={brandProfile.primaryColor || '#3B82F6'}
+                      onChange={(e) => updateBrandProfile({ primaryColor: e.target.value })}
+                      className="w-12 h-10 rounded border border-gray-300 cursor-pointer"
+                      title="Pick primary color"
+                    />
                     <Input
                       value={brandProfile.primaryColor}
                       onChange={(e) => updateBrandProfile({ primaryColor: e.target.value })}
@@ -1469,10 +1472,13 @@ export function WebsiteAnalysisStep({
                 <div>
                   <Label>Accent Color</Label>
                   <div className="flex items-center gap-2 mt-1">
-                    <div
-                      className="w-8 h-8 rounded border border-gray-300"
-                      style={{ backgroundColor: brandProfile.accentColor }}
-                    ></div>
+                    <input
+                      type="color"
+                      value={brandProfile.accentColor || '#10B981'}
+                      onChange={(e) => updateBrandProfile({ accentColor: e.target.value })}
+                      className="w-12 h-10 rounded border border-gray-300 cursor-pointer"
+                      title="Pick accent color"
+                    />
                     <Input
                       value={brandProfile.accentColor}
                       onChange={(e) => updateBrandProfile({ accentColor: e.target.value })}
@@ -1484,10 +1490,13 @@ export function WebsiteAnalysisStep({
                 <div>
                   <Label>Background Color</Label>
                   <div className="flex items-center gap-2 mt-1">
-                    <div
-                      className="w-8 h-8 rounded border border-gray-300"
-                      style={{ backgroundColor: brandProfile.backgroundColor }}
-                    ></div>
+                    <input
+                      type="color"
+                      value={brandProfile.backgroundColor || '#F8FAFC'}
+                      onChange={(e) => updateBrandProfile({ backgroundColor: e.target.value })}
+                      className="w-12 h-10 rounded border border-gray-300 cursor-pointer"
+                      title="Pick background color"
+                    />
                     <Input
                       value={brandProfile.backgroundColor}
                       onChange={(e) => updateBrandProfile({ backgroundColor: e.target.value })}
