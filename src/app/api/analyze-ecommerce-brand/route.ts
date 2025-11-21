@@ -185,6 +185,17 @@ export async function POST(request: NextRequest) {
     console.log(`  - Key Features: ${keyFeatures.split('\n').filter(f => f.trim()).length} items`);
     console.log(`  - Competitive Advantages: ${filteredAdvantages.length} items`);
 
+    // Convert services array to string format (newline-separated)
+    const servicesRaw = rawData.services_offered || rawData.services;
+    const servicesString = Array.isArray(servicesRaw)
+      ? servicesRaw.map(s => {
+          if (typeof s === 'string') return s;
+          if (s?.name && s?.description) return `${s.name}: ${s.description}`;
+          if (s?.name) return s.name;
+          return String(s);
+        }).filter(s => s.trim()).join('\n')
+      : (typeof servicesRaw === 'string' ? servicesRaw : '');
+
     // Map Claude's response structure to expected format
     const data = {
       businessName: rawData.store_info?.name || rawData.company_info?.name,
@@ -194,7 +205,7 @@ export async function POST(request: NextRequest) {
       targetMarket: rawData.business_analysis?.target_market,
       businessModel: rawData.business_analysis?.business_model,
       location: rawData.store_info?.location || rawData.company_info?.location,
-      services: rawData.services_offered || rawData.services,
+      services: servicesString,
       products: rawData.products,
       paymentOptions: rawData.payment_options,
       deliveryInfo: rawData.delivery_info,
