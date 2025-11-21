@@ -12,6 +12,7 @@ import { generateRevo15ContentAction } from "@/app/actions/revo-1.5-actions";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth-supabase";
 import { useCredits } from "@/hooks/use-credits";
+import { useUnifiedBrand } from "@/contexts/unified-brand-context";
 import type { BrandProfile, GeneratedPost, Platform, BrandConsistencyPreferences } from "@/lib/types";
 import type { ScheduledService } from "@/services/calendar-service";
 
@@ -57,6 +58,7 @@ export function ContentCalendar({
   const { toast } = useToast();
   const { user } = useAuth();
   const { creditBalance, getCreditBalance, hasEnoughCreditsForModel, useCreditsForModel } = useCredits();
+  const { updateProfile } = useUnifiedBrand();
 
   // Brand consistency preferences - default to consistent if design examples exist
   const [brandConsistency, setBrandConsistency] = React.useState<BrandConsistencyPreferences>({
@@ -678,6 +680,165 @@ export function ContentCalendar({
                 className="text-xs"
               />
             </div>
+          </div>
+
+          {/* Brand Colors Section */}
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Palette className="h-4 w-4 text-blue-600" />
+              <span className="font-medium text-sm">Brand Colors</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {/* Primary Color */}
+              <div className="bg-white rounded-lg p-3 border border-gray-200">
+                <label className="text-xs font-medium text-gray-600 mb-2 block">Primary Color</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={brandProfile.primaryColor || '#3B82F6'}
+                    onChange={async (e) => {
+                      const newColor = e.target.value;
+                      if (!brandProfile.id) return;
+                      try {
+                        await updateProfile(brandProfile.id, { primaryColor: newColor });
+                        toast({
+                          title: "Color Updated",
+                          description: "Primary color has been updated successfully",
+                        });
+                      } catch (error) {
+                        toast({
+                          variant: "destructive",
+                          title: "Update Failed",
+                          description: "Failed to update primary color",
+                        });
+                      }
+                    }}
+                    className="w-12 h-12 rounded border-2 border-gray-300 cursor-pointer hover:border-blue-500 transition-colors"
+                    title="Pick primary color"
+                  />
+                  <div className="flex-1">
+                    <input
+                      type="text"
+                      value={brandProfile.primaryColor || '#3B82F6'}
+                      onChange={async (e) => {
+                        const newColor = e.target.value;
+                        if (!brandProfile.id) return;
+                        if (/^#[0-9A-F]{6}$/i.test(newColor)) {
+                          try {
+                            await updateProfile(brandProfile.id, { primaryColor: newColor });
+                          } catch (error) {
+                            console.error('Failed to update color:', error);
+                          }
+                        }
+                      }}
+                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                      placeholder="#3B82F6"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Accent Color */}
+              <div className="bg-white rounded-lg p-3 border border-gray-200">
+                <label className="text-xs font-medium text-gray-600 mb-2 block">Accent Color</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={brandProfile.accentColor || '#10B981'}
+                    onChange={async (e) => {
+                      const newColor = e.target.value;
+                      if (!brandProfile.id) return;
+                      try {
+                        await updateProfile(brandProfile.id, { accentColor: newColor });
+                        toast({
+                          title: "Color Updated",
+                          description: "Accent color has been updated successfully",
+                        });
+                      } catch (error) {
+                        toast({
+                          variant: "destructive",
+                          title: "Update Failed",
+                          description: "Failed to update accent color",
+                        });
+                      }
+                    }}
+                    className="w-12 h-12 rounded border-2 border-gray-300 cursor-pointer hover:border-green-500 transition-colors"
+                    title="Pick accent color"
+                  />
+                  <div className="flex-1">
+                    <input
+                      type="text"
+                      value={brandProfile.accentColor || '#10B981'}
+                      onChange={async (e) => {
+                        const newColor = e.target.value;
+                        if (!brandProfile.id) return;
+                        if (/^#[0-9A-F]{6}$/i.test(newColor)) {
+                          try {
+                            await updateProfile(brandProfile.id, { accentColor: newColor });
+                          } catch (error) {
+                            console.error('Failed to update color:', error);
+                          }
+                        }
+                      }}
+                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500 font-mono"
+                      placeholder="#10B981"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Background Color */}
+              <div className="bg-white rounded-lg p-3 border border-gray-200">
+                <label className="text-xs font-medium text-gray-600 mb-2 block">Background Color</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={brandProfile.backgroundColor || '#F8FAFC'}
+                    onChange={async (e) => {
+                      const newColor = e.target.value;
+                      if (!brandProfile.id) return;
+                      try {
+                        await updateProfile(brandProfile.id, { backgroundColor: newColor });
+                        toast({
+                          title: "Color Updated",
+                          description: "Background color has been updated successfully",
+                        });
+                      } catch (error) {
+                        toast({
+                          variant: "destructive",
+                          title: "Update Failed",
+                          description: "Failed to update background color",
+                        });
+                      }
+                    }}
+                    className="w-12 h-12 rounded border-2 border-gray-300 cursor-pointer hover:border-gray-500 transition-colors"
+                    title="Pick background color"
+                  />
+                  <div className="flex-1">
+                    <input
+                      type="text"
+                      value={brandProfile.backgroundColor || '#F8FAFC'}
+                      onChange={async (e) => {
+                        const newColor = e.target.value;
+                        if (!brandProfile.id) return;
+                        if (/^#[0-9A-F]{6}$/i.test(newColor)) {
+                          try {
+                            await updateProfile(brandProfile.id, { backgroundColor: newColor });
+                          } catch (error) {
+                            console.error('Failed to update color:', error);
+                          }
+                        }
+                      }}
+                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-500 font-mono"
+                      placeholder="#F8FAFC"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 mt-3">
+              💡 These colors will be used in your generated content when "Colors" toggle is enabled
+            </p>
           </div>
 
           {/* Credit Display and Model Selection */}

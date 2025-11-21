@@ -7,6 +7,7 @@ export type BrandConsistencyPreferences = {
 };
 
 export type BrandProfile = {
+  id?: string; // Brand profile ID (optional for compatibility)
   businessName: string;
   businessType: string;
   location: string;
