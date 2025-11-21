@@ -58,21 +58,61 @@ export async function POST(request: NextRequest) {
     console.log(`📊 Analysis type: ${analysisType}`);
     console.log(`🔑 Available API Keys: ${apiKeys.length}`);
 
-    // Step 1: Fetch website content
-    const websiteResponse = await fetch(targetUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      }
-    });
+    // Step 1: Fetch website content with retry logic
+    let html = '';
+    let fetchSuccess = false;
+    const maxRetries = 3;
 
-    if (!websiteResponse.ok) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`🌐 [Attempt ${attempt}/${maxRetries}] Fetching website content...`);
+
+        const websiteResponse = await fetch(targetUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'DNT': '1',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Cache-Control': 'max-age=0'
+          },
+          signal: AbortSignal.timeout(15000) // 15 second timeout
+        });
+
+        if (websiteResponse.ok) {
+          html = await websiteResponse.text();
+          console.log(`✅ Website fetched successfully (${html.length} bytes)`);
+          fetchSuccess = true;
+          break;
+        } else {
+          console.warn(`⚠️ Attempt ${attempt} failed with status: ${websiteResponse.status}`);
+          if (attempt < maxRetries) {
+            // Wait before retry (exponential backoff)
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+          }
+        }
+      } catch (error) {
+        console.warn(`⚠️ Attempt ${attempt} failed:`, error instanceof Error ? error.message : error);
+        if (attempt < maxRetries) {
+          // Wait before retry (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        }
+      }
+    }
+
+    if (!fetchSuccess || !html) {
+      console.error('❌ Failed to fetch website content after all retries');
       return NextResponse.json(
         { error: 'Failed to fetch website content' },
         { status: 400 }
       );
     }
 
-    const html = await websiteResponse.text();
     console.log(`📄 Website HTML length: ${html.length}`);
 
     // Step 2: Extract content with enhanced metadata extraction for SPAs
@@ -203,7 +243,7 @@ Example: "iPhone 14 Pro Max - KSh 150,000, iPhone 13 - KSh 100,000. iOS smartpho
 - "Featured Products", "Best Sellers", "On Sale" sections
 - Navigation menu items with product models
 - Product showcases with pricing
-- Aim for 10-20 product categories, each with 2-3 specific examples
+- Extract ONLY 3-5 MAIN product categories (CRITICAL: Keep minimal to avoid truncation)
 
 PAYMENT OPTIONS TO EXTRACT:
 - Cash prices
@@ -227,7 +267,17 @@ LOOK EVERYWHERE FOR PRODUCTS:
 
 VISUAL STYLE & WRITING TONE (keep brief):
 - visual_style: One sentence describing colors, design style, and imagery (e.g., "Modern blue and white design with product photos")
-- writing_tone: One sentence about style and personality (e.g., "Professional and customer-focused")`;
+- writing_tone: One sentence about style and personality (e.g., "Professional and customer-focused")
+
+⚠️ **CRITICAL: RESPONSE LENGTH LIMIT - READ THIS CAREFULLY**
+- Extract ONLY 3-5 product categories (NOT 8, NOT 10, ONLY 3-5!)
+- Keep each product description to ONE SHORT SENTENCE (max 15 words)
+- DO NOT include long specification lists - keep specs to 2-3 items max
+- DO NOT repeat similar information across products
+- Your response MUST be under 6000 tokens or it WILL be truncated and FAIL
+- QUALITY OVER QUANTITY: 3 complete products > 10 incomplete products
+- If you're writing more than 5 products, STOP and reduce to 3-5 only
+`;
       
     } else {
       dataStructure = {
@@ -374,7 +424,7 @@ JSON Response:`;
             },
             body: JSON.stringify({
               model: 'claude-haiku-4-5-20251001',
-              max_tokens: 4096, // Increased to handle longer responses
+              max_tokens: 8000, // Increased to prevent truncation
               temperature: 0.7,
               messages: [
                 {
@@ -462,10 +512,10 @@ JSON Response:`;
     // Step 5: Parse Claude's response
     const responseText = claudeResult.content?.[0]?.text || '';
     let parsedData = null;
+    let cleanText = responseText.trim(); // Declare outside try block for scope
 
     try {
       // Clean up the response text
-      let cleanText = responseText.trim();
       if (cleanText.includes('```json')) {
         cleanText = cleanText.split('```json')[1].split('```')[0].trim();
       } else if (cleanText.includes('```')) {
@@ -481,15 +531,48 @@ JSON Response:`;
       console.log('Raw response preview (first 1000 chars):', responseText.substring(0, 1000));
       console.log('Raw response preview (last 500 chars):', responseText.substring(Math.max(0, responseText.length - 500)));
       
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Failed to parse Claude response as JSON',
-          raw_response: responseText.substring(0, 1000),
-          response_length: responseText.length
-        },
-        { status: 422 }
-      );
+      // Try to fix truncated JSON by finding the last complete object
+      try {
+        console.log('🔧 Attempting to fix truncated JSON...');
+        
+        // Find the last complete closing brace
+        let fixedText = cleanText;
+        let braceCount = 0;
+        let lastValidIndex = -1;
+        
+        for (let i = 0; i < fixedText.length; i++) {
+          if (fixedText[i] === '{') braceCount++;
+          if (fixedText[i] === '}') {
+            braceCount--;
+            if (braceCount === 0) {
+              lastValidIndex = i;
+            }
+          }
+        }
+        
+        if (lastValidIndex > 0) {
+          fixedText = fixedText.substring(0, lastValidIndex + 1);
+          console.log('🔧 Trying to parse fixed JSON of length:', fixedText.length);
+          
+          parsedData = JSON.parse(fixedText);
+          console.log('✅ Successfully parsed fixed JSON response');
+        } else {
+          throw new Error('Could not fix JSON structure');
+        }
+        
+      } catch (fixError) {
+        console.error('❌ Could not fix JSON:', fixError);
+        
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Failed to parse Claude response as JSON',
+            raw_response: responseText.substring(0, 1000),
+            response_length: responseText.length
+          },
+          { status: 422 }
+        );
+      }
     }
 
     console.log(`✅ Claude analysis completed successfully for ${targetUrl}`);

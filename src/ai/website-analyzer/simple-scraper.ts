@@ -84,28 +84,54 @@ export class SimplifiedWebsiteScraper {
   async analyzeWebsiteComprehensively(url: string): Promise<ComprehensiveAnalysis> {
     console.log(`🔍 Starting simplified analysis of: ${url}`);
 
-    try {
-      // Basic fetch to get HTML content
-      const response = await fetch(url, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    // Try multiple fetch attempts with different strategies
+    const maxRetries = 3;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`🌐 [Simple Scraper - Attempt ${attempt}/${maxRetries}] Fetching: ${url}`);
+
+        const response = await fetch(url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'DNT': '1',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Cache-Control': 'max-age=0'
+          },
+          signal: AbortSignal.timeout(15000) // 15 second timeout
+        });
+
+        if (response.ok) {
+          const html = await response.text();
+          const analysis = this.parseHTMLContent(html, url);
+          console.log(`✅ Simplified analysis complete for: ${url}`);
+          return analysis;
+        } else {
+          console.warn(`⚠️ Attempt ${attempt} failed with status: ${response.status}`);
+          if (attempt < maxRetries) {
+            // Wait before retry (exponential backoff)
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+          }
         }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      } catch (error) {
+        console.warn(`⚠️ Attempt ${attempt} failed:`, error instanceof Error ? error.message : error);
+        if (attempt < maxRetries) {
+          // Wait before retry (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        }
       }
-
-      const html = await response.text();
-      const analysis = this.parseHTMLContent(html, url);
-
-      console.log(`✅ Simplified analysis complete for: ${url}`);
-      return analysis;
-
-    } catch (error) {
-      console.warn(`⚠️ Simplified scraping failed for ${url}:`, error);
-      return this.createFallbackAnalysis(url);
     }
+
+    // All retries failed, return fallback
+    console.warn(`⚠️ All ${maxRetries} attempts failed for ${url}, using fallback analysis`);
+    return this.createFallbackAnalysis(url);
   }
 
   private parseHTMLContent(html: string, url: string): ComprehensiveAnalysis {
