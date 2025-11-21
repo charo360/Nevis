@@ -18,6 +18,7 @@ const QuickContent = React.lazy(() => import('../../app/quick-content/page').the
 const Showcase = React.lazy(() => import('../../app/showcase/page').then(m => ({ default: m.default })));
 const SocialConnect = React.lazy(() => import('../../app/social-connect/page').then(m => ({ default: m.default })));
 const Credits = React.lazy(() => import('../../app/credits/page').then(m => ({ default: m.default })));
+const AssetLibrary = React.lazy(() => import('../../app/asset-library/page').then(m => ({ default: m.default })));
 
 // Public pages
 const Features = React.lazy(() => import('../../app/features/page').then(m => ({ default: m.default })));
@@ -137,6 +138,7 @@ export function AppRoute() {
     { test: p => p.startsWith('/showcase'), Component: Showcase },
     { test: p => p.startsWith('/social-connect'), Component: SocialConnect },
     { test: p => p.startsWith('/credits'), Component: Credits },
+    { test: p => p.startsWith('/asset-library'), Component: AssetLibrary },
 
     // Other app routes
     { test: p => p.startsWith('/success'), Component: Success },

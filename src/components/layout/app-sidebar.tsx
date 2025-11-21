@@ -23,6 +23,7 @@ import {
   PanelLeftOpen,
   Menu,
   X,
+  Image,
 } from "lucide-react";
 import { CrevoLogo } from "@/components/ui/crevo-logo";
 import { UnifiedBrandSelector } from '@/components/brand/unified-brand-selector';
@@ -190,6 +191,19 @@ export function AppSidebar() {
               <Link href="/content-calendar">
                 <Calendar />
                 <span>Content Calendar</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={isActive("/asset-library")}
+              tooltip="Asset Library"
+            >
+              <Link href="/asset-library">
+                <Image />
+                <span>Asset Library</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
