@@ -108,7 +108,87 @@ export async function analyzeBrandAction(
       if (robotsResponse.ok) {
         const robotsText = await robotsResponse.text();
         if (robotsText.includes('Disallow: /')) {
-          console.warn('⚠️ Website has robots.txt that disallows scraping, but proceeding for user-initiated analysis');
+          console.warn('⚠️ Website has robots.txt that disallows scraping. Blocking regular analysis.');
+          
+          // Try to find existing profile to return "idempotent" success and avoid UI error dialog
+          try {
+            // Use the imported createClient which handles cookies internally
+            const supabase = await createClient(); 
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            if (user) {
+              const profiles = await brandProfileSupabaseService.loadBrandProfiles(user.id);
+              // Find matching profile (handling trailing slashes)
+              const match = profiles.find(p => {
+                const pUrl = (p.websiteUrl || '').replace(/\/$/, '');
+                const nUrl = normalizedUrl.replace(/\/$/, '');
+                return pUrl === nUrl;
+              });
+              
+              if (match) {
+                console.log('✅ Found existing profile for blocked site, returning cached data to prevent overwrite.');
+
+                // IMPORTANT: Only return cached data if it has keyFeatures and competitiveAdvantages
+                // This prevents overwriting good e-commerce analysis data with empty cached data
+                const hasKeyData = match.keyFeatures && match.competitiveAdvantages;
+
+                if (!hasKeyData) {
+                  console.warn('⚠️ Cached profile has empty keyFeatures/competitiveAdvantages, blocking to prevent overwrite');
+                  // Don't return cached data - let the error flow through
+                  // This will prevent overwriting good e-commerce data
+                } else {
+                  // Map CompleteBrandProfile to BrandAnalysisResult
+                  return {
+                    success: true,
+                    data: {
+                      businessName: match.businessName,
+                      description: match.description || '',
+                      businessType: match.businessType || '',
+                      industry: match.businessType || '',
+                      targetAudience: match.targetAudience || '',
+                      location: match.location || match.city || match.contactAddress || '',
+                      services: Array.isArray(match.services)
+                        ? match.services.map((s: any) => s?.name ? `${s.name}: ${s.description || ''}` : s).join('\n')
+                        : (typeof match.services === 'string' ? match.services : ''),
+                      keyFeatures: match.keyFeatures || '',
+                      competitiveAdvantages: match.competitiveAdvantages || '',
+                      visualStyle: match.visualStyle || '',
+                      writingTone: match.writingTone || '',
+                      contentThemes: Array.isArray(match.contentThemes) ? match.contentThemes.join(', ') : (match.contentThemes || ''),
+                      colorPalette: {
+                        primary: match.primaryColor,
+                        secondary: match.accentColor,
+                        accent: match.accentColor,
+                        description: 'Preserved from existing profile'
+                      },
+                      contactInfo: {
+                        email: match.contactEmail,
+                        phone: match.contactPhone,
+                        address: match.contactAddress,
+                        website: match.websiteUrl
+                      },
+                      socialMedia: {
+                        facebook: match.facebookUrl,
+                        instagram: match.instagramUrl,
+                        twitter: match.twitterUrl,
+                        linkedin: match.linkedinUrl,
+                      }
+                    } as any
+                  };
+                }
+              }
+            } catch (e) {
+              console.warn('⚠️ Error trying to fetch existing profile:', e);
+            }
+
+          // CRITICAL: Stop analysis here if scraping is disallowed
+          // This prevents the regular AI analysis from running on e-commerce sites
+          // and overwriting the correct e-commerce data.
+          return {
+            success: false,
+            error: "Analysis blocked: Website robots.txt disallows scraping. Please use E-commerce Analysis mode.",
+            errorType: 'blocked'
+          };
         }
       }
     } catch {
@@ -1177,5 +1257,136 @@ export async function generateContentWithArtifactsAction(
 
   } catch (error) {
     throw new Error((error as Error).message);
+  }
+}
+
+// E-commerce specific brand analysis action
+export async function analyzeEcommerceBrandAction(
+  websiteUrl: string,
+  designImageUris: string[],
+  ecommerceContext: any
+): Promise<AnalysisResult> {
+  try {
+    // Step 1: URL Validation and Normalization
+    if (!websiteUrl || !websiteUrl.trim()) {
+      return {
+        success: false,
+        error: "Website URL is required",
+        errorType: 'error'
+      };
+    }
+
+    let normalizedUrl = websiteUrl.trim();
+    if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
+      normalizedUrl = `https://${normalizedUrl}`;
+    }
+
+    // Validate URL format
+    try {
+      new URL(normalizedUrl);
+    } catch {
+      return {
+        success: false,
+        error: "Invalid URL format. Please enter a valid website URL (e.g., https://example.com).",
+        errorType: 'error'
+      };
+    }
+
+    // Step 2: Run E-commerce specific AI analysis
+    console.log('🛒 Running E-commerce specific AI analysis with extracted data...');
+    console.log('📦 E-commerce context:', {
+      platform: ecommerceContext?.platform,
+      totalProducts: ecommerceContext?.totalProducts,
+      totalImages: ecommerceContext?.totalImages,
+      productsCount: ecommerceContext?.products?.length || 0
+    });
+
+    try {
+      // Use specialized e-commerce analysis endpoint
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      const baseUrl = isDevelopment 
+        ? 'http://localhost:3001' 
+        : (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3001');
+      
+      const apiUrl = `${baseUrl}/api/analyze-ecommerce-brand`;
+      console.log('📡 Calling E-commerce API:', apiUrl);
+
+      // Add timeout for E-commerce analysis (45 seconds)
+      const analysisResponse = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          websiteUrl: normalizedUrl,
+          ecommerceContext: ecommerceContext,
+          businessType: 'e-commerce'
+        }),
+        signal: AbortSignal.timeout(45000) // 45 second timeout
+      });
+
+      console.log('📊 E-commerce Response status:', analysisResponse.status, analysisResponse.statusText);
+
+      if (!analysisResponse.ok) {
+        const errorText = await analysisResponse.text();
+        console.error('❌ E-commerce API Error Response:', errorText);
+        
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText };
+        }
+        
+        throw new Error(errorData.error || 'E-commerce analysis failed');
+      }
+
+      const result = await analysisResponse.json();
+      console.log('✅ E-commerce Analysis successful:', {
+        businessName: result.businessName,
+        description: result.description?.substring(0, 100) + '...',
+        services: Array.isArray(result.services) ? result.services.length : 0,
+        products: Array.isArray(result.products) ? result.products.length : 0,
+        hasProducts: !!ecommerceContext?.products?.length
+      });
+
+      return {
+        success: true,
+        data: result
+      };
+
+    } catch (error) {
+      console.error('❌ E-commerce analysis failed:', error);
+      
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          return {
+            success: false,
+            error: "E-commerce analysis timed out. The store might be too large or complex. Please try again.",
+            errorType: 'timeout'
+          };
+        }
+        
+        return {
+          success: false,
+          error: `E-commerce analysis failed: ${error.message}`,
+          errorType: 'error'
+        };
+      }
+      
+      return {
+        success: false,
+        error: "Unknown error during e-commerce analysis",
+        errorType: 'error'
+      };
+    }
+
+  } catch (error) {
+    console.error('❌ E-commerce brand analysis action failed:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "E-commerce analysis failed",
+      errorType: 'error'
+    };
   }
 }
