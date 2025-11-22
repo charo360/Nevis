@@ -99,8 +99,8 @@ export async function deductCreditsForGeneration(
       return {
         success: false,
         message: remainingCredits === 0
-          ? `🚀 Ready to create amazing content? You need ${requiredCredits} credits to use this feature. Let's get you topped up! 💳`
-          : `🎨 So close! You have ${remainingCredits} credits but need ${requiredCredits} for this generation. Just ${shortfall} more credits needed! 💳`,
+          ? `💳 No Credits Available\n\nYou need ${requiredCredits} credits to generate this content, but you have 0 credits remaining.\n\nPlease purchase credits to continue.`
+          : `💳 Insufficient Credits\n\nYou need ${requiredCredits} credits to generate this content, but you only have ${remainingCredits} credits.\n\nYou need ${shortfall} more credit${shortfall !== 1 ? 's' : ''} to continue. Please purchase credits to keep creating.`,
         remainingCredits: remainingCredits,
         costDeducted: 0
       };
@@ -239,8 +239,8 @@ export async function withCreditTracking<T>(
       const shortfall = requiredCredits - remainingCredits;
 
       const errorMessage = remainingCredits === 0
-        ? `🚀 Ready to create amazing content? You need ${requiredCredits} credits to use this feature. Let's get you topped up! 💳`
-        : `🎨 So close! You have ${remainingCredits} credits but need ${requiredCredits} for this generation. Just ${shortfall} more credits needed! 💳`;
+        ? `💳 No Credits Available\n\nYou need ${requiredCredits} credits to generate this content, but you have 0 credits remaining.\n\nPlease purchase credits to continue.`
+        : `💳 Insufficient Credits\n\nYou need ${requiredCredits} credits to generate this content, but you only have ${remainingCredits} credits.\n\nYou need ${shortfall} more credit${shortfall !== 1 ? 's' : ''} to continue. Please purchase credits to keep creating.`;
 
       return {
         success: false,

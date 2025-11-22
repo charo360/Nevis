@@ -190,7 +190,8 @@ export function ContentCalendar({
       // Deduct credits before generation
       const creditResult = await useCreditsForModel(selectedRevoModel, 'content_generation', 'post');
       if (!creditResult.success) {
-        const { getUserFriendlyErrorMessage, extractCreditInfo } = await import('@/lib/error-messages');
+        const { getUserFriendlyErrorMessage, extractCreditInfo, isCreditError } = await import('@/lib/error-messages');
+        const { ToastAction } = await import('@/components/ui/toast');
         const errorMessage = creditResult.error || "Failed to deduct credits";
 
         // Extract credit information if available
@@ -209,11 +210,20 @@ export function ContentCalendar({
         const title = parts[0] || 'Credit Deduction Failed';
         const description = parts.slice(1).join('\n\n') || friendlyMessage;
 
+        const isCredit = isCreditError(errorMessage);
         toast({
           variant: "destructive",
           title: title.replace(/\n/g, ' '), // Remove line breaks from title
           description: description,
           duration: 8000, // Longer duration for credit errors
+          action: isCredit ? (
+            <ToastAction
+              altText="Buy Credits"
+              onClick={() => window.location.href = '/pricing'}
+            >
+              Buy Credits
+            </ToastAction>
+          ) : undefined,
         });
         return;
       }
@@ -474,7 +484,8 @@ export function ContentCalendar({
         description
       });
     } catch (error) {
-      const { getUserFriendlyErrorMessage, extractCreditInfo } = await import('@/lib/error-messages');
+      const { getUserFriendlyErrorMessage, extractCreditInfo, isCreditError } = await import('@/lib/error-messages');
+      const { ToastAction } = await import('@/components/ui/toast');
       const errorMessage = (error as Error).message;
 
       // Extract credit information if available
@@ -493,11 +504,20 @@ export function ContentCalendar({
       const title = parts[0] || 'Generation Failed';
       const description = parts.slice(1).join('\n\n') || friendlyMessage;
 
+      const isCredit = isCreditError(errorMessage);
       toast({
         variant: "destructive",
         title: title.replace(/\n/g, ' '), // Remove line breaks from title
         description: description,
-        duration: creditInfo ? 8000 : 5000, // Longer duration for credit errors
+        duration: isCredit ? 8000 : 5000, // Longer duration for credit errors
+        action: isCredit ? (
+          <ToastAction
+            altText="Buy Credits"
+            onClick={() => window.location.href = '/pricing'}
+          >
+            Buy Credits
+          </ToastAction>
+        ) : undefined,
       });
     } finally {
       setIsGenerating(null);

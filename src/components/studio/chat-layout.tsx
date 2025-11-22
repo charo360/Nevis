@@ -334,6 +334,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
 
         } catch (error) {
             const { getUserFriendlyErrorMessage, extractCreditInfo, isCreditError } = await import('@/lib/error-messages');
+            const { ToastAction } = await import('@/components/ui/toast');
             const errorMessage = (error as Error).message;
 
             // Extract credit information if available
@@ -365,11 +366,20 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
             setMessages(prevMessages => [...prevMessages, errorResponse]);
 
             // Use appropriate toast variant based on error type
+            const isCredit = isCreditError(errorMessage);
             toast({
-                variant: isCreditError(errorMessage) ? 'destructive' : 'destructive',
+                variant: 'destructive',
                 title: title.replace(/\n/g, ' '), // Remove line breaks from title
                 description: description,
-                duration: isCreditError(errorMessage) ? 8000 : 5000, // Longer duration for credit errors
+                duration: isCredit ? 8000 : 5000, // Longer duration for credit errors
+                action: isCredit ? (
+                    <ToastAction
+                        altText="Buy Credits"
+                        onClick={() => window.location.href = '/pricing'}
+                    >
+                        Buy Credits
+                    </ToastAction>
+                ) : undefined,
             });
         } finally {
             setIsLoading(false);

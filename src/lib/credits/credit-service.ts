@@ -130,8 +130,8 @@ export class CreditService {
       if (currentBalance.remainingCredits < amount) {
         const shortfall = amount - currentBalance.remainingCredits;
         const friendlyMessage = currentBalance.remainingCredits === 0
-          ? `🚀 Ready to create amazing content? You need ${amount} credits to use this feature. Let's get you topped up! 💳`
-          : `🎨 So close! You have ${currentBalance.remainingCredits} credits but need ${amount} for this generation. Just ${shortfall} more credits needed! 💳`;
+          ? `💳 No Credits Available\n\nYou need ${amount} credits to generate this content, but you have 0 credits remaining.\n\nPlease purchase credits to continue.`
+          : `💳 Insufficient Credits\n\nYou need ${amount} credits to generate this content, but you only have ${currentBalance.remainingCredits} credits.\n\nYou need ${shortfall} more credit${shortfall !== 1 ? 's' : ''} to continue. Please purchase credits to keep creating.`;
 
         return {
           success: false,
