@@ -5,8 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { BrandAssetLibraryService } from '@/lib/brand-asset-library';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { createClient } from '@/lib/supabase-server';
 
 /**
  * POST /api/brand-assets/set-default
@@ -14,8 +13,10 @@ import { authOptions } from '@/lib/auth';
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -31,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     await BrandAssetLibraryService.setAsDefault(
       assetId,
-      session.user.id,
+      user.id,
       brandProfileId
     );
 
