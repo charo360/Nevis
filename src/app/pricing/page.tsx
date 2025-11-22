@@ -190,7 +190,7 @@ export default function PricingPage() {
       </section>
 
       {/* Pricing Cards */}
-      <section className="relative px-6 py-20">
+      <section id="credit-packages" className="relative px-6 py-20">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-16">
             {/* Try Agent Free */}

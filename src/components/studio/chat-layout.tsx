@@ -375,7 +375,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 action: isCredit ? (
                     <ToastAction
                         altText="Buy Credits"
-                        onClick={() => window.location.href = '/pricing'}
+                        onClick={() => window.location.href = '/pricing#credit-packages'}
                     >
                         Buy Credits
                     </ToastAction>

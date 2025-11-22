@@ -188,7 +188,7 @@ export function ContentCalendar({
         action: (
           <ToastAction
             altText="Buy Credits"
-            onClick={() => window.location.href = '/pricing'}
+            onClick={() => window.location.href = '/pricing#credit-packages'}
           >
             Buy Credits
           </ToastAction>
@@ -231,7 +231,7 @@ export function ContentCalendar({
           action: isCredit ? (
             <ToastAction
               altText="Buy Credits"
-              onClick={() => window.location.href = '/pricing'}
+              onClick={() => window.location.href = '/pricing#credit-packages'}
             >
               Buy Credits
             </ToastAction>
@@ -525,7 +525,7 @@ export function ContentCalendar({
         action: isCredit ? (
           <ToastAction
             altText="Buy Credits"
-            onClick={() => window.location.href = '/pricing'}
+            onClick={() => window.location.href = '/pricing#credit-packages'}
           >
             Buy Credits
           </ToastAction>
