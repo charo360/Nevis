@@ -712,6 +712,14 @@ export async function generateCreativeAssetAction(
     if (!wrapped.success) {
       // Extract credit information from error message if available
       const errorMessage = wrapped.error || wrapped.creditInfo?.message || 'Credit deduction failed';
+      
+      console.log('❌ [Creative Studio] Generation failed:', {
+        errorMessage,
+        hasError: !!wrapped.error,
+        hasCreditInfo: !!wrapped.creditInfo,
+        remainingCredits: wrapped.creditInfo?.remainingCredits,
+        costDeducted: wrapped.creditInfo?.costDeducted
+      });
 
       // Check if it's a credit error and format it nicely
       if (wrapped.creditInfo?.remainingCredits !== undefined && wrapped.creditInfo?.costDeducted === 0) {
@@ -720,17 +728,15 @@ export async function generateCreativeAssetAction(
         const needed = creditsRequired - creditsAvailable;
 
         // Throw user-friendly credit error message
-        if (creditsAvailable === 0) {
-          throw new Error(
-            `💳 No Credits Available\n\nYou need ${creditsRequired} credits to generate this creative asset, but you have 0 credits remaining.\n\nPlease purchase credits to continue using Creative Studio.`
-          );
-        } else {
-          throw new Error(
-            `💳 Insufficient Credits\n\nYou need ${creditsRequired} credits to generate this creative asset, but you only have ${creditsAvailable} credits.\n\nYou need ${needed} more credit${needed !== 1 ? 's' : ''} to continue. Please purchase credits to keep creating.`
-          );
-        }
+        const creditErrorMessage = creditsAvailable === 0
+          ? `💳 No Credits Available\n\nYou need ${creditsRequired} credits to generate this creative asset, but you have 0 credits remaining.\n\nPlease purchase credits to continue using Creative Studio.`
+          : `💳 Insufficient Credits\n\nYou need ${creditsRequired} credits to generate this creative asset, but you only have ${creditsAvailable} credits.\n\nYou need ${needed} more credit${needed !== 1 ? 's' : ''} to continue. Please purchase credits to keep creating.`;
+        
+        console.log('💳 [Creative Studio] Throwing credit error:', creditErrorMessage);
+        throw new Error(creditErrorMessage);
       }
 
+      console.log('⚠️ [Creative Studio] Throwing generic error:', errorMessage);
       throw new Error(errorMessage);
     }
 
@@ -822,10 +828,18 @@ export async function generateCreativeAssetAction(
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
 
     // Handle credit errors first (highest priority)
-    if (errorMessage.includes('💳') ||
-        errorMessage.includes('Insufficient Credits') ||
-        errorMessage.includes('No Credits Available') ||
-        errorMessage.includes('credits') && (errorMessage.includes('need') || errorMessage.includes('only have'))) {
+    // Check for credit-related keywords in the error message
+    const isCreditError = 
+      errorMessage.includes('💳') ||
+      errorMessage.includes('Insufficient Credits') ||
+      errorMessage.includes('No Credits Available') ||
+      errorMessage.includes('0 credits remaining') ||
+      errorMessage.includes('Credit deduction failed') ||
+      (errorMessage.toLowerCase().includes('credit') && 
+       (errorMessage.includes('need') || errorMessage.includes('only have') || errorMessage.includes('purchase')));
+    
+    if (isCreditError) {
+      console.log('✅ [Creative Studio] Detected credit error, passing through:', errorMessage);
       throw new Error(errorMessage); // Pass through credit errors as-is
     }
 

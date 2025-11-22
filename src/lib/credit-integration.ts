@@ -340,12 +340,14 @@ export async function deductCreditsForImageEdit(
 
     if (!userData || userData.remaining_credits < EDIT_CREDIT_COST) {
       const remainingCredits = userData?.remaining_credits || 0;
+      const needed = EDIT_CREDIT_COST - remainingCredits;
       return {
         success: false,
         message: remainingCredits === 0
-          ? `🎨 Oops! You're out of credits. You need ${EDIT_CREDIT_COST} credit to edit images. Time to top up your account! 💳`
-          : `🎨 Almost there! You have ${remainingCredits} credits but need ${EDIT_CREDIT_COST} credit for image editing. Just need ${EDIT_CREDIT_COST - remainingCredits} more! 💳`,
+          ? `💳 No Credits Available\n\nYou need ${EDIT_CREDIT_COST} credit to edit this image, but you have 0 credits remaining.\n\nPlease purchase credits to continue editing.`
+          : `💳 Insufficient Credits\n\nYou need ${EDIT_CREDIT_COST} credit to edit this image, but you only have ${remainingCredits} credit${remainingCredits !== 1 ? 's' : ''}.\n\nYou need ${needed} more credit${needed !== 1 ? 's' : ''} to continue. Please purchase credits to keep editing.`,
         remainingCredits: remainingCredits,
+        costDeducted: 0,
       };
     }
 

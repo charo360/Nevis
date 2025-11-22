@@ -20,11 +20,22 @@ export function getUserFriendlyErrorMessage(error: Error | string, context?: Err
   if (
     lowerMessage.includes('insufficient credits') ||
     lowerMessage.includes('not enough credits') ||
+    lowerMessage.includes('no credits available') ||
     lowerMessage.includes('credit deduction failed') ||
-    lowerMessage.includes('need') && lowerMessage.includes('credits') && lowerMessage.includes('only have')
+    lowerMessage.includes('0 credits remaining') ||
+    (lowerMessage.includes('need') && lowerMessage.includes('credits') && lowerMessage.includes('only have')) ||
+    (lowerMessage.includes('need') && lowerMessage.includes('credits') && lowerMessage.includes('have 0'))
   ) {
+    // If the error message already contains the credit info, pass it through
+    if (errorMessage.includes('💳')) {
+      return errorMessage;
+    }
+    
     if (context?.creditsRequired && context?.creditsAvailable !== undefined) {
       const needed = context.creditsRequired - context.creditsAvailable;
+      if (context.creditsAvailable === 0) {
+        return `💳 No Credits Available\n\nYou need ${context.creditsRequired} credits to generate this content, but you have 0 credits remaining.\n\nPlease purchase credits to continue using ${context.feature === 'creative_studio' ? 'Creative Studio' : 'Quick Content'}.`;
+      }
       return `💳 Insufficient Credits\n\nYou need ${context.creditsRequired} credits to generate this content, but you only have ${context.creditsAvailable} credits.\n\nYou need ${needed} more credits to continue. Please purchase credits to continue using ${context.feature === 'creative_studio' ? 'Creative Studio' : 'Quick Content'}.`;
     }
     return `💳 Insufficient Credits\n\nYou don't have enough credits to generate this content. Please purchase credits to continue using ${context?.feature === 'creative_studio' ? 'Creative Studio' : 'Quick Content'}.`;
@@ -139,8 +150,11 @@ export function isCreditError(error: Error | string): boolean {
   return (
     lowerMessage.includes('insufficient credits') ||
     lowerMessage.includes('not enough credits') ||
+    lowerMessage.includes('no credits available') ||
     lowerMessage.includes('credit deduction failed') ||
-    (lowerMessage.includes('need') && lowerMessage.includes('credits') && lowerMessage.includes('only have'))
+    lowerMessage.includes('0 credits remaining') ||
+    (lowerMessage.includes('need') && lowerMessage.includes('credits') && lowerMessage.includes('only have')) ||
+    (lowerMessage.includes('need') && lowerMessage.includes('credits') && lowerMessage.includes('have 0'))
   );
 }
 

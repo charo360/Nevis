@@ -277,11 +277,27 @@ export function ImageEditor({ imageUrl, onClose, brandProfile, onImageUpdated }:
                 prompt: prompt.substring(0, 100) // Log first 100 chars of prompt
             });
             if (!creditResult.success) {
+                const { ToastAction } = await import('@/components/ui/toast');
+                const errorMessage = creditResult.error || "You need 1 credit to edit this image. Please purchase more credits to continue.";
+                
+                // Split multi-line messages for display
+                const parts = errorMessage.split('\n\n');
+                const title = parts[0] || '💳 Insufficient Credits';
+                const description = parts.slice(1).join('\n\n') || errorMessage;
+                
                 toast({
                     variant: "destructive",
-                    title: "Insufficient Credits",
-                    description: "You need 1 credit to edit this image. Please purchase more credits.",
-                    duration: 6000,
+                    title: title.replace(/\n/g, ' '), // Remove line breaks from title
+                    description: description,
+                    duration: Infinity, // Stay until dismissed
+                    action: (
+                        <ToastAction
+                            altText="Buy Credits"
+                            onClick={() => window.location.href = '/pricing#credit-packages'}
+                        >
+                            Buy Credits
+                        </ToastAction>
+                    ),
                 });
                 setIsLoading(false);
                 return;
