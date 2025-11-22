@@ -30,6 +30,25 @@ export default function PricingPage() {
 
   useEffect(() => {
     setIsVisible(true);
+
+    // Handle hash navigation (e.g., #credit-packages)
+    const hash = window.location.hash;
+    if (hash) {
+      // Wait for content to render, then scroll
+      setTimeout(() => {
+        const element = document.querySelector(hash);
+        if (element) {
+          // Get element position and scroll with offset for navbar
+          const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+          const offsetPosition = elementPosition - 80; // 80px offset for navbar
+
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+          });
+        }
+      }, 300); // Increased timeout to ensure content is rendered
+    }
   }, []);
 
   // Logic from homepage pricing section
