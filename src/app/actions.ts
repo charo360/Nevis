@@ -719,9 +719,16 @@ export async function generateCreativeAssetAction(
         const creditsAvailable = wrapped.creditInfo.remainingCredits;
         const needed = creditsRequired - creditsAvailable;
 
-        throw new Error(
-          `Insufficient credits. Need ${creditsRequired} credits, but only have ${creditsAvailable} credits.`
-        );
+        // Throw user-friendly credit error message
+        if (creditsAvailable === 0) {
+          throw new Error(
+            `💳 No Credits Available\n\nYou need ${creditsRequired} credits to generate this creative asset, but you have 0 credits remaining.\n\nPlease purchase credits to continue using Creative Studio.`
+          );
+        } else {
+          throw new Error(
+            `💳 Insufficient Credits\n\nYou need ${creditsRequired} credits to generate this creative asset, but you only have ${creditsAvailable} credits.\n\nYou need ${needed} more credit${needed !== 1 ? 's' : ''} to continue. Please purchase credits to keep creating.`
+          );
+        }
       }
 
       throw new Error(errorMessage);
@@ -814,6 +821,14 @@ export async function generateCreativeAssetAction(
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
 
+    // Handle credit errors first (highest priority)
+    if (errorMessage.includes('💳') ||
+        errorMessage.includes('Insufficient Credits') ||
+        errorMessage.includes('No Credits Available') ||
+        errorMessage.includes('credits') && (errorMessage.includes('need') || errorMessage.includes('only have'))) {
+      throw new Error(errorMessage); // Pass through credit errors as-is
+    }
+
     // Handle specific error types with user-friendly messages
     if (errorMessage.includes('Unauthorized') || errorMessage.includes('log in')) {
       throw new Error('🔐 Please log in to use Creative Studio. If you\'re already logged in, try refreshing the page.');
@@ -836,7 +851,7 @@ export async function generateCreativeAssetAction(
     }
 
     // If it's already a user-friendly message, pass it through
-    if (errorMessage.includes('😅') || errorMessage.includes('🔧') || errorMessage.includes('🌐') || errorMessage.includes('🔐') || errorMessage.includes('🔄')) {
+    if (errorMessage.includes('😅') || errorMessage.includes('🔧') || errorMessage.includes('🌐') || errorMessage.includes('🔐') || errorMessage.includes('🔄') || errorMessage.includes('🚀')) {
       throw new Error(errorMessage);
     }
 
