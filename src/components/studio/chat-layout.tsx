@@ -371,7 +371,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 variant: 'destructive',
                 title: title.replace(/\n/g, ' '), // Remove line breaks from title
                 description: description,
-                duration: isCredit ? 8000 : 5000, // Longer duration for credit errors
+                duration: isCredit ? Infinity : 5000, // Credit errors stay until dismissed
                 action: isCredit ? (
                     <ToastAction
                         altText="Buy Credits"

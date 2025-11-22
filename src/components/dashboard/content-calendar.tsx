@@ -177,10 +177,22 @@ export function ContentCalendar({
     // Check if user has enough credits for the selected model
     const hasCredits = await hasEnoughCreditsForModel(selectedRevoModel);
     if (!hasCredits) {
+      const { ToastAction } = await import('@/components/ui/toast');
+      const creditsNeeded = selectedRevoModel === 'revo-1.0' ? 3 : selectedRevoModel === 'revo-1.5' ? 4 : 5;
+
       toast({
-        title: "Insufficient Credits",
-        description: `You need ${selectedRevoModel === 'revo-1.0' ? '3' : selectedRevoModel === 'revo-1.5' ? '4' : '5'} credits to use ${selectedRevoModel}. Please purchase more credits.`,
+        title: "💳 Insufficient Credits",
+        description: `You need ${creditsNeeded} credits to use ${selectedRevoModel}. Please purchase more credits.`,
         variant: "destructive",
+        duration: Infinity, // Toast stays until manually dismissed
+        action: (
+          <ToastAction
+            altText="Buy Credits"
+            onClick={() => window.location.href = '/pricing'}
+          >
+            Buy Credits
+          </ToastAction>
+        ),
       });
       return;
     }
@@ -215,7 +227,7 @@ export function ContentCalendar({
           variant: "destructive",
           title: title.replace(/\n/g, ' '), // Remove line breaks from title
           description: description,
-          duration: 8000, // Longer duration for credit errors
+          duration: isCredit ? Infinity : 5000, // Credit errors stay until dismissed
           action: isCredit ? (
             <ToastAction
               altText="Buy Credits"
@@ -509,7 +521,7 @@ export function ContentCalendar({
         variant: "destructive",
         title: title.replace(/\n/g, ' '), // Remove line breaks from title
         description: description,
-        duration: isCredit ? 8000 : 5000, // Longer duration for credit errors
+        duration: isCredit ? Infinity : 5000, // Credit errors stay until dismissed
         action: isCredit ? (
           <ToastAction
             altText="Buy Credits"
