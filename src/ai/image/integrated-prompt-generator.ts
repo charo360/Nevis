@@ -184,6 +184,28 @@ export class IntegratedPromptGenerator {
     prompt += `5. Overall mood must match content tone\n`;
     prompt += `6. All text must be clearly readable and well-contrasted\n\n`;
 
+    // ANTI-AI VISUAL RULES (CRITICAL)
+    prompt += `**🚫 ANTI-AI VISUAL RULES (MANDATORY - NO EXCEPTIONS):**\n`;
+    prompt += `ABSOLUTELY FORBIDDEN - DO NOT INCLUDE ANY OF THESE:\n`;
+    prompt += `❌ NO flowing lines, waves, streams, or ribbons coming from devices/phones\n`;
+    prompt += `❌ NO glowing trails, light beams, energy effects, or halos around objects\n`;
+    prompt += `❌ NO abstract colorful swirls, flowing elements, or decorative curves\n`;
+    prompt += `❌ NO neon glows, artificial lighting effects, or fantasy glows\n`;
+    prompt += `❌ NO computer-generated visual effects or CGI-style elements\n`;
+    prompt += `❌ NO floating icons, symbols, or graphic overlays on the image\n`;
+    prompt += `❌ NO abstract data visualizations, charts, or graphs overlaid on photos\n`;
+    prompt += `❌ NO holographic effects, digital overlays, or futuristic elements\n`;
+    prompt += `❌ NO particle effects, sparkles, or magical elements\n`;
+    prompt += `❌ NO geometric patterns overlaid on realistic photos\n\n`;
+    prompt += `✅ INSTEAD, CREATE:\n`;
+    prompt += `✓ Clean, realistic photography without artificial effects\n`;
+    prompt += `✓ Natural lighting and authentic environments\n`;
+    prompt += `✓ Real people in natural settings (not staged poses)\n`;
+    prompt += `✓ Actual products/devices shown clearly without effects\n`;
+    prompt += `✓ Simple, professional compositions\n`;
+    prompt += `✓ Authentic interactions with technology\n`;
+    prompt += `✓ Real-world scenarios that people can relate to\n\n`;
+
     // FORBIDDEN VISUAL ELEMENTS
     prompt += `🚫 **FORBIDDEN VISUAL ELEMENTS - DO NOT INCLUDE:**\n`;
     prompt += `❌ NO circuit boards, circuit lines, or electronic circuits\n`;
@@ -390,7 +412,11 @@ export class IntegratedPromptGenerator {
 - Demonstrate "before vs after" or "problem vs solution"
 - Use authentic ${location} scenarios, not staged environments
 - Show outcomes and results, not just processes
-- Avoid complex charts or trading graphs - keep it relatable\n\n`,
+- Avoid complex charts or trading graphs - keep it relatable
+- 🚫 CRITICAL: NO flowing money lines, glowing payment trails, or abstract financial swirls
+- 🚫 NO colorful waves/streams coming from phones or devices
+- 🚫 NO artificial glowing effects around mobile banking interfaces
+- ✅ SHOW: Clean phone screens with actual banking interfaces, real people in natural settings\n\n`,
 
       retail: `**RETAIL BUSINESS GUIDELINES:**
 - Show products in real-world usage contexts

@@ -32,9 +32,10 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
     const [useBrandProfile, setUseBrandProfile] = React.useState(!!brandProfile);
     const [outputType, setOutputType] = React.useState<'image' | 'video'>('image');
     const [aspectRatio, setAspectRatio] = React.useState<'16:9' | '9:16'>('16:9');
-    const [selectedRevoModel, setSelectedRevoModel] = React.useState<RevoModel>('revo-1.5');
+    const [selectedRevoModel, setSelectedRevoModel] = React.useState<RevoModel>('revo-2.0');
     const [isPromptBuilderOpen, setIsPromptBuilderOpen] = React.useState(false);
     const [selectedProductId, setSelectedProductId] = React.useState<string | null>(null);
+    const [includeContacts, setIncludeContacts] = React.useState(false); // Contacts toggle - default OFF
     const { toast } = useToast();
     const { designColors, updateDesignColors } = useDesignColors();
     const { getAccessToken } = useAuth();
@@ -209,7 +210,8 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     outputType === 'video' ? aspectRatio : undefined,
                     'revo-2.0-gemini-2.5-flash-image-preview', // Use Revo 2.0 model specifically (4 credits)
                     designColors, // Pass design-specific colors
-                    accessToken || undefined // Pass access token as fallback
+                    accessToken || undefined, // Pass access token as fallback
+                    includeContacts // Pass contacts toggle
                 );
 
                 aiResponse = {
@@ -236,7 +238,8 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     outputType === 'video' ? aspectRatio : undefined,
                     'revo-1.5-gemini-2.5-flash-image-preview', // Use Revo 1.5 model specifically (3 credits)
                     designColors, // Pass design-specific colors
-                    accessToken || undefined // Pass access token as fallback
+                    accessToken || undefined, // Pass access token as fallback
+                    includeContacts // Pass contacts toggle
                 );
 
                 aiResponse = {
@@ -274,7 +277,8 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     outputType === 'video' ? aspectRatio : undefined,
                     'revo-1.0-gemini-2.5-flash-image-preview', // Use Revo 1.0 model specifically (3 credits)
                     undefined, // designColors
-                    accessToken || undefined // Pass access token as fallback
+                    accessToken || undefined, // Pass access token as fallback
+                    includeContacts // Pass contacts toggle
                 );
 
                 // 🔍 DEBUG: Log generation result
@@ -313,7 +317,8 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     outputType === 'video' ? aspectRatio : undefined,
                     undefined, // preferredModel
                     undefined, // designColors
-                    accessToken || undefined // Pass access token as fallback
+                    accessToken || undefined, // Pass access token as fallback
+                    includeContacts // Pass contacts toggle
                 );
 
                 aiResponse = {
@@ -462,6 +467,8 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     setAspectRatio={setAspectRatio}
                     selectedRevoModel={selectedRevoModel}
                     setSelectedRevoModel={setSelectedRevoModel}
+                    includeContacts={includeContacts}
+                    setIncludeContacts={setIncludeContacts}
                 />
             </div>
         </div>

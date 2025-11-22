@@ -7,6 +7,7 @@
 import type { BrandProfile, Platform } from '@/lib/types';
 import { ContentQualityEnhancer } from '@/utils/content-quality-enhancer';
 import { getVertexAIClient } from '@/lib/services/vertex-ai-client';
+import { getGeminiAPIClient } from '@/lib/services/gemini-api-client';
 import { getClaudeClient } from '@/lib/services/claude-client';
 import {
   TextGenerationHandler,
@@ -24,6 +25,8 @@ type VertexGenerationOptions = {
   temperature?: number;
   maxOutputTokens?: number;
   logoImage?: string;
+  aspectRatio?: '1:1' | '3:4' | '4:3' | '9:16' | '16:9'; // Gemini 3 Pro aspect ratio
+  imageSize?: '256' | '512' | '1K' | '2K'; // Gemini 3 Pro image size
 };
 
 export const defaultClaudeGenerator: TextGenerationHandler = {
@@ -79,12 +82,45 @@ export async function generateContentDirect(
 
   try {
     if (isImageGeneration) {
-      // Use Vertex AI for image generation
-      const result = await getVertexAIClient().generateImage(prompt, modelName, {
-        temperature: options.temperature ?? 0.7,
-        maxOutputTokens: options.maxOutputTokens ?? 8192,
-        logoImage: options.logoImage ?? logoImage
-      });
+      // Route to appropriate API based on model
+      const isGemini3Pro = modelName.includes('gemini-3-pro-image');
+      
+      let result;
+      if (isGemini3Pro) {
+        // PRIMARY: Try Gemini 3 Pro via direct API first
+        try {
+          console.log('🎨 [Revo 2.0] PRIMARY: Using Gemini 3 Pro via direct API');
+          result = await getGeminiAPIClient().generateImage(prompt, modelName, {
+            temperature: options.temperature ?? 0.7,
+            aspectRatio: options.aspectRatio,
+            imageSize: options.imageSize,
+            logoImage: options.logoImage ?? logoImage
+          });
+          console.log('✅ [Revo 2.0] Gemini 3 Pro generation successful');
+        } catch (gemini3Error) {
+          // FALLBACK: Use Vertex AI if Gemini 3 Pro fails
+          console.warn('⚠️ [Revo 2.0] Gemini 3 Pro failed, falling back to Vertex AI:', gemini3Error instanceof Error ? gemini3Error.message : gemini3Error);
+          console.log('🔄 [Revo 2.0] FALLBACK: Using Gemini 2.5 via Vertex AI');
+          result = await getVertexAIClient().generateImage(prompt, REVO_2_0_FALLBACK_MODEL, {
+            temperature: options.temperature ?? 0.7,
+            maxOutputTokens: options.maxOutputTokens ?? 8192,
+            logoImage: options.logoImage ?? logoImage,
+            aspectRatio: options.aspectRatio,
+            imageSize: options.imageSize
+          });
+          console.log('✅ [Revo 2.0] Fallback generation successful');
+        }
+      } else {
+        // Use Vertex AI for other models (Gemini 2.5, etc.)
+        console.log('🎨 [Revo 2.0] Using Vertex AI for model:', modelName);
+        result = await getVertexAIClient().generateImage(prompt, modelName, {
+          temperature: options.temperature ?? 0.7,
+          maxOutputTokens: options.maxOutputTokens ?? 8192,
+          logoImage: options.logoImage ?? logoImage,
+          aspectRatio: options.aspectRatio,
+          imageSize: options.imageSize
+        });
+      }
 
       // Return in expected format
       return {
@@ -138,8 +174,18 @@ export async function generateContentWithProxy(
   return await generateContentDirect(promptOrParts, modelName, isImageGeneration, options);
 }
 
-// Direct Vertex AI models (no proxy dependencies)
-export const REVO_2_0_MODEL = 'gemini-2.5-flash-image';
+// Image generation models
+// PRIMARY: Gemini 3 Pro via direct API (best quality, aspect ratio control)
+export const REVO_2_0_PRIMARY_MODEL = 'gemini-3-pro-image-preview'; // Via direct Gemini API
+// FALLBACK: Gemini 2.5 via Vertex AI (if Gemini 3 Pro fails)
+export const REVO_2_0_FALLBACK_MODEL = 'gemini-2.5-flash-image'; // Via Vertex AI
+
+// Text generation model (for Vertex AI)
+export const REVO_2_0_TEXT_MODEL = 'gemini-2.5-flash'; // Via Vertex AI for text generation
+
+// Legacy exports for backwards compatibility
+export const REVO_2_0_MODEL = REVO_2_0_PRIMARY_MODEL; // Now points to Gemini 3 Pro (IMAGE ONLY)
+export const REVO_2_0_GEMINI_3_PRO_MODEL = REVO_2_0_PRIMARY_MODEL;
 
 // ============================================================================
 // UNIVERSAL MULTI-ANGLE MARKETING FRAMEWORK (Ported from Revo 1.0)
@@ -1414,7 +1460,7 @@ export async function generateCreativeConcept(options: Revo20GenerationOptions):
     const temperature = 0.8 + (Math.random() * 0.2); // 0.8-1.0 range (safe for Claude)
     console.log(`🎲 [Revo 2.0] Using temperature: ${temperature.toFixed(2)} for concept variety`);
 
-    const result = await generateContentWithProxy(conceptPrompt, REVO_2_0_MODEL, false);
+    const result = await generateContentWithProxy(conceptPrompt, REVO_2_0_TEXT_MODEL, false);
     const response = await result.response;
     const conceptText = response.text();
 
@@ -1638,13 +1684,19 @@ export function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: a
 - Abstract emotional imagery without product
 - People as main focus with product as prop
 - Vague "smart home" imagery without specific devices
+- Flowing lines, glowing effects, or abstract swirls around products
+- Holographic overlays or futuristic visual effects
+- Floating icons or decorative graphic elements
+- Any AI-generated looking visual effects
 
 ✅ REQUIRED FOR RETAIL VISUALS:
 - Large, clear product image
 - Product takes up majority of frame
 - Price visible somewhere in design
 - Brand/model identifiable
-- Professional product showcase style`;
+- Professional product showcase style
+- Clean, realistic photography without artificial effects
+- Natural lighting and simple backgrounds`;
     }
   }
 
@@ -2685,10 +2737,26 @@ ${imagePrompt ? `Image elements include: ${getDetailedVisualContext(imagePrompt,
 - Show REAL people in NATURAL settings (not staged poses)
 - Use CLEAN, SIMPLE compositions without artificial effects
 - Focus on AUTHENTIC interactions with technology
-- Avoid ANY flowing lines, glowing effects, or abstract elements
-- Show actual mobile banking interfaces, not fantasy effects
-- Use natural lighting and realistic environments
-- NO computer-generated visual effects that look fake
+
+🚫 ABSOLUTELY FORBIDDEN - DO NOT INCLUDE ANY OF THESE:
+❌ NO flowing lines, waves, streams, or ribbons coming from devices/phones
+❌ NO glowing trails, light beams, energy effects, or halos around objects
+❌ NO abstract colorful swirls, flowing elements, or decorative curves
+❌ NO neon glows, artificial lighting effects, or fantasy glows
+❌ NO computer-generated visual effects or CGI-style elements
+❌ NO floating icons, symbols, or graphic overlays on the image
+❌ NO abstract data visualizations, charts, or graphs overlaid on photos
+❌ NO holographic effects, digital overlays, or futuristic elements
+❌ NO particle effects, sparkles, or magical elements
+❌ NO geometric patterns overlaid on realistic photos
+
+✅ INSTEAD, CREATE:
+✓ Clean, realistic photography without artificial effects
+✓ Natural lighting and authentic environments
+✓ Real people in natural settings doing real activities
+✓ Actual products/devices shown clearly without effects
+✓ Simple, professional compositions
+✓ Show actual mobile banking interfaces, not fantasy effects
 
 📖 AUTHENTIC STORYTELLING SCENARIOS (USE THESE REAL-LIFE STORIES):
 ${getAuthenticStoryScenarios(brandProfile, businessType)}
@@ -2811,15 +2879,27 @@ ${getValuePropositionsForBusiness(businessType, brandProfile)}
 - CREATE: Authentic fintech scenarios that Paya customers actually experience
 - CREATE: Authentic fintech scenarios that Paya customers actually experience
 
-🚫 ANTI-AI VISUAL RULES (CRITICAL):
-- NO flowing lines, waves, or streams coming from devices
-- NO glowing trails, light beams, or energy effects around phones
-- NO abstract colorful ribbons or flowing elements
-- NO overly stylized lighting effects or artificial glows
-- NO computer-generated looking visual effects
-- USE: Clean, realistic photography without artificial effects
-- SHOW: Real people using real devices in natural settings
-- AVOID: Any elements that look obviously AI-generated or fake
+🚫 ANTI-AI VISUAL RULES (MANDATORY - NO EXCEPTIONS):
+ABSOLUTELY FORBIDDEN - DO NOT INCLUDE ANY OF THESE:
+❌ NO flowing lines, waves, streams, or ribbons coming from devices/phones
+❌ NO glowing trails, light beams, energy effects, or halos around objects
+❌ NO abstract colorful swirls, flowing elements, or decorative curves
+❌ NO neon glows, artificial lighting effects, or fantasy glows
+❌ NO computer-generated visual effects or CGI-style elements
+❌ NO floating icons, symbols, or graphic overlays on the image
+❌ NO abstract data visualizations, charts, or graphs overlaid on photos
+❌ NO holographic effects, digital overlays, or futuristic elements
+❌ NO particle effects, sparkles, or magical elements
+❌ NO geometric patterns overlaid on realistic photos
+
+✅ INSTEAD, CREATE:
+✓ Clean, realistic photography without artificial effects
+✓ Natural lighting and authentic environments
+✓ Real people in natural settings doing real activities
+✓ Actual products/devices shown clearly without effects
+✓ Simple, professional compositions
+✓ Authentic interactions with technology
+✓ Real-world scenarios that people can relate to
 
 🚫 BANNED CORPORATE JARGON (ELIMINATE THESE):
 - "Payments that fits your day" (WRONG GRAMMAR + GENERIC)
@@ -3328,7 +3408,7 @@ Location: ${brandProfile.location || 'Global'}
 
 Return ONLY the caption text, nothing else.`;
 
-    const result = await generateContentWithProxy(captionPrompt, REVO_2_0_MODEL, false);
+    const result = await generateContentWithProxy(captionPrompt, REVO_2_0_TEXT_MODEL, false);
     const response = await result.response;
     const caption = response.text().trim().replace(/^["']|["']$/g, '');
 
@@ -4012,7 +4092,7 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
     // Step 6: Generate image with integrated prompt
     const imageResult = await Promise.race([
       generateImageWithGemini(imagePrompt, enhancedOptions),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Image generation timeout')), 20000))
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Image generation timeout')), 60000)) // Increased to 60s for Gemini 3 Pro
     ]) as { imageUrl: string };
 
     console.log(`🖼️ [Revo 2.0] Generated image successfully`);
@@ -4163,7 +4243,7 @@ Location: ${brandProfile.location || 'Global'}
 
 Return ONLY the headline text, nothing else.`;
 
-    const result = await generateContentWithProxy(headlinePrompt, REVO_2_0_MODEL, false);
+    const result = await generateContentWithProxy(headlinePrompt, REVO_2_0_TEXT_MODEL, false);
     const response = await result.response;
     const headline = response.text().trim().replace(/^["']|["']$/g, '');
 
@@ -4212,7 +4292,7 @@ Location: ${brandProfile.location || 'Global'}
 
 Return ONLY the subheadline text, nothing else.`;
 
-    const result = await generateContentWithProxy(subheadlinePrompt, REVO_2_0_MODEL, false);
+    const result = await generateContentWithProxy(subheadlinePrompt, REVO_2_0_TEXT_MODEL, false);
     const response = await result.response;
     const subheadline = response.text().trim().replace(/^["']|["']$/g, '');
 
@@ -4329,7 +4409,7 @@ ${productContext}
 
 Return ONLY the CTA text, nothing else.`;
 
-    const result = await generateContentWithProxy(ctaPrompt, REVO_2_0_MODEL, false);
+    const result = await generateContentWithProxy(ctaPrompt, REVO_2_0_TEXT_MODEL, false);
     const response = await result.response;
     const cta = response.text().trim().replace(/^["']|["']$/g, '');
 

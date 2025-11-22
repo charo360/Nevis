@@ -682,17 +682,17 @@ export function ContentCalendar({
             </div>
           </div>
 
-          {/* Brand Colors Section */}
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Palette className="h-4 w-4 text-blue-600" />
-              <span className="font-medium text-sm">Brand Colors</span>
+          {/* Brand Colors Section - Compact */}
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-2.5">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Palette className="h-3.5 w-3.5 text-blue-600" />
+              <span className="font-medium text-xs">Brand Colors</span>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
               {/* Primary Color */}
-              <div className="bg-white rounded-lg p-3 border border-gray-200">
-                <label className="text-xs font-medium text-gray-600 mb-2 block">Primary Color</label>
-                <div className="flex items-center gap-2">
+              <div className="bg-white rounded p-2 border border-gray-200">
+                <label className="text-[10px] font-medium text-gray-600 mb-1 block">Primary Color</label>
+                <div className="flex items-center gap-1.5">
                   <input
                     type="color"
                     value={brandProfile.primaryColor || '#3B82F6'}
@@ -713,7 +713,7 @@ export function ContentCalendar({
                         });
                       }
                     }}
-                    className="w-12 h-12 rounded border-2 border-gray-300 cursor-pointer hover:border-blue-500 transition-colors"
+                    className="w-8 h-8 rounded border border-gray-300 cursor-pointer hover:border-blue-500 transition-colors"
                     title="Pick primary color"
                   />
                   <div className="flex-1">
@@ -731,7 +731,7 @@ export function ContentCalendar({
                           }
                         }
                       }}
-                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                      className="w-full px-1.5 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
                       placeholder="#3B82F6"
                     />
                   </div>
@@ -739,9 +739,9 @@ export function ContentCalendar({
               </div>
 
               {/* Accent Color */}
-              <div className="bg-white rounded-lg p-3 border border-gray-200">
-                <label className="text-xs font-medium text-gray-600 mb-2 block">Accent Color</label>
-                <div className="flex items-center gap-2">
+              <div className="bg-white rounded p-2 border border-gray-200">
+                <label className="text-[10px] font-medium text-gray-600 mb-1 block">Accent Color</label>
+                <div className="flex items-center gap-1.5">
                   <input
                     type="color"
                     value={brandProfile.accentColor || '#10B981'}
@@ -762,7 +762,7 @@ export function ContentCalendar({
                         });
                       }
                     }}
-                    className="w-12 h-12 rounded border-2 border-gray-300 cursor-pointer hover:border-green-500 transition-colors"
+                    className="w-8 h-8 rounded border border-gray-300 cursor-pointer hover:border-green-500 transition-colors"
                     title="Pick accent color"
                   />
                   <div className="flex-1">
@@ -780,7 +780,7 @@ export function ContentCalendar({
                           }
                         }
                       }}
-                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500 font-mono"
+                      className="w-full px-1.5 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 font-mono"
                       placeholder="#10B981"
                     />
                   </div>
@@ -788,9 +788,9 @@ export function ContentCalendar({
               </div>
 
               {/* Background Color */}
-              <div className="bg-white rounded-lg p-3 border border-gray-200">
-                <label className="text-xs font-medium text-gray-600 mb-2 block">Background Color</label>
-                <div className="flex items-center gap-2">
+              <div className="bg-white rounded p-2 border border-gray-200">
+                <label className="text-[10px] font-medium text-gray-600 mb-1 block">Background Color</label>
+                <div className="flex items-center gap-1.5">
                   <input
                     type="color"
                     value={brandProfile.backgroundColor || '#F8FAFC'}
@@ -811,7 +811,7 @@ export function ContentCalendar({
                         });
                       }
                     }}
-                    className="w-12 h-12 rounded border-2 border-gray-300 cursor-pointer hover:border-gray-500 transition-colors"
+                    className="w-8 h-8 rounded border border-gray-300 cursor-pointer hover:border-gray-500 transition-colors"
                     title="Pick background color"
                   />
                   <div className="flex-1">
@@ -829,14 +829,14 @@ export function ContentCalendar({
                           }
                         }
                       }}
-                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-500 font-mono"
+                      className="w-full px-1.5 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-gray-500 font-mono"
                       placeholder="#F8FAFC"
                     />
                   </div>
                 </div>
               </div>
             </div>
-            <p className="text-xs text-gray-500 mt-3">
+            <p className="text-[10px] text-gray-500 mt-1.5">
               💡 These colors will be used in your generated content when "Colors" toggle is enabled
             </p>
           </div>

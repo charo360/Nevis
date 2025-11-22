@@ -6,15 +6,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI, Part, Modality } from '@google/genai';
 import { BrandProfile } from '@/lib/types';
+import { getGeminiAPIClient } from '@/lib/services/gemini-api-client';
 
-// Increase body size limit for this route to handle large image uploads
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '50mb',
-    },
-  },
-};
+// Configure route for large payloads
+export const runtime = 'nodejs';
+export const maxDuration = 60; // 60 seconds timeout
+export const dynamic = 'force-dynamic';
+
+// Note: Body size limit is configured in next.config.js
+// api.bodyParser.sizeLimit = '50mb'
 
 // Image asset interface
 interface ImageAsset {

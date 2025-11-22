@@ -33,6 +33,8 @@ interface ChatInputProps {
   selectedRevoModel: RevoModel;
   setSelectedRevoModel: (value: RevoModel) => void;
   userCredits?: number;
+  includeContacts: boolean;
+  setIncludeContacts: (value: boolean) => void;
 }
 
 export function ChatInput({
@@ -48,6 +50,8 @@ export function ChatInput({
   outputType,
   setOutputType,
   handleImageUpload,
+  includeContacts,
+  setIncludeContacts,
   isBrandProfileAvailable,
   onEditImage,
   aspectRatio,
@@ -193,6 +197,26 @@ export function ChatInput({
                   </Tooltip>
                 </TooltipProvider>
               )}
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="contacts-switch"
+                checked={includeContacts}
+                onCheckedChange={setIncludeContacts}
+                disabled={!useBrandProfile || !isBrandProfileAvailable}
+              />
+              <Label htmlFor="contacts-switch">Include Contact Info</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-xs text-muted-foreground cursor-help">ⓘ</span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Add phone, email, and website to the design footer</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
 
             <div className="flex items-center space-x-2">

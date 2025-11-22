@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crevo Store Importer - Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .input-section {
+            margin-bottom: 30px;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        input[type="text"] {
+            flex: 1;
+            padding: 15px 20px;
+            font-size: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            padding: 15px 40px;
+            font-size: 16px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .examples {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+        
+        .examples h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #666;
+        }
+        
+        .example-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .example-link {
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        
+        .example-link:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .loading.active {
+            display: block;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .results {
+            display: none;
+        }
+        
+        .results.active {
+            display: block;
+        }
+        
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .stat-card .number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-card .label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        .brand-assets {
+            margin-bottom: 30px;
+        }
+        
+        .brand-assets h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .logo-section {
+            margin-bottom: 20px;
+        }
+        
+        .logo-section img {
+            max-width: 200px;
+            max-height: 100px;
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        
+        .colors {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .color-swatch {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding: 5px;
+            font-size: 11px;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+        
+        .products-section h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .product-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .product-card img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+        }
+        
+        .product-info {
+            padding: 15px;
+        }
+        
+        .product-info h3 {
+            font-size: 16px;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .product-info .image-count {
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .error {
+            display: none;
+            padding: 20px;
+            background: #fee;
+            border: 1px solid #fcc;
+            border-radius: 8px;
+            color: #c33;
+            margin-bottom: 20px;
+        }
+        
+        .error.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 Crevo Store Importer</h1>
+            <p>Extract all product images, logo, and brand colors from any store</p>
+        </div>
+        
+        <div class="content">
+            <div class="input-section">
+                <div class="input-group">
+                    <input 
+                        type="text" 
+                        id="storeUrl" 
+                        placeholder="Enter store URL (e.g., https://shop.gymshark.com)"
+                        value=""
+                    />
+                    <button id="importBtn" onclick="importStore()">
+                        Import Assets
+                    </button>
+                </div>
+                
+                <div class="examples">
+                    <h3>Try these examples:</h3>
+                    <div class="example-links">
+                        <span class="example-link" onclick="setExample('https://shop.gymshark.com')">Gymshark (Shopify)</span>
+                        <span class="example-link" onclick="setExample('https://www.allbirds.com')">Allbirds (Shopify)</span>
+                        <span class="example-link" onclick="setExample('https://www.fashionnova.com')">Fashion Nova</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="error" class="error"></div>
+            
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Analyzing store and extracting assets...</p>
+                <p style="font-size: 14px; color: #666; margin-top: 10px;">This may take 5-15 seconds</p>
+            </div>
+            
+            <div id="results" class="results">
+                <div class="summary">
+                    <div class="stat-card">
+                        <div class="number" id="platformName">-</div>
+                        <div class="label">Platform</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number" id="productCount">0</div>
+                        <div class="label">Products</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number" id="imageCount">0</div>
+                        <div class="label">Images</div>
+                    </div>
+                </div>
+                
+                <div class="brand-assets">
+                    <h2>Brand Assets</h2>
+                    
+                    <div class="logo-section">
+                        <h3 style="font-size: 14px; color: #666; margin-bottom: 10px;">Logo</h3>
+                        <img id="logoImg" src="" alt="Store Logo" style="display: none;" />
+                        <p id="noLogo" style="color: #999; display: none;">No logo detected</p>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <h3 style="font-size: 14px; color: #666; margin-bottom: 10px;">Brand Colors</h3>
+                        <div id="colors" class="colors"></div>
+                        <p id="noColors" style="color: #999; display: none;">No colors detected</p>
+                    </div>
+                </div>
+                
+                <div class="products-section">
+                    <h2>Products (<span id="productCountText">0</span>)</h2>
+                    <div id="productsGrid" class="products-grid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:3000/api/import-store';
+        
+        function setExample(url) {
+            document.getElementById('storeUrl').value = url;
+        }
+        
+        async function importStore() {
+            const storeUrl = document.getElementById('storeUrl').value.trim();
+            
+            if (!storeUrl) {
+                showError('Please enter a store URL');
+                return;
+            }
+            
+            // Hide previous results/errors
+            hideError();
+            document.getElementById('results').classList.remove('active');
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('importBtn').disabled = true;
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ storeUrl })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayResults(data);
+                } else {
+                    showError(data.error || 'Failed to import store');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Network error. Make sure the API server is running on localhost:3000');
+            } finally {
+                document.getElementById('loading').classList.remove('active');
+                document.getElementById('importBtn').disabled = false;
+            }
+        }
+        
+        function displayResults(data) {
+            // Update summary stats
+            document.getElementById('platformName').textContent = data.platform.toUpperCase();
+            document.getElementById('productCount').textContent = data.totalProducts;
+            document.getElementById('imageCount').textContent = data.totalImages;
+            document.getElementById('productCountText').textContent = data.totalProducts;
+            
+            // Display logo
+            const logoImg = document.getElementById('logoImg');
+            const noLogo = document.getElementById('noLogo');
+            if (data.logo) {
+                logoImg.src = data.logo;
+                logoImg.style.display = 'block';
+                noLogo.style.display = 'none';
+            } else {
+                logoImg.style.display = 'none';
+                noLogo.style.display = 'block';
+            }
+            
+            // Display colors
+            const colorsContainer = document.getElementById('colors');
+            const noColors = document.getElementById('noColors');
+            colorsContainer.innerHTML = '';
+            
+            if (data.brandColors && data.brandColors.length > 0) {
+                data.brandColors.forEach(color => {
+                    const swatch = document.createElement('div');
+                    swatch.className = 'color-swatch';
+                    swatch.style.background = color;
+                    swatch.textContent = color;
+                    colorsContainer.appendChild(swatch);
+                });
+                noColors.style.display = 'none';
+            } else {
+                noColors.style.display = 'block';
+            }
+            
+            // Display products
+            const productsGrid = document.getElementById('productsGrid');
+            productsGrid.innerHTML = '';
+            
+            data.products.forEach(product => {
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                
+                const mainImage = product.images && product.images.length > 0 
+                    ? (product.images[0].url || product.images[0])
+                    : 'https://via.placeholder.com/250x250?text=No+Image';
+                
+                card.innerHTML = `
+                    <img src="${mainImage}" alt="${product.title}" />
+                    <div class="product-info">
+                        <h3>${product.title}</h3>
+                        <div class="image-count">${product.images?.length || 0} images</div>
+                    </div>
+                `;
+                
+                productsGrid.appendChild(card);
+            });
+            
+            // Show results
+            document.getElementById('results').classList.add('active');
+            
+            // Scroll to results
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.classList.add('active');
+        }
+        
+        function hideError() {
+            document.getElementById('error').classList.remove('active');
+        }
+        
+        // Allow Enter key to submit
+        document.getElementById('storeUrl').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                importStore();
+            }
+        });
+    </script>
+</body>
+</html>

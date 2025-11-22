@@ -154,6 +154,20 @@ const nextConfig = {
   experimental: {
     // Remove turbo configuration to avoid Turbopack issues
   },
+  // Increase body size limit for API routes (especially image editing)
+  serverRuntimeConfig: {
+    // Will only be available on the server side
+    bodyParser: {
+      sizeLimit: '50mb',
+    },
+  },
+  // API routes configuration
+  api: {
+    bodyParser: {
+      sizeLimit: '50mb',
+    },
+    responseLimit: '50mb',
+  },
 }
 
 module.exports = nextConfig

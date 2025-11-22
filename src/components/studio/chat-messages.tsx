@@ -49,7 +49,7 @@ export function ChatMessages({ messages, isLoading, onSetReferenceAsset, onEditI
       const link = document.createElement('a');
       link.href = downloadUrl;
       const fileExtension = type === 'image' ? 'png' : 'mp4';
-      link.download = `nevis-hd-${type}-${Date.now()}.${fileExtension}`;
+      link.download = `crevo-hd-${type}-${Date.now()}.${fileExtension}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

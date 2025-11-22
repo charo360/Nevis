@@ -586,7 +586,8 @@ export async function generateCreativeAssetAction(
     accentColor?: string;
     backgroundColor?: string;
   },
-  accessToken?: string // Optional: pass access token from client as fallback
+  accessToken?: string, // Optional: pass access token from client as fallback
+  includeContacts?: boolean // Optional: whether to include contact information (default: false)
 ): Promise<CreativeAsset> {
   try {
     // Enforce credit deduction for creative studio generations
@@ -704,6 +705,7 @@ export async function generateCreativeAssetAction(
         aspectRatio,
         preferredModel,
         designColors,
+        includeContacts: includeContacts || false, // Pass includeContacts toggle (default: false)
       })
     );
 

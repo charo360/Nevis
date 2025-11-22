@@ -116,7 +116,7 @@ class VertexAIClient {
     if (envSecondaryCredsString) {
       try {
         this.secondaryCredentials = JSON.parse(envSecondaryCredsString);
-        this.secondaryProjectId = process.env.VERTEX_AI_SECONDARY_PROJECT_ID || this.secondaryCredentials.project_id;
+        this.secondaryProjectId = process.env.VERTEX_AI_SECONDARY_PROJECT_ID || this.secondaryCredentials?.project_id || 'unknown';
         this.secondaryLocation = process.env.VERTEX_AI_SECONDARY_LOCATION || 'us-central1';
         console.log('✅ [Vertex AI] Secondary credentials loaded from environment variable');
         return;
@@ -131,7 +131,7 @@ class VertexAIClient {
       const secondaryPath = join(process.cwd(), secondaryKeyFile);
       const secondaryData = readFileSync(secondaryPath, 'utf8');
       this.secondaryCredentials = JSON.parse(secondaryData);
-      this.secondaryProjectId = process.env.VERTEX_AI_SECONDARY_PROJECT_ID || this.secondaryCredentials.project_id;
+      this.secondaryProjectId = process.env.VERTEX_AI_SECONDARY_PROJECT_ID || this.secondaryCredentials?.project_id || 'unknown';
       this.secondaryLocation = process.env.VERTEX_AI_SECONDARY_LOCATION || 'us-central1';
       console.log('✅ [Vertex AI] Secondary fallback credentials loaded from file');
     } catch (error) {
@@ -187,10 +187,10 @@ class VertexAIClient {
     }
 
     const tokenData = await response.json();
-    this.accessToken = tokenData.access_token;
+    this.accessToken = tokenData.access_token || null;
     this.tokenExpiry = Date.now() + (tokenData.expires_in * 1000) - 60000; // Refresh 1 minute early
 
-    return this.accessToken;
+    return this.accessToken || '';
   }
 
   /**
@@ -245,10 +245,10 @@ class VertexAIClient {
     }
 
     const tokenData = await response.json();
-    this.secondaryAccessToken = tokenData.access_token;
+    this.secondaryAccessToken = tokenData.access_token || null;
     this.secondaryTokenExpiry = Date.now() + (tokenData.expires_in * 1000) - 60000; // Refresh 1 minute early
 
-    return this.secondaryAccessToken;
+    return this.secondaryAccessToken || '';
   }
 
   /**
@@ -366,7 +366,7 @@ class VertexAIClient {
   }
 
   /**
-   * Generate image content
+   * Generate image content with Gemini 3 Pro support
    */
   async generateImage(
     prompt: string,
@@ -376,6 +376,8 @@ class VertexAIClient {
       maxOutputTokens?: number;
       uploadedImage?: string; // Base64 data URL for user-uploaded image
       logoImage?: string; // Base64 data URL for brand logo
+      aspectRatio?: '1:1' | '3:4' | '4:3' | '9:16' | '16:9'; // Gemini 3 Pro aspect ratio
+      imageSize?: '256' | '512' | '1K' | '2K'; // Gemini 3 Pro image size
     } = {}
   ): Promise<{ imageData: string; mimeType: string; finishReason: string }> {
     const parts: any[] = [{ text: prompt }];
@@ -416,16 +418,28 @@ class VertexAIClient {
       });
     }
 
+    // Build generation config with Gemini 3 Pro support
+    const generationConfig: any = {
+      temperature: options.temperature || 0.7,
+      maxOutputTokens: options.maxOutputTokens || 8192,
+      responseModalities: ['IMAGE']
+    };
+
+    // Add imageConfig for models that support it (Gemini 2.0 Flash Exp, future Gemini 3 Pro)
+    if (model.includes('gemini-3-pro-image') || model.includes('gemini-2.0-flash-exp')) {
+      generationConfig.imageConfig = {
+        aspectRatio: options.aspectRatio || '3:4', // Default to Instagram portrait
+        imageSize: options.imageSize || '1K' // Default to high resolution
+      };
+      console.log('✅ [Vertex AI Client] Using enhanced model with imageConfig:', generationConfig.imageConfig);
+    }
+
     const request: VertexAIRequest = {
       contents: [{
         role: 'user',
         parts
       }],
-      generationConfig: {
-        temperature: options.temperature || 0.7,
-        maxOutputTokens: options.maxOutputTokens || 8192,
-        responseModalities: ['IMAGE']
-      }
+      generationConfig
     };
 
     const response = await this.generateContent(model, request);

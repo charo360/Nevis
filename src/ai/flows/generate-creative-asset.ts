@@ -10,6 +10,7 @@
 import { ai, MediaPart, GenerateRequest, generateContentWithProxy } from '@/ai/genkit';
 import { aiProxyClient, getUserIdForProxy, getUserTierForProxy } from '@/lib/services/ai-proxy-client';
 import { getVertexAIClient } from '@/lib/services/vertex-ai-client';
+import { getGeminiAPIClient } from '@/lib/services/gemini-api-client';
 import { z } from 'zod';
 import type { BrandProfile } from '@/lib/types';
 import {
@@ -46,6 +47,7 @@ const CreativeAssetInputSchema = z.object({
         accentColor: z.string().optional(),
         backgroundColor: z.string().optional(),
     }).optional().describe('Design-specific colors that override brand colors for this generation.'),
+    includeContacts: z.boolean().optional().describe('Whether to include contact information in the design (default: false).'),
 });
 export type CreativeAssetInput = z.infer<typeof CreativeAssetInputSchema>;
 
@@ -475,17 +477,28 @@ const understandContext = (
 ): ContextUnderstanding => {
     const lowerPrompt = prompt.toLowerCase();
 
-    // Determine image intent
+    // Determine image intent with enhanced detection
     let imageIntent: 'enhance' | 'reference' | 'template' | 'none' = 'none';
     if (hasUploadedImage) {
-        if (/\b(?:enhance|improve|edit|modify|update)\b/i.test(prompt)) {
+        // ENHANCE: User wants to improve/edit the uploaded image
+        if (/\b(?:enhance|improve|edit|modify|update|fix|refine|polish|upgrade)\b/i.test(prompt)) {
             imageIntent = 'enhance';
-        } else if (/\b(?:like|similar|inspired|based\s+on)\b/i.test(prompt)) {
-            imageIntent = 'reference';
-        } else if (/\b(?:use|template|exact|same)\b/i.test(prompt)) {
+        }
+        // TEMPLATE: User wants to use exact structure/layout
+        else if (/\b(?:use\s+this|template|exact|same|copy|replicate|match\s+this)\b/i.test(prompt)) {
             imageIntent = 'template';
-        } else {
-            imageIntent = 'reference'; // Default for uploaded images
+        }
+        // REFERENCE: User wants inspiration from the image (most common)
+        else if (/\b(?:like\s+this|similar|inspired|based\s+on|style|look|vibe|mood|feel|aesthetic)\b/i.test(prompt)) {
+            imageIntent = 'reference';
+        }
+        // CONTEXT: User is providing context/example (keywords: "for", "showing", "featuring", "with")
+        else if (/\b(?:for|showing|featuring|with|using|create.*design|make.*design)\b/i.test(prompt)) {
+            imageIntent = 'reference'; // Treat as reference for design inspiration
+        }
+        // DEFAULT: If no specific keywords, treat as reference (user uploaded for a reason)
+        else {
+            imageIntent = 'reference'; // Default - assume user wants design inspired by the image
         }
     }
 
@@ -715,15 +728,48 @@ const buildInstructionEnforcement = (enhancedIntent: EnhancedUserIntent): string
 
     // Context-specific guidance
     if (enhancedIntent.contextUnderstanding.hasUploadedImage) {
-        enforcement += `📸 **UPLOADED IMAGE CONTEXT:**\n`;
+        enforcement += `📸 **UPLOADED IMAGE CONTEXT & UNDERSTANDING:**\n`;
         enforcement += `- Intent: ${enhancedIntent.contextUnderstanding.imageIntent.toUpperCase()}\n`;
+
         if (enhancedIntent.contextUnderstanding.imageIntent === 'enhance') {
-            enforcement += '- Action: Enhance and improve the uploaded image while keeping its core elements\n';
+            enforcement += `- Action: Enhance and improve the uploaded image while keeping its core elements\n`;
+            enforcement += `- Analyze: Study the uploaded image carefully - understand its subject, composition, colors, and style\n`;
+            enforcement += `- Preserve: Keep the main subject, layout, and visual identity of the original\n`;
+            enforcement += `- Improve: Enhance quality, add professional design elements, improve composition\n`;
         } else if (enhancedIntent.contextUnderstanding.imageIntent === 'reference') {
-            enforcement += '- Action: Use the uploaded image as inspiration for style and composition\n';
+            enforcement += `- Action: Use the uploaded image as STRONG INSPIRATION for style, composition, and visual direction\n`;
+            enforcement += `- Deep Analysis Required:\n`;
+            enforcement += `  • STUDY the uploaded image's subject matter (product, person, scene, object)\n`;
+            enforcement += `  • EXTRACT the color palette (dominant colors, accent colors, mood)\n`;
+            enforcement += `  • UNDERSTAND the composition (layout, framing, focal points)\n`;
+            enforcement += `  • IDENTIFY the style (modern, vintage, minimalist, bold, etc.)\n`;
+            enforcement += `  • RECOGNIZE the context (what is being shown, what story it tells)\n`;
+            enforcement += `- Creative Interpretation:\n`;
+            enforcement += `  • CREATE a new design that CAPTURES THE ESSENCE of the uploaded image\n`;
+            enforcement += `  • If it shows a product, feature THAT TYPE of product in your design\n`;
+            enforcement += `  • If it shows a scene/setting, use SIMILAR visual atmosphere\n`;
+            enforcement += `  • If it shows people, match the DEMOGRAPHIC and STYLE\n`;
+            enforcement += `  • MATCH the color scheme and visual mood\n`;
+            enforcement += `  • ADAPT the composition style while making it your own\n`;
+            enforcement += `- Integration with User Prompt:\n`;
+            enforcement += `  • COMBINE insights from the uploaded image WITH the user's text instructions\n`;
+            enforcement += `  • The uploaded image provides VISUAL DIRECTION\n`;
+            enforcement += `  • The user's prompt provides CONTENT and MESSAGING\n`;
+            enforcement += `  • MERGE both to create a cohesive, relevant design\n`;
         } else if (enhancedIntent.contextUnderstanding.imageIntent === 'template') {
-            enforcement += '- Action: Use the uploaded image as an exact template - match its layout and structure\n';
+            enforcement += `- Action: Use the uploaded image as an EXACT TEMPLATE - match its layout and structure precisely\n`;
+            enforcement += `- Analyze: Study every detail - layout, positioning, spacing, hierarchy\n`;
+            enforcement += `- Replicate: Match the structure, composition, and design approach exactly\n`;
+            enforcement += `- Adapt: Replace content while maintaining the exact same visual framework\n`;
         }
+
+        enforcement += `\n🎯 **CRITICAL: UPLOADED IMAGE UNDERSTANDING CHECKLIST:**\n`;
+        enforcement += `✅ I have carefully analyzed the uploaded image\n`;
+        enforcement += `✅ I understand what it shows (subject, context, purpose)\n`;
+        enforcement += `✅ I have extracted its color palette and visual style\n`;
+        enforcement += `✅ I will incorporate these insights into my design\n`;
+        enforcement += `✅ My design will reflect the visual direction from the uploaded image\n`;
+        enforcement += `✅ I will combine the image's visual cues with the user's text instructions\n`;
         enforcement += '\n';
     }
 
@@ -1402,6 +1448,15 @@ ${bp.contactInfo?.email ? `- Email: ${bp.contactInfo.email}` : ''}
 ${servicesText ? `- Services: ${servicesText}` : ''}
 
 ${(() => {
+                    // Only include contacts if the toggle is ON
+                    if (input.includeContacts !== true) {
+                        return `\n🚫 **CRITICAL: DO NOT INCLUDE CONTACT INFORMATION:**
+- DO NOT include phone numbers, email addresses, or website URLs in the design
+- DO NOT add contact details in footer or anywhere else
+- Contact toggle is OFF - no contact information should appear
+- Focus on the main message without contact details\n`;
+                    }
+
                     const contacts: string[] = [];
                     if (bp.contactInfo?.phone) contacts.push(`📞 ${bp.contactInfo.phone}`);
                     if (bp.contactInfo?.email) contacts.push(`📧 ${bp.contactInfo.email}`);
@@ -2056,27 +2111,8 @@ Ensure the text is readable and well-composed.`
                 while (attempts < maxAttempts && !finalImageUrl) {
                     attempts++;
 
-                    // FORCE Flash models to prevent Pro charges
-                    let modelToUse = 'googleai/gemini-2.5-flash-image'; // Default
-
-                    if (input.preferredModel) {
-                        // Map Gemini model names to Genkit model identifiers - ONLY AUTHORIZED MODELS
-                        const modelMapping: Record<string, string> = {
-                            'gemini-2.5-flash-image-preview': 'googleai/gemini-2.5-flash-image',
-                            'gemini-2.5-flash-image': 'googleai/gemini-2.5-flash-image',
-                            'gemini-2.5-flash': 'googleai/gemini-2.5-flash'
-                            // REMOVED: 'gemini-2.0-flash' - NOT AUTHORIZED, CAUSES UNEXPECTED BILLING
-                        };
-
-                        modelToUse = modelMapping[input.preferredModel] || 'googleai/gemini-2.5-flash-image';
-
-                        // BLOCK Pro models to prevent expensive charges
-                        if (modelToUse.includes('pro')) {
-                            console.warn('🚫 BLOCKED Pro model to prevent charges, using Flash instead');
-                            modelToUse = 'googleai/gemini-2.5-flash-image';
-                        }
-                    }
-
+                    // Check if Revo 2.0 is selected (use Gemini 3 Pro)
+                    const isRevo20 = input.preferredModel?.includes('revo-2.0');
                     let imageUrl: string | null = null;
 
                     try {
@@ -2085,41 +2121,109 @@ Ensure the text is readable and well-composed.`
                             ? input.brandProfile.logoDataUrl
                             : undefined;
 
-                        // 🔍 DEBUG: Log promptParts before sending to AI
                         // 🔍 DEBUG: Extract full prompt text for analysis
                         const textPart = promptParts.find(part => typeof part === 'object' && 'text' in part);
                         const fullPromptText = textPart && 'text' in textPart ? textPart.text : '';
 
-                        console.log('🤖 [Generate Creative Asset] Sending to AI Model:', {
-                            modelToUse: modelToUse,
-                            promptPartsCount: promptParts.length,
-                            promptPartsTypes: promptParts.map(part => {
-                                if (typeof part === 'string') return 'string';
-                                if ('text' in part) return 'text';
-                                if ('media' in part) return `media(${part.media.contentType})`;
-                                return 'unknown';
-                            }),
-                            hasLogoDataUrl: !!logoDataUrl,
-                            hasUploadedImage: !!input.referenceAssetUrl
-                        });
+                        if (isRevo20) {
+                            // ✨ REVO 2.0: Use Gemini 3 Pro via Direct API for advanced editing capabilities
+                            console.log('🎨 [Creative Studio] REVO 2.0: Using Gemini 3 Pro via direct API');
+                            console.log('🤖 [Creative Studio] Gemini 3 Pro Config:', {
+                                promptLength: fullPromptText.length,
+                                hasLogoDataUrl: !!logoDataUrl,
+                                hasUploadedImage: !!input.referenceAssetUrl,
+                                uploadedImageLength: input.referenceAssetUrl?.length || 0,
+                                aspectRatio: input.aspectRatio || '1:1',
+                                imageSize: '1K'
+                            });
 
-                        console.log('📝 [Generate Creative Asset] FULL PROMPT TEXT:');
-                        console.log(fullPromptText);
-                        console.log('📝 [Generate Creative Asset] PROMPT LENGTH:', fullPromptText.length);
+                            try {
+                                // Use Gemini 3 Pro for Revo 2.0 with uploaded image support
+                                const result = await getGeminiAPIClient().generateImage(
+                                    fullPromptText,
+                                    'gemini-3-pro-image-preview',
+                                    {
+                                        temperature: 0.7,
+                                        aspectRatio: input.aspectRatio || '1:1',
+                                        imageSize: '1K',
+                                        logoImage: logoDataUrl,
+                                        uploadedImage: input.referenceAssetUrl || undefined // Pass uploaded reference image
+                                    }
+                                );
 
-                        const { media } = await generateWithRetry({
-                            model: modelToUse,
-                            prompt: promptParts,
-                            config: {
-                                responseModalities: ['TEXT', 'IMAGE'],
-                            },
-                        }, logoDataUrl);
+                                imageUrl = `data:${result.mimeType};base64,${result.imageData}`;
+                                console.log('✅ [Creative Studio] Gemini 3 Pro generation successful');
+                            } catch (gemini3Error) {
+                                // FALLBACK: Use Vertex AI if Gemini 3 Pro fails
+                                console.warn('⚠️ [Creative Studio] Gemini 3 Pro failed, falling back to Vertex AI:', gemini3Error instanceof Error ? gemini3Error.message : gemini3Error);
+                                console.log('🔄 [Creative Studio] FALLBACK: Using Gemini 2.5 via Vertex AI');
 
-                        imageUrl = media?.url ?? null;
+                                const vertexResult = await getVertexAIClient().generateImage(
+                                    fullPromptText,
+                                    'gemini-2.5-flash-image',
+                                    {
+                                        temperature: 0.7,
+                                        maxOutputTokens: 8192,
+                                        logoImage: logoDataUrl,
+                                        uploadedImage: input.referenceAssetUrl || undefined, // Pass uploaded image to fallback too
+                                        aspectRatio: input.aspectRatio || '1:1',
+                                        imageSize: '1K'
+                                    }
+                                );
+
+                                imageUrl = `data:${vertexResult.mimeType};base64,${vertexResult.imageData}`;
+                                console.log('✅ [Creative Studio] Vertex AI fallback generation successful');
+                            }
+                        } else {
+                            // REVO 1.0 / 1.5: Use Gemini 2.5 Flash via Genkit
+                            let modelToUse = 'googleai/gemini-2.5-flash-image'; // Default
+
+                            if (input.preferredModel) {
+                                // Map Gemini model names to Genkit model identifiers - ONLY AUTHORIZED MODELS
+                                const modelMapping: Record<string, string> = {
+                                    'gemini-2.5-flash-image-preview': 'googleai/gemini-2.5-flash-image',
+                                    'gemini-2.5-flash-image': 'googleai/gemini-2.5-flash-image',
+                                    'gemini-2.5-flash': 'googleai/gemini-2.5-flash'
+                                    // REMOVED: 'gemini-2.0-flash' - NOT AUTHORIZED, CAUSES UNEXPECTED BILLING
+                                };
+
+                                modelToUse = modelMapping[input.preferredModel] || 'googleai/gemini-2.5-flash-image';
+
+                                // BLOCK Pro models to prevent expensive charges
+                                if (modelToUse.includes('pro')) {
+                                    console.warn('🚫 BLOCKED Pro model to prevent charges, using Flash instead');
+                                    modelToUse = 'googleai/gemini-2.5-flash-image';
+                                }
+                            }
+
+                            console.log('🤖 [Creative Studio] Sending to AI Model:', {
+                                modelToUse: modelToUse,
+                                promptPartsCount: promptParts.length,
+                                promptPartsTypes: promptParts.map(part => {
+                                    if (typeof part === 'string') return 'string';
+                                    if ('text' in part) return 'text';
+                                    if ('media' in part) return `media(${part.media.contentType})`;
+                                    return 'unknown';
+                                }),
+                                hasLogoDataUrl: !!logoDataUrl,
+                                hasUploadedImage: !!input.referenceAssetUrl
+                            });
+
+                            console.log('📝 [Creative Studio] FULL PROMPT TEXT:');
+                            console.log(fullPromptText);
+                            console.log('📝 [Creative Studio] PROMPT LENGTH:', fullPromptText.length);
+
+                            const { media } = await generateWithRetry({
+                                model: modelToUse,
+                                prompt: promptParts,
+                                config: {
+                                    responseModalities: ['TEXT', 'IMAGE'],
+                                },
+                            }, logoDataUrl);
+
+                            imageUrl = media?.url ?? null;
+                        }
                     } catch (err: any) {
-                        const msg = (err?.message || '').toLowerCase();
-                        const isInternalError = msg.includes('500') || msg.includes('internal error');
-
                         // REMOVED: Unauthorized fallback model that causes unexpected billing
                         // Previously used 'googleai/gemini-2.0-flash-exp-image-generation' which is NOT AUTHORIZED
                         // Instead, rethrow the error to surface clear message and prevent unauthorized model usage
