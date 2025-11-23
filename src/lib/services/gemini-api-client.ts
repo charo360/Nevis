@@ -52,14 +52,20 @@ class GeminiAPIClient {
       this.apiKeys.push(primaryKey);
     }
 
-    // Secondary/fallback key
-    const secondaryKey = process.env.GEMINI_API_KEY_SECONDARY || process.env.GEMINI_IMAGE_EDIT_API_KEY_SECONDARY;
-    if (secondaryKey) {
-      this.apiKeys.push(secondaryKey);
+    // Fallback key 2
+    const fallbackKey2 = process.env.GEMINI_API_KEY_SECONDARY || process.env.GEMINI_IMAGE_EDIT_API_KEY_2;
+    if (fallbackKey2) {
+      this.apiKeys.push(fallbackKey2);
+    }
+
+    // Fallback key 3
+    const fallbackKey3 = process.env.GEMINI_IMAGE_EDIT_API_KEY_3;
+    if (fallbackKey3) {
+      this.apiKeys.push(fallbackKey3);
     }
 
     if (this.apiKeys.length === 0) {
-      throw new Error('🔑 At least one GEMINI_API_KEY is required. Please add it to your .env.local file.');
+      throw new Error('🔑 At least one GEMINI_API_KEY is required. Please add GEMINI_IMAGE_EDIT_API_KEY to your environment.');
     }
 
     console.log(`✅ [Gemini API] Client initialized with ${this.apiKeys.length} API key(s)`);
