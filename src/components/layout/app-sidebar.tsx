@@ -195,6 +195,7 @@ export function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
 
+          {/* TODO: Asset Library - Coming Soon (code preserved for future release)
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
@@ -207,6 +208,7 @@ export function AppSidebar() {
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
+          */}
 
           <SidebarMenuItem>
             <SidebarMenuButton
