@@ -7,7 +7,7 @@ RETURNS TABLE (
 ) AS $$
 DECLARE
     v_user_exists BOOLEAN;
-    v_free_credits INTEGER := 10; -- Default free credits for new users
+    v_free_credits INTEGER := 20; -- Default free credits for new users
 BEGIN
     -- Check if user already has credits record
     SELECT EXISTS(

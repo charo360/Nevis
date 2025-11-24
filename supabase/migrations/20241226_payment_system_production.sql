@@ -122,12 +122,12 @@ CREATE INDEX IF NOT EXISTS idx_users_trial_ends_at ON users(trial_ends_at);
 CREATE INDEX IF NOT EXISTS idx_users_subscription_status ON users(subscription_status);
 
 -- Initialize existing users with trial periods (PRODUCTION SAFE)
--- This gives all existing free users a 7-day trial with 10 credits
+-- This gives all existing free users a 7-day trial with 20 credits
 UPDATE users 
 SET 
     trial_ends_at = NOW() + INTERVAL '7 days',
-    remaining_credits = COALESCE(remaining_credits, 0) + 10,
-    total_credits = COALESCE(total_credits, 0) + 10,
+    remaining_credits = COALESCE(remaining_credits, 0) + 20,
+    total_credits = COALESCE(total_credits, 0) + 20,
     subscription_status = 'trialing',
     updated_at = NOW()
 WHERE 

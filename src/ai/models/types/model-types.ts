@@ -32,7 +32,7 @@ export interface ModelPricing {
   creditsPerGeneration: number;
   creditsPerDesign: number;
   creditsPerVideo?: number;
-  tier: 'basic' | 'premium' | 'enterprise';
+  tier: 'basic' | 'enhanced' | 'premium' | 'enterprise';
 }
 
 // Model configuration interface
@@ -152,7 +152,7 @@ export interface IModelRegistry {
 // Model selection criteria
 export interface ModelSelectionCriteria {
   requiredCapabilities?: (keyof ModelCapabilities)[];
-  preferredTier?: 'basic' | 'premium' | 'enterprise';
+  preferredTier?: 'basic' | 'enhanced' | 'premium' | 'enterprise';
   maxCredits?: number;
   platform?: Platform;
   qualityPreference?: 'speed' | 'quality' | 'balanced';
