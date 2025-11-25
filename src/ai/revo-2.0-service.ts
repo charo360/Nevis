@@ -3997,7 +3997,8 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
           platform: enhancedOptions.platform
         }),
         new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Business intelligence timeout')), 90000)
+          // Reduce timeout to 30s - if deep analysis hangs, fail fast and use instant fallback
+          setTimeout(() => reject(new Error('Business intelligence timeout')), 30000)
         )
       ]);
 
