@@ -4021,8 +4021,9 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
           platform: enhancedOptions.platform
         }),
         new Promise((_, reject) =>
-          // Reduce timeout to 30s - if deep analysis hangs, fail fast and use instant fallback
-          setTimeout(() => reject(new Error('Business intelligence timeout')), 30000)
+          // Reduce timeout to 8s - FAIL FAST strategy
+          // If we can't get deep BI in 8s, we must switch to fallback instantly to avoid 504 timeouts
+          setTimeout(() => reject(new Error('Business intelligence timeout')), 8000)
         )
       ]);
 
