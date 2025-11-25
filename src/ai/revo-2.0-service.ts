@@ -4263,7 +4263,7 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
       const fallbackResult = await getVertexAIClient().generateImage(imagePrompt, REVO_2_0_FALLBACK_MODEL, {
         temperature: enhancedOptions.temperature ?? 0.7,
         maxOutputTokens: enhancedOptions.maxOutputTokens ?? 8192,
-        logoImage: enhancedOptions.logoImage,
+        logoImage: enhancedOptions.brandProfile?.logoDataUrl || enhancedOptions.logoImage,
         aspectRatio: enhancedOptions.aspectRatio,
         imageSize: enhancedOptions.imageSize
       });
