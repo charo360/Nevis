@@ -3997,7 +3997,7 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
           platform: enhancedOptions.platform
         }),
         new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Business intelligence timeout')), 30000)
+          setTimeout(() => reject(new Error('Business intelligence timeout')), 90000)
         )
       ]);
 
@@ -4025,7 +4025,7 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
             businessType: businessType.primaryType,
             platform: enhancedOptions.platform
           }),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Business intelligence timeout')), 15000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Business intelligence timeout')), 90000))
         ]);
         console.log(`🧠 [Revo 2.0] Enhanced BI gathered (fallback):`);
         console.log(`   📍 What they do: ${businessIntelligence.coreBusinessUnderstanding.whatTheyDo}`);
