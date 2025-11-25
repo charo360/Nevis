@@ -4245,27 +4245,33 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
     let imageResult;
     
     try {
-      // Try Gemini 3 Pro with 90s timeout
+      // Try Gemini 3 Pro with 25s timeout (was 90s)
+      // If it takes longer than 25s, it's likely hanging, so fail fast
       imageResult = await Promise.race([
         generateImageWithGemini(imagePrompt, enhancedOptions),
         new Promise<{ imageUrl: string }>((_, reject) => 
-          setTimeout(() => reject(new Error('Image generation timeout after 90s')), 90000)
+          setTimeout(() => reject(new Error('Image generation timeout after 25s')), 25000)
         )
       ]);
       const imageTime = Date.now() - imageStartTime;
       console.log(`⏱️ [Revo 2.0] Image generation took ${imageTime}ms (${(imageTime/1000).toFixed(1)}s)`);
     } catch (timeoutError) {
       // If timeout, fallback to Gemini 2.5 via Vertex AI
-      console.warn('⚠️ [Revo 2.0] Gemini 3 Pro timeout, falling back to Gemini 2.5 Flash via Vertex AI');
+      console.warn('⚠️ [Revo 2.0] Gemini 3 Pro timeout (25s), falling back to Gemini 2.5 Flash via Vertex AI');
       console.log('🔄 [Revo 2.0] FALLBACK: Using Gemini 2.5 Flash for faster generation');
       
-      imageResult = await getVertexAIClient().generateImage(imagePrompt, REVO_2_0_FALLBACK_MODEL, {
+      const fallbackResult = await getVertexAIClient().generateImage(imagePrompt, REVO_2_0_FALLBACK_MODEL, {
         temperature: enhancedOptions.temperature ?? 0.7,
         maxOutputTokens: enhancedOptions.maxOutputTokens ?? 8192,
         logoImage: enhancedOptions.logoImage,
         aspectRatio: enhancedOptions.aspectRatio,
         imageSize: enhancedOptions.imageSize
       });
+
+      // Convert Vertex AI result format to Revo service format
+      imageResult = {
+        imageUrl: `data:${fallbackResult.mimeType};base64,${fallbackResult.imageData}`
+      };
       
       const imageTime = Date.now() - imageStartTime;
       console.log(`⏱️ [Revo 2.0] Fallback image generation took ${imageTime}ms (${(imageTime/1000).toFixed(1)}s)`);
