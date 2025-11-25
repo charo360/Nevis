@@ -4239,10 +4239,18 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
       console.log(`#️⃣ [Revo 2.0 Claude Fallback] Final hashtag count: ${fallbackHashtags.length} for ${enhancedOptions.platform}`);
     }
 
-    // Step 6: Generate image with integrated prompt
-    // Note: No timeout wrapper here - let the internal fallback mechanism work
-    // The generateImageWithGemini function has built-in fallback from Gemini 3 Pro to Gemini 2.5
-    const imageResult = await generateImageWithGemini(imagePrompt, enhancedOptions);
+    // Step 6: Generate image with integrated prompt with timeout
+    // Gemini 3 Pro can sometimes hang - add 90s timeout with fallback
+    console.log(`🎨 [Revo 2.0] Starting image generation...`);
+    const imageStartTime = Date.now();
+    const imageResult = await Promise.race([
+      generateImageWithGemini(imagePrompt, enhancedOptions),
+      new Promise<{ imageUrl: string }>((_, reject) => 
+        setTimeout(() => reject(new Error('Image generation timeout after 90s')), 90000)
+      )
+    ]);
+    const imageTime = Date.now() - imageStartTime;
+    console.log(`⏱️ [Revo 2.0] Image generation took ${imageTime}ms (${(imageTime/1000).toFixed(1)}s)`);
 
     console.log(`🖼️ [Revo 2.0] Generated image successfully`);
 

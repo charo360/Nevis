@@ -350,7 +350,11 @@ class GeminiAPIClient {
       console.log('✅ [Gemini API] Using Gemini 3 Pro with imageConfig:', request.generationConfig.imageConfig);
     }
 
+    console.log(`⏱️ [Gemini API] Sending request to Gemini 3 Pro (prompt: ${prompt.length} chars, parts: ${parts.length})...`);
+    const apiStartTime = Date.now();
     const response = await this.generateContent(model, request);
+    const apiTime = Date.now() - apiStartTime;
+    console.log(`⏱️ [Gemini API] Gemini 3 Pro API call took ${apiTime}ms (${(apiTime/1000).toFixed(1)}s)`);
 
     if (!response.candidates || response.candidates.length === 0) {
       throw new Error('No candidates returned from Gemini API');
