@@ -412,7 +412,21 @@ class VertexAIClient {
         }
       });
 
-      console.log('✅ [Vertex AI Client] Added logo image to parts:', {
+      // Add critical logo instruction to the prompt text
+      // This is required for the model to understand it must use the provided image as a logo
+      const logoInstruction = `\n\n🎯 CRITICAL LOGO REQUIREMENT - THIS IS MANDATORY:
+      You MUST include the exact brand logo image that was provided above in your design. This is not optional.
+      - Integrate the logo naturally into the layout
+      - The logo should be prominently displayed but not overwhelming
+      - Position the logo in a professional manner (top-left, top-right, or center as appropriate)
+      - Maintain the logo's aspect ratio and clarity
+      - Ensure the logo is clearly visible against the background
+      - FAILURE TO INCLUDE THE LOGO IS UNACCEPTABLE.`;
+      
+      // Append instruction to the text part (which is always at index 0)
+      parts[0].text += logoInstruction;
+
+      console.log('✅ [Vertex AI Client] Added logo image and instructions to parts:', {
         mimeType,
         dataLength: base64Data.length
       });
