@@ -4008,9 +4008,9 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
       // No conversion needed
 
       console.log(`🧠 [Revo 2.0] Business Profile Intelligence:`);
-      console.log(`   📍 What they do: ${businessIntelligence.coreBusinessUnderstanding.whatTheyDo.substring(0, 80)}...`);
-      console.log(`   👥 Who it's for: ${businessIntelligence.coreBusinessUnderstanding.whoItsFor.substring(0, 80)}...`);
-      console.log(`   💡 Why it matters: ${businessIntelligence.coreBusinessUnderstanding.whyItMatters.substring(0, 80)}...`);
+      console.log(`   🏢 Competitive: ${businessIntelligence.competitive?.mainCompetitors?.join(', ') || 'N/A'}`);
+      console.log(`   👥 Customer: ${businessIntelligence.customer?.primaryAudience?.substring(0, 80) || 'N/A'}...`);
+      console.log(`   📈 Market: ${businessIntelligence.market?.marketSize?.substring(0, 80) || 'N/A'}...`);
 
     } catch (profileError) {
       console.warn(`⚠️ [Revo 2.0] Business profile generation failed, using enhanced BI fallback:`, profileError);
@@ -4028,9 +4028,9 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
           new Promise((_, reject) => setTimeout(() => reject(new Error('Business intelligence timeout')), 90000))
         ]);
         console.log(`🧠 [Revo 2.0] Enhanced BI gathered (fallback):`);
-        console.log(`   📍 What they do: ${businessIntelligence.coreBusinessUnderstanding.whatTheyDo}`);
-        console.log(`   👥 Who it's for: ${businessIntelligence.coreBusinessUnderstanding.whoItsFor}`);
-        console.log(`   💡 Why it matters: ${businessIntelligence.coreBusinessUnderstanding.whyItMatters}`);
+        console.log(`   🏢 Competitive: ${businessIntelligence.competitive?.mainCompetitors?.join(', ') || 'N/A'}`);
+        console.log(`   👥 Customer: ${businessIntelligence.customer?.primaryAudience?.substring(0, 80) || 'N/A'}...`);
+        console.log(`   📈 Market: ${businessIntelligence.market?.marketSize?.substring(0, 80) || 'N/A'}...`);
       } catch (biError) {
         console.warn(`⚠️ [Revo 2.0] Enhanced business intelligence failed, using basic context:`, biError);
         businessIntelligence = null;
