@@ -4013,28 +4013,29 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
       console.log(`   📈 Market: ${businessIntelligence.market?.marketSize?.substring(0, 80) || 'N/A'}...`);
 
     } catch (profileError) {
-      console.warn(`⚠️ [Revo 2.0] Business profile generation failed, using enhanced BI fallback:`, profileError);
+      console.warn(`⚠️ [Revo 2.0] Business profile generation failed/timed out. Using instant basic fallback to save time.`);
 
-      // Fallback to enhanced business intelligence
-      // Use the same business intelligence gatherer as fallback
+      // FAST FALLBACK: Construct basic BI from existing profile data instantly
+      // Do NOT retry the expensive gatherer that just failed/timed out
+      const bp = enhancedOptions.brandProfile as any;
+      businessIntelligence = {
+        competitive: { 
+          mainCompetitors: bp.competitors?.map((c: any) => c.name) || ['Generic Competitors'] 
+        },
+        customer: { 
+          primaryAudience: enhancedOptions.brandProfile.targetAudience || 'General audience interested in this product' 
+        },
+        market: { 
+          marketSize: 'Growing market with significant opportunity' 
+        },
+        strategy: {
+          recommendedApproach: 'Focus on unique value proposition and key benefits'
+        }
+      };
 
-      try {
-        businessIntelligence = await Promise.race([
-          businessIntelligenceGatherer.gatherBusinessIntelligence({
-            brandProfile: enhancedOptions.brandProfile,
-            businessType: businessType.primaryType,
-            platform: enhancedOptions.platform
-          }),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Business intelligence timeout')), 90000))
-        ]);
-        console.log(`🧠 [Revo 2.0] Enhanced BI gathered (fallback):`);
-        console.log(`   🏢 Competitive: ${businessIntelligence.competitive?.mainCompetitors?.join(', ') || 'N/A'}`);
-        console.log(`   👥 Customer: ${businessIntelligence.customer?.primaryAudience?.substring(0, 80) || 'N/A'}...`);
-        console.log(`   📈 Market: ${businessIntelligence.market?.marketSize?.substring(0, 80) || 'N/A'}...`);
-      } catch (biError) {
-        console.warn(`⚠️ [Revo 2.0] Enhanced business intelligence failed, using basic context:`, biError);
-        businessIntelligence = null;
-      }
+      console.log(`🧠 [Revo 2.0] Instant BI fallback used (0ms):`);
+      console.log(`   🏢 Competitive: ${businessIntelligence.competitive?.mainCompetitors?.join(', ') || 'N/A'}`);
+      console.log(`   👥 Customer: ${businessIntelligence.customer?.primaryAudience?.substring(0, 80) || 'N/A'}...`);
     }
 
     // Step 3: Generate creative concept with visual direction
@@ -4260,12 +4261,13 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
       console.warn('⚠️ [Revo 2.0] Gemini 3 Pro timeout (25s), falling back to Gemini 2.5 Flash via Vertex AI');
       console.log('🔄 [Revo 2.0] FALLBACK: Using Gemini 2.5 Flash for faster generation');
       
+      const opts = enhancedOptions as any;
       const fallbackResult = await getVertexAIClient().generateImage(imagePrompt, REVO_2_0_FALLBACK_MODEL, {
-        temperature: enhancedOptions.temperature ?? 0.7,
-        maxOutputTokens: enhancedOptions.maxOutputTokens ?? 8192,
-        logoImage: enhancedOptions.brandProfile?.logoDataUrl || enhancedOptions.logoImage,
-        aspectRatio: enhancedOptions.aspectRatio,
-        imageSize: enhancedOptions.imageSize
+        temperature: opts.temperature ?? 0.7,
+        maxOutputTokens: opts.maxOutputTokens ?? 8192,
+        logoImage: enhancedOptions.brandProfile?.logoDataUrl || opts.logoImage,
+        aspectRatio: (['1:1', '3:4', '4:3', '9:16', '16:9'].includes(enhancedOptions.aspectRatio) ? enhancedOptions.aspectRatio : '1:1') as any,
+        imageSize: opts.imageSize
       });
 
       // Convert Vertex AI result format to Revo service format
