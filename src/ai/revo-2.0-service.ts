@@ -1897,14 +1897,38 @@ export function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: a
         (brandProfile as any)?.address;
 
       // Use EXACT contact information without any modifications
-      if (phone && phone.trim()) contacts.push(`📞 ${phone.trim()}`);
-      if (email && email.trim()) contacts.push(`📧 ${email.trim()}`);
-      // Clean website URL: remove https:// and http:// for cleaner display - NEVER generate fake URLs
-      if (website && website.trim() && !website.includes('example.com') && !website.includes('placeholder')) {
-        const cleanWebsite = website.trim().replace(/^https?:\/\//, '');
-        contacts.push(`🌐 ${cleanWebsite}`);
+      // Handle phone as array or string
+      if (phone) {
+        const phoneStr = Array.isArray(phone) ? phone[0] : phone;
+        if (phoneStr && typeof phoneStr === 'string' && phoneStr.trim()) {
+          contacts.push(`📞 ${phoneStr.trim()}`);
+        }
       }
-      if (address && address.trim()) contacts.push(`📍 ${address.trim()}`);
+
+      // Handle email as array or string
+      if (email) {
+        const emailStr = Array.isArray(email) ? email[0] : email;
+        if (emailStr && typeof emailStr === 'string' && emailStr.trim()) {
+          contacts.push(`📧 ${emailStr.trim()}`);
+        }
+      }
+
+      // Clean website URL: remove https:// and http:// for cleaner display - NEVER generate fake URLs
+      if (website) {
+        const websiteStr = Array.isArray(website) ? website[0] : website;
+        if (websiteStr && typeof websiteStr === 'string' && websiteStr.trim() && !websiteStr.includes('example.com') && !websiteStr.includes('placeholder')) {
+          const cleanWebsite = websiteStr.trim().replace(/^https?:\/\//, '');
+          contacts.push(`🌐 ${cleanWebsite}`);
+        }
+      }
+
+      // Handle address as array or string
+      if (address) {
+        const addressStr = Array.isArray(address) ? address[0] : address;
+        if (addressStr && typeof addressStr === 'string' && addressStr.trim()) {
+          contacts.push(`📍 ${addressStr.trim()}`);
+        }
+      }
 
       if (contacts.length > 0) {
         contactInstruction = `\n\n🔗 **CONTACT INFORMATION TO INCLUDE (USE EXACTLY AS SHOWN):**\n${contacts.join(' | ')}\n\n**CRITICAL**: Use contact information EXACTLY as provided above. Do not modify spelling, domains, or formatting. Display all contact info in a SINGLE HORIZONTAL LINE separated by | symbols. Place in footer area of design.`;
@@ -4021,7 +4045,10 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
       const bp = enhancedOptions.brandProfile as any;
       businessIntelligence = {
         competitive: { 
-          mainCompetitors: bp.competitors?.map((c: any) => c.name) || ['Generic Competitors'] 
+          mainCompetitors: bp.competitors?.map((c: any) => c.name) || ['Generic Competitors'],
+          competitiveAdvantages: ['Quality products', 'Excellent service', 'Local presence'],
+          marketPosition: 'Growing challenger in the local market',
+          differentiationOpportunities: ['Focus on customer service', 'Community engagement']
         },
         customer: { 
           primaryAudience: enhancedOptions.brandProfile.targetAudience || 'General audience interested in this product' 
