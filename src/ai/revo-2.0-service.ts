@@ -1687,7 +1687,11 @@ export function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: a
   // Build color scheme instruction with strict mode enforcement
   const colorScheme = isStrictMode && primaryColor && accentColor && backgroundColor
     ? `🚨 STRICT MODE - EXACT COLORS ONLY: Primary: ${primaryColor} (60% dominant), Accent: ${accentColor} (30% secondary), Background: ${backgroundColor} (10% highlights) - USE THESE EXACT HEX CODES, NO VARIATIONS ALLOWED`
-    : `Primary: ${primaryColor || '#3B82F6'} (60% dominant), Accent: ${accentColor || '#1E40AF'} (30% secondary), Background: ${backgroundColor || '#FFFFFF'} (10% highlights)`;
+    : `🎨 BRAND COLOR PALETTE (MANDATORY):
+- Primary: ${primaryColor || '#3B82F6'} (Dominant color)
+- Accent: ${accentColor || '#1E40AF'} (Secondary/Highlight)
+- Background: ${backgroundColor || '#FFFFFF'}
+- REQUIREMENT: You MUST use these specific colors or very close shades. Do not use random colors.`;
 
   // Brand location info
   const brandInfo = brandProfile.location ? ` based in ${brandProfile.location}` : '';
@@ -4294,10 +4298,28 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
       console.log('🔄 [Revo 2.0] FALLBACK: Using Gemini 2.5 Flash for faster generation');
       
       const opts = enhancedOptions as any;
+      
+      // Ensure logo is converted to Data URL for fallback
+      let fallbackLogoUrl = enhancedOptions.brandProfile?.logoDataUrl || opts.logoImage;
+      
+      // If we have a logo URL but it's not a data URL, try to convert it
+      // This is crucial because VertexAIClient ONLY accepts data URLs
+      if (!fallbackLogoUrl && (enhancedOptions.brandProfile as any)?.logoUrl) {
+         const rawLogoUrl = (enhancedOptions.brandProfile as any).logoUrl;
+         if (rawLogoUrl && rawLogoUrl.startsWith('http')) {
+           try {
+             fallbackLogoUrl = await convertLogoToDataUrl(rawLogoUrl);
+             console.log('✅ [Revo 2.0] Converted logo URL for fallback generation');
+           } catch (e) {
+             console.warn('⚠️ [Revo 2.0] Failed to convert logo for fallback:', e);
+           }
+         }
+      }
+
       const fallbackResult = await getVertexAIClient().generateImage(imagePrompt, REVO_2_0_FALLBACK_MODEL, {
         temperature: opts.temperature ?? 0.7,
         maxOutputTokens: opts.maxOutputTokens ?? 8192,
-        logoImage: enhancedOptions.brandProfile?.logoDataUrl || opts.logoImage,
+        logoImage: fallbackLogoUrl,
         aspectRatio: (['1:1', '3:4', '4:3', '9:16', '16:9'].includes(enhancedOptions.aspectRatio) ? enhancedOptions.aspectRatio : '1:1') as any,
         imageSize: opts.imageSize
       });
