@@ -1798,6 +1798,24 @@ export function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: a
   const location = brandProfile.location || 'Global';
   const africanCountries = ['kenya', 'nigeria', 'south africa', 'ghana', 'uganda', 'tanzania', 'ethiopia', 'rwanda', 'zambia', 'botswana', 'malawi'];
   const isAfricanCountry = africanCountries.some(country => location.toLowerCase().includes(country.toLowerCase()));
+  
+  // Debug log for African representation detection
+  console.log('');
+  console.log('🌍 ========================================');
+  console.log('🌍 AFRICAN REPRESENTATION CHECK (REVO 2.0)');
+  console.log('🌍 ========================================');
+  console.log(`🌍 Business Location: "${location}"`);
+  console.log(`🌍 Is African Country: ${isAfricanCountry ? '✅ YES' : '❌ NO'}`);
+  console.log(`🌍 Include People Toggle: ${options.includePeopleInDesigns !== false ? '✅ ON' : '❌ OFF'}`);
+  if (isAfricanCountry && options.includePeopleInDesigns !== false) {
+    console.log('');
+    console.log('🚨 AFRICAN REPRESENTATION MODE ACTIVE 🚨');
+    console.log('🚨 ALL PEOPLE MUST BE BLACK/AFRICAN 🚨');
+    console.log('🚨 ZERO WHITE PEOPLE ALLOWED 🚨');
+    console.log('');
+  }
+  console.log('🌍 ========================================');
+  console.log('');
 
   // Build people inclusion instructions based on toggle
   let peopleInstructions = '';
@@ -1805,7 +1823,7 @@ export function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: a
     peopleInstructions = `\n\n👥 PEOPLE EXCLUSION REQUIREMENT:\n- MANDATORY: Create a clean, professional design WITHOUT any people or human figures\n- AVOID: Any human faces, bodies, or silhouettes\n- FOCUS: Products, services, abstract elements, or clean minimalist design\n- STYLE: Professional, clean aesthetics without human elements\n- EMPHASIS: Brand elements, typography, and non-human visual elements`;
   } else {
     if (isAfricanCountry) {
-      peopleInstructions = `\n\n👥 PEOPLE INCLUSION (AFRICAN REPRESENTATION - MANDATORY):\n🚨 CRITICAL: This business is in ${location} - ALL people in the image MUST be Black/African\n- MANDATORY: Show ONLY Black/African people with dark skin tones\n- FORBIDDEN: White people, light-skinned people, or non-African ethnicities\n- REQUIRED: Authentic African features, hairstyles, and appearance\n- Show people who would actually use ${businessType} services in ${location}\n- Display local African people in settings relevant to ${businessType} business\n- Ensure faces are fully visible, well-lit, and anatomically correct\n- 100% REQUIREMENT: Every person visible must be Black/African - NO EXCEPTIONS\n- Context: Show people in ${businessType}-relevant settings, not generic offices\n- Cultural authenticity is NON-NEGOTIABLE for this ${location}-based business`;
+      peopleInstructions = `\n\n👥 PEOPLE INCLUSION (AFRICAN REPRESENTATION - MANDATORY):\n🚨🚨🚨 CRITICAL REQUIREMENT - READ THIS CAREFULLY 🚨🚨🚨\n\nThis business is located in ${location}. This is an AFRICAN country.\n\n**ABSOLUTE REQUIREMENTS - NO EXCEPTIONS:**\n1. EVERY SINGLE PERSON in the image MUST be Black/African with dark skin\n2. ZERO white people allowed - this is NON-NEGOTIABLE\n3. ZERO light-skinned people allowed\n4. ZERO non-African ethnicities allowed\n5. ALL people must have authentic African features, hairstyles, and appearance\n\n**IF YOU INCLUDE ANY PEOPLE:**\n- They MUST be Black/African people from ${location}\n- They MUST have dark skin tones\n- They MUST look like real ${location} residents\n- They MUST be in ${businessType}-relevant settings\n- NO stock photo models - show REAL African people\n\n**VALIDATION CHECK BEFORE GENERATING:**\n- Question 1: Is this business in Africa? YES (${location})\n- Question 2: Will I show ONLY Black/African people? ANSWER MUST BE YES\n- Question 3: Will I avoid white people completely? ANSWER MUST BE YES\n- Question 4: Do all people have dark skin and African features? ANSWER MUST BE YES\n\n**IF YOU CANNOT GUARANTEE 100% BLACK/AFRICAN PEOPLE:**\n- Then DO NOT include any people at all\n- Better to have NO people than wrong people\n\n🚨 CULTURAL AUTHENTICITY IS NON-NEGOTIABLE FOR ${location} 🚨`;
     } else {
       peopleInstructions = `\n\n👥 PEOPLE INCLUSION (DIVERSE REPRESENTATION):\n- Include diverse, authentic people who represent the target market\n- Show people who would actually use ${businessType} services\n- Display people in settings relevant to ${businessType} business\n- Ensure faces are fully visible, well-lit, and anatomically correct\n- Context: Show people in ${businessType}-relevant settings`;
     }
