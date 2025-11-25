@@ -1197,6 +1197,89 @@ function pickNonRepeating<T>(arr: T[], last?: T): T {
   return filtered[Math.floor(Math.random() * filtered.length)] || arr[0];
 }
 
+/**
+ * Get specific text placement guidance based on layout composition
+ */
+function getTextPlacementGuidance(layoutName: string): string {
+  const guidanceMap: Record<string, string> = {
+    'Full-Bleed Photo': `
+- Text overlays directly on the photo
+- Use contrasting text colors for readability
+- Position headline in upper or lower third (not center)
+- Add subtle text background/shadow for legibility
+- CTA can be in corner or bottom strip`,
+    
+    'Split Screen': `
+- Image on one side (left or right)
+- Text on opposite side with solid color background
+- Vertical or horizontal split (choose based on content)
+- Text section should have generous padding
+- All text elements stay within their designated section`,
+    
+    'Text Frame': `
+- Bold headline at top OR bottom
+- Image occupies middle section
+- Text creates a "frame" around the image
+- Subheadline and CTA in same text section as headline
+- Clean separation between text and image zones`,
+    
+    'Minimal Overlay': `
+- Large, clean image as main focus
+- Minimal text in one corner (top-left, top-right, or bottom)
+- Let the image breathe - don't overcrowd
+- Small, elegant text treatment
+- CTA can be subtle button or text link`,
+    
+    'Collage Grid': `
+- Multiple images arranged in grid
+- Text in dedicated section (not overlapping images)
+- Could be side panel or top/bottom strip
+- Keep text grouped together for clarity
+- Grid creates visual interest, text provides context`,
+    
+    'Circular Focus': `
+- Circular or rounded image frame as focal point
+- Text wraps around or positioned to side
+- Creates organic, flowing composition
+- Headline near top, CTA near bottom
+- Asymmetric balance between circle and text`,
+    
+    'Diagonal Dynamic': `
+- Diagonal split or angled elements
+- Text follows diagonal flow or contrasts it
+- Creates movement and energy
+- Can use diagonal text orientation
+- Bold, dynamic placement`,
+    
+    'Magazine Editorial': `
+- Large image with text column overlay
+- Text positioned like magazine article
+- Headline at top of column
+- Body text flows down
+- Professional editorial style`,
+    
+    'Product Hero': `
+- Product/person centered in composition
+- Headline above the focal point
+- Subheadline/details below
+- CTA at bottom
+- Symmetrical, balanced layout`,
+    
+    'Asymmetric Balance': `
+- Off-center image placement
+- Text balances the composition on opposite side
+- Creates visual tension and interest
+- Unconventional but balanced
+- Text size/weight balances image weight`
+  };
+
+  return guidanceMap[layoutName] || `
+- Adapt text placement to the layout structure
+- Maintain visual hierarchy and balance
+- Ensure readability and clear flow
+- Use white space effectively`;
+}
+
 function getCulturalBusinessGuidance(businessType: string): string {
   const businessLower = businessType.toLowerCase();
 
@@ -1722,7 +1805,7 @@ export function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: a
     peopleInstructions = `\n\n👥 PEOPLE EXCLUSION REQUIREMENT:\n- MANDATORY: Create a clean, professional design WITHOUT any people or human figures\n- AVOID: Any human faces, bodies, or silhouettes\n- FOCUS: Products, services, abstract elements, or clean minimalist design\n- STYLE: Professional, clean aesthetics without human elements\n- EMPHASIS: Brand elements, typography, and non-human visual elements`;
   } else {
     if (isAfricanCountry) {
-      peopleInstructions = `\n\n👥 PEOPLE INCLUSION (AFRICAN REPRESENTATION):\n- Include authentic Black/African people who represent the target market\n- Show people who would actually use ${businessType} services\n- Display local African people in settings relevant to ${businessType} business\n- Ensure faces are fully visible, well-lit, and anatomically correct\n- PRIORITY: 80%+ of people should be Black/African for cultural authenticity\n- Context: Show people in ${businessType}-relevant settings, not generic offices`;
+      peopleInstructions = `\n\n👥 PEOPLE INCLUSION (AFRICAN REPRESENTATION - MANDATORY):\n🚨 CRITICAL: This business is in ${location} - ALL people in the image MUST be Black/African\n- MANDATORY: Show ONLY Black/African people with dark skin tones\n- FORBIDDEN: White people, light-skinned people, or non-African ethnicities\n- REQUIRED: Authentic African features, hairstyles, and appearance\n- Show people who would actually use ${businessType} services in ${location}\n- Display local African people in settings relevant to ${businessType} business\n- Ensure faces are fully visible, well-lit, and anatomically correct\n- 100% REQUIREMENT: Every person visible must be Black/African - NO EXCEPTIONS\n- Context: Show people in ${businessType}-relevant settings, not generic offices\n- Cultural authenticity is NON-NEGOTIABLE for this ${location}-based business`;
     } else {
       peopleInstructions = `\n\n👥 PEOPLE INCLUSION (DIVERSE REPRESENTATION):\n- Include diverse, authentic people who represent the target market\n- Show people who would actually use ${businessType} services\n- Display people in settings relevant to ${businessType} business\n- Ensure faces are fully visible, well-lit, and anatomically correct\n- Context: Show people in ${businessType}-relevant settings`;
     }
@@ -1736,7 +1819,21 @@ export function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: a
 
   // Style/Layout/Typography variation (avoid repeating last style per brand/platform)
   const styles = ['modern-minimal', 'bold-color-blocking', 'editorial-magazine', 'organic-textured', 'geometric-abstract', 'photo-forward', 'duotone', 'retro-modern', 'ultra-clean', 'dynamic-diagonal'];
-  const layouts = ['grid', 'asymmetrical', 'centered', 'diagonal-flow', 'layered-collage', 'rule-of-thirds', 'framed', 'split-screen'];
+  
+  // LAYOUT COMPOSITIONS - Diverse structural approaches (NOT just text placement)
+  const layoutCompositions = [
+    { name: 'Full-Bleed Photo', description: 'Large background image with text overlay - text integrated into photo' },
+    { name: 'Split Screen', description: 'Vertical or horizontal split - image one side, text/color block other side' },
+    { name: 'Text Frame', description: 'Bold text at top/bottom with image in middle section' },
+    { name: 'Minimal Overlay', description: 'Clean image with minimal text overlay in corner - let image breathe' },
+    { name: 'Collage Grid', description: 'Multiple images in grid layout with text in dedicated section' },
+    { name: 'Circular Focus', description: 'Circular or rounded image frame with text wrapping around' },
+    { name: 'Diagonal Dynamic', description: 'Diagonal split or angled elements creating movement' },
+    { name: 'Magazine Editorial', description: 'Large image with text column overlay like magazine spread' },
+    { name: 'Product Hero', description: 'Product/person centered with text above and below' },
+    { name: 'Asymmetric Balance', description: 'Off-center composition with text and image balancing each other' }
+  ];
+  
   const typographySet = ['bold sans-serif headline + light subhead', 'elegant serif display + sans body', 'condensed uppercase headline', 'playful rounded sans', 'high-contrast modern serif'];
   const effects = ['subtle grain', 'soft vignette', 'gentle drop shadow', 'glassmorphism card', 'gradient overlay'];
 
@@ -1744,7 +1841,7 @@ export function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: a
   const lastStyle = recentStyles.get(bKey);
   const chosenStyle = pickNonRepeating(styles, lastStyle);
   recentStyles.set(bKey, chosenStyle);
-  const chosenLayout = pickNonRepeating(layouts);
+  const chosenLayoutComposition = layoutCompositions[Math.floor(Math.random() * layoutCompositions.length)];
   const chosenType = pickNonRepeating(typographySet);
   const chosenEffect = pickNonRepeating(effects);
 
@@ -1825,10 +1922,17 @@ Each design MUST be visually unique and avoid repetition:
 
 🔄 STYLE VARIATION FOR THIS DESIGN:
 - Visual Style: ${chosenStyle}
-- Layout: ${chosenLayout}
+- Layout Composition: ${chosenLayoutComposition.name} - ${chosenLayoutComposition.description}
 - Typography: ${chosenType}
 - Effect: ${chosenEffect}
 - Previous Style to AVOID: ${lastStyle || 'None'}
+
+🎨 LAYOUT COMPOSITION INSTRUCTIONS (CRITICAL - FOLLOW THE CHOSEN LAYOUT):
+You MUST follow the "${chosenLayoutComposition.name}" layout structure described above.
+${chosenLayoutComposition.description}
+
+DO NOT default to "text at top, image in middle, CTA at bottom" - that's the MOST OVERUSED layout.
+Each layout composition creates a COMPLETELY DIFFERENT visual structure.
 
 ⚠️ CRITICAL: Make this design visually distinct from any previous designs!
 
@@ -1944,23 +2048,25 @@ Each design MUST be visually unique and avoid repetition:
 - ACCENT COLOR: Use ${primaryColor} or ${accentColor} strategically for theme connection
 - FOCAL ELEMENT: Choose ONE - either person OR object, positioned prominently
 
-📍 STRATEGIC HEADLINE & SUBHEADLINE PLACEMENT:
-- HEADLINE POSITION: Top-left or top-right corner for maximum impact and readability
-- SUBHEADLINE POSITION: Directly below headline with consistent spacing (never scattered)
-- VISUAL FLOW: Create clear reading path - headline → image → subheadline → CTA
-- GOLDEN RATIO: Place text in upper third or lower third zones, never center-cramped
-- BRAND MOTIF: Opposite corner from headline for balanced composition
-- BREATHING SPACE: At least one-third negative space around all text elements
-- NO RANDOM PLACEMENT: Text positioned with clear design intention and visual hierarchy
-- LAYOUT SYSTEM: Left-aligned headline with right image OR right-aligned headline with left image
+📍 FLEXIBLE TEXT PLACEMENT (ADAPT TO YOUR CHOSEN LAYOUT COMPOSITION):
+
+**For "${chosenLayoutComposition.name}" layout:**
+${getTextPlacementGuidance(chosenLayoutComposition.name)}
+
+**Universal Text Placement Principles:**
+- VISUAL HIERARCHY: Headline (largest) > Subheadline > Body > CTA
+- BREATHING SPACE: Generous white space around all text elements (minimum 20% of design)
+- READING FLOW: Create natural eye movement through the design
+- BALANCE: Text and image should complement each other, not compete
+- CONSISTENCY: Keep related text elements grouped together
 - COMPOSITION VARIETY: ${concept.composition} - vary poses and angles to keep series fresh
 
-🚫 AVOID POOR TEXT PLACEMENT:
-- NO text scattered randomly across the design
-- NO headlines placed wherever there's leftover space
-- NO subheadlines disconnected from headlines
+🚫 AVOID THESE TEXT PLACEMENT MISTAKES:
+- NO repetitive "text at top, image middle, CTA bottom" layout every time
+- NO text scattered randomly without design intention
 - NO text overlapping or competing with focal elements
-- NO center-heavy text that creates cramped layouts
+- NO cramped layouts - always leave breathing room
+- NO ignoring the chosen layout composition structure
 
 🚫 ELIMINATE GENERIC FINTECH CLICHÉS (CRITICAL):
 - NEVER use: "Unlock Your Tomorrow", "The Future is Now", "Banking Made Simple"
@@ -2019,7 +2125,7 @@ TOTAL LENGTH: 3-4 sentences maximum, NO poetic storytelling
 
 🎛️ SIMPLIFIED STYLE DIRECTIVES:
 - Design Style: ${chosenStyle} (applied minimally)
-- Layout: ${chosenLayout} (with generous white space)
+- Layout Composition: ${chosenLayoutComposition.name} (MUST follow this structure)
 - Typography: ${chosenType} (clean and readable)
 - Effects: ${chosenEffect} (subtle, not distracting)
 
@@ -4090,10 +4196,9 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
     }
 
     // Step 6: Generate image with integrated prompt
-    const imageResult = await Promise.race([
-      generateImageWithGemini(imagePrompt, enhancedOptions),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Image generation timeout')), 60000)) // Increased to 60s for Gemini 3 Pro
-    ]) as { imageUrl: string };
+    // Note: No timeout wrapper here - let the internal fallback mechanism work
+    // The generateImageWithGemini function has built-in fallback from Gemini 3 Pro to Gemini 2.5
+    const imageResult = await generateImageWithGemini(imagePrompt, enhancedOptions);
 
     console.log(`🖼️ [Revo 2.0] Generated image successfully`);
 

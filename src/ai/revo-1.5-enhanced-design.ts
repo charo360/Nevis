@@ -4210,6 +4210,22 @@ EXAMPLES OF PROPER MATCHING:
 - People should look natural and authentic (not stock photo fake)
 - Show the OUTCOME/BENEFIT the person gets from the business
 - Location context: ${location} - include appropriate cultural representation
+
+${(() => {
+  const africanCountries = ['kenya', 'nigeria', 'south africa', 'ghana', 'uganda', 'tanzania', 'ethiopia', 'rwanda', 'zambia', 'botswana', 'malawi'];
+  const isAfricanCountry = africanCountries.some(country => location.toLowerCase().includes(country));
+  if (isAfricanCountry) {
+    return `
+🚨 CRITICAL AFRICAN REPRESENTATION REQUIREMENT:
+- This business is in ${location} - ALL people in the image MUST be Black/African
+- MANDATORY: Show ONLY Black/African people with dark skin tones
+- FORBIDDEN: White people, light-skinned people, or non-African ethnicities
+- REQUIRED: Authentic African features, hairstyles, and appearance
+- 100% REQUIREMENT: Every person visible must be Black/African - NO EXCEPTIONS
+- Cultural authenticity is NON-NEGOTIABLE for this ${location}-based business`;
+  }
+  return '';
+})()}
 ` : `
 🚫 PEOPLE INTEGRATION (TOGGLE: OFF):
 - NO people in the design
