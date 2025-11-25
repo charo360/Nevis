@@ -1,0 +1,22 @@
+{
+  "functions": {
+    "src/app/api/generate-revo-2.0/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/generate-revo-1.5/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/image-edit/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/image-edit-gemini3/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/analyze-brand-claude/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/analyze-website-claude/route.ts": {
+      "maxDuration": 60
+    }
+  }
+}
