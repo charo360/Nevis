@@ -4239,18 +4239,38 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
       console.log(`#️⃣ [Revo 2.0 Claude Fallback] Final hashtag count: ${fallbackHashtags.length} for ${enhancedOptions.platform}`);
     }
 
-    // Step 6: Generate image with integrated prompt with timeout
-    // Gemini 3 Pro can sometimes hang - add 90s timeout with fallback
+    // Step 6: Generate image with integrated prompt with timeout and fallback
     console.log(`🎨 [Revo 2.0] Starting image generation...`);
     const imageStartTime = Date.now();
-    const imageResult = await Promise.race([
-      generateImageWithGemini(imagePrompt, enhancedOptions),
-      new Promise<{ imageUrl: string }>((_, reject) => 
-        setTimeout(() => reject(new Error('Image generation timeout after 90s')), 90000)
-      )
-    ]);
-    const imageTime = Date.now() - imageStartTime;
-    console.log(`⏱️ [Revo 2.0] Image generation took ${imageTime}ms (${(imageTime/1000).toFixed(1)}s)`);
+    let imageResult;
+    
+    try {
+      // Try Gemini 3 Pro with 90s timeout
+      imageResult = await Promise.race([
+        generateImageWithGemini(imagePrompt, enhancedOptions),
+        new Promise<{ imageUrl: string }>((_, reject) => 
+          setTimeout(() => reject(new Error('Image generation timeout after 90s')), 90000)
+        )
+      ]);
+      const imageTime = Date.now() - imageStartTime;
+      console.log(`⏱️ [Revo 2.0] Image generation took ${imageTime}ms (${(imageTime/1000).toFixed(1)}s)`);
+    } catch (timeoutError) {
+      // If timeout, fallback to Gemini 2.5 via Vertex AI
+      console.warn('⚠️ [Revo 2.0] Gemini 3 Pro timeout, falling back to Gemini 2.5 Flash via Vertex AI');
+      console.log('🔄 [Revo 2.0] FALLBACK: Using Gemini 2.5 Flash for faster generation');
+      
+      imageResult = await getVertexAIClient().generateImage(imagePrompt, REVO_2_0_FALLBACK_MODEL, {
+        temperature: enhancedOptions.temperature ?? 0.7,
+        maxOutputTokens: enhancedOptions.maxOutputTokens ?? 8192,
+        logoImage: enhancedOptions.logoImage,
+        aspectRatio: enhancedOptions.aspectRatio,
+        imageSize: enhancedOptions.imageSize
+      });
+      
+      const imageTime = Date.now() - imageStartTime;
+      console.log(`⏱️ [Revo 2.0] Fallback image generation took ${imageTime}ms (${(imageTime/1000).toFixed(1)}s)`);
+      console.log('✅ [Revo 2.0] Fallback generation successful');
+    }
 
     console.log(`🖼️ [Revo 2.0] Generated image successfully`);
 
