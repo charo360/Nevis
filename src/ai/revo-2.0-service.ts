@@ -4051,7 +4051,10 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
           differentiationOpportunities: ['Focus on customer service', 'Community engagement']
         },
         customer: { 
-          primaryAudience: enhancedOptions.brandProfile.targetAudience || 'General audience interested in this product' 
+          primaryAudience: enhancedOptions.brandProfile.targetAudience || 'General audience interested in this product',
+          painPoints: ['Price sensitivity', 'Quality concerns', 'Availability'],
+          motivations: ['Value for money', 'Reliability', 'Status'],
+          preferredChannels: ['Instagram', 'Facebook', 'WhatsApp']
         },
         market: { 
           marketSize: 'Growing market with significant opportunity' 
