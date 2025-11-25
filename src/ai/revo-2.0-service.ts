@@ -1430,7 +1430,16 @@ async function convertLogoToDataUrl(logoUrl?: string): Promise<string | undefine
     const base64 = Buffer.from(arrayBuffer).toString('base64');
 
     // Determine MIME type from response headers or URL extension
-    const contentType = response.headers.get('content-type') || 'image/png';
+    let contentType = response.headers.get('content-type');
+    
+    // If content type is generic or missing, try to guess from URL
+    if (!contentType || contentType === 'application/octet-stream' || contentType === 'binary/octet-stream') {
+      if (logoUrl.match(/\.png$/i)) contentType = 'image/png';
+      else if (logoUrl.match(/\.jpe?g$/i)) contentType = 'image/jpeg';
+      else if (logoUrl.match(/\.webp$/i)) contentType = 'image/webp';
+      else contentType = 'image/png'; // Default fallback
+    }
+    
     const dataUrl = `data:${contentType};base64,${base64}`;
 
     return dataUrl;

@@ -401,35 +401,39 @@ class VertexAIClient {
     }
 
     // Add logo image if provided
-    if (options.logoImage && options.logoImage.startsWith('data:image/')) {
-      const [mimeInfo, base64Data] = options.logoImage.split(',');
-      const mimeType = mimeInfo.split(':')[1].split(';')[0];
+    if (options.logoImage) {
+      if (options.logoImage.startsWith('data:image/')) {
+        const [mimeInfo, base64Data] = options.logoImage.split(',');
+        const mimeType = mimeInfo.split(':')[1].split(';')[0];
 
-      parts.push({
-        inlineData: {
+        parts.push({
+          inlineData: {
+            mimeType,
+            data: base64Data
+          }
+        });
+
+        // Add critical logo instruction to the prompt text
+        // This is required for the model to understand it must use the provided image as a logo
+        const logoInstruction = `\n\n🎯 CRITICAL LOGO REQUIREMENT - THIS IS MANDATORY:
+        You MUST include the exact brand logo image that was provided above in your design. This is not optional.
+        - Integrate the logo naturally into the layout
+        - The logo should be prominently displayed but not overwhelming
+        - Position the logo in a professional manner (top-left, top-right, or center as appropriate)
+        - Maintain the logo's aspect ratio and clarity
+        - Ensure the logo is clearly visible against the background
+        - FAILURE TO INCLUDE THE LOGO IS UNACCEPTABLE.`;
+        
+        // Append instruction to the text part (which is always at index 0)
+        parts[0].text += logoInstruction;
+
+        console.log('✅ [Vertex AI Client] Added logo image and instructions to parts:', {
           mimeType,
-          data: base64Data
-        }
-      });
-
-      // Add critical logo instruction to the prompt text
-      // This is required for the model to understand it must use the provided image as a logo
-      const logoInstruction = `\n\n🎯 CRITICAL LOGO REQUIREMENT - THIS IS MANDATORY:
-      You MUST include the exact brand logo image that was provided above in your design. This is not optional.
-      - Integrate the logo naturally into the layout
-      - The logo should be prominently displayed but not overwhelming
-      - Position the logo in a professional manner (top-left, top-right, or center as appropriate)
-      - Maintain the logo's aspect ratio and clarity
-      - Ensure the logo is clearly visible against the background
-      - FAILURE TO INCLUDE THE LOGO IS UNACCEPTABLE.`;
-      
-      // Append instruction to the text part (which is always at index 0)
-      parts[0].text += logoInstruction;
-
-      console.log('✅ [Vertex AI Client] Added logo image and instructions to parts:', {
-        mimeType,
-        dataLength: base64Data.length
-      });
+          dataLength: base64Data.length
+        });
+      } else {
+        console.warn('⚠️ [Vertex AI Client] Logo image provided but ignored because format invalid (must start with data:image/):', options.logoImage.substring(0, 30) + '...');
+      }
     }
 
     // Build generation config with Gemini 3 Pro support
