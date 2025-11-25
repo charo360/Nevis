@@ -112,7 +112,27 @@ export class IntegratedPromptGenerator {
     includeContacts: boolean = true,
     strictConsistency: boolean = false
   ): string {
+    // Check if this is an African country
+    const location = brandProfile.location || '';
+    const africanCountries = ['kenya', 'nigeria', 'south africa', 'ghana', 'uganda', 'tanzania', 'ethiopia', 'rwanda', 'zambia', 'botswana', 'malawi'];
+    const isAfricanCountry = africanCountries.some(country => location.toLowerCase().includes(country.toLowerCase()));
+    
     let prompt = `Create a professional ${platform} social media design for ${brandProfile.businessName}:\n\n`;
+    
+    // AFRICAN REPRESENTATION - FIRST PRIORITY
+    if (isAfricanCountry) {
+      prompt += `🚨🚨🚨 CRITICAL: AFRICAN REPRESENTATION REQUIREMENT 🚨🚨🚨\n`;
+      prompt += `THIS BUSINESS IS IN ${location.toUpperCase()} - AN AFRICAN COUNTRY\n\n`;
+      prompt += `BEFORE YOU GENERATE ANYTHING, READ THIS:\n`;
+      prompt += `- If you include ANY people in this image, they MUST be 100% Black/African\n`;
+      prompt += `- ZERO white people allowed - this is ABSOLUTE and NON-NEGOTIABLE\n`;
+      prompt += `- ZERO light-skinned people - only dark-skinned Black/African people\n`;
+      prompt += `- All people must have authentic African features, hairstyles, and appearance\n`;
+      prompt += `- If you cannot guarantee this, DO NOT include people at all\n`;
+      prompt += `- Better NO people than wrong people\n\n`;
+      prompt += `VALIDATION: Can you guarantee ONLY Black/African people? If NO, exclude people entirely.\n`;
+      prompt += `🚨🚨🚨 THIS IS THE #1 PRIORITY - NOTHING OVERRIDES THIS 🚨🚨🚨\n\n`;
+    }
 
     // CONTENT TO INCLUDE (most important section)
     prompt += `**CONTENT TO INCLUDE ON IMAGE:**\n`;
@@ -248,6 +268,16 @@ export class IntegratedPromptGenerator {
 
     // BUSINESS-SPECIFIC GUIDELINES
     prompt += this.getBusinessSpecificGuidelines(businessType, brandProfile);
+
+    // FINAL AFRICAN REPRESENTATION REMINDER
+    if (isAfricanCountry) {
+      prompt += `\n🚨🚨🚨 FINAL REMINDER - AFRICAN REPRESENTATION 🚨🚨🚨\n`;
+      prompt += `Before you generate, answer this question:\n`;
+      prompt += `"Will EVERY person in this image be Black/African with dark skin?"\n\n`;
+      prompt += `If the answer is NOT a definite YES, then EXCLUDE all people from the image.\n`;
+      prompt += `This business is in ${location} - cultural authenticity is MANDATORY.\n`;
+      prompt += `🚨🚨🚨 ZERO WHITE PEOPLE - THIS IS NON-NEGOTIABLE 🚨🚨🚨\n`;
+    }
 
     return prompt;
   }
