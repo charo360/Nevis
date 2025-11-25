@@ -326,7 +326,24 @@ class GeminiAPIClient {
         }
       });
 
-      console.log('✅ [Gemini API] Added logo image to request');
+      // Add critical logo instruction to the prompt
+      // This is required for the model to understand it must use the provided image as a logo
+      const logoInstruction = `\n\n🎯 CRITICAL LOGO REQUIREMENT - THIS IS MANDATORY:
+      You MUST include the exact brand logo image that was provided above in your design. This is not optional.
+      - Integrate the logo naturally into the layout
+      - The logo should be prominently displayed but not overwhelming
+      - Position the logo in a professional manner (top-left, top-right, or center as appropriate)
+      - Maintain the logo's aspect ratio and clarity
+      - Ensure the logo is clearly visible against the background
+      - FAILURE TO INCLUDE THE LOGO IS UNACCEPTABLE.`;
+      
+      // Find the text part and append the instruction
+      const textPart = parts.find(p => p.text);
+      if (textPart) {
+        textPart.text += logoInstruction;
+      }
+
+      console.log('✅ [Gemini API] Added logo image and instructions to request');
     }
 
     const request: GeminiAPIRequest = {
