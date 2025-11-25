@@ -6,6 +6,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateWithRevo20 } from '@/ai/revo-2.0-service';
 
+// Configure route for longer execution time (image generation can take time)
+export const maxDuration = 60; // 60 seconds timeout
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     // Get user ID from headers (would be set by middleware in production)
