@@ -2155,6 +2155,21 @@ DESIGN REQUIREMENTS:
 - Visual Theme: ${visualContext}
 ${concept.featuredServices && concept.featuredServices.length > 0 ? `- Featured Service: ${concept.featuredServices[0].serviceName} (TODAY'S FOCUS)` : ''}
 
+${isAfricanCountry && options.includePeopleInDesigns !== false ? `
+🚨🚨🚨 CRITICAL: AFRICAN REPRESENTATION REQUIREMENT 🚨🚨🚨
+THIS BUSINESS IS IN ${location.toUpperCase()} - AN AFRICAN COUNTRY
+
+BEFORE YOU GENERATE ANYTHING, READ THIS:
+- If you include ANY people in this image, they MUST be 100% Black/African
+- ZERO white people allowed - this is ABSOLUTE and NON-NEGOTIABLE
+- ZERO light-skinned people - only dark-skinned Black/African people
+- If you cannot guarantee this, DO NOT include people at all
+- Better NO people than wrong people
+
+VALIDATION: Can you guarantee ONLY Black/African people? If NO, exclude people entirely.
+🚨🚨🚨 THIS IS THE #1 PRIORITY - NOTHING OVERRIDES THIS 🚨🚨🚨
+` : ''}
+
 🎨 ${isStrictMode ? '🚨🚨🚨 ULTRA-STRICT BRAND COLOR ENFORCEMENT 🚨🚨🚨' : 'STRICT BRAND COLOR CONSISTENCY (MANDATORY)'}:
 ${colorScheme}
 ${isStrictMode ? `
@@ -2275,7 +2290,18 @@ ${shouldFollowBrandColors ? `- MANDATORY: Use the specified brand colors (${prim
 ${currencyInstructions}
 ${options.includeContacts !== true ? '\n\n🚫 **CRITICAL: DO NOT INCLUDE CONTACT INFORMATION:**\n- DO NOT include phone numbers, email addresses, or website URLs in the design\n- DO NOT add contact details in footer or anywhere else\n- Contact toggle is OFF - no contact information should appear\n- Focus on the main message without contact details' : ''}
 
-Create a visually stunning design that stops scrolling and drives engagement while maintaining perfect brand consistency.${options.includeContacts === true ? contactInstruction : ''}${peopleInstructions}${culturalInstructions}`;
+Create a visually stunning design that stops scrolling and drives engagement while maintaining perfect brand consistency.${options.includeContacts === true ? contactInstruction : ''}${peopleInstructions}${culturalInstructions}
+
+${isAfricanCountry && options.includePeopleInDesigns !== false ? `
+
+🚨🚨🚨 FINAL REMINDER - AFRICAN REPRESENTATION 🚨🚨🚨
+Before you generate, answer this question:
+"Will EVERY person in this image be Black/African with dark skin?"
+
+If the answer is NOT a definite YES, then EXCLUDE all people from the image.
+This business is in ${location} - cultural authenticity is MANDATORY.
+🚨🚨🚨 ZERO WHITE PEOPLE - THIS IS NON-NEGOTIABLE 🚨🚨🚨
+` : ''}`;
 }
 
 async function hydrateAnglesFromDb(brandKey: string, brandProfileId?: string, platform?: string): Promise<void> {
