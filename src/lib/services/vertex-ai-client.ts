@@ -378,6 +378,11 @@ class VertexAIClient {
       logoImage?: string; // Base64 data URL for brand logo
       aspectRatio?: '1:1' | '3:4' | '4:3' | '9:16' | '16:9'; // Gemini 3 Pro aspect ratio
       imageSize?: '256' | '512' | '1K' | '2K'; // Gemini 3 Pro image size
+      brandColors?: {
+        primary?: string;
+        accent?: string;
+        background?: string;
+      };
     } = {}
   ): Promise<{ imageData: string; mimeType: string; finishReason: string }> {
     const parts: any[] = [{ text: prompt }];
@@ -402,6 +407,13 @@ class VertexAIClient {
 
     // Add logo image if provided
     if (options.logoImage) {
+      console.log('🔍 [Vertex AI Client] Logo image provided:', {
+        hasLogo: !!options.logoImage,
+        format: options.logoImage.startsWith('data:') ? 'data-url' : 'url',
+        length: options.logoImage.length,
+        preview: options.logoImage.substring(0, 50) + '...'
+      });
+      
       if (options.logoImage.startsWith('data:image/')) {
         const [mimeInfo, base64Data] = options.logoImage.split(',');
         const mimeType = mimeInfo.split(':')[1].split(';')[0];
@@ -427,13 +439,43 @@ class VertexAIClient {
         // Append instruction to the text part (which is always at index 0)
         parts[0].text += logoInstruction;
 
-        console.log('✅ [Vertex AI Client] Added logo image and instructions to parts:', {
+        console.log('✅ [Vertex AI Client] Successfully added logo image and instructions to parts:', {
           mimeType,
-          dataLength: base64Data.length
+          dataLength: base64Data.length,
+          totalParts: parts.length,
+          hasLogoInstructions: parts[0].text.includes('CRITICAL LOGO REQUIREMENT')
         });
       } else {
-        console.warn('⚠️ [Vertex AI Client] Logo image provided but ignored because format invalid (must start with data:image/):', options.logoImage.substring(0, 30) + '...');
+        console.error('❌ [Vertex AI Client] Logo image provided but INVALID FORMAT (must start with data:image/):', {
+          provided: options.logoImage.substring(0, 50) + '...',
+          expectedFormat: 'data:image/[type];base64,[data]'
+        });
       }
+    } else {
+      console.log('ℹ️ [Vertex AI Client] No logo image provided for generation');
+    }
+
+    // Add brand color instructions if provided
+    if (options.brandColors && (options.brandColors.primary || options.brandColors.accent)) {
+      console.log('🎨 [Vertex AI Client] Brand colors provided:', {
+        primary: options.brandColors.primary,
+        accent: options.brandColors.accent,
+        background: options.brandColors.background
+      });
+      
+      const brandColorInstruction = `\n\n🎨 CRITICAL BRAND COLOR REQUIREMENT:
+You MUST use the following brand colors in your design:
+- Primary Color: ${options.brandColors.primary || '#3B82F6'}
+- Accent Color: ${options.brandColors.accent || options.brandColors.primary || '#1E40AF'}
+- Background Color: ${options.brandColors.background || '#FFFFFF'}
+These colors are mandatory and must be prominently featured in the design.`;
+      
+      // Append brand color instruction to the text part (which is always at index 0)
+      parts[0].text += brandColorInstruction;
+      
+      console.log('✅ [Vertex AI Client] Added brand color instructions to prompt');
+    } else {
+      console.log('ℹ️ [Vertex AI Client] No brand colors provided for generation');
     }
 
     // Build generation config with Gemini 3 Pro support

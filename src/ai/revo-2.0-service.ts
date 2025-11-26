@@ -1409,21 +1409,50 @@ export interface Revo20GenerationResult {
 }
 
 /**
- * Convert logo URL to base64 data URL for AI models (matching Revo 1.5 logic)
+ * Convert logo URL to base64 data URL for AI models with enhanced error handling
  */
 async function convertLogoToDataUrl(logoUrl?: string): Promise<string | undefined> {
-  if (!logoUrl) return undefined;
+  if (!logoUrl) {
+    console.log('⚠️ [Revo 2.0] No logo URL provided for conversion');
+    return undefined;
+  }
 
   // If it's already a data URL, return as is
   if (logoUrl.startsWith('data:')) {
+    console.log('✅ [Revo 2.0] Logo is already a data URL, returning as-is');
     return logoUrl;
   }
 
+  // Validate URL format
+  if (!logoUrl.startsWith('http')) {
+    console.error('❌ [Revo 2.0] Invalid logo URL format (must start with http/https):', logoUrl);
+    return undefined;
+  }
+
   try {
-    const response = await fetch(logoUrl);
+    console.log('🔄 [Revo 2.0] Converting logo URL to data URL:', logoUrl);
+    
+    // Add timeout to prevent hanging
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+    
+    const response = await fetch(logoUrl, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; Revo2.0/1.0)'
+      }
+    });
+    
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error(`Failed to fetch logo: ${response.status} ${response.statusText}`);
+    }
+
+    // Check content length to avoid huge files
+    const contentLength = response.headers.get('content-length');
+    if (contentLength && parseInt(contentLength) > 5 * 1024 * 1024) { // 5MB limit
+      throw new Error(`Logo file too large: ${contentLength} bytes (max 5MB)`);
     }
 
     const arrayBuffer = await response.arrayBuffer();
@@ -1437,15 +1466,26 @@ async function convertLogoToDataUrl(logoUrl?: string): Promise<string | undefine
       if (logoUrl.match(/\.png$/i)) contentType = 'image/png';
       else if (logoUrl.match(/\.jpe?g$/i)) contentType = 'image/jpeg';
       else if (logoUrl.match(/\.webp$/i)) contentType = 'image/webp';
+      else if (logoUrl.match(/\.svg$/i)) contentType = 'image/svg+xml';
       else contentType = 'image/png'; // Default fallback
     }
     
+    // Validate it's actually an image
+    if (!contentType.startsWith('image/')) {
+      throw new Error(`Invalid content type: ${contentType} (expected image/*)`);
+    }
+    
     const dataUrl = `data:${contentType};base64,${base64}`;
+    console.log(`✅ [Revo 2.0] Logo converted successfully (${contentType}, ${base64.length} chars)`);
 
     return dataUrl;
 
   } catch (error) {
-    console.error('❌ Revo 2.0: Logo conversion failed:', error);
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('❌ [Revo 2.0] Logo conversion timeout (10s)');
+    } else {
+      console.error('❌ [Revo 2.0] Logo conversion failed:', error instanceof Error ? error.message : error);
+    }
     return undefined;
   }
 }
@@ -2386,6 +2426,13 @@ async function generateImageWithGemini(prompt: string, options: Revo20Generation
     const logoDataUrl = options.brandProfile.logoDataUrl;
     const logoStorageUrl = (options.brandProfile as any).logoUrl || (options.brandProfile as any).logo_url;
     let logoUrl = logoDataUrl || logoStorageUrl;
+    
+    console.log('🔍 [Revo 2.0 Primary] Logo detection for Gemini 3 Pro:', {
+      hasLogoDataUrl: !!logoDataUrl,
+      hasLogoStorageUrl: !!logoStorageUrl,
+      finalLogoUrl: !!logoUrl,
+      logoFormat: logoUrl ? (logoUrl.startsWith('data:') ? 'data-url' : 'url') : 'none'
+    });
 
     // Convert storage URL to data URL if needed (same as Revo 1.5)
     if (logoUrl && !logoUrl.startsWith('data:') && logoUrl.startsWith('http')) {
@@ -2399,6 +2446,7 @@ async function generateImageWithGemini(prompt: string, options: Revo20Generation
 
     // Add logo to generation parts if available
     if (logoUrl && logoUrl.startsWith('data:image/')) {
+      console.log('🎯 [Revo 2.0] Adding logo to generation parts');
 
       // Extract base64 data and mime type
       const logoMatch = logoUrl.match(/^data:([^;]+);base64,(.+)$/);
@@ -2412,22 +2460,36 @@ async function generateImageWithGemini(prompt: string, options: Revo20Generation
           }
         });
 
-        // Add logo integration prompt (same as Revo 1.0)
+        // Enhanced logo integration prompt with business context
+        const businessName = options.brandProfile?.businessName || 'the business';
         const logoPrompt = `\n\n🎯 CRITICAL LOGO REQUIREMENT - THIS IS MANDATORY:
 You MUST include the exact brand logo image that was provided above in your design. This is not optional.
-- Integrate the logo naturally into the layout - do not create a new logo
+
+📋 LOGO INTEGRATION RULES:
+- Integrate the ${businessName} logo naturally into the layout - do not create a new logo
 - The logo should be prominently displayed but not overwhelming the design
-- Position the logo in a professional manner (top-left, top-right, or center as appropriate)
+- Position the logo professionally (top-left, top-right, or center as appropriate)
 - Maintain the logo's aspect ratio and clarity
 - Ensure the logo is clearly visible against the background
+- The logo represents ${businessName} - treat it with respect and prominence
 
-The client specifically requested their brand logo to be included. FAILURE TO INCLUDE THE LOGO IS UNACCEPTABLE.`;
+🚨 CRITICAL: The client specifically requested their brand logo to be included. FAILURE TO INCLUDE THE LOGO IS UNACCEPTABLE.
+
+💡 DESIGN QUALITY REQUIREMENTS:
+- Create a professional, modern design that reflects ${businessName}'s brand
+- Use high-quality, realistic imagery (no stock photo poses)
+- Ensure text is readable and well-positioned
+- Create visual hierarchy with proper spacing
+- Match the design style to the business type and target audience
+- Include relevant business context in the visual elements`;
 
         generationParts[0] = prompt + logoPrompt;
+        console.log('✅ [Revo 2.0] Logo integration prompt added');
       } else {
-        console.error('❌ Revo 2.0: Invalid logo data URL format');
+        console.error('❌ [Revo 2.0] Invalid logo data URL format');
       }
     } else {
+      console.log('ℹ️ [Revo 2.0] No logo available for generation');
     }
 
     const result = await generateContentWithProxy(generationParts, REVO_2_0_MODEL, true);
@@ -4021,67 +4083,14 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
     //   deepBusinessUnderstanding = null;
     // }
 
-    // Step 3: Generate COMPREHENSIVE business profile for deep understanding
-    const { businessIntelligenceGatherer } = await import('./intelligence/business-intelligence-gatherer');
-
-    let businessIntelligence: any;
-    try {
-      // Generate business intelligence using existing gatherer
-      businessIntelligence = await Promise.race([
-        businessIntelligenceGatherer.gatherBusinessIntelligence({
-          brandProfile: enhancedOptions.brandProfile,
-          businessType: businessType.primaryType,
-          platform: enhancedOptions.platform
-        }),
-        new Promise((_, reject) =>
-          // Reduce timeout to 8s - FAIL FAST strategy
-          // If we can't get deep BI in 8s, we must switch to fallback instantly to avoid 504 timeouts
-          setTimeout(() => reject(new Error('Business intelligence timeout')), 8000)
-        )
-      ]);
-
-      console.log('✅ [Revo 2.0] Comprehensive business profile generated');
-      console.log('🎯 [Revo 2.0] Business essence:', enhancedOptions.brandProfile.businessName);
-
-      // Business intelligence is already in the correct format from the gatherer
-      // No conversion needed
-
-      console.log(`🧠 [Revo 2.0] Business Profile Intelligence:`);
-      console.log(`   🏢 Competitive: ${businessIntelligence.competitive?.mainCompetitors?.join(', ') || 'N/A'}`);
-      console.log(`   👥 Customer: ${businessIntelligence.customer?.primaryAudience?.substring(0, 80) || 'N/A'}...`);
-      console.log(`   📈 Market: ${businessIntelligence.market?.marketSize?.substring(0, 80) || 'N/A'}...`);
-
-    } catch (profileError) {
-      console.warn(`⚠️ [Revo 2.0] Business profile generation failed/timed out. Using instant basic fallback to save time.`);
-
-      // FAST FALLBACK: Construct basic BI from existing profile data instantly
-      // Do NOT retry the expensive gatherer that just failed/timed out
-      const bp = enhancedOptions.brandProfile as any;
-      businessIntelligence = {
-        competitive: { 
-          mainCompetitors: bp.competitors?.map((c: any) => c.name) || ['Generic Competitors'],
-          competitiveAdvantages: ['Quality products', 'Excellent service', 'Local presence'],
-          marketPosition: 'Growing challenger in the local market',
-          differentiationOpportunities: ['Focus on customer service', 'Community engagement']
-        },
-        customer: { 
-          primaryAudience: enhancedOptions.brandProfile.targetAudience || 'General audience interested in this product',
-          painPoints: ['Price sensitivity', 'Quality concerns', 'Availability'],
-          motivations: ['Value for money', 'Reliability', 'Status'],
-          preferredChannels: ['Instagram', 'Facebook', 'WhatsApp']
-        },
-        market: { 
-          marketSize: 'Growing market with significant opportunity' 
-        },
-        strategy: {
-          recommendedApproach: 'Focus on unique value proposition and key benefits'
-        }
-      };
-
-      console.log(`🧠 [Revo 2.0] Instant BI fallback used (0ms):`);
-      console.log(`   🏢 Competitive: ${businessIntelligence.competitive?.mainCompetitors?.join(', ') || 'N/A'}`);
-      console.log(`   👥 Customer: ${businessIntelligence.customer?.primaryAudience?.substring(0, 80) || 'N/A'}...`);
-    }
+    // Step 3: Business Intelligence now handled by AI Assistants
+    // BI analysis is integrated into assistant instructions for efficiency
+    console.log('🧠 [Revo 2.0] Business Intelligence integrated into AI Assistant (no separate calls needed)');
+    
+    // No separate BI analysis needed - assistants handle this internally
+    let businessIntelligence: any = {
+      note: 'BI analysis now handled by AI assistants during content generation'
+    };
 
     // Step 3: Generate creative concept with visual direction
     const concept = await Promise.race([
@@ -4291,47 +4300,122 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
     let imageResult;
     
     try {
-      // Try Gemini 3 Pro with 25s timeout (was 90s)
-      // If it takes longer than 25s, it's likely hanging, so fail fast
+      // Try Gemini 3 Pro with 60s timeout (increased from 15s)
+      // Longer timeout to allow Gemini 3 Pro to complete before fallback
       imageResult = await Promise.race([
         generateImageWithGemini(imagePrompt, enhancedOptions),
         new Promise<{ imageUrl: string }>((_, reject) => 
-          setTimeout(() => reject(new Error('Image generation timeout after 25s')), 25000)
+          setTimeout(() => reject(new Error('Image generation timeout after 60s')), 60000)
         )
       ]);
       const imageTime = Date.now() - imageStartTime;
       console.log(`⏱️ [Revo 2.0] Image generation took ${imageTime}ms (${(imageTime/1000).toFixed(1)}s)`);
     } catch (timeoutError) {
       // If timeout, fallback to Gemini 2.5 via Vertex AI
-      console.warn('⚠️ [Revo 2.0] Gemini 3 Pro timeout (25s), falling back to Gemini 2.5 Flash via Vertex AI');
+      console.warn('⚠️ [Revo 2.0] Gemini 3 Pro timeout (60s), falling back to Gemini 2.5 Flash via Vertex AI');
       console.log('🔄 [Revo 2.0] FALLBACK: Using Gemini 2.5 Flash for faster generation');
+      console.log('🔍 [Revo 2.0] Timeout error details:', timeoutError instanceof Error ? timeoutError.message : timeoutError);
       
       const opts = enhancedOptions as any;
       
-      // Ensure logo is converted to Data URL for fallback
-      let fallbackLogoUrl = enhancedOptions.brandProfile?.logoDataUrl || opts.logoImage;
+      // Enhanced logo handling for fallback - SAME LOGIC AS PRIMARY GENERATION
+      const logoDataUrl = enhancedOptions.brandProfile?.logoDataUrl;
+      const logoStorageUrl = (enhancedOptions.brandProfile as any)?.logoUrl || (enhancedOptions.brandProfile as any)?.logo_url;
+      let fallbackLogoUrl = logoDataUrl || logoStorageUrl;
       
-      // If we have a logo URL but it's not a data URL, try to convert it
-      // This is crucial because VertexAIClient ONLY accepts data URLs
-      if (!fallbackLogoUrl && (enhancedOptions.brandProfile as any)?.logoUrl) {
-         const rawLogoUrl = (enhancedOptions.brandProfile as any).logoUrl;
-         if (rawLogoUrl && rawLogoUrl.startsWith('http')) {
-           try {
-             fallbackLogoUrl = await convertLogoToDataUrl(rawLogoUrl);
-             console.log('✅ [Revo 2.0] Converted logo URL for fallback generation');
-           } catch (e) {
-             console.warn('⚠️ [Revo 2.0] Failed to convert logo for fallback:', e);
-           }
-         }
+      console.log('🔍 [Revo 2.0] Logo fallback check (using primary generation logic):');
+      console.log('  - logoDataUrl:', !!logoDataUrl);
+      console.log('  - logoStorageUrl:', !!logoStorageUrl);
+      console.log('  - finalLogoUrl:', !!fallbackLogoUrl);
+      console.log('  - logoFormat:', fallbackLogoUrl ? (fallbackLogoUrl.startsWith('data:') ? 'data-url' : 'url') : 'none');
+      
+      // Convert storage URL to data URL if needed (SAME AS PRIMARY GENERATION)
+      if (fallbackLogoUrl && !fallbackLogoUrl.startsWith('data:') && fallbackLogoUrl.startsWith('http')) {
+        try {
+          console.log('🔄 [Revo 2.0] Converting logo URL to data URL for fallback:', fallbackLogoUrl);
+          const conversionStartTime = Date.now();
+          fallbackLogoUrl = await convertLogoToDataUrl(fallbackLogoUrl);
+          const conversionTime = Date.now() - conversionStartTime;
+          console.log(`✅ [Revo 2.0] Logo converted for fallback in ${conversionTime}ms`);
+        } catch (conversionError) {
+          console.error('❌ [Revo 2.0] Logo URL conversion failed for fallback:', conversionError);
+          fallbackLogoUrl = undefined; // Clear invalid logo
+        }
+      }
+      
+      if (fallbackLogoUrl && fallbackLogoUrl.startsWith('data:image/')) {
+        console.log('✅ [Revo 2.0] Logo ready for fallback generation (data URL format)');
+      } else if (fallbackLogoUrl) {
+        console.log('⚠️ [Revo 2.0] Logo available but not in data URL format:', fallbackLogoUrl.substring(0, 50) + '...');
+      } else {
+        console.log('ℹ️ [Revo 2.0] No logo available for fallback generation');
       }
 
-      const fallbackResult = await getVertexAIClient().generateImage(imagePrompt, REVO_2_0_FALLBACK_MODEL, {
-        temperature: opts.temperature ?? 0.7,
-        maxOutputTokens: opts.maxOutputTokens ?? 8192,
-        logoImage: fallbackLogoUrl,
-        aspectRatio: (['1:1', '3:4', '4:3', '9:16', '16:9'].includes(enhancedOptions.aspectRatio) ? enhancedOptions.aspectRatio : '1:1') as any,
-        imageSize: opts.imageSize
+      // Enhanced fallback generation with timeout protection
+      console.log('🎨 [Revo 2.0] Starting fallback generation with Vertex AI...');
+      const fallbackStartTime = Date.now();
+      
+      // Create clean image prompt for Vertex AI (remove any Gemini 3 Pro specific logo instructions)
+      // The Vertex AI client will add its own logo instructions
+      let cleanImagePrompt = imagePrompt;
+      
+      // Remove any existing logo instructions that might conflict with Vertex AI's approach
+      cleanImagePrompt = cleanImagePrompt.replace(/🎯 CRITICAL LOGO REQUIREMENT[\s\S]*?UNACCEPTABLE\./g, '');
+      cleanImagePrompt = cleanImagePrompt.replace(/\n\n🎯 CRITICAL LOGO REQUIREMENT[\s\S]*?UNACCEPTABLE\./g, '');
+      cleanImagePrompt = cleanImagePrompt.trim();
+      
+      console.log('🧼 [Revo 2.0] Cleaned image prompt for Vertex AI fallback');
+      console.log('🔍 [Revo 2.0] Fallback status check:', {
+        hasLogoUrl: !!fallbackLogoUrl,
+        logoFormat: fallbackLogoUrl ? (fallbackLogoUrl.startsWith('data:') ? 'data-url' : 'url') : 'none',
+        promptLength: cleanImagePrompt.length,
+        hasBrandColors: !!(enhancedOptions.brandProfile?.primaryColor && enhancedOptions.brandProfile?.accentColor),
+        primaryColor: enhancedOptions.brandProfile?.primaryColor,
+        accentColor: enhancedOptions.brandProfile?.accentColor,
+        backgroundColor: enhancedOptions.brandProfile?.backgroundColor,
+        followBrandColors: enhancedOptions.followBrandColors !== false
       });
+      
+      // Check if brand colors are mentioned in the prompt
+      const hasBrandColorInstructions = cleanImagePrompt.includes('brand colors') || 
+                                       cleanImagePrompt.includes('primaryColor') ||
+                                       cleanImagePrompt.includes('MANDATORY: Use the specified brand colors');
+      console.log('🎨 [Revo 2.0] Brand color instructions in fallback prompt:', hasBrandColorInstructions);
+      
+      if (!hasBrandColorInstructions && enhancedOptions.brandProfile?.primaryColor) {
+        console.log('⚠️ [Revo 2.0] WARNING: Brand colors available but not found in fallback prompt!');
+        // Add brand color instructions to ensure fallback follows brand colors
+        const brandColorInstruction = `\n\n🎨 CRITICAL BRAND COLOR REQUIREMENT:
+You MUST use the following brand colors in your design:
+- Primary Color: ${enhancedOptions.brandProfile.primaryColor}
+- Accent Color: ${enhancedOptions.brandProfile.accentColor || enhancedOptions.brandProfile.primaryColor}
+- Background Color: ${enhancedOptions.brandProfile.backgroundColor || '#FFFFFF'}
+These colors are mandatory and must be prominently featured in the design.`;
+        cleanImagePrompt += brandColorInstruction;
+        console.log('✅ [Revo 2.0] Added brand color instructions to fallback prompt');
+      }
+      
+      const fallbackResult = await Promise.race([
+        getVertexAIClient().generateImage(cleanImagePrompt, REVO_2_0_FALLBACK_MODEL, {
+          temperature: opts.temperature ?? 0.7,
+          maxOutputTokens: opts.maxOutputTokens ?? 8192,
+          logoImage: fallbackLogoUrl, // Vertex AI client will handle logo integration
+          aspectRatio: (['1:1', '3:4', '4:3', '9:16', '16:9'].includes(enhancedOptions.aspectRatio) ? enhancedOptions.aspectRatio : '1:1') as any,
+          imageSize: opts.imageSize,
+          // Pass brand color information to Vertex AI client
+          brandColors: {
+            primary: enhancedOptions.brandProfile?.primaryColor,
+            accent: enhancedOptions.brandProfile?.accentColor,
+            background: enhancedOptions.brandProfile?.backgroundColor
+          }
+        } as any),
+        new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Fallback generation timeout after 30s')), 30000)
+        )
+      ]);
+      
+      const fallbackTime = Date.now() - fallbackStartTime;
+      console.log(`✅ [Revo 2.0] Fallback generation completed in ${fallbackTime}ms`);
 
       // Convert Vertex AI result format to Revo service format
       imageResult = {

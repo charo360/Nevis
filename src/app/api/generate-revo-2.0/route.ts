@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateWithRevo20 } from '@/ai/revo-2.0-service';
 
 // Configure route for longer execution time (image generation can take time)
-export const maxDuration = 300; // 300 seconds timeout (5 minutes)
+export const maxDuration = 120; // 120 seconds timeout (2 minutes) - reduced from 5 minutes
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
