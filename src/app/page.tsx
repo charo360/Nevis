@@ -29,6 +29,12 @@ import { useToast } from '@/hooks/use-toast';
 import { loadStripe } from '@stripe/stripe-js';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { AppRoutesPaths } from '@/lib/routes';
 import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
@@ -294,10 +300,6 @@ export default function HomePage() {
     router.push('/auth');
   };
 
-  const handleWatchDemo = () => {
-    // Add demo video functionality later
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 overflow-hidden">
       {/* Navigation */}
@@ -335,15 +337,33 @@ export default function HomePage() {
                 <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5" />
               </Button>
 
-              <Button
-                variant="outline"
-                size="lg"
-                className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 h-auto border-gray-300 hover:bg-gray-50 text-black hover:text-black"
-                onClick={handleWatchDemo}
-              >
-                <Play className="mr-2 w-4 h-4 sm:w-5 sm:h-5 text-black" />
-                <span className="text-black">Watch Demo</span>
-              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 h-auto border-gray-300 hover:bg-gray-50 text-black hover:text-black"
+                  >
+                    <Play className="mr-2 w-4 h-4 sm:w-5 sm:h-5 text-black" />
+                    <span className="text-black">Watch Demo</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[800px] p-0 border-0 bg-black overflow-hidden">
+                  <DialogTitle className="sr-only">Demo Video</DialogTitle>
+                  <div className="aspect-video w-full">
+                    <iframe
+                      width="100%"
+                      height="100%"
+                      src="https://www.youtube.com/embed/gp-dwaW9H_E?autoplay=1"
+                      title="Demo Video"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="w-full h-full"
+                    />
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
 
             {/* Social Proof */}

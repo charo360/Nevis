@@ -29,6 +29,8 @@ export interface AssistantContentRequest {
   businessIntelligence?: any;
   deepBusinessUnderstanding?: any; // Deep business understanding from business-understanding system
   avoidListText?: string;
+  designVariations?: any; // Pre-selected Universal Design System variations
+  adConcept?: any; // 6D Ad Concept for conceptual variety
 }
 
 /**
@@ -245,6 +247,13 @@ export class AssistantManager {
       console.log(`✅ [Assistant Manager] Generation successful in ${duration}ms`);
       console.log(`📊 [Assistant Manager] Headline: "${response.content.headline}"`);
       console.log(`🎨 [Assistant Manager] Design Hero: "${response.design_specifications.hero_element}"`);
+      
+      // DEBUG: Log alignment validation from assistant
+      if (response.alignment_validation) {
+        console.log(`🔍 [Assistant Manager] Alignment Validation: "${response.alignment_validation}"`);
+      } else {
+        console.warn(`⚠️ [Assistant Manager] NO alignment_validation field in response!`);
+      }
 
       return response;
 
@@ -430,13 +439,72 @@ export class AssistantManager {
 
     // Marketing Angle
     if (marketingAngle) {
-      message += `**Marketing Angle:** ${marketingAngle.name}\n`;
-      message += `${marketingAngle.description}\n\n`;
+      message += `\n🎯🎯🎯 **MARKETING ANGLE - DRIVES VISUAL CONCEPT** 🎯🎯🎯\n`;
+      message += `**Angle:** ${marketingAngle.name}\n`;
+      message += `**Description:** ${marketingAngle.description}\n\n`;
+    }
+
+    // === 6D AD CONCEPT (CRITICAL FOR VARIETY) ===
+    if (request.adConcept) {
+      const ac = request.adConcept;
+      message += `\n🎭🎭🎭 **6-DIMENSIONAL CREATIVE CONCEPT** 🎭🎭🎭\n`;
+      message += `You MUST follow this specific creative concept to ensure this ad looks completely different from others:\n\n`;
+      
+      message += `**1. SETTING:** ${ac.setting.category} - ${ac.setting.description}\n`;
+      message += `**2. CUSTOMER:** ${ac.customer.type} - ${ac.customer.description}\n`;
+      message += `**3. VISUAL STYLE:** ${ac.visualStyle.style} - ${ac.visualStyle.description}\n`;
+      message += `**4. BENEFIT FOCUS:** ${ac.benefit.type} - ${ac.benefit.message}\n`;
+      message += `**5. EMOTIONAL TONE:** ${ac.emotionalTone.tone} - ${ac.emotionalTone.description}\n`;
+      message += `**6. FORMAT:** ${ac.format.technique} - ${ac.format.structure}\n\n`;
+      
+      message += `🚨 CRITICAL INSTRUCTION: Your content and design specs MUST match this 6D concept!\n`;
+      message += `- If Setting is 'Home', show a home environment, not an office.\n`;
+      message += `- If Customer is 'Student', write for a student audience.\n`;
+      message += `- If Tone is 'Exciting', use exclamation marks and energetic language.\n`;
+      message += `- If Format is 'Problem-Solution', structure your caption as Problem -> Solution.\n\n`;
     }
 
     if (request.avoidListText) {
       message += `**ANTI-REPETITION GUIDANCE:**\n`;
       message += `${request.avoidListText}\n\n`;
+    }
+
+    // === UNIVERSAL DESIGN SYSTEM VARIATIONS (CRITICAL) ===
+    // Pass the pre-selected design variations so content matches the visual approach
+    if (request.designVariations) {
+      const dv = request.designVariations;
+      message += `\n🎨🎨🎨 **UNIVERSAL DESIGN SYSTEM - PRE-SELECTED VARIATIONS** 🎨🎨🎨\n`;
+      message += `Your content MUST align with these pre-selected visual dimensions:\n\n`;
+      
+      message += `**1. LAYOUT ARCHITECTURE: ${dv.layout.name}**\n`;
+      message += `- Category: ${dv.layout.category}\n`;
+      message += `- Description: ${dv.layout.description}\n`;
+      message += `- Write content that works with this layout structure\n\n`;
+      
+      message += `**2. TYPOGRAPHY STYLE: ${dv.typography.name}**\n`;
+      message += `- ${dv.typography.description}\n`;
+      message += `- Adjust headline length/style to match this typography\n\n`;
+      
+      message += `**3. IMAGE TREATMENT: ${dv.imageTreatment.name}**\n`;
+      message += `- ${dv.imageTreatment.description}\n`;
+      message += `- Your hero_element and scene_description must work with this treatment\n\n`;
+      
+      message += `**4. COLOR STRATEGY: ${dv.colorStrategy.name}**\n`;
+      message += `- ${dv.colorStrategy.description}\n`;
+      message += `- Your color_scheme must follow this strategy\n\n`;
+      
+      message += `**5. COLOR DISTRIBUTION: ${dv.colorDistribution.name}**\n`;
+      message += `- Primary: ${dv.colorDistribution.distribution.primary}%, Accent: ${dv.colorDistribution.distribution.accent}%, Background: ${dv.colorDistribution.distribution.background}%\n`;
+      message += `- ${dv.colorDistribution.instruction}\n\n`;
+      
+      message += `**6. VISUAL STYLE: ${dv.visualStyle}**\n`;
+      message += `- Overall aesthetic approach\n\n`;
+      
+      message += `**7. VISUAL EFFECT: ${dv.effect}**\n`;
+      message += `- Subtle enhancement to apply\n\n`;
+      
+      message += `🚨 CRITICAL: Your content (headline, subheadline, caption) and design specifications (hero_element, scene_description, text_placement, color_scheme, mood_direction) MUST be written to work with these pre-selected visual dimensions!\n\n`;
+      message += `This ensures perfect content-design alignment and maximum visual variety across designs.\n\n`;
     }
 
     // Product Catalog (for retail)
@@ -1090,6 +1158,77 @@ export class AssistantManager {
     message += `- Are benefits listed directly or buried after intro? (Must be direct)\n`;
     message += `- Does it sound like advertising copy or creative writing? (Must be advertising)\n\n`;
     
+    message += `🚨 **CRITICAL: CONTENT-DESIGN ALIGNMENT (NON-NEGOTIABLE)** 🚨\n\n`;
+    message += `Your content (headline, subheadline, caption) and design specifications MUST tell ONE UNIFIED STORY.\n`;
+    message += `This is the #1 reason for validation failures. Follow these rules EXACTLY:\n\n`;
+    
+    message += `**1. UNIFIED NARRATIVE FLOW:**\n`;
+    message += `- Headline → Subheadline → Caption must tell ONE continuous story\n`;
+    message += `- ALL elements must share COMMON THEMES and KEY WORDS\n`;
+    message += `- NO topic shifts between headline and caption\n`;
+    message += `- Example: If headline is "Study Smart, Succeed Faster" → caption MUST be about studying and success, NOT about work or business\n\n`;
+    
+    message += `**2. HERO-HEADLINE MATCH:**\n`;
+    message += `- Hero element MUST visually demonstrate the headline promise\n`;
+    message += `- If headline says "Transform Your Learning" → hero must show learning transformation (student with tablet, educational content visible)\n`;
+    message += `- If headline says "Work From Anywhere" → hero must show remote work scenario (laptop in cafe, person working outside office)\n`;
+    message += `- Hero element is NOT just decoration - it PROVES the headline claim\n\n`;
+    
+    message += `**3. SCENE-STORY ALIGNMENT:**\n`;
+    message += `- Scene description must DEMONSTRATE the story in the caption\n`;
+    message += `- Caption tells story → Scene shows that exact story happening\n`;
+    message += `- If caption mentions "supplier payment" → scene must show business payment scenario\n`;
+    message += `- If caption mentions "student studying" → scene must show student with educational materials\n\n`;
+    
+    message += `**4. MOOD CONSISTENCY:**\n`;
+    message += `- Content tone, design mood, and concept emotion MUST MATCH\n`;
+    message += `- Urgent content → urgent/dynamic mood (motion, energy, action)\n`;
+    message += `- Professional content → professional mood (clean, organized, confident)\n`;
+    message += `- Playful content → playful mood (bright, fun, energetic)\n`;
+    message += `- NO mismatches: urgent content with calm mood, or professional content with playful mood\n\n`;
+    
+    message += `**5. CTA-TONE ALIGNMENT:**\n`;
+    message += `- CTA must match the emotional tone of the caption\n`;
+    message += `- Urgent caption → urgent CTA ("Get Yours Now", "Start Today")\n`;
+    message += `- Educational caption → learning CTA ("Learn More", "Discover How")\n`;
+    message += `- Benefit caption → benefit CTA ("Save Money Now", "Boost Productivity")\n`;
+    message += `- NO generic CTAs that don't match content tone\n\n`;
+    
+    message += `**6. COMMON THEMES REQUIREMENT:**\n`;
+    message += `Headline, subheadline, and caption MUST share at least 2-3 common themes:\n`;
+    message += `- Speed themes: fast, quick, instant, rapid, immediate\n`;
+    message += `- Security themes: safe, secure, protected, trusted, reliable\n`;
+    message += `- Convenience themes: easy, simple, effortless, hassle-free\n`;
+    message += `- Savings themes: save, cheap, affordable, discount, value\n`;
+    message += `- Quality themes: best, premium, excellent, superior, top\n`;
+    message += `- Innovation themes: new, modern, advanced, cutting-edge\n`;
+    message += `- Success themes: achieve, win, accomplish, excel, grow\n\n`;
+    
+    message += `**VALIDATION CHECKLIST (ALL MUST BE TRUE):**\n`;
+    message += `✅ Do headline, subheadline, and caption share 2+ common themes?\n`;
+    message += `✅ Does hero element visually represent the headline promise?\n`;
+    message += `✅ Does scene description demonstrate the caption story?\n`;
+    message += `✅ Do content tone, design mood, and concept emotion match?\n`;
+    message += `✅ Does CTA align with the caption's emotional tone?\n`;
+    message += `✅ Is there ONE unified story from headline → caption → design?\n\n`;
+    
+    message += `**WRONG EXAMPLE (DISCONNECTED - NEVER DO THIS):**\n`;
+    message += `❌ Headline: "Study Smart, Succeed Faster"\n`;
+    message += `❌ Subheadline: "Transform your business operations with cutting-edge technology"\n`;
+    message += `❌ Caption: "Boost your productivity at work with powerful tools..."\n`;
+    message += `❌ Hero: "Professional in office meeting"\n`;
+    message += `❌ Problem: Headline about STUDYING, subheadline about BUSINESS, caption about WORK - NO COMMON THEMES!\n\n`;
+    
+    message += `**CORRECT EXAMPLE (UNIFIED - ALWAYS DO THIS):**\n`;
+    message += `✅ Headline: "Study Smart, Succeed Faster"\n`;
+    message += `✅ Subheadline: "Access all your textbooks, notes, and study materials in one lightweight tablet"\n`;
+    message += `✅ Caption: "Stop carrying heavy textbooks. Get all your study materials on one device. 8-hour battery covers full school day. Perfect for students who want to study smarter, not harder."\n`;
+    message += `✅ Hero: "Student using tablet with educational content visible on screen"\n`;
+    message += `✅ Scene: "Student in study environment, tablet showing textbooks/notes, focused and engaged"\n`;
+    message += `✅ Mood: "Focused, determined, educational"\n`;
+    message += `✅ CTA: "Study Smarter Today"\n`;
+    message += `✅ Common Themes: STUDY, EDUCATION, LEARNING, STUDENT, SMART (all elements share these themes!)\n\n`;
+    
     message += `**CONTENT REQUIREMENTS:**\n`;
     message += `1. Headline (4-6 words that match the main visual element)\n`;
     message += `2. Subheadline (15-25 words that expand on the headline's promise)\n`;
@@ -1100,20 +1239,20 @@ export class AssistantManager {
     message += `Return as JSON with both content and design specifications:\n`;
     message += `{\n`;
     message += `  "content": {\n`;
-    message += `    "headline": "4-6 words that match the main visual element",\n`;
-    message += `    "subheadline": "15-25 words that describe what's happening in the scene",\n`;
-    message += `    "caption": "50-100 words story that the visual demonstrates",\n`;
-    message += `    "cta": "2-4 words matching the action in the image",\n`;
+    message += `    "headline": "4-6 words (MUST share themes with subheadline and caption)",\n`;
+    message += `    "subheadline": "15-25 words (MUST expand on headline using SAME themes)",\n`;
+    message += `    "caption": "50-100 words (MUST continue headline story with SAME themes - NO topic shifts)",\n`;
+    message += `    "cta": "2-4 words (MUST match caption's emotional tone)",\n`;
     message += `    "hashtags": ["relevant", "tags"]\n`;
     message += `  },\n`;
     message += `  "design_specifications": {\n`;
-    message += `    "hero_element": "Main focal point of the image",\n`;
-    message += `    "scene_description": "Detailed visual scene that supports the content",\n`;
+    message += `    "hero_element": "Main focal point (MUST visually demonstrate the headline promise)",\n`;
+    message += `    "scene_description": "Detailed visual scene (MUST show the caption story happening)",\n`;
     message += `    "text_placement": "Where each text element should be positioned",\n`;
     message += `    "color_scheme": "How brand colors should be applied",\n`;
-    message += `    "mood_direction": "Specific visual mood and atmosphere"\n`;
+    message += `    "mood_direction": "Visual mood (MUST match content tone - urgent/professional/playful)"\n`;
     message += `  },\n`;
-    message += `  "alignment_validation": "Explain how content and visuals work together as one unified story"\n`;
+    message += `  "alignment_validation": "List the 2-3 common themes shared by headline, subheadline, and caption. Confirm hero demonstrates headline and scene shows caption story. Verify mood matches content tone."\n`;
     message += `}`;
 
     return message;
@@ -1221,6 +1360,16 @@ export class AssistantManager {
       }
 
       const parsed = JSON.parse(jsonMatch[0]);
+      
+      // DEBUG: Log the actual response structure
+      console.log('🔍 [Assistant Manager] Response structure:', {
+        hasContent: !!parsed.content,
+        hasDesignSpecs: !!parsed.design_specifications,
+        hasAlignmentValidation: !!parsed.alignment_validation,
+        topLevelKeys: Object.keys(parsed),
+        contentKeys: parsed.content ? Object.keys(parsed.content) : 'N/A',
+        designKeys: parsed.design_specifications ? Object.keys(parsed.design_specifications) : 'N/A'
+      });
 
       // Validate required fields in new nested structure
       if (!parsed.content || !parsed.content.headline || !parsed.content.caption || !parsed.content.cta) {

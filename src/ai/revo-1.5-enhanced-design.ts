@@ -3155,14 +3155,20 @@ CRITICAL INSTRUCTION: The image MUST visually represent and include the text con
     });
 
     // Use EXACT contact information without any modifications
-    if (phone && phone.trim()) contacts.push(`📞 ${phone.trim()}`);
-    if (email && email.trim()) contacts.push(`📧 ${email.trim()}`);
+    // Handle phone as array or string
+    if (phone) {
+      const phoneStr = Array.isArray(phone) ? phone[0] : phone;
+      if (phoneStr && typeof phoneStr === 'string' && phoneStr.trim()) {
+        contacts.push(`📞 ${phoneStr.trim()}`);
+      }
+    }
+    if (email && typeof email === 'string' && email.trim()) contacts.push(`📧 ${email.trim()}`);
     // Clean website URL: remove https:// and http:// for cleaner display
-    if (website && website.trim() && !website.includes('example.com') && !website.includes('placeholder')) {
+    if (website && typeof website === 'string' && website.trim() && !website.includes('example.com') && !website.includes('placeholder')) {
       const cleanWebsite = website.trim().replace(/^https?:\/\//, '');
       contacts.push(`🌐 ${cleanWebsite}`);
     }
-    if (address && address.trim()) contacts.push(`📍 ${address.trim()}`);
+    if (address && typeof address === 'string' && address.trim()) contacts.push(`📍 ${address.trim()}`);
 
     if (contacts.length > 0) {
       contactInstruction = `\n\n📞 CONTACT INFORMATION (MANDATORY FOOTER PLACEMENT):\n${contacts.join('\n')}\n🚨 CRITICAL: Use the EXACT contact information provided above - DO NOT modify, change, or reformat any phone numbers, emails, or websites\n🚨 CRITICAL: Copy the contact details EXACTLY as shown - no typos, no missing letters, no changes\n- MUST display available contact info in footer strip at BOTTOM of image\n- MANDATORY: Footer background MUST use BRAND COLORS (primary, accent, or background color from brand profile)\n- MANDATORY: If brand color is dark, use WHITE or LIGHT text; if brand color is light, use DARK text\n- MANDATORY: DO NOT use black (#000000) unless it's explicitly a brand color\n- MANDATORY: Contact footer must span full width of image\n- MANDATORY: Text size minimum 14px equivalent for readability\n- MANDATORY: Format as horizontal strip: "${contacts.join(' | ')}"\n- MANDATORY: Footer placement is NON-NEGOTIABLE - always at bottom\n- NOTE: Only show available contacts (phone, email, website) - not all are required\n- Use professional styling that complements and matches the brand colors`;
@@ -4210,6 +4216,22 @@ EXAMPLES OF PROPER MATCHING:
 - People should look natural and authentic (not stock photo fake)
 - Show the OUTCOME/BENEFIT the person gets from the business
 - Location context: ${location} - include appropriate cultural representation
+
+${(() => {
+  const africanCountries = ['kenya', 'nigeria', 'south africa', 'ghana', 'uganda', 'tanzania', 'ethiopia', 'rwanda', 'zambia', 'botswana', 'malawi'];
+  const isAfricanCountry = africanCountries.some(country => location.toLowerCase().includes(country));
+  if (isAfricanCountry) {
+    return `
+🚨 CRITICAL AFRICAN REPRESENTATION REQUIREMENT:
+- This business is in ${location} - ALL people in the image MUST be Black/African
+- MANDATORY: Show ONLY Black/African people with dark skin tones
+- FORBIDDEN: White people, light-skinned people, or non-African ethnicities
+- REQUIRED: Authentic African features, hairstyles, and appearance
+- 100% REQUIREMENT: Every person visible must be Black/African - NO EXCEPTIONS
+- Cultural authenticity is NON-NEGOTIABLE for this ${location}-based business`;
+  }
+  return '';
+})()}
 ` : `
 🚫 PEOPLE INTEGRATION (TOGGLE: OFF):
 - NO people in the design

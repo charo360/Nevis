@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "src/app/api/generate-revo-2.0/**": {
+      "maxDuration": 60
+    },
+    "src/app/api/generate-revo-1.5/**": {
+      "maxDuration": 60
+    }
+  }
+}

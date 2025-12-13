@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { PostCard } from "@/components/dashboard/post-card";
 import { generateContentAction, generateEnhancedDesignAction, generateContentWithArtifactsAction } from "@/app/actions";
 import { generateRevo15ContentAction } from "@/app/actions/revo-1.5-actions";
+import { generateRevo2ContentAction } from "@/app/actions/revo-2-actions";
 
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth-supabase";
@@ -75,6 +76,45 @@ export function ContentCalendar({
 
   // Use local language toggle
   const [useLocalLanguage, setUseLocalLanguage] = React.useState<boolean>(false);
+
+  // Save colors function
+  const saveColorsToProfile = async () => {
+    try {
+      // Get colors from localStorage (where UI colors are stored)
+      const savedColors = localStorage.getItem('brandColors');
+      if (!savedColors) {
+        toast({
+          title: "No Colors to Save",
+          description: "No colors found in UI. Please set colors first.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const colors = JSON.parse(savedColors);
+      
+      // Update the brand profile with the colors
+      await updateProfile(brandProfile.id!, {
+        primaryColor: colors.primaryColor || '#d96355',
+        accentColor: colors.accentColor || '#ffffff', 
+        backgroundColor: colors.backgroundColor || '#f8fafc'
+      });
+
+      toast({
+        title: "✅ Colors Saved!",
+        description: "Brand colors have been saved to your profile. Revo 2.0 will now use these colors consistently.",
+      });
+
+      console.log('🎨 Colors saved to brand profile:', colors);
+    } catch (error) {
+      console.error('❌ Failed to save colors:', error);
+      toast({
+        title: "Failed to Save Colors",
+        description: "Could not save colors to brand profile. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Save preferences to localStorage
   React.useEffect(() => {
@@ -264,37 +304,40 @@ export function ContentCalendar({
       // Dynamic model routing based on selected Revo version
       if (selectedRevoModel === 'revo-2.0') {
 
-        // Use server action to avoid client-side imports
-        const trendingContext = {
-          trendingHashtags: platformHashtags,
-          businessType: brandProfile.businessType || 'business'
-        };
-
-        const response = await fetch('/api/generate-revo-2.0', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            businessType: brandProfile.businessType || 'Business',
-            platform: platform.toLowerCase(),
-            visualStyle: (brandProfile.visualStyle as any) || 'modern',
-            imageText: '',
-            brandProfile,
+        // Use server action to fetch fresh brand colors from database
+        console.log('🔄 [Content Calendar] Using Revo 2.0 Server Action (fetches fresh colors)');
+        
+        const generatedPost = await generateRevo2ContentAction(
+          brandProfile,
+          platform as Platform,
+          brandConsistency,
+          '', // No custom prompt
+          {
             aspectRatio: '1:1',
+            visualStyle: (brandProfile.visualStyle as any) || 'modern',
             includePeopleInDesigns,
-            useLocalLanguage,
-            includeContacts: brandConsistency.includeContacts,
-            trendingContext: trendingContext,
-            scheduledServices: scheduledServices // NEW: Pass scheduled services to Revo 2.0
-          })
-        });
+            useLocalLanguage
+          },
+          scheduledServices // Pass scheduled services
+        );
 
-        if (!response.ok) {
-          throw new Error(`Revo 2.0 generation failed: ${response.statusText}`);
-        }
-
-        revo20Result = await response.json();
+        // Convert to API response format for compatibility
+        revo20Result = {
+          success: true,
+          imageUrl: generatedPost.imageUrl,
+          model: generatedPost.metadata?.model || 'Revo 2.0',
+          qualityScore: generatedPost.metadata?.qualityScore || 0,
+          processingTime: generatedPost.metadata?.processingTime || 0,
+          enhancementsApplied: generatedPost.metadata?.enhancementsApplied || [],
+          headline: generatedPost.catchyWords,
+          subheadline: generatedPost.subheadline,
+          caption: generatedPost.content,
+          captionVariations: [],
+          cta: generatedPost.callToAction,
+          hashtags: generatedPost.hashtags?.split(' ') || [],
+          businessIntelligence: generatedPost.metadata,
+          contentSource: generatedPost.metadata?.contentSource || 'unknown'
+        };
 
         // Log content source for debugging
         const contentSource = revo20Result.contentSource || revo20Result.businessIntelligence?.contentSource || 'unknown';
@@ -677,6 +720,14 @@ export function ContentCalendar({
                     <option value="revo-2.0">Revo 2.0 (5 credits)</option>
                   </select>
                 </div>
+                <Button
+                  onClick={saveColorsToProfile}
+                  size="sm"
+                  variant="outline"
+                  className="text-xs lg:text-sm whitespace-nowrap"
+                >
+                  🎨 Save Colors
+                </Button>
               </div>
               
               {/* AI Model Selection - Separate row on mobile only */}

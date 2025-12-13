@@ -17,11 +17,17 @@ export default function FeaturesLayout({
     { name: 'Features', url: '/features' }
   ]);
 
+  const faqSchema = getFAQSchema();
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
       {children}
     </>

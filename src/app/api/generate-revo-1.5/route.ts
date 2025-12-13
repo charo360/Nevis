@@ -9,6 +9,11 @@ import { verifyToken } from '@/lib/auth/jwt';
 import { deductCreditsForRevo } from '@/app/actions/pricing-actions';
 import type { BrandProfile } from '@/lib/types';
 
+// Configure route for longer execution time (image generation can take time)
+export const maxDuration = 60; // 60 seconds timeout
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 // Helper function to convert logo URL to base64 data URL for AI models (matching Revo 1.0)
 async function convertLogoToDataUrl(logoUrl?: string): Promise<string | undefined> {
   if (!logoUrl) return undefined;
