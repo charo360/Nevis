@@ -15,6 +15,8 @@ export interface IntegratedPromptRequest {
   businessType: string;
   includeContacts?: boolean; // Whether to include contact information in the design
   strictConsistency?: boolean; // NEW: Whether to enforce EXACT brand colors with NO fallbacks
+  designVariations?: Record<string, any>; // Selected Universal Design System combo
+  adConcept?: any; // 6D concept driving the narrative
 }
 
 export interface IntegratedPromptResult {
@@ -62,7 +64,9 @@ export class IntegratedPromptGenerator {
       aspectRatio,
       businessType,
       includeContacts,
-      strictConsistency
+      strictConsistency,
+      request.designVariations,
+      request.adConcept
     );
 
     // Extract content structure for text overlay
@@ -110,7 +114,9 @@ export class IntegratedPromptGenerator {
     aspectRatio: string,
     businessType: string,
     includeContacts: boolean = true,
-    strictConsistency: boolean = false
+    strictConsistency: boolean = false,
+    designVariations?: Record<string, any>,
+    adConcept?: any
   ): string {
     // Check if this is an African country
     const location = brandProfile.location || '';
@@ -151,6 +157,44 @@ export class IntegratedPromptGenerator {
     prompt += `- Hero Element: ${designSpecs.hero_element}\n`;
     prompt += `- Scene Description: ${designSpecs.scene_description}\n`;
     prompt += `- Mood & Atmosphere: ${designSpecs.mood_direction}\n\n`;
+
+    // 6D CONCEPT + HERO BLUEPRINT (if provided)
+    if (adConcept) {
+      prompt += `🎭 **6D CONCEPT BLUEPRINT (MANDATORY)**\n`;
+      prompt += `1. Setting: ${adConcept.setting.category} - ${adConcept.setting.description}\n`;
+      prompt += `2. Customer: ${adConcept.customer.type} - ${adConcept.customer.description}\n`;
+      prompt += `3. Visual Style: ${adConcept.visualStyle.style} - ${adConcept.visualStyle.description}\n`;
+      prompt += `4. Benefit Focus: ${adConcept.benefit.type} - ${adConcept.benefit.message}\n`;
+      prompt += `5. Emotional Tone: ${adConcept.emotionalTone.tone} - ${adConcept.emotionalTone.description}\n`;
+      prompt += `6. Format/Technique: ${adConcept.format.technique} - ${adConcept.format.structure}\n`;
+      prompt += `🚨 Depict THIS exact scenario. Do NOT replace it with generic "person with phone" imagery.\n`;
+    }
+
+    if (designVariations?.layout) {
+      const layout = designVariations.layout;
+      prompt += `\n📐 **LAYOUT ARCHITECTURE (FOLLOW EXACTLY)**\n`;
+      prompt += `- Layout: ${layout.name} (${layout.category})\n`;
+      prompt += `- Description: ${layout.description}\n`;
+      if (layout.structure) {
+        prompt += `- Visual Structure:\n${layout.structure}\n`;
+      }
+      if (Array.isArray(layout.rules) && layout.rules.length > 0) {
+        prompt += `- Mandatory Rules:\n${layout.rules.map((rule: string, idx: number) => `  ${idx + 1}. ${rule}`).join('\n')}\n`;
+      }
+      prompt += `🚫 DO NOT deviate from this spatial blueprint. Position hero/text exactly where this layout specifies.\n`;
+    }
+
+    if (designVariations && adConcept) {
+      prompt += `\n🎬 **HERO + SCENE EXECUTION (STRICT)**\n`;
+      prompt += `- Hero Subject: ${adConcept.customer.description} (${adConcept.customer.type}) placed ONLY within the image zone defined by the layout above.\n`;
+      prompt += `- Environment: ${adConcept.setting.description} — include unmistakable props/background cues from this setting.\n`;
+      prompt += `- Action Format: ${adConcept.format.structure} — visually show every beat (e.g., before/after, testimonial moment, day-in-life).\n`;
+      prompt += `- Benefit Visualization: ${adConcept.benefit.message} — add UI props, overlays, or objects that make this benefit obvious.\n`;
+      prompt += `- Emotional Direction: Faces/body language must express "${adConcept.emotionalTone.description}".\n`;
+      prompt += `- Visual Style Execution: Render using ${adConcept.visualStyle.style} aesthetics (lighting, framing, texture).\n`;
+      prompt += `- Camera & Cropping: Match the format (close-up vs wide) implied by the layout + concept; never default to centered portrait unless layout demands it.\n`;
+      prompt += `🚫 Forbidden shortcuts: generic blank backgrounds, random models, or swapping the specified setting for an easier scene.\n`;
+    }
 
     // DESIGN SPECIFICATIONS
     prompt += `**DESIGN SPECIFICATIONS:**\n`;

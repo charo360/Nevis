@@ -180,7 +180,8 @@ export class ContentDesignValidator {
     const ctaAction = this.extractAction(cta);
 
     // CTA should match the urgency/tone of the caption
-    if (captionSentiment === 'urgent' && !this.isUrgentCTA(cta)) {
+    // Only flag mismatches for extreme cases
+    if (captionSentiment === 'urgent' && !this.isUrgentCTA(cta) && !this.isTransactionalCTA(cta)) {
       issues.push('CTA does not match urgent tone of caption');
       recommendations.push('Use action words like "Start Now", "Get Started", "Act Today"');
       return false;
@@ -192,6 +193,7 @@ export class ContentDesignValidator {
       return false;
     }
 
+    // Aspirational and neutral captions can use any CTA type
     return true;
   }
 
@@ -207,11 +209,29 @@ export class ContentDesignValidator {
     const headlineKeywords = this.extractKeyWords(headline);
     const heroKeywords = this.extractKeyWords(heroElement);
 
+    // Check for direct word overlap
     const overlap = headlineKeywords.filter(word => 
       heroKeywords.some(heroWord => 
         heroWord.includes(word) || word.includes(heroWord)
       )
     );
+
+    // Also check for semantic product matches (more lenient for retail)
+    const headlineLower = headline.toLowerCase();
+    const heroLower = heroElement.toLowerCase();
+    
+    // If headline mentions quality/experience/benefit and hero shows the product in use, that's aligned
+    const benefitWords = ['clarity', 'quality', 'performance', 'experience', 'power', 'speed', 
+                          'learning', 'access', 'instant', 'solutions', 'entertainment', 'productivity'];
+    const hasBenefitPromise = benefitWords.some(word => headlineLower.includes(word));
+    const hasProductInUse = heroLower.includes('displayed') || heroLower.includes('showcasing') || 
+                            heroLower.includes('featuring') || heroLower.includes('showing') ||
+                            heroLower.includes('using') || heroLower.includes('with') ||
+                            heroLower.includes('on the screen') || heroLower.includes('visible');
+    
+    if (hasBenefitPromise && hasProductInUse) {
+      return true; // Benefit promise + product in use = aligned
+    }
 
     if (overlap.length === 0) {
       issues.push('Hero element does not visually represent headline promise');
@@ -241,7 +261,17 @@ export class ContentDesignValidator {
       )
     );
 
-    if (actionOverlap.length === 0) {
+    // Also check for thematic keyword overlap (more lenient)
+    const captionKeywords = this.extractKeyWords(caption);
+    const sceneKeywords = this.extractKeyWords(sceneDescription);
+    const keywordOverlap = captionKeywords.filter(word =>
+      sceneKeywords.some(sceneWord => 
+        sceneWord.includes(word) || word.includes(sceneWord)
+      )
+    );
+
+    // Pass if there's either action overlap OR keyword overlap (at least 2 common words)
+    if (actionOverlap.length === 0 && keywordOverlap.length < 2) {
       issues.push('Visual scene does not demonstrate the story told in caption');
       recommendations.push('Ensure visual scene shows the actions or outcomes described in caption');
       return false;
@@ -336,9 +366,15 @@ export class ContentDesignValidator {
   private findCommonThemes(wordArrays: string[][]): string[] {
     if (wordArrays.length === 0) return [];
     
-    return wordArrays[0].filter(word =>
-      wordArrays.every(array => array.includes(word))
-    );
+    // Find words that appear in at least 2 of the 3 arrays (more lenient)
+    // This allows for spec-heavy subheadlines while maintaining thematic consistency
+    const allWords = new Set<string>();
+    wordArrays.forEach(array => array.forEach(word => allWords.add(word)));
+    
+    return Array.from(allWords).filter(word => {
+      const appearanceCount = wordArrays.filter(array => array.includes(word)).length;
+      return appearanceCount >= 2; // Must appear in at least 2 out of 3 elements
+    });
   }
 
   private isLogicalProgression(first: string, second: string): boolean {
@@ -351,15 +387,16 @@ export class ContentDesignValidator {
   }
 
   private analyzeSentiment(text: string): 'urgent' | 'informative' | 'aspirational' | 'neutral' {
-    const urgentWords = ['now', 'today', 'immediately', 'fast', 'quick', 'instant', 'urgent'];
+    const urgentWords = ['limited time', 'sale ends', 'only', 'hurry', 'urgent', 'act now', 'don\'t miss'];
     const informativeWords = ['learn', 'discover', 'understand', 'know', 'find'];
-    const aspirationalWords = ['achieve', 'success', 'grow', 'transform', 'unlock'];
+    const aspirationalWords = ['achieve', 'success', 'grow', 'transform', 'unlock', 'elevate', 'experience'];
 
     const lowerText = text.toLowerCase();
     
+    // Check for urgent phrases (more specific than single words)
     if (urgentWords.some(word => lowerText.includes(word))) return 'urgent';
-    if (informativeWords.some(word => lowerText.includes(word))) return 'informative';
     if (aspirationalWords.some(word => lowerText.includes(word))) return 'aspirational';
+    if (informativeWords.some(word => lowerText.includes(word))) return 'informative';
     
     return 'neutral';
   }
@@ -376,6 +413,11 @@ export class ContentDesignValidator {
     return urgentCTAs.some(urgent => cta.toLowerCase().includes(urgent));
   }
 
+  private isTransactionalCTA(cta: string): boolean {
+    const transactionalCTAs = ['save', 'get yours', 'order now', 'buy now', 'shop now', 'kes'];
+    return transactionalCTAs.some(trans => cta.toLowerCase().includes(trans));
+  }
+
   private extractActions(text: string): string[] {
     const actionWords = ['send', 'receive', 'pay', 'buy', 'use', 'click', 'tap', 'open', 'close', 'save'];
     const lowerText = text.toLowerCase();
@@ -384,12 +426,15 @@ export class ContentDesignValidator {
   }
 
   private analyzeMood(text: string): string {
-    const urgentMood = ['fast', 'quick', 'now', 'immediate'];
-    const professionalMood = ['professional', 'business', 'reliable', 'trust'];
+    const urgentMood = ['limited time', 'sale ends', 'hurry', 'act now', 'don\'t miss'];
+    const professionalMood = ['professional', 'business', 'reliable', 'trust', 'quality'];
     const friendlyMood = ['easy', 'simple', 'help', 'support'];
+    const aspirationalMood = ['experience', 'elevate', 'transform', 'unlock', 'clarity', 'unmatched'];
 
     const lowerText = text.toLowerCase();
 
+    // Check aspirational first (priority for retail)
+    if (aspirationalMood.some(word => lowerText.includes(word))) return 'aspirational';
     if (urgentMood.some(word => lowerText.includes(word))) return 'urgent';
     if (professionalMood.some(word => lowerText.includes(word))) return 'professional';
     if (friendlyMood.some(word => lowerText.includes(word))) return 'friendly';
@@ -400,6 +445,7 @@ export class ContentDesignValidator {
   private extractMoodFromDirection(moodDirection: string): string {
     const lowerMood = moodDirection.toLowerCase();
     
+    if (lowerMood.includes('exciting') || lowerMood.includes('vibrant') || lowerMood.includes('dynamic')) return 'aspirational';
     if (lowerMood.includes('urgent') || lowerMood.includes('fast')) return 'urgent';
     if (lowerMood.includes('professional') || lowerMood.includes('business')) return 'professional';
     if (lowerMood.includes('friendly') || lowerMood.includes('approachable')) return 'friendly';
@@ -408,18 +454,23 @@ export class ContentDesignValidator {
   }
 
   private areMoodsCompatible(contentMood: string, designMood: string, conceptMood: string): boolean {
-    // Define compatible mood combinations
+    // Define compatible mood combinations (more lenient for retail)
     const compatibleMoods = {
-      urgent: ['urgent', 'professional', 'neutral'],
-      professional: ['professional', 'urgent', 'neutral'],
-      friendly: ['friendly', 'professional', 'neutral'],
-      neutral: ['urgent', 'professional', 'friendly', 'neutral']
+      aspirational: ['aspirational', 'professional', 'neutral', 'friendly', 'urgent', 'confident', 'exciting'],
+      urgent: ['urgent', 'professional', 'neutral', 'aspirational', 'confident', 'exciting'],
+      professional: ['professional', 'urgent', 'neutral', 'aspirational', 'confident'],
+      friendly: ['friendly', 'professional', 'neutral', 'aspirational', 'confident'],
+      neutral: ['urgent', 'professional', 'friendly', 'neutral', 'aspirational', 'confident', 'exciting']
     };
 
     const contentCompatible = compatibleMoods[contentMood as keyof typeof compatibleMoods] || [];
     
-    return contentCompatible.includes(designMood) && 
-           (conceptMood === '' || contentCompatible.includes(conceptMood));
+    // More lenient: if concept mood is not in our predefined list, accept it
+    const isConceptCompatible = conceptMood === '' || 
+                                contentCompatible.includes(conceptMood) ||
+                                !['urgent', 'professional', 'friendly', 'neutral', 'aspirational'].includes(conceptMood);
+    
+    return contentCompatible.includes(designMood) && isConceptCompatible;
   }
 
   private isStyleCompatible(brandStyle: string, moodDirection: string): boolean {

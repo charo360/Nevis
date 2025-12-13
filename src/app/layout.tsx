@@ -4,7 +4,7 @@ import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import { ClientLayout } from './client-layout';
 import { generateMetadata as genMeta, siteConfig } from '@/lib/seo/metadata';
-import { getOrganizationSchema, getSoftwareApplicationSchema, getWebsiteSchema } from '@/lib/seo/structured-data';
+import { getOrganizationSchema, getSoftwareApplicationSchema, getWebsiteSchema, getVideoSchema } from '@/lib/seo/structured-data';
 
 export const metadata: Metadata = {
   ...genMeta({
@@ -96,6 +96,15 @@ export default function RootLayout({
   const organizationSchema = getOrganizationSchema();
   const softwareSchema = getSoftwareApplicationSchema();
   const websiteSchema = getWebsiteSchema();
+  const videoSchema = getVideoSchema({
+    name: 'Crevo Demo - AI Social Media Content Creator',
+    description: 'See how Crevo creates professional social media content in 30 seconds with AI. Watch our demo to learn how 10 specialized AI designers can transform your marketing.',
+    thumbnailUrl: 'https://i.imgur.com/dkMlN6t.png',
+    uploadDate: '2024-12-01',
+    duration: 'PT2M30S',
+    contentUrl: 'https://youtu.be/gp-dwaW9H_E',
+    embedUrl: 'https://www.youtube.com/embed/gp-dwaW9H_E'
+  });
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -122,6 +131,10 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(videoSchema) }}
         />
       </head>
       <body className="font-body antialiased overflow-x-hidden" suppressHydrationWarning>

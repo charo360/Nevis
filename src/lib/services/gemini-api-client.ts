@@ -112,13 +112,60 @@ class GeminiAPIClient {
       const endpoint = `${this.baseUrl}/models/${model}:generateContent?key=${currentKey}`;
 
       try {
+        // Add fetch timeout to prevent hanging requests
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+          console.warn(`⚠️ [Gemini API] Fetch timeout after 180s for key ${attempt + 1}`);
+          controller.abort();
+        }, 180000); // 180s timeout for fetch (3 minutes for development)
+        
+        console.log(`🔄 [Gemini API] Attempting request with key ${attempt + 1}/${this.apiKeys.length}`);
+        console.log(`🔍 [Gemini API] Environment: ${process.env.NODE_ENV || 'unknown'}`);
+        console.log(`🔍 [Gemini API] Request details: ${endpoint.substring(0, 100)}...`);
+        console.log(`🔍 [Gemini API] Model: ${model}`);
+        console.log(`🔍 [Gemini API] Request size: ${JSON.stringify(request).length} chars`);
+        
+        // Log network environment details
+        console.log(`🌐 [Gemini API] User Agent: ${typeof navigator !== 'undefined' ? 'Browser' : 'Node.js'}`);
+        console.log(`🌐 [Gemini API] Platform: ${process.platform || 'unknown'}`);
+        if (process.env.HTTP_PROXY || process.env.HTTPS_PROXY) {
+          console.log(`🌐 [Gemini API] Proxy detected: HTTP=${!!process.env.HTTP_PROXY}, HTTPS=${!!process.env.HTTPS_PROXY}`);
+        }
+        
+        // Test connectivity and DNS resolution
+        try {
+          console.log(`🌐 [Gemini API] Testing connectivity to generativelanguage.googleapis.com...`);
+          const connectStart = Date.now();
+          const connectTest = await fetch('https://generativelanguage.googleapis.com/', { 
+            method: 'HEAD',
+            signal: AbortSignal.timeout(10000)
+          });
+          const connectTime = Date.now() - connectStart;
+          console.log(`✅ [Gemini API] Connectivity test: ${connectTest.status} in ${connectTime}ms`);
+          
+          // If connectivity is slow, that's likely the issue
+          if (connectTime > 5000) {
+            console.warn(`⚠️ [Gemini API] SLOW CONNECTIVITY: ${connectTime}ms - This may cause API timeouts`);
+          }
+        } catch (connectError) {
+          console.error(`❌ [Gemini API] CONNECTIVITY FAILED: ${connectError instanceof Error ? connectError.message : connectError}`);
+          console.log(`🔧 [Gemini API] This explains why Gemini 3 Pro times out in development`);
+        }
+        
+        const fetchStart = Date.now();
+        
         const response = await fetch(endpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(request)
+          body: JSON.stringify(request),
+          signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
+        const fetchTime = Date.now() - fetchStart;
+        console.log(`⏱️ [Gemini API] Fetch completed in ${fetchTime}ms with status ${response.status}`);
 
         if (!response.ok) {
           const errorText = await response.text();
@@ -142,10 +189,19 @@ class GeminiAPIClient {
         return result;
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
+        
+        // Log specific error details
+        if (error instanceof Error) {
+          if (error.name === 'AbortError') {
+            console.warn(`⚠️ [Gemini API] Request aborted (timeout) for key ${attempt + 1}: ${error.message}`);
+          } else {
+            console.warn(`⚠️ [Gemini API] Request failed for key ${attempt + 1}: ${error.message}`);
+          }
+        }
 
         // If we have more keys to try, continue
         if (this.switchToNextKey()) {
-          console.warn(`⚠️ [Gemini API] Key ${attempt + 1} failed, trying next key...`);
+          console.warn(`⚠️ [Gemini API] Trying next key...`);
           continue;
         }
 

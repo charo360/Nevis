@@ -299,3 +299,34 @@ export function getHowToSchema(howTo: {
   };
 }
 
+// Video Schema for demo videos
+export function getVideoSchema(video: {
+  name: string;
+  description: string;
+  thumbnailUrl: string;
+  uploadDate: string;
+  duration?: string;
+  contentUrl?: string;
+  embedUrl?: string;
+}) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'VideoObject',
+    name: video.name,
+    description: video.description,
+    thumbnailUrl: video.thumbnailUrl,
+    uploadDate: video.uploadDate,
+    duration: video.duration || 'PT2M',
+    contentUrl: video.contentUrl,
+    embedUrl: video.embedUrl,
+    publisher: {
+      '@type': 'Organization',
+      name: siteConfig.name,
+      logo: {
+        '@type': 'ImageObject',
+        url: `${siteConfig.url}/logo.png`
+      }
+    }
+  };
+}
+
