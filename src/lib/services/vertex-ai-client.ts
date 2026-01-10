@@ -376,7 +376,7 @@ class VertexAIClient {
       maxOutputTokens?: number;
       uploadedImage?: string; // Base64 data URL for user-uploaded image
       logoImage?: string; // Base64 data URL for brand logo
-      aspectRatio?: '1:1' | '3:4' | '4:3' | '9:16' | '16:9'; // Gemini 3 Pro aspect ratio
+      aspectRatio?: '1:1' | '3:4' | '4:3' | '9:16' | '16:9' | '4:5'; // 4:5 will be mapped to 3:4
       imageSize?: '256' | '512' | '1K' | '2K'; // Gemini 3 Pro image size
       brandColors?: {
         primary?: string;
@@ -487,8 +487,20 @@ These colors are mandatory and must be prominently featured in the design.`;
 
     // Add imageConfig for models that support it (Gemini 2.0 Flash Exp, future Gemini 3 Pro)
     if (model.includes('gemini-3-pro-image') || model.includes('gemini-2.0-flash-exp')) {
+      // Map UI aspect ratios to Gemini-supported ones
+      // Gemini supports: 1:1, 3:4, 4:3, 9:16, 16:9
+      // 4:5 is not supported, map to 3:4 (closest portrait ratio)
+      let geminiAspectRatio: '1:1' | '3:4' | '4:3' | '9:16' | '16:9' = '1:1';
+      if (options.aspectRatio) {
+        if (options.aspectRatio === '4:5') {
+          geminiAspectRatio = '3:4'; // Map 4:5 to 3:4 (closest portrait)
+          console.log('📐 [Vertex AI Client] Mapping 4:5 to 3:4 (Gemini supported)');
+        } else if (['1:1', '3:4', '4:3', '9:16', '16:9'].includes(options.aspectRatio)) {
+          geminiAspectRatio = options.aspectRatio as '1:1' | '3:4' | '4:3' | '9:16' | '16:9';
+        }
+      }
       generationConfig.imageConfig = {
-        aspectRatio: options.aspectRatio || '3:4', // Default to Instagram portrait
+        aspectRatio: geminiAspectRatio,
         imageSize: options.imageSize || '1K' // Default to high resolution
       };
       console.log('✅ [Vertex AI Client] Using enhanced model with imageConfig:', generationConfig.imageConfig);
