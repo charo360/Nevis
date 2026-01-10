@@ -444,24 +444,54 @@ export class AssistantManager {
       message += `**Description:** ${marketingAngle.description}\n\n`;
     }
 
-    // === 6D AD CONCEPT (CRITICAL FOR VARIETY) ===
+    // === 10D AD CONCEPT (CRITICAL FOR MAXIMUM VARIETY) ===
     if (request.adConcept) {
       const ac = request.adConcept;
-      message += `\n🎭🎭🎭 **6-DIMENSIONAL CREATIVE CONCEPT** 🎭🎭🎭\n`;
-      message += `You MUST follow this specific creative concept to ensure this ad looks completely different from others:\n\n`;
+      message += `\n🎭🎭🎭 **10-DIMENSIONAL CREATIVE CONCEPT - MANDATORY** 🎭🎭🎭\n`;
+      message += `This unique concept was generated from 72+ MILLION possible combinations.\n`;
+      message += `You MUST follow ALL 10 dimensions to create a truly unique design:\n\n`;
       
       message += `**1. SETTING:** ${ac.setting.category} - ${ac.setting.description}\n`;
       message += `**2. CUSTOMER:** ${ac.customer.type} - ${ac.customer.description}\n`;
       message += `**3. VISUAL STYLE:** ${ac.visualStyle.style} - ${ac.visualStyle.description}\n`;
       message += `**4. BENEFIT FOCUS:** ${ac.benefit.type} - ${ac.benefit.message}\n`;
       message += `**5. EMOTIONAL TONE:** ${ac.emotionalTone.tone} - ${ac.emotionalTone.description}\n`;
-      message += `**6. FORMAT:** ${ac.format.technique} - ${ac.format.structure}\n\n`;
+      message += `**6. FORMAT:** ${ac.format.technique} - ${ac.format.structure}\n`;
       
-      message += `🚨 CRITICAL INSTRUCTION: Your content and design specs MUST match this 6D concept!\n`;
-      message += `- If Setting is 'Home', show a home environment, not an office.\n`;
-      message += `- If Customer is 'Student', write for a student audience.\n`;
-      message += `- If Tone is 'Exciting', use exclamation marks and energetic language.\n`;
-      message += `- If Format is 'Problem-Solution', structure your caption as Problem -> Solution.\n\n`;
+      // NEW DIMENSIONS
+      if (ac.headlineStyle) {
+        message += `**7. HEADLINE STYLE:** ${ac.headlineStyle.style} - Example: "${ac.headlineStyle.example}"\n`;
+      }
+      if (ac.colorMood) {
+        message += `**8. COLOR MOOD:** ${ac.colorMood.mood} - ${ac.colorMood.palette}\n`;
+      }
+      if (ac.compositionType) {
+        message += `**9. COMPOSITION:** ${ac.compositionType.type} - ${ac.compositionType.description}\n`;
+      }
+      if (ac.ctaStyle) {
+        message += `**10. CTA STYLE:** ${ac.ctaStyle.style} - Example: "${ac.ctaStyle.example}"\n`;
+      }
+      
+      message += `\n🚨 CRITICAL: Your content MUST match ALL 10 dimensions!\n`;
+      message += `- **Setting ${ac.setting.category}**: Show this environment in your scene_description\n`;
+      message += `- **Customer ${ac.customer.type}**: Write for THIS specific audience\n`;
+      message += `- **Visual ${ac.visualStyle.style}**: Your hero_element must use this style\n`;
+      message += `- **Benefit ${ac.benefit.type}**: Your headline must emphasize this benefit\n`;
+      message += `- **Tone ${ac.emotionalTone.tone}**: Your caption must feel this way\n`;
+      message += `- **Format ${ac.format.technique}**: Structure your content this way\n`;
+      if (ac.headlineStyle) {
+        message += `- **Headline ${ac.headlineStyle.style}**: Write headline in this style\n`;
+      }
+      if (ac.colorMood) {
+        message += `- **Color ${ac.colorMood.mood}**: Use this color mood in color_scheme\n`;
+      }
+      if (ac.compositionType) {
+        message += `- **Composition ${ac.compositionType.type}**: Arrange elements this way\n`;
+      }
+      if (ac.ctaStyle) {
+        message += `- **CTA ${ac.ctaStyle.style}**: Write CTA in this style\n`;
+      }
+      message += `\n`;
     }
 
     if (request.avoidListText) {

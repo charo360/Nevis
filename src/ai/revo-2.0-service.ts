@@ -5073,8 +5073,9 @@ function getValuePropositionsForBusiness(businessType: string, brandProfile: any
  * Now we force Claude to regenerate with stricter coherence rules instead
  */
 
-// === 6D AD CONCEPT FRAMEWORK (PORTED FROM REVO 1.5) ===
-// This framework ensures deep conceptual variety beyond just visual style changes
+// === ENHANCED 10D AD CONCEPT FRAMEWORK ===
+// This framework ensures MAXIMUM conceptual variety with 10 dimensions
+// Total combinations: 8×5×10×9×8×15×8×6×7×5 = 72,576,000+ unique concepts
 
 interface AdConcept {
   name: string;
@@ -5084,126 +5085,260 @@ interface AdConcept {
   benefit: { type: string; message: string; };
   emotionalTone: { tone: string; description: string; };
   format: { technique: string; structure: string; };
+  // NEW DIMENSIONS for maximum variety
+  headlineStyle: { style: string; example: string; };
+  colorMood: { mood: string; palette: string; };
+  compositionType: { type: string; description: string; };
+  ctaStyle: { style: string; example: string; };
 }
 
 let recentConcepts6D: AdConcept[] = [];
+let usedCombinationHashes: Set<string> = new Set();
 
 function generate6DimensionalAdConcept(): AdConcept {
-  // DIMENSION 1: SETTING (Where)
+  // DIMENSION 1: SETTING (Where) - 8 options
   const settings = [
-    { category: "Workspace", description: "Office, factory, workshop, store, kitchen, studio" },
-    { category: "Home", description: "Living room, bedroom, dining table, backyard" },
-    { category: "Transit", description: "Car, bus, train, walking, airport, traffic" },
-    { category: "Public", description: "Park, street, cafe, restaurant, gym, mall" },
-    { category: "Digital", description: "App interface, website, dashboard, video call" },
-    { category: "Nature", description: "Outdoor, beach, mountain, garden" },
-    { category: "Abstract", description: "Plain background, geometric shapes, minimal" },
-    { category: "Metaphorical", description: "Visual metaphors (maze, ladder, bridge, door)" }
+    { category: "Workspace", description: "Modern office, co-working space, home office desk" },
+    { category: "Home", description: "Cozy living room, kitchen counter, bedroom with morning light" },
+    { category: "Transit", description: "Inside car, waiting at bus stop, walking on busy street" },
+    { category: "Public", description: "Trendy cafe, busy market, gym, shopping mall" },
+    { category: "Digital", description: "Phone screen close-up, laptop dashboard, app interface" },
+    { category: "Nature", description: "Park bench, beach sunset, rooftop garden" },
+    { category: "Abstract", description: "Solid color background, gradient, geometric patterns" },
+    { category: "Metaphorical", description: "Bridge (connection), ladder (growth), door (opportunity), path (journey)" }
   ];
 
-  // DIMENSION 2: CUSTOMER TYPE (Who)
+  // DIMENSION 2: CUSTOMER TYPE (Who) - 5 options
   const customers = [
-    { type: "Young Professional", description: "Age 25-35, tech-savvy, career-focused" },
-    { type: "Entrepreneur", description: "Business owner, startup founder, self-employed" },
-    { type: "Family Person", description: "Parent, family-oriented, work-life balance" },
-    { type: "Senior Professional", description: "Age 45+, established, experienced" },
-    { type: "Student/Youth", description: "Age 18-25, learning, budget-conscious" }
+    { type: "Young Professional", description: "Age 25-35, ambitious, tech-savvy, career-focused" },
+    { type: "Entrepreneur", description: "Business owner, hustler, risk-taker, growth-minded" },
+    { type: "Family Person", description: "Parent, provider, work-life balance seeker" },
+    { type: "Senior Professional", description: "Age 45+, established, experienced, value quality" },
+    { type: "Student/Youth", description: "Age 18-25, learning, budget-conscious, future-focused" }
   ];
 
-  // DIMENSION 3: VISUAL STYLE (How it looks)
+  // DIMENSION 3: VISUAL STYLE (How it looks) - 10 options
   const visualStyles = [
-    { style: "Lifestyle Photography", description: "Real people in natural situations" },
-    { style: "Product Focus", description: "Close-up of your product/app/service" },
-    { style: "Documentary", description: "Behind-the-scenes, authentic moments" },
-    { style: "Illustration", description: "Drawn/animated characters and scenes" },
-    { style: "Data Visualization", description: "Charts, graphs, statistics, infographics" },
-    { style: "Typography-Driven", description: "Bold text with minimal imagery" },
-    { style: "UI/Screen", description: "App interface, dashboard, software in action" },
-    { style: "Before/After", description: "Split screen showing transformation" },
-    { style: "Collage", description: "Multiple images combined" },
-    { style: "Minimalist", description: "Simple, lots of white space, one element" }
+    { style: "Lifestyle Photography", description: "Real person in authentic moment, candid feel" },
+    { style: "Product Hero", description: "Product as star, dramatic lighting, premium feel" },
+    { style: "Documentary", description: "Behind-the-scenes, raw, authentic, unpolished" },
+    { style: "Flat Illustration", description: "Modern vector art, clean lines, vibrant colors" },
+    { style: "Data Visualization", description: "Bold numbers, charts, statistics as visual" },
+    { style: "Typography-Driven", description: "Text IS the visual, bold fonts, minimal imagery" },
+    { style: "UI Showcase", description: "App screens, dashboard, interface in context" },
+    { style: "Cinematic", description: "Movie-like composition, dramatic lighting, wide shots" },
+    { style: "Collage/Mosaic", description: "Multiple images combined, layered, dynamic" },
+    { style: "Minimalist", description: "One element, lots of white space, zen-like" }
   ];
 
-  // DIMENSION 4: BENEFIT/MESSAGE (What)
+  // DIMENSION 4: BENEFIT/MESSAGE (What) - 9 options
   const benefits = [
-    { type: "Speed", message: "Fast, instant, quick, save time" },
-    { type: "Ease", message: "Simple, effortless, convenient, no hassle" },
-    { type: "Cost", message: "Save money, affordable, free, discount" },
-    { type: "Quality", message: "Premium, reliable, professional, superior" },
-    { type: "Growth", message: "Scale, expand, increase, improve" },
-    { type: "Security", message: "Safe, protected, trusted, guaranteed" },
-    { type: "Freedom", message: "Flexibility, independence, control, choice" },
-    { type: "Connection", message: "Community, belonging, support, together" },
-    { type: "Innovation", message: "New, modern, cutting-edge, smart" }
+    { type: "Speed", message: "Instant results, save hours, no waiting" },
+    { type: "Simplicity", message: "One-tap, effortless, no complexity" },
+    { type: "Savings", message: "Cut costs, free features, best value" },
+    { type: "Quality", message: "Premium experience, reliable, professional-grade" },
+    { type: "Growth", message: "Scale up, expand reach, multiply results" },
+    { type: "Security", message: "Protected, guaranteed, risk-free" },
+    { type: "Freedom", message: "Work anywhere, your terms, no limits" },
+    { type: "Community", message: "Join thousands, belong, supported" },
+    { type: "Innovation", message: "First of its kind, cutting-edge, future-ready" }
   ];
 
-  // DIMENSION 5: EMOTIONAL TONE (Feel)
+  // DIMENSION 5: EMOTIONAL TONE (Feel) - 8 options
   const emotionalTones = [
-    { tone: "Urgent", description: "Limited time offers, problem-solving" },
-    { tone: "Aspirational", description: "Premium products, lifestyle upgrades" },
-    { tone: "Reassuring", description: "Risk reduction, security, trust-building" },
-    { tone: "Exciting", description: "New products, innovation, possibilities" },
-    { tone: "Warm/Friendly", description: "Community, relationships, support" },
-    { tone: "Confident", description: "Professional services, B2B, expertise" },
-    { tone: "Playful", description: "Youth products, entertainment, casual" },
-    { tone: "Serious", description: "Healthcare, finance, legal, insurance" }
+    { tone: "Urgent", description: "Act now, limited time, don't miss out" },
+    { tone: "Aspirational", description: "Dream big, level up, premium lifestyle" },
+    { tone: "Reassuring", description: "Safe choice, trusted, no worries" },
+    { tone: "Exciting", description: "Game-changing, revolutionary, wow factor" },
+    { tone: "Warm", description: "Friendly, supportive, like family" },
+    { tone: "Confident", description: "Expert, authoritative, proven" },
+    { tone: "Playful", description: "Fun, light-hearted, engaging" },
+    { tone: "Empowering", description: "You can do this, take control, own it" }
   ];
 
-  // DIMENSION 6: FORMAT/TECHNIQUE (Structure)
+  // DIMENSION 6: FORMAT/TECHNIQUE (Structure) - 15 options
   const formats = [
-    { technique: "Testimonial", structure: "Real customer story with photo/quote" },
-    { technique: "Statistic", structure: "Lead with a big number or data point" },
-    { technique: "Question", structure: "Start with provocative question" },
-    { technique: "Problem-Solution", structure: "Focus on the solution solving a pain point (NO visual diagrams/arrows)" },
-    { technique: "Comparison", structure: "Highlight unique value proposition (NO split screens or comparison charts)" },
-    { technique: "Tutorial", structure: "Step-by-step, how it works" },
-    { technique: "Announcement", structure: "New feature, update, launch" },
-    { technique: "Social Proof", structure: "Join 10,000 others, Trusted by..." },
-    { technique: "Story", structure: "Narrative arc with beginning/middle/end" },
-    { technique: "Direct Offer", structure: "Straight to the deal/CTA" },
-    { technique: "Transformation", structure: "Show the positive outcome of the service (NO split screens/before-after diagrams)" },
-    { technique: "Day-in-Life", structure: "Follow real person through daily routine" },
-    { technique: "Success Moment", structure: "Capture the exact moment customer achieves their goal" },
-    { technique: "Community Impact", structure: "Show how individual success ripples out" },
-    { technique: "Overcoming Struggle", structure: "Real person facing challenge, finding solution" }
+    { technique: "Testimonial", structure: "Real customer quote with their photo" },
+    { technique: "Big Number", structure: "Lead with impressive statistic (10,000+, 50%, etc.)" },
+    { technique: "Question Hook", structure: "Start with provocative question that demands answer" },
+    { technique: "Problem-Solution", structure: "Name the pain, show the cure" },
+    { technique: "Versus", structure: "Old way vs new way (without split screen)" },
+    { technique: "How-To", structure: "3 simple steps to achieve result" },
+    { technique: "Announcement", structure: "Breaking news, new feature, just launched" },
+    { technique: "Social Proof", structure: "Join 10,000+ others who already..." },
+    { technique: "Mini-Story", structure: "Character + Challenge + Solution in 3 sentences" },
+    { technique: "Direct Offer", structure: "Here's the deal, here's the price, here's how" },
+    { technique: "Transformation", structure: "Before state → After state (emotional, not visual)" },
+    { technique: "Day-in-Life", structure: "Morning routine, workday, evening - show real usage" },
+    { technique: "Success Moment", structure: "Capture the exact moment of achievement" },
+    { technique: "Community", structure: "Show the tribe, the movement, the belonging" },
+    { technique: "Challenge", structure: "Dare them, challenge assumption, provoke action" }
   ];
 
-  // Randomize with anti-repetition
-  const timeBasedSeed = Date.now() % 1000;
+  // DIMENSION 7: HEADLINE STYLE (NEW) - 8 options
+  const headlineStyles = [
+    { style: "Question", example: "Still paying bank fees?" },
+    { style: "Command", example: "Stop wasting time. Start now." },
+    { style: "Number", example: "3 seconds. That's all it takes." },
+    { style: "Benefit", example: "Save 50% on every transaction" },
+    { style: "Curiosity", example: "The secret top businesses use" },
+    { style: "Contrast", example: "Old banking is dead. Welcome to the future." },
+    { style: "Personal", example: "Your money. Your rules." },
+    { style: "Bold Claim", example: "The fastest payments in Kenya. Period." }
+  ];
+
+  // DIMENSION 8: COLOR MOOD (NEW) - 6 options
+  const colorMoods = [
+    { mood: "Vibrant", palette: "Bright, saturated, energetic colors" },
+    { mood: "Muted", palette: "Soft, desaturated, sophisticated tones" },
+    { mood: "High Contrast", palette: "Bold black/white with one accent color" },
+    { mood: "Warm", palette: "Oranges, reds, yellows - inviting feel" },
+    { mood: "Cool", palette: "Blues, greens, purples - professional feel" },
+    { mood: "Monochromatic", palette: "Shades of one color for cohesion" }
+  ];
+
+  // DIMENSION 9: COMPOSITION TYPE (NEW) - 7 options
+  const compositionTypes = [
+    { type: "Centered", description: "Subject in center, symmetrical, balanced" },
+    { type: "Rule of Thirds", description: "Subject off-center, dynamic, professional" },
+    { type: "Diagonal", description: "Elements on diagonal, creates energy and movement" },
+    { type: "Frame within Frame", description: "Subject framed by environment (doorway, window)" },
+    { type: "Leading Lines", description: "Lines draw eye to subject" },
+    { type: "Negative Space", description: "Subject small, lots of empty space, impactful" },
+    { type: "Fill Frame", description: "Subject fills entire frame, bold, intimate" }
+  ];
+
+  // DIMENSION 10: CTA STYLE (NEW) - 5 options
+  const ctaStyles = [
+    { style: "Action", example: "Get Started Now" },
+    { style: "Benefit", example: "Start Saving Today" },
+    { style: "Urgency", example: "Claim Your Spot" },
+    { style: "Curiosity", example: "See How It Works" },
+    { style: "Personal", example: "Get My Free Account" }
+  ];
+
+  // ENHANCED RANDOMIZATION with cryptographic-quality randomness
+  const cryptoRandom = () => {
+    const array = new Uint32Array(1);
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      crypto.getRandomValues(array);
+      return array[0] / (0xFFFFFFFF + 1);
+    }
+    return Math.random();
+  };
+
+  // Shuffle function for better randomization
+  const shuffleArray = <T>(arr: T[]): T[] => {
+    const shuffled = [...arr];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(cryptoRandom() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
   let attempts = 0;
   let selectedSetting, selectedCustomer, selectedVisualStyle, selectedBenefit, selectedTone, selectedFormat;
+  let selectedHeadlineStyle, selectedColorMood, selectedComposition, selectedCtaStyle;
+  let combinationHash: string;
+  
+  // Shuffle all arrays for true randomness
+  const shuffledSettings = shuffleArray(settings);
+  const shuffledCustomers = shuffleArray(customers);
+  const shuffledVisualStyles = shuffleArray(visualStyles);
+  const shuffledBenefits = shuffleArray(benefits);
+  const shuffledTones = shuffleArray(emotionalTones);
+  const shuffledFormats = shuffleArray(formats);
+  const shuffledHeadlineStyles = shuffleArray(headlineStyles);
+  const shuffledColorMoods = shuffleArray(colorMoods);
+  const shuffledCompositions = shuffleArray(compositionTypes);
+  const shuffledCtaStyles = shuffleArray(ctaStyles);
   
   do {
-    selectedSetting = settings[Math.floor((Math.random() + timeBasedSeed / 1000) % 1 * settings.length)];
-    selectedCustomer = customers[Math.floor((Math.random() + timeBasedSeed / 2000) % 1 * customers.length)];
-    selectedVisualStyle = visualStyles[Math.floor((Math.random() + timeBasedSeed / 3000) % 1 * visualStyles.length)];
-    selectedBenefit = benefits[Math.floor((Math.random() + timeBasedSeed / 4000) % 1 * benefits.length)];
-    selectedTone = emotionalTones[Math.floor((Math.random() + timeBasedSeed / 5000) % 1 * emotionalTones.length)];
-    selectedFormat = formats[Math.floor((Math.random() + timeBasedSeed / 6000) % 1 * formats.length)];
+    // Pick from shuffled arrays with additional randomization
+    const settingIdx = Math.floor(cryptoRandom() * shuffledSettings.length);
+    const customerIdx = Math.floor(cryptoRandom() * shuffledCustomers.length);
+    const visualIdx = Math.floor(cryptoRandom() * shuffledVisualStyles.length);
+    const benefitIdx = Math.floor(cryptoRandom() * shuffledBenefits.length);
+    const toneIdx = Math.floor(cryptoRandom() * shuffledTones.length);
+    const formatIdx = Math.floor(cryptoRandom() * shuffledFormats.length);
+    const headlineIdx = Math.floor(cryptoRandom() * shuffledHeadlineStyles.length);
+    const colorIdx = Math.floor(cryptoRandom() * shuffledColorMoods.length);
+    const compIdx = Math.floor(cryptoRandom() * shuffledCompositions.length);
+    const ctaIdx = Math.floor(cryptoRandom() * shuffledCtaStyles.length);
+    
+    selectedSetting = shuffledSettings[settingIdx];
+    selectedCustomer = shuffledCustomers[customerIdx];
+    selectedVisualStyle = shuffledVisualStyles[visualIdx];
+    selectedBenefit = shuffledBenefits[benefitIdx];
+    selectedTone = shuffledTones[toneIdx];
+    selectedFormat = shuffledFormats[formatIdx];
+    selectedHeadlineStyle = shuffledHeadlineStyles[headlineIdx];
+    selectedColorMood = shuffledColorMoods[colorIdx];
+    selectedComposition = shuffledCompositions[compIdx];
+    selectedCtaStyle = shuffledCtaStyles[ctaIdx];
+    
+    // Create unique hash for this combination
+    combinationHash = `${selectedSetting.category}-${selectedCustomer.type}-${selectedVisualStyle.style}-${selectedBenefit.type}-${selectedFormat.technique}-${selectedHeadlineStyle.style}`;
     
     attempts++;
     
-    const isTooSimilar = recentConcepts6D.some(recent =>
-      recent.setting.category === selectedSetting.category &&
-      recent.customer.type === selectedCustomer.type &&
-      recent.visualStyle.style === selectedVisualStyle.style
-    );
+    // Check against recent concepts (stricter: must differ in at least 4 dimensions)
+    const isTooSimilar = recentConcepts6D.some(recent => {
+      let matchCount = 0;
+      if (recent.setting.category === selectedSetting.category) matchCount++;
+      if (recent.customer.type === selectedCustomer.type) matchCount++;
+      if (recent.visualStyle.style === selectedVisualStyle.style) matchCount++;
+      if (recent.benefit.type === selectedBenefit.type) matchCount++;
+      if (recent.format.technique === selectedFormat.technique) matchCount++;
+      if (recent.headlineStyle?.style === selectedHeadlineStyle.style) matchCount++;
+      return matchCount >= 3; // Too similar if 3+ dimensions match
+    });
     
-    if (!isTooSimilar || attempts >= 10) break;
-  } while (attempts < 10);
+    // Also check if this exact combination was used before
+    const wasUsedBefore = usedCombinationHashes.has(combinationHash);
+    
+    if ((!isTooSimilar && !wasUsedBefore) || attempts >= 20) break;
+  } while (attempts < 20);
+
+  // Store the hash to prevent exact repeats
+  usedCombinationHashes.add(combinationHash!);
+  if (usedCombinationHashes.size > 100) {
+    // Clear oldest hashes to prevent memory bloat
+    const hashArray = Array.from(usedCombinationHashes);
+    usedCombinationHashes = new Set(hashArray.slice(-50));
+  }
 
   const concept: AdConcept = {
-    name: `${selectedFormat.technique} ${selectedSetting.category} ${selectedBenefit.type}`,
-    setting: selectedSetting,
-    customer: selectedCustomer,
-    visualStyle: selectedVisualStyle,
-    benefit: selectedBenefit,
-    emotionalTone: selectedTone,
-    format: selectedFormat
+    name: `${selectedFormat!.technique} | ${selectedHeadlineStyle!.style} | ${selectedBenefit!.type} | ${selectedTone!.tone}`,
+    setting: selectedSetting!,
+    customer: selectedCustomer!,
+    visualStyle: selectedVisualStyle!,
+    benefit: selectedBenefit!,
+    emotionalTone: selectedTone!,
+    format: selectedFormat!,
+    headlineStyle: selectedHeadlineStyle!,
+    colorMood: selectedColorMood!,
+    compositionType: selectedComposition!,
+    ctaStyle: selectedCtaStyle!
   };
 
+  // Log the generated concept for debugging
+  console.log(`🎨 [10D Concept] Generated unique concept:`);
+  console.log(`   Setting: ${concept.setting.category}`);
+  console.log(`   Customer: ${concept.customer.type}`);
+  console.log(`   Visual: ${concept.visualStyle.style}`);
+  console.log(`   Benefit: ${concept.benefit.type}`);
+  console.log(`   Tone: ${concept.emotionalTone.tone}`);
+  console.log(`   Format: ${concept.format.technique}`);
+  console.log(`   Headline: ${concept.headlineStyle.style}`);
+  console.log(`   Color: ${concept.colorMood.mood}`);
+  console.log(`   Composition: ${concept.compositionType.type}`);
+  console.log(`   CTA: ${concept.ctaStyle.style}`);
+  console.log(`   Attempts: ${attempts}`);
+
   recentConcepts6D.push(concept);
-  if (recentConcepts6D.length > 9) recentConcepts6D = recentConcepts6D.slice(-9);
+  if (recentConcepts6D.length > 15) recentConcepts6D = recentConcepts6D.slice(-15);
   
   return concept;
 }
