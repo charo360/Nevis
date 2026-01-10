@@ -18,15 +18,38 @@ export interface PlatformDimensions {
 }
 
 /**
- * Get target dimensions for each platform
- * MOBILE-FIRST: All platforms now use 992x1056px format for optimal mobile viewing
+ * Get target dimensions for each platform or aspect ratio
+ * Supports: 1:1 (square), 4:5 (portrait), 16:9 (landscape), 9:16 (story/reel)
  */
 export function getPlatformDimensions(platform: string): PlatformDimensions {
   const platformLower = platform.toLowerCase();
 
-  // MOBILE-OPTIMIZED: All platforms use square format for best mobile experience
-  // Only exceptions are Stories/Reels which need portrait format
-  if (platformLower.includes('story') || platformLower.includes('reel')) {
+  // Direct aspect ratio support (for Creative Studio size selector)
+  if (platformLower === '1:1' || platformLower === 'square') {
+    return {
+      width: 1024,
+      height: 1024,
+      aspectRatio: '1:1'
+    };
+  }
+
+  if (platformLower === '4:5' || platformLower === 'instagram' || platformLower === 'portrait') {
+    return {
+      width: 1080,
+      height: 1350,
+      aspectRatio: '4:5'
+    };
+  }
+
+  if (platformLower === '16:9' || platformLower === 'linkedin' || platformLower === 'landscape' || platformLower === 'youtube') {
+    return {
+      width: 1920,
+      height: 1080,
+      aspectRatio: '16:9'
+    };
+  }
+
+  if (platformLower === '9:16' || platformLower.includes('story') || platformLower.includes('reel')) {
     return {
       width: 1080,
       height: 1920,
@@ -34,11 +57,10 @@ export function getPlatformDimensions(platform: string): PlatformDimensions {
     };
   }
 
-  // DEFAULT: Custom format - 992x1056px HD for all platforms
-  // Perfect for Instagram, Facebook, Twitter, LinkedIn on mobile
+  // DEFAULT: Square format 1:1
   return {
-    width: 992,
-    height: 1056,
+    width: 1024,
+    height: 1024,
     aspectRatio: '1:1'
   };
 }

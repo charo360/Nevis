@@ -2271,10 +2271,8 @@ Ensure the text is readable and well-composed.`
                     if (input.aspectRatio && input.aspectRatio !== '1:1') {
                         try {
                             const { cropImageFromUrl } = await import('@/lib/image-processing');
-                            // Map aspect ratio to platform for cropping
-                            const platformForCropping = input.aspectRatio === '16:9' ? 'linkedin' :
-                                input.aspectRatio === '9:16' ? 'story' : 'instagram';
-                            imageUrl = await cropImageFromUrl(imageUrl, platformForCropping);
+                            // Pass aspect ratio directly - getPlatformDimensions now supports aspect ratio strings
+                            imageUrl = await cropImageFromUrl(imageUrl, input.aspectRatio);
                         } catch (cropError) {
                             // Continue with original image if cropping fails
                         }
