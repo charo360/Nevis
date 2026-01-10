@@ -319,7 +319,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     useBrandProfile,
                     brandProfile,
                     null, // maskDataUrl - Creative Studio can handle inpainting
-                    outputType === 'video' ? aspectRatio : undefined,
+                    undefined, // aspectRatio - only for video
                     'revo-2.0-gemini-2.5-flash-image-preview', // Use Revo 2.0 model specifically (4 credits)
                     designColors, // Pass design-specific colors
                     accessToken || undefined, // Pass access token as fallback
@@ -347,7 +347,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     useBrandProfile,
                     brandProfile,
                     null, // maskDataUrl - Creative Studio can handle inpainting
-                    outputType === 'video' ? aspectRatio : undefined,
+                    undefined, // aspectRatio - only for video
                     'revo-1.5-gemini-2.5-flash-image-preview', // Use Revo 1.5 model specifically (3 credits)
                     designColors, // Pass design-specific colors
                     accessToken || undefined, // Pass access token as fallback
@@ -386,7 +386,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     useBrandProfile,
                     brandProfile,
                     null, // maskDataUrl - Creative Studio can handle inpainting
-                    outputType === 'video' ? aspectRatio : undefined,
+                    undefined, // aspectRatio - only for video
                     'revo-1.0-gemini-2.5-flash-image-preview', // Use Revo 1.0 model specifically (3 credits)
                     undefined, // designColors
                     accessToken || undefined, // Pass access token as fallback
@@ -598,8 +598,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     setImageDataUrl={setImageDataUrl}
                     useBrandProfile={useBrandProfile}
                     setUseBrandProfile={setUseBrandProfile}
-                    brandName={brandProfile?.businessName}
-                    brandType={brandProfile?.businessType}
+                    brandProfile={brandProfile}
                     outputType={outputType}
                     setOutputType={setOutputType}
                     handleImageUpload={handleImageUpload}

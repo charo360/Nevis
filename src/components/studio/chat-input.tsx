@@ -12,6 +12,7 @@ import { RevoModelSelector, type RevoModel } from '@/components/ui/revo-model-se
 import { getUserCredits } from '@/app/actions/pricing-actions';
 import Image from "next/image";
 import { cn } from '@/lib/utils';
+import type { BrandProfile } from '@/lib/types';
 
 interface ChatInputProps {
   input: string;
@@ -36,8 +37,7 @@ interface ChatInputProps {
   includeContacts: boolean;
   setIncludeContacts: (value: boolean) => void;
   onOpenAssetLibrary: () => void;
-  brandName?: string;
-  brandType?: string;
+  brandProfile?: BrandProfile | null;
 }
 
 export function ChatInput({
@@ -63,33 +63,68 @@ export function ChatInput({
   setSelectedRevoModel,
   userCredits,
   onOpenAssetLibrary,
-  brandName,
-  brandType,
+  brandProfile,
 }: ChatInputProps) {
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const generateRandomPrompt = () => {
-    const type = brandType || 'business';
-    const name = brandName || 'my brand';
+    if (!brandProfile) {
+      const genericTemplates = [
+        "Create a high-converting social media post",
+        "Design a minimalist product showcase",
+        "Generate a seasonal sale announcement",
+        "Create an engaging Instagram Story"
+      ];
+      const randomPrompt = genericTemplates[Math.floor(Math.random() * genericTemplates.length)];
+      setInput(randomPrompt);
+      return;
+    }
 
-    // Different templates for variety
+    const {
+      businessName,
+      businessType,
+      targetAudience,
+      contentThemes,
+      keyFeatures,
+      visualStyle,
+      writingTone
+    } = brandProfile;
+
+    const name = businessName || 'our brand';
+    const type = businessType || 'business';
+    const audience = targetAudience || 'our customers';
+    const themes = contentThemes?.split(',').map(t => t.trim()).filter(t => t) || [];
+    const features = keyFeatures?.split('\n').map(f => f.replace(/^[-*]\s*/, '').trim()).filter(f => f) || [];
+    const style = visualStyle || 'professional';
+
     const templates = [
-      `Create a high-converting social media post for ${name}`,
-      `Design a minimalist product showcase for a ${type}`,
-      `Generate a seasonal sale announcement for ${name}`,
-      `Create an engaging Instagram Story for a ${type}`,
-      `Design a professional LinkedIn header for ${name}`,
-      `Create a "Coming Soon" teaser for a new ${type} product`,
-      `Generate a customer testimonial layout for ${name}`,
-      `Design a clean, modern promotional banner for ${name}`,
-      `Create a "Meet the Team" social post for a ${type}`,
-      `Generate a behind-the-scenes content layout for ${name}`,
-      `Design a quote card that aligns with ${name}'s style`,
-      `Create an educational infographic for a ${type} audience`
+      // Focus on Target Audience
+      `Create a ${style} post tailored for ${audience} that perfectly represents ${name}.`,
+
+      // Focus on Content Themes
+      themes.length > 0
+        ? `Design an engaging creative focusing on ${themes[Math.floor(Math.random() * themes.length)]} for ${name}.`
+        : `Generate a high-impact promotional design for ${name}.`,
+
+      // Focus on Key Features
+      features.length > 0
+        ? `Create a product highlight for ${name} focusing on our ${features[Math.floor(Math.random() * features.length)]} feature.`
+        : `Design a professional product showcase for ${name}.`,
+
+      // Focus on Tone/Style
+      `Generate a ${style} social media visual using a ${writingTone || 'professional'} tone for ${name}.`,
+
+      // Business Type specific
+      `Design a stunning header for a ${type} that speaks to ${audience}.`,
+
+      // Mixed Context
+      `Create a social post for ${name} that combines ${themes[0] || 'our core values'} with a focus on ${audience}.`,
+
+      // Call to action focused
+      `Design a "Limited Time Offer" visual for ${name} in a ${style} style for ${audience}.`
     ];
 
-    // Pick a random template
     const randomPrompt = templates[Math.floor(Math.random() * templates.length)];
     setInput(randomPrompt);
   };
@@ -324,8 +359,6 @@ export function ChatInput({
                 selectedModel={selectedRevoModel}
                 onModelChange={setSelectedRevoModel}
                 disabled={!isBrandProfileAvailable || outputType !== 'image'}
-                showCredits={true}
-                userCredits={userCredits}
               />
             </div>
           </div>
