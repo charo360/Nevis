@@ -3,7 +3,7 @@
  * Replaces MongoDB for data storage and fixes image storage issues
  */
 
-import { createClient as createServerSupabase } from '@/lib/supabase-server';
+import { createClient } from '@/lib/supabase-client';
 import type { BrandProfile } from '@/lib/types';
 
 export interface SupabaseBrandProfile {
@@ -61,7 +61,7 @@ export class SupabaseService {
     if (this.initialized) return;
 
     try {
-      const supabase = await createServerSupabase();
+      const supabase = createClient();
 
       // Check if we have a real Supabase client (not mock)
       if (!supabase.storage || typeof (supabase.storage as any).listBuckets !== 'function') {
@@ -102,7 +102,7 @@ export class SupabaseService {
     contentType?: string
   ): Promise<{ url: string; path: string } | null> {
     try {
-      const supabase = await createServerSupabase();
+      const supabase = createClient();
 
       const { data, error } = await (supabase.storage as any)
         .from(this.bucketName)
@@ -179,7 +179,7 @@ export class SupabaseService {
       };
 
       // Insert or update brand profile
-      const supabase = await createServerSupabase();
+      const supabase = createClient();
       const { data, error } = await supabase
         .from('brand_profiles')
         .upsert(supabaseData)
@@ -203,7 +203,7 @@ export class SupabaseService {
    */
   async getBrandProfiles(userId: string): Promise<SupabaseBrandProfile[]> {
     try {
-      const supabase = await createServerSupabase();
+      const supabase = createClient();
       const { data, error } = await supabase
         .from('brand_profiles')
         .select('*')
@@ -264,7 +264,7 @@ export class SupabaseService {
       }
 
       // Save post data
-      const supabase = await createServerSupabase();
+      const supabase = createClient();
       const { data, error } = await supabase
         .from('generated_posts')
         .insert({
@@ -307,7 +307,7 @@ export class SupabaseService {
     limit: number = 50
   ): Promise<SupabaseGeneratedPost[]> {
     try {
-      const supabase = await createServerSupabase();
+      const supabase = createClient();
       let query = supabase
         .from('generated_posts')
         .select('*')
@@ -338,7 +338,7 @@ export class SupabaseService {
    */
   async deleteImage(path: string): Promise<boolean> {
     try {
-      const supabase = await createServerSupabase();
+      const supabase = createClient();
 
       const { error } = await (supabase.storage as any)
         .from(this.bucketName)

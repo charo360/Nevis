@@ -17,20 +17,20 @@ import type { ScheduledService } from "@/services/calendar-service";
 import { MODEL_COSTS } from '@/lib/credit-integration';
 import { formatContactForAI, getPriorityContacts, getExactContactInstructions } from '@/lib/utils/smart-contact-formatter';
 
-// Helper function to convert logo URL to base64 data URL for AI models
-async function convertLogoToDataUrl(logoUrl?: string): Promise<string | undefined> {
-  if (!logoUrl) return undefined;
+// Helper function to convert any URL to base64 data URL for AI models
+async function convertUrlToDataUri(url?: string): Promise<string | undefined> {
+  if (!url) return undefined;
 
   // If it's already a data URL, return as is
-  if (logoUrl.startsWith('data:')) {
-    return logoUrl;
+  if (url.startsWith('data:')) {
+    return url;
   }
 
-  // If it's a Supabase Storage URL, fetch and convert to base64
-  if (logoUrl.startsWith('http')) {
+  // If it's a Supabase Storage URL or any http URL, fetch and convert to base64
+  if (url.startsWith('http')) {
     try {
 
-      const response = await fetch(logoUrl);
+      const response = await fetch(url);
       if (!response.ok) {
         console.warn('⚠️ Failed to fetch logo from URL:', response.status);
         return undefined;
@@ -43,7 +43,7 @@ async function convertLogoToDataUrl(logoUrl?: string): Promise<string | undefine
 
       return dataUrl;
     } catch (error) {
-      console.error('❌ Error converting logo URL to base64:', error);
+      console.error('❌ Error converting URL to base64:', error);
       return undefined;
     }
   }
@@ -123,13 +123,13 @@ export async function analyzeBrandAction(
     try {
       // Use Claude analysis as PRIMARY method (Enhanced with actual product extraction)
       console.log('🤖 Using Claude-enhanced website analysis...');
-      
+
       // In development, always use localhost to avoid calling production
       const isDevelopment = process.env.NODE_ENV === 'development';
-      const baseUrl = isDevelopment 
-        ? 'http://localhost:3001' 
+      const baseUrl = isDevelopment
+        ? 'http://localhost:3001'
         : (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3001');
-      
+
       const apiUrl = `${baseUrl}/api/analyze-brand-claude`;
       console.log('📡 Calling API:', apiUrl);
       console.log('📦 Request body:', { websiteUrl: normalizedUrl, businessType: 'auto-detect' });
@@ -154,19 +154,19 @@ export async function analyzeBrandAction(
       if (!analysisResponse.ok) {
         const errorText = await analysisResponse.text();
         console.error('❌ API Error Response:', errorText);
-        
+
         let errorData;
         try {
           errorData = JSON.parse(errorText);
         } catch {
           errorData = { error: errorText };
         }
-        
+
         throw new Error(errorData.error || 'Claude analysis failed');
       }
 
       const claudeResult = await analysisResponse.json();
-      
+
       if (!claudeResult.success) {
         throw new Error(claudeResult.error || 'Claude analysis failed');
       }
@@ -441,7 +441,7 @@ export async function generateContentAction(
     const priorityContacts = getPriorityContacts(smartContactInfo, 3);
     const formattedContactForAI = formatContactForAI(smartContactInfo, 150);
     const exactContactInstructions = getExactContactInstructions(smartContactInfo);
-    
+
     console.log('📞 [Actions] Smart Contact Formatting:', {
       originalContacts: smartContactInfo,
       priorityContacts: priorityContacts.map(c => ({ type: c.type, value: c.displayValue })),
@@ -477,17 +477,17 @@ export async function generateContentAction(
       primaryColor: enhancedProfile.primaryColor || '#3B82F6',
       accentColor: enhancedProfile.accentColor || '#10B981',
       backgroundColor: enhancedProfile.backgroundColor || '#F8FAFC',
-      logoDataUrl: await convertLogoToDataUrl((enhancedProfile as any).logoUrl || enhancedProfile.logoDataUrl || (enhancedProfile as any).logo_url),
+      logoDataUrl: await convertUrlToDataUri((enhancedProfile as any).logoUrl || enhancedProfile.logoDataUrl || (enhancedProfile as any).logo_url),
       logoUrl: (enhancedProfile as any).logoUrl || (enhancedProfile as any).logo_url, // Pass original URL for Revo 1.0
       designExamples: effectiveDesignExamples,
       dayOfWeek: dayOfWeek,
       currentDate: currentDate,
       // Contact information for brand consistency (using smart formatting)
       includeContacts: brandConsistency?.includeContacts || false,
-      contactInfo: brandConsistency?.includeContacts 
+      contactInfo: brandConsistency?.includeContacts
         ? Object.fromEntries(
-            priorityContacts.map(contact => [contact.type, contact.displayValue])
-          )
+          priorityContacts.map(contact => [contact.type, contact.displayValue])
+        )
         : {},
       websiteUrl: priorityContacts.find(c => c.type === 'website')?.value || enhancedProfile.websiteUrl,
       // Add formatted contact string for AI prompts
@@ -698,7 +698,7 @@ export async function generateCreativeAssetAction(
       async () => await generateCreativeAssetFlow({
         prompt,
         outputType,
-        referenceAssetUrl,
+        referenceAssetUrl: await convertUrlToDataUri(referenceAssetUrl || undefined) || null,
         useBrandProfile,
         brandProfile: useBrandProfile ? brandProfile : null,
         maskDataUrl,
@@ -712,7 +712,7 @@ export async function generateCreativeAssetAction(
     if (!wrapped.success) {
       // Extract credit information from error message if available
       const errorMessage = wrapped.error || wrapped.creditInfo?.message || 'Credit deduction failed';
-      
+
       console.log('❌ [Creative Studio] Generation failed:', {
         errorMessage,
         hasError: !!wrapped.error,
@@ -741,7 +741,7 @@ export async function generateCreativeAssetAction(
         const creditErrorMessage = creditsAvailable === 0
           ? `💳 No Credits Available\n\nYou need ${creditsRequired} credits to generate this creative asset, but you have 0 credits remaining.\n\nPlease purchase credits to continue using Creative Studio.`
           : `💳 Insufficient Credits\n\nYou need ${creditsRequired} credits to generate this creative asset, but you only have ${creditsAvailable} credits.\n\nYou need ${needed} more credit${needed !== 1 ? 's' : ''} to continue. Please purchase credits to keep creating.`;
-        
+
         console.log('💳 [Creative Studio] Throwing credit error from creditInfo:', creditErrorMessage);
         throw new Error(creditErrorMessage);
       }
@@ -839,15 +839,15 @@ export async function generateCreativeAssetAction(
 
     // Handle credit errors first (highest priority)
     // Check for credit-related keywords in the error message
-    const isCreditError = 
+    const isCreditError =
       errorMessage.includes('💳') ||
       errorMessage.includes('Insufficient Credits') ||
       errorMessage.includes('No Credits Available') ||
       errorMessage.includes('0 credits remaining') ||
       errorMessage.includes('Credit deduction failed') ||
-      (errorMessage.toLowerCase().includes('credit') && 
-       (errorMessage.includes('need') || errorMessage.includes('only have') || errorMessage.includes('purchase')));
-    
+      (errorMessage.toLowerCase().includes('credit') &&
+        (errorMessage.includes('need') || errorMessage.includes('only have') || errorMessage.includes('purchase')));
+
     if (isCreditError) {
       console.log('✅ [Creative Studio] Detected credit error, passing through:', errorMessage);
       throw new Error(errorMessage); // Pass through credit errors as-is
@@ -1267,10 +1267,10 @@ export async function analyzeEcommerceBrandAction(
     try {
       // Use specialized e-commerce analysis endpoint
       const isDevelopment = process.env.NODE_ENV === 'development';
-      const baseUrl = isDevelopment 
-        ? 'http://localhost:3001' 
+      const baseUrl = isDevelopment
+        ? 'http://localhost:3001'
         : (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3001');
-      
+
       const apiUrl = `${baseUrl}/api/analyze-ecommerce-brand`;
       console.log('📡 Calling E-commerce API:', apiUrl);
 
@@ -1293,14 +1293,14 @@ export async function analyzeEcommerceBrandAction(
       if (!analysisResponse.ok) {
         const errorText = await analysisResponse.text();
         console.error('❌ E-commerce API Error Response:', errorText);
-        
+
         let errorData;
         try {
           errorData = JSON.parse(errorText);
         } catch {
           errorData = { error: errorText };
         }
-        
+
         throw new Error(errorData.error || 'E-commerce analysis failed');
       }
 
@@ -1320,7 +1320,7 @@ export async function analyzeEcommerceBrandAction(
 
     } catch (error) {
       console.error('❌ E-commerce analysis failed:', error);
-      
+
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
           return {
@@ -1329,14 +1329,14 @@ export async function analyzeEcommerceBrandAction(
             errorType: 'timeout'
           };
         }
-        
+
         return {
           success: false,
           error: `E-commerce analysis failed: ${error.message}`,
           errorType: 'error'
         };
       }
-      
+
       return {
         success: false,
         error: "Unknown error during e-commerce analysis",

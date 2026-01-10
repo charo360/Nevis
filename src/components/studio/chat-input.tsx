@@ -1,6 +1,6 @@
 // src/components/studio/chat-input.tsx
 import * as React from 'react';
-import { Paperclip, Send, Image as ImageIcon, Video, Wand, X, Brush } from 'lucide-react';
+import { Paperclip, Send, Image as ImageIcon, Video, Wand, X, Brush, FolderOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -35,6 +35,9 @@ interface ChatInputProps {
   userCredits?: number;
   includeContacts: boolean;
   setIncludeContacts: (value: boolean) => void;
+  onOpenAssetLibrary: () => void;
+  brandName?: string;
+  brandType?: string;
 }
 
 export function ChatInput({
@@ -59,9 +62,37 @@ export function ChatInput({
   selectedRevoModel,
   setSelectedRevoModel,
   userCredits,
+  onOpenAssetLibrary,
+  brandName,
+  brandType,
 }: ChatInputProps) {
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const generateRandomPrompt = () => {
+    const type = brandType || 'business';
+    const name = brandName || 'my brand';
+
+    // Different templates for variety
+    const templates = [
+      `Create a high-converting social media post for ${name}`,
+      `Design a minimalist product showcase for a ${type}`,
+      `Generate a seasonal sale announcement for ${name}`,
+      `Create an engaging Instagram Story for a ${type}`,
+      `Design a professional LinkedIn header for ${name}`,
+      `Create a "Coming Soon" teaser for a new ${type} product`,
+      `Generate a customer testimonial layout for ${name}`,
+      `Design a clean, modern promotional banner for ${name}`,
+      `Create a "Meet the Team" social post for a ${type}`,
+      `Generate a behind-the-scenes content layout for ${name}`,
+      `Design a quote card that aligns with ${name}'s style`,
+      `Create an educational infographic for a ${type} audience`
+    ];
+
+    // Pick a random template
+    const randomPrompt = templates[Math.floor(Math.random() * templates.length)];
+    setInput(randomPrompt);
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -91,54 +122,122 @@ export function ChatInput({
   return (
     <div className="relative w-full border-t">
       <form onSubmit={handleSubmit} className="p-4 space-y-4">
-        <div className="relative">
-          {imagePreview && (
-            <div className="group absolute bottom-full mb-2 w-24 h-24">
-              <Image src={imagePreview} alt="Image preview" layout="fill" objectFit="cover" className="rounded-md" />
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-md">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-white hover:bg-white/20 hover:text-white"
-                        onClick={() => onEditImage(imagePreview)}
-                      >
-                        <span className="sr-only">Edit image</span>
-                        <Brush className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Edit this image</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+        {/* Enhanced Image Preview - More Prominent */}
+        {imagePreview && (
+          <div className="mb-3 p-3 bg-primary/5 border-2 border-primary/20 rounded-lg">
+            <div className="flex items-start gap-3">
+              <div className="relative w-32 h-32 flex-shrink-0 group">
+                <Image
+                  src={imagePreview}
+                  alt="Selected asset preview"
+                  layout="fill"
+                  objectFit="cover"
+                  className="rounded-md border-2 border-primary/30"
+                />
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-md">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="icon"
+                          className="h-9 w-9"
+                          onClick={() => onEditImage(imagePreview)}
+                        >
+                          <span className="sr-only">Edit image</span>
+                          <Brush className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Edit this image</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute -right-2 -top-2 h-6 w-6 rounded-full bg-background"
-                onClick={handleRemoveImage}
-              >
-                <span className="sr-only">Remove image</span>
-                <X className="h-4 w-4" />
-              </Button>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-semibold text-primary flex items-center gap-2">
+                      <ImageIcon className="h-4 w-4" />
+                      Asset Selected
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      This asset will be used as reference for your design
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 flex-shrink-0"
+                    onClick={handleRemoveImage}
+                  >
+                    <span className="sr-only">Remove asset</span>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             </div>
-          )}
+          </div>
+        )}
+        <div className="relative">
           <Textarea
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={imagePreview
-              ? "Describe how to use the uploaded image (e.g., 'enhance this', 'use as template', 'create similar design')..."
-              : "Describe the design you want to create, or upload an image to enhance/reference..."}
+              ? "✨ Describe how to use this asset (e.g., 'create an ad with this product', 'use as background', 'enhance this image')..."
+              : "Describe the design you want to create, or select an asset from your library..."}
             className="pr-20 resize-none min-h-[4rem] max-h-40"
             rows={1}
             disabled={isLoading}
           />
           <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    onClick={generateRandomPrompt}
+                    disabled={isLoading}
+                    className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 mr-1"
+                  >
+                    <Wand className="h-4 w-4" />
+                    <span className="sr-only">AI Suggestion</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Get AI Suggestion</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant={imagePreview ? "default" : "ghost"}
+                    onClick={onOpenAssetLibrary}
+                    disabled={isLoading}
+                    className={cn(imagePreview && "bg-primary/10 hover:bg-primary/20 text-primary")}
+                  >
+                    <FolderOpen className="h-4 w-4" />
+                    <span className="sr-only">Asset Library</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <div className="text-xs max-w-xs">
+                    <p className="font-semibold mb-1">Asset Library</p>
+                    <p>Access your uploaded images and reuse them in designs</p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -168,7 +267,7 @@ export function ChatInput({
               accept="image/*"
               onChange={handleImageUpload}
             />
-            <Button type="submit" size="icon" variant="ghost" disabled={isLoading || !input}>
+            <Button type="submit" size="icon" variant="ghost" disabled={isLoading || (!input && !imagePreview)}>
               <Send />
               <span className="sr-only">Send message</span>
             </Button>
@@ -260,7 +359,7 @@ export function ChatInput({
               </RadioGroup>
             </div>
 
-            <Button type="submit" className="w-full sm:w-auto sm:min-w-[120px]" disabled={isLoading || !input || outputType === 'video'}>
+            <Button type="submit" className="w-full sm:w-auto sm:min-w-[120px]" disabled={isLoading || (!input && !imagePreview) || outputType === 'video'}>
               {isLoading ? 'Generating...' : outputType === 'video' ? 'Coming Soon' : <><Wand className="mr-2 h-4 w-4" /> Generate</>}
             </Button>
           </div>

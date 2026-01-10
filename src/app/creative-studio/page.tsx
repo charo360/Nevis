@@ -73,16 +73,17 @@ function CreativeStudioPageContent() {
       }
 
       const convertedProfile: BrandProfile = {
+        id: currentBrand.id,
         businessName: currentBrand.businessName,
         businessType: currentBrand.businessType,
         location:
           typeof currentBrand.location === "string"
             ? currentBrand.location
             : currentBrand.location
-            ? `${currentBrand.location.city || ""}, ${currentBrand.location.country || ""}`
+              ? `${currentBrand.location.city || ""}, ${currentBrand.location.country || ""}`
                 .replace(/^,\s*/, "")
                 .replace(/,\s*$/, "") || "Location"
-            : "Location",
+              : "Location",
         description: currentBrand.description,
         targetAudience: currentBrand.targetAudience,
         keyFeatures: currentBrand.keyFeatures,
@@ -171,7 +172,11 @@ function CreativeStudioPageContent() {
                   <div className="h-full bg-gradient-to-br from-blue-50 to-indigo-100">
                     <div className="w-full mobile-container-tight py-4 sm:py-8 h-full" style={{ maxWidth: "none" }}>
                       <div className="w-full h-full">
-                        <ChatLayout brandProfile={brandProfile} onEditImage={setEditorImage} />
+                        <ChatLayout
+                          key={brandProfile?.id || 'no-brand'}
+                          brandProfile={brandProfile}
+                          onEditImage={setEditorImage}
+                        />
                       </div>
                     </div>
                   </div>

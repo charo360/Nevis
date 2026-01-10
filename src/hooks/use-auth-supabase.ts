@@ -363,7 +363,7 @@ export function useAuth() {
         loading: false,
         error: errorMessage,
       }));
-      throw error;
+      throw error; // Re-throw so auth page can catch it
     }
   };
 

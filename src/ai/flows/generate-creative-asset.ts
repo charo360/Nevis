@@ -1596,19 +1596,36 @@ ${buildInstructionEnforcement(enhancedIntent)}`;
 
                 onBrandPrompt += `\n**STYLE REFERENCE:**
 Use the provided design examples as style reference to create a similar visual aesthetic, color scheme, typography, and overall design approach. Match the style, mood, and visual characteristics of the reference designs while creating new content.
+`;
 
-${designDNA}`;
+                if (designDNA) {
+                    onBrandPrompt += `\n${designDNA} `;
+                }
+            }
+
+            // NEW: Stronger enforcement of uploaded asset integration
+            if (hasUploadedImage) {
+                onBrandPrompt += `\n\n📸 ** UPLOADED ASSET INTEGRATION(HIGHEST PRIORITY):**
+- ** PRIMARY SUBJECT:** The uploaded image is the HERO product / subject.It must be the CENTRAL focus.
+- ** NO CARDS / FRAMES:** DO NOT place the image inside a card, frame, box, or Polaroid - style border.The image should blend seamlessly.
+- ** BACKGROUND REMOVAL:** You have permission to mask / remove the original background and place the subject in a NEW, professional scene.
+- ** COMPOSITION:** Build the scene AROUND the subject.The subject should interact with the lighting and environment naturally.
+- ** SCALE:** The subject should be LARGE and prominent(at least 50 % of the canvas).
+- ** REALISM:** Matches the perspective and lighting of the subject to the new background.
+- ** PROHIBITION:** DO NOT create a "social media post" showing a phone or tablet.Create the VISUAL ITSELF.
+`;
             }
 
             if (input.outputType === 'image') {
-                onBrandPrompt += `\n- **Text Overlay Requirements:** ${imageText ? `
+                onBrandPrompt += `\n - ** Text Overlay Requirements:** ${imageText ? `
                   * Display this EXACT text: "${imageText}"
                   * Use ENGLISH ONLY - no foreign languages, symbols, or corrupted characters
                   * Make text LARGE and BOLD for mobile readability
                   * Apply high contrast (minimum 4.5:1 ratio) between text and background
                   * Add text shadows, outlines, or semi-transparent backgrounds for readability
                   * Position text using rule of thirds for optimal composition
-                  * Ensure text is the primary focal point of the design` : 'No text should be added to the asset.'}`;
+                  * Ensure text is the primary focal point of the design` : 'No text should be added to the asset.'
+                    } `;
                 // Handle uploaded image integration with AI intelligence
                 if (hasUploadedImage) {
                     // 🔍 DEBUG: Log uploaded image integration
@@ -1630,154 +1647,154 @@ ${designDNA}`;
                 // Instructions for design generation with uploaded image and/or logo
                 if (hasUploadedImage && bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
                     // Both uploaded image AND logo present - treat both as reference images to incorporate
-                    onBrandPrompt += `\n- **🎯 DUAL IMAGE INTEGRATION - PROFESSIONAL MARKETING DESIGN:**
+                    onBrandPrompt += `\n - **🎯 DUAL IMAGE INTEGRATION - PROFESSIONAL MARKETING DESIGN:**
 
-  **CRITICAL: This is a MARKETING DESIGN, NOT a raw photo with text overlay!**
+  ** CRITICAL: This is a MARKETING DESIGN, NOT a raw photo with text overlay! **
 
-  You have been provided with TWO reference images:
-  1. **User's Uploaded Image** (provided below) - Use as PRIMARY visual element
-  2. **Brand Logo** (provided below) - Must be prominently featured
+                    You have been provided with TWO reference images:
+                1. ** User's Uploaded Image** (provided below) - Use as PRIMARY visual element
+                2. ** Brand Logo ** (provided below) - Must be prominently featured
 
-  **DESIGN APPROACH (MANDATORY):**
-  - Create a PROFESSIONAL MARKETING COMPOSITION with design elements
-  - DO NOT just overlay text on the raw uploaded photo
-  - ADD design elements: frames, shapes, color blocks, gradients, geometric elements
-  - Use the uploaded image as the HERO VISUAL but within a professional design layout
-  - Incorporate brand colors through design elements (not just text)
-  - Add visual interest through composition, not just the raw photo
+  ** DESIGN APPROACH(MANDATORY):**
+    - Create a PROFESSIONAL MARKETING COMPOSITION with design elements
+        - DO NOT just overlay text on the raw uploaded photo
+            - ADD design elements: frames, shapes, color blocks, gradients, geometric elements
+                - Use the uploaded image as the HERO VISUAL but within a professional design layout
+                    - Incorporate brand colors through design elements(not just text)
+                        - Add visual interest through composition, not just the raw photo
 
-  **UPLOADED IMAGE TREATMENT:**
-  - Feature prominently as the main visual (60%+ of visual weight)
-  - Can be: framed, masked, integrated into shapes, part of a split layout
-  - Should feel like part of a designed composition, not a background
-  - Add design treatments: borders, shadows, overlays (subtle), color grading
+                            ** UPLOADED IMAGE TREATMENT:**
+                                - Feature prominently as the main visual(60 % + of visual weight)
+                                    - Can be: framed, masked, integrated into shapes, part of a split layout
+                                        - Should feel like part of a designed composition, not a background
+                                            - Add design treatments: borders, shadows, overlays(subtle), color grading
 
-  **SEAMLESS INTEGRATION & BLENDING (CRITICAL):**
-  - Extract colors FROM the uploaded image and use them in design elements
-  - Match the color palette of design elements to the uploaded image's colors
-  - Use gradients that transition from image colors to brand colors
-  - Blend edges where design elements meet the uploaded image (no harsh lines)
-  - Apply subtle color overlays to harmonize the uploaded image with brand colors
-  - Use shapes that overlap or intersect with the image for cohesion
-  - Create visual flow between the uploaded image and design elements
-  - Make it feel like ONE cohesive design, not image + separate elements
+                                                ** SEAMLESS INTEGRATION & BLENDING(CRITICAL):**
+                                                    - Extract colors FROM the uploaded image and use them in design elements
+                                                        - Match the color palette of design elements to the uploaded image's colors
+                                                            - Use gradients that transition from image colors to brand colors
+                                                                - Blend edges where design elements meet the uploaded image(no harsh lines)
+                                                                    - Apply subtle color overlays to harmonize the uploaded image with brand colors
+                                                                        - Use shapes that overlap or intersect with the image for cohesion
+                                                                            - Create visual flow between the uploaded image and design elements
+                                                                                - Make it feel like ONE cohesive design, not image + separate elements
 
-  **COLOR HARMONY:**
-  - Sample dominant colors from the uploaded image
-  - Use those colors in geometric shapes, text backgrounds, or accents
-  - Create color transitions that connect the image to brand colors
-  - Apply subtle color grading to unify the entire composition
-  - Ensure design elements complement (not clash with) the image colors
+                                                                                    ** COLOR HARMONY:**
+                                                                                        - Sample dominant colors from the uploaded image
+                                                                                            - Use those colors in geometric shapes, text backgrounds, or accents
+                                                                                                - Create color transitions that connect the image to brand colors
+                                                                                                    - Apply subtle color grading to unify the entire composition
+                                                                                                        - Ensure design elements complement(not clash with) the image colors
 
-  **LOGO TREATMENT:**
-  - Clearly visible and well-positioned (10%+ of design area)
-  - Integrated naturally into the design composition
-  - Can be on a color block, shape, or clean area for visibility
-  - Logo placement should feel natural within the overall composition
+                                                                                                            ** LOGO TREATMENT:**
+                                                                                                                - Clearly visible and well - positioned(10 % + of design area)
+                                                                                                                    - Integrated naturally into the design composition
+                                                                                                                        - Can be on a color block, shape, or clean area for visibility
+                                                                                                                            - Logo placement should feel natural within the overall composition
 
-  **DESIGN ELEMENTS TO ADD:**
-  - Geometric shapes (rectangles, circles, triangles) using colors from the image + brand colors
-  - Color blocks or panels that blend with the image's color palette
-  - Gradients that transition between image colors and brand colors
-  - Professional typography with hierarchy
-  - Visual balance and composition
-  - Overlapping elements that create depth and integration
+                                                                                                                                ** DESIGN ELEMENTS TO ADD:**
+                                                                                                                                    - Geometric shapes(rectangles, circles, triangles) using colors from the image + brand colors
+                                                                                                                                        - Color blocks or panels that blend with the image's color palette
+                                                                                                                                            - Gradients that transition between image colors and brand colors
+                                                                                                                                                - Professional typography with hierarchy
+                                                                                                                                                - Visual balance and composition
+                                                                                                                                                    - Overlapping elements that create depth and integration
 
-  **WHAT THIS IS:**
+                                                                                                                                                        ** WHAT THIS IS:**
   ✅ Professional marketing design that FEATURES the uploaded image
   ✅ Cohesive composition with design elements + uploaded image + logo
   ✅ Social media ready marketing asset
 
-  **WHAT THIS IS NOT:**
+    ** WHAT THIS IS NOT:**
   ❌ Raw photo with text slapped on top
   ❌ Unedited uploaded image with minimal changes
   ❌ Simple text overlay without design elements`;
                 } else if (hasUploadedImage) {
                     // Only uploaded image, no logo
-                    onBrandPrompt += `\n- **🎯 UPLOADED IMAGE INTEGRATION - PROFESSIONAL MARKETING DESIGN:**
+                    onBrandPrompt += `\n - **🎯 UPLOADED IMAGE INTEGRATION - PROFESSIONAL MARKETING DESIGN:**
 
-  **CRITICAL: This is a MARKETING DESIGN, NOT a raw photo with text overlay!**
+  ** CRITICAL: This is a MARKETING DESIGN, NOT a raw photo with text overlay! **
 
-  **DESIGN APPROACH (MANDATORY):**
-  - Create a PROFESSIONAL MARKETING COMPOSITION with design elements
-  - DO NOT just overlay text on the raw uploaded photo
-  - ADD design elements: frames, shapes, color blocks, gradients, geometric elements
-  - Use the uploaded image as the HERO VISUAL but within a professional design layout
-  - Incorporate brand colors through design elements
-  - Add visual interest through composition
+  ** DESIGN APPROACH(MANDATORY):**
+    - Create a PROFESSIONAL MARKETING COMPOSITION with design elements
+        - DO NOT just overlay text on the raw uploaded photo
+            - ADD design elements: frames, shapes, color blocks, gradients, geometric elements
+                - Use the uploaded image as the HERO VISUAL but within a professional design layout
+                    - Incorporate brand colors through design elements
+                        - Add visual interest through composition
 
-  **UPLOADED IMAGE TREATMENT:**
-  - Feature prominently as the main visual element
-  - Can be: framed, masked, integrated into shapes, part of a split layout
-  - Should feel like part of a designed composition, not a background
-  - Add design treatments: borders, shadows, overlays (subtle), color grading
+                            ** UPLOADED IMAGE TREATMENT:**
+                                - Feature prominently as the main visual element
+                                    - Can be: framed, masked, integrated into shapes, part of a split layout
+                                        - Should feel like part of a designed composition, not a background
+                                            - Add design treatments: borders, shadows, overlays(subtle), color grading
 
-  **SEAMLESS INTEGRATION & BLENDING (CRITICAL):**
-  - Extract colors FROM the uploaded image and use them in design elements
-  - Match the color palette of design elements to the uploaded image's colors
-  - Use gradients that transition from image colors to brand colors
-  - Blend edges where design elements meet the uploaded image (no harsh lines)
-  - Apply subtle color overlays to harmonize the uploaded image with brand colors
-  - Use shapes that overlap or intersect with the image for cohesion
-  - Create visual flow between the uploaded image and design elements
-  - Make it feel like ONE cohesive design, not image + separate elements
+                                                ** SEAMLESS INTEGRATION & BLENDING(CRITICAL):**
+                                                    - Extract colors FROM the uploaded image and use them in design elements
+                                                        - Match the color palette of design elements to the uploaded image's colors
+                                                            - Use gradients that transition from image colors to brand colors
+                                                                - Blend edges where design elements meet the uploaded image(no harsh lines)
+                                                                    - Apply subtle color overlays to harmonize the uploaded image with brand colors
+                                                                        - Use shapes that overlap or intersect with the image for cohesion
+                                                                            - Create visual flow between the uploaded image and design elements
+                                                                                - Make it feel like ONE cohesive design, not image + separate elements
 
-  **COLOR HARMONY:**
-  - Sample dominant colors from the uploaded image
-  - Use those colors in geometric shapes, text backgrounds, or accents
-  - Create color transitions that connect the image to brand colors
-  - Apply subtle color grading to unify the entire composition
-  - Ensure design elements complement (not clash with) the image colors
+                                                                                    ** COLOR HARMONY:**
+                                                                                        - Sample dominant colors from the uploaded image
+                                                                                            - Use those colors in geometric shapes, text backgrounds, or accents
+                                                                                                - Create color transitions that connect the image to brand colors
+                                                                                                    - Apply subtle color grading to unify the entire composition
+                                                                                                        - Ensure design elements complement(not clash with) the image colors
 
-  **DESIGN ELEMENTS TO ADD:**
-  - Geometric shapes (rectangles, circles, triangles) using colors from the image + brand colors
-  - Color blocks or panels that blend with the image's color palette
-  - Gradients that transition between image colors and brand colors
-  - Professional typography with hierarchy
-  - Visual balance and composition
-  - Overlapping elements that create depth and integration
+                                                                                                            ** DESIGN ELEMENTS TO ADD:**
+                                                                                                                - Geometric shapes(rectangles, circles, triangles) using colors from the image + brand colors
+                                                                                                                    - Color blocks or panels that blend with the image's color palette
+                                                                                                                        - Gradients that transition between image colors and brand colors
+                                                                                                                            - Professional typography with hierarchy
+                                                                                                                            - Visual balance and composition
+                                                                                                                                - Overlapping elements that create depth and integration
 
-  **WHAT THIS IS:**
+                                                                                                                                    ** WHAT THIS IS:**
   ✅ Professional marketing design that FEATURES the uploaded image
   ✅ Cohesive composition with design elements + uploaded image
   ✅ Social media ready marketing asset
 
-  **WHAT THIS IS NOT:**
+    ** WHAT THIS IS NOT:**
   ❌ Raw photo with text slapped on top
   ❌ Unedited uploaded image with minimal changes`;
                 } else if (bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
                     // Only logo, no uploaded image
-                    onBrandPrompt += `\n- **🎯 BRAND LOGO INTEGRATION:** The brand logo (provided below) MUST be prominently featured in your design
-- **Logo Treatment:** Logo should be clearly visible, well-positioned, and properly sized (minimum 10% of design area)
-- **Design Approach:** Create a complete, professional marketing design with full layout composition that prominently features the brand logo`;
+                    onBrandPrompt += `\n - **🎯 BRAND LOGO INTEGRATION:** The brand logo(provided below) MUST be prominently featured in your design
+    - ** Logo Treatment:** Logo should be clearly visible, well - positioned, and properly sized(minimum 10 % of design area)
+        - ** Design Approach:** Create a complete, professional marketing design with full layout composition that prominently features the brand logo`;
                 } else {
                     // No uploaded image, no logo
-                    onBrandPrompt += `\n- **Design Approach:** Create a complete, professional marketing design with full layout composition. This should be a comprehensive social media post design, NOT just a logo. Include backgrounds, graphics, text elements, and visual hierarchy.`;
+                    onBrandPrompt += `\n - ** Design Approach:** Create a complete, professional marketing design with full layout composition.This should be a comprehensive social media post design, NOT just a logo.Include backgrounds, graphics, text elements, and visual hierarchy.`;
                 }
 
                 if (noPeopleRequirement) {
-                    onBrandPrompt += `\n- **PEOPLE EXCLUSION (MANDATORY):** Do NOT include people, faces, silhouettes, or human-like figures in any part of the design.`;
+                    onBrandPrompt += `\n - ** PEOPLE EXCLUSION(MANDATORY):** Do NOT include people, faces, silhouettes, or human - like figures in any part of the design.`;
                 }
 
-                onBrandPrompt += `\n- **Critical Language Rule:** ALL text must be in clear, readable ENGLISH only. Never use foreign languages, corrupted text, or unreadable symbols.`;
+                onBrandPrompt += `\n - ** Critical Language Rule:** ALL text must be in clear, readable ENGLISH only.Never use foreign languages, corrupted text, or unreadable symbols.`;
 
                 // Add reference images to promptParts with clear instructions
                 if (bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
-                    onBrandPrompt += `\n\n🎯 **CRITICAL REFERENCE IMAGE REQUIREMENTS:**`;
+                    onBrandPrompt += `\n\n🎯 ** CRITICAL REFERENCE IMAGE REQUIREMENTS:** `;
                     if (hasUploadedImage) {
                         onBrandPrompt += `
-- The uploaded image provided below MUST be the PRIMARY visual element in your design (hero/focal point)
-- The brand logo image provided below MUST also be prominently featured and clearly visible
-- Both images are mandatory - incorporate them into a cohesive, professional design
-- Visual hierarchy: Uploaded image (primary/dominant) + Brand logo (secondary/prominent)
-- This is a critical requirement - BOTH images MUST appear in the final design`;
+    - The uploaded image provided below MUST be the PRIMARY visual element in your design(hero / focal point)
+        - The brand logo image provided below MUST also be prominently featured and clearly visible
+            - Both images are mandatory - incorporate them into a cohesive, professional design
+                - Visual hierarchy: Uploaded image(primary / dominant) + Brand logo(secondary / prominent)
+                    - This is a critical requirement - BOTH images MUST appear in the final design`;
                     } else {
                         onBrandPrompt += `
-- The brand logo image provided below MUST be prominently featured in your design
-- Logo should be clearly visible and well-integrated into the composition
-- Minimum logo size: 10% of total design area
-- Logo placement should be natural but unmistakable
-- This is a mandatory requirement - the logo MUST appear in the final design`;
+                        - The brand logo image provided below MUST be prominently featured in your design
+                            - Logo should be clearly visible and well - integrated into the composition
+                                - Minimum logo size: 10 % of total design area
+                                    - Logo placement should be natural but unmistakable
+                                        - This is a mandatory requirement - the logo MUST appear in the final design`;
                     }
                     promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
                 }
@@ -1786,39 +1803,39 @@ ${designDNA}`;
                     promptParts.unshift({ text: textPrompt });
                 }
             } else { // Video
-                onBrandPrompt += `\n- **Video Specifics:** Generate a video that is cinematically interesting, well-composed, and has a sense of completeness. Create a well-composed shot with a clear beginning, middle, and end, even within a short duration. Avoid abrupt cuts or unfinished scenes.`;
+                onBrandPrompt += `\n - ** Video Specifics:** Generate a video that is cinematically interesting, well - composed, and has a sense of completeness.Create a well - composed shot with a clear beginning, middle, and end, even within a short duration.Avoid abrupt cuts or unfinished scenes.`;
                 if (input.aspectRatio === '16:9') {
                     onBrandPrompt += ' The video should have relevant sound.';
                 }
                 if (imageText) {
-                    onBrandPrompt += `\n- **Text Overlay:** The following text MUST be overlaid on the video in a stylish, readable font: "${imageText}". It is critical that the text is clearly readable, well-composed, and not cut off. The entire text must be visible.`
+                    onBrandPrompt += `\n - ** Text Overlay:** The following text MUST be overlaid on the video in a stylish, readable font: "${imageText}".It is critical that the text is clearly readable, well - composed, and not cut off.The entire text must be visible.`
                 }
 
                 // Handle uploaded image integration for video with AI intelligence
                 if (hasUploadedImage) {
-                    onBrandPrompt += `\n- **🎯 UPLOADED IMAGE FOCUSED VIDEO:** A user has uploaded an image that must be the PRIMARY visual element throughout the video. DO NOT generate any additional images.`;
-                    onBrandPrompt += `\n  * **Video Analysis:** Analyze the uploaded image to determine the best video enhancement approach:`;
-                    onBrandPrompt += `\n    - Product/Object: Feature as hero element with dynamic camera movements and text overlays`;
-                    onBrandPrompt += `\n    - Scene/Background: Use as cinematic backdrop with professional text treatments and effects`;
-                    onBrandPrompt += `\n    - Person/Lifestyle: Create engaging sequences showcasing the subject with text overlays`;
-                    onBrandPrompt += `\n    - Logo/Graphic: Enhance with animated text and design treatments`;
-                    onBrandPrompt += `\n  * **Cinematic Quality:** Use ONLY the uploaded image - enhance with professional video effects, text overlays, and treatments`;
-                    onBrandPrompt += `\n  * **Brand Storytelling:** Weave the uploaded image into a compelling brand narrative with text and design elements`;
-                    onBrandPrompt += `\n  * **Visual Continuity:** Maintain consistent style and mood using the uploaded image as the foundation`;
+                    onBrandPrompt += `\n - **🎯 UPLOADED IMAGE FOCUSED VIDEO:** A user has uploaded an image that must be the PRIMARY visual element throughout the video.DO NOT generate any additional images.`;
+                    onBrandPrompt += `\n * ** Video Analysis:** Analyze the uploaded image to determine the best video enhancement approach: `;
+                    onBrandPrompt += `\n - Product / Object: Feature as hero element with dynamic camera movements and text overlays`;
+                    onBrandPrompt += `\n - Scene / Background: Use as cinematic backdrop with professional text treatments and effects`;
+                    onBrandPrompt += `\n - Person / Lifestyle: Create engaging sequences showcasing the subject with text overlays`;
+                    onBrandPrompt += `\n - Logo / Graphic: Enhance with animated text and design treatments`;
+                    onBrandPrompt += `\n * ** Cinematic Quality:** Use ONLY the uploaded image - enhance with professional video effects, text overlays, and treatments`;
+                    onBrandPrompt += `\n * ** Brand Storytelling:** Weave the uploaded image into a compelling brand narrative with text and design elements`;
+                    onBrandPrompt += `\n * ** Visual Continuity:** Maintain consistent style and mood using the uploaded image as the foundation`;
                     promptParts.push({ media: { url: input.referenceAssetUrl!, contentType: getMimeTypeFromDataURI(input.referenceAssetUrl!) } });
                 }
 
                 if (bp.logoDataUrl && !bp.logoDataUrl.includes('image/svg+xml')) {
-                    onBrandPrompt += `\n- **COMPLETE MARKETING DESIGN:** Create a full marketing video with comprehensive visual storytelling - NOT just logo animation. Include backgrounds, graphics, text elements, and complete scene composition.`;
-                    onBrandPrompt += `\n- **🚨 MANDATORY LOGO INTEGRATION:** You MUST prominently feature the provided brand logo throughout the video. The logo should be clearly visible, well-positioned, and consistently present. This is a critical requirement - the logo must be unmistakably present in the final video.`;
-                    onBrandPrompt += `\n\n🎯 **CRITICAL LOGO REQUIREMENT FOR VIDEO:**
-- The brand logo image provided below MUST be prominently featured throughout the video
-- Logo should be clearly visible and consistently present during key moments
-- Logo integration should feel natural but unmistakable
-- This is a mandatory requirement - the logo MUST appear in the final video`;
+                    onBrandPrompt += `\n - ** COMPLETE MARKETING DESIGN:** Create a full marketing video with comprehensive visual storytelling - NOT just logo animation.Include backgrounds, graphics, text elements, and complete scene composition.`;
+                    onBrandPrompt += `\n - **🚨 MANDATORY LOGO INTEGRATION:** You MUST prominently feature the provided brand logo throughout the video.The logo should be clearly visible, well - positioned, and consistently present.This is a critical requirement - the logo must be unmistakably present in the final video.`;
+                    onBrandPrompt += `\n\n🎯 ** CRITICAL LOGO REQUIREMENT FOR VIDEO:**
+    - The brand logo image provided below MUST be prominently featured throughout the video
+        - Logo should be clearly visible and consistently present during key moments
+            - Logo integration should feel natural but unmistakable
+                - This is a mandatory requirement - the logo MUST appear in the final video`;
                     promptParts.push({ media: { url: bp.logoDataUrl, contentType: getMimeTypeFromDataURI(bp.logoDataUrl) } });
                 } else if (bp.logoDataUrl && bp.logoDataUrl.includes('image/svg+xml')) {
-                    onBrandPrompt += `\n- **COMPREHENSIVE MARKETING VIDEO:** Create a complete marketing video that represents the brand identity with full scene composition, storytelling, and visual elements. Note: SVG logo format detected - represent the brand identity through design elements.`;
+                    onBrandPrompt += `\n - ** COMPREHENSIVE MARKETING VIDEO:** Create a complete marketing video that represents the brand identity with full scene composition, storytelling, and visual elements.Note: SVG logo format detected - represent the brand identity through design elements.`;
                 }
 
                 // Add selected design examples as reference
@@ -1840,11 +1857,11 @@ ${designDNA}`;
             if (userIntent.isLiteralTextRequest) {
                 // User wants specific text - use exactly what they specified
                 structuredContentInstructions += `\n\n🚨🚨🚨 LITERAL TEXT REQUEST DETECTED 🚨🚨🚨\n`;
-                structuredContentInstructions += `**USER SPECIFIED TEXT (HIGHEST PRIORITY):**\n`;
+                structuredContentInstructions += `** USER SPECIFIED TEXT(HIGHEST PRIORITY):**\n`;
                 userIntent.textInstructions.forEach((text, index) => {
-                    structuredContentInstructions += `- ${text}\n`;
+                    structuredContentInstructions += `- ${text} \n`;
                 });
-                structuredContentInstructions += `\n⛔ CRITICAL RESTRICTIONS:\n`;
+                structuredContentInstructions += `\n⛔ CRITICAL RESTRICTIONS: \n`;
                 structuredContentInstructions += `- ONLY use the exact text specified by the user above\n`;
                 structuredContentInstructions += `- NEVER add "CREATE A DESIGN FOR TODAY" or similar promotional text\n`;
                 structuredContentInstructions += `- NEVER add marketing slogans or business taglines\n`;
@@ -1853,10 +1870,10 @@ ${designDNA}`;
             } else if (userIntent.isDesignDirectionRequest) {
                 // User wants AI to create general promotional content
                 structuredContentInstructions += `\n\n🎯 DESIGN DIRECTION REQUEST DETECTED 🎯\n`;
-                structuredContentInstructions += `**CREATIVE CONTENT GENERATION:**\n`;
+                structuredContentInstructions += `** CREATIVE CONTENT GENERATION:**\n`;
                 structuredContentInstructions += `- Generate appropriate marketing content based on the design direction\n`;
                 structuredContentInstructions += `- Create relevant, professional promotional text\n`;
-                structuredContentInstructions += `- Focus on the specific request: ${userIntent.designDirection}\n`;
+                structuredContentInstructions += `- Focus on the specific request: ${userIntent.designDirection} \n`;
                 structuredContentInstructions += `- AVOID generic phrases like "CREATE A DESIGN FOR TODAY"\n`;
                 structuredContentInstructions += `- Make it specific to the user's actual request\n`;
             } else {
@@ -1874,7 +1891,7 @@ ${designDNA}`;
             let generatedContent = '';
 
             // Check if we need to generate creative content automatically
-            const needsContentGeneration = !hasExplicitTextRequest && !hasQuotedText && !hasStructuredInstructions && input.useBrandProfile && input.brandProfile;
+            const needsContentGeneration = !hasExplicitTextRequest && !hasQuotedText && input.useBrandProfile && input.brandProfile;
 
             if (needsContentGeneration) {
                 try {

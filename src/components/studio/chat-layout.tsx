@@ -16,6 +16,8 @@ import { type RevoModel } from '@/components/ui/revo-model-selector';
 import { useDesignColors } from '@/contexts/design-color-context';
 import { DesignColorPicker } from './design-color-picker';
 import ProductImageSelector from './product-image-selector';
+import { AssetLibrary } from './asset-library';
+import type { CreativeAsset } from '@/lib/services/creative-assets-service';
 
 
 interface ChatLayoutProps {
@@ -36,9 +38,12 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
     const [isPromptBuilderOpen, setIsPromptBuilderOpen] = React.useState(false);
     const [selectedProductId, setSelectedProductId] = React.useState<string | null>(null);
     const [includeContacts, setIncludeContacts] = React.useState(false); // Contacts toggle - default OFF
+    const [isAssetLibraryOpen, setIsAssetLibraryOpen] = React.useState(false);
     const { toast } = useToast();
     const { designColors, updateDesignColors } = useDesignColors();
     const { getAccessToken } = useAuth();
+    const chatInputRef = React.useRef<HTMLDivElement>(null);
+    const messagesContainerRef = React.useRef<HTMLDivElement>(null);
 
 
 
@@ -98,6 +103,69 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
         }
     };
 
+    const handleSelectAsset = async (asset: CreativeAsset) => {
+        console.log('📦 [Creative Studio] Asset selected:', asset.filename);
+
+        try {
+            // Close dialog
+            setIsAssetLibraryOpen(false);
+
+            // Set Preview
+            setImagePreview(asset.file_url);
+
+            // Add Message
+            const assetMessage: Message = {
+                id: Date.now().toString(),
+                role: 'user',
+                content: `Selected asset: ${asset.filename}`,
+                imageUrl: asset.file_url,
+            };
+            setMessages(prev => [...prev, assetMessage]);
+
+            // Show Toast
+            toast({
+                title: 'Asset Added',
+                description: 'Ready to design',
+                duration: 3000
+            });
+
+            // Handle Data URI conversion
+            if (!asset.file_url.startsWith('data:')) {
+                setImageDataUrl(asset.file_url);
+
+                fetch(asset.file_url)
+                    .then(res => res.blob())
+                    .then(blob => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            if (typeof reader.result === 'string') {
+                                setImageDataUrl(reader.result);
+                            }
+                        };
+                        reader.readAsDataURL(blob);
+                    })
+                    .catch(e => console.warn('Conversion failed', e));
+            } else {
+                setImageDataUrl(asset.file_url);
+            }
+
+        } catch (e) {
+            console.warn('Error in handleSelectAsset:', e);
+            toast({ variant: 'destructive', title: 'Error', description: 'Failed to select asset' });
+        }
+
+        // Scroll to bottom and focus input
+        setTimeout(() => {
+            if (messagesContainerRef.current) {
+                messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+            }
+            const textarea = chatInputRef.current?.querySelector('textarea') as HTMLTextAreaElement;
+            if (textarea) {
+                textarea.focus();
+            }
+        }, 100);
+    };
+
     const handleClearProductSelection = () => {
         setSelectedProductId(null);
         setImagePreview(null);
@@ -118,11 +186,11 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
             return;
         }
 
-        if (!input.trim()) {
+        if (!input.trim() && !imageDataUrl) {
             toast({
                 variant: 'destructive',
                 title: 'Input Required',
-                description: 'Please describe the image or video you want to create.',
+                description: 'Please describe the image or video you want to create, or provide an image asset.',
             });
             return
         };
@@ -130,7 +198,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
         const newUserMessage: Message = {
             id: Date.now().toString(),
             role: 'user',
-            content: input,
+            content: input || "Generating from image...",
             // For simplicity, we just show the preview, which could be an image data URL for a video.
             imageUrl: imagePreview,
         };
@@ -141,13 +209,46 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
         // Enhanced image handling - always pass uploaded images to AI
         // The enhanced intent detection system in generate-creative-asset.ts will determine how to use it
         // Possible intents: enhance, reference, template, or general context
-        const currentImageDataUrl = imageDataUrl;
+        let currentImageDataUrl = imageDataUrl;
+
+        // Convert URL to data URI if needed (fallback in case async conversion didn't complete)
+        if (currentImageDataUrl && !currentImageDataUrl.startsWith('data:')) {
+            try {
+                console.log('🔄 [Creative Studio] Converting image URL to data URI in handleSubmit...');
+                const response = await fetch(currentImageDataUrl);
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const reader = new FileReader();
+                    currentImageDataUrl = await new Promise<string>((resolve, reject) => {
+                        reader.onloadend = () => {
+                            if (reader.result) {
+                                resolve(reader.result as string);
+                            } else {
+                                reject(new Error('Failed to convert image to data URI'));
+                            }
+                        };
+                        reader.onerror = reject;
+                        reader.readAsDataURL(blob);
+                    });
+                    console.log('✅ [Creative Studio] Successfully converted image URL to data URI in handleSubmit');
+                }
+            } catch (error) {
+                console.error('❌ [Creative Studio] Failed to convert image URL in handleSubmit:', error);
+                toast({
+                    variant: 'destructive',
+                    title: 'Error Processing Image',
+                    description: 'Failed to prepare image for generation. Please try selecting the asset again.'
+                });
+                return;
+            }
+        }
 
         // 🔍 DEBUG: Log image upload state
         console.log('🖼️ [Creative Studio] Image Upload Debug:', {
-            hasImageDataUrl: !!imageDataUrl,
-            imageDataUrlLength: imageDataUrl?.length || 0,
-            imageDataUrlPreview: imageDataUrl?.substring(0, 50) || 'none',
+            hasImageDataUrl: !!currentImageDataUrl,
+            imageDataUrlLength: currentImageDataUrl?.length || 0,
+            imageDataUrlPreview: currentImageDataUrl?.substring(0, 50) || 'none',
+            isDataUri: currentImageDataUrl?.startsWith('data:') || false,
             currentInput: currentInput,
             selectedRevoModel: selectedRevoModel,
             outputType: outputType,
@@ -156,30 +257,33 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
         });
 
         // Build enhanced prompt with image context if image is uploaded
-        let enhancedPrompt = currentInput;
-        if (imageDataUrl && currentInput) {
-            // Detect user's intent for the uploaded image
-            const hasEnhanceIntent = /\b(enhance|improve|fix|better|upgrade|refine)\b/i.test(currentInput);
-            const hasReferenceIntent = /\b(like|similar|style|inspired|based on|reference)\b/i.test(currentInput);
-            const hasTemplateIntent = /\b(template|layout|structure|format|same|exact)\b/i.test(currentInput);
+        let enhancedPrompt = currentInput || "Please use this image as reference for a professional design.";
+        if (imageDataUrl) {
+            if (currentInput) {
+                // Detect user's intent for the uploaded image
+                const hasEnhanceIntent = /\b(enhance|improve|fix|better|upgrade|refine)\b/i.test(currentInput);
+                const hasReferenceIntent = /\b(like|similar|style|inspired|based on|reference)\b/i.test(currentInput);
+                const hasTemplateIntent = /\b(template|layout|structure|format|same|exact)\b/i.test(currentInput);
 
-            // Add context to prompt to help AI understand image intent
-            if (hasEnhanceIntent) {
-                enhancedPrompt = `[IMAGE UPLOADED - INTENT: ENHANCE] ${currentInput}\n\nIMPORTANT: The user uploaded an image and wants to ENHANCE it. Keep the core elements of the uploaded image while improving quality, composition, and visual appeal based on the user's instructions.`;
-            } else if (hasTemplateIntent) {
-                enhancedPrompt = `[IMAGE UPLOADED - INTENT: TEMPLATE] ${currentInput}\n\nIMPORTANT: The user uploaded an image as a TEMPLATE. Match the exact layout, structure, and composition of the uploaded image while applying the user's specific instructions.`;
-            } else if (hasReferenceIntent) {
-                enhancedPrompt = `[IMAGE UPLOADED - INTENT: REFERENCE] ${currentInput}\n\nIMPORTANT: The user uploaded an image as a REFERENCE. Use the uploaded image as inspiration for style, composition, and visual direction while creating a new design based on the user's instructions.`;
+                // Add context to prompt to help AI understand image intent
+                if (hasEnhanceIntent) {
+                    enhancedPrompt = `[IMAGE UPLOADED - INTENT: ENHANCE] ${currentInput}\n\nIMPORTANT: The user uploaded an image and wants to ENHANCE it. Keep the core elements of the uploaded image while improving quality, composition, and visual appeal based on the user's instructions.`;
+                } else if (hasTemplateIntent) {
+                    enhancedPrompt = `[IMAGE UPLOADED - INTENT: TEMPLATE] ${currentInput}\n\nIMPORTANT: The user uploaded an image as a TEMPLATE. Match the exact layout, structure, and composition of the uploaded image while applying the user's specific instructions.`;
+                } else if (hasReferenceIntent) {
+                    enhancedPrompt = `[IMAGE UPLOADED - INTENT: REFERENCE] ${currentInput}\n\nIMPORTANT: The user uploaded an image as a REFERENCE. Use the uploaded image as inspiration for style, composition, and visual direction while creating a new design based on the user's instructions.`;
+                } else {
+                    // Default: treat as reference/context
+                    enhancedPrompt = `[IMAGE UPLOADED - INTENT: CONTEXT] ${currentInput}\n\nIMPORTANT: The user uploaded an image for context. Analyze the image and integrate it naturally into the design based on the user's instructions. Use it as visual context to inform the design direction.`;
+                }
             } else {
-                // Default: treat as reference/context
-                enhancedPrompt = `[IMAGE UPLOADED - INTENT: CONTEXT] ${currentInput}\n\nIMPORTANT: The user uploaded an image for context. Analyze the image and integrate it naturally into the design based on the user's instructions. Use it as visual context to inform the design direction.`;
+                // Default prompt when ONLY image is provided
+                enhancedPrompt = `[IMAGE UPLOADED] The user has provided an image to use as a basis for creative asset generation. Analyze the style, composition, and subject matter of this image and generate a complementary, professional creative asset that enhances or relates to this visual context.`;
             }
 
             // 🔍 DEBUG: Log enhanced prompt construction
             console.log('📝 [Creative Studio] Enhanced Prompt Built:', {
-                hasEnhanceIntent,
-                hasReferenceIntent,
-                hasTemplateIntent,
+                hasInput: !!currentInput,
                 enhancedPromptPreview: enhancedPrompt.substring(0, 100)
             });
         }
@@ -193,6 +297,12 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
             let result;
             let aiResponse: Message;
 
+            // Optimized: Use the remote URL if available to avoid Server Action payload limits (500 Error)
+            // If imagePreview is a remote URL (not data:), use it. Otherwise use the data URL.
+            const assetUrlToPass = (imagePreview && !imagePreview.startsWith('data:'))
+                ? imagePreview
+                : currentImageDataUrl;
+
             if (selectedRevoModel === 'revo-2.0' && outputType === 'image' && brandProfile) {
                 // Use Creative Studio's advanced creative asset generation for Revo 2.0
                 // This provides unique Creative Studio features like inpainting, outpainting,
@@ -200,10 +310,12 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 // Get access token as fallback if cookies don't work
                 const accessToken = await getAccessToken().catch(() => null);
 
+
+
                 result = await generateCreativeAssetAction(
                     enhancedPrompt, // Use enhanced prompt with image context
                     outputType,
-                    currentImageDataUrl,
+                    assetUrlToPass,
                     useBrandProfile,
                     brandProfile,
                     null, // maskDataUrl - Creative Studio can handle inpainting
@@ -231,7 +343,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 result = await generateCreativeAssetAction(
                     enhancedPrompt, // Use enhanced prompt with image context
                     outputType,
-                    currentImageDataUrl,
+                    assetUrlToPass,
                     useBrandProfile,
                     brandProfile,
                     null, // maskDataUrl - Creative Studio can handle inpainting
@@ -270,7 +382,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 result = await generateCreativeAssetAction(
                     enhancedPrompt, // Use enhanced prompt with image context
                     outputType,
-                    currentImageDataUrl,
+                    assetUrlToPass,
                     useBrandProfile,
                     brandProfile,
                     null, // maskDataUrl - Creative Studio can handle inpainting
@@ -310,7 +422,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 result = await generateCreativeAssetAction(
                     enhancedPrompt, // Use enhanced prompt with image context
                     outputType,
-                    currentImageDataUrl,
+                    assetUrlToPass,
                     useBrandProfile,
                     brandProfile,
                     null, // maskDataUrl
@@ -432,7 +544,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto min-h-0 max-h-[calc(100vh-200px)]">
+            <div ref={messagesContainerRef} className="flex-1 overflow-y-auto min-h-0 max-h-[calc(100vh-200px)]">
                 {messages.length === 0 && !isLoading ? (
                     <div className="flex h-full flex-col items-center justify-center text-center p-4">
                         <Card className="max-w-2xl w-full">
@@ -443,6 +555,24 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                                     <Balancer>
                                         Welcome to your AI-powered creative partner. Use the Design Brief Builder above to create structured prompts, or describe what you want directly in the chat. The builder form stays populated so you can easily create multiple design variations!
                                     </Balancer>
+                                </div>
+                                <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {[
+                                        `Create a ${brandProfile?.businessType || 'business'} social media post`,
+                                        `Design a sale announcement for ${brandProfile?.businessName || 'my brand'}`,
+                                        "Generate a modern product showcase",
+                                        "Create an engaging Instagram Story"
+                                    ].map((suggestion, i) => (
+                                        <Button
+                                            key={i}
+                                            variant="outline"
+                                            className="h-auto py-3 text-left justify-start whitespace-normal"
+                                            onClick={() => setInput(suggestion)}
+                                        >
+                                            <Wand2 className="mr-2 h-4 w-4 text-primary shrink-0" />
+                                            <span>{suggestion}</span>
+                                        </Button>
+                                    ))}
                                 </div>
                             </CardContent>
                         </Card>
@@ -457,7 +587,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 )}
             </div>
 
-            <div className="flex-shrink-0 border-t bg-background">
+            <div ref={chatInputRef} className="flex-shrink-0 border-t bg-background">
                 <ChatInput
                     input={input}
                     setInput={setInput}
@@ -468,6 +598,8 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     setImageDataUrl={setImageDataUrl}
                     useBrandProfile={useBrandProfile}
                     setUseBrandProfile={setUseBrandProfile}
+                    brandName={brandProfile?.businessName}
+                    brandType={brandProfile?.businessType}
                     outputType={outputType}
                     setOutputType={setOutputType}
                     handleImageUpload={handleImageUpload}
@@ -479,8 +611,17 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     setSelectedRevoModel={setSelectedRevoModel}
                     includeContacts={includeContacts}
                     setIncludeContacts={setIncludeContacts}
+                    onOpenAssetLibrary={() => setIsAssetLibraryOpen(true)}
                 />
             </div>
+
+            {/* Asset Library Dialog */}
+            <AssetLibrary
+                open={isAssetLibraryOpen}
+                onOpenChange={setIsAssetLibraryOpen}
+                onSelectAsset={handleSelectAsset}
+                brandProfileId={brandProfile?.id}
+            />
         </div>
     );
 }
