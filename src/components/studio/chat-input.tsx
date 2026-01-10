@@ -29,8 +29,8 @@ interface ChatInputProps {
   handleImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   isBrandProfileAvailable: boolean;
   onEditImage: (url: string) => void;
-  aspectRatio: '16:9' | '9:16';
-  setAspectRatio: (value: '16:9' | '9:16') => void;
+  aspectRatio: '1:1' | '4:5' | '16:9' | '9:16';
+  setAspectRatio: (value: '1:1' | '4:5' | '16:9' | '9:16') => void;
   selectedRevoModel: RevoModel;
   setSelectedRevoModel: (value: RevoModel) => void;
   userCredits?: number;
@@ -378,16 +378,36 @@ export function ChatInput({
               </RadioGroup>
             </div>
 
-            <div className={cn("flex items-center space-x-4", outputType === 'video' ? 'opacity-100' : 'opacity-0')}>
-              <Label>Aspect Ratio:</Label>
-              <RadioGroup value={aspectRatio} onValueChange={(v) => setAspectRatio(v as '16:9' | '9:16')} className="flex items-center space-x-4" disabled={isLoading || outputType !== 'video'}>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="16:9" id="r-16-9" />
-                  <Label htmlFor="r-16-9" className="flex items-center gap-2">16:9 (Sound)</Label>
+            <div className="flex items-center space-x-4">
+              <Label>Size:</Label>
+              <RadioGroup value={aspectRatio} onValueChange={(v) => setAspectRatio(v as '1:1' | '4:5' | '16:9' | '9:16')} className="flex items-center space-x-2 sm:space-x-4 flex-wrap" disabled={isLoading}>
+                <div className="flex items-center space-x-1">
+                  <RadioGroupItem value="1:1" id="r-1-1" />
+                  <Label htmlFor="r-1-1" className="flex items-center gap-1 text-xs sm:text-sm cursor-pointer">
+                    <span className="w-4 h-4 border border-current rounded-sm" />
+                    1:1
+                  </Label>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1">
+                  <RadioGroupItem value="4:5" id="r-4-5" />
+                  <Label htmlFor="r-4-5" className="flex items-center gap-1 text-xs sm:text-sm cursor-pointer">
+                    <span className="w-3 h-4 border border-current rounded-sm" />
+                    4:5
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <RadioGroupItem value="16:9" id="r-16-9" />
+                  <Label htmlFor="r-16-9" className="flex items-center gap-1 text-xs sm:text-sm cursor-pointer">
+                    <span className="w-5 h-3 border border-current rounded-sm" />
+                    16:9
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-1">
                   <RadioGroupItem value="9:16" id="r-9-16" />
-                  <Label htmlFor="r-9-16" className="flex items-center gap-2">9:16 (No Sound)</Label>
+                  <Label htmlFor="r-9-16" className="flex items-center gap-1 text-xs sm:text-sm cursor-pointer">
+                    <span className="w-3 h-5 border border-current rounded-sm" />
+                    9:16
+                  </Label>
                 </div>
               </RadioGroup>
             </div>

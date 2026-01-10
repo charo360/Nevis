@@ -33,7 +33,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
     const [imageDataUrl, setImageDataUrl] = React.useState<string | null>(null);
     const [useBrandProfile, setUseBrandProfile] = React.useState(!!brandProfile);
     const [outputType, setOutputType] = React.useState<'image' | 'video'>('image');
-    const [aspectRatio, setAspectRatio] = React.useState<'16:9' | '9:16'>('16:9');
+    const [aspectRatio, setAspectRatio] = React.useState<'1:1' | '4:5' | '16:9' | '9:16'>('1:1');
     const [selectedRevoModel, setSelectedRevoModel] = React.useState<RevoModel>('revo-2.0');
     const [isPromptBuilderOpen, setIsPromptBuilderOpen] = React.useState(false);
     const [selectedProductId, setSelectedProductId] = React.useState<string | null>(null);
@@ -319,7 +319,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     useBrandProfile,
                     brandProfile,
                     null, // maskDataUrl - Creative Studio can handle inpainting
-                    undefined, // aspectRatio - only for video
+                    aspectRatio, // Pass selected aspect ratio for image size
                     'revo-2.0-gemini-2.5-flash-image-preview', // Use Revo 2.0 model specifically (4 credits)
                     designColors, // Pass design-specific colors
                     accessToken || undefined, // Pass access token as fallback
@@ -347,7 +347,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     useBrandProfile,
                     brandProfile,
                     null, // maskDataUrl - Creative Studio can handle inpainting
-                    undefined, // aspectRatio - only for video
+                    aspectRatio, // Pass selected aspect ratio for image size
                     'revo-1.5-gemini-2.5-flash-image-preview', // Use Revo 1.5 model specifically (3 credits)
                     designColors, // Pass design-specific colors
                     accessToken || undefined, // Pass access token as fallback
@@ -386,7 +386,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     useBrandProfile,
                     brandProfile,
                     null, // maskDataUrl - Creative Studio can handle inpainting
-                    undefined, // aspectRatio - only for video
+                    aspectRatio, // Pass selected aspect ratio for image size
                     'revo-1.0-gemini-2.5-flash-image-preview', // Use Revo 1.0 model specifically (3 credits)
                     undefined, // designColors
                     accessToken || undefined, // Pass access token as fallback
@@ -426,7 +426,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                     useBrandProfile,
                     brandProfile,
                     null, // maskDataUrl
-                    outputType === 'video' ? aspectRatio : undefined,
+                    aspectRatio, // Pass selected aspect ratio for image/video size
                     undefined, // preferredModel
                     undefined, // designColors
                     accessToken || undefined, // Pass access token as fallback

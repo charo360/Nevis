@@ -579,7 +579,7 @@ export async function generateCreativeAssetAction(
   useBrandProfile: boolean,
   brandProfile: BrandProfile | null,
   maskDataUrl: string | null | undefined,
-  aspectRatio: '16:9' | '9:16' | undefined,
+  aspectRatio: '1:1' | '4:5' | '16:9' | '9:16' | undefined,
   preferredModel?: string,
   designColors?: {
     primaryColor?: string;

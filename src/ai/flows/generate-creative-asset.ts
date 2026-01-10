@@ -40,7 +40,7 @@ const CreativeAssetInputSchema = z.object({
     useBrandProfile: z.boolean().describe('Whether to apply the brand profile.'),
     brandProfile: z.custom<BrandProfile>().nullable().describe('The brand profile object.'),
     maskDataUrl: z.string().nullable().optional().describe('An optional mask image for inpainting as a data URI.'),
-    aspectRatio: z.enum(['16:9', '9:16']).optional().describe('The aspect ratio for video generation.'),
+    aspectRatio: z.enum(['1:1', '4:5', '16:9', '9:16']).optional().describe('The aspect ratio for image/video generation.'),
     preferredModel: z.string().optional().describe('Preferred model for generation (e.g., gemini-2.5-flash-image-preview).'),
     designColors: z.object({
         primaryColor: z.string().optional(),
