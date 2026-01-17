@@ -4348,8 +4348,8 @@ export async function generateRevo15EnhancedDesign(
 
   // Logo processing is now handled in generateFinalImage (same as Revo 1.0)
 
-  // Auto-detect platform-specific aspect ratio
-  const aspectRatio = getPlatformAspectRatio(input.platform);
+  // Auto-detect platform-specific aspect ratio if not provided
+  const aspectRatio = input.aspectRatio || getPlatformAspectRatio(input.platform);
   const enhancedInput = {
     ...input,
     aspectRatio

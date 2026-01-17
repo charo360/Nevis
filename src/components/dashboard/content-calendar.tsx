@@ -9,6 +9,8 @@ import { PostCard } from "@/components/dashboard/post-card";
 import { generateContentAction, generateEnhancedDesignAction, generateContentWithArtifactsAction } from "@/app/actions";
 import { generateRevo15ContentAction } from "@/app/actions/revo-1.5-actions";
 import { generateRevo2ContentAction } from "@/app/actions/revo-2-actions";
+import { getUserFriendlyErrorMessage, extractCreditInfo, isCreditError } from '@/lib/error-messages';
+import { ToastAction } from "@/components/ui/toast";
 
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth-supabase";
@@ -77,6 +79,9 @@ export function ContentCalendar({
   // Use local language toggle
   const [useLocalLanguage, setUseLocalLanguage] = React.useState<boolean>(false);
 
+  // Aspect ratio selection (Revo 2.0 only)
+  const [selectedAspectRatio, setSelectedAspectRatio] = React.useState<string>('1:1');
+
   // Save colors function
   const saveColorsToProfile = async () => {
     try {
@@ -137,6 +142,11 @@ export function ContentCalendar({
     if (savedUseLocalLanguage !== null) {
       setUseLocalLanguage(JSON.parse(savedUseLocalLanguage));
     }
+
+    const savedAspectRatio = localStorage.getItem('selectedAspectRatio');
+    if (savedAspectRatio) {
+      setSelectedAspectRatio(savedAspectRatio);
+    }
   }, []);
 
   React.useEffect(() => {
@@ -170,6 +180,10 @@ export function ContentCalendar({
     console.log('🌍 ========================================');
     console.log('');
   }, [useLocalLanguage, brandProfile.location]);
+
+  React.useEffect(() => {
+    localStorage.setItem('selectedAspectRatio', selectedAspectRatio);
+  }, [selectedAspectRatio]);
 
   const handleGenerateClick = async (platform: Platform) => {
     // ========================================
@@ -217,7 +231,6 @@ export function ContentCalendar({
     // Check if user has enough credits for the selected model
     const hasCredits = await hasEnoughCreditsForModel(selectedRevoModel);
     if (!hasCredits) {
-      const { ToastAction } = await import('@/components/ui/toast');
       const creditsNeeded = selectedRevoModel === 'revo-1.0' ? 3 : selectedRevoModel === 'revo-1.5' ? 4 : 5;
 
       toast({
@@ -242,8 +255,6 @@ export function ContentCalendar({
       // Deduct credits before generation
       const creditResult = await useCreditsForModel(selectedRevoModel, 'content_generation', 'post');
       if (!creditResult.success) {
-        const { getUserFriendlyErrorMessage, extractCreditInfo, isCreditError } = await import('@/lib/error-messages');
-        const { ToastAction } = await import('@/components/ui/toast');
         const errorMessage = creditResult.error || "Failed to deduct credits";
 
         // Extract credit information if available
@@ -313,7 +324,7 @@ export function ContentCalendar({
           brandConsistency,
           '', // No custom prompt
           {
-            aspectRatio: '1:1',
+            aspectRatio: selectedAspectRatio,
             visualStyle: (brandProfile.visualStyle as any) || 'modern',
             includePeopleInDesigns,
             useLocalLanguage
@@ -432,9 +443,6 @@ export function ContentCalendar({
           hasScheduledContent
         });
 
-        // Import and call the new Revo 1.0 action
-        const { generateRevo1ContentAction } = await import('@/app/actions/revo-1-actions');
-
         newPost = await generateRevo1ContentAction(
           brandProfile,
           platform,
@@ -539,8 +547,6 @@ export function ContentCalendar({
         description
       });
     } catch (error) {
-      const { getUserFriendlyErrorMessage, extractCreditInfo, isCreditError } = await import('@/lib/error-messages');
-      const { ToastAction } = await import('@/components/ui/toast');
       const errorMessage = (error as Error).message;
 
       // Extract credit information if available
@@ -764,6 +770,61 @@ export function ContentCalendar({
               />
             </div>
           </div>
+
+          {/* Aspect Ratio Selector - Revo 2.0 Only */}
+          {selectedRevoModel === 'revo-2.0' && (
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-sm font-medium text-purple-900">📐 Image Size:</span>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setSelectedAspectRatio('1:1')}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    selectedAspectRatio === '1:1'
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  1:1 Square
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedAspectRatio('3:4')}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    selectedAspectRatio === '3:4'
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  3:4 Portrait
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedAspectRatio('16:9')}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    selectedAspectRatio === '16:9'
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  16:9 Landscape
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedAspectRatio('9:16')}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    selectedAspectRatio === '9:16'
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  9:16 Story
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Brand Colors Section - Compact */}
           <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-2.5">

@@ -355,7 +355,7 @@ Return ONLY valid JSON in this exact format with BOTH content AND design specifi
     "hero_element": "Professional using MacBook Pro in modern office, laptop screen showing productivity software, focused and engaged",
     "scene_description": "Clean modern workspace with MacBook Pro on desk, professional working on deadline-critical project, organized environment with coffee cup and notepad, natural lighting, productive atmosphere",
     "text_placement": "Headline at top in bold, subheadline below with pricing highlighted, CTA button at bottom right",
-    "color_scheme": "Professional blue and white tones with brand accent colors, clean and modern",
+    "color_scheme": "Use ONLY the provided brand colors (Primary, Secondary, Background hex codes) - professional and clean application",
     "mood_direction": "Professional, focused, productive, efficient - urgent but controlled energy"
   },
   "alignment_validation": "Common themes: PRODUCTIVITY, WORK, PROFESSIONAL, DEADLINES, EFFICIENCY. Hero shows professional using laptop for work (matches headline promise of meeting deadlines). Scene demonstrates productive workspace (matches caption story about productivity). Mood is professional and focused (matches urgent but professional content tone)."
@@ -374,7 +374,7 @@ Return ONLY valid JSON in this exact format with BOTH content AND design specifi
     "hero_element": "iPhone 15 Pro with titanium finish prominently displayed, showing durability and premium build quality, screen displaying camera interface",
     "scene_description": "Premium lifestyle setting with iPhone 15 Pro on modern surface, titanium construction visible, camera lens prominent, lifestyle context showing durability and quality, soft professional lighting",
     "text_placement": "Headline at top emphasizing durability, subheadline with specs and pricing in middle, CTA button bottom right",
-    "color_scheme": "Premium titanium silver with brand colors, sophisticated and modern",
+    "color_scheme": "Use ONLY the provided brand colors (Primary, Secondary, Background hex codes) - sophisticated and modern application",
     "mood_direction": "Confident, secure, premium - reassuring and trustworthy atmosphere"
   },
   "alignment_validation": "Common themes: DURABILITY, PROTECTION, QUALITY, PREMIUM, MEMORIES. Hero shows titanium iPhone emphasizing durability (matches headline promise of no broken screens). Scene demonstrates premium build quality (matches caption story about titanium construction). Mood is confident and secure (matches reassuring content tone about protection)."

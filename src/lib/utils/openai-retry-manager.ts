@@ -58,9 +58,19 @@ class CircuitBreaker {
   private state: 'closed' | 'open' | 'half-open' = 'closed';
   
   constructor(
-    private failureThreshold = 5,
-    private recoveryTimeMs = 60000 // 1 minute
+    private failureThreshold = 10, // Increased from 5 to be more tolerant
+    private recoveryTimeMs = 30000 // Reduced from 60s to 30s for faster recovery
   ) {}
+
+  /**
+   * Reset the circuit breaker to closed state
+   */
+  reset(): void {
+    this.failures = 0;
+    this.state = 'closed';
+    this.lastFailureTime = 0;
+    console.log(`🔄 [Circuit Breaker] Reset to closed state`);
+  }
 
   canExecute(): boolean {
     if (this.state === 'closed') return true;
@@ -239,8 +249,7 @@ export class OpenAIRetryManager {
    * Reset circuit breaker (for manual recovery)
    */
   resetCircuitBreaker(): void {
-    this.circuitBreaker.onSuccess();
-    console.log(`🔄 [OpenAI Retry] Circuit breaker manually reset`);
+    this.circuitBreaker.reset();
   }
 }
 
@@ -299,6 +308,17 @@ export const openAIRetryManagers = {
   fileOperations: new OpenAIRetryManager({ ...DEFAULT_RETRY_CONFIG, ...RETRY_CONFIGS.FILE_OPERATIONS }),
   quickOperations: new OpenAIRetryManager({ ...DEFAULT_RETRY_CONFIG, ...RETRY_CONFIGS.QUICK_OPERATIONS })
 };
+
+/**
+ * Reset all circuit breakers - useful when recovering from service issues
+ */
+export function resetAllCircuitBreakers(): void {
+  console.log(`🔄 [OpenAI Retry] Resetting all circuit breakers...`);
+  Object.values(openAIRetryManagers).forEach(manager => {
+    manager.resetCircuitBreaker();
+  });
+  console.log(`✅ [OpenAI Retry] All circuit breakers reset to closed state`);
+}
 
 /**
  * Utility function to wrap OpenAI operations with retry logic

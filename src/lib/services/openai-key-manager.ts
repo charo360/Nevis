@@ -6,6 +6,9 @@
  */
 
 import OpenAI from 'openai';
+import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
 
 export interface APIKeyHealth {
   key: string;
@@ -34,8 +37,12 @@ export class OpenAIKeyManager {
   private currentKeyIndex: number = 0;
   private config: OpenAIKeyManagerConfig;
   private healthCheckTimer?: NodeJS.Timeout;
+  private localEnvKey: string | null = null;
 
   constructor(config?: Partial<OpenAIKeyManagerConfig>) {
+    // Force load .env.local to bypass stale process.env
+    this.forceLoadEnv();
+
     this.config = {
       fallbackEnabled: process.env.OPENAI_FALLBACK_ENABLED === 'true',
       keyRotationEnabled: process.env.OPENAI_KEY_ROTATION_ENABLED === 'true',
@@ -59,13 +66,34 @@ export class OpenAIKeyManager {
   }
 
   /**
+   * Force load .env.local to get the correct key
+   */
+  private forceLoadEnv(): void {
+    try {
+      const envPath = path.resolve(process.cwd(), '.env.local');
+      if (fs.existsSync(envPath)) {
+        const envContent = fs.readFileSync(envPath, 'utf8');
+        const match = envContent.match(/OPENAI_API_KEY=([^\s#]+)/);
+        if (match && match[1]) {
+          this.localEnvKey = match[1].trim();
+          console.log(`DATA_INTEGRITY_CHECK: Found fresh key in .env.local ending in ...${this.localEnvKey.slice(-4)}`);
+        }
+      }
+    } catch (error) {
+      console.warn('Could not force load .env.local:', error);
+    }
+  }
+
+  /**
    * Load API keys from environment variables
    */
   private loadAPIKeys(): void {
     const keys: string[] = [];
 
-    // Primary key
-    if (process.env.OPENAI_API_KEY) {
+    // Primary key - PREFER localEnvKey over process.env
+    if (this.localEnvKey) {
+      keys.push(this.localEnvKey);
+    } else if (process.env.OPENAI_API_KEY) {
       keys.push(process.env.OPENAI_API_KEY);
     }
 
@@ -266,5 +294,40 @@ export class OpenAIKeyManager {
   }
 }
 
-// Global instance
-export const openAIKeyManager = new OpenAIKeyManager();
+// Global instance - with lazy initialization to ensure fresh env vars
+let _openAIKeyManager: OpenAIKeyManager | null = null;
+
+export const openAIKeyManager = {
+  get instance(): OpenAIKeyManager {
+    if (!_openAIKeyManager) {
+      _openAIKeyManager = new OpenAIKeyManager();
+    }
+    return _openAIKeyManager;
+  },
+  createClient() {
+    return this.instance.createClient();
+  },
+  getHealthyKey() {
+    return this.instance.getHealthyKey();
+  },
+  recordSuccess(apiKey: string) {
+    return this.instance.recordSuccess(apiKey);
+  },
+  recordFailure(apiKey: string, error: Error) {
+    return this.instance.recordFailure(apiKey, error);
+  },
+  getHealthStatus() {
+    return this.instance.getHealthStatus();
+  },
+  destroy() {
+    return this.instance.destroy();
+  },
+  // Force reload keys from environment
+  reload() {
+    if (_openAIKeyManager) {
+      _openAIKeyManager.destroy();
+    }
+    _openAIKeyManager = new OpenAIKeyManager();
+    return _openAIKeyManager;
+  }
+};

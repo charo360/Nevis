@@ -192,24 +192,122 @@ export class IntegratedPromptGenerator {
       prompt += `- Benefit Visualization: ${adConcept.benefit.message} — add UI props, overlays, or objects that make this benefit obvious.\n`;
       prompt += `- Emotional Direction: Faces/body language must express "${adConcept.emotionalTone.description}".\n`;
       prompt += `- Visual Style Execution: Render using ${adConcept.visualStyle.style} aesthetics (lighting, framing, texture).\n`;
-      prompt += `- Camera & Cropping: Match the format (close-up vs wide) implied by the layout + concept; never default to centered portrait unless layout demands it.\n`;
+      
+      // ENHANCED: Camera Perspective from Design Variations
+      if (designVariations.perspective) {
+        prompt += `- Camera Angle: ${designVariations.perspective.name} — ${designVariations.perspective.instruction}\n`;
+      } else {
+        prompt += `- Camera & Cropping: Match the format (close-up vs wide) implied by the layout + concept; never default to centered portrait unless layout demands it.\n`;
+      }
+      
       prompt += `🚫 Forbidden shortcuts: generic blank backgrounds, random models, or swapping the specified setting for an easier scene.\n`;
+    }
+
+    // NEW: UNIVERSAL DESIGN SYSTEM - VISUAL TREATMENT LAYER
+    if (designVariations) {
+      prompt += `\n🎨 **VISUAL STYLE & TREATMENT (HIGH FIDELITY)**\n`;
+      
+      if (designVariations.imageTreatment) {
+        prompt += `- Image Treatment: ${designVariations.imageTreatment.name} — ${designVariations.imageTreatment.instructions}\n`;
+      }
+      
+      if (designVariations.effect) {
+        prompt += `- Visual Effect: ${designVariations.effect} (apply subtly for polish)\n`;
+      }
+      
+      if (designVariations.typography) {
+        prompt += `- Typography Aesthetic: Match the vibe of "${designVariations.typography.name}" fonts (${designVariations.typography.description}). \n`;
+      }
     }
 
     // DESIGN SPECIFICATIONS
     prompt += `**DESIGN SPECIFICATIONS:**\n`;
-    prompt += `- Text Placement: ${designSpecs.text_placement}\n`;
-    prompt += `- Color Scheme: ${designSpecs.color_scheme}\n`;
-    prompt += `- Layout Style: ${this.getLayoutStyle(platform, businessType)}\n`;
+    
+    // CRITICAL FIX: Only include assistant's text placement if we don't have a specific layout variation
+    // The assistant tends to default to "Headline top, image center" which overrides our diverse layouts
+    if (designVariations?.layout) {
+      console.log(`📐 [Integrated Prompt] Enforcing Layout: ${designVariations.layout.name}`);
+      prompt += `- Text Placement: Follow the ${designVariations.layout.name} structure defined above EXACTLY\n`;
+    } else {
+      console.log(`⚠️ [Integrated Prompt] Using Assistant Text Placement: ${designSpecs.text_placement}`);
+      prompt += `- Text Placement: ${designSpecs.text_placement}\n`;
+    }
+    
+    // BRAND COLORS
+    const primaryColor = brandProfile.brandColors?.primary || brandProfile.primaryColor;
+    const secondaryColor = brandProfile.brandColors?.secondary || brandProfile.accentColor;
+    const backgroundColor = brandProfile.brandColors?.background || brandProfile.backgroundColor;
+
+    // ENHANCED: Color Strategy with EXPLICIT Hex Injection
+    if (designVariations?.colorStrategy) {
+       let strategyInstr = designVariations.colorStrategy.instructions;
+       let distInstr = designVariations.colorDistribution?.instruction || '';
+
+       // Inject actual hex codes into instructions to prevent hallucination
+       if (primaryColor) {
+         strategyInstr = strategyInstr.replace(/Primary (brand )?color/gi, `Primary Color (${primaryColor})`);
+         distInstr = distInstr.replace(/Primary (brand )?color/gi, `Primary Color (${primaryColor})`);
+         strategyInstr = strategyInstr.replace(/Primary/gi, `Primary (${primaryColor})`);
+         distInstr = distInstr.replace(/Primary/gi, `Primary (${primaryColor})`);
+       }
+       if (secondaryColor) {
+         strategyInstr = strategyInstr.replace(/Accent (brand )?color|Secondary (brand )?color/gi, `Accent Color (${secondaryColor})`);
+         distInstr = distInstr.replace(/Accent (brand )?color|Secondary (brand )?color/gi, `Accent Color (${secondaryColor})`);
+         strategyInstr = strategyInstr.replace(/Accent/gi, `Accent (${secondaryColor})`);
+         distInstr = distInstr.replace(/Accent/gi, `Accent (${secondaryColor})`);
+       }
+       if (backgroundColor) {
+         strategyInstr = strategyInstr.replace(/Background (brand )?color/gi, `Background Color (${backgroundColor})`);
+         distInstr = distInstr.replace(/Background (brand )?color/gi, `Background Color (${backgroundColor})`);
+         strategyInstr = strategyInstr.replace(/Background/gi, `Background (${backgroundColor})`);
+         distInstr = distInstr.replace(/Background/gi, `Background (${backgroundColor})`);
+       }
+
+       console.log(`🎨 [Integrated Prompt] Injected Color Strategy: ${strategyInstr}`);
+       console.log(`🎨 [Integrated Prompt] Injected Color Distribution: ${distInstr}`);
+
+       prompt += `- Color Strategy: ${designVariations.colorStrategy.name} — ${strategyInstr}\n`;
+       if (designVariations.colorDistribution) {
+         prompt += `- Color Distribution: ${distInstr}\n`;
+       }
+    } else {
+       // SANITIZE: Replace any non-brand color terms in Assistant's color_scheme with actual hex codes
+       let sanitizedColorScheme = designSpecs.color_scheme || '';
+       
+       // Replace generic color terms with brand hex codes
+       if (primaryColor) {
+         sanitizedColorScheme = sanitizedColorScheme.replace(/\b(blue|green|red|orange|yellow|purple|pink|cyan|teal|silver|gold|titanium)\b/gi, `brand primary (${primaryColor})`);
+         sanitizedColorScheme = sanitizedColorScheme.replace(/primary/gi, `Primary (${primaryColor})`);
+       }
+       if (secondaryColor) {
+         sanitizedColorScheme = sanitizedColorScheme.replace(/accent|secondary/gi, `Accent (${secondaryColor})`);
+       }
+       if (backgroundColor) {
+         sanitizedColorScheme = sanitizedColorScheme.replace(/background/gi, `Background (${backgroundColor})`);
+       }
+       
+       // If the color_scheme still contains generic color words, override completely
+       const hasGenericColors = /\b(blue|green|red|orange|yellow|purple|pink|cyan|teal|silver|gold|titanium|white|black)\b/i.test(sanitizedColorScheme);
+       if (hasGenericColors && primaryColor && secondaryColor && backgroundColor) {
+         sanitizedColorScheme = `Use ONLY brand colors: Primary (${primaryColor}), Accent (${secondaryColor}), Background (${backgroundColor}) - NO other colors allowed`;
+         console.log(`⚠️ [Integrated Prompt] Overriding Assistant color_scheme due to generic colors detected`);
+       }
+       
+       console.log(`🎨 [Integrated Prompt] Sanitized Color Scheme: ${sanitizedColorScheme}`);
+       prompt += `- Color Scheme: ${sanitizedColorScheme}\n`;
+    }
+    
+    // CRITICAL FIX: Ensure Layout Style matches the chosen layout variation
+    if (designVariations?.layout) {
+      prompt += `- Layout Style: ${designVariations.layout.name} (${designVariations.layout.category})\n`;
+    } else {
+      prompt += `- Layout Style: ${this.getLayoutStyle(platform, businessType)}\n`;
+    }
+    
     prompt += `- Aspect Ratio: ${aspectRatio}\n\n`;
 
     // BRAND INTEGRATION
     prompt += `**BRAND INTEGRATION:**\n`;
-
-    // Check both brandColors.primary and primaryColor for compatibility
-    const primaryColor = brandProfile.brandColors?.primary || brandProfile.primaryColor;
-    const secondaryColor = brandProfile.brandColors?.secondary || brandProfile.accentColor;
-    const backgroundColor = brandProfile.brandColors?.background || brandProfile.backgroundColor;
 
     // STRICT MODE: Enforce exact colors with NO fallbacks
     if (strictConsistency && primaryColor && secondaryColor && backgroundColor) {

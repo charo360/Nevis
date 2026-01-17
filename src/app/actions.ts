@@ -792,16 +792,23 @@ export async function generateCreativeAssetAction(
       // For Creative Studio, we save to generated_posts table
       // Only save if we have a brand profile (brand_profile_id is required by schema)
       if (brandProfile?.id && finalImageUrl) {
+        // Use the actual generated caption from Revo 2.0/1.5/1.0, fallback to prompt if not available
+        const generatedCaption = result.caption || result.content || `Creative Studio: ${prompt}`;
+        
         const savedPost = await supabaseService.saveGeneratedPost(
           user.id,
           brandProfile.id,
           {
-            content: `Creative Studio: ${prompt}`, // Use prompt as content
-            imageText: prompt, // Store the prompt as image text
+            content: generatedCaption, // Use actual generated caption, not prompt
+            imageText: prompt, // Store the original prompt as image text
             platform: 'creative_studio', // Mark as creative studio
             aspectRatio: aspectRatio || undefined,
             generationModel: preferredModel || modelVersion,
             generationPrompt: prompt,
+            headline: result.headline, // Save headline
+            subheadline: result.subheadline, // Save subheadline
+            cta: result.cta, // Save CTA
+            hashtags: Array.isArray(result.hashtags) ? result.hashtags.join(' ') : result.hashtags, // Save hashtags as string
             generationSettings: {
               outputType,
               useBrandProfile,

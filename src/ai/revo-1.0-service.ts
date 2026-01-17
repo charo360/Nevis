@@ -7964,6 +7964,7 @@ export async function generateRevo10Image(input: {
   scheduledServices?: ScheduledService[];
   followBrandColors?: boolean;
   designExamples?: string[];
+  aspectRatio?: '1:1' | '16:9' | '9:16' | '21:9' | '4:5';
 }) {
   try {
     // Create concept object for enhanced prompt
@@ -7988,7 +7989,7 @@ export async function generateRevo10Image(input: {
         designExamples: input.designExamples || [],
         businessType: input.businessType
       },
-      aspectRatio: '1:1',
+      aspectRatio: input.aspectRatio || '1:1',
       visualStyle: input.visualStyle || 'modern',
       scheduledServices: input.scheduledServices,
       followBrandColors: input.followBrandColors,

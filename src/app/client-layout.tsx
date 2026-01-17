@@ -11,8 +11,8 @@ import React, { Suspense, useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 
 // Enable the client-side AppRoute overlay for faster perceived routing.
-// The AppRoute client component is lazy-loaded and will render client pages inside the layout.
-const AppRouteClient = React.lazy(() => import('@/components/app-route/AppRoute').then(m => ({ default: m.default })));
+// The AppRoute client component is statically imported to avoid chunk loading issues.
+import { AppRoute as AppRouteClient } from '@/components/app-route/AppRoute';
 
 
 

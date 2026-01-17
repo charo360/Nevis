@@ -4,12 +4,8 @@ import { createBrowserClient } from '@supabase/ssr'
 let supabaseInstance: any = null;
 
 export function createClient() {
-  // Return existing instance if available
+  // Return existing instance if available (no logging to reduce console noise)
   if (supabaseInstance) {
-    // Reduced logging - only log in development mode and limit frequency
-    if (process.env.NODE_ENV === 'development' && Math.random() < 0.01) {
-      console.log('🔄 [Supabase Client] Reusing existing instance');
-    }
     return supabaseInstance;
   }
 

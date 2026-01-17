@@ -205,7 +205,7 @@ export async function generateRevo15ContentAction(
     }
 
     if (errorMessage.includes('401') || errorMessage.includes('unauthorized') || errorMessage.includes('API key')) {
-      throw new Error('🔑 Revo 1.5 API key issue. Check GEMINI_API_KEY_REVO_1_5 in .env.local');
+      throw new Error('🔑 Revo 1.5 API key issue. Check OPENAI_API_KEY in .env.local (Revo 1.5 uses OpenAI GPT-4 for content generation)');
     }
 
     if (errorMessage.includes('network') || errorMessage.includes('timeout') || errorMessage.includes('ECONNRESET')) {

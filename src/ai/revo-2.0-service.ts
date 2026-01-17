@@ -1025,21 +1025,33 @@ function getColorDistributionRotations() {
     },
     {
       name: 'Balanced Harmony',
-      description: 'Equal balance between primary and accent with generous white space',
+      description: 'Equal balance between primary and accent with generous negative space',
       distribution: { primary: 40, accent: 40, background: 20 },
-      instruction: 'Balance primary (40%) and accent (40%) equally, with generous white space (20%)'
+      instruction: `Balance primary (40%) and accent (40%) equally, with generous brand background (20%)`
     },
     {
       name: 'Accent Forward',
       description: 'Accent color leads with primary as supporting element',
       distribution: { primary: 25, accent: 60, background: 15 },
-      instruction: 'Lead with accent color (60%), primary as support (25%), background for spacing (15%)'
+      instruction: `Lead with accent color (60%), primary as support (25%), brand background for spacing (15%)`
     },
     {
       name: 'Minimal Clean',
-      description: 'Mostly white/background with strategic color placement',
+      description: 'Mostly brand background with strategic color placement',
       distribution: { primary: 25, accent: 15, background: 60 },
-      instruction: 'Predominantly white/background (60%) with strategic primary (25%) and accent pops (15%)'
+      instruction: `Predominantly brand background (60%) with strategic primary (25%) and accent pops (15%)`
+    },
+    {
+      name: 'Dark Mode Impact',
+      description: 'Dark/Black background with bright color pops',
+      distribution: { primary: 30, accent: 20, background: 50 },
+      instruction: `Use DARK/BLACK brand background (50%) to make Primary (30%) and Accent (20%) colors glow/pop`
+    },
+    {
+      name: 'Monochrome Depth',
+      description: 'Variations of primary color with minimal accent',
+      distribution: { primary: 70, accent: 5, background: 25 },
+      instruction: `Use multiple shades of Primary color (70%), neutral brand background (25%), tiny Accent pop (5%)`
     }
   ];
 }
@@ -1340,7 +1352,7 @@ function getTextPlacementGuidance(layoutName: string): string {
 - Adapt text placement to the layout structure
 - Maintain visual hierarchy and balance
 - Ensure readability and clear flow
-- Use white space effectively`;
+- Use negative space effectively`;
 }
 
 function getCulturalBusinessGuidance(businessType: string): string {
@@ -1452,8 +1464,8 @@ function getDynamicColorRotation(primaryColor: string, accentColor: string, back
     },
     {
       name: "Balanced Harmony",
-      description: "Equal balance between primary and accent with generous white space",
-      instruction: `Balance ${primaryColor} (40%) and ${accentColor} (40%) with ${backgroundColor} providing generous white space (20%)`
+      description: "Equal balance between primary and accent with generous negative space",
+      instruction: `Balance ${primaryColor} (40%) and ${accentColor} (40%) with ${backgroundColor} providing generous negative space (20%)`
     },
     {
       name: "Accent Forward",
@@ -1462,7 +1474,7 @@ function getDynamicColorRotation(primaryColor: string, accentColor: string, back
     },
     {
       name: "Minimal Clean",
-      description: "Mostly white/background with strategic color placement",
+      description: "Mostly brand background with strategic color placement",
       instruction: `Predominantly ${backgroundColor} (60%) with strategic ${primaryColor} (25%) and ${accentColor} accents (15%)`
     }
   ];
@@ -1757,7 +1769,7 @@ export function generateFallbackConcept(brandProfile: any, businessType: string,
  */
 function getDesignElementsForStyle(visualStyle: string): string[] {
   const styleMap: Record<string, string[]> = {
-    'Clean Minimalist': ['generous white space', 'single focal point', 'clean typography'],
+    'Clean Minimalist': ['generous negative space', 'single focal point', 'clean typography'],
     'Single Product Focus': ['isolated product', 'clean background', 'professional lighting'],
     'Simple Portrait': ['single person', 'uncluttered background', 'natural lighting'],
     'Clean Illustration': ['minimal graphics', 'simple shapes', 'clear messaging'],
@@ -1836,6 +1848,131 @@ export function buildEnhancedPrompt(options: Revo20GenerationOptions, concept: a
   });
 
   // Build color scheme instruction with strict mode enforcement
+  // CAMERA PERSPECTIVES - FORCE VISUAL VARIETY
+  const cameraPerspectives = [
+    { name: 'Eye Level', description: 'Standard, relatable, human connection', instruction: 'Shot at eye level - creates direct, personal connection with subject' },
+    { name: 'Low Angle (Heroic)', description: 'Empowering, impressive, grand', instruction: 'Shot from below looking up - makes subject/product look powerful, heroic, and impressive' },
+    { name: 'High Angle (Overview)', description: 'Context, clarity, overview', instruction: 'Shot from above looking down (45 degrees) - shows context and clarity of subject' },
+    { name: 'Top-Down (Flat Lay)', description: 'Organized, structured, clear', instruction: 'Shot directly from overhead (90 degrees) - flat lay style, perfect for showing multiple items or desk setups' },
+    { name: 'Macro Close-up', description: 'Detail-oriented, intimate, texture', instruction: 'Extreme close-up - focus on specific details, textures, or small elements. Background blurred.' },
+    { name: 'Wide Angle', description: 'Context, environment, space', instruction: 'Wide field of view - shows the subject within their environment/location. Sense of space.' },
+    { name: 'Over-the-Shoulder', description: 'POV, immersive, action', instruction: 'Shot from behind subject shoulder - shows what they are looking at (screen, view). Immersive POV.' },
+    { name: 'Side Profile', description: 'Candid, focused, distinct', instruction: 'Shot from the side profile - shows subject in action/focus without looking at camera. Candid feel.' }
+  ];
+
+  // COLOR USAGE STRATEGIES - 10 ways to use brand colors (Universal Design System)
+  const colorUsageStrategies = [
+    { 
+      name: 'Dominant Background',
+      description: 'Bold brands, promotions, sales',
+      instructions: `Distribution: 70% Primary (${primaryColor}) background, 20% Contrast text, 10% Image. Best for: Bold brands, promotions`
+    },
+    { 
+      name: 'Accent Highlights',
+      description: 'Minimal brands, luxury, sophisticated',
+      instructions: `Distribution: 80% Brand Background (${backgroundColor}), 15% Image, 5% Primary (${primaryColor}) pops. Best for: Minimal, luxury`
+    },
+    { 
+      name: 'Split Sections',
+      description: 'Clear divisions, features, comparisons',
+      instructions: `Distribution: 50% Primary (${primaryColor}) section, 50% Brand Background (${backgroundColor}) section. Best for: Clear divisions`
+    },
+    { 
+      name: 'Borders & Frames',
+      description: 'Premium, framed, organized',
+      instructions: `Distribution: 85% Brand Background (${backgroundColor}), 10% Image, 5% Primary (${primaryColor}) borders. Best for: Premium feel`
+    },
+    { 
+      name: 'Gradient Variation',
+      description: 'Modern brands, tech, depth',
+      instructions: `Distribution: Gradient using Brand Primary (${primaryColor}) (light to dark shades of this EXACT hex), creates depth. Best for: Modern`
+    },
+    { 
+      name: 'Top/Bottom Bars',
+      description: 'Clean, organized, professional',
+      instructions: `Distribution: 70% Brand Background (${backgroundColor}) center, 30% Brand color (${primaryColor}) bars. Best for: Professional layouts`
+    },
+    { 
+      name: 'Overlay Transparency',
+      description: 'Image-heavy, cohesive look',
+      instructions: `Distribution: Full image background, Brand color (${primaryColor}) overlay at 40-60% opacity. Best for: Image-heavy designs`
+    },
+    { 
+      name: 'Text-Only Color',
+      description: 'Typography-focused, clean, minimal',
+      instructions: `Distribution: 90% Brand Background (${backgroundColor}), 10% Brand color (${primaryColor}) for text only. Best for: Typography-focused`
+    },
+    { 
+      name: 'Inverted Contrast',
+      description: 'Dynamic, high contrast, modern',
+      instructions: `Distribution: Alternate sections - ${primaryColor} background + contrast text, then ${backgroundColor} + ${primaryColor} text. Best for: Dynamic`
+    },
+    { 
+      name: 'Circular/Shape Focus',
+      description: 'Focused, modern, geometric',
+      instructions: `Distribution: 85% Brand Background (${backgroundColor}), 15% Brand color (${primaryColor}) in shapes. Best for: Geometric designs`
+    }
+  ];
+
+  // DYNAMIC COLOR ROTATION SYSTEM (Ported from Revo 1.5)
+  // Rotates color distribution to prevent repetitive look even with same brand colors
+  const colorDistributionRotations = [
+    {
+      name: 'Primary Dominant',
+      description: 'Primary color takes 70% of design space with accent highlights',
+      distribution: { primary: 70, accent: 20, background: 10 },
+      instruction: `Use Primary (${primaryColor}) as dominant (70%), Accent (${accentColor}) highlights (20%), Background (${backgroundColor}) for space (10%)`
+    },
+    {
+      name: 'Balanced Harmony',
+      description: 'Equal balance between primary and accent with generous negative space',
+      distribution: { primary: 40, accent: 40, background: 20 },
+      instruction: `Balance Primary (${primaryColor}) (40%) and Accent (${accentColor}) (40%) equally, with Background (${backgroundColor}) (20%)`
+    },
+    {
+      name: 'Accent Forward',
+      description: 'Accent color leads with primary as supporting element',
+      distribution: { primary: 25, accent: 60, background: 15 },
+      instruction: `Lead with Accent (${accentColor}) (60%), Primary (${primaryColor}) support (25%), Background (${backgroundColor}) (15%)`
+    },
+    {
+      name: 'Minimal Clean',
+      description: 'Mostly brand background with strategic color placement',
+      distribution: { primary: 25, accent: 15, background: 60 },
+      instruction: `Predominantly Background (${backgroundColor}) (60%) with strategic Primary (${primaryColor}) (25%) and Accent (${accentColor}) (15%)`
+    },
+    {
+      name: 'Dark Mode Impact',
+      description: 'Dark/Black background with bright color pops',
+      distribution: { primary: 30, accent: 20, background: 50 },
+      instruction: `Use DARK Background (${backgroundColor}) (50%) to make Primary (${primaryColor}) (30%) and Accent (${accentColor}) (20%) pop`
+    },
+    {
+      name: 'Monochrome Depth',
+      description: 'Variations of primary color with minimal accent',
+      distribution: { primary: 70, accent: 5, background: 25 },
+      instruction: `Use multiple shades of Primary (${primaryColor}) (70%), Background (${backgroundColor}) (25%), tiny Accent (${accentColor}) pop (5%)`
+    }
+  ];
+
+  const effects = [
+    'subtle film grain', 
+    'soft vignette', 
+    'gentle drop shadow', 
+    'glassmorphism card', 
+    'gradient overlay',
+    'duotone highlight',
+    'motion blur accents',
+    'bokeh background',
+    'light leak overlay',
+    'paper texture',
+    'noise texture',
+    'halftone pattern',
+    'chromatic aberration (subtle)',
+    'double exposure',
+    'long exposure light trails'
+  ];
+
   const colorScheme = isStrictMode && primaryColor && accentColor && backgroundColor
     ? `🚨 STRICT MODE - EXACT COLORS ONLY: Primary: ${primaryColor} (60% dominant), Accent: ${accentColor} (30% secondary), Background: ${backgroundColor} (10% highlights) - USE THESE EXACT HEX CODES, NO VARIATIONS ALLOWED`
     : `🚨🚨🚨 CRITICAL BRAND COLOR REQUIREMENT - NON-NEGOTIABLE 🚨🚨🚨
@@ -2027,7 +2164,7 @@ This is a BRAND CONSISTENCY requirement. Using wrong colors damages brand identi
         'Text section: headline at top, body in middle, CTA at bottom',
         'Image section: full-height visual or product photo',
         'Can use straight line or curved/diagonal divider',
-        'Text section gets solid color background (brand color or white)',
+        'Text section gets solid color background (brand color or brand background)',
         'Generous padding in text section (20% margins)'
       ]
     },
@@ -2228,18 +2365,19 @@ This is a BRAND CONSISTENCY requirement. Using wrong colors damages brand identi
       description: 'Horizontal stripe bands creating rhythmic pattern',
       structure: `
 ┌─────────────────┐
-│╱╲╱╲╱╲╱╲╱╲╱╲╱╲╱│
+│╱╲╱╲╱╲╱╲╱╲╱╲╱│
 │  HEADLINE       │
-│╲╱╲╱╲╱╲╱╲╱╲╱╲╱╲│
+│╲╱╲╱╲╱╲╱╲╱╲╱╲│
 │  FEATURE TEXT   │
-│╱╲╱╲╱╲╱╲╱╲╱╲╱╲╱│
+│╱╲╱╲╱╲╱╲╱╲╱╲╱│
 │  CTA HERE       │
-│╲╱╲╱╲╱╲╱╲╱╲╱╲╱╲│
+│╲╱╲╱╲╱╲╱╲╱╲╱╲│
+└────────┴───┴──┘ │
 └─────────────────┘`,
       rules: [
         'Create 3-5 horizontal bands across canvas',
         'Bands can be straight or wavy/zigzag edges',
-        'Alternate colors: brand color, white, accent color',
+        'Alternate colors: brand color, brand background, accent color',
         'Each band contains one element (headline, feature, CTA)',
         'Rhythmic, organized, structured feel',
         'Good for step-by-step or multi-point messages'
@@ -2284,7 +2422,7 @@ This is a BRAND CONSISTENCY requirement. Using wrong colors damages brand identi
         'Create 4-6 blocks of varying sizes',
         'Intentionally misalign blocks (not on perfect grid)',
         'Blocks can overlap slightly',
-        'Each block: different content type (text, image, stat, icon)',
+        'Each block: different content type (text/image/CTA)',
         'Creates visual tension and interest',
         'Very modern, artistic, unconventional',
         'Maintains balance despite asymmetry'
@@ -2329,7 +2467,7 @@ This is a BRAND CONSISTENCY requirement. Using wrong colors damages brand identi
     'Bold, large typography dominates (60-70% of space)',
     'Small image or icon (20-30% of space)',
     'Asymmetric placement - nothing centered',
-    'Lots of white space (50%+)',
+    'Lots of negative space (50%+)',
     'Grid-based but appears free-form',
     'Minimalist, sophisticated, design-forward',
     'Typography IS the design'
@@ -2372,7 +2510,7 @@ This is a BRAND CONSISTENCY requirement. Using wrong colors damages brand identi
 │                 │
 └─────────────────┘`,
   rules: [
-    '80% negative space (white or solid color)',
+    '80% negative space (brand background or solid color)',
     'One hero element in center: product, logo, or key visual',
     'Minimal text: headline above or below element',
     'Optional: small CTA at bottom',
@@ -2569,7 +2707,7 @@ This is a BRAND CONSISTENCY requirement. Using wrong colors damages brand identi
     { 
       name: 'Cut-Out Isolated',
       description: 'Clean, focused, product-centric',
-      instructions: 'Subject: Extracted from background, Background: Solid brand color or white, Use for: Product focus, clean aesthetic'
+      instructions: 'Subject: Extracted from background, Background: Solid brand color or brand background, Use for: Product focus, clean aesthetic'
     },
     { 
       name: 'High Contrast Bold',
@@ -2589,102 +2727,6 @@ This is a BRAND CONSISTENCY requirement. Using wrong colors damages brand identi
   ];
 
   // CAMERA PERSPECTIVES - FORCE VISUAL VARIETY
-  const cameraPerspectives = [
-    { name: 'Eye Level', description: 'Standard, relatable, human connection', instruction: 'Shot at eye level - creates direct, personal connection with subject' },
-    { name: 'Low Angle (Heroic)', description: 'Empowering, impressive, grand', instruction: 'Shot from below looking up - makes subject/product look powerful, heroic, and impressive' },
-    { name: 'High Angle (Overview)', description: 'Context, clarity, overview', instruction: 'Shot from above looking down (45 degrees) - shows context and clarity of subject' },
-    { name: 'Top-Down (Flat Lay)', description: 'Organized, structured, clear', instruction: 'Shot directly from overhead (90 degrees) - flat lay style, perfect for showing multiple items or desk setups' },
-    { name: 'Macro Close-up', description: 'Detail-oriented, intimate, texture', instruction: 'Extreme close-up - focus on specific details, textures, or small elements. Background blurred.' },
-    { name: 'Wide Angle', description: 'Context, environment, space', instruction: 'Wide field of view - shows the subject within their environment/location. Sense of space.' },
-    { name: 'Over-the-Shoulder', description: 'POV, immersive, action', instruction: 'Shot from behind subject shoulder - shows what they are looking at (screen, view). Immersive POV.' },
-    { name: 'Side Profile', description: 'Candid, focused, distinct', instruction: 'Shot from the side profile - shows subject in action/focus without looking at camera. Candid feel.' }
-  ];
-
-  // COLOR USAGE STRATEGIES - 10 ways to use brand colors (Universal Design System)
-  const colorUsageStrategies = [
-    { 
-      name: 'Dominant Background',
-      description: 'Bold brands, promotions, sales',
-      instructions: 'Distribution: 70% Primary brand color background, 20% White/light text and elements, 10% Image or secondary color. Best for: Bold brands, promotions, high-impact messages'
-    },
-    { 
-      name: 'Accent Highlights',
-      description: 'Minimal brands, luxury, sophisticated',
-      instructions: 'Distribution: 80% White/neutral background, 15% Image or graphics, 5% Primary brand color (strategic pops). Best for: Minimal, luxury, sophisticated brands'
-    },
-    { 
-      name: 'Split Sections',
-      description: 'Clear divisions, features, comparisons',
-      instructions: 'Distribution: 50% Primary brand color section, 50% White/neutral section. Best for: Clear divisions, before/after, feature comparisons'
-    },
-    { 
-      name: 'Borders & Frames',
-      description: 'Premium, framed, organized',
-      instructions: 'Distribution: 85% White/neutral background, 10% Image, 5% Primary brand color (borders only). Best for: Premium feel, organized, framed content'
-    },
-    { 
-      name: 'Gradient Variation',
-      description: 'Modern brands, tech, depth',
-      instructions: 'Distribution: Gradient from light to dark brand color, creates depth. Best for: Modern, tech, dimensional designs'
-    },
-    { 
-      name: 'Top/Bottom Bars',
-      description: 'Clean, organized, professional',
-      instructions: 'Distribution: 70% White/image in center, 30% Brand color bars at top/bottom. Best for: Clean, organized, professional layouts'
-    },
-    { 
-      name: 'Overlay Transparency',
-      description: 'Image-heavy, cohesive look',
-      instructions: 'Distribution: Full image background, Brand color overlay at 40-60% opacity. Best for: Image-heavy designs with brand integration'
-    },
-    { 
-      name: 'Text-Only Color',
-      description: 'Typography-focused, clean, minimal',
-      instructions: 'Distribution: 90% White/neutral background, 10% Brand color for text only. Best for: Typography-focused, clean, minimal designs'
-    },
-    { 
-      name: 'Inverted Contrast',
-      description: 'Dynamic, high contrast, modern',
-      instructions: 'Distribution: Alternate sections - Brand color background + white text, then White background + brand color text. Best for: Dynamic, modern, high-contrast designs'
-    },
-    { 
-      name: 'Circular/Shape Focus',
-      description: 'Focused, modern, geometric',
-      instructions: 'Distribution: 85% White/neutral, 15% Brand color in circular/geometric shape. Best for: Focused, modern, geometric designs'
-    }
-  ];
-
-  // DYNAMIC COLOR ROTATION SYSTEM (Ported from Revo 1.5)
-  // Rotates color distribution to prevent repetitive look even with same brand colors
-  const colorDistributionRotations = [
-    {
-      name: 'Primary Dominant',
-      description: 'Primary color takes 70% of design space with accent highlights',
-      distribution: { primary: 70, accent: 20, background: 10 },
-      instruction: 'Use primary brand color as dominant (70% of color usage), accent for highlights (20%), background for breathing space (10%)'
-    },
-    {
-      name: 'Balanced Harmony',
-      description: 'Equal balance between primary and accent with generous white space',
-      distribution: { primary: 40, accent: 40, background: 20 },
-      instruction: 'Balance primary (40%) and accent (40%) equally, with generous white space (20%)'
-    },
-    {
-      name: 'Accent Forward',
-      description: 'Accent color leads with primary as supporting element',
-      distribution: { primary: 25, accent: 60, background: 15 },
-      instruction: 'Lead with accent color (60%), primary as support (25%), background for spacing (15%)'
-    },
-    {
-      name: 'Minimal Clean',
-      description: 'Mostly white/background with strategic color placement',
-      distribution: { primary: 25, accent: 15, background: 60 },
-      instruction: 'Predominantly white/background (60%) with strategic primary (25%) and accent pops (15%)'
-    }
-  ];
-
-  const effects = ['subtle grain', 'soft vignette', 'gentle drop shadow', 'glassmorphism card', 'gradient overlay'];
-
   // ============================================================================
   // HELPER FUNCTION: SELECT UNIVERSAL DESIGN VARIATIONS EARLY
   // ============================================================================
@@ -2696,7 +2738,8 @@ This is a BRAND CONSISTENCY requirement. Using wrong colors damages brand identi
     imageTrts: any[],
     colorStrats: any[]
   ) {
-    const colorDistRotations = getColorDistributionRotations();
+    // FIX: Use local colorDistributionRotations if available (contains hex codes), otherwise fall back to global
+    const colorDistRotations = typeof colorDistributionRotations !== 'undefined' ? colorDistributionRotations : getColorDistributionRotations();
     const visualStyles = styles;
     const effs = effects;
     
@@ -2910,7 +2953,7 @@ Each design MUST be visually unique and avoid repetition:
 1. Lifestyle photography - show product/service in real-life context
 2. Product hero shot - make the product the star with dramatic lighting
 3. People-first - focus on human emotions and connections
-4. Minimalist design - clean, simple, lots of white space
+4. Minimalist design - clean, simple, lots of negative space
 5. Bold typography - let text be the main visual element
 6. Collage/mixed media - combine multiple visual elements creatively
 7. Illustration-based - use custom illustrations or graphics
@@ -3060,7 +3103,7 @@ ${concept?.dimensions ? `🎬 HERO + SCENE EXECUTION BLUEPRINT (STRICT - NO GENE
 🎯 VISUAL CONTEXT REQUIREMENT: ${visualContext}${serviceVisualContext}${businessTypeVisualGuidance}
 
 🎯 DESIGN QUALITY PRINCIPLES (Apply within chosen layout):
-1. NEUTRAL BACKGROUND: White or soft gradient ONLY (NEVER busy patterns, lines, grids, or decorative overlays)
+1. NEUTRAL BACKGROUND: Brand background or soft gradient ONLY (NEVER busy patterns, lines, grids, or decorative overlays)
 2. ACCENT COLOR: Tied to post theme using brand colors strategically
 3. VISUAL ELEMENTS: Adapt to the chosen layout structure (NOT always centered, NOT always single element)
 4. EMOTIONAL HEADLINE: Human tone, not corporate speak
@@ -3132,15 +3175,15 @@ ${concept?.dimensions ? `🎬 HERO + SCENE EXECUTION BLUEPRINT (STRICT - NO GENE
 - ONLY use clean, SOLID flat backgrounds or simple gradients
 - KEEP backgrounds sleek, minimal, and professional
 - FOCUS on content and people, not decorative background elements
-- BACKGROUNDS MUST BE: Solid white, solid brand color, or simple 2-color gradient ONLY
+- BACKGROUNDS MUST BE: Solid brand background, solid brand color, or simple 2-color gradient ONLY
 - NO TECH AESTHETIC - keep it clean, modern, and simple
 
 🚫 FORBIDDEN BACKGROUND COLORS (CRITICAL):
 - NO black (#000000) backgrounds unless it's a brand color
 - NO dark gray (#333333, #444444, #555555) backgrounds unless brand colors
 - NO charcoal or dark neutral backgrounds unless specified in brand colors
-- ONLY use: White, brand colors (${primaryColor}, ${accentColor}, ${backgroundColor}), or light gradients
-- If brand colors are dark, use WHITE background with dark text instead
+- ONLY use: Brand background, brand colors (${primaryColor}, ${accentColor}, ${backgroundColor}), or light gradients
+- If brand colors are dark, use CONTRASTING background with readable text instead
 
 🌟 NATURAL, AUTHENTIC IMAGERY REQUIREMENTS:
 - Show REAL people using technology naturally (no artificial tech effects)
@@ -3171,7 +3214,7 @@ ${concept?.dimensions ? `🎬 HERO + SCENE EXECUTION BLUEPRINT (STRICT - NO GENE
 - CONSISTENT photographic filter/LUT for unified brand appearance
 
 🎨 STRATEGIC TEXT PLACEMENT SYSTEM (MANDATORY):
-- BACKGROUND: Clean white (#FFFFFF) or subtle gradient using brand colors
+- BACKGROUND: Clean brand background or subtle gradient using brand colors
 - ACCENT COLOR: Use ${primaryColor} or ${accentColor} strategically for theme connection
 - FOCAL ELEMENT: Choose ONE - either person OR object, positioned prominently
 
@@ -3182,7 +3225,7 @@ ${getTextPlacementGuidance(chosenLayoutComposition.name)}
 
 **Universal Text Placement Principles:**
 - VISUAL HIERARCHY: Headline (largest) > Subheadline > Body > CTA
-- BREATHING SPACE: Generous white space around all text elements (minimum 20% of design)
+- BREATHING SPACE: Generous negative space around all text elements (minimum 20% of design)
 - READING FLOW: Create natural eye movement through the design
 - BALANCE: Text and image should complement each other, not compete
 - CONSISTENCY: Keep related text elements grouped together
@@ -3248,7 +3291,7 @@ TOTAL LENGTH: 3-4 sentences maximum, NO poetic storytelling
 - NO multiple competing focal points
 - NO corporate jargon in headlines
 - NO overwhelming brand elements
-- NO cramped layouts without white space
+- NO cramped layouts without negative space
 
 🎛️ SIMPLIFIED STYLE DIRECTIVES:
 - Design Style: ${chosenStyle} (applied minimally - USE ${primaryColor} ONLY)
@@ -3542,7 +3585,14 @@ You MUST include the exact brand logo image that was provided above in your desi
       console.log('ℹ️ [Revo 2.0] No logo available for generation');
     }
 
-    const result = await generateContentWithProxy(generationParts, REVO_2_0_MODEL, true);
+    // Map Revo20GenerationOptions to VertexGenerationOptions
+    const vertexOptions = {
+      aspectRatio: options.aspectRatio as any,
+      // Default image size if not specified
+      imageSize: '1K' as any 
+    };
+
+    const result = await generateContentWithProxy(generationParts, REVO_2_0_MODEL, true, vertexOptions);
     const response = await result.response;
 
     // Extract image from response
@@ -5117,18 +5167,23 @@ function generate6DimensionalAdConcept(): AdConcept {
     { type: "Student/Youth", description: "Age 18-25, learning, budget-conscious, future-focused" }
   ];
 
-  // DIMENSION 3: VISUAL STYLE (How it looks) - 10 options
+  // DIMENSION 3: VISUAL STYLE (How it looks) - 15 options (Expanded)
   const visualStyles = [
     { style: "Lifestyle Photography", description: "Real person in authentic moment, candid feel" },
     { style: "Product Hero", description: "Product as star, dramatic lighting, premium feel" },
     { style: "Documentary", description: "Behind-the-scenes, raw, authentic, unpolished" },
-    { style: "Flat Illustration", description: "Modern vector art, clean lines, vibrant colors" },
-    { style: "Data Visualization", description: "Bold numbers, charts, statistics as visual" },
+    { style: "Flat Illustration", description: "Modern vector art, clean lines, using ONLY brand colors" },
+    { style: "Data Visualization", description: "Bold numbers, charts, statistics in brand colors" },
     { style: "Typography-Driven", description: "Text IS the visual, bold fonts, minimal imagery" },
     { style: "UI Showcase", description: "App screens, dashboard, interface in context" },
     { style: "Cinematic", description: "Movie-like composition, dramatic lighting, wide shots" },
-    { style: "Collage/Mosaic", description: "Multiple images combined, layered, dynamic" },
-    { style: "Minimalist", description: "One element, lots of white space, zen-like" }
+    { style: "Collage/Mosaic", description: "Multiple images combined, layered, dynamic brand style" },
+    { style: "Minimalist", description: "One element, lots of negative space, zen-like" },
+    { style: "Neo-Brutalism", description: "Raw, bold, high contrast, using brand colors" },
+    { style: "Ethereal/Soft", description: "Dreamy, light, airy, soft focus brand aesthetics, brand colors" },
+    { style: "Isometric 3D", description: "Clean, geometric 3D perspective, brand palette" },
+    { style: "Macro Detail", description: "Extreme close-up on texture/details, sensory, brand colors" },
+    { style: "Pop Art", description: "Vibrant halftone patterns, retro style using ONLY brand colors" }
   ];
 
   // DIMENSION 4: BENEFIT/MESSAGE (What) - 9 options
@@ -5189,12 +5244,12 @@ function generate6DimensionalAdConcept(): AdConcept {
 
   // DIMENSION 8: COLOR MOOD (NEW) - 6 options
   const colorMoods = [
-    { mood: "Vibrant", palette: "Bright, saturated, energetic colors" },
-    { mood: "Muted", palette: "Soft, desaturated, sophisticated tones" },
-    { mood: "High Contrast", palette: "Bold black/white with one accent color" },
-    { mood: "Warm", palette: "Oranges, reds, yellows - inviting feel" },
-    { mood: "Cool", palette: "Blues, greens, purples - professional feel" },
-    { mood: "Monochromatic", palette: "Shades of one color for cohesion" }
+    { mood: "Vibrant", palette: "Bright, saturated usage of brand colors" },
+    { mood: "Muted", palette: "Soft, sophisticated usage of brand colors" },
+    { mood: "High Contrast", palette: "Bold brand colors with high contrast" },
+    { mood: "Warm", palette: "Warm tones derived from brand palette" },
+    { mood: "Cool", palette: "Professional, clean usage of brand palette" },
+    { mood: "Monochromatic", palette: "Shades of primary brand color only" }
   ];
 
   // DIMENSION 9: COMPOSITION TYPE (NEW) - 7 options
@@ -5362,6 +5417,11 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
     // Auto-detect platform-specific aspect ratio if not provided
     const aspectRatio = options.aspectRatio || getPlatformAspectRatio(options.platform);
     const enhancedOptions = { ...options, aspectRatio };
+    
+    console.log(`📐 [Revo 2.0] ASPECT RATIO DEBUG:`);
+    console.log(`   - options.aspectRatio (from UI): ${options.aspectRatio || 'NOT PROVIDED'}`);
+    console.log(`   - getPlatformAspectRatio fallback: ${getPlatformAspectRatio(options.platform)}`);
+    console.log(`   - FINAL aspectRatio being used: ${aspectRatio}`);
 
     // Step 1: Detect business type for assistant selection
     const businessType = detectBusinessType(enhancedOptions.brandProfile);
@@ -5571,7 +5631,14 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
         console.error(`❌ [Revo 2.0] Assistant generation failed:`);
         console.error(`   Error Type: ${assistantError instanceof Error ? assistantError.constructor.name : typeof assistantError}`);
         console.error(`   Error Message: ${assistantError instanceof Error ? assistantError.message : String(assistantError)}`);
-        console.error(`   Full Error:`, assistantError);
+        if (assistantError instanceof Error && assistantError.stack) {
+          console.error(`   Stack: ${assistantError.stack}`);
+        }
+        try {
+          console.error(`   Full Error String:`, JSON.stringify(assistantError, null, 2));
+        } catch (e) {
+          console.error(`   Full Error (Stringified): ${String(assistantError)}`);
+        }
         
         console.warn(`⚠️ [Revo 2.0] Falling back to Claude due to assistant failure`);
         contentSource = 'claude_fallback';
@@ -5645,13 +5712,16 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
     let imagePrompt: string;
     let finalContent: any;
 
+    // Use the determined aspect ratio from enhancedOptions
+    const finalAspectRatio = enhancedOptions.aspectRatio;
+
     if (contentSource === 'assistant') {
       // Use integrated prompt generator for perfect alignment
       const integratedPrompt = integratedPromptGenerator.generateIntegratedPrompt({
         assistantResponse,
         brandProfile: enhancedOptions.brandProfile,
         platform: enhancedOptions.platform,
-        aspectRatio: aspectRatio,
+        aspectRatio: finalAspectRatio, // Explicitly pass the determined ratio
         businessType: businessType.primaryType,
         includeContacts: enhancedOptions.includeContacts,
         strictConsistency: enhancedOptions.strictConsistency, // NEW: Pass strict mode toggle
@@ -5684,8 +5754,40 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
       console.log(`🎨 [Revo 2.0] Generated integrated image prompt (${imagePrompt.length} chars)`);
       console.log(`#️⃣ [Revo 2.0] Final hashtag count: ${finalHashtags.length} for ${enhancedOptions.platform}`);
     } else {
-      // Use traditional approach for Claude fallback
-      imagePrompt = buildEnhancedPrompt(enhancedOptions, concept);
+      // Use traditional approach for Claude fallback BUT inject the generated content
+      const basePrompt = buildEnhancedPrompt(enhancedOptions, concept);
+      
+      // 🚨 CRITICAL FIX: Inject the generated content into the image prompt
+      // This ensures the image displays the SAME text as the caption
+      const contentInjection = `
+🚨🚨🚨 CRITICAL: EXACT TEXT TO DISPLAY ON IMAGE 🚨🚨🚨
+
+**YOU MUST DISPLAY THESE EXACT WORDS ON THE IMAGE:**
+- HEADLINE: "${assistantResponse.headline || 'Quality Services'}"
+- SUBHEADLINE: "${assistantResponse.subheadline || ''}"
+- CTA BUTTON: "${assistantResponse.cta || 'Learn More'}"
+
+**CONTENT-DESIGN SYNCHRONIZATION RULES:**
+1. The HEADLINE text above MUST appear as the largest, most prominent text
+2. The SUBHEADLINE text MUST appear below the headline in smaller text
+3. The CTA text MUST appear on a button or call-out area
+4. The visual scene MUST illustrate what the headline describes
+5. DO NOT invent different text - use EXACTLY what is specified above
+6. The image story and caption story MUST be the SAME story
+
+**VALIDATION CHECK:**
+- Before generating, confirm: "Am I displaying the EXACT headline '${assistantResponse.headline}'?"
+- If answer is NO, fix it - the text must match EXACTLY
+
+`;
+      
+      imagePrompt = contentInjection + basePrompt;
+      
+      console.log(`📝 [Revo 2.0] Injected content into fallback prompt:`, {
+        headline: assistantResponse.headline,
+        subheadline: assistantResponse.subheadline,
+        cta: assistantResponse.cta
+      });
 
       // Enforce platform-specific hashtag limits for Claude fallback as well
       const normalizedPlatform = String(enhancedOptions.platform).toLowerCase();
@@ -5704,7 +5806,7 @@ export async function generateWithRevo20(options: Revo20GenerationOptions): Prom
         hashtags: fallbackHashtags
       };
 
-      console.log(`📝 [Revo 2.0] Using traditional prompt approach for fallback`);
+      console.log(`📝 [Revo 2.0] Using content-synchronized fallback prompt approach`);
       console.log(`#️⃣ [Revo 2.0 Claude Fallback] Final hashtag count: ${fallbackHashtags.length} for ${enhancedOptions.platform}`);
     }
 
@@ -5908,12 +6010,29 @@ These colors are mandatory and must be prominently featured in the design.`;
 
 /**
  * Claude fallback function for when OpenAI Assistant is not available or fails
+ * Now tries Gemini FIRST since it's more reliable, then Claude, then static fallback
  */
 async function generateClaudeFallback(options: any, concept: any): Promise<any> {
-  console.log(`📝 [Revo 2.0] Using Claude fallback for content generation`);
+  console.log(`📝 [Revo 2.0] Using fallback content generation (Gemini primary)`);
   
+  // Try Gemini FIRST since it's more reliable
   try {
-    // Use existing Claude-based content generation
+    console.log(`🔄 [Revo 2.0] Trying Gemini text generation as PRIMARY fallback`);
+    const geminiResult = await generateGeminiTextFallback(options, concept);
+    if (geminiResult && geminiResult.caption && geminiResult.headline) {
+      console.log(`✅ [Revo 2.0] Gemini text fallback succeeded:`, {
+        headline: geminiResult.headline,
+        captionPreview: geminiResult.caption?.substring(0, 50) + '...'
+      });
+      return geminiResult;
+    }
+  } catch (geminiError) {
+    console.error(`❌ [Revo 2.0] Gemini text fallback failed:`, geminiError);
+  }
+  
+  // Try Claude as secondary fallback
+  try {
+    console.log(`🔄 [Revo 2.0] Trying Claude as secondary fallback`);
     const contentResult = await generateCaptionAndHashtags(options, concept, '', '');
     
     // Convert to assistant-like response format for consistency
@@ -5926,18 +6045,171 @@ async function generateClaudeFallback(options: any, concept: any): Promise<any> 
       captionVariations: contentResult.captionVariations || [contentResult.caption]
     };
   } catch (error) {
-    console.error(`❌ [Revo 2.0] Claude fallback failed:`, error);
+    console.error(`❌ [Revo 2.0] Claude fallback also failed:`, error);
     
-    // Ultra-simple fallback
+    // Ultra-simple fallback - generate unique content based on concept
+    const uniqueHeadlines = [
+      `${options.brandProfile.businessName} - Your Trusted Partner`,
+      `Experience ${options.businessType} Excellence`,
+      `${options.brandProfile.businessName} Delivers Results`,
+      `Transform Your ${options.businessType} Experience`,
+      `${options.brandProfile.businessName} - Quality First`
+    ];
+    const uniqueCaptions = [
+      `${options.brandProfile.businessName} brings you exceptional ${options.businessType} services. ${options.brandProfile.location ? `Proudly serving ${options.brandProfile.location}` : 'Serving you'} with dedication and expertise. Contact us today to learn more!`,
+      `Looking for reliable ${options.businessType} solutions? ${options.brandProfile.businessName} has you covered. ${options.brandProfile.location ? `Based in ${options.brandProfile.location}` : 'Available now'}, we're committed to your success.`,
+      `${options.brandProfile.businessName} offers premium ${options.businessType} services tailored to your needs. ${options.brandProfile.location ? `Serving ${options.brandProfile.location}` : 'Reach out today'} - your satisfaction is our priority.`
+    ];
+    
+    const randomIndex = Math.floor(Math.random() * uniqueHeadlines.length);
+    const captionIndex = Math.floor(Math.random() * uniqueCaptions.length);
+    
     return {
-      caption: `Discover quality services at ${options.brandProfile.businessName}. ${options.brandProfile.location ? `Serving ${options.brandProfile.location}` : 'Serving you'} with excellence.`,
-      hashtags: [`#${options.brandProfile.businessName.replace(/\s+/g, '')}`, `#${options.businessType.replace(/\s+/g, '')}`, '#Quality'],
-      headline: options.brandProfile.businessName,
-      subheadline: `Quality ${options.businessType} services`,
-      cta: 'Learn More',
-      captionVariations: []
+      caption: uniqueCaptions[captionIndex],
+      hashtags: [`#${options.brandProfile.businessName.replace(/\s+/g, '')}`, `#${options.businessType.replace(/\s+/g, '')}`, '#Quality', '#Service', '#Excellence'].slice(0, 5),
+      headline: uniqueHeadlines[randomIndex],
+      subheadline: `Premium ${options.businessType} Solutions`,
+      cta: 'Get Started Today',
+      captionVariations: uniqueCaptions
     };
   }
+}
+
+/**
+ * Gemini text generation fallback - generates unique, engaging content
+ * Now includes concept information for content-design synchronization
+ */
+async function generateGeminiTextFallback(options: any, concept: any): Promise<any> {
+  // Generate unique seed for variety
+  const uniqueSeed = Date.now() + Math.floor(Math.random() * 10000);
+  const creativityAngle = ['innovation', 'trust', 'quality', 'speed', 'convenience', 'expertise'][Math.floor(Math.random() * 6)];
+  
+  // Extract concept information for content-design alignment
+  const conceptInfo = concept ? `
+🎭 VISUAL CONCEPT (Content MUST match this visual story):
+- Setting: ${concept.setting?.description || concept.setting?.category || 'Professional environment'}
+- Customer: ${concept.customer?.description || concept.customer?.type || 'Target customer'}
+- Visual Style: ${concept.visualStyle?.description || concept.visualStyle?.style || 'Modern'}
+- Benefit: ${concept.benefit?.message || concept.benefit?.type || 'Key benefit'}
+- Emotional Tone: ${concept.emotionalTone?.description || concept.emotionalTone?.tone || 'Positive'}
+- Format: ${concept.format?.structure || concept.format?.technique || 'Standard'}
+
+🚨 CRITICAL: Your headline, subheadline, and caption MUST tell the SAME story as this visual concept.
+The image will show this exact scenario - your text must describe what the image shows.
+` : '';
+
+  const prompt = `You are an expert marketing copywriter for ${options.brandProfile?.businessName || 'this business'}. Create ONE unified story across all content elements.
+
+🏢 BUSINESS CONTEXT:
+- Business: ${options.brandProfile?.businessName || 'Business'}
+- Industry: ${options.businessType || 'Services'}
+- Location: ${options.brandProfile?.location || 'Global'}
+- Platform: ${options.platform || 'Instagram'}
+- What they do: ${options.brandProfile?.description?.substring(0, 200) || 'Quality services'}
+${conceptInfo}
+🎯 CREATIVE ANGLE: ${creativityAngle}
+Unique Seed: ${uniqueSeed}
+
+📝 YOUR TASK - Create ONE UNIFIED STORY:
+
+**Step 1: Choose a SPECIFIC customer scenario**
+Examples:
+- A restaurant owner who just ran out of ingredients mid-service
+- A student who needs textbooks but payday is next week
+- A farmer whose tractor broke down during harvest season
+- A boutique owner preparing for a big sale but low on inventory
+
+**Step 2: Write content that tells THIS ONE scenario across all elements**
+
+1. **HEADLINE** (4-6 words): The problem or desire
+   - Make it emotional and specific
+   - Use real situations, not generic benefits
+   - Examples: "Ran Out Mid-Rush?" / "Textbooks Cost More Than Rent" / "Harvest Can't Wait"
+
+2. **SUBHEADLINE** (8-12 words): The immediate solution
+   - How ${options.brandProfile?.businessName || 'we'} solves THIS specific problem
+   - Must directly relate to the headline scenario
+   - NO "Join thousands" formulas - be specific to the story
+
+3. **CAPTION** (2-3 sentences): Tell the complete story
+   - Start with the scenario from the headline
+   - Show the problem's impact
+   - End with how ${options.brandProfile?.businessName || 'the solution'} changes everything
+   - Write like you're talking to a friend, not writing a brochure
+   - Use real details: times, amounts, emotions
+
+4. **CTA** (3-5 words): Natural next step
+   - Must fit the story (not generic "Learn More")
+   - Examples: "Get Restocked Now" / "Buy Books Today" / "Fix It Fast"
+
+5. **HASHTAGS**: 5 relevant tags for ${options.businessType}
+
+🚨 CRITICAL RULES:
+1. ALL elements must tell the SAME specific scenario
+2. NO generic corporate language ("innovative solutions", "quality service")
+3. NO repetitive formats - vary your structure each time
+4. Write like a human having a conversation
+5. Be SPECIFIC - use real details, not vague benefits
+6. The visual concept above shows the scene - your text describes it
+
+❌ BANNED PHRASES:
+- "Discover quality services"
+- "Join thousands of..."
+- "Experience excellence"
+- "Your trusted partner"
+- "makes it practical, useful, and..."
+- "We've all been there"
+- Any incomplete sentences with "..."
+
+✅ GOOD EXAMPLE (Food Business):
+{
+  "headline": "Dinner Rush. No Tomatoes.",
+  "subheadline": "Get fresh supplies delivered in 30 minutes, pay next week",
+  "caption": "It's 7 PM. Your signature pasta is flying out the kitchen. Then your chef says those three words: 'We're out.' ${options.brandProfile?.businessName || 'We'} gets you restocked before the next order comes in. Order now, pay when you're ready.",
+  "cta": "Restock Now",
+  "hashtags": ["#RestaurantLife", "#FoodBusiness", "#NeverRunOut", "#${options.brandProfile?.businessName?.replace(/\s+/g, '') || 'Business'}", "#${options.businessType?.replace(/\s+/g, '') || 'Service'}"]
+}
+
+Return ONLY valid JSON, no markdown or explanation:
+{"headline": "...", "subheadline": "...", "caption": "...", "cta": "...", "hashtags": ["#tag1", "#tag2", "#tag3", "#tag4", "#tag5"]}`;
+
+  console.log(`🤖 [Gemini Fallback] Generating content with angle: ${creativityAngle}`);
+  
+  const result = await generateContentWithProxy(prompt, REVO_2_0_TEXT_MODEL, false);
+  const response = await result.response;
+  const text = response.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  
+  console.log(`🤖 [Gemini Fallback] Raw response length: ${text.length}`);
+  
+  // Parse JSON from response
+  let cleanText = text.trim();
+  if (cleanText.includes('```json')) {
+    cleanText = cleanText.split('```json')[1].split('```')[0].trim();
+  } else if (cleanText.includes('```')) {
+    cleanText = cleanText.split('```')[1].split('```')[0].trim();
+  }
+  
+  // Try to find JSON object in the response
+  const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    cleanText = jsonMatch[0];
+  }
+  
+  const parsed = JSON.parse(cleanText);
+  
+  console.log(`✅ [Gemini Fallback] Parsed content:`, {
+    headline: parsed.headline,
+    captionPreview: parsed.caption?.substring(0, 50) + '...'
+  });
+  
+  return {
+    caption: parsed.caption,
+    hashtags: parsed.hashtags || [],
+    headline: parsed.headline,
+    subheadline: parsed.subheadline,
+    cta: parsed.cta,
+    captionVariations: [parsed.caption]
+  };
 }
 
 /**

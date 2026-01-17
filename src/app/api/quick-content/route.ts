@@ -100,7 +100,9 @@ export async function POST(request: NextRequest) {
       brandConsistency,
       useLocalLanguage = false,
       scheduledServices = [],
-      includePeopleInDesigns = true
+      includePeopleInDesigns = true,
+      size,
+      aspectRatio
     } = body as {
       revoModel: 'revo-1.0' | 'revo-1.5';
       brandProfile: LooseBrandProfile;
@@ -109,6 +111,8 @@ export async function POST(request: NextRequest) {
       useLocalLanguage?: boolean;
       scheduledServices?: ScheduledService[];
       includePeopleInDesigns?: boolean;
+      size?: string;
+      aspectRatio?: string;
     };
 
     // Validate required parameters
@@ -118,6 +122,26 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Determine aspect ratio from size or aspectRatio parameter
+    const determineAspectRatio = (sizeInput?: string, ratioInput?: string): '1:1' | '16:9' | '9:16' | '21:9' | '4:5' => {
+      // Priority to explicit ratio
+      if (ratioInput && ['1:1', '16:9', '9:16', '21:9', '4:5'].includes(ratioInput)) {
+        return ratioInput as any;
+      }
+      
+      const s = (sizeInput || '').toLowerCase();
+      if (s === 'square') return '1:1';
+      if (s === 'portrait' || s === 'story' || s === 'reel' || s === 'tiktok') return '9:16';
+      if (s === 'landscape' || s === 'horizontal') return '16:9';
+      if (s === 'feed_portrait' || s === '4:5') return '4:5';
+      if (s === 'cinema' || s === '21:9') return '21:9';
+      
+      return '1:1'; // Default
+    };
+
+    const targetAspectRatio = determineAspectRatio(size, aspectRatio);
+    console.log(`📏 [QuickContent] Target Aspect Ratio: ${targetAspectRatio} (from size: ${size}, ratio: ${aspectRatio})`);
 
     // Normalize incoming profile so downstream logic always works with expected structure
     const normalizedBrandProfile = normalizeBrandProfileInput(rawBrandProfile);
@@ -166,8 +190,7 @@ export async function POST(request: NextRequest) {
 
     let result;
 
-    try {
-      // Get user ID from headers (would be set by middleware in production)
+    // Get user ID from headers (would be set by middleware in production)
       // Using test user ID for consistency with other Revo routes
       const userId = 'test-user-id'; // TODO: Get from authentication
       const user = { id: userId };
@@ -183,7 +206,7 @@ export async function POST(request: NextRequest) {
           brandConsistency || { strictConsistency: false, followBrandColors: true, includeContacts: false },
           '',
           {
-            aspectRatio: '1:1',
+            aspectRatio: targetAspectRatio,
             visualStyle: getSafeVisualStyle(freshBrandProfile.visualStyle),
             includePeopleInDesigns,
             useLocalLanguage
@@ -198,7 +221,7 @@ export async function POST(request: NextRequest) {
           brandConsistency || { strictConsistency: false, followBrandColors: true, includeContacts: false },
           '',
           {
-            aspectRatio: '1:1',
+            aspectRatio: targetAspectRatio,
             visualStyle: getSafeVisualStyle(freshBrandProfile.visualStyle),
             includePeopleInDesigns,
             useLocalLanguage
@@ -206,10 +229,10 @@ export async function POST(request: NextRequest) {
           brandSpecificServices
         );
 
-        // 🔄 UPLOAD REVO 1.5 IMAGE TO SUPABASE STORAGE (Fix broken images)
+        // UPLOAD REVO 1.5 IMAGE TO SUPABASE STORAGE (Fix broken images)
         if (result && result.imageUrl && result.imageUrl.startsWith('data:')) {
           try {
-            console.log('📤 [QuickContent] Uploading Revo 1.5 image to Supabase...');
+            console.log(' [QuickContent] Uploading Revo 1.5 image to Supabase...');
 
             // Check if Supabase is properly configured
             const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -260,23 +283,22 @@ export async function POST(request: NextRequest) {
                   }));
                 }
               } else {
-                console.warn('⚠️ [QuickContent] Revo 1.5 image upload failed, keeping data URL:', uploadResult.error);
+                console.warn(' [QuickContent] Revo 1.5 image upload failed, keeping data URL:', uploadResult.error);
               }
             }
           } catch (uploadError) {
-            console.error('❌ [QuickContent] Revo 1.5 image upload error:', uploadError);
-            console.error('❌ [QuickContent] Revo 1.5 Upload error stack:', uploadError instanceof Error ? uploadError.stack : 'No stack');
+            console.error(' [QuickContent] Revo 1.5 image upload error:', uploadError);
           }
         }
       } else {
-        // Use Revo 1.0 unified architecture (same pattern as Revo 2.0)
+        // Default to Revo 1.0 (Unified Architecture)
         result = await generateRevo1ContentAction(
-          freshBrandProfile as BrandProfile, // Use fresh data from database
+          freshBrandProfile as BrandProfile,
           platform,
           brandConsistency || { strictConsistency: false, followBrandColors: true, includeContacts: false },
           '',
           {
-            aspectRatio: '1:1',
+            aspectRatio: targetAspectRatio,
             visualStyle: getSafeVisualStyle(freshBrandProfile.visualStyle),
             includePeopleInDesigns,
             useLocalLanguage
@@ -284,28 +306,6 @@ export async function POST(request: NextRequest) {
           brandSpecificServices
         );
       }
-    } catch (generationError) {
-      console.error(` [QuickContent] ${revoModel} generation failed:`, generationError);
-      console.error(` [QuickContent] ${revoModel} error stack:`, generationError instanceof Error ? generationError.stack : 'No stack');
-      console.error(` [QuickContent] ${revoModel} error details:`, JSON.stringify(generationError, null, 2));
-
-      const errorMessage = generationError instanceof Error
-        ? generationError.message
-        : 'Unknown error occurred during content generation';
-
-      return NextResponse.json(
-        {
-          error: errorMessage,
-          details: generationError instanceof Error ? {
-            message: generationError.message,
-            stack: generationError.stack,
-            name: generationError.name
-          } : generationError,
-          message: `${revoModel} generation failed`,
-        },
-        { status: 500 }
-      );
-    }
 
     // Validate result before returning
     if (!result) {

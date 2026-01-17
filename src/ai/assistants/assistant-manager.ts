@@ -64,11 +64,15 @@ export interface AssistantContentResponse {
  * Handles all assistant operations generically
  */
 export class AssistantManager {
-  private assistantIds: Map<BusinessTypeCategory, string>;
+  private assistantIds: Map<BusinessTypeCategory, string> = new Map();
+  private initialized: boolean = false;
 
   constructor() {
-    // Load assistant IDs from environment variables
-    this.assistantIds = new Map();
+    // Lazy initialization happens on first use
+  }
+
+  private ensureInitialized() {
+    if (this.initialized) return;
 
     console.log('🔧 [Assistant Manager] Initializing assistant manager...');
     console.log('🔧 [Assistant Manager] Environment check:', {
@@ -82,6 +86,7 @@ export class AssistantManager {
       'healthcare', 'realestate', 'education', 'b2b', 'nonprofit'
     ];
 
+    this.assistantIds.clear();
     for (const type of businessTypes) {
       const config = getAssistantConfig(type);
       if (config && config.implemented) {
@@ -90,22 +95,32 @@ export class AssistantManager {
           this.assistantIds.set(type, assistantId);
           console.log(`✅ [Assistant Manager] Loaded assistant for ${type}: ${assistantId}`);
         } else {
-          console.warn(`⚠️  [Assistant Manager] No assistant ID found for ${type} (${config.envVar})`);
-          console.warn(`    Looking for: process.env.${config.envVar}`);
+          // Don't warn on every check, only on initialization
+          if (process.env.NODE_ENV === 'development') {
+            console.warn(`⚠️  [Assistant Manager] No assistant ID found for ${type} (${config.envVar})`);
+          }
         }
-      } else {
-        console.log(`⏭️  [Assistant Manager] Skipping ${type} (not implemented or no config)`);
       }
     }
-
-    console.log(`📊 [Assistant Manager] Total assistants loaded: ${this.assistantIds.size}/10`);
+    
+    this.initialized = true;
+    console.log(`📊 [Assistant Manager] Total assistants loaded: ${this.assistantIds.size}`);
   }
 
   /**
    * Check if assistant is available for a business type
    */
   isAvailable(businessType: BusinessTypeCategory): boolean {
+    this.ensureInitialized();
     return this.assistantIds.has(businessType) && isAssistantImplemented(businessType);
+  }
+
+  /**
+   * Reload configuration (useful when env vars change)
+   */
+  reload(): void {
+    this.initialized = false;
+    this.ensureInitialized();
   }
 
   /**

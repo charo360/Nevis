@@ -429,6 +429,7 @@ class GeminiAPIClient {
       // Gemini 3 Pro supports: 1:1, 3:4, 4:3, 9:16, 16:9
       // 4:5 is not supported, map to 3:4 (closest portrait ratio)
       let geminiAspectRatio: '1:1' | '3:4' | '4:3' | '9:16' | '16:9' = '1:1';
+      console.log(`📐 [Gemini API] ASPECT RATIO INPUT: ${options.aspectRatio || 'NOT PROVIDED (defaulting to 1:1)'}`);
       if (options.aspectRatio) {
         if (options.aspectRatio === '4:5') {
           geminiAspectRatio = '3:4'; // Map 4:5 to 3:4 (closest portrait)
@@ -441,6 +442,7 @@ class GeminiAPIClient {
         aspectRatio: geminiAspectRatio,
         imageSize: options.imageSize || '1K'
       };
+      console.log(`📐 [Gemini API] FINAL ASPECT RATIO FOR GENERATION: ${geminiAspectRatio}`);
       console.log('✅ [Gemini API] Using Gemini 3 Pro with imageConfig:', request.generationConfig.imageConfig);
     }
 

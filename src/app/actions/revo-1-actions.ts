@@ -264,7 +264,8 @@ export async function generateRevo1ContentAction(
       websiteUrl: finalWebsiteUrl,
       includePeople: options?.includePeopleInDesigns ?? true,
       scheduledServices: scheduledServices || [],
-      followBrandColors: brandConsistency?.followBrandColors !== false
+      followBrandColors: brandConsistency?.followBrandColors !== false,
+      aspectRatio: options?.aspectRatio || '1:1'
     });
 
     console.log('✅ [Revo 1.0 Actions] Image generation successful!');

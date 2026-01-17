@@ -56,6 +56,13 @@ const CreativeAssetOutputSchema = z.object({
     imageUrl: z.string().nullable().describe('The data URI of the generated image, if applicable.'),
     videoUrl: z.string().nullable().describe('The data URI of the generated video, if applicable.'),
     aiExplanation: z.string().describe('A brief explanation from the AI about what it created.'),
+    // Content fields from Revo 2.0/1.5/1.0 generation
+    caption: z.string().optional().describe('The generated caption/content for the post.'),
+    headline: z.string().optional().describe('The generated headline text.'),
+    subheadline: z.string().optional().describe('The generated subheadline text.'),
+    cta: z.string().optional().describe('The generated call-to-action text.'),
+    hashtags: z.array(z.string()).optional().describe('Generated hashtags for the post.'),
+    content: z.string().optional().describe('Alternative field for caption content.'),
 });
 export type CreativeAsset = z.infer<typeof CreativeAssetOutputSchema>;
 
@@ -1048,6 +1055,15 @@ const generateCreativeAssetFlow = ai.defineFlow(
     async (input) => {
         const promptParts: (string | { text: string } | { media: { url: string; contentType?: string } })[] = [];
         let textPrompt = '';
+        
+        // Store the full content result from Revo systems to pass to the return value
+        let revoContentResultGlobal: {
+            caption?: string;
+            headline?: string;
+            subheadline?: string;
+            cta?: string;
+            hashtags?: string[];
+        } | null = null;
 
         // 🔍 DEBUG: Log input parameters
         console.log('🎨 [Generate Creative Asset] Flow Started:', {
@@ -1891,7 +1907,8 @@ Use the provided design examples as style reference to create a similar visual a
             let generatedContent = '';
 
             // Check if we need to generate creative content automatically
-            const needsContentGeneration = !hasExplicitTextRequest && !hasQuotedText && input.useBrandProfile && input.brandProfile;
+            // Use userIntent which is already in scope instead of undefined variables
+            const needsContentGeneration = !userIntent.isLiteralTextRequest && input.useBrandProfile && input.brandProfile;
 
             if (needsContentGeneration) {
                 try {
@@ -1904,11 +1921,10 @@ Use the provided design examples as style reference to create a similar visual a
                     const contentResult = await generateWithRevo20({
                         brandProfile: input.brandProfile,
                         businessType: input.brandProfile.businessType || 'business',
-                        platform: 'instagram',
+                        platform: 'Instagram',
                         visualStyle: input.brandProfile.visualStyle || 'modern',
-                        prompt: parsedInstructions.remainingPrompt || remainingPrompt || 'Create engaging content',
                         useLocalLanguage: false
-                    });
+                    } as any);
 
                     if (contentResult && contentResult.headline) {
                         // Use generated content for the image text
@@ -1919,10 +1935,21 @@ Use the provided design examples as style reference to create a similar visual a
                         // Combine into compelling image text
                         generatedContent = [headline, subheadline, cta].filter(Boolean).join(' • ');
 
+                        // Store the full content result for the return value
+                        revoContentResultGlobal = {
+                            caption: contentResult.caption,
+                            headline: contentResult.headline,
+                            subheadline: contentResult.subheadline,
+                            cta: contentResult.cta,
+                            hashtags: contentResult.hashtags
+                        };
+
                         console.log('✅ [Creative Studio] Generated compelling content:', {
                             headline,
                             subheadline,
                             cta,
+                            caption: contentResult.caption?.substring(0, 100) + '...',
+                            hashtagCount: contentResult.hashtags?.length || 0,
                             combined: generatedContent
                         });
 
@@ -1937,21 +1964,32 @@ Use the provided design examples as style reference to create a similar visual a
                         const { generateRevo15EnhancedDesign } = await import('@/ai/revo-1.5-enhanced-design');
 
                         const contentResult = await generateRevo15EnhancedDesign({
-                            brandProfile: input.brandProfile,
+                            brandProfile: input.brandProfile as any,
                             businessType: input.brandProfile.businessType || 'business',
-                            platform: 'instagram',
+                            platform: 'Instagram',
                             visualStyle: input.brandProfile.visualStyle || 'modern',
-                            prompt: parsedInstructions.remainingPrompt || remainingPrompt || 'Create engaging content',
                             useLocalLanguage: false
-                        });
+                        } as any);
 
                         if (contentResult && contentResult.headline) {
                             const headline = contentResult.headline;
                             const subheadline = contentResult.subheadline || '';
-                            const cta = contentResult.cta || '';
+                            const cta = contentResult.callToAction || '';
 
                             generatedContent = [headline, subheadline, cta].filter(Boolean).join(' • ');
                             imageText = generatedContent;
+
+                            // Store content result for return value (Revo 1.5 uses 'content' and 'callToAction')
+                            const hashtagsValue = (contentResult as any).hashtags;
+                            revoContentResultGlobal = {
+                                caption: (contentResult as any).content,
+                                headline: contentResult.headline,
+                                subheadline: contentResult.subheadline,
+                                cta: (contentResult as any).callToAction,
+                                hashtags: typeof hashtagsValue === 'string' 
+                                    ? hashtagsValue.split(' ').filter(Boolean) 
+                                    : (hashtagsValue as string[])
+                            };
 
                             console.log('✅ [Creative Studio] Generated content with Revo 1.5:', generatedContent);
                         }
@@ -1966,18 +2004,29 @@ Use the provided design examples as style reference to create a similar visual a
                                 businessType: input.brandProfile.businessType || 'business',
                                 businessName: input.brandProfile.businessName || 'Business',
                                 location: input.brandProfile.location || 'Local Area',
-                                platform: 'instagram',
-                                writingTone: 'professional',
-                                brandProfile: input.brandProfile
-                            });
+                                platform: 'Instagram',
+                                writingTone: 'professional'
+                            } as any);
 
                             if (contentResult && contentResult.headline) {
                                 const headline = contentResult.headline;
                                 const subheadline = contentResult.subheadline || '';
-                                const cta = contentResult.cta || '';
+                                const cta = contentResult.callToAction || '';
 
                                 generatedContent = [headline, subheadline, cta].filter(Boolean).join(' • ');
                                 imageText = generatedContent;
+
+                                // Store content result for return value (Revo 1.0 uses 'content' and 'callToAction')
+                                const hashtagsValue10 = (contentResult as any).hashtags;
+                                revoContentResultGlobal = {
+                                    caption: (contentResult as any).content,
+                                    headline: contentResult.headline,
+                                    subheadline: contentResult.subheadline,
+                                    cta: (contentResult as any).callToAction,
+                                    hashtags: typeof hashtagsValue10 === 'string' 
+                                        ? hashtagsValue10.split(' ').filter(Boolean) 
+                                        : (hashtagsValue10 as string[])
+                                };
 
                                 console.log('✅ [Creative Studio] Generated content with Revo 1.0:', generatedContent);
                             }
@@ -2117,6 +2166,8 @@ Ensure the text is readable and well-composed.`
         //     name: 'creativeAssetExplanationPrompt',
         //     prompt: `Based on the generated ${input.outputType}, write a very brief, one-sentence explanation of the creative choices made. ${input.useBrandProfile && input.brandProfile?.logoDataUrl ? 'Make sure to mention how the brand logo was integrated into the design.' : ''} For example: "I created a modern, vibrant image of a coffee shop, using your brand's primary color and prominently featuring your logo in the top-right corner."`
         // });
+
+        // Use the global revoContentResult for return value
 
         try {
             if (input.outputType === 'image') {
@@ -2326,7 +2377,14 @@ Ensure the text is readable and well-composed.`
                 return {
                     imageUrl: finalImageUrl,
                     videoUrl: null,
-                    aiExplanation
+                    aiExplanation,
+                    // Include generated content from Revo systems
+                    caption: revoContentResultGlobal?.caption,
+                    headline: revoContentResultGlobal?.headline,
+                    subheadline: revoContentResultGlobal?.subheadline,
+                    cta: revoContentResultGlobal?.cta,
+                    hashtags: revoContentResultGlobal?.hashtags,
+                    content: revoContentResultGlobal?.caption // Alternative field
                 };
             } else { // Video generation
                 const isVertical = input.aspectRatio === '9:16';
