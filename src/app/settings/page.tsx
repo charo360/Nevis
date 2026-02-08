@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth-supabase";
+import { supabase } from "@/lib/supabase/client";
+import { useUnifiedBrand } from "@/contexts/unified-brand-context";
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -34,13 +36,16 @@ import {
   Mail,
   KeyRound,
   BadgeCheck,
+  Share2
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { ConnectAccountsCard } from "@/components/social/ConnectAccountsCard";
 
 export default function SettingsPage() {
   const router = useRouter();
   const { user, updateUserProfile, signOut } = useAuth();
+  const { currentBrand, brands, loading: brandsLoading, refreshBrands } = useUnifiedBrand();
   const { toast } = useToast();
 
   const [name, setName] = useState(user?.displayName || "");
@@ -52,26 +57,115 @@ export default function SettingsPage() {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleteReason, setDeleteReason] = useState("");
   const [activeTab, setActiveTab] = useState("account");
+  const [resolvedBrandId, setResolvedBrandId] = useState<string | null>(null);
+  const [connectAccountsKey, setConnectAccountsKey] = useState(0);
+
+  // Derive the effective brand ID immediately from context if available, otherwise use resolved fallback
+  const effectiveBrandId = currentBrand?.id || (brands.length > 0 ? brands[0].id : null) || resolvedBrandId;
+
+  // Resolve brand ID from LocalStorage -> API (Fallback)
+  useEffect(() => {
+    const resolveBrand = async () => {
+      // If we already have it from context, no need to do anything
+      if (currentBrand?.id || brands.length > 0) return;
+
+      // 1. Try LocalStorage
+      const storedBrandId = localStorage.getItem('selectedBrandId');
+      if (storedBrandId) {
+        setResolvedBrandId(storedBrandId);
+        return;
+      }
+
+      // 2. Try API Fetch directly (Fallback)
+      // Note: useAuth user object has 'userId' property, not 'id'
+      if (user?.userId) {
+        try {
+          console.log('SettingsPage: Attempting fallback fetch for brands...');
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.access_token) {
+            const response = await fetch('/api/brand-profiles', {
+              headers: { 'Authorization': `Bearer ${session.access_token}` }
+            });
+            if (response.ok) {
+              const data = await response.json();
+              console.log('SettingsPage: Fallback fetch response:', data);
+              const profiles = Array.isArray(data) ? data : (data.profiles || []);
+              if (profiles.length > 0) {
+                setResolvedBrandId(profiles[0].id);
+                // Also trigger context refresh since we found data
+                refreshBrands();
+              }
+            } else {
+              console.error('SettingsPage: Fallback fetch failed:', response.status);
+            }
+          }
+        } catch (e) {
+          console.error("Failed to resolve brand fallback:", e);
+        }
+      }
+    };
+
+    resolveBrand();
+  }, [currentBrand, brands, user?.userId, refreshBrands]);
 
   useEffect(() => {
     setName(user?.displayName || "");
     setEmail(user?.email || "");
   }, [user]);
 
+  // Handle OAuth success/error callback
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const oauthSuccess = urlParams.get('oauth_success');
+    const error = urlParams.get('error');
+    const details = urlParams.get('details');
+    const tab = urlParams.get('tab');
+    const platform = urlParams.get('platform');
+    const username = urlParams.get('username');
+
+    if (oauthSuccess === 'true' && platform && username) {
+      toast({
+        title: "Account Connected!",
+        description: `Successfully connected ${platform} account: ${decodeURIComponent(username)}`,
+      });
+      setConnectAccountsKey(prev => prev + 1);
+    } else if (error) {
+      toast({
+        variant: "destructive",
+        title: "Connection Failed",
+        description: details ? decodeURIComponent(details) : `Error: ${error}`,
+      });
+    }
+
+    // Switch tab if requested (e.g. after redirect)
+    if (tab) {
+      setActiveTab(tab);
+    } else if (oauthSuccess === 'true' || error) {
+      // Default to social tab if returning from OAuth
+      setActiveTab("social");
+    }
+
+    // Clean up URL parameters if any OAauth params are present
+    if (oauthSuccess || error || tab) {
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [toast]);
+
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       await updateUserProfile({ displayName: name });
-      toast({ 
-        title: "Profile updated", 
-        description: "Your account information has been successfully updated." 
+      toast({
+        title: "Profile updated",
+        description: "Your account information has been successfully updated."
       });
-      } catch (err) {
-      toast({ 
-        variant: "destructive", 
-        title: "Update failed", 
-        description: String(err) 
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Update failed",
+        description: String(err)
       });
     } finally {
       setLoading(false);
@@ -80,7 +174,7 @@ export default function SettingsPage() {
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (newPassword !== confirmPassword) {
       toast({
         variant: "destructive",
@@ -102,18 +196,18 @@ export default function SettingsPage() {
     setLoading(true);
     try {
       // Add your password change API call here
-      toast({ 
-        title: "Password updated", 
-        description: "Your password has been successfully changed." 
+      toast({
+        title: "Password updated",
+        description: "Your password has been successfully changed."
       });
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch (err) {
-      toast({ 
-        variant: "destructive", 
-        title: "Password change failed", 
-        description: String(err) 
+      toast({
+        variant: "destructive",
+        title: "Password change failed",
+        description: String(err)
       });
     } finally {
       setLoading(false);
@@ -143,23 +237,23 @@ export default function SettingsPage() {
     try {
       // Add your account deletion API call here
       // Include the deleteReason in the API call for feedback
-      toast({ 
-        title: "Account deleted", 
-        description: "Your account has been permanently deleted. We're sorry to see you go." 
+      toast({
+        title: "Account deleted",
+        description: "Your account has been permanently deleted. We're sorry to see you go."
       });
-      
+
       // Clear the form
       setDeleteConfirmText("");
       setDeleteReason("");
-      
+
       // Sign out and redirect
       await signOut();
       router.push("/");
     } catch (err) {
-      toast({ 
-        variant: "destructive", 
-        title: "Deletion failed", 
-        description: String(err) 
+      toast({
+        variant: "destructive",
+        title: "Deletion failed",
+        description: String(err)
       });
     } finally {
       setLoading(false);
@@ -187,7 +281,7 @@ export default function SettingsPage() {
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Settings</h1>
           <p className="text-gray-600 mt-2">Manage your account settings and preferences</p>
-      </div>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 lg:gap-8">
           {/* Profile Card - Sidebar */}
@@ -201,7 +295,7 @@ export default function SettingsPage() {
                       {user.displayName?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || "U"}
                     </AvatarFallback>
                   </Avatar>
-                  
+
                   <div className="space-y-1 w-full">
                     <h3 className="font-semibold text-lg text-gray-900 truncate">
                       {user.displayName || "User"}
@@ -225,7 +319,7 @@ export default function SettingsPage() {
                       <span className="text-gray-900 font-medium">
                         {user.isAnonymous ? "Demo" : "Standard"}
                       </span>
-                  </div>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -235,7 +329,7 @@ export default function SettingsPage() {
           {/* Main Content */}
           <main className="md:col-span-3">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="account" className="flex items-center gap-2">
                   <User className="w-4 h-4" />
                   <span className="hidden sm:inline">Account</span>
@@ -247,6 +341,10 @@ export default function SettingsPage() {
                 <TabsTrigger value="data" className="flex items-center gap-2">
                   <Database className="w-4 h-4" />
                   <span className="hidden sm:inline">Data</span>
+                </TabsTrigger>
+                <TabsTrigger value="social" className="flex items-center gap-2">
+                  <Share2 className="w-4 h-4" />
+                  <span className="hidden sm:inline">Social</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -431,14 +529,14 @@ export default function SettingsPage() {
                         <p className="text-sm text-green-600 font-medium mt-1">
                           Active & Verified
                         </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
                 {/* Danger Zone */}
-          <Card className="border-destructive/50">
-            <CardHeader>
+                <Card className="border-destructive/50">
+                  <CardHeader>
                     <CardTitle className="text-destructive flex items-center gap-2">
                       <Trash2 className="w-5 h-5" />
                       Danger Zone
@@ -446,26 +544,26 @@ export default function SettingsPage() {
                     <CardDescription>
                       Irreversible actions that will permanently affect your account
                     </CardDescription>
-            </CardHeader>
-            <CardContent>
+                  </CardHeader>
+                  <CardContent>
                     <div className="space-y-4">
                       <div className="p-4 border border-destructive/20 rounded-lg bg-destructive/5">
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
+                          <div>
                             <h4 className="font-semibold text-gray-900">Delete Account</h4>
                             <p className="text-sm text-gray-600 mt-1">
                               Once deleted, all your data will be permanently removed. This action cannot be undone.
                             </p>
-                </div>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
+                          </div>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
                               <Button variant="destructive" className="shrink-0">
                                 <Trash2 className="w-4 h-4 mr-2" />
                                 Delete Account
                               </Button>
-                  </AlertDialogTrigger>
+                            </AlertDialogTrigger>
                             <AlertDialogContent className="max-w-md">
-                    <AlertDialogHeader>
+                              <AlertDialogHeader>
                                 <AlertDialogTitle className="flex items-center gap-2 text-destructive">
                                   <Trash2 className="w-5 h-5" />
                                   Delete Account Permanently?
@@ -487,7 +585,7 @@ export default function SettingsPage() {
                                     </div>
                                   </div>
                                 </AlertDialogDescription>
-                    </AlertDialogHeader>
+                              </AlertDialogHeader>
 
                               <div className="space-y-4 pt-4">
                                 <div className="space-y-2">
@@ -522,7 +620,7 @@ export default function SettingsPage() {
                               </div>
 
                               <AlertDialogFooter className="mt-6">
-                                <AlertDialogCancel 
+                                <AlertDialogCancel
                                   onClick={() => {
                                     setDeleteConfirmText("");
                                     setDeleteReason("");
@@ -538,14 +636,90 @@ export default function SettingsPage() {
                                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                   Delete Account Permanently
                                 </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </div>
-              </div>
-            </CardContent>
-          </Card>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Social Tab */}
+              <TabsContent value="social" className="space-y-6">
+                {/* Debug Info (Temporary) */}
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-xs font-mono mb-4">
+                  <p><strong>Debug Info:</strong></p>
+                  <p>Loading: {brandsLoading ? 'Yes' : 'No'}</p>
+                  <p>Current Brand: {currentBrand ? currentBrand.businessName : 'None'}</p>
+                  <p>Brands Count: {brands.length}</p>
+                  <p>User ID: {user?.userId}</p>
+                  <p>Effective Brand ID: {effectiveBrandId}</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-2 h-6"
+                    onClick={() => refreshBrands()}
+                  >
+                    Force Refresh Brands
+                  </Button>
+                </div>
+
+                {brandsLoading && !effectiveBrandId ? (
+                  <Card>
+                    <CardContent className="flex items-center justify-center py-12">
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    </CardContent>
+                  </Card>
+                ) : effectiveBrandId ? (
+                  <ConnectAccountsCard
+                    key={connectAccountsKey}
+                    brandProfileId={effectiveBrandId}
+                    onAccountsChange={(accounts) => {
+                      console.log('Connected accounts updated:', accounts.length);
+                    }}
+                  />
+                ) : (
+                  <Card>
+                    <CardContent className="py-8 text-center text-muted-foreground">
+                      <p>Please create a brand profile first to connect social accounts.</p>
+                      <Button className="mt-4" onClick={() => router.push('/quick-content')}>
+                        Create Brand Profile
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Share2 className="w-5 h-5" />
+                      Publishing Settings
+                    </CardTitle>
+                    <CardDescription>
+                      Configure how your content is published to social media
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="p-4 bg-muted/50 rounded-lg">
+                      <p className="text-sm text-muted-foreground">
+                        Once you connect your social media accounts, you can publish content directly from Crevo.
+                        Your posts will be published using your connected accounts without needing to leave the app.
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 border rounded-lg">
+                        <p className="text-sm font-medium text-gray-700">Default Platform</p>
+                        <p className="text-sm text-gray-900 mt-1">Instagram</p>
+                      </div>
+                      <div className="p-4 border rounded-lg">
+                        <p className="text-sm font-medium text-gray-700">Auto-publish</p>
+                        <p className="text-sm text-gray-900 mt-1">Disabled (Manual approval)</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </TabsContent>
             </Tabs>
           </main>
@@ -554,4 +728,3 @@ export default function SettingsPage() {
     </SidebarInset>
   );
 }
-

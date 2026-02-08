@@ -18,6 +18,7 @@ import { DesignColorPicker } from './design-color-picker';
 import ProductImageSelector from './product-image-selector';
 import { AssetLibrary } from './asset-library';
 import type { CreativeAsset } from '@/lib/services/creative-assets-service';
+import { analyzeImageWithVision, formatVisionAnalysisForDisplay, type VisionAnalysisResult } from '@/lib/services/google-vision';
 
 
 interface ChatLayoutProps {
@@ -31,6 +32,7 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
     const [input, setInput] = React.useState('');
     const [imagePreview, setImagePreview] = React.useState<string | null>(null);
     const [imageDataUrl, setImageDataUrl] = React.useState<string | null>(null);
+    const [visionAnalysis, setVisionAnalysis] = React.useState<VisionAnalysisResult | null>(null); // NEW: Store Vision API results
     const [useBrandProfile, setUseBrandProfile] = React.useState(!!brandProfile);
     const [outputType, setOutputType] = React.useState<'image' | 'video'>('image');
     const [aspectRatio, setAspectRatio] = React.useState<'1:1' | '4:5' | '16:9' | '9:16'>('1:1');
@@ -51,16 +53,141 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
         setUseBrandProfile(!!brandProfile);
     }, [brandProfile]);
 
-    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (file) {
+        if (!file) return;
+
+        // Validate file size (max 20MB)
+        const maxSizeMB = 20;
+        const fileSizeMB = file.size / (1024 * 1024);
+        if (fileSizeMB > maxSizeMB) {
+            toast({
+                variant: 'destructive',
+                title: 'File Too Large',
+                description: `Image size (${fileSizeMB.toFixed(1)}MB) exceeds maximum of ${maxSizeMB}MB. Please use a smaller image or compress it first.`,
+            });
+            return;
+        }
+
+        try {
+            // Show loading toast
+            const loadingToast = toast({
+                title: 'Processing Image...',
+                description: 'Optimizing for upload...',
+            });
+
             const reader = new FileReader();
-            reader.onloadend = () => {
+            reader.onloadend = async () => {
                 const dataUrl = reader.result as string;
-                setImagePreview(dataUrl);
-                setImageDataUrl(dataUrl);
+
+                // Compress image if needed (using utility from image-compression.ts)
+                const { compressImageDataUrl, estimateBase64SizeMB } = await import('@/utils/image-compression');
+                const originalSizeMB = estimateBase64SizeMB(dataUrl.split(',')[1]);
+
+                let finalDataUrl = dataUrl;
+                if (originalSizeMB > 10) {
+                    console.log(`🔄 [Creative Studio] Compressing image from ${originalSizeMB.toFixed(2)}MB...`);
+                    finalDataUrl = await compressImageDataUrl(dataUrl, {
+                        maxWidth: 2048,
+                        maxHeight: 2048,
+                        quality: 0.85,
+                        maxSizeMB: 10
+                    });
+                    const compressedSizeMB = estimateBase64SizeMB(finalDataUrl.split(',')[1]);
+                    const reductionPercent = ((1 - compressedSizeMB / originalSizeMB) * 100).toFixed(1);
+                    console.log(`✅ [Creative Studio] Compressed to ${compressedSizeMB.toFixed(2)}MB (${reductionPercent}% reduction)`);
+
+                    // Show success toast with compression stats
+                    toast({
+                        title: 'Image Optimized',
+                        description: `Compressed from ${originalSizeMB.toFixed(1)}MB to ${compressedSizeMB.toFixed(1)}MB (${reductionPercent}% smaller)`,
+                        duration: 3000,
+                    });
+                } else {
+                    console.log(`✅ [Creative Studio] Image size (${originalSizeMB.toFixed(2)}MB) is optimal, no compression needed`);
+                }
+
+                // NEW: Analyze image with Google Vision API with progressive feedback
+                let analysisToastId: any = null;
+                try {
+                    // Show initial analyzing toast
+                    analysisToastId = toast({
+                        title: '🔍 Analyzing Image...',
+                        description: 'Gathering visual information from your image',
+                        duration: 30000, // Keep visible during analysis
+                    });
+
+                    console.log('🔍 [Creative Studio] Analyzing image with Vision API...');
+
+                    // Update toast to show we're working
+                    setTimeout(() => {
+                        if (analysisToastId) {
+                            toast({
+                                title: '🎨 Detecting Colors & Objects...',
+                                description: 'Extracting dominant colors and identifying elements',
+                                duration: 30000,
+                            });
+                        }
+                    }, 500);
+
+                    const visionResult = await analyzeImageWithVision(finalDataUrl);
+
+                    if (visionResult.error) {
+                        console.warn('⚠️ [Vision API] Analysis failed:', visionResult.error);
+                        // Continue without Vision data - don't block upload
+                        toast({
+                            title: 'Image Uploaded',
+                            description: 'Image analysis unavailable, but upload successful',
+                            duration: 2000,
+                        });
+                    } else {
+                        console.log('✅ [Vision API] Analysis complete:', {
+                            labels: visionResult.labels.length,
+                            colors: visionResult.dominantColors.length,
+                            text: visionResult.fullTextAnnotation ? 'detected' : 'none',
+                            logos: visionResult.logos.length,
+                        });
+
+                        // Store Vision analysis
+                        setVisionAnalysis(visionResult);
+
+                        // Show success with what we found
+                        const findingsCount = [
+                            visionResult.labels.length > 0 ? 'objects' : null,
+                            visionResult.dominantColors.length > 0 ? 'colors' : null,
+                            visionResult.logos.length > 0 ? 'brands' : null,
+                            visionResult.fullTextAnnotation ? 'text' : null,
+                        ].filter(Boolean);
+
+                        toast({
+                            title: '✅ Analysis Complete!',
+                            description: `Found ${findingsCount.join(', ')} - ${formatVisionAnalysisForDisplay(visionResult)}`,
+                            duration: 5000,
+                        });
+                    }
+                } catch (visionError) {
+                    console.error('❌ [Vision API] Analysis error:', visionError);
+                    // Continue without Vision - don't block the upload
+                    setVisionAnalysis(null);
+                    toast({
+                        title: 'Image Uploaded',
+                        description: 'Analysis failed, but image uploaded successfully',
+                        duration: 2000,
+                    });
+                }
+
+                setImagePreview(finalDataUrl);
+                setImageDataUrl(finalDataUrl);
             };
             reader.readAsDataURL(file);
+
+        } catch (error) {
+            console.error('❌ [Creative Studio] Image processing error:', error);
+            toast({
+                variant: 'destructive',
+                title: 'Image Processing Failed',
+                description: 'Failed to process image. Please try a different file.',
+            });
         }
     };
 
@@ -124,29 +251,87 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
 
             // Show Toast
             toast({
-                title: 'Asset Added',
-                description: 'Ready to design',
-                duration: 3000
+                title: 'Asset Loading...',
+                description: 'Optimizing asset for generation',
+                duration: 2000
             });
 
-            // Handle Data URI conversion
+            // Handle Data URI conversion with compression
             if (!asset.file_url.startsWith('data:')) {
-                setImageDataUrl(asset.file_url);
+                // Fetch and convert to data URI
+                const response = await fetch(asset.file_url);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch asset');
+                }
 
-                fetch(asset.file_url)
-                    .then(res => res.blob())
-                    .then(blob => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                            if (typeof reader.result === 'string') {
-                                setImageDataUrl(reader.result);
+                const blob = await response.blob();
+                const reader = new FileReader();
+
+                reader.onloadend = async () => {
+                    if (typeof reader.result === 'string') {
+                        try {
+                            // Compress if needed
+                            const { compressImageDataUrl, estimateBase64SizeMB } = await import('@/utils/image-compression');
+                            const originalDataUrl = reader.result;
+                            const originalSizeMB = estimateBase64SizeMB(originalDataUrl.split(',')[1]);
+
+                            let finalDataUrl = originalDataUrl;
+                            if (originalSizeMB > 10) {
+                                console.log(`🔄 [Creative Studio] Compressing selected asset from ${originalSizeMB.toFixed(2)}MB...`);
+                                finalDataUrl = await compressImageDataUrl(originalDataUrl, {
+                                    maxWidth: 2048,
+                                    maxHeight: 2048,
+                                    quality: 0.85,
+                                    maxSizeMB: 10
+                                });
+                                const compressedSizeMB = estimateBase64SizeMB(finalDataUrl.split(',')[1]);
+                                console.log(`✅ [Creative Studio] Asset compressed to ${compressedSizeMB.toFixed(2)}MB`);
                             }
-                        };
-                        reader.readAsDataURL(blob);
-                    })
-                    .catch(e => console.warn('Conversion failed', e));
+
+                            setImageDataUrl(finalDataUrl);
+
+                            toast({
+                                title: 'Asset Ready',
+                                description: 'Asset optimized and ready to use',
+                                duration: 2000
+                            });
+                        } catch (compressionError) {
+                            console.warn('⚠️ [Creative Studio] Asset compression failed:', compressionError);
+                            // Fallback to uncompressed if compression fails
+                            setImageDataUrl(reader.result);
+                            toast({
+                                title: 'Asset Ready',
+                                description: 'Asset loaded (optimization skipped)',
+                                duration: 2000
+                            });
+                        }
+                    }
+                };
+                reader.readAsDataURL(blob);
             } else {
-                setImageDataUrl(asset.file_url);
+                // Already a data URI - compress if needed
+                try {
+                    const { compressImageDataUrl, estimateBase64SizeMB } = await import('@/utils/image-compression');
+                    const originalSizeMB = estimateBase64SizeMB(asset.file_url.split(',')[1]);
+
+                    let finalDataUrl = asset.file_url;
+                    if (originalSizeMB > 10) {
+                        console.log(`🔄 [Creative Studio] Compressing selected data URI from ${originalSizeMB.toFixed(2)}MB...`);
+                        finalDataUrl = await compressImageDataUrl(asset.file_url, {
+                            maxWidth: 2048,
+                            maxHeight: 2048,
+                            quality: 0.85,
+                            maxSizeMB: 10
+                        });
+                        const compressedSizeMB = estimateBase64SizeMB(finalDataUrl.split(',')[1]);
+                        console.log(`✅ [Creative Studio] Data URI compressed to ${compressedSizeMB.toFixed(2)}MB`);
+                    }
+
+                    setImageDataUrl(finalDataUrl);
+                } catch (error) {
+                    console.warn('⚠️ [Creative Studio] Data URI compression failed:', error);
+                    setImageDataUrl(asset.file_url);
+                }
             }
 
         } catch (e) {
@@ -273,24 +458,97 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 } else if (hasReferenceIntent) {
                     enhancedPrompt = `[IMAGE UPLOADED - INTENT: REFERENCE] ${currentInput}\n\nIMPORTANT: The user uploaded an image as a REFERENCE. Use the uploaded image as inspiration for style, composition, and visual direction while creating a new design based on the user's instructions.`;
                 } else {
-                    // Default: treat as reference/context
-                    enhancedPrompt = `[IMAGE UPLOADED - INTENT: CONTEXT] ${currentInput}\n\nIMPORTANT: The user uploaded an image for context. Analyze the image and integrate it naturally into the design based on the user's instructions. Use it as visual context to inform the design direction.`;
+                    //Default: treat as reference/context but ensure deep analysis
+                    enhancedPrompt = `[VISUAL IMAGE + INSTRUCTIONS PROVIDED]
+
+USER'S REQUEST: "${currentInput}"
+
+🎯 CRITICAL TWO-STEP PROCESS:
+
+STEP 1 - ANALYZE THE UPLOADED IMAGE:
+Before doing anything, extract these details from the uploaded image:
+• Visual elements: What objects, products, or subjects do you see?
+• Color palette: What are the dominant colors?
+• Text content: Is there any text visible in the image?
+• Mood & style: What's the emotional tone and visual style?
+• Context: What is this image showing and why?
+
+STEP 2 - BLEND IMAGE + INSTRUCTIONS:
+Create a design that:
+✅ Incorporates specific visual details you identified from the image
+✅ Fulfills the user's written instructions
+✅ Feels like a natural combination of BOTH the image and the request
+✅ References colors, objects, or elements from the uploaded image
+✅ Matches or complements the image's mood and style
+
+The final result should show you understood BOTH the uploaded image AND the user's instructions. Make it feel cohesive and intentional, not disconnected.`;
                 }
             } else {
-                // Default prompt when ONLY image is provided
-                enhancedPrompt = `[IMAGE UPLOADED] The user has provided an image to use as a basis for creative asset generation. Analyze the style, composition, and subject matter of this image and generate a complementary, professional creative asset that enhances or relates to this visual context.`;
+                // Default prompt when ONLY image is provided - CRITICAL: Must analyze image deeply
+                enhancedPrompt = `[VISUAL IMAGE PROVIDED - ANALYSIS REQUIRED]
+
+🎯 CRITICAL INSTRUCTION: The user uploaded a visual image without detailed text instructions.
+
+YOU MUST:
+1. **ANALYZE THE IMAGE THOROUGHLY** - Identify all visual elements:
+   • Objects, products, or subjects visible
+   • Dominant colors and color palette
+   • Any text or typography in the image
+   • Mood, tone, and emotional feeling
+   • Visual style (modern, vintage, minimalist, bold, etc.)
+   • Composition and layout characteristics
+
+2. **UNDERSTAND THE CONTEXT**:
+   • What is this image showing? (product, lifestyle, brand photo, etc.)
+   • What's the likely marketing purpose?
+   • What audience would this appeal to?
+   • What message does it convey?
+
+3. **CREATE NATURAL, IMAGE-AWARE CONTENT**:
+   • Generate design elements that complement the image's colors and style
+   • Write copy that relates to what you see in the image
+   • Match the mood and tone of the uploaded visual
+   • Reference specific elements you identified (e.g., if you see a blue product, mention it)
+   • Make it feel like the design was custom-made for THIS specific image
+
+🎯 **SMART IMAGE MODIFICATIONS (ALLOWED IF NATURAL):**
+   • You MAY modify the image if it enhances the design
+   • Modifications MUST look 100% photorealistic and natural
+   • Adding objects to hands? Ensure proper grip and realistic positioning
+   • Maintain original photo quality and lighting throughout
+   • If you can't make it look natural, add design elements around the image instead
+
+✅ GOOD: Adding tablet to hand with proper grip, natural shadows, realistic positioning
+❌ BAD: Floating objects, awkward hand positions, mismatched lighting
+
+❌ DO NOT: Create generic content unrelated to the image
+❌ DO NOT: Make modifications that look fake or reduce quality
+✅ DO: Show you understood the image by referencing its specific visual details
+✅ DO: Ensure any modifications are indistinguishable from the original photo quality
+
+Your output should feel completely natural and contextually connected to the uploaded image.`;
             }
 
             // 🔍 DEBUG: Log enhanced prompt construction
             console.log('📝 [Creative Studio] Enhanced Prompt Built:', {
                 hasInput: !!currentInput,
+                hasVisionAnalysis: !!visionAnalysis,
                 enhancedPromptPreview: enhancedPrompt.substring(0, 100)
             });
+        }
+
+        // Add Vision API analysis to prompt if available
+        if (visionAnalysis && !visionAnalysis.error) {
+            const { formatVisionAnalysisForAI } = await import('@/lib/services/google-vision');
+            const visionPrompt = formatVisionAnalysisForAI(visionAnalysis);
+            enhancedPrompt = visionPrompt + '\n\n' + enhancedPrompt;
+            console.log('🎨 [Creative Studio] Added Vision API analysis to prompt');
         }
 
         setInput('');
         setImagePreview(null);
         setImageDataUrl(null);
+        setVisionAnalysis(null); // Clear Vision analysis when submitting
         setIsLoading(true);
 
         try {
@@ -448,6 +706,26 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
             const { getUserFriendlyErrorMessage, extractCreditInfo, isCreditError } = await import('@/lib/error-messages');
             const { ToastAction } = await import('@/components/ui/toast');
             const errorMessage = (error as Error).message;
+
+            // Check for 413 Payload Too Large error
+            if (errorMessage.includes('413') || errorMessage.toLowerCase().includes('payload too large')) {
+                const errorResponse: Message = {
+                    id: (Date.now() + 1).toString(),
+                    role: 'assistant',
+                    content: '⚠️ Image Upload Issue\n\nThe image you uploaded is too large for our servers to process. This usually happens when an image wasn\'t compressed properly.\n\nPlease try:\n• Uploading a smaller image\n• Using a different image\n• Refreshing the page and trying again',
+                };
+                setMessages(prevMessages => [...prevMessages, errorResponse]);
+
+                toast({
+                    variant: 'destructive',
+                    title: '413 - Payload Too Large',
+                    description: 'Image exceeds upload limit. Please try a smaller file.',
+                    duration: 5000,
+                });
+
+                setIsLoading(false);
+                return;
+            }
 
             // Extract credit information if available
             const creditInfo = extractCreditInfo(errorMessage);

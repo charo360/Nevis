@@ -38,18 +38,18 @@ interface StoreAssets {
 export async function importStoreAssets(storeUrl: string): Promise<StoreAssets> {
   try {
     console.log(`🛒 Starting asset extraction for: ${storeUrl}`);
-    
+
     // Normalize URL
     const normalizedUrl = normalizeUrl(storeUrl);
-    
+
     // Detect platform
     const platform = await detectPlatform(normalizedUrl);
     console.log(`📱 Detected platform: ${platform}`);
-    
+
     // Extract based on platform
     let assets: Omit<StoreAssets, 'success' | 'platform' | 'storeUrl' | 'scrapedAt'>;
-    
-    switch(platform) {
+
+    switch (platform) {
       case 'shopify':
         assets = await scrapeShopify(normalizedUrl);
         break;
@@ -59,7 +59,7 @@ export async function importStoreAssets(storeUrl: string): Promise<StoreAssets> 
       default:
         assets = await scrapeGeneric(normalizedUrl);
     }
-    
+
     return {
       success: true,
       platform,
@@ -67,7 +67,7 @@ export async function importStoreAssets(storeUrl: string): Promise<StoreAssets> 
       ...assets,
       scrapedAt: new Date().toISOString()
     };
-    
+
   } catch (error) {
     console.error('❌ Error importing store assets:', error);
     return {
@@ -97,27 +97,27 @@ export async function detectPlatform(url: string): Promise<string> {
     if (shopifyTest.ok) {
       return 'shopify';
     }
-    
+
     // Try WooCommerce API
     const wooTest = await fetch(`${url}/wp-json/wc/v3/products?per_page=1`);
     if (wooTest.ok) {
       return 'woocommerce';
     }
-    
+
     // Check page content for platform indicators
     const response = await fetch(url);
     const html = await response.text();
-    
+
     if (html.includes('Shopify') || html.includes('shopify')) {
       return 'shopify';
     }
-    
+
     if (html.includes('WooCommerce') || html.includes('wp-content')) {
       return 'woocommerce';
     }
-    
+
     return 'generic';
-    
+
   } catch (error) {
     console.warn('⚠️ Platform detection failed, using generic scraper');
     return 'generic';
@@ -130,17 +130,17 @@ export async function detectPlatform(url: string): Promise<string> {
 async function scrapeShopify(url: string): Promise<Omit<StoreAssets, 'success' | 'platform' | 'storeUrl' | 'scrapedAt'>> {
   try {
     console.log('🏪 Scraping Shopify store...');
-    
+
     // Get products from Shopify API
     const productsResponse = await fetch(`${url}/products.json?limit=250`);
     if (!productsResponse.ok) {
       throw new Error('Failed to fetch Shopify products');
     }
-    
+
     const productsData = await productsResponse.json();
     const products: StoreProduct[] = [];
     const allImages: string[] = [];
-    
+
     for (const product of productsData.products) {
       const productImages = product.images.map((img: any) => ({
         url: img.src,
@@ -148,7 +148,7 @@ async function scrapeShopify(url: string): Promise<Omit<StoreAssets, 'success' |
         width: img.width,
         height: img.height
       }));
-      
+
       products.push({
         id: product.id,
         title: product.title,
@@ -157,14 +157,14 @@ async function scrapeShopify(url: string): Promise<Omit<StoreAssets, 'success' |
         variants: product.variants?.length || 0,
         productUrl: `${url}/products/${product.handle}`
       });
-      
+
       // Collect all image URLs
       productImages.forEach(img => allImages.push(img.url));
     }
-    
+
     // Try to get logo and brand colors from main page
     const { logo, brandColors } = await extractBrandAssets(url);
-    
+
     return {
       products,
       totalProducts: products.length,
@@ -173,7 +173,7 @@ async function scrapeShopify(url: string): Promise<Omit<StoreAssets, 'success' |
       brandColors,
       allImages
     };
-    
+
   } catch (error) {
     console.error('❌ Shopify scraping failed:', error);
     throw error;
@@ -186,7 +186,7 @@ async function scrapeShopify(url: string): Promise<Omit<StoreAssets, 'success' |
 async function scrapeWooCommerce(url: string): Promise<Omit<StoreAssets, 'success' | 'platform' | 'storeUrl' | 'scrapedAt'>> {
   try {
     console.log('🛍️ Scraping WooCommerce store...');
-    
+
     // Try WooCommerce REST API first
     try {
       const apiResponse = await fetch(`${url}/wp-json/wc/v3/products?per_page=100`);
@@ -197,10 +197,10 @@ async function scrapeWooCommerce(url: string): Promise<Omit<StoreAssets, 'succes
     } catch (apiError) {
       console.warn('⚠️ WooCommerce API failed, falling back to scraping');
     }
-    
+
     // Fallback to generic scraping
     return await scrapeGeneric(url);
-    
+
   } catch (error) {
     console.error('❌ WooCommerce scraping failed:', error);
     throw error;
@@ -213,7 +213,7 @@ async function scrapeWooCommerce(url: string): Promise<Omit<StoreAssets, 'succes
 async function processWooCommerceProducts(apiProducts: any[], baseUrl: string): Promise<Omit<StoreAssets, 'success' | 'platform' | 'storeUrl' | 'scrapedAt'>> {
   const products: StoreProduct[] = [];
   const allImages: string[] = [];
-  
+
   for (const product of apiProducts) {
     const productImages = product.images?.map((img: any) => ({
       url: img.src,
@@ -221,7 +221,7 @@ async function processWooCommerceProducts(apiProducts: any[], baseUrl: string): 
       width: img.width,
       height: img.height
     })) || [];
-    
+
     products.push({
       id: product.id,
       title: product.name,
@@ -230,12 +230,12 @@ async function processWooCommerceProducts(apiProducts: any[], baseUrl: string): 
       variants: product.variations?.length || 0,
       productUrl: product.permalink
     });
-    
+
     productImages.forEach((img: any) => allImages.push(img.url));
   }
-  
+
   const { logo, brandColors } = await extractBrandAssets(baseUrl);
-  
+
   return {
     products,
     totalProducts: products.length,
@@ -252,11 +252,11 @@ async function processWooCommerceProducts(apiProducts: any[], baseUrl: string): 
 async function scrapeGeneric(url: string): Promise<Omit<StoreAssets, 'success' | 'platform' | 'storeUrl' | 'scrapedAt'>> {
   try {
     console.log('🌐 Using generic scraping...');
-    
+
     // For now, return basic brand assets extraction
     // In production, you'd use Puppeteer here
     const { logo, brandColors } = await extractBrandAssets(url);
-    
+
     return {
       products: [],
       totalProducts: 0,
@@ -265,7 +265,7 @@ async function scrapeGeneric(url: string): Promise<Omit<StoreAssets, 'success' |
       brandColors,
       allImages: []
     };
-    
+
   } catch (error) {
     console.error('❌ Generic scraping failed:', error);
     throw error;
@@ -274,9 +274,17 @@ async function scrapeGeneric(url: string): Promise<Omit<StoreAssets, 'success' |
 
 /**
  * Extract logo, images, and brand colors from any website
+ * 
+ * ⚠️ WARNING: This function makes HTTP requests and should ONLY be called from 
+ * server-side code (API routes, server actions) to avoid CORS errors.
+ * 
+ * For client-side usage, call the `/api/extract-website-assets` endpoint instead.
+ * 
+ * @param url - The website URL to extract assets from
+ * @returns Object containing logo, brandColors, images, and favicon
  */
-export async function extractBrandAssets(url: string): Promise<{ 
-  logo?: string; 
+export async function extractBrandAssets(url: string): Promise<{
+  logo?: string;
   brandColors?: string[];
   images?: string[];
   favicon?: string;
@@ -284,12 +292,12 @@ export async function extractBrandAssets(url: string): Promise<{
   try {
     const response = await fetch(url);
     const html = await response.text();
-    
+
     // Enhanced logo extraction
     let logo: string | undefined;
     const images: string[] = [];
     let favicon: string | undefined;
-    
+
     // 1. Look for logo in common patterns
     const logoPatterns = [
       /<img[^>]*(?:class|id|alt)=["'][^"']*logo[^"']*["'][^>]*src=["']([^"']+)["']/i,
@@ -297,7 +305,7 @@ export async function extractBrandAssets(url: string): Promise<{
       /<img[^>]*(?:class|id|alt)=["'][^"']*brand[^"']*["'][^>]*src=["']([^"']+)["']/i,
       /<img[^>]*src=["']([^"']+)["'][^>]*(?:class|id|alt)=["'][^"']*brand[^"']*["']/i,
     ];
-    
+
     for (const pattern of logoPatterns) {
       const match = html.match(pattern);
       if (match && match[1]) {
@@ -305,13 +313,13 @@ export async function extractBrandAssets(url: string): Promise<{
         break;
       }
     }
-    
+
     // 2. Extract favicon
     const faviconPatterns = [
       /<link[^>]*rel=["'](?:icon|shortcut icon)["'][^>]*href=["']([^"']+)["']/i,
       /<link[^>]*href=["']([^"']+)["'][^>]*rel=["'](?:icon|shortcut icon)["']/i,
     ];
-    
+
     for (const pattern of faviconPatterns) {
       const match = html.match(pattern);
       if (match && match[1]) {
@@ -319,7 +327,7 @@ export async function extractBrandAssets(url: string): Promise<{
         break;
       }
     }
-    
+
     // 3. Extract other relevant images (hero images, banners, etc.)
     const imageMatches = html.match(/<img[^>]*src=["']([^"']+)["']/gi) || [];
     imageMatches.forEach(match => {
@@ -332,13 +340,13 @@ export async function extractBrandAssets(url: string): Promise<{
         }
       }
     });
-    
+
     // Limit images to prevent overwhelming results
     const limitedImages = images.slice(0, 10);
-    
+
     // Enhanced brand color extraction
     const brandColors: string[] = [];
-    
+
     // 1. CSS custom properties (--primary-color, --brand-color, etc.)
     const cssVarMatches = html.match(/--[^:]*(?:primary|brand|main|accent|theme)[^:]*color[^:]*:\s*([^;]+)/gi) || [];
     cssVarMatches.forEach(match => {
@@ -347,23 +355,23 @@ export async function extractBrandAssets(url: string): Promise<{
         brandColors.push(color);
       }
     });
-    
+
     // 2. Inline styles with common brand color patterns
     const inlineColorMatches = html.match(/(?:background-color|color):\s*(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}|rgb\([^)]+\))/gi) || [];
     inlineColorMatches.forEach(match => {
       const color = match.split(':')[1]?.trim();
       if (color) brandColors.push(color);
     });
-    
+
     // 3. Common CSS class patterns
     const classColorMatches = html.match(/class="[^"]*(?:primary|brand|main|accent|theme)[^"]*"/gi) || [];
-    
+
     // 4. Meta theme colors
     const themeColorMatch = html.match(/<meta[^>]*name=["']theme-color["'][^>]*content=["']([^"']+)["']/i);
     if (themeColorMatch && themeColorMatch[1]) {
       brandColors.push(themeColorMatch[1]);
     }
-    
+
     // 5. Remove duplicates and invalid colors, limit to 5 most relevant
     const uniqueColors = [...new Set(brandColors)]
       .filter(color => {
@@ -372,14 +380,14 @@ export async function extractBrandAssets(url: string): Promise<{
         return !commonColors.includes(color.toLowerCase());
       })
       .slice(0, 5);
-    
-    return { 
-      logo, 
-      brandColors: uniqueColors, 
+
+    return {
+      logo,
+      brandColors: uniqueColors,
       images: limitedImages,
-      favicon 
+      favicon
     };
-    
+
   } catch (error) {
     console.warn('⚠️ Brand assets extraction failed:', error);
     return {};

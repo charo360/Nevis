@@ -1055,7 +1055,7 @@ const generateCreativeAssetFlow = ai.defineFlow(
     async (input) => {
         const promptParts: (string | { text: string } | { media: { url: string; contentType?: string } })[] = [];
         let textPrompt = '';
-        
+
         // Store the full content result from Revo systems to pass to the return value
         let revoContentResultGlobal: {
             caption?: string;
@@ -1651,13 +1651,52 @@ Use the provided design examples as style reference to create a similar visual a
                         promptPartsLengthBefore: promptParts.length
                     });
 
-                    // Add uploaded image to promptParts (will be referenced in instructions below)
+                    // CRITICAL: Add uploaded image FIRST for analysis priority
                     promptParts.push({ media: { url: input.referenceAssetUrl!, contentType: getMimeTypeFromDataURI(input.referenceAssetUrl!) } });
 
                     // 🔍 DEBUG: Confirm image added
                     console.log('✅ [Generate Creative Asset] Uploaded Image Added to Prompt Parts:', {
                         promptPartsLengthAfter: promptParts.length
                     });
+
+                    // **CRITICAL ADDITION**: Explicit image analysis requirements
+                    onBrandPrompt = `
+🎯 **MANDATORY: UPLOADED IMAGE ANALYSIS** 🎯
+
+BEFORE creating any design, you MUST analyze the uploaded image provided above.
+
+**STEP 1 - VISUAL EXTRACTION (REQUIRED):**
+Examine the uploaded image and identify:
+1. **Objects & Subjects**: What do you see? (products, people, items, logos, etc.)
+2. **Color Palette**: Dominant colors (list specific colors/hex if possible)
+3. **Text Elements**: Any text, numbers, or typography visible in the image
+4. **Mood & Emotion**: What feeling does it convey? (professional, playful, elegant, energetic, calm, etc.)
+5. **Visual Style**: Aesthetic type (modern, vintage, minimalist, bold, photographic, illustrative, etc.)
+6. **Composition**: Layout, framing, focus areas, visual hierarchy
+
+**STEP 2 - CONTEXT UNDERSTANDING (REQUIRED):**
+- What is this image showing? (product photo, lifestyle scene, logo, promotional image, etc.)
+- What's the likely marketing/branding purpose?
+- What audience would this appeal to?
+- What message or value proposition does it communicate?
+
+**STEP 3 - INTEGRATION MANDATE (REQUIRED):**
+Your final design MUST:
+✅ Incorporate specific colors extracted from the uploaded image
+✅ Reference or complement visible objects/subjects
+✅ Match or enhance the mood and emotional tone
+✅ Align with the visual style you identified
+✅ Show understanding by mentioning specific elements (e.g., "the blue product", "the outdoor setting", etc.)
+✅ Create copy/text that relates to what you actually see in the image
+✅ Feel like a natural, contextual evolution of the uploaded image
+
+❌ NEVER create a generic design that could work without the image
+❌ NEVER ignore the image's colors, mood, or content
+❌ NEVER generate content disconnected from the uploaded visual
+
+**Your output must prove you analyzed and understood the uploaded image.**
+
+` + onBrandPrompt;
                 }
 
                 // Instructions for design generation with uploaded image and/or logo
@@ -1986,8 +2025,8 @@ Use the provided design examples as style reference to create a similar visual a
                                 headline: contentResult.headline,
                                 subheadline: contentResult.subheadline,
                                 cta: (contentResult as any).callToAction,
-                                hashtags: typeof hashtagsValue === 'string' 
-                                    ? hashtagsValue.split(' ').filter(Boolean) 
+                                hashtags: typeof hashtagsValue === 'string'
+                                    ? hashtagsValue.split(' ').filter(Boolean)
                                     : (hashtagsValue as string[])
                             };
 
@@ -2023,8 +2062,8 @@ Use the provided design examples as style reference to create a similar visual a
                                     headline: contentResult.headline,
                                     subheadline: contentResult.subheadline,
                                     cta: (contentResult as any).callToAction,
-                                    hashtags: typeof hashtagsValue10 === 'string' 
-                                        ? hashtagsValue10.split(' ').filter(Boolean) 
+                                    hashtags: typeof hashtagsValue10 === 'string'
+                                        ? hashtagsValue10.split(' ').filter(Boolean)
                                         : (hashtagsValue10 as string[])
                                 };
 

@@ -1,0 +1,399 @@
+[2026-01-19T01:25:07.409Z] Instagram OAuth callback started {
+  "url": "https://localhost:3001/api/social/oauth/instagram/callback?code=AQCKlCSje2jvY3sEXuxEs2U0oVwhERjR47_tD6Y9OgK3U6MTvNxp80sQFAH2JYKKU0D3CQu2QMkrhqwd29SnEjS2FhSM3DWpPiQ9wJUMKZRtnJLTQ2beQN18i69JCNxifO0OOP_hwL9BbhQxaIgpst41eA4nd-dluVnkBehRg61r9XFrOEDXSc9qLNw6fawM53LTfiaG_bZ508EzV1s9I_pa_PdbbjxxRh5AeH6PSx1nhbj4AEGl6KaGwPGQ6nglwk3QNU2Nv7CiA9nt4vaXNOILE-cuiBCL-BnB-PCWL10ywVunhqTDHL5X0IWtgtMx84oc9Y4zhcZmLUXI32ftH9OTWu6FKESZi6NyFqWTuQohIDs6Gk3Efv0Zo9b8JGhxU_QAMCPn0nUR400NHoJY9p0fAnOq56n1Q_KwYetOBUMiinTIbNlx3Gc33vHr3hOv3qY&state=880be4de1219bdba73039a9d"
+}
+[2026-01-19T01:25:07.414Z] Callback parameters {
+  "code": "present",
+  "state": "880be4de1219bdba73039a9d",
+  "error": null
+}
+[2026-01-19T01:25:07.419Z] Stored state retrieval {
+  "stateKey": "880be4de1219bdba73039a9d",
+  "found": true
+}
+[2026-01-19T01:25:07.420Z] State details {
+  "userId": "dd9f93dc-08c2-4086-9359-687fa6c5897d",
+  "brandProfileId": "528572e3-ea39-499a-9130-e0085a9df8d2"
+}
+[2026-01-19T01:25:07.422Z] Configuration {
+  "clientId": "set",
+  "redirectUri": "https://grisel-pyloric-semiprovincially.ngrok-free.dev/api/social/oauth/instagram/callback"
+}
+[2026-01-19T01:25:07.424Z] Requesting access token {
+  "tokenUrl": "https://graph.facebook.com/v19.0/oauth/access_token?client_id=941480140282145&client_secret=fb94252ffc6df574a0714f12a909b97b&redirect_uri=https%3A%2F%2Fgrisel-pyloric-semiprovincially.ngrok-free.dev%2Fapi%2Fsocial%2Foauth%2Finstagram%2Fcallback&code=AQCKlCSje2jvY3sEXuxEs2U0oVwhERjR47_tD6Y9OgK3U6MTvNxp80sQFAH2JYKKU0D3CQu2QMkrhqwd29SnEjS2FhSM3DWpPiQ9wJUMKZRtnJLTQ2beQN18i69JCNxifO0OOP_hwL9BbhQxaIgpst41eA4nd-dluVnkBehRg61r9XFrOEDXSc9qLNw6fawM53LTfiaG_bZ508EzV1s9I_pa_PdbbjxxRh5AeH6PSx1nhbj4AEGl6KaGwPGQ6nglwk3QNU2Nv7CiA9nt4vaXNOILE-cuiBCL-BnB-PCWL10ywVunhqTDHL5X0IWtgtMx84oc9Y4zhcZmLUXI32ftH9OTWu6FKESZi6NyFqWTuQohIDs6Gk3Efv0Zo9b8JGhxU_QAMCPn0nUR400NHoJY9p0fAnOq56n1Q_KwYetOBUMiinTIbNlx3Gc33vHr3hOv3qY"
+}
+[2026-01-19T01:25:07.730Z] Token response {
+  "access_token": "EAANYRW1TGSEBQQI0SF8ZApFZCzmkrZAEZBmMXoCZBH6n4UHeRctYmgtsguTRJilbRfp13t16LFAjLmn8nYv7UR1bunj9XxBZAsTTO34AsYtJIdS07FHUvH39x6ZC1TgrWXlsVvrCFkraCpQTEIvaj3fi8sieIk2LvHzTBCtgGIsYO1ZCbRCrZCroJ48M2bfJRTrdp3jJKz3aWuXyGAHwdfTq06ChFWcR1RNUmHUidzSCtEnTw3WXZBRcAxu2ntglp0WNrUsxaLfyemRoKAPr3xj6TjY9xf8FHu8Wxq7pxYRZCdcHBf9ZAuehcOQt",
+  "token_type": "bearer"
+}
+[2026-01-19T01:25:07.732Z] Fetching user info 
+[2026-01-19T01:25:08.369Z] User info response {
+  "id": "3043536872701946",
+  "name": "Sam Mweni"
+}
+[2026-01-19T01:25:08.372Z] Fetching Facebook pages 
+[2026-01-19T01:25:08.618Z] Pages response {
+  "data": [
+    {
+      "access_token": "EAANYRW1TGSEBQRguDVaWZAV4vLw79Ew1KwGRrtNAEbTfUHWZAGN5EzH0vhJmolXB3irDJZBxHFVUdk27ZB04ZBNtAdP2raggOiryFmJKVVSHghQ4uZBE3DY2tbM5vgjPCZAftdvqqxZCKtG8CXiUbvgCGoewDtkKftBUO66yZBkhxo9icdvjonlt4UrfI8iFeXvywCfec9QwZD",
+      "category": "Information Technology Company",
+      "category_list": [
+        {
+          "id": "1130035050388269",
+          "name": "Information Technology Company"
+        }
+      ],
+      "name": "Crevo",
+      "id": "114174821715288",
+      "tasks": [
+        "ADVERTISE",
+        "ANALYZE",
+        "CREATE_CONTENT",
+        "MESSAGING",
+        "MODERATE",
+        "MANAGE"
+      ]
+    }
+  ],
+  "paging": {
+    "cursors": {
+      "before": "QVFIU3diX2x3bVU0TnVMZATVNZAjVJYXd3dUdKYVJuaVU0d2lnd2ZADZA184eDE3d2JUV21uSnNnelFabzFyOWtWWHhiTVJGZAzUwZATdGOGpKcGhHMmpUekdxZAURR",
+      "after": "QVFIU3diX2x3bVU0TnVMZATVNZAjVJYXd3dUdKYVJuaVU0d2lnd2ZADZA184eDE3d2JUV21uSnNnelFabzFyOWtWWHhiTVJGZAzUwZATdGOGpKcGhHMmpUekdxZAURR"
+    }
+  }
+}
+[2026-01-19T01:25:08.621Z] Checking first page for IG account {
+  "pageId": "114174821715288",
+  "pageName": "Crevo"
+}
+[2026-01-19T01:25:08.898Z] IG account response {
+  "instagram_business_account": {
+    "id": "17841455335676793"
+  },
+  "id": "114174821715288"
+}
+[2026-01-19T01:25:08.901Z] Fetching IG details {
+  "instagramAccountId": "17841455335676793"
+}
+[2026-01-19T01:25:09.217Z] IG details response {
+  "id": "17841455335676793",
+  "username": "crevo.app",
+  "name": "Crevo",
+  "profile_picture_url": "https://scontent-iad3-1.xx.fbcdn.net/v/t51.82787-15/548891211_17989977269844523_2483567596722138737_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=7d201b&_nc_ohc=nQ06kcHJVm8Q7kNvwHzUty-&_nc_oc=AdkoVF3U9bf7RTnteTFNwAP-b90sBMtTLIPZRRoIUyCggGauI7FXtji-5iipdmBDOik&_nc_zt=23&_nc_ht=scontent-iad3-1.xx&edm=AL-3X8kEAAAA&_nc_gid=iPBpiMJvoT_G42cuIy5JpA&oh=00_Afo3P5xiK0pO7Jvhan1vL3Xm5M7DM6eTz22hylpHtG9bmw&oe=69734CD5",
+  "followers_count": 19552,
+  "media_count": 0
+}
+[2026-01-19T01:25:09.284Z] Upserting to Supabase {
+  "userId": "dd9f93dc-08c2-4086-9359-687fa6c5897d",
+  "platform": "instagram",
+  "socialId": "17841455335676793"
+}
+[2026-01-19T01:25:09.898Z] Connection stored successfully [
+  {
+    "id": "21ee0245-1826-47c7-a79d-50df7405206e",
+    "user_id": "dd9f93dc-08c2-4086-9359-687fa6c5897d",
+    "platform": "instagram",
+    "social_id": "17841455335676793",
+    "access_token": "724f9f397efe7504346c53c349e20d04:0ce1c24a6792fc6fd7ee61e070295f50:e7ac7834beb577f6ca62ee98f9a0f40b5c7c2035bbe6570f57ba6d975c9029d7fc3f0ec62ec2853e120182ebfab8055a8519210d555852ac5cf50e507d7036b0a428a7293cff6e5cdecc4c35fa4d16a0c996b8df57ff547eb43f1f996e7f5a7817b09f2088ce6f0b2a500329a1a33cf9664ba1249c585bd36d561e991f92b3fffdbce541788ab2c21a141c31bce0e61bdc30837685988ea97169644bcab269a009e976c45a0990cc02eb3e232f9c2e802fc955dcc4499363402a74433255000ec10d1039643bfc29b017825b8098b0",
+    "refresh_token": null,
+    "expires_at": null,
+    "profile_data": {
+      "name": "Crevo",
+      "username": "crevo.app",
+      "mediaCount": 0,
+      "accountType": "business",
+      "facebookPageId": "114174821715288",
+      "followersCount": 19552,
+      "facebookPageName": "Crevo"
+    },
+    "created_at": "2026-01-19T01:25:09.290169+00:00",
+    "updated_at": "2026-01-19T01:25:09.29+00:00"
+  }
+]
+[2026-01-19T01:25:09.902Z] Redirecting to success {
+  "redirectUrl": "https://grisel-pyloric-semiprovincially.ngrok-free.dev/settings?oauth_success=true&platform=instagram&username=crevo.app"
+}
+[2026-01-19T01:43:25.647Z] Instagram OAuth callback started {
+  "url": "https://localhost:3001/api/social/oauth/instagram/callback?code=AQBZa100VPNJo7h7I95T1LsuTb1VqWFQnsl0HTqMJtALifN096iKEBIdXQFLNMx6z_4XrGmr4lvt5ZwwHsYaV08YzHqvXe8jPTEeIfz6TiXGNKYkV2mpV_Aaldrf0TXROLI3myaBAKHALfd_HqJoVCJeHuPjRG4ASny-5dQzMXw_6Byozd9QOmdP39s8ltDmQiBq00yrzXKFTjEJOaEkvbBMFHuLmXu_h-s8EBjBDqIa8y2IdIghTlJ-GYaY-e8F4VKtEp8gf5f7v_TwHKm7XT-oRZ7VYeHfPG0MbLJfwOucXQYdYZwdEhaEjKbvtbyUncQhhLytI1iifhLMis1ESwRW5uQbLTzbloQgpgwLbOMxfp_74kjN3nOCWOyj_VmlhDRi8NOTv5NdaQqnYHeCJGjKkH7H8A_mPSh2WQie7kUP9IUa65l9TVhzOOSE8JCl9n8&state=62b3a6b29d11e8c558078fbf"
+}
+[2026-01-19T01:43:25.651Z] Callback parameters {
+  "code": "present",
+  "state": "62b3a6b29d11e8c558078fbf",
+  "error": null
+}
+[2026-01-19T01:43:25.655Z] Stored state retrieval {
+  "stateKey": "62b3a6b29d11e8c558078fbf",
+  "found": true
+}
+[2026-01-19T01:43:25.658Z] State details {
+  "userId": "dd9f93dc-08c2-4086-9359-687fa6c5897d",
+  "brandProfileId": "528572e3-ea39-499a-9130-e0085a9df8d2"
+}
+[2026-01-19T01:43:25.660Z] Configuration {
+  "clientId": "set",
+  "redirectUri": "https://grisel-pyloric-semiprovincially.ngrok-free.dev/api/social/oauth/instagram/callback"
+}
+[2026-01-19T01:43:25.664Z] Requesting access token {
+  "tokenUrl": "https://graph.facebook.com/v19.0/oauth/access_token?client_id=941480140282145&client_secret=fb94252ffc6df574a0714f12a909b97b&redirect_uri=https%3A%2F%2Fgrisel-pyloric-semiprovincially.ngrok-free.dev%2Fapi%2Fsocial%2Foauth%2Finstagram%2Fcallback&code=AQBZa100VPNJo7h7I95T1LsuTb1VqWFQnsl0HTqMJtALifN096iKEBIdXQFLNMx6z_4XrGmr4lvt5ZwwHsYaV08YzHqvXe8jPTEeIfz6TiXGNKYkV2mpV_Aaldrf0TXROLI3myaBAKHALfd_HqJoVCJeHuPjRG4ASny-5dQzMXw_6Byozd9QOmdP39s8ltDmQiBq00yrzXKFTjEJOaEkvbBMFHuLmXu_h-s8EBjBDqIa8y2IdIghTlJ-GYaY-e8F4VKtEp8gf5f7v_TwHKm7XT-oRZ7VYeHfPG0MbLJfwOucXQYdYZwdEhaEjKbvtbyUncQhhLytI1iifhLMis1ESwRW5uQbLTzbloQgpgwLbOMxfp_74kjN3nOCWOyj_VmlhDRi8NOTv5NdaQqnYHeCJGjKkH7H8A_mPSh2WQie7kUP9IUa65l9TVhzOOSE8JCl9n8"
+}
+[2026-01-19T01:43:26.384Z] Token response {
+  "access_token": "EAANYRW1TGSEBQdIkIj2KLsiEy6xvU11VhM8ZCf7igGZCOtyBuCOLJzstzXS2VBrOP5KOqGaNhZC1NQGhXg87Ibq6j6OC0ZCe9uIz2Ts7CuBEPzmh8lxPYtSbYQDYP75jhugyQ2tVaT6GFNhqZBrOflZBvhzZClLuVZCEDZBqI14A0TnvUNP5cAFXue2QAgUqUfj2hZAYL8BVZCqHO8SRUKjmZAYKBuzk8C8NDzgyxy5teODZCD0h30R5d0C1rwhnTruaetHx4eyhtEDcQgLhMou3OtApdzJWvV4jkOVh6aF86UmkA4HssQKFunSFW",
+  "token_type": "bearer"
+}
+[2026-01-19T01:43:26.387Z] Fetching user info 
+[2026-01-19T01:43:26.834Z] User info response {
+  "id": "3043536872701946",
+  "name": "Sam Mweni"
+}
+[2026-01-19T01:43:26.837Z] Fetching Facebook pages 
+[2026-01-19T01:43:27.218Z] Pages response {
+  "data": [
+    {
+      "access_token": "EAANYRW1TGSEBQdgaPk7ZApDpv28c5oXpnEPnV4pRqpOBhzV9S1oi2pgG44oeGMbaKZAtpNYHGlojNTJ0wTXiTcxLX2R9oX7U9RDwKGteQu3iroJYYUG0xXjNTJVJByOr4czOcKRDEVMC9re8VCbvAtv3ZAYesOm7ZBIj4TzBtmy6kxuJ0dPZCMccfShP3aFhF2dxZBd58ZD",
+      "category": "Information Technology Company",
+      "category_list": [
+        {
+          "id": "1130035050388269",
+          "name": "Information Technology Company"
+        }
+      ],
+      "name": "Crevo",
+      "id": "114174821715288",
+      "tasks": [
+        "ADVERTISE",
+        "ANALYZE",
+        "CREATE_CONTENT",
+        "MESSAGING",
+        "MODERATE",
+        "MANAGE"
+      ]
+    }
+  ],
+  "paging": {
+    "cursors": {
+      "before": "QVFIU3diX2x3bVU0TnVMZATVNZAjVJYXd3dUdKYVJuaVU0d2lnd2ZADZA184eDE3d2JUV21uSnNnelFabzFyOWtWWHhiTVJGZAzUwZATdGOGpKcGhHMmpUekdxZAURR",
+      "after": "QVFIU3diX2x3bVU0TnVMZATVNZAjVJYXd3dUdKYVJuaVU0d2lnd2ZADZA184eDE3d2JUV21uSnNnelFabzFyOWtWWHhiTVJGZAzUwZATdGOGpKcGhHMmpUekdxZAURR"
+    }
+  }
+}
+[2026-01-19T01:43:27.221Z] Checking first page for IG account {
+  "pageId": "114174821715288",
+  "pageName": "Crevo"
+}
+[2026-01-19T01:43:27.633Z] IG account response {
+  "instagram_business_account": {
+    "id": "17841455335676793"
+  },
+  "id": "114174821715288"
+}
+[2026-01-19T01:43:27.641Z] Fetching IG details {
+  "instagramAccountId": "17841455335676793"
+}
+[2026-01-19T01:43:28.190Z] IG details response {
+  "id": "17841455335676793",
+  "username": "crevo.app",
+  "name": "Crevo",
+  "profile_picture_url": "https://scontent-iad3-1.xx.fbcdn.net/v/t51.82787-15/548891211_17989977269844523_2483567596722138737_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=7d201b&_nc_ohc=nQ06kcHJVm8Q7kNvwHzUty-&_nc_oc=AdkoVF3U9bf7RTnteTFNwAP-b90sBMtTLIPZRRoIUyCggGauI7FXtji-5iipdmBDOik&_nc_zt=23&_nc_ht=scontent-iad3-1.xx&edm=AL-3X8kEAAAA&_nc_gid=7Ab9ATRrtJ9vO1V2vNB6Mw&oh=00_Afq5tu4nzkVrMJIzCwEB6qjZ_e-QyPgrGgbQGSLYnSAl_Q&oe=69734CD5",
+  "followers_count": 19552,
+  "media_count": 0
+}
+[2026-01-19T01:43:28.197Z] Upserting to Supabase {
+  "userId": "dd9f93dc-08c2-4086-9359-687fa6c5897d",
+  "platform": "instagram",
+  "socialId": "17841455335676793"
+}
+[2026-01-19T01:43:28.442Z] Database error {
+  "code": "23505",
+  "details": "Key (user_id, platform)=(dd9f93dc-08c2-4086-9359-687fa6c5897d, instagram) already exists.",
+  "hint": null,
+  "message": "duplicate key value violates unique constraint \"social_connections_user_id_platform_key\""
+}
+[2026-01-19T01:44:27.713Z] Instagram OAuth callback started {
+  "url": "https://localhost:3001/api/social/oauth/instagram/callback?code=AQDLeLBGbVq8QuW69bdaPjXhunSsAPn0kTFqlDGSD9-0ZpyjOAEp6StYvZYwN5WV6JQ5Xp649cMYfhRMa4dvfSDo4i1tidj1D5e4DPO9S4C6aLP2mgTEqDgO-y1G-SsdeEOfvYU9kW8hSC4XzzfhstSXjfBM9oq3oUkij-dJzu3GEBJ3VoNo0zElRQdLBVApFkWSiFnWYAkKM4EljUX-90NbBc5iYSD78w9eZZYlKFIGVIb0mHrlqA8JPVlg7pR1-b6Mz1dapv3poS3ATfSGZh5edkZmOgrfiKkLzWedE6jBhriKnsYCcapRG2icg_4fZku52I87QzNlbWDKBbHt7I1v7yxe2VGqXIkV4KaeH8jSe2eVf5dA5dz1IFBYOT8FQLBuW4E7bIdXIfjrIRKP3LjQ4Ik2qQy-9hT-HRFNMmj7TEqN0We3xyyIvsprHZXH1R4&state=560d8c9714903eba99700d4e"
+}
+[2026-01-19T01:44:27.721Z] Callback parameters {
+  "code": "present",
+  "state": "560d8c9714903eba99700d4e",
+  "error": null
+}
+[2026-01-19T01:44:27.728Z] Stored state retrieval {
+  "stateKey": "560d8c9714903eba99700d4e",
+  "found": true
+}
+[2026-01-19T01:44:27.731Z] State details {
+  "userId": "dd9f93dc-08c2-4086-9359-687fa6c5897d",
+  "brandProfileId": "528572e3-ea39-499a-9130-e0085a9df8d2"
+}
+[2026-01-19T01:44:27.733Z] Configuration {
+  "clientId": "set",
+  "redirectUri": "https://grisel-pyloric-semiprovincially.ngrok-free.dev/api/social/oauth/instagram/callback"
+}
+[2026-01-19T01:44:27.737Z] Requesting access token {
+  "tokenUrl": "https://graph.facebook.com/v19.0/oauth/access_token?client_id=941480140282145&client_secret=fb94252ffc6df574a0714f12a909b97b&redirect_uri=https%3A%2F%2Fgrisel-pyloric-semiprovincially.ngrok-free.dev%2Fapi%2Fsocial%2Foauth%2Finstagram%2Fcallback&code=AQDLeLBGbVq8QuW69bdaPjXhunSsAPn0kTFqlDGSD9-0ZpyjOAEp6StYvZYwN5WV6JQ5Xp649cMYfhRMa4dvfSDo4i1tidj1D5e4DPO9S4C6aLP2mgTEqDgO-y1G-SsdeEOfvYU9kW8hSC4XzzfhstSXjfBM9oq3oUkij-dJzu3GEBJ3VoNo0zElRQdLBVApFkWSiFnWYAkKM4EljUX-90NbBc5iYSD78w9eZZYlKFIGVIb0mHrlqA8JPVlg7pR1-b6Mz1dapv3poS3ATfSGZh5edkZmOgrfiKkLzWedE6jBhriKnsYCcapRG2icg_4fZku52I87QzNlbWDKBbHt7I1v7yxe2VGqXIkV4KaeH8jSe2eVf5dA5dz1IFBYOT8FQLBuW4E7bIdXIfjrIRKP3LjQ4Ik2qQy-9hT-HRFNMmj7TEqN0We3xyyIvsprHZXH1R4"
+}
+[2026-01-19T01:44:28.259Z] Token response {
+  "access_token": "EAANYRW1TGSEBQVm0t74dP1fnDvQA1xpZCxj3cXiMZBMgKiCRDHMtWZBW4bjHZA94ZAAZBHpoLuEWD5OiIJQh6ooU9vQ4Xi3dbI9z36tcH4QZBa0k4KIGO9mRjavQAYfC5Nr3feZBjlVtKYfgdxU7d2ZC0LF0xZAnlE6dFxLifg45Exp2xLVYOTvSZBpvH8RAYZAZA15iL8zDZBwGaDPT7TX9gXXBFbvawZAdfCaSlfYyCdQiL0POcINCna7k45prZBRhCDtpPnm3whfoTYumJhpzzCnSscjycwbxgduqqZAHm6PSO7woItR7uq1F2DYiZB",
+  "token_type": "bearer"
+}
+[2026-01-19T01:44:28.262Z] Fetching user info 
+[2026-01-19T01:44:28.655Z] User info response {
+  "id": "3043536872701946",
+  "name": "Sam Mweni"
+}
+[2026-01-19T01:44:28.659Z] Fetching Facebook pages 
+[2026-01-19T01:44:28.990Z] Pages response {
+  "data": [
+    {
+      "access_token": "EAANYRW1TGSEBQQ82euxrnlAXak9dg8Toqan0XPRUlStUO5a1sj7xSD5xJ4e4ZCKY6jAqwrdVd2cHZAliNY1yWYPHHtoQUkxQKf1dX8ZC55VGfpj4GzxOQHY6ZCuHHX1GkKSFNjuwZB6vKW3qVQd3nxfd4G1qrCSp2zU1CLMJMOWqvlNNKwyKfGa1Y3D9j0Cw1ehk1wp8ZD",
+      "category": "Information Technology Company",
+      "category_list": [
+        {
+          "id": "1130035050388269",
+          "name": "Information Technology Company"
+        }
+      ],
+      "name": "Crevo",
+      "id": "114174821715288",
+      "tasks": [
+        "ADVERTISE",
+        "ANALYZE",
+        "CREATE_CONTENT",
+        "MESSAGING",
+        "MODERATE",
+        "MANAGE"
+      ]
+    }
+  ],
+  "paging": {
+    "cursors": {
+      "before": "QVFIU3diX2x3bVU0TnVMZATVNZAjVJYXd3dUdKYVJuaVU0d2lnd2ZADZA184eDE3d2JUV21uSnNnelFabzFyOWtWWHhiTVJGZAzUwZATdGOGpKcGhHMmpUekdxZAURR",
+      "after": "QVFIU3diX2x3bVU0TnVMZATVNZAjVJYXd3dUdKYVJuaVU0d2lnd2ZADZA184eDE3d2JUV21uSnNnelFabzFyOWtWWHhiTVJGZAzUwZATdGOGpKcGhHMmpUekdxZAURR"
+    }
+  }
+}
+[2026-01-19T01:44:28.992Z] Checking first page for IG account {
+  "pageId": "114174821715288",
+  "pageName": "Crevo"
+}
+[2026-01-19T01:44:29.347Z] IG account response {
+  "instagram_business_account": {
+    "id": "17841455335676793"
+  },
+  "id": "114174821715288"
+}
+[2026-01-19T01:44:29.349Z] Fetching IG details {
+  "instagramAccountId": "17841455335676793"
+}
+[2026-01-19T01:44:29.660Z] IG details response {
+  "id": "17841455335676793",
+  "username": "crevo.app",
+  "name": "Crevo",
+  "profile_picture_url": "https://scontent-iad3-1.xx.fbcdn.net/v/t51.82787-15/548891211_17989977269844523_2483567596722138737_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=7d201b&_nc_ohc=nQ06kcHJVm8Q7kNvwHzUty-&_nc_oc=AdkoVF3U9bf7RTnteTFNwAP-b90sBMtTLIPZRRoIUyCggGauI7FXtji-5iipdmBDOik&_nc_zt=23&_nc_ht=scontent-iad3-1.xx&edm=AL-3X8kEAAAA&_nc_gid=RjIBxDVjVnxrKOt8Q2IyUg&oh=00_AfqN9crFrYFlNoyNhfguyMjjNdISSTvE-SDC0pKpecnQbQ&oe=69734CD5",
+  "followers_count": 19552,
+  "media_count": 0
+}
+[2026-01-19T01:44:29.674Z] Upserting to Supabase {
+  "userId": "dd9f93dc-08c2-4086-9359-687fa6c5897d",
+  "platform": "instagram",
+  "socialId": "17841455335676793"
+}
+[2026-01-19T01:44:29.964Z] Database error {
+  "code": "23505",
+  "details": "Key (user_id, platform)=(dd9f93dc-08c2-4086-9359-687fa6c5897d, instagram) already exists.",
+  "hint": null,
+  "message": "duplicate key value violates unique constraint \"social_connections_user_id_platform_key\""
+}
+[2026-01-19T02:05:33.085Z] Instagram OAuth callback started {
+  "url": "https://localhost:3001/api/social/oauth/instagram/callback?code=AQAVX-qCkI3qFtFt0-Xkncmz_-b56Blhp8LoDXJgApAwITf1H1nMcAOD6tAx1-hvnKnXcKIrG-hHLKOHL6xyuaUqk8LnfiV2Q5aUjVVPskrlvOHRPTAZOznWeQAyrQxVpDHwH0briDCa0iQvZ6S19bRek2tB6Kz1aeltLtohCKWN8pck5ODLsZuvvMZYwM2GPMyzL-gccpsSAtPgxQfhrasYvK-k6twSKjx5ey4yEmSOB6aVcj97yELBNi69sCWXJZdKjFEjx4fBSUtqdCKuwrHmmDa4vUtPUAtE4w0_GVq0-RokvZcJOOJEDMW6y2bmhPaJGx1qEeLDuJdQIbaQz9izptjKJtt0J8gCPZJ7Wl9pLPiEXVD8ReEbYXiZCYksI4u04brUvBrfGfink5hDU2eQwJCtYius4Qz-XayUmXxhB3Pfo3A09SMmcn42N8eFNvI&state=7e5698e9794962419498b168"
+}
+[2026-01-19T02:05:33.102Z] Callback parameters {
+  "code": "present",
+  "state": "7e5698e9794962419498b168",
+  "error": null
+}
+[2026-01-19T02:05:33.106Z] Stored state retrieval {
+  "stateKey": "7e5698e9794962419498b168",
+  "found": true
+}
+[2026-01-19T02:05:33.108Z] State details {
+  "userId": "dd9f93dc-08c2-4086-9359-687fa6c5897d",
+  "brandProfileId": "528572e3-ea39-499a-9130-e0085a9df8d2"
+}
+[2026-01-19T02:05:33.111Z] Configuration {
+  "clientId": "set",
+  "redirectUri": "https://grisel-pyloric-semiprovincially.ngrok-free.dev/api/social/oauth/instagram/callback"
+}
+[2026-01-19T02:05:33.114Z] Requesting access token {
+  "tokenUrl": "https://graph.facebook.com/v19.0/oauth/access_token?client_id=941480140282145&client_secret=fb94252ffc6df574a0714f12a909b97b&redirect_uri=https%3A%2F%2Fgrisel-pyloric-semiprovincially.ngrok-free.dev%2Fapi%2Fsocial%2Foauth%2Finstagram%2Fcallback&code=AQAVX-qCkI3qFtFt0-Xkncmz_-b56Blhp8LoDXJgApAwITf1H1nMcAOD6tAx1-hvnKnXcKIrG-hHLKOHL6xyuaUqk8LnfiV2Q5aUjVVPskrlvOHRPTAZOznWeQAyrQxVpDHwH0briDCa0iQvZ6S19bRek2tB6Kz1aeltLtohCKWN8pck5ODLsZuvvMZYwM2GPMyzL-gccpsSAtPgxQfhrasYvK-k6twSKjx5ey4yEmSOB6aVcj97yELBNi69sCWXJZdKjFEjx4fBSUtqdCKuwrHmmDa4vUtPUAtE4w0_GVq0-RokvZcJOOJEDMW6y2bmhPaJGx1qEeLDuJdQIbaQz9izptjKJtt0J8gCPZJ7Wl9pLPiEXVD8ReEbYXiZCYksI4u04brUvBrfGfink5hDU2eQwJCtYius4Qz-XayUmXxhB3Pfo3A09SMmcn42N8eFNvI"
+}
+[2026-01-19T02:05:33.576Z] Token response {
+  "access_token": "EAANYRW1TGSEBQZAWIMAflyAvmA0kvEutMREgcqvEgvrrlpZCZAO1zZC3zsFu2EanIFr5XWIHnA5LZCq7I45qgxkD5ntzfLICIlqbG2GZACj95DIcyyBhaxLEwN457LzdiRZCpmtWgrWZA7iNEpSF92PtExQXodTryQF2S0tajZBZCSMOFDUHDCsgn9N2iIjXErotu9rTkB4FjHaFS38IZC9IloXe4L5vlVAt1kiWtZCiJv3U8eN6yHZBQ6PqpN66TjzljFGqKOe5WBIhGmkpK9ErYgfoKtPELq6A5FKhce63oidxAGIYHJN0jefph",
+  "token_type": "bearer"
+}
+[2026-01-19T02:05:33.579Z] Fetching user info 
+[2026-01-19T02:05:33.780Z] User info response {
+  "id": "3043536872701946",
+  "name": "Sam Mweni"
+}
+[2026-01-19T02:05:33.783Z] Fetching Facebook pages 
+[2026-01-19T02:05:34.082Z] Pages response {
+  "data": [
+    {
+      "access_token": "EAANYRW1TGSEBQZAakZCxbCLTrgSf7CF82zmZAUiQX8jf4s3oDx36Kqhz2EZBAJCvrwmkgstk1dmr5g7KR5xXtYQqu1lI34UWNOrYnEZBSYadaVxjr031OPgi12w0RWlo7euK0QA3QAjUrcFPXH14zWnlJPu4NY4zdGQbZC6cJGAicXwN3jnzHQWF7hmKaYT8JkifBjuucZD",
+      "category": "Information Technology Company",
+      "category_list": [
+        {
+          "id": "1130035050388269",
+          "name": "Information Technology Company"
+        }
+      ],
+      "name": "Crevo",
+      "id": "114174821715288",
+      "tasks": [
+        "ADVERTISE",
+        "ANALYZE",
+        "CREATE_CONTENT",
+        "MESSAGING",
+        "MODERATE",
+        "MANAGE"
+      ]
+    }
+  ],
+  "paging": {
+    "cursors": {
+      "before": "QVFIU3diX2x3bVU0TnVMZATVNZAjVJYXd3dUdKYVJuaVU0d2lnd2ZADZA184eDE3d2JUV21uSnNnelFabzFyOWtWWHhiTVJGZAzUwZATdGOGpKcGhHMmpUekdxZAURR",
+      "after": "QVFIU3diX2x3bVU0TnVMZATVNZAjVJYXd3dUdKYVJuaVU0d2lnd2ZADZA184eDE3d2JUV21uSnNnelFabzFyOWtWWHhiTVJGZAzUwZATdGOGpKcGhHMmpUekdxZAURR"
+    }
+  }
+}
+[2026-01-19T02:05:34.084Z] Checking first page for IG account {
+  "pageId": "114174821715288",
+  "pageName": "Crevo"
+}
+[2026-01-19T02:05:34.330Z] IG account response {
+  "instagram_business_account": {
+    "id": "17841455335676793"
+  },
+  "id": "114174821715288"
+}
+[2026-01-19T02:05:34.335Z] Fetching IG details {
+  "instagramAccountId": "17841455335676793"
+}
+[2026-01-19T02:05:34.572Z] IG details response {
+  "id": "17841455335676793",
+  "username": "crevo.app",
+  "name": "Crevo",
+  "profile_picture_url": "https://scontent-iad3-1.xx.fbcdn.net/v/t51.82787-15/548891211_17989977269844523_2483567596722138737_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=7d201b&_nc_ohc=nQ06kcHJVm8Q7kNvwHzUty-&_nc_oc=AdkoVF3U9bf7RTnteTFNwAP-b90sBMtTLIPZRRoIUyCggGauI7FXtji-5iipdmBDOik&_nc_zt=23&_nc_ht=scontent-iad3-1.xx&edm=AL-3X8kEAAAA&_nc_gid=62enc0JoxgHpe3E3rvHagg&oh=00_Afr6TilMkGnrc1G_CrDPHcT2_q-2kedQWihABJJNcpOJIA&oe=69734CD5",
+  "followers_count": 19552,
+  "media_count": 0
+}
+[2026-01-19T02:05:34.579Z] Upserting to Supabase {
+  "userId": "dd9f93dc-08c2-4086-9359-687fa6c5897d",
+  "platform": "instagram",
+  "socialId": "17841455335676793"
+}
+[2026-01-19T02:05:34.902Z] Database error {
+  "code": "23505",
+  "details": "Key (user_id, platform)=(dd9f93dc-08c2-4086-9359-687fa6c5897d, instagram) already exists.",
+  "hint": null,
+  "message": "duplicate key value violates unique constraint \"social_connections_user_id_platform_key\""
+}

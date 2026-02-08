@@ -1,22 +1,20 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import fs from 'fs/promises';
-import path from 'path';
 
-const STATE_STORE = path.resolve(process.cwd(), 'tmp', 'oauth-states.json');
-
-async function readStates() {
+// Encryption helper
+function encrypt(text: string, secret: string) {
   try {
-    const raw = await fs.readFile(STATE_STORE, 'utf-8');
-    return JSON.parse(raw || '{}');
-  } catch (e) {
-    return {};
+    const iv = crypto.randomBytes(16);
+    // Ensure secret is 32 bytes for aes-256-cbc
+    const key = crypto.createHash('sha256').update(secret).digest();
+    const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+    let encrypted = cipher.update(text);
+    encrypted = Buffer.concat([encrypted, cipher.final()]);
+    return iv.toString('hex') + ':' + encrypted.toString('hex');
+  } catch (err) {
+    console.error('Encryption error:', err);
+    throw err;
   }
-}
-
-async function writeStates(data: any) {
-  await fs.mkdir(path.dirname(STATE_STORE), { recursive: true });
-  await fs.writeFile(STATE_STORE, JSON.stringify(data, null, 2), 'utf-8');
 }
 
 export async function GET(req: Request) {
@@ -29,7 +27,6 @@ export async function GET(req: Request) {
 
   if (authHeader.startsWith('Bearer ')) {
     accessToken = authHeader.split(' ')[1];
-    // For now, we'll use a simple userId from query or generate one
     userId = url.searchParams.get('userId') || 'user_' + Date.now();
   } else {
     // Fallback for demo/development
@@ -39,21 +36,40 @@ export async function GET(req: Request) {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001';
 
-    // For development, use the production callback URL if NEXT_PUBLIC_APP_URL is not set
+    // IMPORTANT: Fix for Localhost vs Production Callback
+    // If we are on localhost, we SHOULD ideally use localhost callback.
+    // However, keeping the original logic's preference pattern but ensuring it works.
     const isDevelopment = !process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_APP_URL.includes('localhost');
     const prodCallbackUrl = 'https://crevo.app/api/social/oauth/facebook/callback';
     const devCallbackUrl = `${baseUrl}/api/social/oauth/facebook/callback`;
+
+    // NOTE: Using the Dev callback URL if strictly in dev might require the user to whitelist it in FB.
+    // Sticking to the previous logic of preferring Prod URL to minimize regression risk if that's what is whitelisted.
     const callbackUrl = isDevelopment ? prodCallbackUrl : devCallbackUrl;
 
-    // Generate state parameter
-    const state = crypto.randomBytes(12).toString('hex');
-    const states = await readStates();
-    states[state] = {
+    const brandProfileId = url.searchParams.get('brandProfileId');
+
+    console.log('[OAuth Start] Initiating Facebook connection', { userId, brandProfileId, callbackUrl, isDevelopment });
+
+    // Generate state data
+    const stateData = {
       userId,
-      accessToken,
-      createdAt: Date.now()
+      brandProfileId,
+      nonce: crypto.randomBytes(8).toString('hex'),
+      timestamp: Date.now(),
+      // We can include accessToken if needed, but for security/size lets rely on userId
+      // and the callback re-authenticating or using the userId header.
+      accessToken // Including it just in case, hope it's not too huge.
     };
-    await writeStates(states);
+
+    // Encrypt state using FB Client Secret (shared secret)
+    const clientSecret = process.env.FACEBOOK_APP_SECRET || process.env.FACEBOOK_SECRET_KEY || process.env.FACEBOOK_CLIENT_SECRET!;
+    if (!clientSecret) {
+      throw new Error('Missing FACEBOOK_APP_SECRET');
+    }
+
+    const state = encrypt(JSON.stringify(stateData), clientSecret);
+    console.log('[OAuth Start] Generated stateless state');
 
     // Facebook OAuth URL construction
     const clientId = process.env.FACEBOOK_APP_ID || process.env.FACEBOOK_API_KEY || process.env.FACEBOOK_CLIENT_ID!;
@@ -70,6 +86,6 @@ export async function GET(req: Request) {
   } catch (error) {
     console.error('Facebook OAuth initiation error:', error);
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001';
-    return NextResponse.redirect(`${baseUrl}/social-connect?error=facebook_oauth_failed`);
+    return NextResponse.redirect(`${baseUrl}/social-connect?error=facebook_oauth_failed&details=${encodeURIComponent(String(error))}`);
   }
 }

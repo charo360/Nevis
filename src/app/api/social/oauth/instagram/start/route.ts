@@ -19,6 +19,19 @@ async function writeStates(data: any) {
   await fs.writeFile(STATE_STORE, JSON.stringify(data, null, 2), 'utf-8');
 }
 
+const DEBUG_LOG = path.resolve(process.cwd(), 'tmp', 'oauth-start.log');
+
+async function logDebug(message: string, data?: any) {
+  const timestamp = new Date().toISOString();
+  const logEntry = `[${timestamp}] ${message} ${data ? JSON.stringify(data, null, 2) : ''}\n`;
+  try {
+    await fs.mkdir(path.dirname(DEBUG_LOG), { recursive: true });
+    await fs.appendFile(DEBUG_LOG, logEntry, 'utf-8');
+  } catch (e) {
+    console.error('Failed to write debug log:', e);
+  }
+}
+
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const authHeader = req.headers.get('authorization') || '';
@@ -29,60 +42,86 @@ export async function GET(req: Request) {
 
   if (authHeader.startsWith('Bearer ')) {
     accessToken = authHeader.split(' ')[1];
-    // For now, we'll use a simple userId from query or generate one
     userId = url.searchParams.get('userId') || 'user_' + Date.now();
   } else {
-    // Fallback for demo/development
+    // If accessed via browser navigation, check for userId query param or default to demo
     userId = url.searchParams.get('userId') || 'demo';
   }
 
-  // Get account type from query params
-  const accountType = url.searchParams.get('accountType') || 'personal';
+  // Get brand profile ID from query params
+  const brandProfileId = url.searchParams.get('brandProfileId') || '';
 
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001';
+    // Determine Base URL
+    // Priority: Env Var -> Request Origin -> Default
+    let baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+    if (!baseUrl) {
+      baseUrl = `${url.protocol}//${url.host}`;
+    }
+    
+    // Remove trailing slash if present
+    if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
 
-    // For development, use the production callback URL if NEXT_PUBLIC_APP_URL is not set
-    const isDevelopment = !process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_APP_URL.includes('localhost');
-    const prodCallbackUrl = 'https://crevo.app/api/social/oauth/instagram/callback';
-    const devCallbackUrl = `${baseUrl}/api/social/oauth/instagram/callback`;
-    const callbackUrl = isDevelopment ? prodCallbackUrl : devCallbackUrl;
+    const callbackUrl = `${baseUrl}/api/social/oauth/instagram/callback`;
+    
+    await logDebug('Starting Instagram OAuth', { 
+      baseUrl, 
+      callbackUrl, 
+      userId, 
+      brandProfileId,
+      envAppUrl: process.env.NEXT_PUBLIC_APP_URL,
+      requestUrl: req.url
+    });
+    
+    // Instagram Business accounts use Facebook's OAuth system
+    // This is required because Instagram Graph API only supports business accounts
+    const clientId = process.env.META_APP_ID!;
+    
+    console.log('Instagram OAuth - Using Facebook OAuth for Instagram Business accounts');
+    console.log('Instagram OAuth - Callback URL:', callbackUrl);
+    console.log('Instagram OAuth - Client ID:', clientId);
 
-    // Instagram uses Facebook's OAuth system
-    // For business accounts, we need to request additional permissions
-    const scopes = accountType === 'business'
-      ? [
-          'instagram_basic',
-          'pages_show_list',
-          'instagram_content_publish',
-          'pages_read_engagement'
-        ]
-      : [
-          'instagram_basic'
-        ];
+    if (!clientId) {
+      await logDebug('Error: META_APP_ID is missing');
+      return NextResponse.redirect(`${baseUrl}/settings?error=config_error&message=Missing_App_ID`);
+    }
 
-    // Generate Facebook OAuth URL with Instagram permissions
-    const clientId = process.env.FACEBOOK_APP_ID!;
+    // Generate state for CSRF protection
     const state = crypto.randomBytes(12).toString('hex');
     const states = await readStates();
     states[state] = {
       userId,
       accessToken,
-      accountType,
+      brandProfileId,
       createdAt: Date.now()
     };
     await writeStates(states);
 
-    const fbUrl = `https://www.facebook.com/v19.0/dialog/oauth?` +
+    // Instagram Graph API scopes for business accounts
+    const scopes = [
+      'instagram_basic',
+      'instagram_content_publish',
+      'pages_show_list',
+      'pages_read_engagement',
+      'business_management'
+    ];
+
+    // Facebook OAuth URL with Instagram permissions
+    const facebookAuthUrl = `https://www.facebook.com/v19.0/dialog/oauth?` +
       `client_id=${clientId}` +
       `&redirect_uri=${encodeURIComponent(callbackUrl)}` +
       `&scope=${encodeURIComponent(scopes.join(','))}` +
+      `&response_type=code` +
       `&state=${state}`;
 
-    return NextResponse.redirect(fbUrl);
+    console.log('Instagram OAuth - Redirecting to Facebook OAuth:', facebookAuthUrl);
+    await logDebug('Redirecting to Facebook', { facebookAuthUrl });
+
+    return NextResponse.redirect(facebookAuthUrl);
   } catch (error) {
+    await logDebug('Exception during start', { error: String(error) });
     console.error('Instagram OAuth initiation error:', error);
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001';
-    return NextResponse.redirect(`${baseUrl}/social-connect?error=instagram_oauth_failed`);
+    return NextResponse.redirect(`${baseUrl}/settings?error=instagram_oauth_failed`);
   }
 }

@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, ExternalLink, Trash2, CheckCircle, AlertCircle } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth-supabase';
 
 interface ConnectedAccount {
   id: string;
@@ -45,10 +46,14 @@ interface ConnectAccountsCardProps {
 }
 
 export function ConnectAccountsCard({ brandProfileId, onAccountsChange }: ConnectAccountsCardProps) {
+  const { user } = useAuth();
   const [accounts, setAccounts] = useState<ConnectedAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState<string | null>(null);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
+
+  // Debug user state
+  console.log('ConnectAccountsCard: User from useAuth:', user);
 
   // Fetch connected accounts
   useEffect(() => {
@@ -58,15 +63,70 @@ export function ConnectAccountsCard({ brandProfileId, onAccountsChange }: Connec
   const fetchAccounts = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/social/accounts?brandProfileId=${brandProfileId}`);
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+
+      // Get Supabase session for proper authentication
+      if (user?.userId) {
+        try {
+          const { createClient } = await import('@supabase/supabase-js');
+          const supabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+          );
+
+          const { data: { session } } = await supabase.auth.getSession();
+
+          if (session?.access_token) {
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+            console.log('ConnectAccountsCard: Using Supabase session token');
+          } else {
+            headers['x-demo-user'] = user.userId;
+            console.log('ConnectAccountsCard: No session, using demo user header');
+          }
+        } catch (error) {
+          console.error('ConnectAccountsCard: Error getting session:', error);
+          headers['x-demo-user'] = user.userId;
+        }
+      } else {
+        headers['x-demo-user'] = 'demo';
+        console.log('ConnectAccountsCard: No user, using demo header');
+      }
+
+      console.log('ConnectAccountsCard: Fetching accounts with headers:', headers);
+
+      const response = await fetch(`/api/social/connections?brandProfileId=${brandProfileId}`, { headers });
       const data = await response.json();
-      
-      if (data.success) {
-        setAccounts(data.data.accounts || []);
-        onAccountsChange?.(data.data.accounts || []);
+
+      console.log('ConnectAccountsCard: API response status:', response.status);
+      console.log('ConnectAccountsCard: API response:', data);
+
+      if (response.ok && data.connections) {
+        // Transform connections to match expected format
+        const transformedAccounts = data.connections.map((conn: any) => ({
+          id: conn.id,
+          platform: conn.platform,
+          accountId: conn.socialId,
+          accountName: conn.profile?.username || conn.profile?.name || 'Unknown',
+          accountType: conn.profile?.accountType || 'profile',
+          profilePicture: conn.profile?.profile_picture_url,
+          isActive: true,
+          connectedAt: conn.createdAt,
+          expiresAt: conn.updatedAt
+        }));
+
+        console.log('ConnectAccountsCard: Transformed accounts:', transformedAccounts);
+        setAccounts(transformedAccounts);
+        onAccountsChange?.(transformedAccounts);
+      } else {
+        console.log('ConnectAccountsCard: No connections found or API error:', data);
+        setAccounts([]);
       }
     } catch (error) {
-      console.error('Failed to fetch accounts:', error);
+      console.error('ConnectAccountsCard: Failed to fetch accounts:', error);
+      setAccounts([]);
     } finally {
       setLoading(false);
     }
@@ -74,8 +134,10 @@ export function ConnectAccountsCard({ brandProfileId, onAccountsChange }: Connec
 
   const connectAccount = (platformId: string) => {
     setConnecting(platformId);
-    // Redirect to OAuth flow
-    window.location.href = `/api/oauth/${platformId}?brandProfileId=${brandProfileId}`;
+    // Redirect to OAuth flow - use correct endpoint structure
+    // Pass userId to ensure the server knows who is connecting
+    const userIdParam = user?.userId ? `&userId=${user.userId}` : '';
+    window.location.href = `/api/social/oauth/${platformId}/start?brandProfileId=${brandProfileId}${userIdParam}`;
   };
 
   const disconnectAccount = async (platform: string, accountId: string) => {
@@ -83,11 +145,37 @@ export function ConnectAccountsCard({ brandProfileId, onAccountsChange }: Connec
 
     try {
       setDisconnecting(`${platform}_${accountId}`);
-      
-      const response = await fetch('/api/social/accounts', {
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+
+      // Get proper authentication headers
+      if (user?.userId) {
+        try {
+          const { createClient } = await import('@supabase/supabase-js');
+          const supabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+          );
+
+          const { data: { session } } = await supabase.auth.getSession();
+
+          if (session?.access_token) {
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+          } else {
+            headers['x-demo-user'] = user.userId;
+          }
+        } catch (error) {
+          headers['x-demo-user'] = user.userId;
+        }
+      } else {
+        headers['x-demo-user'] = 'demo';
+      }
+
+      const response = await fetch(`/api/social/connections?platform=${platform}&brandProfileId=${brandProfileId}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ brandProfileId, platform, accountId }),
+        headers,
       });
 
       if (response.ok) {
@@ -173,8 +261,8 @@ export function ConnectAccountsCard({ brandProfileId, onAccountsChange }: Connec
                           <div>
                             <p className="text-sm font-medium">{account.accountName}</p>
                             <p className="text-xs text-muted-foreground">
-                              {account.accountType === 'business' ? 'Business Account' : 
-                               account.accountType === 'page' ? 'Page' : 'Profile'}
+                              {account.accountType === 'business' ? 'Business Account' :
+                                account.accountType === 'page' ? 'Page' : 'Profile'}
                             </p>
                           </div>
                           {isTokenExpiringSoon(account.expiresAt) ? (
@@ -225,7 +313,7 @@ export function ConnectAccountsCard({ brandProfileId, onAccountsChange }: Connec
 
         <div className="mt-4 p-3 bg-muted/50 rounded-lg">
           <p className="text-xs text-muted-foreground">
-            <strong>Note:</strong> For Instagram, you need an Instagram Business or Creator account 
+            <strong>Note:</strong> For Instagram, you need an Instagram Business or Creator account
             connected to a Facebook Page. For Facebook, you need to be an admin of the Page you want to connect.
           </p>
         </div>

@@ -145,6 +145,13 @@ const nextConfig: NextConfig = {
   // Experimental features for better performance
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
+    // CRITICAL: Increase server action body size limit to handle image uploads
+    // Default is 1MB which is too small for base64-encoded images
+    // Even a compressed 8MB image becomes ~10.7MB as base64
+    // This prevents 413 Payload Too Large errors in Creative Studio
+    serverActions: {
+      bodySizeLimit: '50mb',
+    },
   },
 
   async headers() {

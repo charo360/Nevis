@@ -698,7 +698,11 @@ export async function generateCreativeAssetAction(
       async () => await generateCreativeAssetFlow({
         prompt,
         outputType,
-        referenceAssetUrl: await convertUrlToDataUri(referenceAssetUrl || undefined) || null,
+        // OPTIMIZATION: Don't convert URLs to data URIs here - it doubles the payload size!
+        // Client-side already compresses images, so:
+        // - If it's a data URI, it's already optimized (pass as-is)
+        // - If it's a URL, let the server fetch it directly (more efficient)
+        referenceAssetUrl: referenceAssetUrl,
         useBrandProfile,
         brandProfile: useBrandProfile ? brandProfile : null,
         maskDataUrl,
@@ -794,7 +798,7 @@ export async function generateCreativeAssetAction(
       if (brandProfile?.id && finalImageUrl) {
         // Use the actual generated caption from Revo 2.0/1.5/1.0, fallback to prompt if not available
         const generatedCaption = result.caption || result.content || `Creative Studio: ${prompt}`;
-        
+
         const savedPost = await supabaseService.saveGeneratedPost(
           user.id,
           brandProfile.id,

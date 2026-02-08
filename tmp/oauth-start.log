@@ -1,0 +1,44 @@
+[2026-01-19T01:24:52.483Z] Starting Instagram OAuth {
+  "baseUrl": "https://grisel-pyloric-semiprovincially.ngrok-free.dev",
+  "callbackUrl": "https://grisel-pyloric-semiprovincially.ngrok-free.dev/api/social/oauth/instagram/callback",
+  "userId": "dd9f93dc-08c2-4086-9359-687fa6c5897d",
+  "brandProfileId": "528572e3-ea39-499a-9130-e0085a9df8d2",
+  "envAppUrl": "https://grisel-pyloric-semiprovincially.ngrok-free.dev",
+  "requestUrl": "https://localhost:3001/api/social/oauth/instagram/start?brandProfileId=528572e3-ea39-499a-9130-e0085a9df8d2&userId=dd9f93dc-08c2-4086-9359-687fa6c5897d"
+}
+[2026-01-19T01:24:52.550Z] Redirecting to Facebook {
+  "facebookAuthUrl": "https://www.facebook.com/v19.0/dialog/oauth?client_id=941480140282145&redirect_uri=https%3A%2F%2Fgrisel-pyloric-semiprovincially.ngrok-free.dev%2Fapi%2Fsocial%2Foauth%2Finstagram%2Fcallback&scope=instagram_basic%2Cinstagram_content_publish%2Cpages_show_list%2Cpages_read_engagement%2Cbusiness_management&response_type=code&state=880be4de1219bdba73039a9d"
+}
+[2026-01-19T01:43:16.236Z] Starting Instagram OAuth {
+  "baseUrl": "https://grisel-pyloric-semiprovincially.ngrok-free.dev",
+  "callbackUrl": "https://grisel-pyloric-semiprovincially.ngrok-free.dev/api/social/oauth/instagram/callback",
+  "userId": "dd9f93dc-08c2-4086-9359-687fa6c5897d",
+  "brandProfileId": "528572e3-ea39-499a-9130-e0085a9df8d2",
+  "envAppUrl": "https://grisel-pyloric-semiprovincially.ngrok-free.dev",
+  "requestUrl": "https://localhost:3001/api/social/oauth/instagram/start?brandProfileId=528572e3-ea39-499a-9130-e0085a9df8d2&userId=dd9f93dc-08c2-4086-9359-687fa6c5897d"
+}
+[2026-01-19T01:43:16.257Z] Redirecting to Facebook {
+  "facebookAuthUrl": "https://www.facebook.com/v19.0/dialog/oauth?client_id=941480140282145&redirect_uri=https%3A%2F%2Fgrisel-pyloric-semiprovincially.ngrok-free.dev%2Fapi%2Fsocial%2Foauth%2Finstagram%2Fcallback&scope=instagram_basic%2Cinstagram_content_publish%2Cpages_show_list%2Cpages_read_engagement%2Cbusiness_management&response_type=code&state=62b3a6b29d11e8c558078fbf"
+}
+[2026-01-19T01:44:20.885Z] Starting Instagram OAuth {
+  "baseUrl": "https://grisel-pyloric-semiprovincially.ngrok-free.dev",
+  "callbackUrl": "https://grisel-pyloric-semiprovincially.ngrok-free.dev/api/social/oauth/instagram/callback",
+  "userId": "dd9f93dc-08c2-4086-9359-687fa6c5897d",
+  "brandProfileId": "528572e3-ea39-499a-9130-e0085a9df8d2",
+  "envAppUrl": "https://grisel-pyloric-semiprovincially.ngrok-free.dev",
+  "requestUrl": "https://localhost:3001/api/social/oauth/instagram/start?brandProfileId=528572e3-ea39-499a-9130-e0085a9df8d2&userId=dd9f93dc-08c2-4086-9359-687fa6c5897d"
+}
+[2026-01-19T01:44:20.916Z] Redirecting to Facebook {
+  "facebookAuthUrl": "https://www.facebook.com/v19.0/dialog/oauth?client_id=941480140282145&redirect_uri=https%3A%2F%2Fgrisel-pyloric-semiprovincially.ngrok-free.dev%2Fapi%2Fsocial%2Foauth%2Finstagram%2Fcallback&scope=instagram_basic%2Cinstagram_content_publish%2Cpages_show_list%2Cpages_read_engagement%2Cbusiness_management&response_type=code&state=560d8c9714903eba99700d4e"
+}
+[2026-01-19T02:05:24.074Z] Starting Instagram OAuth {
+  "baseUrl": "https://grisel-pyloric-semiprovincially.ngrok-free.dev",
+  "callbackUrl": "https://grisel-pyloric-semiprovincially.ngrok-free.dev/api/social/oauth/instagram/callback",
+  "userId": "dd9f93dc-08c2-4086-9359-687fa6c5897d",
+  "brandProfileId": "528572e3-ea39-499a-9130-e0085a9df8d2",
+  "envAppUrl": "https://grisel-pyloric-semiprovincially.ngrok-free.dev",
+  "requestUrl": "https://localhost:3001/api/social/oauth/instagram/start?brandProfileId=528572e3-ea39-499a-9130-e0085a9df8d2&userId=dd9f93dc-08c2-4086-9359-687fa6c5897d"
+}
+[2026-01-19T02:05:24.095Z] Redirecting to Facebook {
+  "facebookAuthUrl": "https://www.facebook.com/v19.0/dialog/oauth?client_id=941480140282145&redirect_uri=https%3A%2F%2Fgrisel-pyloric-semiprovincially.ngrok-free.dev%2Fapi%2Fsocial%2Foauth%2Finstagram%2Fcallback&scope=instagram_basic%2Cinstagram_content_publish%2Cpages_show_list%2Cpages_read_engagement%2Cbusiness_management&response_type=code&state=7e5698e9794962419498b168"
+}

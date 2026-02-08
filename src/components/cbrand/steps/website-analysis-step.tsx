@@ -38,7 +38,7 @@ export function WebsiteAnalysisStep({
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState('');
   const [analysisError, setAnalysisError] = useState('');
-  
+
   // E-commerce scraper state
   const [storeAssets, setStoreAssets] = useState<any>(null);
   // Website assets state (for regular websites)
@@ -50,7 +50,7 @@ export function WebsiteAnalysisStep({
   const [showAnalysisDialog, setShowAnalysisDialog] = useState(false);
   const [dialogType, setDialogType] = useState<'blocked' | 'timeout' | 'error'>('error');
   const [dialogMessage, setDialogMessage] = useState('');
-  
+
   // Debug: Log when brand colors change
   useEffect(() => {
     console.log('🎨 [UI] Brand profile colors updated:', {
@@ -65,7 +65,7 @@ export function WebsiteAnalysisStep({
     console.log('🔄 WebsiteAnalysisStep: brandProfile.websiteUrl changed:', brandProfile.websiteUrl);
     console.log('🔄 WebsiteAnalysisStep: current websiteUrl state:', websiteUrl);
     console.log('🔄 WebsiteAnalysisStep: brandProfile object:', brandProfile);
-    
+
     // Simply use the brandProfile.websiteUrl if available
     if (brandProfile.websiteUrl && brandProfile.websiteUrl !== websiteUrl) {
       console.log('✅ WebsiteAnalysisStep: Updating websiteUrl from brandProfile:', brandProfile.websiteUrl);
@@ -169,10 +169,10 @@ export function WebsiteAnalysisStep({
     try {
       // Step 1: Quick e-commerce detection
       const isEcommerce = await detectEcommerceStore(websiteUrl.trim());
-      
+
       if (isEcommerce) {
         setAnalysisProgress('🛒 E-commerce store detected! Extracting store assets...');
-        
+
         // Step 1: Run e-commerce extraction first
         let storeData = null;
         try {
@@ -180,7 +180,7 @@ export function WebsiteAnalysisStep({
           if (storeResult.success) {
             setStoreAssets(storeResult);
             storeData = storeResult;
-            
+
             // Apply brand colors if extracted
             if (storeResult.brandColors && storeResult.brandColors.length > 0) {
               console.log('🎨 [E-commerce] Setting initial brand colors:', {
@@ -188,18 +188,18 @@ export function WebsiteAnalysisStep({
                 accentColor: storeResult.brandColors[1] || storeResult.brandColors[0],
                 allColors: storeResult.brandColors
               });
-              
+
               updateBrandProfile({
                 primaryColor: storeResult.brandColors[0],
                 accentColor: storeResult.brandColors[1] || storeResult.brandColors[0],
                 backgroundColor: storeResult.brandColors[2] || '#F8FAFC'
               });
-              
+
               // Mark that e-commerce colors have been set
               setEcommerceColorsSet(true);
               console.log('🔒 [E-commerce] Colors locked - will not be overwritten by AI analysis');
             }
-            
+
             const productCount = storeData?.totalProducts || 0;
             const imageCount = storeData?.totalImages || 0;
             setAnalysisProgress(`🛒 Store assets extracted! Found ${productCount} products, ${imageCount} images. Now running AI analysis...`);
@@ -242,14 +242,14 @@ export function WebsiteAnalysisStep({
 
         if (aiAnalysisSuccess && storeData) {
           setAnalysisProgress(`✅ Complete! Found ${productCount} products, ${imageCount} images + AI brand analysis`);
-          
+
           toast({
             title: "Comprehensive Analysis Complete! 🚀",
             description: `E-commerce: ${productCount} products, ${imageCount} images. AI brand analysis: business info, services, colors extracted.`,
           });
         } else if (storeData) {
           setAnalysisProgress(`✅ E-commerce analysis complete! Found ${productCount} products, ${imageCount} images`);
-          
+
           toast({
             title: "E-commerce Analysis Complete! 🛒",
             description: `Found ${productCount} products, ${imageCount} images. AI analysis failed but e-commerce data extracted.`,
@@ -257,7 +257,7 @@ export function WebsiteAnalysisStep({
           });
         } else if (aiAnalysisSuccess) {
           setAnalysisProgress(`✅ AI analysis complete! E-commerce extraction failed but got brand info.`);
-          
+
           toast({
             title: "AI Analysis Complete! 🤖",
             description: "E-commerce extraction failed but AI successfully analyzed the website for brand information.",
@@ -269,7 +269,7 @@ export function WebsiteAnalysisStep({
       } else {
         // Regular website - run AI analysis + color extraction
         setAnalysisProgress('🤖 Running AI website analysis...');
-        
+
         // Run AI analysis and color extraction in parallel
         const [aiResult, colorResult] = await Promise.allSettled([
           runAIAnalysis(websiteUrl.trim()),
@@ -280,7 +280,7 @@ export function WebsiteAnalysisStep({
         if (colorResult.status === 'fulfilled') {
           const assets = colorResult.value;
           setWebsiteAssets(assets);
-          
+
           // Apply brand colors if found
           if (assets.brandColors?.length > 0) {
             updateBrandProfile({
@@ -288,26 +288,26 @@ export function WebsiteAnalysisStep({
               accentColor: assets.brandColors[1] || assets.brandColors[0]
             });
           }
-          
+
           const colorCount = assets.brandColors?.length || 0;
           const imageCount = assets.images?.length || 0;
           const hasLogo = !!assets.logo;
-          
+
           let assetsFound = [];
           if (colorCount > 0) assetsFound.push(`${colorCount} colors`);
           if (hasLogo) assetsFound.push('logo');
           if (imageCount > 0) assetsFound.push(`${imageCount} images`);
-          
+
           if (assetsFound.length > 0) {
             setAnalysisProgress(`✅ AI analysis complete! Found ${assetsFound.join(', ')}`);
-            
+
             toast({
               title: "Website Analysis Complete! 🎨",
               description: `AI analysis completed + extracted ${assetsFound.join(', ')}.`,
             });
           } else {
             setAnalysisProgress('✅ AI analysis complete!');
-            
+
             toast({
               title: "Website Analysis Complete! 🤖",
               description: "AI has analyzed your website and extracted brand information.",
@@ -315,7 +315,7 @@ export function WebsiteAnalysisStep({
           }
         } else {
           setAnalysisProgress('✅ AI analysis complete!');
-          
+
           toast({
             title: "Website Analysis Complete! 🤖",
             description: "AI has analyzed your website and extracted brand information.",
@@ -326,7 +326,7 @@ export function WebsiteAnalysisStep({
     } catch (error) {
       console.error('❌ Unified analysis failed:', error);
       setAnalysisError(error instanceof Error ? error.message : 'Analysis failed');
-      
+
       toast({
         variant: "destructive",
         title: "Analysis Failed",
@@ -345,7 +345,7 @@ export function WebsiteAnalysisStep({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ storeUrl: url, detectOnly: true })
       });
-      
+
       const result = await response.json();
       return result.success && result.platform !== 'generic';
     } catch {
@@ -360,18 +360,39 @@ export function WebsiteAnalysisStep({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ storeUrl: url })
     });
-    
+
     return await response.json();
   };
 
   // Helper function to extract colors from any website
   const extractColorsFromWebsite = async (url: string) => {
     try {
-      const { extractBrandAssets } = await import('@/lib/services/ecommerce-scraper');
-      return await extractBrandAssets(url);
+      // ✅ Call server-side API to bypass CORS restrictions
+      const response = await fetch('/api/extract-website-assets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Brand assets API failed: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to extract brand assets');
+      }
+
+      return {
+        brandColors: result.brandColors || [],
+        images: result.images || [],
+        logo: result.logo,
+        favicon: result.favicon
+      };
     } catch (error) {
-      console.warn('⚠️ Color extraction failed:', error);
-      return { brandColors: [] };
+      console.warn('⚠️ Brand assets extraction failed:', error);
+      return { brandColors: [], images: [], logo: undefined, favicon: undefined };
     }
   };
 
@@ -441,27 +462,27 @@ export function WebsiteAnalysisStep({
     // Parse services (for e-commerce, these might be product categories)
     const servicesArray = result.services
       ? result.services.split('\n').filter(service => service.trim()).map(service => {
-          const colonIndex = service.indexOf(':');
-          if (colonIndex > 0) {
+        const colonIndex = service.indexOf(':');
+        if (colonIndex > 0) {
+          return {
+            name: service.substring(0, colonIndex).trim(),
+            description: service.substring(colonIndex + 1).trim()
+          };
+        } else {
+          const dashIndex = service.indexOf(' - ');
+          if (dashIndex > 0) {
             return {
-              name: service.substring(0, colonIndex).trim(),
-              description: service.substring(colonIndex + 1).trim()
+              name: service.substring(0, dashIndex).trim(),
+              description: service.substring(dashIndex + 3).trim()
             };
           } else {
-            const dashIndex = service.indexOf(' - ');
-            if (dashIndex > 0) {
-              return {
-                name: service.substring(0, dashIndex).trim(),
-                description: service.substring(dashIndex + 3).trim()
-              };
-            } else {
-              return {
-                name: service.trim(),
-                description: ''
-              };
-            }
+            return {
+              name: service.trim(),
+              description: ''
+            };
           }
-        })
+        }
+      })
       : [];
 
     // ALWAYS use e-commerce extracted colors (they are more accurate than AI detection)
@@ -469,7 +490,7 @@ export function WebsiteAnalysisStep({
     const primaryColor = storeData?.brandColors?.[0] || brandProfile.primaryColor || '#3B82F6';
     const accentColor = storeData?.brandColors?.[1] || brandProfile.accentColor || '#10B981';
     const backgroundColor = storeData?.brandColors?.[2] || brandProfile.backgroundColor || '#F8FAFC';
-    
+
     console.log('🎨 Using brand colors:', {
       source: storeData?.brandColors ? 'E-commerce Extraction' : (brandProfile.primaryColor !== '#3B82F6' ? 'Existing Profile' : 'AI Fallback'),
       primaryColor,
@@ -509,13 +530,13 @@ export function WebsiteAnalysisStep({
       linkedinUrl: result.socialMedia?.linkedin || '',
       designExamples: [...existingDesignExamples, ...designImageUris],
     };
-    
+
     console.log('🎨 [AI Analysis] Updating brand profile with colors:', {
       primaryColor: profileUpdate.primaryColor,
       accentColor: profileUpdate.accentColor,
       backgroundColor: profileUpdate.backgroundColor
     });
-    
+
     updateBrandProfile(profileUpdate);
 
     return result;
@@ -576,34 +597,34 @@ export function WebsiteAnalysisStep({
     // Parse services
     const servicesArray = result.services
       ? result.services.split('\n').filter(service => service.trim()).map(service => {
-          const colonIndex = service.indexOf(':');
-          if (colonIndex > 0) {
+        const colonIndex = service.indexOf(':');
+        if (colonIndex > 0) {
+          return {
+            name: service.substring(0, colonIndex).trim(),
+            description: service.substring(colonIndex + 1).trim()
+          };
+        } else {
+          const dashIndex = service.indexOf(' - ');
+          if (dashIndex > 0) {
             return {
-              name: service.substring(0, colonIndex).trim(),
-              description: service.substring(colonIndex + 1).trim()
+              name: service.substring(0, dashIndex).trim(),
+              description: service.substring(dashIndex + 3).trim()
             };
           } else {
-            const dashIndex = service.indexOf(' - ');
-            if (dashIndex > 0) {
-              return {
-                name: service.substring(0, dashIndex).trim(),
-                description: service.substring(dashIndex + 3).trim()
-              };
-            } else {
-              return {
-                name: service.trim(),
-                description: ''
-              };
-            }
+            return {
+              name: service.trim(),
+              description: ''
+            };
           }
-        })
+        }
+      })
       : [];
 
     // Extract colors from AI - but preserve e-commerce colors if they were already set
     const primaryColor = ecommerceColorsSet ? brandProfile.primaryColor : (result.colorPalette?.primary || brandProfile.primaryColor || '#3B82F6');
     const accentColor = ecommerceColorsSet ? brandProfile.accentColor : (result.colorPalette?.secondary || result.colorPalette?.accent || brandProfile.accentColor || '#10B981');
     const backgroundColor = ecommerceColorsSet ? brandProfile.backgroundColor : (brandProfile.backgroundColor || '#F8FAFC');
-    
+
     console.log('🎨 [Regular AI] Color decision:', {
       ecommerceColorsLocked: ecommerceColorsSet,
       usingColors: ecommerceColorsSet ? 'E-commerce (preserved)' : 'AI Detection',
@@ -809,7 +830,7 @@ export function WebsiteAnalysisStep({
 
         // Store design examples for future AI reference (combine existing + new)
         designExamples: [...existingDesignExamples, ...designImageUris],
-        
+
         // Store enhanced data if available
         enhancedData: result.enhancedData || undefined,
       });
@@ -863,7 +884,7 @@ export function WebsiteAnalysisStep({
             title: "🚀 COMPREHENSIVE Analysis Complete!",
             description: `Found ${enhancedData.products?.length || 0} products, ${enhancedData.totalImagesFound || 0} images, ${enhancedData.uniqueSellingPropositions?.length || 0} USPs, and ${enhancedData.marketGaps?.length || 0} opportunities!`,
           });
-          
+
           // Log enhanced data for debugging
           console.log('🎉 Enhanced Analysis Results:', {
             products: enhancedData.products?.length || 0,
@@ -1071,9 +1092,9 @@ export function WebsiteAnalysisStep({
               {websiteAssets.logo && (
                 <div className="mt-2">
                   <span className="text-xs text-blue-700">Logo: </span>
-                  <img 
-                    src={websiteAssets.logo} 
-                    alt="Website Logo" 
+                  <img
+                    src={websiteAssets.logo}
+                    alt="Website Logo"
                     className="inline-block h-6 max-w-24 object-contain"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
