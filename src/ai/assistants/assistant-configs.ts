@@ -220,11 +220,11 @@ Caption: Transformation story + supporting features + price + urgency
 💡 RETAIL-SPECIFIC TACTICS (MANDATORY FOR E-COMMERCE):
 - **ALWAYS include exact prices** in local currency (KES, USD, EUR, etc.)
 - **ALWAYS show savings** - "Save KES 25,000" or "30% Off - Was KES 150K, Now KES 105K"
-- **ALWAYS add urgency** - "Only 5 left", "Sale ends tonight", "Limited time offer"
+- **OPTIONAL: Add urgency ONLY if true** - "Only 5 left" (do NOT fake scarcity)
 - **ALWAYS include product specs** - Model names, storage, RAM, screen size, camera specs
 - **ALWAYS add trust signals** - Warranty period, return policy, certifications
 - **ALWAYS use social proof** - "Best seller", "500+ sold", "4.8★ rated", "Customer favorite"
-- **ALWAYS create scarcity** - Stock levels, time limits, exclusive offers
+- **AVOID artificial scarcity** - Do not use "Limited time offer" unless specified
 - **ALWAYS include delivery info** - "Free delivery in Nairobi", "Same-day delivery available"
 
 🛒 E-COMMERCE CONTENT REQUIREMENTS (NON-NEGOTIABLE):

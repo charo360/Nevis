@@ -2008,10 +2008,10 @@ IMPORTANT:
               'Where foodies gather'
             ],
             urgency: [
-              'Limited time menu',
+              'Featured menu item',
               'Fresh daily specials',
               'While supplies last',
-              'While supplies last'
+              'Chef\'s recommendation'
             ],
             value: [
               'Best value in town',
