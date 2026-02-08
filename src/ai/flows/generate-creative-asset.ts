@@ -1424,6 +1424,11 @@ Transform the uploaded image into a professional marketing design by enhancing i
                 structuredContentInstructions += `- Create content that makes sense for: ${bp.businessName} (${bp.businessType})\n`;
                 structuredContentInstructions += `- Location: ${bp.location}\n`;
                 structuredContentInstructions += `- Services: ${servicesText || 'General business services'}\n`;
+                structuredContentInstructions += `\n🚨 CRITICAL - DO NOT REPEAT THE USER'S PROMPT:\n`;
+                structuredContentInstructions += `- The user's request "${input.prompt}" is an INSTRUCTION, not the text to display\n`;
+                structuredContentInstructions += `- DO NOT write "${input.prompt}" on the design\n`;
+                structuredContentInstructions += `- INSTEAD: Write actual marketing copy that fulfills their request\n`;
+                structuredContentInstructions += `- Example: If they say "Create a post about success stories", write actual success story content, not "Create a post about success stories"\n`;
                 structuredContentInstructions += `\n✅ SMART CONTENT APPROACH:\n`;
                 structuredContentInstructions += `- Generate relevant, natural marketing content\n`;
                 structuredContentInstructions += `- Use business context intelligently\n`;
@@ -1434,6 +1439,7 @@ Transform the uploaded image into a professional marketing design by enhancing i
                 structuredContentInstructions += `- Robotic or template-like language\n`;
                 structuredContentInstructions += `- Irrelevant promotional text\n`;
                 structuredContentInstructions += `- One-size-fits-all marketing speak\n`;
+                structuredContentInstructions += `- NEVER repeat the user's instruction as if it were content\n`;
             }
 
             if (parsedInstructions.headline) {

@@ -20,6 +20,8 @@ import { AssetLibrary } from './asset-library';
 import type { CreativeAsset } from '@/lib/services/creative-assets-service';
 import { analyzeImageWithVision, formatVisionAnalysisForDisplay, type VisionAnalysisResult } from '@/lib/services/google-vision';
 
+// 🔧 FEATURE FLAG: Temporarily disable Vision API (set to true to re-enable)
+const ENABLE_VISION_API = false;
 
 interface ChatLayoutProps {
     brandProfile: BrandProfile | null;
@@ -108,70 +110,81 @@ export function ChatLayout({ brandProfile, onEditImage }: ChatLayoutProps) {
                 }
 
                 // NEW: Analyze image with Google Vision API with progressive feedback
+                // 🔧 FEATURE FLAG: Skip Vision API if disabled
                 let analysisToastId: any = null;
-                try {
-                    // Show initial analyzing toast
-                    analysisToastId = toast({
-                        title: '🔍 Analyzing Image...',
-                        description: 'Gathering visual information from your image',
-                        duration: 30000, // Keep visible during analysis
-                    });
+                if (ENABLE_VISION_API) {
+                    try {
+                        // Show initial analyzing toast
+                        analysisToastId = toast({
+                            title: '🔍 Analyzing Image...',
+                            description: 'Gathering visual information from your image',
+                            duration: 30000, // Keep visible during analysis
+                        });
 
-                    console.log('🔍 [Creative Studio] Analyzing image with Vision API...');
+                        console.log('🔍 [Creative Studio] Analyzing image with Vision API...');
 
-                    // Update toast to show we're working
-                    setTimeout(() => {
-                        if (analysisToastId) {
+                        // Update toast to show we're working
+                        setTimeout(() => {
+                            if (analysisToastId) {
+                                toast({
+                                    title: '🎨 Detecting Colors & Objects...',
+                                    description: 'Extracting dominant colors and identifying elements',
+                                    duration: 30000,
+                                });
+                            }
+                        }, 500);
+
+                        const visionResult = await analyzeImageWithVision(finalDataUrl);
+
+                        if (visionResult.error) {
+                            console.warn('⚠️ [Vision API] Analysis failed:', visionResult.error);
+                            // Continue without Vision data - don't block upload
                             toast({
-                                title: '🎨 Detecting Colors & Objects...',
-                                description: 'Extracting dominant colors and identifying elements',
-                                duration: 30000,
+                                title: 'Image Uploaded',
+                                description: 'Image analysis unavailable, but upload successful',
+                                duration: 2000,
+                            });
+                        } else {
+                            console.log('✅ [Vision API] Analysis complete:', {
+                                labels: visionResult.labels.length,
+                                colors: visionResult.dominantColors.length,
+                                text: visionResult.fullTextAnnotation ? 'detected' : 'none',
+                                logos: visionResult.logos.length,
+                            });
+
+                            // Store Vision analysis
+                            setVisionAnalysis(visionResult);
+
+                            // Show success with what we found
+                            const findingsCount = [
+                                visionResult.labels.length > 0 ? 'objects' : null,
+                                visionResult.dominantColors.length > 0 ? 'colors' : null,
+                                visionResult.logos.length > 0 ? 'brands' : null,
+                                visionResult.fullTextAnnotation ? 'text' : null,
+                            ].filter(Boolean);
+
+                            toast({
+                                title: '✅ Analysis Complete!',
+                                description: `Found ${findingsCount.join(', ')} - ${formatVisionAnalysisForDisplay(visionResult)}`,
+                                duration: 5000,
                             });
                         }
-                    }, 500);
-
-                    const visionResult = await analyzeImageWithVision(finalDataUrl);
-
-                    if (visionResult.error) {
-                        console.warn('⚠️ [Vision API] Analysis failed:', visionResult.error);
-                        // Continue without Vision data - don't block upload
+                    } catch (visionError) {
+                        console.error('❌ [Vision API] Analysis error:', visionError);
+                        // Continue without Vision - don't block the upload
+                        setVisionAnalysis(null);
                         toast({
                             title: 'Image Uploaded',
-                            description: 'Image analysis unavailable, but upload successful',
+                            description: 'Analysis failed, but image uploaded successfully',
                             duration: 2000,
                         });
-                    } else {
-                        console.log('✅ [Vision API] Analysis complete:', {
-                            labels: visionResult.labels.length,
-                            colors: visionResult.dominantColors.length,
-                            text: visionResult.fullTextAnnotation ? 'detected' : 'none',
-                            logos: visionResult.logos.length,
-                        });
-
-                        // Store Vision analysis
-                        setVisionAnalysis(visionResult);
-
-                        // Show success with what we found
-                        const findingsCount = [
-                            visionResult.labels.length > 0 ? 'objects' : null,
-                            visionResult.dominantColors.length > 0 ? 'colors' : null,
-                            visionResult.logos.length > 0 ? 'brands' : null,
-                            visionResult.fullTextAnnotation ? 'text' : null,
-                        ].filter(Boolean);
-
-                        toast({
-                            title: '✅ Analysis Complete!',
-                            description: `Found ${findingsCount.join(', ')} - ${formatVisionAnalysisForDisplay(visionResult)}`,
-                            duration: 5000,
-                        });
                     }
-                } catch (visionError) {
-                    console.error('❌ [Vision API] Analysis error:', visionError);
-                    // Continue without Vision - don't block the upload
-                    setVisionAnalysis(null);
+                } else {
+                    console.log('ℹ️ [Creative Studio] Vision API disabled via feature flag');
+                    // Just show simple upload success
                     toast({
-                        title: 'Image Uploaded',
-                        description: 'Analysis failed, but image uploaded successfully',
+                        title: '✅ Image Uploaded',
+                        description: 'Image ready for generation',
                         duration: 2000,
                     });
                 }
